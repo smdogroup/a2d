@@ -10,8 +10,7 @@
   Op = "" = assignment, +=
   Or = "" = normal, "Trans" = transpose, "Symm" = symmetric
 */
-
-inline void Symm3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3SymmMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] = (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -23,7 +22,7 @@ inline void Symm3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsScalar 
   C[8] = (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
 }
 
-inline void Symm3x3SymmScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3SymmMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] = scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -35,7 +34,7 @@ inline void Symm3x3SymmScale( TacsScalar scale, const TacsScalar A[], const Tacs
   C[8] = scale * (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
 }
 
-inline void Symm3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3SymmMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] += (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -47,7 +46,7 @@ inline void Symm3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], TacsScal
   C[8] += (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
 }
 
-inline void Symm3x3SymmSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3SymmMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] -= (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] -= (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -59,7 +58,7 @@ inline void Symm3x3SymmSub( const TacsScalar A[], const TacsScalar B[], TacsScal
   C[8] -= (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
 }
 
-inline void Symm3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3SymmMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] += scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -71,7 +70,7 @@ inline void Symm3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], const T
   C[8] += scale * (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
 }
 
-inline void Symm3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] = (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] = (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -83,7 +82,7 @@ inline void Symm3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScalar C
   C[8] = (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] = scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] = scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -95,7 +94,7 @@ inline void Symm3x3MatScale( TacsScalar scale, const TacsScalar A[], const TacsS
   C[8] = scale * (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] += (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] += (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -107,7 +106,7 @@ inline void Symm3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsScala
   C[8] += (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] -= (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] -= (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -119,7 +118,7 @@ inline void Symm3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsScala
   C[8] -= (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] += scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] += scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -131,7 +130,7 @@ inline void Symm3x3MatAddScale( TacsScalar scale, const TacsScalar A[], const Ta
   C[8] += scale * (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatTrans( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatTransMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] = (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -143,7 +142,7 @@ inline void Symm3x3MatTrans( const TacsScalar A[], const TacsScalar B[], TacsSca
   C[8] = (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatTransScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatTransMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] = scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -155,7 +154,7 @@ inline void Symm3x3MatTransScale( TacsScalar scale, const TacsScalar A[], const 
   C[8] = scale * (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatTransMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] += (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -167,7 +166,7 @@ inline void Symm3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], Tacs
   C[8] += (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatTransMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] -= (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] -= (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -179,7 +178,7 @@ inline void Symm3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], Tacs
   C[8] -= (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
 }
 
-inline void Symm3x3MatTransAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Symm3x3MatTransMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] += scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -191,7 +190,7 @@ inline void Symm3x3MatTransAddScale( TacsScalar scale, const TacsScalar A[], con
   C[8] += scale * (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
 }
 
-inline void Mat3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3SymmMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] = (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -203,7 +202,7 @@ inline void Mat3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsScalar C
   C[8] = (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
 }
 
-inline void Mat3x3SymmScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3SymmMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] = scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -215,7 +214,7 @@ inline void Mat3x3SymmScale( TacsScalar scale, const TacsScalar A[], const TacsS
   C[8] = scale * (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
 }
 
-inline void Mat3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3SymmMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] += (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -227,7 +226,7 @@ inline void Mat3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], TacsScala
   C[8] += (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
 }
 
-inline void Mat3x3SymmSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3SymmMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] -= (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] -= (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -239,7 +238,7 @@ inline void Mat3x3SymmSub( const TacsScalar A[], const TacsScalar B[], TacsScala
   C[8] -= (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
 }
 
-inline void Mat3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3SymmMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
   C[2] += scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -251,7 +250,7 @@ inline void Mat3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], const Ta
   C[8] += scale * (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
 }
 
-inline void MatTrans3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3SymmMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] = (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
   C[2] = (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -263,7 +262,7 @@ inline void MatTrans3x3Symm( const TacsScalar A[], const TacsScalar B[], TacsSca
   C[8] = (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
 }
 
-inline void MatTrans3x3SymmScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3SymmMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] = scale * (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
   C[2] = scale * (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -275,7 +274,7 @@ inline void MatTrans3x3SymmScale( TacsScalar scale, const TacsScalar A[], const 
   C[8] = scale * (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
 }
 
-inline void MatTrans3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3SymmMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] += (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
   C[2] += (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -287,7 +286,7 @@ inline void MatTrans3x3SymmAdd( const TacsScalar A[], const TacsScalar B[], Tacs
   C[8] += (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
 }
 
-inline void MatTrans3x3SymmSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3SymmMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] -= (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
   C[2] -= (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -299,7 +298,7 @@ inline void MatTrans3x3SymmSub( const TacsScalar A[], const TacsScalar B[], Tacs
   C[8] -= (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
 }
 
-inline void MatTrans3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3SymmMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] += scale * (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
   C[2] += scale * (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -311,7 +310,7 @@ inline void MatTrans3x3SymmAddScale( TacsScalar scale, const TacsScalar A[], con
   C[8] += scale * (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
 }
 
-inline void Mat3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] = (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] = (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -323,7 +322,7 @@ inline void Mat3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScalar C[
   C[8] = (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] = scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] = scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -335,7 +334,7 @@ inline void Mat3x3MatScale( TacsScalar scale, const TacsScalar A[], const TacsSc
   C[8] = scale * (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] += (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] += (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -347,7 +346,7 @@ inline void Mat3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar
   C[8] += (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] -= (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] -= (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -359,7 +358,7 @@ inline void Mat3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsScalar
   C[8] -= (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
   C[1] += scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
   C[2] += scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -371,7 +370,7 @@ inline void Mat3x3MatAddScale( TacsScalar scale, const TacsScalar A[], const Tac
   C[8] += scale * (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatTrans( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatTransMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] = (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -383,7 +382,7 @@ inline void Mat3x3MatTrans( const TacsScalar A[], const TacsScalar B[], TacsScal
   C[8] = (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatTransScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatTransMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] = scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] = scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -395,7 +394,7 @@ inline void Mat3x3MatTransScale( TacsScalar scale, const TacsScalar A[], const T
   C[8] = scale * (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatTransMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] += (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -407,7 +406,7 @@ inline void Mat3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], TacsS
   C[8] += (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatTransMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] -= (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] -= (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -419,7 +418,7 @@ inline void Mat3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], TacsS
   C[8] -= (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
 }
 
-inline void Mat3x3MatTransAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void Mat3x3MatTransMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
   C[1] += scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
   C[2] += scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -431,7 +430,7 @@ inline void Mat3x3MatTransAddScale( TacsScalar scale, const TacsScalar A[], cons
   C[8] += scale * (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
   C[1] = (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
   C[2] = (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -443,7 +442,7 @@ inline void MatTrans3x3Mat( const TacsScalar A[], const TacsScalar B[], TacsScal
   C[8] = (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
   C[1] = scale * (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
   C[2] = scale * (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -455,7 +454,7 @@ inline void MatTrans3x3MatScale( TacsScalar scale, const TacsScalar A[], const T
   C[8] = scale * (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
   C[1] += (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
   C[2] += (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -467,7 +466,7 @@ inline void MatTrans3x3MatAdd( const TacsScalar A[], const TacsScalar B[], TacsS
   C[8] += (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
   C[1] -= (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
   C[2] -= (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -479,7 +478,7 @@ inline void MatTrans3x3MatSub( const TacsScalar A[], const TacsScalar B[], TacsS
   C[8] -= (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
   C[1] += scale * (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
   C[2] += scale * (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -491,7 +490,7 @@ inline void MatTrans3x3MatAddScale( TacsScalar scale, const TacsScalar A[], cons
   C[8] += scale * (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatTrans( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatTransMult( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] = (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
   C[2] = (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -503,7 +502,7 @@ inline void MatTrans3x3MatTrans( const TacsScalar A[], const TacsScalar B[], Tac
   C[8] = (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatTransScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatTransMultScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] = scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] = scale * (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
   C[2] = scale * (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -515,7 +514,7 @@ inline void MatTrans3x3MatTransScale( TacsScalar scale, const TacsScalar A[], co
   C[8] = scale * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatTransMultAdd( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] += (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
   C[2] += (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -527,7 +526,7 @@ inline void MatTrans3x3MatTransAdd( const TacsScalar A[], const TacsScalar B[], 
   C[8] += (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatTransMultSub( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] -= (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] -= (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
   C[2] -= (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -539,7 +538,7 @@ inline void MatTrans3x3MatTransSub( const TacsScalar A[], const TacsScalar B[], 
   C[8] -= (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
 }
 
-inline void MatTrans3x3MatTransAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+inline void MatTrans3x3MatTransMultAddScale( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
   C[0] += scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
   C[1] += scale * (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
   C[2] += scale * (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);

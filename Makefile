@@ -1,2 +1,2 @@
 default:
-	clang++ -g -o ad ad.cpp
+	g++ -g -o ad ad.cpp

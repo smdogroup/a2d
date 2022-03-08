@@ -48,6 +48,8 @@ def get_subroutine(Aor='normal', Bor='normal', op='=', scale=False):
     elif Bor == 'symmetric':
         name += 'Symm'
 
+    name += 'Mult'
+
     if op == '+=':
         name += 'Add'
     elif op == '-=':

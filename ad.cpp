@@ -57,8 +57,8 @@ static inline void inv3x3Sens( const TacsScalar Ainv[],
 
   // Ad = -Ainv^{T}*Ainvd*Ainv^{T}
   TacsScalar t[9];
-  MatTrans3x3Mat(Ainv, Ainvd, t);
-  Mat3x3MatTransAdd(t, Ainv, Ad);
+  MatTrans3x3MatMult(Ainv, Ainvd, t);
+  Mat3x3MatTransMultAdd(t, Ainv, Ad);
 
   Ad[0] = -Ad[0];
   Ad[1] = -Ad[1];
@@ -106,30 +106,32 @@ static inline void Mat3x3DetDeriv( const TacsScalar A[],
 /*
   Inverse matrix operation
 */
-template<class Atype, class Btype>
 class Mat3x3InverseOper : public ADOp {
 public:
   Mat3x3InverseOper( ADMat3x3 &A, ADMat3x3 &B ) : A(A), B(B) {
     B.op = this;
+    printf("Mat3x3InverseOper: this = %p\n", this);
+    printf("Mat3x3InverseOper: B.op = %p\n", B.op);
   }
 
   void computeDeriv(){
+    printf("Mat3x3InverseOper: this = %p\n", this);
+
     // given B.Ad compute A.Ad
     inv3x3Sens(B.A, B.Ad, A.Ad);
 
     if (A.op){
-      A::computeDeriv();
+      A.op->computeDeriv();
     }
   }
 
-  Atype& A;
-  Btype& B;
+  ADMat3x3& A;
+  ADMat3x3& B;
 };
 
-template<class Atype, class Btype>
-Mat3x3InverseOper<Atype, Btype> Mat3x3Inverse( ADMat3x3& A, ADMat3x3& B ){
+Mat3x3InverseOper Mat3x3Inverse( ADMat3x3& A, ADMat3x3& B ){
   inv3x3(A.A, B.A);
-  return Mat3x3InverseOper<Atype, Btype>(A, B);
+  return Mat3x3InverseOper(A, B);
 }
 
 /*
@@ -139,15 +141,19 @@ class Mat3x3MatMultOper : public ADOp {
 public:
   Mat3x3MatMultOper( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
     C.op = this;
+    printf("Mat3x3MatMultOper: this = %p\n", this);
+    printf("Mat3x3MatMultOper: C.op = %p\n", C.op);
   }
 
   // C = A * B
   void computeDeriv(){
+    printf("Mat3x3MatMultOper: this = %p\n", this);
+
     // dfdA = dfdC * B^{T}
-    mat3x3MatTransMultAdd(C.Ad, B.A, A.Ad);
+    Mat3x3MatTransMultAdd(C.Ad, B.A, A.Ad);
 
     // dfdB = A^{T} * dfdC
-    mat3x3TransMatMultAdd(A.A, C.Ad, B.Ad);
+    MatTrans3x3MatMultAdd(A.A, C.Ad, B.Ad);
 
     if (A.op && B.op && A.op == B.op){
       B.op->computeDeriv();
@@ -166,7 +172,7 @@ public:
 };
 
 Mat3x3MatMultOper Mat3x3MatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ){
-  mat3x3MatMult(A.A, B.A, C.A);
+  Mat3x3MatMult(A.A, B.A, C.A);
 
   return Mat3x3MatMultOper(A, B, C);
 }
@@ -178,14 +184,18 @@ class Mat3x3TraceOper : public ADOp {
 public:
   Mat3x3TraceOper( ADMat3x3& A, ADScalar& B ): A(A), B(B) {
     B.op = this;
+    printf("Mat3x3TraceOper: this = %p\n", this);
+    printf("Mat3x3TraceOper: B.op = %p\n", B.op);
   }
 
   void computeDeriv(){
+    printf("Mat3x3TraceOper: this = %p\n", this);
+
     A.Ad[0] += B.adjoint;
     A.Ad[4] += B.adjoint;
     A.Ad[8] += B.adjoint;
 
-    if (B.op){
+    if (A.op){
       A.op->computeDeriv();
     }
   }
@@ -230,14 +240,17 @@ public:
   void computeDeriv(){
     det3x3Sens(B.adjoint, A.A, A.Ad);
 
-    if (B.op){
-      B.op->computeDeriv();
+    if (A.op){
+      A.op->computeDeriv();
     }
   }
+
+  ADMat3x3& A;
+  ADScalar& B;
 };
 
 Mat3x3DetOper Mat3x3Det( ADMat3x3& A, ADScalar& B ){
-  B.value = det3x3(A.A);
+  B.value = Mat3x3Det(A.A);
   return Mat3x3DetOper(A, B);
 }
 
@@ -263,8 +276,12 @@ Mat3x3DetOper Mat3x3Det( ADMat3x3& A, ADScalar& B ){
 */
 int main( int argc, const char *argv[] ){
 
-  TacsScalar Uvals[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-  TacsScalar Jvals[] = {1, 0.5, 0.2, 1, 6, 2, 3, 7, 9};
+  TacsScalar Uvals[] = {1,   2,   3,
+                        4,   5,   6,
+                        7,   8,   9};
+  TacsScalar Jvals[] = {1, 0.5, 0.2,
+                        1, 6, 2,
+                        3, 7, 9};
 
   ADMat3x3 Uxi(Uvals), J(Jvals);
 
@@ -280,10 +297,11 @@ int main( int argc, const char *argv[] ){
   // ADOp op4 = Mat3x3IsoStress(lambda, mu, E, S);
   // ADOp op5 = Mat3x3MatMult(E, S, T);
   ADOp op3 = Mat3x3MatMult(Ux, Ux, T);
-  ADOp op6 = Mat3x3Trace(T, energy);
+  T.op->computeDeriv();
 
-  energy.adjoint = 1.0;
-  energy.op->computeDeriv();
+  // ADOp op6 = Mat3x3Trace(T, energy);
+  // energy.adjoint = 1.0;
+  // energy.op->computeDeriv();
 
   ADMat3x3 dfdUxi(Uxi.Ad);
 

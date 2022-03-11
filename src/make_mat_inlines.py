@@ -60,6 +60,8 @@ def get_subroutine(Aor='normal', Bor='normal', op='=', scale=False):
         args = 'TacsScalar scale, ' + args
         name += 'Scale'
 
+    name += 'Core'
+
     result = 'inline void %s( %s ){\n'%(name, args)
     for k in range(9):
         if scale:

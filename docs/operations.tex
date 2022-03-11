@@ -1,0 +1,92 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+
+
+
+\begin{document}
+
+\section{Scalar operations}
+
+
+
+\section{Vector operations}
+
+\begin{enumerate}
+\item Norm $\alpha = ||\mathbf{x}||_{2}$
+\begin{itemize}
+\item Forward: $\dot{\alpha} = \dfrac{ \mathbf{x}^{T} \dot{\mathbf{x}}}{||\mathbf{x}||_{2}}$
+\item Reverse: $\bar{\mathbf{x}} = \dfrac{\bar{\alpha}}{||\mathbf{x}||_{2}} \mathbf{x}$
+\end{itemize}
+
+\item Scale $\mathbf{v} = \alpha \mathbf{x}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dot{\alpha} \mathbf{x} + \alpha \dot{\mathbf{x}}$
+\item Reverse: $\bar{\alpha} = \bar{\mathbf{v}}^{T} \mathbf{x}$, $\bar{\mathbf{x}} = \alpha \bar{\mathbf{v}}$ 
+\end{itemize}
+
+\item AXPY $\mathbf{v} = \alpha \mathbf{x} + \mathbf{y}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dot{\alpha} \mathbf{x} + \alpha \dot{\mathbf{x}} + \dot{\mathbf{y}}$
+\item Reverse: $\bar{\alpha} = \bar{\mathbf{v}}^{T} \mathbf{x}$, $\bar{\mathbf{x}} = \alpha \bar{\mathbf{v}}$, $\bar{\mathbf{y}} = \bar{\mathbf{v}}$
+\end{itemize}
+
+\item Dot-product $\alpha = \mathbf{x}^{T} \mathbf{y}$
+\begin{itemize}
+\item Forward: $\dot{\alpha} = \dot{\mathbf{x}}^{T} \mathbf{y} + \mathbf{x}^{T} \dot{\mathbf{y}}$
+\item Reverse: $\bar{\mathbf{x}} = \bar{\alpha} \mathbf{y}$, $\bar{\mathbf{y}} = \bar{\alpha} \mathbf{x}$
+\end{itemize}
+
+\item Cross-product $\mathbf{v} = \mathbf{x} \times \mathbf{y}$,
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dot{\mathbf{x}} \times \mathbf{y} + \mathbf{x} \times \dot{\mathbf{y}}$
+\item Reverse: $\bar{\mathbf{x}} = \mathbf{y} \times \bar{\mathbf{v}}$, $\bar{\mathbf{y}} = \bar{\mathbf{v}} \times \bar{\mathbf{x}}$, 
+\end{itemize}
+
+\item Symmetric outer-product $\mathbf{S} = \alpha \mathbf{x}\mathbf{x}^{T}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{S}} = \dot{\alpha} + \dot{\mathbf{x}} \mathbf{x}^{T} + \mathbf{x} \dot{\mathbf{x}}^{T}$
+\item Reverse: $\bar{\alpha} = \mathbf{x}^{T} \bar{\mathbf{S}} \mathbf{x}$, $\bar{\mathbf{x}} = 2 \alpha \bar{\mathbf{S}} \mathbf{x}$
+\end{itemize}
+
+\item Symmetric double outer-product $\mathbf{S} = \alpha (\mathbf{x} \mathbf{y}^{T} + \mathbf{y} \mathbf{x}^{T})$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{S}} = \dot{\alpha}  (\mathbf{x} \mathbf{y}^{T} + \mathbf{y} \mathbf{x}^{T})$
+\end{itemize}
+
+\item Outer-product $\mathbf{A} = \alpha \mathbf{x}\mathbf{y}^{T}$
+\begin{itemize}
+\item Forward
+\item Reverse $\bar{\alpha} = \mathbf{x}^{T} \bar{\mathbf{A}} \mathbf{y}$, $\bar{x} = \alpha \bar{\mathbf{A}} \mathbf{y}$, $\bar{\mathbf{y}} = \alpha \bar{\mathbf{A}}^{T} \mathbf{x}$
+\end{itemize}
+
+\end{enumerate}
+
+\section{Matrix-vector operations}
+
+\begin{enumerate}
+\item Matrix-vector product $\mathbf{v} = \mathbf{A} \mathbf{x}$
+\item Inner product $\alpha = \mathbf{x}^{T} \mathbf{A} \mathbf{x}$
+\item Symmetric inner product $\alpha = \mathbf{x}^{T} \mathbf{S} \mathbf{x}$
+\end{enumerate}
+
+\section{Matrix-matrix operations}
+
+\begin{enumerate}
+\item Trace $\alpha = \text{tr}(\mathbf{A})$
+\item Symmetric trace $\alpha = \text{tr}(\mathbf{S})$ 
+\item Determinant $\alpha = \text{det}(\mathbf{A})$
+\item Symmetric determinant $\alpha = \text{det}(\mathbf{A})$
+\item Inverse $\mathbf{B} = \mathbf{A}^{-1}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{B}} = - \mathbf{A}^{-1} \dot{\mathbf{A}} \mathbf{A}^{-1}$ 
+\item Reverse $\bar{\mathbf{A}} = - \mathbf{A}^{-T} \bar{\mathbf{B}} \mathbf{A}^{-T}$
+\end{itemize}
+\item Symmetric Inverse $\mathbf{T} = \mathbf{S}^{-1}$
+\item Symmetric part $\mathbf{S} = \alpha(\mathbf{A} + \mathbf{A}^{T})$
+\item Anti-symmetric part $\mathbf{B} = \alpha (\mathbf{A} - \mathbf{A}^{T})$
+\item Matrix addition $\mathbf{C} = \mathbf{A} + \mathbf{B}$
+\item Matrix-matrix product
+\end{enumerate}
+
+\end{document}

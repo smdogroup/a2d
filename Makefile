@@ -1,2 +1,2 @@
 default:
-	g++ -g -o ad ad.cpp
+	${CXX} -g -Isrc -o test test.cpp

@@ -74,19 +74,55 @@
 
 \begin{enumerate}
 \item Trace $\alpha = \text{tr}(\mathbf{A})$
+\begin{itemize}
+\item Forward $\dot{\alpha} = \text{tr}(\dot{\mathbf{A}})$
+\item Forward 
+\end{itemize}
+
 \item Symmetric trace $\alpha = \text{tr}(\mathbf{S})$ 
 \item Determinant $\alpha = \text{det}(\mathbf{A})$
 \item Symmetric determinant $\alpha = \text{det}(\mathbf{A})$
+
 \item Inverse $\mathbf{B} = \mathbf{A}^{-1}$
 \begin{itemize}
 \item Forward: $\dot{\mathbf{B}} = - \mathbf{A}^{-1} \dot{\mathbf{A}} \mathbf{A}^{-1}$ 
 \item Reverse $\bar{\mathbf{A}} = - \mathbf{A}^{-T} \bar{\mathbf{B}} \mathbf{A}^{-T}$
 \end{itemize}
+
 \item Symmetric Inverse $\mathbf{T} = \mathbf{S}^{-1}$
+
 \item Symmetric part $\mathbf{S} = \alpha(\mathbf{A} + \mathbf{A}^{T})$
+
 \item Anti-symmetric part $\mathbf{B} = \alpha (\mathbf{A} - \mathbf{A}^{T})$
+
 \item Matrix addition $\mathbf{C} = \mathbf{A} + \mathbf{B}$
-\item Matrix-matrix product
+\begin{itemize}
+\item Forward: $\dot{\mathbf{C}} =  \dot{\mathbf{A}} + \dot{\mathbf{B}}$
+\item Reverse: $\bar{\mathbf{A}} =  \bar{\mathbf{C}}$, $\bar{\mathbf{B}} = \bar{\mathbf{C}}$
+\end{itemize}
+
+% tr(bar(C)^T dot(C)) = tr( B bar(C)^T dot(A)) + tr(bar(C)^{T} A dot(B)) 
+% bar(B)^{T} = bar(C)^{T} A => bar(B) = A^{T} bar(C)
+% bar(A)^{T} = B bar(C)^{T} => bar(A) = \bar{C} B^{T}
+
+\item Matrix-matrix product $\mathbf{C} = \mathbf{A} \mathbf{B}$ 
+\begin{itemize}
+\item Forward $\dot{\mathbf{C}} = \dot{\mathbf{A}} \mathbf{B} + \mathbf{A} \dot{\mathbf{B}}$
+\item Reverse $\bar{\mathbf{A}} = \bar{\mathbf{C}} \mathbf{B}^{T}$,  $\bar{\mathbf{B}} = \mathbf{A}^{T} \bar{\mathbf{C}}$, 
+\end{itemize}
+
+\item Lagrange-Green strain $\mathbf{E} = \frac{1}{2} \left( \mathbf{U} + \mathbf{U}^{T} + \mathbf{U}^{T} \mathbf{U} \right)$
+\begin{itemize}
+\item Forward $\dot{\mathbf{E}} = \frac{1}{2} \left( \dot{\mathbf{U}} + \dot{\mathbf{U}}^{T} + \dot{\mathbf{U}}^{T} \mathbf{U} + \mathbf{U}^{T} \dot{\mathbf{U}} \right)$
+\item Reverse $\bar{\mathbf{U}} = (\mathbf{I} + \mathbf{U}) \bar{\mathbf{E}}$
+\end{itemize}
+
+\item Isotropic constitutive $\mathbf{S} = 2 \mu \mathbf{E} + \lambda \text{tr}(\mathbf{E}) \mathbf{I}$
+\begin{itemize}
+\item Forward $\dot{\mathbf{S}} = 2 \mu \dot{\mathbf{E}} + \lambda \text{tr}(\dot{\mathbf{E}}) \mathbf{I}$
+\item Reverse $\bar{\mathbf{E}} = 2 \mu \bar{\mathbf{S}} + \lambda \text{tr}(\bar{\mathbf{S}}) \mathbf{I}$
+\end{itemize}
+
 \end{enumerate}
 
 \end{document}

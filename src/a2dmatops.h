@@ -132,6 +132,200 @@ public:
 };
 
 /*
+  Assemble 3x3 matrices from 3x2 matrices and vectors
+*/
+class Mat3x3FromMat3x2 {
+public:
+  Mat3x3FromMat3x2( Mat3x2& A, Mat3x3& B ){
+    B.A[0] = A.A[0];
+    B.A[1] = A.A[1];
+    B.A[2] = 0.0;
+
+    B.A[3] = A.A[2];
+    B.A[4] = A.A[3];
+    B.A[5] = 0.0;
+
+    B.A[6] = A.A[4];
+    B.A[7] = A.A[5];
+    B.A[8] = 0.0;
+  }
+};
+
+class Mat3x3FromMat3x2AndVec3 {
+public:
+  Mat3x3FromMat3x2AndVec3( Mat3x2& A, Vec3& B, Mat3x3& C ){
+    C.A[0] = A.A[0];
+    C.A[1] = A.A[1];
+    C.A[2] = B.x[0];
+
+    C.A[3] = A.A[2];
+    C.A[4] = A.A[3];
+    C.A[5] = B.x[1];
+
+    C.A[6] = A.A[4];
+    C.A[7] = A.A[5];
+    C.A[8] = B.x[2];
+  }
+};
+
+class Mat3x3FromVec3 {
+public:
+  Mat3x3FromVec3( Vec3&x, Vec3& y, Vec3&z, Mat3x3& C ){
+    C.A[0] = x.x[0];
+    C.A[3] = x.x[1];
+    C.A[6] = x.x[2];
+
+    C.A[1] = y.x[0];
+    C.A[4] = y.x[1];
+    C.A[7] = y.x[2];
+
+    C.A[2] = z.x[0];
+    C.A[5] = z.x[1];
+    C.A[8] = z.x[2];
+  }
+};
+
+class ADMat3x3FromADMat3x2 {
+public:
+  ADMat3x3FromADMat3x2( ADMat3x2& A, ADMat3x3& B ) : A(A), B(B) {
+    B.A[0] = A.A[0];
+    B.A[1] = A.A[1];
+    B.A[2] = 0.0;
+
+    B.A[3] = A.A[2];
+    B.A[4] = A.A[3];
+    B.A[5] = 0.0;
+
+    B.A[6] = A.A[4];
+    B.A[7] = A.A[5];
+    B.A[8] = 0.0;
+  }
+  void forward(){
+    B.Ad[0] = A.Ad[0];
+    B.Ad[1] = A.Ad[1];
+    B.Ad[2] = 0.0;
+
+    B.Ad[3] = A.Ad[2];
+    B.Ad[4] = A.Ad[3];
+    B.Ad[5] = 0.0;
+
+    B.Ad[6] = A.Ad[4];
+    B.Ad[7] = A.Ad[5];
+    B.Ad[8] = 0.0;
+  }
+  void reverse(){
+    A.Ad[0] += B.Ad[0];
+    A.Ad[1] += B.Ad[1];
+
+    A.Ad[2] += B.Ad[3];
+    A.Ad[3] += B.Ad[4];
+
+    A.Ad[4] += B.Ad[6];
+    A.Ad[5] += B.Ad[7];
+  }
+
+  ADMat3x2& A;
+  ADMat3x3& B;
+};
+
+class ADMat3x3FromADMat3x2AndADVec3 {
+public:
+  ADMat3x3FromADMat3x2AndADVec3( ADMat3x2& A, ADVec3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    C.A[0] = A.A[0];
+    C.A[1] = A.A[1];
+    C.A[2] = B.x[0];
+
+    C.A[3] = A.A[2];
+    C.A[4] = A.A[3];
+    C.A[5] = B.x[1];
+
+    C.A[6] = A.A[4];
+    C.A[7] = A.A[5];
+    C.A[8] = B.x[2];
+  }
+  void forward(){
+    C.Ad[0] = A.Ad[0];
+    C.Ad[1] = A.Ad[1];
+    C.Ad[2] = B.xd[0];
+
+    C.Ad[3] = A.Ad[2];
+    C.Ad[4] = A.Ad[3];
+    C.Ad[5] = B.xd[1];
+
+    C.Ad[6] = A.Ad[4];
+    C.Ad[7] = A.Ad[5];
+    C.Ad[8] = B.xd[2];
+  }
+  void reverse(){
+    A.Ad[0] += C.Ad[0];
+    A.Ad[1] += C.Ad[1];
+
+    A.Ad[2] += C.Ad[3];
+    A.Ad[3] += C.Ad[4];
+
+    A.Ad[4] += C.Ad[6];
+    A.Ad[5] += C.Ad[7];
+
+    B.xd[0] += C.Ad[2];
+    B.xd[1] += C.Ad[5];
+    B.xd[2] += C.Ad[8];
+  }
+
+  ADMat3x2& A;
+  ADVec3& B;
+  ADMat3x3& C;
+};
+
+class ADMat3x3FromADVec3 {
+public:
+  ADMat3x3FromADVec3( ADVec3&x, ADVec3& y, ADVec3&z, ADMat3x3& C ) :
+    x(x), y(y), z(z), C(C) {
+    C.A[0] = x.x[0];
+    C.A[3] = x.x[1];
+    C.A[6] = x.x[2];
+
+    C.A[1] = y.x[0];
+    C.A[4] = y.x[1];
+    C.A[7] = y.x[2];
+
+    C.A[2] = z.x[0];
+    C.A[5] = z.x[1];
+    C.A[8] = z.x[2];
+  }
+  void forward(){
+    C.Ad[0] = x.xd[0];
+    C.Ad[3] = x.xd[1];
+    C.Ad[6] = x.xd[2];
+
+    C.Ad[1] = y.xd[0];
+    C.Ad[4] = y.xd[1];
+    C.Ad[7] = y.xd[2];
+
+    C.Ad[2] = z.xd[0];
+    C.Ad[5] = z.xd[1];
+    C.Ad[8] = z.xd[2];
+  }
+  void reverse(){
+    x.xd[0] += C.Ad[0];
+    x.xd[1] += C.Ad[3];
+    x.xd[2] += C.Ad[6];
+
+    y.xd[0] += C.Ad[1];
+    y.xd[1] += C.Ad[4];
+    y.xd[2] += C.Ad[7];
+
+    z.xd[0] += C.Ad[2];
+    z.xd[1] += C.Ad[5];
+    z.xd[2] += C.Ad[8];
+  }
+
+  ADVec3& x;
+  ADVec3& y;
+  ADVec3& z;
+  ADMat3x3& C;
+};
+
+/*
   Matrix-matrix products C = A * B
 */
 class Mat3x3MatMult {
@@ -194,6 +388,66 @@ public:
   ADMat3x3& C;
 };
 
+class Mat3x3MatMultAdd {
+public:
+  Mat3x3MatMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMat3x3MatMultAdd {
+public:
+  ADMat3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class Mat3x3ADMatMultAdd {
+public:
+  Mat3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMat3x3ADMatMultAdd {
+public:
+  ADMat3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+    Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
 /*
   Matrix-matrix products C = A^{T} * B
 */
@@ -227,7 +481,7 @@ public:
     MatTrans3x3MatMultCore(A.A, B.A, C.A);
   }
   void forward(){
-    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    MatTrans3x3MatMultCore(A.A, B.Ad, C.Ad);
   }
   void reverse(){
     Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
@@ -245,6 +499,66 @@ public:
   }
   void forward(){
     MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class MatTrans3x3MatMultAdd {
+public:
+  MatTrans3x3MatMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMatTrans3x3MatMultAdd {
+public:
+  ADMatTrans3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class MatTrans3x3ADMatMultAdd {
+public:
+  MatTrans3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMatTrans3x3ADMatMultAdd {
+public:
+  ADMatTrans3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
     MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
   }
   void reverse(){
@@ -290,7 +604,7 @@ public:
     Mat3x3MatTransMultCore(A.A, B.A, C.A);
   }
     void forward(){
-    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    Mat3x3MatTransMultCore(A.A, B.Ad, C.Ad);
   }
   void reverse(){
     MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
@@ -313,6 +627,189 @@ public:
   void reverse(){
     Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
     MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class Mat3x3MatTransMultAdd {
+public:
+  Mat3x3MatTransMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMat3x3MatTransMultAdd {
+public:
+  ADMat3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class Mat3x3ADMatTransMultAdd {
+public:
+  Mat3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+    void forward(){
+    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMat3x3ADMatTransMultAdd {
+public:
+  ADMat3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+/*
+  Matrix-matrix products C = A^{T} * B^{T}
+*/
+class MatTrans3x3MatTransMult {
+public:
+  MatTrans3x3MatTransMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMatTrans3x3MatTransMult {
+public:
+  ADMatTrans3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class MatTrans3x3ADMatTransMult {
+public:
+  MatTrans3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMatTrans3x3ADMatTransMult {
+public:
+  ADMatTrans3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class MatTrans3x3MatTransMultAdd {
+public:
+  MatTrans3x3MatTransMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMatTrans3x3MatTransMultAdd {
+public:
+  ADMatTrans3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class MatTrans3x3ADMatTransMultAdd {
+public:
+  MatTrans3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMatTrans3x3ADMatTransMultAdd {
+public:
+  ADMatTrans3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
   }
 
   ADMat3x3& A;

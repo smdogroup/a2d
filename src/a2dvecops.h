@@ -167,6 +167,104 @@ public:
   ADVec3& v;
 };
 
+/*
+  Vec3 normalize
+*/
+class Vec3Normalize {
+public:
+  Vec3Normalize( Vec3& x, Vec3& y ){
+    TacsScalar alpha = Vec3DotCore(x.x, x.x);
+    if (alpha != 0.0){
+      TacsScalar inv = 1.0/sqrt(alpha);
+      y.x[0] = inv * x.x[0];
+      y.x[1] = inv * x.x[1];
+      y.x[2] = inv * x.x[2];
+    }
+  }
+};
+
+class ADVec3Normalize {
+public:
+  ADVec3Normalize( ADVec3& x, ADVec3& y ) : x(x), y(y) {
+    alpha = Vec3DotCore(x.x, x.x);
+    if (alpha != 0.0){
+      inv = 1.0/sqrt(alpha);
+      y.x[0] = inv * x.x[0];
+      y.x[1] = inv * x.x[1];
+      y.x[2] = inv * x.x[2];
+    }
+    else {
+      inv = 0.0;
+    }
+  }
+  void forward(){
+    TacsScalar beta = Vec3DotCore(x.x, x.xd);
+    TacsScalar scale = inv * inv * inv;
+    y.xd[0] = (alpha * x.xd[0] - beta * x.x[0]) * scale;
+    y.xd[1] = (alpha * x.xd[1] - beta * x.x[1]) * scale;
+    y.xd[2] = (alpha * x.xd[2] - beta * x.x[2]) * scale;
+  }
+  void reverse(){
+    TacsScalar beta = Vec3DotCore(x.x, y.xd);
+    TacsScalar scale = inv * inv * inv;
+    x.xd[0] = (alpha * y.xd[0] - beta * x.x[0]) * scale;
+    x.xd[1] = (alpha * y.xd[1] - beta * x.x[1]) * scale;
+    x.xd[2] = (alpha * y.xd[2] - beta * x.x[2]) * scale;
+  }
+
+  TacsScalar alpha, inv;
+  ADVec3& x;
+  ADVec3& y;
+};
+
+class Mat3x2ToVec3 {
+public:
+  Mat3x2ToVec3( Mat3x2& A, Vec3& x, Vec3& y ){
+    x.x[0] = A.A[0];
+    x.x[1] = A.A[2];
+    x.x[2] = A.A[4];
+
+    y.x[0] = A.A[1];
+    y.x[1] = A.A[3];
+    y.x[2] = A.A[5];
+  }
+};
+
+class ADMat3x2ToADVec3 {
+public:
+  ADMat3x2ToADVec3( ADMat3x2& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
+    x.x[0] = A.A[0];
+    x.x[1] = A.A[2];
+    x.x[2] = A.A[4];
+
+    y.x[0] = A.A[1];
+    y.x[1] = A.A[3];
+    y.x[2] = A.A[5];
+  }
+  void forward(){
+    x.xd[0] = A.Ad[0];
+    x.xd[1] = A.Ad[2];
+    x.xd[2] = A.Ad[4];
+
+    y.xd[0] = A.Ad[1];
+    y.xd[1] = A.Ad[3];
+    y.xd[2] = A.Ad[5];
+  }
+  void reverse(){
+    A.Ad[0] += x.xd[0];
+    A.Ad[2] += x.xd[1];
+    A.Ad[4] += x.xd[2];
+
+    A.Ad[1] += y.xd[0];
+    A.Ad[3] += y.xd[1];
+    A.Ad[5] += y.xd[2];
+  }
+
+  ADMat3x2& A;
+  ADVec3& x;
+  ADVec3& y;
+};
+
 // /*
 //   Vec3SymmOuterProduct
 // */

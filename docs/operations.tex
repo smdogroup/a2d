@@ -43,6 +43,13 @@
 \item Reverse: $\bar{\mathbf{x}} = \mathbf{y} \times \bar{\mathbf{v}}$, $\bar{\mathbf{y}} = \bar{\mathbf{v}} \times \bar{\mathbf{x}}$,
 \end{itemize}
 
+
+\item Normalize $\mathbf{v} = \dfrac{\mathbf{x}}{||\mathbf{x}||_{2}}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dfrac{\dot{\mathbf{x}}}{||\mathbf{x}||_{2}} - \dfrac{(\dot{\mathbf{x}}^{T} \mathbf{x}) \mathbf{x}}{||\mathbf{x}||_{2}^{3}}$
+\item Reverse: $\bar{\mathbf{x}} = \dfrac{\bar{\mathbf{v}}}{||\mathbf{x}||_{2}} - \dfrac{(\bar{\mathbf{v}}^{T} \mathbf{x}) \mathbf{x}}{||\mathbf{x}||_{2}^{3}}$
+\end{itemize}
+
 \item Symmetric outer-product $\mathbf{S} = \alpha \mathbf{x}\mathbf{x}^{T}$
 \begin{itemize}
 \item Forward: $\dot{\mathbf{S}} = \dot{\alpha} + \dot{\mathbf{x}} \mathbf{x}^{T} + \mathbf{x} \dot{\mathbf{x}}^{T}$
@@ -131,6 +138,17 @@
 \item Reverse $\bar{\mathbf{A}} = \bar{\mathbf{C}} \mathbf{B}$, $\bar{\mathbf{B}} = \bar{\mathbf{C}}^{T} \mathbf{A}$
 \end{itemize}
 
+\item Matrix-matrix product $\mathbf{C} = \mathbf{A}^{T} \mathbf{B}^{T}$
+\begin{itemize}
+\item Forward $\dot{\mathbf{C}} = \dot{\mathbf{A}}^{T} \mathbf{B}^{T} + \mathbf{A}^{T} \dot{\mathbf{B}}^{T}$
+\item Reverse $\bar{\mathbf{A}} = \mathbf{B}^{T} \bar{\mathbf{C}}^{T} $, $\bar{\mathbf{B}} = \bar{\mathbf{C}}^{T} \mathbf{A}^{T}$
+\end{itemize}
+
+\item Linear Lagrange-Green strain $\mathbf{E} = \frac{1}{2} \left( \mathbf{U} + \mathbf{U}^{T} \right)$
+\begin{itemize}
+\item Forward $\dot{\mathbf{E}} = \frac{1}{2} \left( \dot{\mathbf{U}} + \dot{\mathbf{U}}^{T} \right)$
+\item Reverse $\bar{\mathbf{U}} = \bar{\mathbf{E}}$
+\end{itemize}
 
 \item Lagrange-Green strain $\mathbf{E} = \frac{1}{2} \left( \mathbf{U} + \mathbf{U}^{T} + \mathbf{U}^{T} \mathbf{U} \right)$
 \begin{itemize}

@@ -147,6 +147,7 @@ class ADSymm3x3 {
 public:
   ADSymm3x3(){
     for ( int i = 0; i < 6; i++ ){
+      A[i] = 0.0;
       Ad[i] = 0.0;
     }
   }
@@ -170,6 +171,64 @@ public:
   }
 
   TacsScalar A[6], Ad[6];
+};
+
+/*
+  Passive 3x2 matrix class
+*/
+class Mat3x2 {
+public:
+  Mat3x2(){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = 0.0;
+    }
+  }
+  Mat3x2( const TacsScalar a[] ){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = a[i];
+    }
+  }
+  Mat3x2( const Mat3x2& a ){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = a.A[i];
+    }
+  }
+
+  TacsScalar A[6];
+};
+
+/*
+  Active 3x2 matrix class
+*/
+class ADMat3x2 {
+public:
+  ADMat3x2(){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = 0.0;
+      Ad[i] = 0.0;
+    }
+  }
+  ADMat3x2( const TacsScalar a[] ){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = a[i];
+      Ad[i] = 0.0;
+    }
+  }
+  ADMat3x2( const TacsScalar a[], const TacsScalar ad[] ){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = a[i];
+      Ad[i] = ad[i];
+    }
+  }
+  ADMat3x2( const ADMat3x2& a ){
+    for ( int i = 0; i < 6; i++ ){
+      A[i] = a.A[i];
+      Ad[i] = a.Ad[i];
+    }
+  }
+
+  TacsScalar A[6];
+  TacsScalar Ad[6];
 };
 
 /*

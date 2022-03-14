@@ -22,7 +22,7 @@
 \item Scale $\mathbf{v} = \alpha \mathbf{x}$
 \begin{itemize}
 \item Forward: $\dot{\mathbf{v}} = \dot{\alpha} \mathbf{x} + \alpha \dot{\mathbf{x}}$
-\item Reverse: $\bar{\alpha} = \bar{\mathbf{v}}^{T} \mathbf{x}$, $\bar{\mathbf{x}} = \alpha \bar{\mathbf{v}}$ 
+\item Reverse: $\bar{\alpha} = \bar{\mathbf{v}}^{T} \mathbf{x}$, $\bar{\mathbf{x}} = \alpha \bar{\mathbf{v}}$
 \end{itemize}
 
 \item AXPY $\mathbf{v} = \alpha \mathbf{x} + \mathbf{y}$
@@ -40,7 +40,7 @@
 \item Cross-product $\mathbf{v} = \mathbf{x} \times \mathbf{y}$,
 \begin{itemize}
 \item Forward: $\dot{\mathbf{v}} = \dot{\mathbf{x}} \times \mathbf{y} + \mathbf{x} \times \dot{\mathbf{y}}$
-\item Reverse: $\bar{\mathbf{x}} = \mathbf{y} \times \bar{\mathbf{v}}$, $\bar{\mathbf{y}} = \bar{\mathbf{v}} \times \bar{\mathbf{x}}$, 
+\item Reverse: $\bar{\mathbf{x}} = \mathbf{y} \times \bar{\mathbf{v}}$, $\bar{\mathbf{y}} = \bar{\mathbf{v}} \times \bar{\mathbf{x}}$,
 \end{itemize}
 
 \item Symmetric outer-product $\mathbf{S} = \alpha \mathbf{x}\mathbf{x}^{T}$
@@ -76,23 +76,31 @@
 \item Trace $\alpha = \text{tr}(\mathbf{A})$
 \begin{itemize}
 \item Forward $\dot{\alpha} = \text{tr}(\dot{\mathbf{A}})$
-\item Forward 
+\item Reverse $\bar{\mathbf{A}}_{ii} = \bar{\alpha}$
 \end{itemize}
 
-\item Symmetric trace $\alpha = \text{tr}(\mathbf{S})$ 
+\item Symmetric trace $\alpha = \text{tr}(\mathbf{S})$
+\begin{itemize}
+\item Forward $\dot{\alpha} = \text{tr}(\dot{\mathbf{S}})$
+\item Reverse $\bar{\mathbf{S}}_{ii} = \bar{\alpha}$
+\end{itemize}
+
 \item Determinant $\alpha = \text{det}(\mathbf{A})$
 \item Symmetric determinant $\alpha = \text{det}(\mathbf{A})$
 
 \item Inverse $\mathbf{B} = \mathbf{A}^{-1}$
 \begin{itemize}
-\item Forward: $\dot{\mathbf{B}} = - \mathbf{A}^{-1} \dot{\mathbf{A}} \mathbf{A}^{-1}$ 
+\item Forward: $\dot{\mathbf{B}} = - \mathbf{A}^{-1} \dot{\mathbf{A}} \mathbf{A}^{-1}$
 \item Reverse $\bar{\mathbf{A}} = - \mathbf{A}^{-T} \bar{\mathbf{B}} \mathbf{A}^{-T}$
 \end{itemize}
 
 \item Symmetric Inverse $\mathbf{T} = \mathbf{S}^{-1}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{T}} = - \mathbf{S}^{-1} \dot{\mathbf{S}} \mathbf{S}^{-1}$
+\item Reverse $\bar{\mathbf{S}} = - \mathbf{S}^{-T} \bar{\mathbf{T}} \mathbf{S}^{-T}$
+\end{itemize}
 
 \item Symmetric part $\mathbf{S} = \alpha(\mathbf{A} + \mathbf{A}^{T})$
-
 \item Anti-symmetric part $\mathbf{B} = \alpha (\mathbf{A} - \mathbf{A}^{T})$
 
 \item Matrix addition $\mathbf{C} = \mathbf{A} + \mathbf{B}$
@@ -101,15 +109,28 @@
 \item Reverse: $\bar{\mathbf{A}} =  \bar{\mathbf{C}}$, $\bar{\mathbf{B}} = \bar{\mathbf{C}}$
 \end{itemize}
 
-% tr(bar(C)^T dot(C)) = tr( B bar(C)^T dot(A)) + tr(bar(C)^{T} A dot(B)) 
+% tr(bar(C)^T dot(C)) = tr( B bar(C)^T dot(A)) + tr(bar(C)^{T} A dot(B))
 % bar(B)^{T} = bar(C)^{T} A => bar(B) = A^{T} bar(C)
 % bar(A)^{T} = B bar(C)^{T} => bar(A) = \bar{C} B^{T}
 
-\item Matrix-matrix product $\mathbf{C} = \mathbf{A} \mathbf{B}$ 
+\item Matrix-matrix product $\mathbf{C} = \mathbf{A} \mathbf{B}$
 \begin{itemize}
 \item Forward $\dot{\mathbf{C}} = \dot{\mathbf{A}} \mathbf{B} + \mathbf{A} \dot{\mathbf{B}}$
-\item Reverse $\bar{\mathbf{A}} = \bar{\mathbf{C}} \mathbf{B}^{T}$,  $\bar{\mathbf{B}} = \mathbf{A}^{T} \bar{\mathbf{C}}$, 
+\item Reverse $\bar{\mathbf{A}} = \bar{\mathbf{C}} \mathbf{B}^{T}$,  $\bar{\mathbf{B}} = \mathbf{A}^{T} \bar{\mathbf{C}}$,
 \end{itemize}
+
+\item Matrix-matrix product $\mathbf{C} = \mathbf{A}^{T} \mathbf{B}$
+\begin{itemize}
+\item Forward $\dot{\mathbf{C}} = \dot{\mathbf{A}}^{T} \mathbf{B} + \mathbf{A}^{T} \dot{\mathbf{B}}$
+\item Reverse $\bar{\mathbf{A}} = \mathbf{B} \bar{\mathbf{C}}^{T}$,  $\bar{\mathbf{B}} = \mathbf{A} \bar{\mathbf{C}}$,
+\end{itemize}
+
+\item Matrix-matrix product $\mathbf{C} = \mathbf{A} \mathbf{B}^{T}$
+\begin{itemize}
+\item Forward $\dot{\mathbf{C}} = \dot{\mathbf{A}} \mathbf{B}^{T} + \mathbf{A} \dot{\mathbf{B}}^{T}$
+\item Reverse $\bar{\mathbf{A}} = \bar{\mathbf{C}} \mathbf{B}$, $\bar{\mathbf{B}} = \bar{\mathbf{C}}^{T} \mathbf{A}$
+\end{itemize}
+
 
 \item Lagrange-Green strain $\mathbf{E} = \frac{1}{2} \left( \mathbf{U} + \mathbf{U}^{T} + \mathbf{U}^{T} \mathbf{U} \right)$
 \begin{itemize}

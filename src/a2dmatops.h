@@ -194,39 +194,134 @@ public:
   ADMat3x3& C;
 };
 
-// /*
-//   Matrix-matrix products C = A^{T} * B
-// */
-// class MatTrans3x3MatMult {
-// public:
-//   MatTrans3x3MatMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
-//     MatTrans3x3MatMult(A.A, B.A, C.A);
-//   }
-// };
+/*
+  Matrix-matrix products C = A^{T} * B
+*/
+class MatTrans3x3MatMult {
+public:
+  MatTrans3x3MatMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatMultCore(A.A, B.A, C.A);
+  }
+};
 
-// class ADMatTrans3x3MatMult {
-// public:
-//   ADMat3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ){
-//     Mat3x3MatMult(A.A, B.A, C.A);
-//   }
-// };
+class ADMatTrans3x3MatMult {
+public:
+  ADMatTrans3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+  }
 
-// class Mat3x3ADMatMult {
-// public:
-//   Mat3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ){
-//     Mat3x3MatMult(A.A, B.A, C.A);
-//   }
-// };
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
 
-// class ADMat3x3ADMatMult {
-// public:
-//   ADMat3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ){
-//     Mat3x3MatMult(A.A, B.A, C.A);
-//   }
-// };
+class MatTrans3x3ADMatMult {
+public:
+  MatTrans3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMatTrans3x3ADMatMult {
+public:
+  ADMatTrans3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    MatTrans3x3MatMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
 
 /*
-  Specific implementations that are handy for elasticity
+  Matrix-matrix products C = A * B^{T}
+*/
+class Mat3x3MatTransMult {
+public:
+  Mat3x3MatTransMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+};
+
+class ADMat3x3MatTransMult {
+public:
+  ADMat3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+  }
+
+  ADMat3x3& A;
+  Mat3x3& B;
+  ADMat3x3& C;
+};
+
+class Mat3x3ADMatTransMult {
+public:
+  Mat3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+    void forward(){
+    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  Mat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+class ADMat3x3ADMatTransMult {
+public:
+  ADMat3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+    Mat3x3MatTransMultCore(A.A, B.A, C.A);
+  }
+  void forward(){
+    Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  }
+  void reverse(){
+    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+  }
+
+  ADMat3x3& A;
+  ADMat3x3& B;
+  ADMat3x3& C;
+};
+
+/*
+  Linear and nonlinear strain from the displacement gradient
 */
 class Mat3x3LinearGreenStrain {
 public:
@@ -300,6 +395,9 @@ public:
   ADScalar& alpha;
 };
 
+/*
+  Isotropic constitutive relationships
+*/
 class Symm3x3IsotropicConstitutive {
 public:
   Symm3x3IsotropicConstitutive( Scalar& mu, Scalar& lambda, Symm3x3& E, Symm3x3& S ){

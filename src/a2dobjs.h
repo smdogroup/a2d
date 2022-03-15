@@ -12,11 +12,22 @@ typedef double TacsReal;
 /*
   Define the basic scalar type TacsScalar
 */
-#ifdef TACS_USE_COMPLEX
 typedef TacsComplex TacsScalar;
-#else
-typedef TacsReal TacsScalar;
-#endif
+
+// Define the real part function for the complex data type
+inline double TacsRealPart( const std::complex<double>& c ){
+  return real(c);
+}
+
+// Define the imaginary part function for the complex data type
+inline double TacsImagPart( const std::complex<double>& c ){
+  return imag(c);
+}
+
+// Dummy function for real part
+inline double TacsRealPart( const double& r ){
+  return r;
+}
 
 /*
   Scalar type

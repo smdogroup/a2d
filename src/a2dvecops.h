@@ -77,28 +77,35 @@ public:
   Vec3Axpy( Scalar& alpha, Vec3& x, Vec3& y, Vec3& v ){
     Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
   }
+  Vec3Axpy( const TacsScalar scale, Scalar& alpha, Vec3& x, Vec3& y, Vec3& v ){
+    Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
+  }
 };
 
 class ADVec3Axpy {
 public:
-  ADVec3Axpy( ADScalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : alpha(alpha), x(x), y(y), v(v) {
+  ADVec3Axpy( ADScalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
     Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
   }
+  ADVec3Axpy( const TacsScalar scale, ADScalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
+    Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
+  }
   void forward(){
-    v.xd[0] = alpha.valued * x.x[0] + alpha.value * x.xd[0] + y.xd[0];
-    v.xd[1] = alpha.valued * x.x[1] + alpha.value * x.xd[1] + y.xd[1];
-    v.xd[2] = alpha.valued * x.x[2] + alpha.value * x.xd[2] + y.xd[2];
+    v.xd[0] = scale * (alpha.valued * x.x[0] + alpha.value * x.xd[0]) + y.xd[0];
+    v.xd[1] = scale * (alpha.valued * x.x[1] + alpha.value * x.xd[1]) + y.xd[1];
+    v.xd[2] = scale * (alpha.valued * x.x[2] + alpha.value * x.xd[2]) + y.xd[2];
   }
   void reverse(){
-    alpha.valued = Vec3DotCore(x.x, v.xd);
-    x.xd[0] += alpha.value * v.xd[0];
-    x.xd[1] += alpha.value * v.xd[1];
-    x.xd[2] += alpha.value * v.xd[2];
+    alpha.valued += scale * Vec3DotCore(x.x, v.xd);
+    x.xd[0] += scale * alpha.value * v.xd[0];
+    x.xd[1] += scale * alpha.value * v.xd[1];
+    x.xd[2] += scale * alpha.value * v.xd[2];
     y.xd[0] += v.xd[0];
     y.xd[1] += v.xd[1];
     y.xd[2] += v.xd[2];
   }
 
+  const TacsScalar scale;
   ADScalar& alpha;
   ADVec3& x;
   ADVec3& y;
@@ -113,26 +120,34 @@ public:
   Vec3Dot( Vec3& x, Vec3& y, Scalar& alpha ){
     alpha.value = Vec3DotCore(x.x, y.x);
   }
+  Vec3Dot( const TacsScalar scale, Vec3& x, Vec3& y, Scalar& alpha ){
+    alpha.value = scale * Vec3DotCore(x.x, y.x);
+  }
 };
 
 class ADVec3Dot {
 public:
-  ADVec3Dot( ADVec3& x, ADVec3& y, ADScalar& alpha ) : x(x), y(y), alpha(alpha) {
+  ADVec3Dot( ADVec3& x, ADVec3& y, ADScalar& alpha ) : scale(1.0), x(x), y(y), alpha(alpha) {
     alpha.value = Vec3DotCore(x.x, y.x);
   }
+  ADVec3Dot( const TacsScalar scale, ADVec3& x, ADVec3& y, ADScalar& alpha ) : scale(scale), x(x), y(y), alpha(alpha) {
+    alpha.value = scale * Vec3DotCore(x.x, y.x);
+  }
   void forward(){
-    alpha.valued = Vec3DotCore(x.x, y.xd) + Vec3DotCore(x.xd, y.x);
+    alpha.valued = scale * (Vec3DotCore(x.x, y.xd) + Vec3DotCore(x.xd, y.x));
   }
   void reverse(){
-    x.xd[0] += alpha.valued * y.x[0];
-    x.xd[1] += alpha.valued * y.x[1];
-    x.xd[2] += alpha.valued * y.x[2];
+    TacsScalar s = scale * alpha.valued;
+    x.xd[0] += s * y.x[0];
+    x.xd[1] += s * y.x[1];
+    x.xd[2] += s * y.x[2];
 
-    y.xd[0] += alpha.valued * x.x[0];
-    y.xd[1] += alpha.valued * x.x[1];
-    y.xd[2] += alpha.valued * x.x[2];
+    y.xd[0] += s * x.x[0];
+    y.xd[1] += s * x.x[1];
+    y.xd[2] += s * x.x[2];
   }
 
+  const TacsScalar scale;
   ADVec3& x;
   ADVec3& y;
   ADScalar& alpha;

@@ -97,19 +97,19 @@ void test_vector(){
   TacsScalar dfr = test_vector_reverse(beta, dbeta,
                                        avals, davals, bvals, dbvals);
 
-  TacsScalar dh = 1e-6;
-  beta += dh * dbeta;
+  TacsReal dh = 1e-30;
+  beta += TacsScalar(0.0, dh) * dbeta;
   for ( int i = 0; i < 3; i++ ){
-    avals[i] += dh * davals[i];
-    bvals[i] += dh * dbvals[i];
+    avals[i] += TacsScalar(0.0, dh) * davals[i];
+    bvals[i] += TacsScalar(0.0, dh) * dbvals[i];
   }
 
   TacsScalar f1 = test_vector_scalar(beta, avals, bvals);
-  TacsScalar fd = (f1 - f0)/dh;
+  TacsScalar fd = TacsImagPart(f1)/dh;
   printf("Vector test\n");
-  printf("Finite-difference: %15.8e\n", fd);
-  printf("Forward mode:      %15.8e\n", df);
-  printf("Reverse mode:      %15.8e\n", dfr);
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
 
 TacsScalar test_mat_scalar( const TacsScalar avals[] ){
@@ -169,18 +169,18 @@ void test_mat(){
   TacsScalar df = test_mat_forward(avals, davals);
   TacsScalar dfr = test_mat_reverse(avals, davals);
 
-  TacsScalar dh = 1e-6;
+  TacsReal dh = 1e-30;
   for ( int i = 0; i < 9; i++ ){
-    avals[i] += dh * davals[i];
+    avals[i] += TacsScalar(0.0, dh) * davals[i];
   }
 
   TacsScalar f1 = test_mat_scalar(avals);
-  TacsScalar fd = (f1 - f0)/dh;
+  TacsScalar fd = TacsImagPart(f1)/dh;
   printf("3x3 matrix test\n");
-  printf("Function value:    %15.8e\n", f0);
-  printf("Finite-difference: %15.8e\n", fd);
-  printf("Forward mode:      %15.8e\n", df);
-  printf("Reverse mode:      %15.8e\n", dfr);
+  printf("Function value:    %25.16e\n", TacsRealPart(f0));
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
 
 TacsScalar test_symm_scalar( const TacsScalar avals[] ){
@@ -227,18 +227,18 @@ void test_symm(){
   TacsScalar df = test_symm_forward(avals, davals);
   TacsScalar dfr = test_symm_reverse(avals, davals);
 
-  TacsScalar dh = 1e-6;
+  TacsReal dh = 1e-6;
   for ( int i = 0; i < 6; i++ ){
     avals[i] += dh * davals[i];
   }
 
   TacsScalar f1 = test_symm_scalar(avals);
-  TacsScalar fd = (f1 - f0)/dh;
+  TacsScalar fd = TacsImagPart(f1)/dh;
   printf("Symmetric 3x3 matrix test\n");
-  printf("Function value:    %15.8e\n", f0);
-  printf("Finite-difference: %15.8e\n", fd);
-  printf("Forward mode:      %15.8e\n", df);
-  printf("Reverse mode:      %15.8e\n", dfr);
+  printf("Function value:    %25.16e\n", TacsRealPart(f0));
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
 
 /*
@@ -327,18 +327,18 @@ void test_elasticity(){
   TacsScalar df = test_elasticity_forward(avals, davals);
   TacsScalar dfr = test_elasticity_reverse(avals, davals);
 
-  TacsScalar dh = 1e-6;
+  TacsReal dh = 1e-30;
   for ( int i = 0; i < 9; i++ ){
-    avals[i] += dh * davals[i];
+    avals[i] += TacsScalar(0.0, dh) * davals[i];
   }
 
   TacsScalar f1 = test_elasticity_scalar(avals);
-  TacsScalar fd = (f1 - f0)/dh;
+  TacsScalar fd = TacsImagPart(f1)/dh;
   printf("Elasticity test\n");
-  printf("Function value:    %15.8e\n", f0);
-  printf("Finite-difference: %15.8e\n", fd);
-  printf("Forward mode:      %15.8e\n", df);
-  printf("Reverse mode:      %15.8e\n", dfr);
+  printf("Function value:    %25.16e\n", TacsRealPart(f0));
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
 
 TacsScalar test_shell_scalar( const TacsScalar n0_data[],
@@ -375,7 +375,7 @@ TacsScalar test_shell_scalar( const TacsScalar n0_data[],
 
   // Form the transformation matrix
   Mat3x3 T;
-  Mat3x3FromVec3 assembleT(t1, t2, n1, T);
+  Mat3x3FromThreeVec3 assembleT(t1, t2, n1, T);
 
   // Assemble the matrix Xd = [X0,xi | n0]
   Mat3x3 Xd, Xdz;
@@ -420,7 +420,7 @@ TacsScalar test_shell_scalar( const TacsScalar n0_data[],
 
   // This isn't really the energy, but is okay for testing..
   Scalar energy;
-  Symm3x3SymmMultTrace trace(e0x, e1x, energy);
+  Symm3x3SymmMultTraceScale trace(detXd, e0x, e1x, energy);
 
   return energy.value;
 }
@@ -467,7 +467,7 @@ TacsScalar test_shell_forward( const TacsScalar n0_data[],
 
   // Form the transformation matrix
   ADMat3x3 T;
-  ADMat3x3FromADVec3 assembleT(t1, t2, n1, T);
+  ADMat3x3FromThreeADVec3 assembleT(t1, t2, n1, T);
   assembleT.forward();
 
   // Assemble the matrix Xd = [X0,xi | n0]
@@ -527,7 +527,7 @@ TacsScalar test_shell_forward( const TacsScalar n0_data[],
 
   // This isn't really the energy, but is okay for testing..
   ADScalar energy;
-  ADSymm3x3ADSymmMultTrace trace(e0x, e1x, energy);
+  ADSymm3x3ADSymmMultTraceADScale trace(detXd, e0x, e1x, energy);
   trace.forward();
 
   return energy.valued;
@@ -570,7 +570,7 @@ TacsScalar test_shell_reverse( const TacsScalar n0_data[],
 
   // Form the transformation matrix
   ADMat3x3 T;
-  ADMat3x3FromADVec3 assembleT(t1, t2, n1, T);
+  ADMat3x3FromThreeADVec3 assembleT(t1, t2, n1, T);
 
   // Assemble the matrix Xd = [X0,xi | n0]
   ADMat3x3 Xd, Xdz;
@@ -615,7 +615,7 @@ TacsScalar test_shell_reverse( const TacsScalar n0_data[],
 
   // This isn't really the energy, but is okay for testing..
   ADScalar energy;
-  ADSymm3x3ADSymmMultTrace trace(e0x, e1x, energy);
+  ADSymm3x3ADSymmMultTraceADScale trace(detXd, e0x, e1x, energy);
 
   // Reverse mode
   energy.valued = 1.0;
@@ -682,23 +682,483 @@ void test_shell(){
                                       X0xi, X0xid,
                                       u0xi, d0, d0xi);
 
-  TacsScalar dh = 1e-7;
+  TacsReal dh = 1e-30;
   for ( int i = 0; i < 3; i++ ){
-    n0[i] += dh * n0d[i];
+    n0[i] += TacsScalar(0.0, dh) * n0d[i];
   }
   for ( int i = 0; i < 6; i++ ){
-    n0xi[i] += dh * n0xid[i];
-    X0xi[i] += dh * X0xid[i];
+    n0xi[i] += TacsScalar(0.0, dh) * n0xid[i];
+    X0xi[i] += TacsScalar(0.0, dh) * X0xid[i];
   }
 
   TacsScalar f1 = test_shell_scalar(n0, n0xi, X0xi, u0xi, d0, d0xi);
-  TacsScalar fd = (f1 - f0)/dh;
-  printf("Elasticity test\n");
-  printf("Function value:    %15.8e\n", f0);
-  printf("Finite-difference: %15.8e\n", fd);
-  printf("Forward mode:      %15.8e\n", df);
-  printf("Reverse mode:      %15.8e\n", dfr);
+  TacsScalar fd = TacsImagPart(f1)/dh;
+  printf("Shell test\n");
+  printf("Function value:    %25.16e\n", TacsRealPart(f0));
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
+
+/*
+  Build up the terms required for the beam element
+*/
+TacsScalar test_beam_scalar( const TacsScalar X0xi_data[],
+                             const TacsScalar axis_data[],
+                             const TacsScalar n1_data[],
+                             const TacsScalar n1xi_data[],
+                             const TacsScalar n2_data[],
+                             const TacsScalar n2xi_data[],
+                             const TacsScalar u0xi_data[],
+                             const TacsScalar d1_data[],
+                             const TacsScalar d1xi_data[],
+                             const TacsScalar d2_data[],
+                             const TacsScalar d2xi_data[] ){
+  Vec3 X0xi(X0xi_data);
+  Vec3 axis(axis_data);
+  Vec3 n1(n1_data), n1xi(n1xi_data);
+  Vec3 n2(n2_data), n2xi(n2xi_data);
+
+  Vec3 u0xi(u0xi_data);
+  Vec3 d1(d1_data), d1xi(d1xi_data);
+  Vec3 d2(d2_data), d2xi(d2xi_data);
+
+  // Compute the transformation to the local coordiantes.
+  // Normalize the first direction.
+  Vec3 t1;
+  Vec3Normalize normalizet1(X0xi, t1);
+
+  // t2_dir = axis - dot(t1, axis) * t1
+  Vec3 t2_dir;
+  Scalar dot;
+  Vec3Dot dott1(t1, axis, dot);
+  Vec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+
+  // Compute the n1 direction
+  Vec3 t2;
+  Vec3Normalize normalizet2(t2_dir, t2);
+
+  // Compute the n2 direction
+  Vec3 t3;
+  Vec3CrossProduct cross(t1, t2, t3);
+
+  // Assemble the referece frame
+  Mat3x3 T;
+  Mat3x3FromThreeVec3 assembleT(t1, t2, t3, T);
+
+  // Compute the inverse
+  Mat3x3 Xd, Xdinv;
+  Mat3x3FromThreeVec3 assembleXd(X0xi, n1, n2, Xd);
+  Mat3x3Inverse invXd(Xd, Xdinv);
+
+  // Compute the determinant of the transform
+  Scalar detXd;
+  Mat3x3Det computedetXd(Xd, detXd);
+
+  // Compute XdinvT = Xdinv * T
+  Mat3x3 XdinvT;
+  Mat3x3MatMult multXinvT(Xdinv, T, XdinvT);
+
+  // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
+  Mat3x3 Xdz1, Xdz2;
+  Mat3x3FromVec3 assembleXdz1(n1xi, Xdz1);
+  Mat3x3FromVec3 assembleXdz2(n2xi, Xdz2);
+
+  // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
+  Mat3x3 Xdinvz1T, Xdz1XdinvT;
+  Mat3x3MatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
+  Mat3x3MatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
+
+  // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
+  Mat3x3 Xdinvz2T, Xdz2XdinvT;
+  Mat3x3MatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
+  Mat3x3MatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
+
+  // Assemble u0d, u1d and u2d
+  Mat3x3 u0d, u1d, u2d;
+  Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
+  Mat3x3FromVec3 assembleu1d(d1xi, u1d);
+  Mat3x3FromVec3 assembleu2d(d2xi, u2d);
+
+  // Compute u0x = T^{T} * u0d * XdinvT
+  Mat3x3 u0dXdinvT, u0x;
+  Mat3x3MatMult multu0d(u0d, XdinvT, u0dXdinvT);
+  MatTrans3x3MatMult multu0x(T, u0dXdinvT, u0x);
+
+  // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
+  Mat3x3 u1dXdinvT, u1x;
+  Mat3x3MatMult multu1d(u1d, XdinvT, u1dXdinvT);
+  Mat3x3MatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
+  MatTrans3x3MatMult multu1x(T, u1dXdinvT, u1x);
+
+  // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
+  Mat3x3 u2dXdinvT, u2x;
+  Mat3x3MatMult multu2d(u2d, XdinvT, u2dXdinvT);
+  Mat3x3MatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
+  MatTrans3x3MatMult multu2x(T, u2dXdinvT, u2x);
+
+  // Compute the strain
+  Symm3x3 e0x, e1x, e2x;
+  Mat3x3GreenStrain strain0(u0x, e0x);
+  Mat3x3GreenStrain strain1(u1x, e1x);
+  Mat3x3GreenStrain strain2(u2x, e2x);
+
+  // This isn't really the energy, but is okay for testing..
+  Scalar energy;
+  Symm3x3SymmMultTraceScale trace(detXd, e0x, e2x, energy);
+
+  return detXd.value; // energy.value;
+}
+
+TacsScalar test_beam_forward( const TacsScalar X0xi_data[],
+                              const TacsScalar X0xi_ddata[],
+                              const TacsScalar axis_data[],
+                              const TacsScalar axis_ddata[],
+                              const TacsScalar n1_data[],
+                              const TacsScalar n1_ddata[],
+                              const TacsScalar n1xi_data[],
+                              const TacsScalar n1xi_ddata[],
+                              const TacsScalar n2_data[],
+                              const TacsScalar n2_ddata[],
+                              const TacsScalar n2xi_data[],
+                              const TacsScalar n2xi_ddata[],
+                              const TacsScalar u0xi_data[],
+                              const TacsScalar d1_data[],
+                              const TacsScalar d1xi_data[],
+                              const TacsScalar d2_data[],
+                              const TacsScalar d2xi_data[] ){
+  ADVec3 X0xi(X0xi_data, X0xi_ddata);
+  ADVec3 axis(axis_data, axis_ddata);
+  ADVec3 n1(n1_data, n1_ddata), n1xi(n1xi_data, n1xi_ddata);
+  ADVec3 n2(n2_data, n2_ddata), n2xi(n2xi_data, n2xi_ddata);
+
+  Vec3 u0xi(u0xi_data);
+  Vec3 d1(d1_data), d1xi(d1xi_data);
+  Vec3 d2(d2_data), d2xi(d2xi_data);
+
+  // Compute the transformation to the local coordiantes.
+  // Normalize the first direction.
+  ADVec3 t1;
+  ADVec3Normalize normalizet1(X0xi, t1);
+  normalizet1.forward();
+
+  // t2_dir = axis - dot(t1, axis) * t1
+  ADVec3 t2_dir;
+  ADScalar dot;
+  ADVec3Dot dott1(t1, axis, dot);
+  dott1.forward();
+  ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+  axpy.forward();
+
+  // Compute the n1 direction
+  ADVec3 t2;
+  ADVec3Normalize normalizet2(t2_dir, t2);
+  normalizet2.forward();
+
+  // Compute the n2 direction
+  ADVec3 t3;
+  ADVec3CrossProduct cross(t1, t2, t3);
+  cross.forward();
+
+  // Assemble the referece frame
+  ADMat3x3 T;
+  ADMat3x3FromThreeADVec3 assembleT(t1, t2, t3, T);
+  assembleT.forward();
+
+  // Compute the inverse
+  ADMat3x3 Xd, Xdinv;
+  ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
+  assembleXd.forward();
+  ADMat3x3Inverse invXd(Xd, Xdinv);
+  invXd.forward();
+
+  // Compute the determinant of the transform
+  ADScalar detXd;
+  ADMat3x3Det computedetXd(Xd, detXd);
+  computedetXd.forward();
+
+  // Compute XdinvT = Xdinv * T
+  ADMat3x3 XdinvT;
+  ADMat3x3ADMatMult multXinvT(Xdinv, T, XdinvT);
+  multXinvT.forward();
+
+  // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
+  ADMat3x3 Xdz1, Xdz2;
+  ADMat3x3FromADVec3 assembleXdz1(n1xi, Xdz1);
+  assembleXdz1.forward();
+  ADMat3x3FromADVec3 assembleXdz2(n2xi, Xdz2);
+  assembleXdz2.forward();
+
+  // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
+  ADMat3x3 Xdinvz1T, Xdz1XdinvT;
+  ADMat3x3ADMatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
+  multXdz1XdinvT.forward();
+  ADMat3x3ADMatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
+  multXdinvz1T.forward();
+
+  // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
+  ADMat3x3 Xdinvz2T, Xdz2XdinvT;
+  ADMat3x3ADMatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
+  multXdz2XdinvT.forward();
+  ADMat3x3ADMatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
+  multXdinvz2T.forward();
+
+  // Assemble u0d, u1d and u2d
+  Mat3x3 u0d, u1d, u2d;
+  Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
+  Mat3x3FromVec3 assembleu1d(d1xi, u1d);
+  Mat3x3FromVec3 assembleu2d(d2xi, u2d);
+
+  // Compute u0x = T^{T} * u0d * XdinvT
+  ADMat3x3 u0dXdinvT, u0x;
+  Mat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
+  multu0d.forward();
+  ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
+  multu0x.forward();
+
+  // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
+  ADMat3x3 u1dXdinvT, u1x;
+  Mat3x3ADMatMult multu1d(u1d, XdinvT, u1dXdinvT);
+  multu1d.forward();
+  Mat3x3ADMatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
+  multu1dadd.forward();
+  ADMatTrans3x3ADMatMult multu1x(T, u1dXdinvT, u1x);
+  multu1x.forward();
+
+  // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
+  ADMat3x3 u2dXdinvT, u2x;
+  Mat3x3ADMatMult multu2d(u2d, XdinvT, u2dXdinvT);
+  multu2d.forward();
+  Mat3x3ADMatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
+  multu2dadd.forward();
+  ADMatTrans3x3ADMatMult multu2x(T, u2dXdinvT, u2x);
+  multu2x.forward();
+
+  // Compute the strain
+  ADSymm3x3 e0x, e1x, e2x;
+  ADMat3x3GreenStrain strain0(u0x, e0x);
+  strain0.forward();
+  ADMat3x3GreenStrain strain1(u1x, e1x);
+  strain1.forward();
+  ADMat3x3GreenStrain strain2(u2x, e2x);
+  strain2.forward();
+
+  // This isn't really the energy, but is okay for testing..
+  ADScalar energy;
+  ADSymm3x3ADSymmMultTraceADScale trace(detXd, e0x, e2x, energy);
+  trace.forward();
+
+  return energy.valued;
+}
+
+TacsScalar test_beam_reverse( const TacsScalar X0xi_data[],
+                              const TacsScalar X0xi_ddata[],
+                              const TacsScalar axis_data[],
+                              const TacsScalar axis_ddata[],
+                              const TacsScalar n1_data[],
+                              const TacsScalar n1_ddata[],
+                              const TacsScalar n1xi_data[],
+                              const TacsScalar n1xi_ddata[],
+                              const TacsScalar n2_data[],
+                              const TacsScalar n2_ddata[],
+                              const TacsScalar n2xi_data[],
+                              const TacsScalar n2xi_ddata[],
+                              const TacsScalar u0xi_data[],
+                              const TacsScalar d1_data[],
+                              const TacsScalar d1xi_data[],
+                              const TacsScalar d2_data[],
+                              const TacsScalar d2xi_data[] ){
+  ADVec3 X0xi(X0xi_data);
+  ADVec3 axis(axis_data);
+  ADVec3 n1(n1_data), n1xi(n1xi_data);
+  ADVec3 n2(n2_data), n2xi(n2xi_data);
+
+  Vec3 u0xi(u0xi_data);
+  Vec3 d1(d1_data), d1xi(d1xi_data);
+  Vec3 d2(d2_data), d2xi(d2xi_data);
+
+  // Compute the transformation to the local coordiantes.
+  // Normalize the first direction.
+  ADVec3 t1;
+  ADVec3Normalize normalizet1(X0xi, t1);
+
+  // t2_dir = axis - dot(t1, axis) * t1
+  ADVec3 t2_dir;
+  ADScalar dot;
+  ADVec3Dot dott1(t1, axis, dot);
+  ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+
+  // Compute the n1 direction
+  ADVec3 t2;
+  ADVec3Normalize normalizet2(t2_dir, t2);
+
+  // Compute the n2 direction
+  ADVec3 t3;
+  ADVec3CrossProduct cross(t1, t2, t3);
+
+  // Assemble the referece frame
+  ADMat3x3 T;
+  ADMat3x3FromThreeADVec3 assembleT(t1, t2, t3, T);
+
+  // Compute the inverse
+  ADMat3x3 Xd, Xdinv;
+  ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
+  ADMat3x3Inverse invXd(Xd, Xdinv);
+
+  // Compute the determinant of the transform
+  ADScalar detXd;
+  ADMat3x3Det computedetXd(Xd, detXd);
+
+  // Compute XdinvT = Xdinv * T
+  ADMat3x3 XdinvT;
+  ADMat3x3ADMatMult multXinvT(Xdinv, T, XdinvT);
+
+  // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
+  ADMat3x3 Xdz1, Xdz2;
+  ADMat3x3FromADVec3 assembleXdz1(n1xi, Xdz1);
+  ADMat3x3FromADVec3 assembleXdz2(n2xi, Xdz2);
+
+  // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
+  ADMat3x3 Xdinvz1T, Xdz1XdinvT;
+  ADMat3x3ADMatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
+  ADMat3x3ADMatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
+
+  // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
+  ADMat3x3 Xdinvz2T, Xdz2XdinvT;
+  ADMat3x3ADMatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
+  ADMat3x3ADMatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
+
+  // Assemble u0d, u1d and u2d
+  Mat3x3 u0d, u1d, u2d;
+  Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
+  Mat3x3FromVec3 assembleu1d(d1xi, u1d);
+  Mat3x3FromVec3 assembleu2d(d2xi, u2d);
+
+  // Compute u0x = T^{T} * u0d * XdinvT
+  ADMat3x3 u0dXdinvT, u0x;
+  Mat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
+  ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
+
+  // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
+  ADMat3x3 u1dXdinvT, u1x;
+  Mat3x3ADMatMult multu1d(u1d, XdinvT, u1dXdinvT);
+  Mat3x3ADMatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
+  ADMatTrans3x3ADMatMult multu1x(T, u1dXdinvT, u1x);
+
+  // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
+  ADMat3x3 u2dXdinvT, u2x;
+  Mat3x3ADMatMult multu2d(u2d, XdinvT, u2dXdinvT);
+  Mat3x3ADMatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
+  ADMatTrans3x3ADMatMult multu2x(T, u2dXdinvT, u2x);
+
+  // Compute the strain
+  ADSymm3x3 e0x, e1x, e2x;
+  ADMat3x3GreenStrain strain0(u0x, e0x);
+  ADMat3x3GreenStrain strain1(u1x, e1x);
+  ADMat3x3GreenStrain strain2(u2x, e2x);
+
+  // This isn't really the energy, but is okay for testing..
+  ADScalar energy;
+  ADSymm3x3ADSymmMultTraceADScale trace(detXd, e0x, e2x, energy);
+
+  energy.valued = 1.0;
+
+  trace.reverse();
+  strain2.reverse();
+  strain1.reverse();
+  strain0.reverse();
+  multu2x.reverse();
+  multu2dadd.reverse();
+  multu2d.reverse();
+  multu1x.reverse();
+  multu1dadd.reverse();
+  multu1d.reverse();
+  multu0x.reverse();
+  multu0d.reverse();
+  multXdinvz2T.reverse();
+  multXdz2XdinvT.reverse();
+  multXdinvz1T.reverse();
+  multXdz1XdinvT.reverse();
+  assembleXdz2.reverse();
+  assembleXdz1.reverse();
+  multXinvT.reverse();
+  computedetXd.reverse();
+  invXd.reverse();
+  assembleXd.reverse();
+  assembleT.reverse();
+  cross.reverse();
+  normalizet2.reverse();
+  axpy.reverse();
+  dott1.reverse();
+  // normalizet1.reverse();
+
+  TacsScalar deriv = 0.0;
+  for ( int i = 0; i < 3; i++ ){
+    deriv += X0xi.xd[i] * X0xi_ddata[i];
+    deriv += axis.xd[i] * axis_ddata[i];
+    deriv += n1.xd[i] * n1_ddata[i];
+    deriv += n1xi.xd[i] * n1xi_ddata[i];
+    deriv += n2.xd[i] * n2_ddata[i];
+    deriv += n2xi.xd[i] * n2xi_ddata[i];
+  }
+
+  return deriv;
+}
+
+void test_beam(){
+  TacsScalar X0xi[3], axis[3], n1[3], n1xi[3], n2[3], n2xi[3];
+  TacsScalar X0xid[3], axisd[3], n1d[3], n1xid[3], n2d[3], n2xid[3];
+  TacsScalar u0xi[3], d1[3], d1xi[3], d2[3], d2xi[3];
+
+  // Fill in the data
+  generate_random_array(3, X0xi);
+  generate_random_array(3, axis);
+  generate_random_array(3, n1);
+  generate_random_array(3, n1xi);
+  generate_random_array(3, n2);
+  generate_random_array(3, n2xi);
+
+  generate_random_array(3, X0xid);
+  generate_random_array(3, axisd);
+  generate_random_array(3, n1d);
+  generate_random_array(3, n1xid);
+  generate_random_array(3, n2d);
+  generate_random_array(3, n2xid);
+
+  generate_random_array(3, d1);
+  generate_random_array(3, d1xi);
+  generate_random_array(3, d2);
+  generate_random_array(3, d2xi);
+
+  TacsScalar f0 = test_beam_scalar(X0xi, axis, n1, n1xi, n2, n2xi,
+                                   u0xi, d1, d1xi, d2, d2xi);
+  TacsScalar df = test_beam_forward(X0xi, X0xid, axis, axisd,
+                                    n1, n1d, n1xi, n1xid, n2, n2d, n2xi, n2xid,
+                                    u0xi, d1, d1xi, d2, d2xi);
+  TacsScalar dfr = test_beam_reverse(X0xi, X0xid, axis, axisd,
+                                     n1, n1d, n1xi, n1xid, n2, n2d, n2xi, n2xid,
+                                     u0xi, d1, d1xi, d2, d2xi);
+
+  TacsReal dh = 1e-30;
+  for ( int i = 0; i < 3; i++ ){
+    X0xi[i] += TacsScalar(0.0, dh) * X0xid[i];
+    axis[i] += TacsScalar(0.0, dh) * axisd[i];
+    n1[i] += TacsScalar(0.0, dh) * n1d[i];
+    n1xi[i] += TacsScalar(0.0, dh) * n1xid[i];
+    n2[i] += TacsScalar(0.0, dh) * n2d[i];
+    n2xi[i] += TacsScalar(0.0, dh) * n2xid[i];
+  }
+
+  TacsScalar f1 = test_beam_scalar(X0xi, axis, n1, n1xi, n2, n2xi,
+                                   u0xi, d1, d1xi, d2, d2xi);
+  TacsScalar fd = TacsImagPart(f1)/dh;
+  printf("Beam test\n");
+  printf("Function value:    %25.16e\n", TacsRealPart(f0));
+  printf("Finite-difference: %25.16e\n", TacsRealPart(fd));
+  printf("Forward mode:      %25.16e\n", TacsRealPart(df));
+  printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
+}
+
 
 int main( int argc, const char *argv[] ){
   test_vector();
@@ -706,6 +1166,7 @@ int main( int argc, const char *argv[] ){
   test_symm();
   test_elasticity();
   test_shell();
+  test_beam();
 
   return 0;
 }

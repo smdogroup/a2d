@@ -807,7 +807,7 @@ TacsScalar test_beam_scalar( const TacsScalar X0xi_data[],
   Scalar energy;
   Symm3x3SymmMultTraceScale trace(detXd, e0x, e2x, energy);
 
-  return detXd.value; // energy.value;
+  return energy.value;
 }
 
 TacsScalar test_beam_forward( const TacsScalar X0xi_data[],
@@ -1090,7 +1090,7 @@ TacsScalar test_beam_reverse( const TacsScalar X0xi_data[],
   normalizet2.reverse();
   axpy.reverse();
   dott1.reverse();
-  // normalizet1.reverse();
+  normalizet1.reverse();
 
   TacsScalar deriv = 0.0;
   for ( int i = 0; i < 3; i++ ){
@@ -1158,7 +1158,6 @@ void test_beam(){
   printf("Forward mode:      %25.16e\n", TacsRealPart(df));
   printf("Reverse mode:      %25.16e\n", TacsRealPart(dfr));
 }
-
 
 int main( int argc, const char *argv[] ){
   test_vector();

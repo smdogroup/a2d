@@ -222,9 +222,9 @@ public:
   void reverse(){
     TacsScalar beta = Vec3DotCore(x.x, y.xd);
     TacsScalar scale = inv * inv * inv;
-    x.xd[0] = (alpha * y.xd[0] - beta * x.x[0]) * scale;
-    x.xd[1] = (alpha * y.xd[1] - beta * x.x[1]) * scale;
-    x.xd[2] = (alpha * y.xd[2] - beta * x.x[2]) * scale;
+    x.xd[0] += (alpha * y.xd[0] - beta * x.x[0]) * scale;
+    x.xd[1] += (alpha * y.xd[1] - beta * x.x[1]) * scale;
+    x.xd[2] += (alpha * y.xd[2] - beta * x.x[2]) * scale;
   }
 
   TacsScalar alpha, inv;

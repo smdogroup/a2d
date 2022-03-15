@@ -333,20 +333,37 @@ public:
   Mat3x3MatMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     Mat3x3MatMultCore(A.A, B.A, C.A);
   }
+  Mat3x3MatMult( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMat3x3MatMult {
 public:
-  ADMat3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultCore(A.A, B.A, C.A);
   }
+  ADMat3x3MatMult( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      Mat3x3MatMultScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -354,16 +371,30 @@ public:
 
 class Mat3x3ADMatMult {
 public:
-  Mat3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  Mat3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultCore(A.A, B.A, C.A);
   }
+  Mat3x3ADMatMult( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatMultScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -371,18 +402,34 @@ public:
 
 class ADMat3x3ADMatMult {
 public:
-  ADMat3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultCore(A.A, B.A, C.A);
   }
+  ADMat3x3ADMatMult( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultCore(A.Ad, B.A, C.Ad);
-    Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultCore(A.Ad, B.A, C.Ad);
+      Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatMultScaleCore(scale, A.Ad, B.A, C.Ad);
+      Mat3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
-    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -393,20 +440,37 @@ public:
   Mat3x3MatMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     Mat3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  Mat3x3MatMultAdd( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMat3x3MatMultAdd {
 public:
-  ADMat3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  ADMat3x3MatMultAdd( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -414,16 +478,30 @@ public:
 
 class Mat3x3ADMatMultAdd {
 public:
-  Mat3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  Mat3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  Mat3x3ADMatMultAdd( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -431,18 +509,34 @@ public:
 
 class ADMat3x3ADMatMultAdd {
 public:
-  ADMat3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  ADMat3x3ADMatMultAdd( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
-    Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+      Mat3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+      Mat3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
-    MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -456,20 +550,37 @@ public:
   MatTrans3x3MatMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     MatTrans3x3MatMultCore(A.A, B.A, C.A);
   }
+  MatTrans3x3MatMult( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMatTrans3x3MatMult {
 public:
-  ADMatTrans3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3MatMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3MatMult( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -477,16 +588,30 @@ public:
 
 class MatTrans3x3ADMatMult {
 public:
-  MatTrans3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  MatTrans3x3ADMatMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultCore(A.A, B.A, C.A);
   }
+  MatTrans3x3ADMatMult( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -494,18 +619,34 @@ public:
 
 class ADMatTrans3x3ADMatMult {
 public:
-  ADMatTrans3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3ADMatMult( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
-    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultCore(A.Ad, B.A, C.Ad);
+      MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultScaleCore(scale, A.Ad, B.A, C.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
-    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+      Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -516,20 +657,37 @@ public:
   MatTrans3x3MatMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  MatTrans3x3MatMultAdd( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMatTrans3x3MatMultAdd {
 public:
-  ADMatTrans3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3MatMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3MatMultAdd( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -537,16 +695,30 @@ public:
 
 class MatTrans3x3ADMatMultAdd {
 public:
-  MatTrans3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  MatTrans3x3ADMatMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  MatTrans3x3ADMatMultAdd( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -554,18 +726,34 @@ public:
 
 class ADMatTrans3x3ADMatMultAdd {
 public:
-  ADMatTrans3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatMultAddCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3ADMatMultAdd( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
-    MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(A.Ad, B.A, C.Ad);
+      MatTrans3x3MatMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
-    Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+      Mat3x3MatMultAddCore(A.A, C.Ad, B.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+      Mat3x3MatMultAddScaleCore(scale, A.A, C.Ad, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -579,20 +767,37 @@ public:
   Mat3x3MatTransMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     Mat3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  Mat3x3MatTransMult( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMat3x3MatTransMult {
 public:
-  ADMat3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  ADMat3x3MatTransMult( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -600,16 +805,30 @@ public:
 
 class Mat3x3ADMatTransMult {
 public:
-  Mat3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  Mat3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultCore(A.A, B.A, C.A);
   }
-    void forward(){
-    Mat3x3MatTransMultCore(A.A, B.Ad, C.Ad);
+  Mat3x3ADMatTransMult( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
+  void forward(){
+    if (scale == 1.0){
+      Mat3x3MatTransMultCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -617,18 +836,34 @@ public:
 
 class ADMat3x3ADMatTransMult {
 public:
-  ADMat3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  ADMat3x3ADMatTransMult( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
-    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+      Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultScaleCore(scale, A.Ad, B.A, C.Ad);
+      Mat3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
-    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -639,20 +874,37 @@ public:
   Mat3x3MatTransMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  Mat3x3MatTransMultAdd( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    Mat3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMat3x3MatTransMultAdd {
 public:
-  ADMat3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  ADMat3x3MatTransMultAdd( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -660,16 +912,30 @@ public:
 
 class Mat3x3ADMatTransMultAdd {
 public:
-  Mat3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  Mat3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
-    void forward(){
-    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+  Mat3x3ADMatTransMultAdd( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
+  void forward(){
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -677,18 +943,34 @@ public:
 
 class ADMat3x3ADMatTransMultAdd {
 public:
-  ADMat3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMat3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     Mat3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  ADMat3x3ADMatTransMultAdd( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    Mat3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
-    Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      Mat3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+      Mat3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      Mat3x3MatTransMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+      Mat3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
-    MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      Mat3x3MatMultAddCore(C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      Mat3x3MatMultAddScaleCore(scale, C.Ad, B.A, A.Ad);
+      MatTrans3x3MatMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -702,20 +984,37 @@ public:
   MatTrans3x3MatTransMult( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  MatTrans3x3MatTransMult( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMatTrans3x3MatTransMult {
 public:
-  ADMatTrans3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3MatTransMult( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3MatTransMult( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -723,16 +1022,30 @@ public:
 
 class MatTrans3x3ADMatTransMult {
 public:
-  MatTrans3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  MatTrans3x3ADMatTransMult( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  MatTrans3x3ADMatTransMult( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -740,18 +1053,34 @@ public:
 
 class ADMatTrans3x3ADMatTransMult {
 public:
-  ADMatTrans3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3ADMatTransMult( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
-    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultCore(A.Ad, B.A, C.Ad);
+      MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultScaleCore(scale, A.Ad, B.A, C.Ad);
+      MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
-    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+      MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+      MatTrans3x3MatTransMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -762,20 +1091,37 @@ public:
   MatTrans3x3MatTransMultAdd( Mat3x3& A, Mat3x3& B, Mat3x3& C ){
     MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  MatTrans3x3MatTransMultAdd( const TacsScalar scale, Mat3x3& A, Mat3x3& B, Mat3x3& C ){
+    MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
 };
 
 class ADMatTrans3x3MatTransMultAdd {
 public:
-  ADMatTrans3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3MatTransMultAdd( ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3MatTransMultAdd( const TacsScalar scale, ADMat3x3& A, Mat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   Mat3x3& B;
   ADMat3x3& C;
@@ -783,16 +1129,30 @@ public:
 
 class MatTrans3x3ADMatTransMultAdd {
 public:
-  MatTrans3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  MatTrans3x3ADMatTransMultAdd( Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  MatTrans3x3ADMatTransMultAdd( const TacsScalar scale, Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   Mat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;
@@ -800,18 +1160,34 @@ public:
 
 class ADMatTrans3x3ADMatTransMultAdd {
 public:
-  ADMatTrans3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
+  ADMatTrans3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
     MatTrans3x3MatTransMultAddCore(A.A, B.A, C.A);
   }
+  ADMatTrans3x3ADMatTransMultAdd( const TacsScalar scale, ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(scale), A(A), B(B), C(C) {
+    MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.A, C.A);
+  }
   void forward(){
-    MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
-    MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(A.Ad, B.A, C.Ad);
+      MatTrans3x3MatTransMultAddCore(A.A, B.Ad, C.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, A.Ad, B.A, C.Ad);
+      MatTrans3x3MatTransMultAddScaleCore(scale, A.A, B.Ad, C.Ad);
+    }
   }
   void reverse(){
-    MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
-    MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    if (scale == 1.0){
+      MatTrans3x3MatTransMultAddCore(B.A, C.Ad, A.Ad);
+      MatTrans3x3MatTransMultAddCore(C.Ad, A.A, B.Ad);
+    }
+    else {
+      MatTrans3x3MatTransMultAddScaleCore(scale, B.A, C.Ad, A.Ad);
+      MatTrans3x3MatTransMultAddScaleCore(scale, C.Ad, A.A, B.Ad);
+    }
   }
 
+  const TacsScalar scale;
   ADMat3x3& A;
   ADMat3x3& B;
   ADMat3x3& C;

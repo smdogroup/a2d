@@ -400,7 +400,7 @@ TacsScalar test_shell_scalar( const TacsScalar n0_data[],
   // Compute XdinvzT = - Xdinv * Xdz * Xdinv * T
   Mat3x3 XdinvzT, XdzXdinvT;
   Mat3x3MatMult multXdzXdinvT(Xdz, XdinvT, XdzXdinvT);
-  Mat3x3MatMult multXdinvzT(Xdinv, XdzXdinvT, XdinvzT);
+  Mat3x3MatMult multXdinvzT(-1.0, Xdinv, XdzXdinvT, XdinvzT);
 
   // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
   Mat3x3 u1dXdinvT, u1x;
@@ -499,7 +499,7 @@ TacsScalar test_shell_forward( const TacsScalar n0_data[],
   ADMat3x3 XdinvzT, XdzXdinvT;
   ADMat3x3ADMatMult multXdzXdinvT(Xdz, XdinvT, XdzXdinvT);
   multXdzXdinvT.forward();
-  ADMat3x3ADMatMult multXdinvzT(Xdinv, XdzXdinvT, XdinvzT);
+  ADMat3x3ADMatMult multXdinvzT(-1.0, Xdinv, XdzXdinvT, XdinvzT);
   multXdinvzT.forward();
 
   // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
@@ -595,7 +595,7 @@ TacsScalar test_shell_reverse( const TacsScalar n0_data[],
   // Compute XdinvzT = - Xdinv * Xdz * Xdinv * T
   ADMat3x3 XdinvzT, XdzXdinvT;
   ADMat3x3ADMatMult multXdzXdinvT(Xdz, XdinvT, XdzXdinvT);
-  ADMat3x3ADMatMult multXdinvzT(Xdinv, XdzXdinvT, XdinvzT);
+  ADMat3x3ADMatMult multXdinvzT(-1.0, Xdinv, XdzXdinvT, XdinvzT);
 
   // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
   ADMat3x3 u1dXdinvT, u1x;
@@ -651,7 +651,6 @@ TacsScalar test_shell_reverse( const TacsScalar n0_data[],
     deriv += n0xi.Ad[i] * n0xi_ddata[i];
     deriv += X0xi.Ad[i] * X0xi_ddata[i];
   }
-
 
   return deriv;
 }

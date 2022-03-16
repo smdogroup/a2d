@@ -1,6 +1,8 @@
 #include "a2d.h"
 #include <stdlib.h>
 
+using namespace A2D;
+
 void generate_random_array( int size, TacsScalar array[],
                             double lower=-1.0, double upper=1.0 ){
   for ( int i = 0; i < size; i++ ){

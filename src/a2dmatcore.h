@@ -1,6 +1,8 @@
 #ifndef A2D_MAT_CORE_H
 #define A2D_MAT_CORE_H
 
+namespace A2D {
+
 inline TacsScalar Mat3x3DetCore( const TacsScalar A[] ){
   return (A[8] * (A[0] * A[4] - A[3] * A[1]) -
           A[7] * (A[0] * A[5] - A[3] * A[2]) +
@@ -760,5 +762,7 @@ inline void Symm3x3IsotropicConstitutiveReverseCore( const TacsScalar mu,
   Ed[4] += mu2 * Sd[4];
   Ed[5] += mu2 * Sd[5] + tr;
 }
+
+} // namespace A2D
 
 #endif // A2D_MAT_CORE_H

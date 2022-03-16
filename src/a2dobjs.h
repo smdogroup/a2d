@@ -29,6 +29,8 @@ inline double TacsRealPart( const double& r ){
   return r;
 }
 
+namespace A2D {
+
 /*
   Scalar type
 */
@@ -298,5 +300,7 @@ public:
 
   TacsScalar A[9], Ad[9];
 };
+
+} // namespace AD
 
 #endif // A2D_OBJS_H

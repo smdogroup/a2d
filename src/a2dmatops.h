@@ -4,6 +4,8 @@
 #include "a2dobjs.h"
 #include "a2dmatcore.h"
 
+namespace A2D {
+
 /*
   Matrix trace operation
 */
@@ -1406,5 +1408,7 @@ public:
   ADSymm3x3& E;
   ADSymm3x3& S;
 };
+
+} // namespace A2D
 
 #endif // A2D_MAT_OPS_H

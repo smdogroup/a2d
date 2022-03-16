@@ -1,6 +1,8 @@
 #ifndef A2D_VEC_CORE_H
 #define A2D_VEC_CORE_H
 
+namespace A2D {
+
 inline TacsScalar Vec3DotCore( const TacsScalar x[],
                                const TacsScalar y[] ){
   return (x[0] * y[0] + x[1] * y[1] + x[2] * y[2]);
@@ -38,5 +40,7 @@ inline void Vec3CrossProductAddCore( const TacsScalar x[], const TacsScalar y[],
   v[1] += x[2] * y[0] - x[0] * y[2];
   v[2] += x[0] * y[1] - x[1] * y[0];
 }
+
+} // namespace AD
 
 #endif // A2D_VEC_CORE_H

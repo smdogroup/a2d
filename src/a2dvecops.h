@@ -4,6 +4,8 @@
 #include "a2dobjs.h"
 #include "a2dveccore.h"
 
+namespace A2D {
+
 /*
   Vec3Norm
 */
@@ -327,5 +329,7 @@ public:
 //   Vec3& y;
 //   Mat3x3& A;
 // };
+
+} // namespace AD
 
 #endif // A2D_VEC_OPS_H

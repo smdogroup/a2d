@@ -11,7 +11,7 @@ namespace A2D {
 */
 class Vec3Norm {
 public:
-  Vec3Norm( Vec3& x, Scalar& alpha ){
+  Vec3Norm( const Vec3& x, Scalar& alpha ){
     alpha.value = Vec3NormCore(x.x);
   }
 };
@@ -44,7 +44,7 @@ public:
 */
 class Vec3Scale {
 public:
-  Vec3Scale( Scalar& alpha, Vec3& x, Vec3& v ){
+  Vec3Scale( const Scalar& alpha, Vec3& x, Vec3& v ){
     Vec3ScaleCore(alpha.value, x.x, v.x);
   }
 };
@@ -76,10 +76,10 @@ public:
 */
 class Vec3Axpy {
 public:
-  Vec3Axpy( Scalar& alpha, Vec3& x, Vec3& y, Vec3& v ){
+  Vec3Axpy( const Scalar& alpha, const Vec3& x, const Vec3& y, Vec3& v ){
     Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
   }
-  Vec3Axpy( const TacsScalar scale, Scalar& alpha, Vec3& x, Vec3& y, Vec3& v ){
+  Vec3Axpy( const TacsScalar scale, const Scalar& alpha, const Vec3& x, const Vec3& y, Vec3& v ){
     Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
   }
 };
@@ -119,10 +119,10 @@ public:
 */
 class Vec3Dot {
 public:
-  Vec3Dot( Vec3& x, Vec3& y, Scalar& alpha ){
+  Vec3Dot( const Vec3& x, const Vec3& y, Scalar& alpha ){
     alpha.value = Vec3DotCore(x.x, y.x);
   }
-  Vec3Dot( const TacsScalar scale, Vec3& x, Vec3& y, Scalar& alpha ){
+  Vec3Dot( const TacsScalar scale, const Vec3& x, const Vec3& y, Scalar& alpha ){
     alpha.value = scale * Vec3DotCore(x.x, y.x);
   }
 };
@@ -160,7 +160,7 @@ public:
 */
 class Vec3CrossProduct {
 public:
-  Vec3CrossProduct( Vec3& x, Vec3& y, Vec3& v ){
+  Vec3CrossProduct( const Vec3& x, const Vec3& y, Vec3& v ){
     Vec3CrossProductCore(x.x, y.x, v.x);
   }
 };
@@ -189,7 +189,7 @@ public:
 */
 class Vec3Normalize {
 public:
-  Vec3Normalize( Vec3& x, Vec3& y ){
+  Vec3Normalize( const Vec3& x, Vec3& y ){
     TacsScalar alpha = Vec3DotCore(x.x, x.x);
     if (alpha != 0.0){
       TacsScalar inv = 1.0/sqrt(alpha);
@@ -236,7 +236,7 @@ public:
 
 class Mat3x2ToVec3 {
 public:
-  Mat3x2ToVec3( Mat3x2& A, Vec3& x, Vec3& y ){
+  Mat3x2ToVec3( const Mat3x2& A, Vec3& x, Vec3& y ){
     x.x[0] = A.A[0];
     x.x[1] = A.A[2];
     x.x[2] = A.A[4];

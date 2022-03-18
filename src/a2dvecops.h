@@ -108,6 +108,62 @@ namespace A2D {
     ADVec3& v;
   };
 
+  class ADVec3VecADScalarAxpy {
+  public:
+    ADVec3VecADScalarAxpy( ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
+      Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
+    }
+    ADVec3VecADScalarAxpy( const TacsScalar scale, ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
+      Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
+    }
+    void forward(){
+      v.xd[0] = scale * (alpha.valued * x.x[0] + alpha.value * x.xd[0]);
+      v.xd[1] = scale * (alpha.valued * x.x[1] + alpha.value * x.xd[1]);
+      v.xd[2] = scale * (alpha.valued * x.x[2] + alpha.value * x.xd[2]);
+    }
+    void reverse(){
+      alpha.valued += scale * Vec3DotCore(x.x, v.xd);
+      x.xd[0] += scale * alpha.value * v.xd[0];
+      x.xd[1] += scale * alpha.value * v.xd[1];
+      x.xd[2] += scale * alpha.value * v.xd[2];
+    }
+
+    const TacsScalar scale;
+    ADScalar& alpha;
+    ADVec3& x;
+    const Vec3& y;
+    ADVec3& v;
+  };
+
+  class ADVec3ADVecScalarAxpy {
+  public:
+    ADVec3ADVecScalarAxpy( const Scalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
+      Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
+    }
+    ADVec3ADVecScalarAxpy( const TacsScalar scale, const Scalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
+      Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
+    }
+    void forward(){
+      v.xd[0] = scale * (alpha.value * x.xd[0]) + y.xd[0];
+      v.xd[1] = scale * (alpha.value * x.xd[1]) + y.xd[1];
+      v.xd[2] = scale * (alpha.value * x.xd[2]) + y.xd[2];
+    }
+    void reverse(){
+      x.xd[0] += scale * alpha.value * v.xd[0];
+      x.xd[1] += scale * alpha.value * v.xd[1];
+      x.xd[2] += scale * alpha.value * v.xd[2];
+      y.xd[0] += v.xd[0];
+      y.xd[1] += v.xd[1];
+      y.xd[2] += v.xd[2];
+    }
+
+    const TacsScalar scale;
+    const Scalar& alpha;
+    ADVec3& x;
+    ADVec3& y;
+    ADVec3& v;
+  };
+
   class ADVec3Axpy {
   public:
     ADVec3Axpy( ADScalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {

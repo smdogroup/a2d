@@ -68,8 +68,19 @@
 
 \begin{enumerate}
 \item Matrix-vector product $\mathbf{v} = \mathbf{A} \mathbf{x}$
-\item Inner product $\alpha = \mathbf{x}^{T} \mathbf{A} \mathbf{x}$
-\item Symmetric inner product $\alpha = \mathbf{x}^{T} \mathbf{S} \mathbf{x}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dot{\mathbf{A}} \mathbf{x} + \mathbf{A} \dot{\mathbf{x}}$
+\item Reverse: $\bar{\mathbf{x}} = \mathbf{A}^{T} \bar{\mathbf{y}}$, $\bar{\mathbf{A}} = \bar{\mathbf{v}} \mathbf{x}^{T}$
+\end{itemize}
+
+\item Matrix-vector product $\mathbf{v} = \mathbf{A}^{T} \mathbf{x}$
+\begin{itemize}
+\item Forward: $\dot{\mathbf{v}} = \dot{\mathbf{A}}^{T} \mathbf{x} + \mathbf{A}^{T} \dot{\mathbf{x}}$
+\item Reverse: $\bar{\mathbf{x}} = \mathbf{A} \bar{\mathbf{y}}$, $\bar{\mathbf{A}} = \mathbf{x} \bar{\mathbf{v}}^{T}$
+\end{itemize}
+
+% \item Inner product $\alpha = \mathbf{x}^{T} \mathbf{A} \mathbf{x}$
+% \item Symmetric inner product $\alpha = \mathbf{x}^{T} \mathbf{S} \mathbf{x}$
 \end{enumerate}
 
 \section{Matrix-matrix operations}

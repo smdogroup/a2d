@@ -163,6 +163,15 @@ namespace A2D {
     y[2] += scale * (A[2] * x[0] + A[5] * x[1] + A[8] * x[2]);
   }
 
+  inline TacsScalar Mat3x3InnerProductCore( const TacsScalar A[],
+                                            const TacsScalar x[],
+                                            const TacsScalar y[] ){
+    return
+      x[0] * (A[0] * y[0] + A[1] * y[1] + A[2] * y[2]) +
+      x[1] * (A[3] * y[0] + A[4] * y[1] + A[5] * y[2]) +
+      x[2] * (A[6] * y[0] + A[7] * y[1] + A[8] * y[2]);
+  }
+
 } // namespace AD
 
 #endif // A2D_VEC_CORE_H

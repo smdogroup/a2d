@@ -84,29 +84,26 @@ namespace A2D {
     }
   };
 
-  class ADVec3VecAxpy {
+  class Vec3VecADScalarAxpy {
   public:
-    ADVec3VecAxpy( ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
+    Vec3VecADScalarAxpy( ADScalar& alpha, const Vec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
       Vec3AXPYCore(alpha.value, x.x, y.x, v.x);
     }
-    ADVec3VecAxpy( const TacsScalar scale, ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
+    Vec3VecADScalarAxpy( const TacsScalar scale, ADScalar& alpha, const Vec3& x, const Vec3& y, ADVec3& v ) : scale(scale), alpha(alpha), x(x), y(y), v(v) {
       Vec3AXPYCore(scale * alpha.value, x.x, y.x, v.x);
     }
     void forward(){
-      v.xd[0] = scale * (alpha.valued * x.x[0] + alpha.value * x.xd[0]);
-      v.xd[1] = scale * (alpha.valued * x.x[1] + alpha.value * x.xd[1]);
-      v.xd[2] = scale * (alpha.valued * x.x[2] + alpha.value * x.xd[2]);
+      v.xd[0] = scale * alpha.valued * x.x[0];
+      v.xd[1] = scale * alpha.valued * x.x[1];
+      v.xd[2] = scale * alpha.valued * x.x[2];
     }
     void reverse(){
       alpha.valued += scale * Vec3DotCore(x.x, v.xd);
-      x.xd[0] += scale * alpha.value * v.xd[0];
-      x.xd[1] += scale * alpha.value * v.xd[1];
-      x.xd[2] += scale * alpha.value * v.xd[2];
     }
 
     const TacsScalar scale;
     ADScalar& alpha;
-    ADVec3& x;
+    const Vec3& x;
     const Vec3& y;
     ADVec3& v;
   };
@@ -399,7 +396,6 @@ namespace A2D {
   /*
     Transpose matrix-vector product
   */
-
   class MatTrans3x3VecMult {
   public:
     MatTrans3x3VecMult( const Mat3x3& A, const Vec3& x, Vec3& y ){
@@ -433,7 +429,7 @@ namespace A2D {
       MatTrans3x3VecMultAddCore(A.A, x.xd, y.xd);
     }
     void reverse(){
-      MatTrans3x3VecMultAddCore(A.A, y.xd, x.xd);
+      Mat3x3VecMultAddCore(A.A, y.xd, x.xd);
     }
 
     const Mat3x3& A;
@@ -451,7 +447,7 @@ namespace A2D {
       MatTrans3x3VecMultAddCore(A.A, x.xd, y.xd);
     }
     void reverse(){
-      MatTrans3x3VecMultAddCore(A.A, y.xd, x.xd);
+      Mat3x3VecMultAddCore(A.A, y.xd, x.xd);
       Vec3OuterProductAddCore(x.x, y.xd, A.Ad);
     }
 
@@ -526,131 +522,324 @@ namespace A2D {
     ADVec3& y;
   };
 
+  class Mat3x3VecMultADScale {
+  public:
+    Mat3x3VecMultADScale( ADScalar& scale, const Mat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      Mat3x3VecMultScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      scale.valued += Mat3x3InnerProductCore(A.A, y.xd, x.x);
+    }
 
+    ADScalar& scale;
+    const Mat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+  };
 
-  // class ADMat3x3VecMultADScale {
-  // public:
-  //   Mat3x3VecMult( ADScalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
-  //     Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     Mat3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
-  //   }
-  //   void reverse(){
-  //     Vec3OuterProductAddScaleCore(scale.value, y.xd, x.x, A.Ad);
-  //   }
+  class ADMat3x3VecMultADScale {
+  public:
+    ADMat3x3VecMultADScale( ADScalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      Mat3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+      Mat3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      Vec3OuterProductAddScaleCore(scale.value, y.xd, x.x, A.Ad);
+      scale.valued += Mat3x3InnerProductCore(A.A, y.xd, x.x);
+    }
 
-  //   ADScalar& scale;
-  //   ADMat3x3& A;
-  //   const Vec3& x;
-  //   ADVec3& y;
-  // };
+    ADScalar& scale;
+    ADMat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+  };
 
-  // class Mat3x3ADVecMultScale {
-  // public:
-  //   Mat3x3VecMultScale( ADScalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
-  //     Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     Mat3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
-  //   }
-  //   void reverse(){
-  //     MatTrans3x3MultAddScaleCore(scale.value, A.A, y.xd, x.xd);
-  //   }
+  class Mat3x3ADVecMultADScale {
+  public:
+    Mat3x3ADVecMultADScale( ADScalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      Mat3x3VecMultScaleCore(scale.value, A.A, x.xd, y.xd);
+      Mat3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      MatTrans3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+      scale.valued += Mat3x3InnerProductCore(A.A, y.xd, x.x);
+    }
 
-  //   const Scalar& scale;
-  //   const Mat3x3& A;
-  //   ADVec3& x;
-  //   ADVec3& y;
-  // };
+    ADScalar& scale;
+    const Mat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
 
-  // class ADMat3x3ADVecMultScale {
-  // public:
-  //   Mat3x3VecMultScale( const Scalar& scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
-  //     Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     Mat3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
-  //     Mat3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
-  //   }
-  //   void reverse(){
-  //     MatTrans3x3MultAddScaleCore(scale.value, A.A, y.xd, x.xd);
-  //     Vec3OuterProductAddScaleCore(scale.value, y.xd, x.x, A.Ad);
-  //   }
+  class ADMat3x3ADVecMultADScale {
+  public:
+    ADMat3x3ADVecMultADScale( ADScalar&scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      Mat3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      Mat3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+      Mat3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
+      Mat3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      MatTrans3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+      Vec3OuterProductAddScaleCore(scale.value, y.xd, x.x, A.Ad);
+      scale.valued += Mat3x3InnerProductCore(A.A, y.xd, x.x);
+    }
 
-  //   const Scalar& scale;
-  //   ADMat3x3& A;
-  //   ADVec3& x;
-  //   ADVec3& y;
-  // };
+    ADScalar& scale;
+    ADMat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
 
   /*
     Transpose matrix-vector product
   */
-  // class MatTrans3x3VecMult {
-  // public:
-  //   MatTrans3x3VecMult( const Mat3x3& A, const Vec3& x, Vec3& y ){
-  //     MatTrans3x3VecMultCore(A.A, x.x, y.x);
-  //   }
-  // };
+  class MatTrans3x3VecMultScale {
+  public:
+    MatTrans3x3VecMultScale( const Scalar& scale, const Mat3x3& A, const Vec3& x, Vec3& y ){
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+  };
 
-  // class ADMatTrans3x3VecMult {
-  // public:
-  //   MatTrans3x3VecMult( ADMat3x3& A, const Vec3& x, ADVec3& y ) : A(A), x(x), y(y) {
-  //     MatTrans3x3VecMultCore(A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     MatTrans3x3VecMultCore(A.Ad, x.x, y.xd);
-  //   }
-  //   void reverse(){
-  //     Vec3OuterProductAddCore(x.x, y.xd, A.Ad);
-  //   }
+  class ADMatTrans3x3VecMultScale {
+  public:
+    ADMatTrans3x3VecMultScale( const Scalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+    }
+    void reverse(){
+      Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
+    }
 
-  //   ADMat3x3& A;
-  //   const Vec& x;
-  //   ADVec& y;
-  // };
+    const Scalar& scale;
+    ADMat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+  };
 
-  // class MatTrans3x3ADVecMult {
-  // public:
-  //   MatTrans3x3VecMult( const Mat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
-  //     MatTrans3x3VecMultCore(A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     MatTrans3x3VecMultAddCore(A.A, x.xd, y.xd);
-  //   }
-  //   void reverse(){
-  //     MatTrans3x3MultAddCore(A.A, y.xd, x.xd);
-  //   }
+  class MatTrans3x3ADVecMultScale {
+  public:
+    MatTrans3x3ADVecMultScale( const Scalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+    }
 
-  //   const Mat3x3& A;
-  //   ADVec3& x;
-  //   ADVec3& y;
-  // };
+    const Scalar& scale;
+    const Mat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
 
-  // class ADMatTrans3x3ADVecMult {
-  // public:
-  //   MatTrans3x3VecMult( ADMat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
-  //     MatTrans3x3VecMultCore(A.A, x.x, y.x);
-  //   }
-  //   void forward(){
-  //     MatTrans3x3VecMultCore(A.Ad, x.x, y.xd);
-  //     MatTrans3x3VecMultAddCore(A.A, x.xd, y.xd);
-  //   }
-  //   void reverse(){
-  //     MatTrans3x3MultAddCore(A.A, y.xd, x.xd);
-  //     Vec3OuterProductAddCore(x.x, y.xd, A.Ad);
-  //   }
+  class ADMatTrans3x3ADVecMultScale {
+  public:
+    ADMatTrans3x3ADVecMultScale( const Scalar& scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+      MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+      Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
+    }
 
-  //   ADMat3x3& A;
-  //   ADVec3& x;
-  //   ADVec3& y;
-  // };
+    const Scalar& scale;
+    ADMat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
+
+  class MatTrans3x3VecMultADScale {
+  public:
+    MatTrans3x3VecMultADScale( ADScalar& scale, const Mat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+
+    ADScalar& scale;
+    const Mat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+  };
+
+  class ADMatTrans3x3VecMultADScale {
+  public:
+    ADMatTrans3x3VecMultADScale( ADScalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+      MatTrans3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
+      scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+
+    ADScalar& scale;
+    ADMat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+  };
+
+  class MatTrans3x3ADVecMultADScale {
+  public:
+    MatTrans3x3ADVecMultADScale( ADScalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.xd, y.xd);
+      MatTrans3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+      scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+
+    ADScalar& scale;
+    const Mat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
+
+  class ADMatTrans3x3ADVecMultADScale {
+  public:
+    ADMatTrans3x3ADVecMultADScale( ADScalar& scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
+      MatTrans3x3VecMultScaleCore(scale.value, A.A, x.x, y.x);
+    }
+    void forward(){
+      MatTrans3x3VecMultScaleCore(scale.value, A.Ad, x.x, y.xd);
+      MatTrans3x3VecMultAddScaleCore(scale.value, A.A, x.xd, y.xd);
+      MatTrans3x3VecMultAddScaleCore(scale.valued, A.A, x.x, y.xd);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(scale.value, A.A, y.xd, x.xd);
+      Vec3OuterProductAddScaleCore(scale.value, x.x, y.xd, A.Ad);
+      scale.valued += Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+
+    ADScalar& scale;
+    ADMat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+  };
 
   /*
-    Inner products
+    Inner products alpha = x^{T} * A * y
   */
+  class Mat3x3VecVecInnerProduct {
+  public:
+    Mat3x3VecVecInnerProduct( const Mat3x3& A, const Vec3& x, const Vec3& y, Scalar& alpha ){
+      alpha.value = Mat3x3InnerProductCore(A.A, x.x, y.x);
+    }
+  };
 
+  class ADMat3x3VecVecInnerProduct {
+  public:
+    ADMat3x3VecVecInnerProduct( ADMat3x3& A, const Vec3& x, const Vec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
+      alpha.value = Mat3x3InnerProductCore(A.A, x.x, y.x);
+    }
+    void forward(){
+      alpha.valued = Mat3x3InnerProductCore(A.Ad, x.x, y.x);
+    }
+    void reverse(){
+      Vec3OuterProductAddScaleCore(alpha.valued, x.x, y.x, A.Ad);
+    }
+
+    ADMat3x3& A;
+    const Vec3& x;
+    const Vec3& y;
+    ADScalar& alpha;
+  };
+
+  class ADMat3x3VecADVecInnerProduct {
+  public:
+    ADMat3x3VecADVecInnerProduct( ADMat3x3& A, const Vec3& x, ADVec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
+      alpha.value = Mat3x3InnerProductCore(A.A, x.x, y.x);
+    }
+    void forward(){
+      alpha.valued =
+        Mat3x3InnerProductCore(A.Ad, x.x, y.x) +
+        Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+    void reverse(){
+      MatTrans3x3VecMultAddScaleCore(alpha.valued, A.A, x.x, y.xd);
+      Vec3OuterProductAddScaleCore(alpha.valued, x.x, y.x, A.Ad);
+    }
+
+    ADMat3x3& A;
+    const Vec3& x;
+    ADVec3& y;
+    ADScalar& alpha;
+  };
+
+  class ADMat3x3ADVecVecInnerProduct {
+  public:
+    ADMat3x3ADVecVecInnerProduct( ADMat3x3& A, ADVec3& x, const Vec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
+      alpha.value = Mat3x3InnerProductCore(A.A, x.x, y.x);
+    }
+    void forward(){
+      alpha.valued =
+        Mat3x3InnerProductCore(A.Ad, x.x, y.x) +
+        Mat3x3InnerProductCore(A.A, x.xd, y.x);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(alpha.valued, A.A, y.x, x.xd);
+      Vec3OuterProductAddScaleCore(alpha.valued, x.x, y.x, A.Ad);
+    }
+
+    ADMat3x3& A;
+    ADVec3& x;
+    const Vec3& y;
+    ADScalar& alpha;
+  };
+
+  class ADMat3x3ADVecADVecInnerProduct {
+  public:
+    ADMat3x3ADVecADVecInnerProduct( ADMat3x3& A, ADVec3& x, ADVec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
+      alpha.value = Mat3x3InnerProductCore(A.A, x.x, y.x);
+    }
+    void forward(){
+      alpha.valued =
+        Mat3x3InnerProductCore(A.Ad, x.x, y.x) +
+        Mat3x3InnerProductCore(A.A, x.xd, y.x) +
+        Mat3x3InnerProductCore(A.A, x.x, y.xd);
+    }
+    void reverse(){
+      Mat3x3VecMultAddScaleCore(alpha.valued, A.A, y.x, x.xd);
+      MatTrans3x3VecMultAddScaleCore(alpha.valued, A.A, x.x, y.xd);
+      Vec3OuterProductAddScaleCore(alpha.valued, x.x, y.x, A.Ad);
+    }
+
+    ADMat3x3& A;
+    ADVec3& x;
+    ADVec3& y;
+    ADScalar& alpha;
+  };
 
 } // namespace AD
 

@@ -773,19 +773,23 @@ TacsScalar test_beam_scalar( const TacsScalar X0xi_data[],
   // Compute s0, sz1 and sz2
   Scalar s0, sz1, sz2;
   Vec3 e1(1.0, 0.0, 0.0);
-  Mat3x3InnerProduct inners0(XdinvT, e1, e1, s0);
-  Mat3x3InnerProduct innersz1(Xdinv, e1, n1xi, sz1);
-  Mat3x3InnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+  Mat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+  Mat3x3VecVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+  Mat3x3VecVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
 
   // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
   Vec3 d1t, d1x;
   Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d1xi, d1t);
-  MatTrans3x3MultScale matmultd1x(s0, T, d1t, d1x);
+  MatTrans3x3VecMultScale matmultd1x(s0, T, d1t, d1x);
 
   // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
   Vec3 d2t, d2x;
   Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d2xi, d2t);
-  MatTrans3x3MultScale matmultd2x(s0, T, d2t, d2x);
+  MatTrans3x3VecMultScale matmultd2x(s0, T, d2t, d2x);
+
+  // Compute the Green strain
+  Symm3x3 e0x;
+  Mat3x3GreenStrain strain0(u0x, e0x);
 
   // This isn't really the energy, but is okay for testing..
   Scalar product;
@@ -880,193 +884,181 @@ TacsScalar test_beam_forward( const TacsScalar X0xi_data[],
   multu0x.forward();
 
   // Compute s0, sz1 and sz2
-  Scalar s0, sz1, sz2;
+  ADScalar s0, sz1, sz2;
   Vec3 e1(1.0, 0.0, 0.0);
-  ADMat3x3InnerProduct inners0(XdinvT, e1, e1, s0);
+  ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
   inners0.forward();
-  Mat3x3InnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+  ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
   innersz1.forward();
-  Mat3x3InnerProduct innersz2(Xdinv, e1, n2xi, sz2);
+  ADMat3x3VecADVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
   innersz2.forward();
 
   // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
-  Vec3 d1t, d1x;
-  Vec3Axpy axpyd1t(-1.0, sz1, u0xi, d1xi, d1t);
+  ADVec3 d1t, d1x;
+  Vec3VecADScalarAxpy axpyd1t(-1.0, sz1, u0xi, d1xi, d1t);
   axpyd1t.forward();
-  MatTrans3x3MultScale matmultd1x(s0, T, d1t, d1x);
+  ADMatTrans3x3ADVecMultADScale matmultd1x(s0, T, d1t, d1x);
   matmultd1x.forward();
 
   // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
-  Vec3 d2t, d2x;
-  Vec3Axpy axpyd2t(-1.0, sz2, u0xi, d2xi, d2t);
+  ADVec3 d2t, d2x;
+  Vec3VecADScalarAxpy axpyd2t(-1.0, sz2, u0xi, d2xi, d2t);
   axpyd2t.forward();
-  MatTrans3x3MultScale matmultd2x(s0, T, d2t, d2x);
+  ADMatTrans3x3ADVecMultADScale matmultd2x(s0, T, d2t, d2x);
   matmultd2x.forward();
 
+  // Compute the Green strain
+  ADSymm3x3 e0x;
+  ADMat3x3GreenStrain strain0(u0x, e0x);
+  strain0.forward();
+
   // This isn't really the energy, but is okay for testing..
-  Scalar product;
-  Vec3Dot dotd1d2(d1x, d2x, product);
+  ADScalar product;
+  ADVec3Dot dotd1d2(d1x, d2x, product);
   dotd1d2.forward();
-  Scalar energy;
-  Symm3x3SymmMultTraceScale trace(product, e0x, e0x, energy);
+  ADScalar energy;
+  ADSymm3x3ADSymmMultTraceADScale trace(product, e0x, e0x, energy);
   trace.forward();
 
   return energy.valued;
 }
 
-// TacsScalar test_beam_reverse( const TacsScalar X0xi_data[],
-//                               const TacsScalar X0xi_ddata[],
-//                               const TacsScalar axis_data[],
-//                               const TacsScalar axis_ddata[],
-//                               const TacsScalar n1_data[],
-//                               const TacsScalar n1_ddata[],
-//                               const TacsScalar n1xi_data[],
-//                               const TacsScalar n1xi_ddata[],
-//                               const TacsScalar n2_data[],
-//                               const TacsScalar n2_ddata[],
-//                               const TacsScalar n2xi_data[],
-//                               const TacsScalar n2xi_ddata[],
-//                               const TacsScalar u0xi_data[],
-//                               const TacsScalar d1_data[],
-//                               const TacsScalar d1xi_data[],
-//                               const TacsScalar d2_data[],
-//                               const TacsScalar d2xi_data[] ){
-//   ADVec3 X0xi(X0xi_data);
-//   ADVec3 axis(axis_data);
-//   ADVec3 n1(n1_data), n1xi(n1xi_data);
-//   ADVec3 n2(n2_data), n2xi(n2xi_data);
+TacsScalar test_beam_reverse( const TacsScalar X0xi_data[],
+                              const TacsScalar X0xi_ddata[],
+                              const TacsScalar axis_data[],
+                              const TacsScalar axis_ddata[],
+                              const TacsScalar n1_data[],
+                              const TacsScalar n1_ddata[],
+                              const TacsScalar n1xi_data[],
+                              const TacsScalar n1xi_ddata[],
+                              const TacsScalar n2_data[],
+                              const TacsScalar n2_ddata[],
+                              const TacsScalar n2xi_data[],
+                              const TacsScalar n2xi_ddata[],
+                              const TacsScalar u0xi_data[],
+                              const TacsScalar d1_data[],
+                              const TacsScalar d1xi_data[],
+                              const TacsScalar d2_data[],
+                              const TacsScalar d2xi_data[] ){
+  ADVec3 X0xi(X0xi_data);
+  ADVec3 axis(axis_data);
+  ADVec3 n1(n1_data), n1xi(n1xi_data);
+  ADVec3 n2(n2_data), n2xi(n2xi_data);
 
-//   Vec3 u0xi(u0xi_data);
-//   Vec3 d1(d1_data), d1xi(d1xi_data);
-//   Vec3 d2(d2_data), d2xi(d2xi_data);
+  Vec3 u0xi(u0xi_data);
+  Vec3 d1(d1_data), d1xi(d1xi_data);
+  Vec3 d2(d2_data), d2xi(d2xi_data);
 
-//   // Compute the transformation to the local coordiantes.
-//   // Normalize the first direction.
-//   ADVec3 t1;
-//   ADVec3Normalize normalizet1(X0xi, t1);
 
-//   // t2_dir = axis - dot(t1, axis) * t1
-//   ADVec3 t2_dir;
-//   ADScalar dot;
-//   ADVec3Dot dott1(t1, axis, dot);
-//   ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
+  // Compute the transformation to the local coordiantes.
+  // Normalize the first direction.
+  ADVec3 t1;
+  ADVec3Normalize normalizet1(X0xi, t1);
 
-//   // Compute the n1 direction
-//   ADVec3 t2;
-//   ADVec3Normalize normalizet2(t2_dir, t2);
+  // t2_dir = axis - dot(t1, axis) * t1
+  ADVec3 t2_dir;
+  ADScalar dot;
+  ADVec3Dot dott1(t1, axis, dot);
+  ADVec3Axpy axpy(-1.0, dot, t1, axis, t2_dir);
 
-//   // Compute the n2 direction
-//   ADVec3 t3;
-//   ADVec3CrossProduct cross(t1, t2, t3);
+  // Compute the n1 direction
+  ADVec3 t2;
+  ADVec3Normalize normalizet2(t2_dir, t2);
 
-//   // Assemble the referece frame
-//   ADMat3x3 T;
-//   ADMat3x3FromThreeADVec3 assembleT(t1, t2, t3, T);
+  // Compute the n2 direction
+  ADVec3 t3;
+  ADVec3CrossProduct cross(t1, t2, t3);
 
-//   // Compute the inverse
-//   ADMat3x3 Xd, Xdinv;
-//   ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
-//   ADMat3x3Inverse invXd(Xd, Xdinv);
+  // Assemble the referece frame
+  ADMat3x3 T;
+  ADMat3x3FromThreeADVec3 assembleT(t1, t2, t3, T);
 
-//   // Compute the determinant of the transform
-//   ADScalar detXd;
-//   ADMat3x3Det computedetXd(Xd, detXd);
+  // Compute the inverse
+  ADMat3x3 Xd, Xdinv;
+  ADMat3x3FromThreeADVec3 assembleXd(X0xi, n1, n2, Xd);
+  ADMat3x3Inverse invXd(Xd, Xdinv);
 
-//   // Compute XdinvT = Xdinv * T
-//   ADMat3x3 XdinvT;
-//   ADMat3x3ADMatMult multXinvT(Xdinv, T, XdinvT);
+  // Compute the determinant of the transform
+  ADScalar detXd;
+  ADMat3x3Det computedetXd(Xd, detXd);
 
-//   // Assemble the matrix Xdz1 = [n1,xi | 0 | 0] and Xdz2 = [n2,xi | 0 | 0 ]
-//   ADMat3x3 Xdz1, Xdz2;
-//   ADMat3x3FromADVec3 assembleXdz1(n1xi, Xdz1);
-//   ADMat3x3FromADVec3 assembleXdz2(n2xi, Xdz2);
+  // Compute XdinvT = Xdinv * T
+  ADMat3x3 XdinvT;
+  ADMat3x3ADMatMult multXinvT(Xdinv, T, XdinvT);
 
-//   // Compute Xdinvz1T = - Xdinv * Xdz1 * Xdinv * T
-//   ADMat3x3 Xdinvz1T, Xdz1XdinvT;
-//   ADMat3x3ADMatMult multXdz1XdinvT(Xdz1, XdinvT, Xdz1XdinvT);
-//   ADMat3x3ADMatMult multXdinvz1T(-1.0, Xdinv, Xdz1XdinvT, Xdinvz1T);
+  // Assemble u0d
+  Mat3x3 u0d;
+  Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
 
-//   // Compute Xdinvz2T = - Xdinv * Xdz2 * Xdinv * T
-//   ADMat3x3 Xdinvz2T, Xdz2XdinvT;
-//   ADMat3x3ADMatMult multXdz2XdinvT(Xdz2, XdinvT, Xdz2XdinvT);
-//   ADMat3x3ADMatMult multXdinvz2T(-1.0, Xdinv, Xdz2XdinvT, Xdinvz2T);
+  // Compute u0x = T^{T} * u0d * XdinvT
+  ADMat3x3 u0dXdinvT, u0x;
+  Mat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
+  ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
 
-//   // Assemble u0d, u1d and u2d
-//   Mat3x3 u0d, u1d, u2d;
-//   Mat3x3FromThreeVec3 assembleu0d(u0xi, d1, d2, u0d);
-//   Mat3x3FromVec3 assembleu1d(d1xi, u1d);
-//   Mat3x3FromVec3 assembleu2d(d2xi, u2d);
+  // Compute s0, sz1 and sz2
+  ADScalar s0, sz1, sz2;
+  Vec3 e1(1.0, 0.0, 0.0);
+  ADMat3x3VecVecInnerProduct inners0(XdinvT, e1, e1, s0);
+  ADMat3x3VecADVecInnerProduct innersz1(Xdinv, e1, n1xi, sz1);
+  ADMat3x3VecADVecInnerProduct innersz2(Xdinv, e1, n2xi, sz2);
 
-//   // Compute u0x = T^{T} * u0d * XdinvT
-//   ADMat3x3 u0dXdinvT, u0x;
-//   Mat3x3ADMatMult multu0d(u0d, XdinvT, u0dXdinvT);
-//   ADMatTrans3x3ADMatMult multu0x(T, u0dXdinvT, u0x);
+  // Compute d1x = s0 * T^{T} * (d1xi - sz1 * u0xi)
+  ADVec3 d1t, d1x;
+  Vec3VecADScalarAxpy axpyd1t(-1.0, sz1, u0xi, d1xi, d1t);
+  ADMatTrans3x3ADVecMultADScale matmultd1x(s0, T, d1t, d1x);
 
-//   // Compute u1x = T^{T} * (u1d * XdinvT + u0d * XdinvzT)
-//   ADMat3x3 u1dXdinvT, u1x;
-//   Mat3x3ADMatMult multu1d(u1d, XdinvT, u1dXdinvT);
-//   Mat3x3ADMatMultAdd multu1dadd(u0d, Xdinvz1T, u1dXdinvT);
-//   ADMatTrans3x3ADMatMult multu1x(T, u1dXdinvT, u1x);
+  // Compute d2x = s0 * T^{T} * (d2xi - sz2 * u0xi)
+  ADVec3 d2t, d2x;
+  Vec3VecADScalarAxpy axpyd2t(-1.0, sz2, u0xi, d2xi, d2t);
+  ADMatTrans3x3ADVecMultADScale matmultd2x(s0, T, d2t, d2x);
 
-//   // Compute u2x = T^{T} * (u2d * XdinvT + u0d * XdinvzT)
-//   ADMat3x3 u2dXdinvT, u2x;
-//   Mat3x3ADMatMult multu2d(u2d, XdinvT, u2dXdinvT);
-//   Mat3x3ADMatMultAdd multu2dadd(u0d, Xdinvz2T, u2dXdinvT);
-//   ADMatTrans3x3ADMatMult multu2x(T, u2dXdinvT, u2x);
+  // Compute the Green strain
+  ADSymm3x3 e0x;
+  ADMat3x3GreenStrain strain0(u0x, e0x);
 
-//   // Compute the strain
-//   ADSymm3x3 e0x, e1x, e2x;
-//   ADMat3x3GreenStrain strain0(u0x, e0x);
-//   ADMat3x3GreenStrain strain1(u1x, e1x);
-//   ADMat3x3GreenStrain strain2(u2x, e2x);
+  // This isn't really the energy, but is okay for testing..
+  ADScalar product;
+  ADVec3Dot dotd1d2(d1x, d2x, product);
+  ADScalar energy;
+  ADSymm3x3ADSymmMultTraceADScale trace(product, e0x, e0x, energy);
 
-//   // This isn't really the energy, but is okay for testing..
-//   ADScalar energy;
-//   ADSymm3x3ADSymmMultTraceADScale trace(detXd, e0x, e2x, energy);
+  energy.valued = 1.0;
 
-//   energy.valued = 1.0;
+  trace.reverse();
+  dotd1d2.reverse();
+  strain0.reverse();
+  matmultd2x.reverse();
+  axpyd2t.reverse();
+  matmultd1x.reverse();
+  axpyd1t.reverse();
+  innersz2.reverse();
+  innersz1.reverse();
+  inners0.reverse();
+  multu0x.reverse();
+  multu0d.reverse();
+  multXinvT.reverse();
+  computedetXd.reverse();
+  invXd.reverse();
+  assembleXd.reverse();
+  assembleT.reverse();
+  cross.reverse();
+  normalizet2.reverse();
+  axpy.reverse();
+  dott1.reverse();
+  normalizet1.reverse();
 
-//   trace.reverse();
-//   strain2.reverse();
-//   strain1.reverse();
-//   strain0.reverse();
-//   multu2x.reverse();
-//   multu2dadd.reverse();
-//   multu2d.reverse();
-//   multu1x.reverse();
-//   multu1dadd.reverse();
-//   multu1d.reverse();
-//   multu0x.reverse();
-//   multu0d.reverse();
-//   multXdinvz2T.reverse();
-//   multXdz2XdinvT.reverse();
-//   multXdinvz1T.reverse();
-//   multXdz1XdinvT.reverse();
-//   assembleXdz2.reverse();
-//   assembleXdz1.reverse();
-//   multXinvT.reverse();
-//   computedetXd.reverse();
-//   invXd.reverse();
-//   assembleXd.reverse();
-//   assembleT.reverse();
-//   cross.reverse();
-//   normalizet2.reverse();
-//   axpy.reverse();
-//   dott1.reverse();
-//   normalizet1.reverse();
+  TacsScalar deriv = 0.0;
+  for ( int i = 0; i < 3; i++ ){
+    deriv += X0xi.xd[i] * X0xi_ddata[i];
+    deriv += axis.xd[i] * axis_ddata[i];
+    deriv += n1.xd[i] * n1_ddata[i];
+    deriv += n1xi.xd[i] * n1xi_ddata[i];
+    deriv += n2.xd[i] * n2_ddata[i];
+    deriv += n2xi.xd[i] * n2xi_ddata[i];
+  }
 
-//   TacsScalar deriv = 0.0;
-//   for ( int i = 0; i < 3; i++ ){
-//     deriv += X0xi.xd[i] * X0xi_ddata[i];
-//     deriv += axis.xd[i] * axis_ddata[i];
-//     deriv += n1.xd[i] * n1_ddata[i];
-//     deriv += n1xi.xd[i] * n1xi_ddata[i];
-//     deriv += n2.xd[i] * n2_ddata[i];
-//     deriv += n2xi.xd[i] * n2xi_ddata[i];
-//   }
-
-//   return deriv;
-// }
+  return deriv;
+}
 
 void test_beam(){
   TacsScalar X0xi[3], axis[3], n1[3], n1xi[3], n2[3], n2xi[3];
@@ -1088,6 +1080,7 @@ void test_beam(){
   generate_random_array(3, n2d);
   generate_random_array(3, n2xid);
 
+  generate_random_array(3, u0xi);
   generate_random_array(3, d1);
   generate_random_array(3, d1xi);
   generate_random_array(3, d2);

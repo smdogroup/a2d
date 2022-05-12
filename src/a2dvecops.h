@@ -9,6 +9,7 @@ namespace A2D {
   /*
     Vec3Norm
   */
+  template<typename T>
   class Vec3Norm {
   public:
     Vec3Norm( const Vec3& x, Scalar& alpha ){
@@ -16,6 +17,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADVec3Norm {
   public:
     ADVec3Norm( ADVec3& x, ADScalar& alpha ) : x(x), alpha(alpha) {
@@ -42,6 +44,7 @@ namespace A2D {
   /*
     Vec3Scale
   */
+  template<typename T>
   class Vec3Scale {
   public:
     Vec3Scale( const Scalar& alpha, Vec3& x, Vec3& v ){
@@ -49,6 +52,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADVec3Scale {
   public:
     ADVec3Scale( ADScalar& alpha, ADVec3& x, ADVec3& v ) : alpha(alpha), x(x), v(v) {
@@ -74,6 +78,7 @@ namespace A2D {
   /*
     Vec3Axpy
   */
+  template<typename T>
   class Vec3Axpy {
   public:
     Vec3Axpy( const Scalar& alpha, const Vec3& x, const Vec3& y, Vec3& v ){
@@ -84,6 +89,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class Vec3VecADScalarAxpy {
   public:
     Vec3VecADScalarAxpy( ADScalar& alpha, const Vec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
@@ -108,6 +114,7 @@ namespace A2D {
     ADVec3& v;
   };
 
+  template<typename T>
   class ADVec3VecADScalarAxpy {
   public:
     ADVec3VecADScalarAxpy( ADScalar& alpha, ADVec3& x, const Vec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
@@ -135,6 +142,7 @@ namespace A2D {
     ADVec3& v;
   };
 
+  template<typename T>
   class ADVec3ADVecScalarAxpy {
   public:
     ADVec3ADVecScalarAxpy( const Scalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
@@ -164,6 +172,7 @@ namespace A2D {
     ADVec3& v;
   };
 
+  template<typename T>
   class ADVec3Axpy {
   public:
     ADVec3Axpy( ADScalar& alpha, ADVec3& x, ADVec3& y, ADVec3& v ) : scale(1.0), alpha(alpha), x(x), y(y), v(v) {
@@ -197,6 +206,7 @@ namespace A2D {
   /*
     Vec3Dot
   */
+  template<typename T>
   class Vec3Dot {
   public:
     Vec3Dot( const Vec3& x, const Vec3& y, Scalar& alpha ){
@@ -207,6 +217,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class Vec3ADVecDot {
   public:
     Vec3ADVecDot( const Vec3& x, ADVec3& y, ADScalar& alpha ) : scale(1.0), x(x), y(y), alpha(alpha) {
@@ -231,6 +242,7 @@ namespace A2D {
     ADScalar& alpha;
   };
 
+  template<typename T>
   class ADVec3Dot {
   public:
     ADVec3Dot( ADVec3& x, ADVec3& y, ADScalar& alpha ) : scale(1.0), x(x), y(y), alpha(alpha) {
@@ -262,6 +274,7 @@ namespace A2D {
   /*
     Vec3CrossProduct
   */
+  template<typename T>
   class Vec3CrossProduct {
   public:
     Vec3CrossProduct( const Vec3& x, const Vec3& y, Vec3& v ){
@@ -269,6 +282,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADVec3CrossProduct {
   public:
     ADVec3CrossProduct( ADVec3& x, ADVec3& y, ADVec3& v ) : x(x), y(y), v(v) {
@@ -291,6 +305,7 @@ namespace A2D {
   /*
     Vec3 normalize
   */
+  template<typename T>
   class Vec3Normalize {
   public:
     Vec3Normalize( const Vec3& x, Vec3& y ){
@@ -304,6 +319,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADVec3Normalize {
   public:
     ADVec3Normalize( ADVec3& x, ADVec3& y ) : x(x), y(y) {
@@ -338,6 +354,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class Mat3x2ToVec3 {
   public:
     Mat3x2ToVec3( const Mat3x2& A, Vec3& x, Vec3& y ){
@@ -351,6 +368,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMat3x2ToADVec3 {
   public:
     ADMat3x2ToADVec3( ADMat3x2& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -389,6 +407,7 @@ namespace A2D {
   /*
     Matrix-vector product
   */
+  template<typename T>
   class Mat3x3VecMult {
   public:
     Mat3x3VecMult( const Mat3x3& A, const Vec3& x, Vec3& y ){
@@ -396,6 +415,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMat3x3VecMult {
   public:
     ADMat3x3VecMult( ADMat3x3& A, const Vec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -413,6 +433,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class Mat3x3ADVecMult {
   public:
     Mat3x3ADVecMult( const Mat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -430,6 +451,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMat3x3ADVecMult {
   public:
     ADMat3x3ADVecMult( ADMat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -452,6 +474,7 @@ namespace A2D {
   /*
     Transpose matrix-vector product
   */
+  template<typename T>
   class MatTrans3x3VecMult {
   public:
     MatTrans3x3VecMult( const Mat3x3& A, const Vec3& x, Vec3& y ){
@@ -459,6 +482,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMatTrans3x3VecMult {
   public:
     ADMatTrans3x3VecMult( ADMat3x3& A, const Vec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -476,6 +500,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class MatTrans3x3ADVecMult {
   public:
     MatTrans3x3ADVecMult( const Mat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -493,6 +518,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMatTrans3x3ADVecMult {
   public:
     ADMatTrans3x3ADVecMult( ADMat3x3& A, ADVec3& x, ADVec3& y ) : A(A), x(x), y(y) {
@@ -515,6 +541,7 @@ namespace A2D {
   /*
     Matrix-vector product
   */
+  template<typename T>
   class Mat3x3VecMultScale {
   public:
     Mat3x3VecMultScale( const Scalar& scale, const Mat3x3& A, const Vec3& x, Vec3& y ){
@@ -522,6 +549,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMat3x3VecMultScale {
   public:
     ADMat3x3VecMultScale( const Scalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -540,6 +568,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class Mat3x3ADVecMultScale {
   public:
     Mat3x3ADVecMultScale( const Scalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -558,6 +587,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMat3x3ADVecMultScale {
   public:
     ADMat3x3ADVecMultScale( const Scalar&scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -578,6 +608,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class Mat3x3VecMultADScale {
   public:
     Mat3x3VecMultADScale( ADScalar& scale, const Mat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -596,6 +627,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMat3x3VecMultADScale {
   public:
     ADMat3x3VecMultADScale( ADScalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -616,6 +648,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class Mat3x3ADVecMultADScale {
   public:
     Mat3x3ADVecMultADScale( ADScalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -636,6 +669,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMat3x3ADVecMultADScale {
   public:
     ADMat3x3ADVecMultADScale( ADScalar&scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -661,6 +695,7 @@ namespace A2D {
   /*
     Transpose matrix-vector product
   */
+  template<typename T>
   class MatTrans3x3VecMultScale {
   public:
     MatTrans3x3VecMultScale( const Scalar& scale, const Mat3x3& A, const Vec3& x, Vec3& y ){
@@ -668,6 +703,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMatTrans3x3VecMultScale {
   public:
     ADMatTrans3x3VecMultScale( const Scalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -686,6 +722,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class MatTrans3x3ADVecMultScale {
   public:
     MatTrans3x3ADVecMultScale( const Scalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -704,6 +741,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMatTrans3x3ADVecMultScale {
   public:
     ADMatTrans3x3ADVecMultScale( const Scalar& scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -724,6 +762,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class MatTrans3x3VecMultADScale {
   public:
     MatTrans3x3VecMultADScale( ADScalar& scale, const Mat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -742,6 +781,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMatTrans3x3VecMultADScale {
   public:
     ADMatTrans3x3VecMultADScale( ADScalar& scale, ADMat3x3& A, const Vec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -762,6 +802,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class MatTrans3x3ADVecMultADScale {
   public:
     MatTrans3x3ADVecMultADScale( ADScalar& scale, const Mat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -782,6 +823,7 @@ namespace A2D {
     ADVec3& y;
   };
 
+  template<typename T>
   class ADMatTrans3x3ADVecMultADScale {
   public:
     ADMatTrans3x3ADVecMultADScale( ADScalar& scale, ADMat3x3& A, ADVec3& x, ADVec3& y ) : scale(scale), A(A), x(x), y(y) {
@@ -807,6 +849,7 @@ namespace A2D {
   /*
     Inner products alpha = x^{T} * A * y
   */
+  template<typename T>
   class Mat3x3VecVecInnerProduct {
   public:
     Mat3x3VecVecInnerProduct( const Mat3x3& A, const Vec3& x, const Vec3& y, Scalar& alpha ){
@@ -814,6 +857,7 @@ namespace A2D {
     }
   };
 
+  template<typename T>
   class ADMat3x3VecVecInnerProduct {
   public:
     ADMat3x3VecVecInnerProduct( ADMat3x3& A, const Vec3& x, const Vec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
@@ -832,6 +876,7 @@ namespace A2D {
     ADScalar& alpha;
   };
 
+  template<typename T>
   class ADMat3x3VecADVecInnerProduct {
   public:
     ADMat3x3VecADVecInnerProduct( ADMat3x3& A, const Vec3& x, ADVec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
@@ -853,6 +898,7 @@ namespace A2D {
     ADScalar& alpha;
   };
 
+  template<typename T>
   class ADMat3x3ADVecVecInnerProduct {
   public:
     ADMat3x3ADVecVecInnerProduct( ADMat3x3& A, ADVec3& x, const Vec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {
@@ -874,6 +920,7 @@ namespace A2D {
     ADScalar& alpha;
   };
 
+  template<typename T>
   class ADMat3x3ADVecADVecInnerProduct {
   public:
     ADMat3x3ADVecADVecInnerProduct( ADMat3x3& A, ADVec3& x, ADVec3& y, ADScalar& alpha ) : A(A), x(x), y(y), alpha(alpha) {

@@ -9,6 +9,7 @@ namespace A2D {
 /*
   Matrix trace operation
 */
+template<typename T>
 class Symm3x3Trace {
 public:
   Symm3x3Trace( const Symm3x3& A, Scalar& alpha ){
@@ -16,6 +17,7 @@ public:
   }
 };
 
+template<typename T>
 class ADSymm3x3Trace {
 public:
   ADSymm3x3Trace( ADSymm3x3& A, ADScalar& alpha ) : A(A), alpha(alpha) {
@@ -34,6 +36,7 @@ public:
   ADScalar& alpha;
 };
 
+template<typename T>
 class Mat3x3Trace {
 public:
   Mat3x3Trace( const Mat3x3& A, Scalar& alpha ){
@@ -41,6 +44,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3Trace {
 public:
   ADMat3x3Trace( ADMat3x3& A, ADScalar& alpha ) : A(A), alpha(alpha) {
@@ -62,6 +66,7 @@ public:
 /*
   Matrix determinant operations
 */
+template<typename T>
 class Symm3x3Det {
 public:
   Symm3x3Det( const Symm3x3& A, Scalar& alpha ){
@@ -69,6 +74,7 @@ public:
   }
 };
 
+template<typename T>
 class ADSymm3x3Det {
 public:
   ADSymm3x3Det( ADSymm3x3& A, ADScalar& alpha ) : A(A), alpha(alpha) {
@@ -84,6 +90,7 @@ public:
   ADScalar& alpha;
 };
 
+template<typename T>
 class Mat3x3Det {
 public:
   Mat3x3Det( const Mat3x3& A, Scalar& alpha ){
@@ -94,6 +101,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3Det {
 public:
   ADMat3x3Det( ADMat3x3& A, ADScalar& alpha ) : scale(1.0), A(A), alpha(alpha) {
@@ -117,6 +125,7 @@ public:
 /*
   Matrix inverse
 */
+template<typename T>
 class Mat3x3Inverse {
 public:
   Mat3x3Inverse( const Mat3x3& A, Mat3x3& B ){
@@ -124,6 +133,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3Inverse {
 public:
   ADMat3x3Inverse( ADMat3x3& A, ADMat3x3 &B ) : A(A), B(B) {
@@ -143,6 +153,7 @@ public:
 /*
   Assemble 3x3 matrices from 3x2 matrices and vectors
 */
+template<typename T>
 class Mat3x3FromMat3x2 {
 public:
   Mat3x3FromMat3x2( const Mat3x2& A, Mat3x3& B ){
@@ -160,6 +171,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3FromADMat3x2 {
 public:
   ADMat3x3FromADMat3x2( ADMat3x2& A, ADMat3x3& B ) : A(A), B(B) {
@@ -203,7 +215,7 @@ public:
   ADMat3x3& B;
 };
 
-
+template<typename T>
 class Mat3x3FromMat3x2AndVec3 {
 public:
   Mat3x3FromMat3x2AndVec3( const Mat3x2& A, const Vec3& B, Mat3x3& C ){
@@ -221,6 +233,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3FromADMat3x2AndADVec3 {
 public:
   ADMat3x3FromADMat3x2AndADVec3( ADMat3x2& A, ADVec3& B, ADMat3x3& C ) : A(A), B(B), C(C) {
@@ -269,6 +282,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3FromThreeVec3 {
 public:
   Mat3x3FromThreeVec3( const Vec3&x, const Vec3& y, const Vec3&z, Mat3x3& C ){
@@ -286,6 +300,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3FromThreeADVec3 {
 public:
   ADMat3x3FromThreeADVec3( ADVec3&x, ADVec3& y, ADVec3&z, ADMat3x3& C ) :
@@ -335,6 +350,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3FromVec3 {
 public:
   Mat3x3FromVec3( const Vec3&x, Mat3x3& C ){
@@ -352,6 +368,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3FromADVec3 {
 public:
   ADMat3x3FromADVec3( ADVec3&x, ADMat3x3& C ) : x(x), C(C) {
@@ -393,6 +410,7 @@ public:
 /*
   Matrix-matrix products C = A * B
 */
+template<typename T>
 class Mat3x3MatMult {
 public:
   Mat3x3MatMult( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -403,6 +421,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3MatMult {
 public:
   ADMat3x3MatMult( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -434,6 +453,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3ADMatMult {
 public:
   Mat3x3ADMatMult( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -465,6 +485,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMat3x3ADMatMult {
 public:
   ADMat3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -500,6 +521,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3MatMultAdd {
 public:
   Mat3x3MatMultAdd( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -510,6 +532,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3MatMultAdd {
 public:
   ADMat3x3MatMultAdd( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -541,6 +564,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3ADMatMultAdd {
 public:
   Mat3x3ADMatMultAdd( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -572,6 +596,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMat3x3ADMatMultAdd {
 public:
   ADMat3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -610,6 +635,7 @@ public:
 /*
   Matrix-matrix products C = A^{T} * B
 */
+template<typename T>
 class MatTrans3x3MatMult {
 public:
   MatTrans3x3MatMult( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -651,6 +677,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3ADMatMult {
 public:
   MatTrans3x3ADMatMult( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -682,6 +709,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMatTrans3x3ADMatMult {
 public:
   ADMatTrans3x3ADMatMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -717,6 +745,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3MatMultAdd {
 public:
   MatTrans3x3MatMultAdd( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -727,6 +756,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMatTrans3x3MatMultAdd {
 public:
   ADMatTrans3x3MatMultAdd( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -758,6 +788,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3ADMatMultAdd {
 public:
   MatTrans3x3ADMatMultAdd( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -789,6 +820,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMatTrans3x3ADMatMultAdd {
 public:
   ADMatTrans3x3ADMatMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -827,6 +859,7 @@ public:
 /*
   Matrix-matrix products C = A * B^{T}
 */
+template<typename T>
 class Mat3x3MatTransMult {
 public:
   Mat3x3MatTransMult( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -837,6 +870,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3MatTransMult {
 public:
   ADMat3x3MatTransMult( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -868,6 +902,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3ADMatTransMult {
 public:
   Mat3x3ADMatTransMult( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -899,6 +934,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMat3x3ADMatTransMult {
 public:
   ADMat3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -934,6 +970,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3MatTransMultAdd {
 public:
   Mat3x3MatTransMultAdd( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -944,6 +981,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3MatTransMultAdd {
 public:
   ADMat3x3MatTransMultAdd( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -975,6 +1013,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class Mat3x3ADMatTransMultAdd {
 public:
   Mat3x3ADMatTransMultAdd( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1006,6 +1045,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMat3x3ADMatTransMultAdd {
 public:
   ADMat3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1044,6 +1084,7 @@ public:
 /*
   Matrix-matrix products C = A^{T} * B^{T}
 */
+template<typename T>
 class MatTrans3x3MatTransMult {
 public:
   MatTrans3x3MatTransMult( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -1054,6 +1095,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMatTrans3x3MatTransMult {
 public:
   ADMatTrans3x3MatTransMult( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1085,6 +1127,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3ADMatTransMult {
 public:
   MatTrans3x3ADMatTransMult( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1116,6 +1159,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMatTrans3x3ADMatTransMult {
 public:
   ADMatTrans3x3ADMatTransMult( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1151,6 +1195,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3MatTransMultAdd {
 public:
   MatTrans3x3MatTransMultAdd( const Mat3x3& A, const Mat3x3& B, Mat3x3& C ){
@@ -1161,6 +1206,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMatTrans3x3MatTransMultAdd {
 public:
   ADMatTrans3x3MatTransMultAdd( ADMat3x3& A, const Mat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1192,6 +1238,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class MatTrans3x3ADMatTransMultAdd {
 public:
   MatTrans3x3ADMatTransMultAdd( const Mat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1223,6 +1270,7 @@ public:
   ADMat3x3& C;
 };
 
+template<typename T>
 class ADMatTrans3x3ADMatTransMultAdd {
 public:
   ADMatTrans3x3ADMatTransMultAdd( ADMat3x3& A, ADMat3x3& B, ADMat3x3& C ) : scale(1.0), A(A), B(B), C(C) {
@@ -1261,6 +1309,7 @@ public:
 /*
   Linear and nonlinear strain from the displacement gradient
 */
+template<typename T>
 class Mat3x3LinearGreenStrain {
 public:
   Mat3x3LinearGreenStrain( const Mat3x3& Ux, Symm3x3& E ){
@@ -1268,6 +1317,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3LinearGreenStrain {
 public:
   ADMat3x3LinearGreenStrain( ADMat3x3& Ux, ADSymm3x3& E ) : Ux(Ux), E(E) {
@@ -1284,6 +1334,7 @@ public:
   ADSymm3x3& E;
 };
 
+template<typename T>
 class Mat3x3GreenStrain {
 public:
   Mat3x3GreenStrain( const Mat3x3& Ux, Symm3x3& E ){
@@ -1291,6 +1342,7 @@ public:
   }
 };
 
+template<typename T>
 class ADMat3x3GreenStrain {
 public:
   ADMat3x3GreenStrain( ADMat3x3& Ux, ADSymm3x3& E ) : Ux(Ux), E(E) {
@@ -1310,6 +1362,7 @@ public:
 /*
   Multiply two matrices and take their trace
 */
+template<typename T>
 class Symm3x3SymmMultTrace {
 public:
   Symm3x3SymmMultTrace( const Symm3x3& S, const Symm3x3& T, Scalar& alpha ){
@@ -1317,6 +1370,7 @@ public:
   }
 };
 
+template<typename T>
 class ADSymm3x3ADSymmMultTrace {
 public:
   ADSymm3x3ADSymmMultTrace( ADSymm3x3& S, ADSymm3x3& T, ADScalar& alpha ) : S(S), T(T), alpha(alpha) {
@@ -1336,6 +1390,7 @@ public:
   ADScalar& alpha;
 };
 
+template<typename T>
 class Symm3x3SymmMultTraceScale {
 public:
   Symm3x3SymmMultTraceScale( const Scalar& scale, const Symm3x3& S, const Symm3x3& T, Scalar& alpha ){
@@ -1343,6 +1398,7 @@ public:
   }
 };
 
+template<typename T>
 class ADSymm3x3ADSymmMultTraceScale {
 public:
   ADSymm3x3ADSymmMultTraceScale( Scalar& scale, ADSymm3x3& S, ADSymm3x3& T, ADScalar& alpha ) : scale(scale), S(S), T(T), alpha(alpha) {
@@ -1363,6 +1419,7 @@ public:
   ADScalar& alpha;
 };
 
+template<typename T>
 class ADSymm3x3ADSymmMultTraceADScale {
 public:
   ADSymm3x3ADSymmMultTraceADScale( ADScalar& scale, ADSymm3x3& S, ADSymm3x3& T, ADScalar& alpha ) : scale(scale), S(S), T(T), alpha(alpha) {
@@ -1390,6 +1447,7 @@ public:
 /*
   Isotropic constitutive relationships
 */
+template<typename T>
 class Symm3x3IsotropicConstitutive {
 public:
   Symm3x3IsotropicConstitutive( const Scalar& mu, const Scalar& lambda, const Symm3x3& E, Symm3x3& S ){
@@ -1397,6 +1455,7 @@ public:
   }
 };
 
+template<typename T>
 class ADSymm3x3IsotropicConstitutive {
 public:
   ADSymm3x3IsotropicConstitutive( const Scalar& mu, const Scalar& lambda, ADSymm3x3& E, ADSymm3x3& S ) :

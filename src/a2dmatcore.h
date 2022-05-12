@@ -684,7 +684,7 @@ namespace A2D {
                                              T Bd[] ){
     T t[9];
     Mat3x3MatMultCore(Ainv, Ad, t);
-    Mat3x3MatMultScaleCore(-1.0, t, Ainv, Bd);
+    Mat3x3MatMultScaleCore(T(-1.0), t, Ainv, Bd);
   }
 
   template<typename T>
@@ -693,15 +693,15 @@ namespace A2D {
                                              T Ad[] ){
     T t[9];
     MatTrans3x3MatMultCore(Ainv, Bd, t);
-    Mat3x3MatTransMultAddScaleCore(-1.0, t, Ainv, Ad);
+    Mat3x3MatTransMultAddScaleCore(T(-1.0), t, Ainv, Ad);
   }
 
   template<typename T>
   inline T Symm3x3MatMultTraceCore( const T S[],
-                                             const T T[] ){
+                                    const T R[] ){
     return (
-            (S[0] * T[0] + S[3] * T[3] + S[5] * T[5]) +
-            2.0 * (S[1] * T[1] + S[2] * T[2] + S[4] * T[4]));
+            (S[0] * R[0] + S[3] * R[3] + S[5] * R[5]) +
+            2.0 * (S[1] * R[1] + S[2] * R[2] + S[4] * R[4]));
   }
 
   template<typename T>

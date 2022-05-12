@@ -29,11 +29,11 @@ namespace A2D {
       value = 0.0;
       valued = 0.0;
     }
-    ADScalar( const TacsScalar& a ){
+    ADScalar( const T& a ){
       value = a;
       valued = 0.0;
     }
-    ADScalar( const TacsScalar& a, const TacsScalar &ad ){
+    ADScalar( const T& a, const T &ad ){
       value = a;
       valued = ad;
     }
@@ -57,12 +57,12 @@ namespace A2D {
         x[i] = 0.0;
       }
     }
-    Vec3( const TacsScalar vx, const TacsScalar vy, const TacsScalar vz ){
+    Vec3( const T vx, const T vy, const T vz ){
       x[0] = vx;
       x[1] = vy;
       x[2] = vz;
     }
-    Vec3( const TacsScalar a[] ){
+    Vec3( const T a[] ){
       for ( int i = 0; i < 3; i++ ){
         x[i] = a[i];
       }
@@ -73,7 +73,7 @@ namespace A2D {
       }
     }
 
-    TacsScalar x[3];
+    T x[3];
   };
 
   /*
@@ -88,19 +88,19 @@ namespace A2D {
         xd[i] = 0.0;
       }
     }
-    ADVec3( const TacsScalar vx, const TacsScalar vy, const TacsScalar vz ){
+    ADVec3( const T vx, const T vy, const T vz ){
       x[0] = vx;
       x[1] = vy;
       x[2] = vz;
       xd[0] = xd[1] = xd[2] = 0.0;
     }
-    ADVec3( const TacsScalar a[] ){
+    ADVec3( const T a[] ){
       for ( int i = 0; i < 3; i++ ){
         x[i] = a[i];
         xd[i] = 0.0;
       }
     }
-    ADVec3( const TacsScalar a[], const TacsScalar ad[] ){
+    ADVec3( const T a[], const T ad[] ){
       if (a){
         for ( int i = 0; i < 3; i++ ){
           x[i] = a[i];
@@ -143,7 +143,7 @@ namespace A2D {
         A[i] = 0.0;
       }
     }
-    Symm3x3( const TacsScalar a[] ){
+    Symm3x3( const T a[] ){
       for ( int i = 0; i < 6; i++ ){
         A[i] = a[i];
       }
@@ -169,13 +169,13 @@ namespace A2D {
         Ad[i] = 0.0;
       }
     }
-    ADSymm3x3( const TacsScalar a[] ){
+    ADSymm3x3( const T a[] ){
       for ( int i = 0; i < 6; i++ ){
         A[i] = a[i];
         Ad[i] = 0.0;
       }
     }
-    ADSymm3x3( const TacsScalar a[], const TacsScalar ad[] ){
+    ADSymm3x3( const T a[], const T ad[] ){
       if (a){
         for ( int i = 0; i < 6; i++ ){
           A[i] = a[i];
@@ -204,7 +204,7 @@ namespace A2D {
       }
     }
 
-    TacsScalar A[6], Ad[6];
+    T A[6], Ad[6];
   };
 
   /*
@@ -218,7 +218,7 @@ namespace A2D {
         A[i] = 0.0;
       }
     }
-    Mat3x2( const TacsScalar a[] ){
+    Mat3x2( const T a[] ){
       for ( int i = 0; i < 6; i++ ){
         A[i] = a[i];
       }
@@ -229,7 +229,7 @@ namespace A2D {
       }
     }
 
-    TacsScalar A[6];
+    T A[6];
   };
 
   /*
@@ -244,13 +244,13 @@ namespace A2D {
         Ad[i] = 0.0;
       }
     }
-    ADMat3x2( const TacsScalar a[] ){
+    ADMat3x2( const T a[] ){
       for ( int i = 0; i < 6; i++ ){
         A[i] = a[i];
         Ad[i] = 0.0;
       }
     }
-    ADMat3x2( const TacsScalar a[], const TacsScalar ad[] ){
+    ADMat3x2( const T a[], const T ad[] ){
       if (a){
         for ( int i = 0; i < 6; i++ ){
           A[i] = a[i];
@@ -279,8 +279,8 @@ namespace A2D {
       }
     }
 
-    TacsScalar A[6];
-    TacsScalar Ad[6];
+    T A[6];
+    T Ad[6];
   };
 
   /*
@@ -294,7 +294,7 @@ namespace A2D {
         A[i] = 0.0;
       }
     }
-    Mat3x3( const TacsScalar a[] ){
+    Mat3x3( const T a[] ){
       for ( int i = 0; i < 9; i++ ){
         A[i] = a[i];
       }
@@ -305,7 +305,7 @@ namespace A2D {
       }
     }
 
-    TacsScalar A[9];
+    T A[9];
   };
 
   /*
@@ -320,13 +320,13 @@ namespace A2D {
         Ad[i] = 0.0;
       }
     }
-    ADMat3x3( const TacsScalar a[] ){
+    ADMat3x3( const T a[] ){
       for ( int i = 0; i < 9; i++ ){
         A[i] = a[i];
         Ad[i] = 0.0;
       }
     }
-    ADMat3x3( const TacsScalar a[], const TacsScalar ad[] ){
+    ADMat3x3( const T a[], const T ad[] ){
       if (a){
         for ( int i = 0; i < 9; i++ ){
           A[i] = a[i];
@@ -355,7 +355,7 @@ namespace A2D {
       }
     }
 
-    TacsScalar A[9], Ad[9];
+    T A[9], Ad[9];
   };
 
 } // namespace AD

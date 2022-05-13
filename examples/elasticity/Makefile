@@ -1,3 +1,3 @@
 
 default:
-	clang++ -I../../src/ -std=c++11 -g -o elasticity elasticity.cpp
+	${CXX} -O2 -I../../src/ -std=c++11 -o elasticity elasticity.cpp

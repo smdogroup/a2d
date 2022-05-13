@@ -14,14 +14,14 @@ void element_scatter( ConnArray& conn,
                       NodeArray& X,
                       ElementArray& Xe ){
   // Loop over the elements
-  for ( size_t i = 0; i < conn.extent(0); i++ ){
+  for ( std::size_t i = 0; i < conn.extent(0); i++ ){
 
     // Loop over each element nodes
-    for ( size_t j = 0; j < conn.extent(1); j++ ){
-      const size_t index = conn(i, j);
+    for ( std::size_t j = 0; j < conn.extent(1); j++ ){
+      const std::size_t index = conn(i, j);
 
       // Loop over the variables
-      for ( size_t k = 0; k < X.extent(1); k++ ){
+      for ( std::size_t k = 0; k < X.extent(1); k++ ){
         Xe(i, j, k) = X(index, k);
       }
     }
@@ -55,7 +55,7 @@ public:
            class QuadPointArray>
   static void interp( ElementArray& input,
                       QuadPointArray& output ){
-    for ( size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
+    for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -67,7 +67,7 @@ public:
       n3[0] = 0.5*(1.0 - pt[2]);
       n3[1] = 0.5*(1.0 + pt[2]);
 
-      for ( size_t i = 0; i < input.extent(0); i++ ){
+      for ( std::size_t i = 0; i < input.extent(0); i++ ){
         for ( int ii = 0; ii < num_vars; ii++ ){
           output(i, j, ii) =
             n3[0] * (n2[0] * (n1[0] * input(i, 0, ii) + n1[1] * input(i, 1, ii)) +
@@ -89,7 +89,7 @@ public:
   static void compute_jtrans( ElementNodeArray& X,
                               QuadPointJacobianArray& Jinv,
                               QuadPointDetJArray& detJ ){
-    for ( size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
+    for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -109,7 +109,7 @@ public:
       n3x[0] = -0.5;
       n3x[1] = 0.5;
 
-      for ( size_t i = 0; i < X.extent(0); i++ ){
+      for ( std::size_t i = 0; i < X.extent(0); i++ ){
         // Compute the Jacobian transformation
         A2D::Mat3x3<T> JObj;
         for ( int ii = 0; ii < 3; ii++ ){
@@ -157,7 +157,7 @@ public:
   static void gradient( ElementSolutionArray& U,
                         QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Ux ){
-    for ( size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
+    for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -177,7 +177,7 @@ public:
       n3x[0] = -0.5;
       n3x[1] = 0.5;
 
-      for ( size_t i = 0; i < U.extent(0); i++ ){
+      for ( std::size_t i = 0; i < U.extent(0); i++ ){
         A2D::Mat3x3<T> JinvObj;
         for ( int ii = 0; ii < 3; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){

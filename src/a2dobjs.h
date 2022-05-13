@@ -72,6 +72,10 @@ namespace A2D {
         x[i] = a.x[i];
       }
     }
+    template<class IdxType>
+    T& operator()( IdxType i ){
+      return x[i];
+    }
 
     T x[3];
   };
@@ -127,6 +131,10 @@ namespace A2D {
         x[i] = a.x[i];
         xd[i] = a.xd[i];
       }
+    }
+    template<class IdxType>
+    T& operator()( IdxType i ){
+      return x[i];
     }
 
     T x[3], xd[3];
@@ -304,6 +312,10 @@ namespace A2D {
         A[i] = a.A[i];
       }
     }
+    template<class IdxType>
+    T& operator()( IdxType i, IdxType j ){
+      return A[3*i + j];
+    }
 
     T A[9];
   };
@@ -353,6 +365,11 @@ namespace A2D {
         A[i] = a.A[i];
         Ad[i] = a.Ad[i];
       }
+    }
+
+    template<class IdxType>
+    T& operator()( IdxType i, IdxType j ){
+      return A[3*i + j];
     }
 
     T A[9], Ad[9];

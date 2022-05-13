@@ -1,6 +1,8 @@
 #ifndef MULTI_ARRAY_H
 #define MULTI_ARRAY_H
 
+#include <type_traits>
+
 /*
   Unpack the argument list to get the extent of indices
 */

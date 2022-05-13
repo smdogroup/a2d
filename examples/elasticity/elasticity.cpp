@@ -11,6 +11,7 @@ int main( int argc, char *argv[] ){
   typedef double ScalarType;
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
+  typedef NonlinearElasticity3D Model;
 
   const int nx = 128;
   const int ny = 64;
@@ -86,20 +87,17 @@ int main( int argc, char *argv[] ){
   CLayout<num_quad_pts, 3, 3> element_Ux_layout(nelems);
   MultiArray<ScalarType, CLayout<num_quad_pts, 3, 3> > Ux(element_Ux_layout, Ux_data);
 
-  HexBasis<HexQuadrature>::interp<vars_per_node>(Xe, Xq);
-  HexBasis<HexQuadrature>::compute_jtrans<ScalarType>(Xe, Jinv, detJ);
-  HexBasis<HexQuadrature>::gradient<ScalarType, vars_per_node>(Xe, Jinv, Ux);
+  // Allocate space for the data
+  ScalarType* Eq_data = new ScalarType[ 2 * num_quad_pts * nelems ];
+  CLayout<num_quad_pts, 2> element_Eq_layout(nelems);
+  MultiArray<ScalarType, CLayout<num_quad_pts, 2> > Eq(element_Eq_layout, Eq_data);
 
-  for ( int i = 0; i < 4; i++ ){
-    for ( int j = 0; j < num_quad_pts; j++ ){
-      std::cout << "J = " << std::endl;
-      for ( int ii = 0; ii < 3; ii++ ){
-        for ( int jj = 0; jj < 3; jj++ ){
-          std::cout << Ux(i, j, ii, jj) << std::endl;
-        }
-      }
-    }
-  }
+  Basis::interp<vars_per_node>(Xe, Xq);
+  Basis::compute_jtrans<ScalarType>(Xe, Jinv, detJ);
+  Basis::gradient<ScalarType, vars_per_node>(Xe, Jinv, Ux);
+
+  ScalarType energy;
+  Basis::energy<ScalarType, Model>(Ux, Eq, Jinv, detJ, energy);
 
   return (0);
 }

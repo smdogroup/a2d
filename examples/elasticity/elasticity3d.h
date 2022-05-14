@@ -1,7 +1,7 @@
 #ifndef ELASTICITY_3D_H
 #define ELASTICITY_3D_H
 
-#include "a2d.h"
+#include "a2dtmp.h"
 
 /*
   Scatter the variables stored at the nodes to the a data structure
@@ -32,28 +32,28 @@ class NonlinearElasticity3D {
 public:
   static const int NUM_VARS = 3;
 
-  template<typename T, class IdxType, class QuadPointData>
-  static T getEnergy( IdxType i, IdxType j, QuadPointData& data, A2D::Mat3x3<T>& Ux ){
+  template<typename T, class IdxType, class QuadPointData, class MatType>
+  static T getEnergy( IdxType i, IdxType j, QuadPointData& data, MatType& Ux ){
     // Extract the Lame parameters
-    A2D::Scalar<T> mu(data(i, j, 0)), lambda(data(i, j, 1));
+    T mu(data(, j, 0)), lambda(data(i, j, 1));
+    T output;
+    SymmMat<T, 3> E, S;
+    Mat3x3GreenStrain strain(Ux, E);
+    Symm3x3IsotropicConstitutive stress(mu, lambda, E, S);
+    Symm3x3SymmMultTrace trace(E, S, output);
 
-    A2D::Scalar<T> output;
-    A2D::Symm3x3<T> E, S;
-    A2D::Mat3x3GreenStrain<T> strain(Ux, E);
-    A2D::Symm3x3IsotropicConstitutive<T> stress(mu, lambda, E, S);
-    A2D::Symm3x3SymmMultTrace<T> trace(E, S, output);
-
-    return output.value;
+    return outpu;
   }
 
-  template<typename T, class IdxType, class QuadPointData>
-  static T getEnergyAndResidual( IdxType i, IdxType j, QuadPointData& data, A2D::ADMat3x3<T>& Ux ){
+  template<typename T, class IdxType, class QuadPointData, class MatType>
+  static T getEnergyAndResidual( IdxType i, IdxType j, QuadPointData& data,
+                                 MatType& Ux, MatType& Uxd ){
     // Extract the Lame parameters
     A2D::Scalar<T> mu(data(i, j, 0)), lambda(data(i, j, 1));
 
-    A2D::Scalar<T> output;
-    A2D::ADSymm3x3<T> E, S;
-    A2D::ADMat3x3GreenStrain<T> strain(Ux, E);
+    A2D::ADScalar<T> output;
+    A2D::SymmMat<T, 3> E, S, Ed, Sd;
+    A2D::ADMat3x3GreenStrain<T> strain(Ux, Uxd, E, Ed);
     A2D::ADSymm3x3IsotropicConstitutive<T> stress(mu, lambda, E, S);
     A2D::ADSymm3x3ADSymmMultTrace<T> trace(E, S, output);
 

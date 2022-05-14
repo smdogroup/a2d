@@ -106,7 +106,7 @@ private:
 };
 
 /*
-  Create a multi-dimensional array
+  A multi-dimensional array
 */
 template <typename T, class Layout>
 class MultiArray {

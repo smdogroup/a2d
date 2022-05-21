@@ -33,36 +33,40 @@ public:
   static const int NUM_VARS = 3;
 
   template<typename T, class IdxType, class QuadPointData, class MatType>
-  static T getEnergy( IdxType i, IdxType j, QuadPointData& data, MatType& Ux ){
-    // Extract the Lame parameters
-    T mu(data(, j, 0)), lambda(data(i, j, 1));
-    T output;
-    SymmMat<T, 3> E, S;
-    Mat3x3GreenStrain strain(Ux, E);
-    Symm3x3IsotropicConstitutive stress(mu, lambda, E, S);
-    Symm3x3SymmMultTrace trace(E, S, output);
+  static T compute_energy( IdxType i, IdxType j, QuadPointData& data, MatType& Ux ){
+    typedef SymmMat<T, 3> SymmMat3x3;
+
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    T output, outputb(1.0);
+
+    Mat3x3GreenStrain<MatType, SymmMat3x3> strain(Ux, E);
+    Symm3x3IsotropicConstitutive<T, SymmMat3x3, SymmMat3x3> stress(mu, lambda, E, S);
+    Symm3x3SymmMultTrace<SymmMat3x3, SymmMat3x3, T> trace(E, S, output);
 
     return outpu;
   }
 
   template<typename T, class IdxType, class QuadPointData, class MatType>
-  static T getEnergyAndResidual( IdxType i, IdxType j, QuadPointData& data,
-                                 MatType& Ux, MatType& Uxd ){
-    // Extract the Lame parameters
-    A2D::Scalar<T> mu(data(i, j, 0)), lambda(data(i, j, 1));
+  static T compute_residual( IdxType i, IdxType j, QuadPointData& data,
+                             MatType& Uxi, MatType& Uxd ){
+    typedef SymmMat<T, 3> SymmMat3x3;
 
-    A2D::ADScalar<T> output;
-    A2D::SymmMat<T, 3> E, S, Ed, Sd;
-    A2D::ADMat3x3GreenStrain<T> strain(Ux, Uxd, E, Ed);
-    A2D::ADSymm3x3IsotropicConstitutive<T> stress(mu, lambda, E, S);
-    A2D::ADSymm3x3ADSymmMultTrace<T> trace(E, S, output);
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    T output, outputb(1.0);
 
-    trace.reverse();
-    stress.reverse();
-    strain.reverse();
+    Mat3x3GreenStrain<MatType, SymmMat3x3> strain(Ux, E);
+    Symm3x3IsotropicConstitutive<T, SymmMat3x3, SymmMat3x3> stress(mu, lambda, E, S);
+    Symm3x3SymmMultTrace<SymmMat3x3, SymmMat3x3, T> trace(E, S, output);
 
-    return output.value;
+    trace.reverse(outputb, Eb, Sb);
+    stress.reverse(Sb, Eb);
+    strain.reverse(Eb, Uxd);
+
+    return output;
   }
+
+
+
 };
 
 const double GaussQuadPts2[] = { -0.577350269189626, 0.577350269189626 };
@@ -154,21 +158,21 @@ public:
 
       for ( std::size_t i = 0; i < X.extent(0); i++ ){
         // Compute the Jacobian transformation
-        A2D::Mat3x3<T> JObj;
+        A2D::Mat<T, 3, 3> J;
         for ( int ii = 0; ii < 3; ii++ ){
-          JObj(ii, 0) =
+          J(ii, 0) =
             n3[0] * (n2[0] * (n1x[0] * X(i, 0, ii) + n1x[1] * X(i, 1, ii)) +
                      n2[1] * (n1x[0] * X(i, 2, ii) + n1x[1] * X(i, 3, ii))) +
             n3[1] * (n2[0] * (n1x[0] * X(i, 4, ii) + n1x[1] * X(i, 5, ii)) +
                      n2[1] * (n1x[0] * X(i, 6, ii) + n1x[1] * X(i, 7, ii)));
 
-          JObj(ii, 1) =
+          J(ii, 1) =
             n3[0] * (n2x[0] * (n1[0] * X(i, 0, ii) + n1[1] * X(i, 1, ii)) +
                      n2x[1] * (n1[0] * X(i, 2, ii) + n1[1] * X(i, 3, ii))) +
             n3[1] * (n2x[0] * (n1[0] * X(i, 4, ii) + n1[1] * X(i, 5, ii)) +
                      n2x[1] * (n1[0] * X(i, 6, ii) + n1[1] * X(i, 7, ii)));
 
-          JObj(ii, 2) =
+          J(ii, 2) =
             n3x[0] * (n2[0] * (n1[0] * X(i, 0, ii) + n1[1] * X(i, 1, ii)) +
                       n2[1] * (n1[0] * X(i, 2, ii) + n1[1] * X(i, 3, ii))) +
             n3x[1] * (n2[0] * (n1[0] * X(i, 4, ii) + n1[1] * X(i, 5, ii)) +
@@ -176,18 +180,15 @@ public:
         }
 
         // Compute the 3x3 matrix inverse
-        A2D::Mat3x3<T> JinvObj;
-        A2D::Mat3x3Inverse<T> inv(JObj, JinvObj);
+        A2D::Mat<T, 3, 3> JinvObj;
+        detJ(i, j) = A2D::Mat3x3InverseCore<T>(J, JinvObj);
+
+        // Copy values of the determinant of the inverse of the Jacobian
         for ( int ii = 0; ii < 3; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
             Jinv(i, j, ii, jj) = JinvObj(ii, jj);
           }
         }
-        // Compute the determinant of the 3x3 matrix
-        A2D::Scalar<T> detJObj;
-        A2D::Mat3x3Det<T>(JObj, detJObj);
-
-        detJ(i, j) = detJObj.value;
       }
     }
   }
@@ -221,15 +222,10 @@ public:
       n3x[1] = 0.5;
 
       for ( std::size_t i = 0; i < U.extent(0); i++ ){
-        A2D::Mat3x3<T> JinvObj;
-        for ( int ii = 0; ii < 3; ii++ ){
-          for ( int jj = 0; jj < 3; jj++ ){
-            JinvObj(ii, jj) = Jinv(i, j, ii, jj);
-          }
-        }
+        A2D::Mat<T, 3, 3> JinvObj(Jinv, i, j);
 
         for ( int ii = 0; ii < num_vars; ii++ ){
-          A2D::Vec3<T> UxiObj;
+          A2D::Vec<T, 3> UxiObj;
           UxiObj(0) =
             n3[0] * (n2[0] * (n1x[0] * U(i, 0, ii) + n1x[1] * U(i, 1, ii)) +
                      n2[1] * (n1x[0] * U(i, 2, ii) + n1x[1] * U(i, 3, ii))) +
@@ -248,8 +244,8 @@ public:
             n3x[1] * (n2[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
                       n2[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
 
-          A2D::Vec3<T> UxObj;
-          A2D::MatTrans3x3VecMult<T> multObj(JinvObj, UxiObj, UxObj);
+          A2D::Vec<T, 3> UxObj;
+          A2D::MatTrans3x3VecMult(JinvObj, UxiObj, UxObj);
 
           for ( int jj = 0; jj < 3; jj++ ){
             Ux(i, j, ii, jj) = UxObj(jj);
@@ -274,8 +270,8 @@ public:
       double weight = Quadrature::getQuadWeight(j);
 
       for ( std::size_t i = 0; i < Ux.extent(0); i++ ){
-        // Extract U,x
-        A2D::Mat3x3<T> UxObj;
+        // Extract U,x to UxObj
+        Mat<T, Model::NUM_VARS, 3> UxObj(Ux, i, j);
         for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
             UxObj(ii, jj) = Ux(i, j, ii, jj);
@@ -322,16 +318,13 @@ public:
 
       for ( std::size_t i = 0; i < Ux.extent(0); i++ ){
         // Extract U,x
-        A2D::ADMat3x3<T> UxObj;
-        for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
-          for ( int jj = 0; jj < 3; jj++ ){
-            UxObj(ii, jj) = Ux(i, j, ii, jj);
-          }
-        }
+        Mat<T, Model::NUM_VARS, 3> UxObj(Ux, i, j);
+        Mat<T, Model::NUM_VARS, 3> dUxObj;
 
-        Model::getEnergyAndResidual(i, j, Edata, UxObj);
+        // Extract the energy and residual
+        dUxObj.zero();
+        Model::getEnergyAndResidual(i, j, Edata, UxObj, dUxObj);
 
-        /*
         for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
           A2D::Vec3<T> UxiObj;
           UxiObj(0) =
@@ -359,7 +352,6 @@ public:
             Ux(i, j, ii, jj) = UxObj(jj);
           }
         }
-        */
       }
     }
   }

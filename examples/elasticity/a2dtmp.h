@@ -4,10 +4,65 @@
   6: (2, 0)  7: (2, 1)  8: (2, 2)
 */
 
+#ifndef A2D_TMP_H
+#define A2D_TMP_H
+
+namespace A2D {
+
+template<typename T, int N>
+class Vec {
+public:
+  typedef T type;
+
+  Vec(){
+    for ( int i = 0; i < N; i++ ){
+      x[i] = 0.0;
+    }
+  }
+  Vec( const T* vals ){
+    for ( int i = 0; i < N; i++ ){
+      x[i] = vals[i];
+    }
+  }
+  template<class VecType>
+  Vec( const VecType& vec ){
+    for ( int i = 0; i < N; i++ ){
+      x[i] = vec(i);
+    }
+  }
+  template<class VecType, class... IdxType>
+  Vec( const VecType& vec, IdxType... idx ){
+    for ( int i = 0; i < N; i++ ){
+      x[i] = vec(idx..., i);
+    }
+  }
+  void zero(){
+    for ( int i = 0; i < N; i++ ){
+      x[i] = 0.0;
+    }
+  }
+  template<class IdxType>
+  T& operator()( const IdxType i ){
+    return x[i];
+  }
+  template<class IdxType>
+  const T& operator()( const IdxType i ) const {
+    return x[i];
+  }
+
+  T x[N];
+};
+
 template<typename T, int M, int N>
 class Mat {
 public:
-  Mat(){}
+  typedef T type;
+
+  Mat(){
+    for ( int i = 0; i < M * N; i++ ){
+      A[i] = 0.0;
+    }
+  }
   Mat( const T* vals ){
     for ( int i = 0; i < M * N; i++ ){
       A[i] = vals[i];
@@ -17,29 +72,30 @@ public:
   Mat( const MatType& mat ){
     for ( int i = 0; i < M; i++ ){
       for ( int j = 0; j < N; j++ ){
-        A[M*i + j] = mat(i, j);
+        A[N*i + j] = mat(i, j);
       }
     }
   }
-
-  ///// Will this work?
   template<class MatType, class... IdxType>
   Mat( const MatType& mat, IdxType... idx ){
     for ( int i = 0; i < M; i++ ){
       for ( int j = 0; j < N; j++ ){
-        A[M*i + j] = mat(idx..., i, j);
+        A[N*i + j] = mat(idx..., i, j);
       }
     }
   }
-
+  void zero(){
+    for ( int i = 0; i < M * N; i++ ){
+      A[i] = 0.0;
+    }
+  }
   template<class IdxType>
   T& operator()( const IdxType i, const IdxType j ){
-    return A[M*i + j];
+    return A[N*i + j];
   }
-
   template<class IdxType>
   const T& operator()( const IdxType i, const IdxType j ) const {
-    return A[M*i + j];
+    return A[N*i + j];
   }
 
   T A[M * N];
@@ -48,15 +104,24 @@ public:
 template<typename T, int N>
 class SymmMat {
 public:
+  typedef T type;
   static const int MAT_SIZE = (N * (N + 1))/2;
 
-  SymmMat(){}
+  SymmMat(){
+    for ( int i = 0; i < MAT_SIZE; i++ ){
+      A[i] = 0.0;
+    }
+  }
   SymmMat( const T* vals ){
     for ( int i = 0; i < MAT_SIZE; i++ ){
       A[i] = vals[i];
     }
   }
-
+  void zero(){
+    for ( int i = 0; i < MAT_SIZE; i++ ){
+      A[i] = 0.0;
+    }
+  }
   template<class IdxType>
   T& operator()( const IdxType i, const IdxType j ){
     if (i >= j){
@@ -66,7 +131,6 @@ public:
       return A[i + j*(j + 1)/2];
     }
   }
-
   template<class IdxType>
   const T& operator()( const IdxType i, const IdxType j ) const {
     if (i >= j){
@@ -79,6 +143,161 @@ public:
 
   T A[MAT_SIZE];
 };
+
+template<typename T, int M, int N>
+class Mat2ndDeriv {
+public:
+  typedef T type;
+  static const int TENSOR_SIZE = (M * N * (M * N + 1))/2;
+  Mat2ndDeriv(){
+    for ( int i = 0; i < TENSOR_SIZE; i++ ){
+      A[i] = 0.0;
+    }
+  }
+
+  template<class IdxType>
+  T& operator()( const IdxType i, const IdxType j, const IdxType k, const IdxType l ){
+    const int ii = N * i + j;
+    const int jj = N * k + l;
+
+    if (ii >= jj){
+      return A[jj + ii*(ii + 1)/2];
+    }
+    else {
+      return A[ii + jj*(jj + 1)/2];
+    }
+  }
+  template<class IdxType>
+  const T& operator()( const IdxType i, const IdxType j, const IdxType k, const IdxType l ) const {
+    const int ii = N * i + j;
+    const int jj = N * k + l;
+
+    if (ii >= jj){
+      return A[jj + ii*(ii + 1)/2];
+    }
+    else {
+      return A[ii + jj*(jj + 1)/2];
+    }
+  }
+
+  T A[TENSOR_SIZE];
+};
+
+/*
+template<class UxMatType, class EMatType>
+class Mat3x3LinearGreenStrain {
+public:
+  Mat3x3LinearGreenStrain( const UxMatType& Ux, EMatType& E ) : Ux(Ux), E(E) {
+    const MatType& Ux = UxData.getMat();
+    EMatType& E = EData.getMat();
+    E(0, 0) = Ux(0, 0);
+    E(1, 1) = Ux(1, 1);
+    E(2, 2) = Ux(2, 2);
+    E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0));
+    E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0));
+    E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1));
+  }
+
+  template<class UxdMatType, class EdMatType>
+  void forward( const UxdMatType& Uxd, EdMatType& Ed ){
+    Ed(0, 0) = Uxd(0, 0);
+    Ed(1, 1) = Uxd(1, 1);
+    Ed(2, 2) = Uxd(2, 2);
+
+    Ed(0, 1) = 0.5*(Uxd(0, 1) + Uxd(1, 0));
+    Ed(0, 2) = 0.5*(Uxd(0, 2) + Uxd(2, 0));
+    Ed(1, 2) = 0.5*(Uxd(1, 2) + Uxd(2, 1));
+  }
+
+  template<class EbMatType, class UxbMatType>
+  void reverse( const EbMatType& Eb, UxbMatType& Uxb ){
+    Uxb(0, 0) += Eb(0, 0);
+    Uxb(0, 1) += 0.5 * Eb(0, 1);
+    Uxb(0, 2) += 0.5 * Eb(0, 2);
+
+    Uxb(1, 0) += 0.5 * Eb(0, 1);
+    Uxb(1, 1) += Eb(1, 1);
+    Uxb(1, 2) += 0.5 * Eb(1, 2);
+
+    Uxb(2, 0) += 0.5 * Eb(0, 2);
+    Uxb(2, 1) += 0.5 * Eb(1, 2);
+    Uxb(2, 2) += Eb(2, 2);
+  }
+
+  template<class EbMatType, class UxdMatType, class UxbMatType>
+  void hessian_vec_product( const EbMatType& Eb, const UxdMatType& Uxd, UxbMatType& Uxb ){}
+
+  const UxMatType& Ux;
+  EMatType& E;
+};
+
+
+template<class MatType, class ScalarType>
+class Mat3x3Det {
+public:
+  Mat3x3Det( const MatType& A, ScalarType& det ) : A(A), det(det) {
+    det = (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
+           A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
+           A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
+  }
+
+  template<class AdMatType>
+  void forward( const AdMatType& Ad, ScalarType& ddet ){
+    detd = (Ad(0, 0) * (A(2, 2) * A(1, 1) - A(2, 1) * A(1, 2)) +
+            Ad(0, 1) * (A(2, 0) * A(1, 2) - A(2, 2) * A(1, 0)) +
+            Ad(0, 2) * (A(2, 1) * A(1, 0) - A(2, 0) * A(1, 1)) +
+            Ad(1, 0) * (A(2, 1) * A(0, 2) - A(2, 2) * A(0, 1)) +
+            Ad(1, 1) * (A(2, 2) * A(0, 0) - A(2, 0) * A(0, 2)) +
+            Ad(1, 2) * (A(2, 0) * A(0, 1) - A(2, 1) * A(0, 0)) +
+            Ad(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)) +
+            Ad(2, 1) * (A(1, 0) * A(0, 2) - A(0, 0) * A(1, 2)) +
+            Ad(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)));
+  }
+
+  template<class AbMatType>
+  void reverse( const ScalarType detd, AbMatType& Ab ){
+    Ab(0, 0) += (A(2, 2) * A(1, 1) - A(2, 1) * A(1, 2)) * detd;
+    Ab(0, 1) += (A(2, 0) * A(1, 2) - A(2, 2) * A(1, 0)) * detd;
+    Ab(0, 2) += (A(2, 1) * A(1, 0) - A(2, 0) * A(1, 1)) * detd;
+    Ab(1, 0) += (A(2, 1) * A(0, 2) - A(2, 2) * A(0, 1)) * detd;
+    Ab(1, 1) += (A(2, 2) * A(0, 0) - A(2, 0) * A(0, 2)) * detd;
+    Ab(1, 2) += (A(2, 0) * A(0, 1) - A(2, 1) * A(0, 0)) * detd;
+    Ab(2, 0) += (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)) * detd;
+    Ab(2, 1) += (A(1, 0) * A(0, 2) - A(0, 0) * A(1, 2)) * detd;
+    Ab(2, 2) += (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) * detd;
+  }
+
+  template<class AdMatType, class AbMatType>
+  void hessian_vec_product( const ScalarType detd, const AdMatType& Ad, AbMatType& Ab ){
+    Ad(0, 0) += (A(2, 2) * A(1, 1) - A(2, 1) * A(1, 2)) * detd;
+    Ad(0, 1) += (A(2, 0) * A(1, 2) - A(2, 2) * A(1, 0)) * detd;
+    Ad(0, 2) += (A(2, 1) * A(1, 0) - A(2, 0) * A(1, 1)) * detd;
+    Ad(1, 0) += (A(2, 1) * A(0, 2) - A(2, 2) * A(0, 1)) * detd;
+    Ad(1, 1) += (A(2, 2) * A(0, 0) - A(2, 0) * A(0, 2)) * detd;
+    Ad(1, 2) += (A(2, 0) * A(0, 1) - A(2, 1) * A(0, 0)) * detd;
+    Ad(2, 0) += (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)) * detd;
+    Ad(2, 1) += (A(1, 0) * A(0, 2) - A(0, 0) * A(1, 2)) * detd;
+    Ad(2, 2) += (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) * detd;
+  }
+
+  const MatType& A;
+  ScalarType& det;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 template<class AMatType, class BMatType, class CMatType>
 inline void Symm3x3SymmMultCore( const AMatType& A, const BMatType& B, CMatType& C ){
@@ -666,7 +885,7 @@ inline void MatTrans3x3MatTransMultAddScaleCore( T scale, const AMatType& A, con
 }
 
 template<typename T, class MatType>
-inline T Mat3x3DetCore( const T A[] ){
+inline T Mat3x3DetCore( const MatType& A ){
   return (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
           A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
           A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
@@ -674,7 +893,7 @@ inline T Mat3x3DetCore( const T A[] ){
 
 template<typename T, class AMatType, class DMatType>
 inline T Mat3x3DetDerivForwardCore( const AMatType A,
-                                    DMatType& Ad ){
+                                    const DMatType& Ad ){
   return (Ad(0, 0) * (A(2, 2) * A(1, 1) - A(2, 1) * A(1, 2)) +
           Ad(0, 1) * (A(2, 0) * A(1, 2) - A(2, 2) * A(1, 0)) +
           Ad(0, 2) * (A(2, 1) * A(1, 0) - A(2, 0) * A(1, 1)) +
@@ -844,7 +1063,7 @@ template<typename T, class EMatType, class SMatType>
 inline void Symm3x3IsotropicConstitutiveCore( const T mu,
                                               const T lambda,
                                               const EMatType& E,
-                                              SMatType S[] ){
+                                              SMatType& S ){
   T tr = lambda * (E(0, 0) + E(1, 1) + E(2, 2));
   T mu2 = 2.0 * mu;
   S(0, 0) = mu2 * E(0, 0) + tr;
@@ -869,21 +1088,8 @@ inline void Symm3x3IsotropicConstitutiveReverseCore( const T mu,
   Ed(1, 2) += mu2 * Sd(1, 2);
   Ed(2, 2) += mu2 * Sd(2, 2) + tr;
 }
-
-/*
-template<class UxMatType, class ESymmMatType>
-class Mat3x3GreenStrain {
-public:
-  Mat3x3GreenStrain( const UxMatType& Ux, ESymmMatType& E ){
-    Mat3x3GreenStrainCore(Ux, E);
-  }
-};
-
-template<class UxMatType, class ESymmMatType>
-class ADMat3x3GreenStrain {
-public:
-  ADMat3x3GreenStrain( const UxMatType& Ux, ESymmMatType& E ){
-    Mat3x3GreenStrainCore(Ux, E);
-  }
-};
 */
+
+} // namespace A2D
+
+#endif // A2D_TMP_H

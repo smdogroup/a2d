@@ -13,7 +13,7 @@ int main( int argc, char *argv[] ){
   typedef double ScalarType;
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  // typedef NonlinearElasticity3D Model;
+  typedef NonlinearElasticity3D Model;
 
   const int nx = 128;
   const int ny = 64;

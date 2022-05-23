@@ -55,7 +55,7 @@ public:
     T mu(data(i, j, 0)), lambda(data(i, j, 1));
     T output, outputb(1.0);
 
-    SymmMat3x3 E0, Eb, S0, Eb;
+    SymmMat3x3 E0, Eb, S0, Sb;
     A2D::ADMat<MatType> Ux(Uxi, Uxid);
     A2D::ADMat<SymmMat3x3> E(E0, Eb);
     A2D::ADMat<SymmMat3x3> S(S0, Sb);
@@ -186,13 +186,14 @@ public:
         }
 
         // Compute the 3x3 matrix inverse
-        A2D::Mat<T, 3, 3> JinvObj;
-        detJ(i, j) = A2D::Mat3x3InverseCore<T>(J, JinvObj);
+        A2D::Mat<T, 3, 3> jinv;
+        A2D::Mat3x3Inverse(J, jinv);
+        A2D::Mat3x3Det(J, detJ(i, j));
 
-        // Copy values of the determinant of the inverse of the Jacobian
+        // Copy values of the inverse of the Jacobian
         for ( int ii = 0; ii < 3; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
-            Jinv(i, j, ii, jj) = JinvObj(ii, jj);
+            Jinv(i, j, ii, jj) = jinv(ii, jj);
           }
         }
       }
@@ -228,29 +229,29 @@ public:
       n3x[1] = 0.5;
 
       for ( std::size_t i = 0; i < U.extent(0); i++ ){
-        A2D::Mat<T, 3, 3> JinvObj(Jinv, i, j);
+        A2D::Mat<T, 3, 3> jinv(Jinv, i, j);
 
         for ( int ii = 0; ii < num_vars; ii++ ){
-          A2D::Vec<T, 3> UxiObj;
-          UxiObj(0) =
+          A2D::Vec<T, 3> Uxi;
+          Uxi(0) =
             n3[0] * (n2[0] * (n1x[0] * U(i, 0, ii) + n1x[1] * U(i, 1, ii)) +
                      n2[1] * (n1x[0] * U(i, 2, ii) + n1x[1] * U(i, 3, ii))) +
             n3[1] * (n2[0] * (n1x[0] * U(i, 4, ii) + n1x[1] * U(i, 5, ii)) +
                      n2[1] * (n1x[0] * U(i, 6, ii) + n1x[1] * U(i, 7, ii)));
 
-          UxiObj(1) =
+          Uxi(1) =
             n3[0] * (n2x[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
                      n2x[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
             n3[1] * (n2x[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
                      n2x[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
 
-          UxiObj(2) =
+          Uxi(2) =
             n3x[0] * (n2[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
                       n2[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
             n3x[1] * (n2[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
                       n2[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
 
-          A2D::Vec<T, 3> UxObj;
+          A2D::Vec<T, 3> Ux;
           A2D::MatTrans3x3VecMult(JinvObj, UxiObj, UxObj);
 
           for ( int jj = 0; jj < 3; jj++ ){
@@ -278,6 +279,7 @@ public:
       for ( std::size_t i = 0; i < Ux.extent(0); i++ ){
         // Extract U,x to UxObj
         Mat<T, Model::NUM_VARS, 3> UxObj(Ux, i, j);
+
         for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
             UxObj(ii, jj) = Ux(i, j, ii, jj);

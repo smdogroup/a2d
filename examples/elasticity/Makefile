@@ -1,6 +1,6 @@
 
-# default:
-# 	${CXX} -O2 -I../../src/ -std=c++11 -o elasticity elasticity.cpp
-
 default:
+	${CXX} -O2 -I../../src/ -std=c++11 -o elasticity elasticity.cpp
+
+test: test.cpp
 	${CXX} -g -I../../src/ -std=c++11 -o test test.cpp

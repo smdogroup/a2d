@@ -8,243 +8,79 @@
 #define A2D_TMP_H
 
 #include <stdlib.h>
+#include "a2dobjs.h"
+#include "a2dtypes.h"
 
 namespace A2D {
 
-template<typename T, int N>
-class Vec {
+template<typename ScalarType>
+inline void Symm3x3SymmMultTrace( const SymmMat<ScalarType, 3>& S, const SymmMat<ScalarType, 3>& E, ScalarType& trace ){
+  trace = (S(0, 0) * E(0, 0) + S(1, 1) * E(1, 1) + S(2, 2) * E(2, 2) +
+           2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2)));
+}
+
+template<class SMatType, class EMatType, class ScalarType>
+class ADSymm3x3SymmMultTraceExpr : public ADExpression<ADSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType> > {
 public:
-  typedef T type;
+  ADSymm3x3SymmMultTraceExpr( ADMat<SMatType>& SObj, ADMat<EMatType>& EObj, ADScalar<ScalarType>& output ) :
+    SObj(SObj), EObj(EObj), output(output) {
+    const SMatType& S = SObj.value();
+    const EMatType& E = EObj.value();
 
-  Vec(){
-    for ( int i = 0; i < N; i++ ){
-      x[i] = 0.0;
-    }
-  }
-  Vec( const T* vals ){
-    for ( int i = 0; i < N; i++ ){
-      x[i] = vals[i];
-    }
-  }
-  template<class VecType>
-  Vec( const VecType& vec ){
-    for ( int i = 0; i < N; i++ ){
-      x[i] = vec(i);
-    }
-  }
-  template<class VecType, class... IdxType>
-  Vec( const VecType& vec, IdxType... idx ){
-    for ( int i = 0; i < N; i++ ){
-      x[i] = vec(idx..., i);
-    }
-  }
-  void zero(){
-    for ( int i = 0; i < N; i++ ){
-      x[i] = 0.0;
-    }
-  }
-  template<class IdxType>
-  T& operator()( const IdxType i ){
-    return x[i];
-  }
-  template<class IdxType>
-  const T& operator()( const IdxType i ) const {
-    return x[i];
+    output.value =
+      S(0, 0) * E(0, 0) + S(1, 1) * E(1, 1) + S(2, 2) * E(2, 2) +
+      2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2));
   }
 
-  T x[N];
-};
+  void forward(){
+    const EMatType& E = EObj.value();
+    const EMatType& Ed = EObj.bvalue();
+    const SMatType& S = SObj.value();
+    const SMatType& Sd = SObj.bvalue();
 
-template<typename T, int M, int N>
-class Mat {
-public:
-  typedef T type;
-
-  Mat(){
-    for ( int i = 0; i < M * N; i++ ){
-      A[i] = 0.0;
-    }
-  }
-  Mat( const T* vals ){
-    for ( int i = 0; i < M * N; i++ ){
-      A[i] = vals[i];
-    }
-  }
-  template<class MatType>
-  Mat( const MatType& mat ){
-    for ( int i = 0; i < M; i++ ){
-      for ( int j = 0; j < N; j++ ){
-        A[N*i + j] = mat(i, j);
-      }
-    }
-  }
-  template<class MatType, class... IdxType>
-  Mat( const MatType& mat, IdxType... idx ){
-    for ( int i = 0; i < M; i++ ){
-      for ( int j = 0; j < N; j++ ){
-        A[N*i + j] = mat(idx..., i, j);
-      }
-    }
-  }
-  void zero(){
-    for ( int i = 0; i < M * N; i++ ){
-      A[i] = 0.0;
-    }
-  }
-  template<class IdxType>
-  T& operator()( const IdxType i, const IdxType j ){
-    return A[N*i + j];
-  }
-  template<class IdxType>
-  const T& operator()( const IdxType i, const IdxType j ) const {
-    return A[N*i + j];
+    output.pvalue =
+      S(0, 0) * Ed(0, 0) + S(1, 1) * Ed(1, 1) + S(2, 2) * Ed(2, 2) +
+      2.0 * (S(0, 1) * Ed(0, 1) + S(0, 2) * Ed(0, 2) + S(1, 2) * Ed(1, 2)) +
+      Sd(0, 0) * E(0, 0) + Sd(1, 1) * E(1, 1) + Sd(2, 2) * E(2, 2) +
+      2.0 * (Sd(0, 1) * E(0, 1) + Sd(0, 2) * E(0, 2) + Sd(1, 2) * E(1, 2));
   }
 
-  T A[M * N];
-};
+  void reverse(){
+    const EMatType& E = EObj.value();
+    EMatType& Eb = EObj.bvalue();
+    const SMatType& S = SObj.value();
+    SMatType& Sb = SObj.bvalue();
 
-template<typename T, int N>
-class SymmMat {
-public:
-  typedef T type;
-  static const int MAT_SIZE = (N * (N + 1))/2;
+    Eb(0, 0) += output.bvalue * S(0, 0);
+    Eb(1, 1) += output.bvalue * S(1, 1);
+    Eb(2, 2) += output.bvalue * S(2, 2);
+    Eb(0, 1) += 2.0 * output.bvalue * S(0, 1);
+    Eb(0, 2) += 2.0 * output.bvalue * S(0, 2);
+    Eb(1, 2) += 2.0 * output.bvalue * S(1, 2);
 
-  SymmMat(){
-    for ( int i = 0; i < MAT_SIZE; i++ ){
-      A[i] = 0.0;
-    }
-  }
-  SymmMat( const T* vals ){
-    for ( int i = 0; i < MAT_SIZE; i++ ){
-      A[i] = vals[i];
-    }
-  }
-  void zero(){
-    for ( int i = 0; i < MAT_SIZE; i++ ){
-      A[i] = 0.0;
-    }
-  }
-  template<class IdxType>
-  T& operator()( const IdxType i, const IdxType j ){
-    if (i >= j){
-      return A[j + i*(i + 1)/2];
-    }
-    else {
-      return A[i + j*(j + 1)/2];
-    }
-  }
-  template<class IdxType>
-  const T& operator()( const IdxType i, const IdxType j ) const {
-    if (i >= j){
-      return A[j + i*(i + 1)/2];
-    }
-    else {
-      return A[i + j*(j + 1)/2];
-    }
+    Sb(0, 0) += output.bvalue * E(0, 0);
+    Sb(1, 1) += output.bvalue * E(1, 1);
+    Sb(2, 2) += output.bvalue * E(2, 2);
+    Sb(0, 1) += 2.0 * output.bvalue * E(0, 1);
+    Sb(0, 2) += 2.0 * output.bvalue * E(0, 2);
+    Sb(1, 2) += 2.0 * output.bvalue * E(1, 2);
   }
 
-  T A[MAT_SIZE];
-};
-
-template<typename T, int M, int N>
-class Mat2ndDeriv {
-public:
-  typedef T type;
-  static const int TENSOR_SIZE = (M * N * (M * N + 1))/2;
-  Mat2ndDeriv(){
-    for ( int i = 0; i < TENSOR_SIZE; i++ ){
-      A[i] = 0.0;
-    }
-  }
-
-  template<class IdxType>
-  T& operator()( const IdxType i, const IdxType j, const IdxType k, const IdxType l ){
-    const int ii = N * i + j;
-    const int jj = N * k + l;
-
-    if (ii >= jj){
-      return A[jj + ii*(ii + 1)/2];
-    }
-    else {
-      return A[ii + jj*(jj + 1)/2];
-    }
-  }
-  template<class IdxType>
-  const T& operator()( const IdxType i, const IdxType j, const IdxType k, const IdxType l ) const {
-    const int ii = N * i + j;
-    const int jj = N * k + l;
-
-    if (ii >= jj){
-      return A[jj + ii*(ii + 1)/2];
-    }
-    else {
-      return A[ii + jj*(jj + 1)/2];
-    }
-  }
-
-  T A[TENSOR_SIZE];
-};
-
-
-template <class A>
-class A2DExpression {
-public:
-  A& cast(){ return static_cast<A&>(*this); }
-  const A& cast() const { return static_cast<const A&>(*this); }
-
-  void forward(){ cast().forward(); }
-  void reverse(){ cast().reverse(); }
-
-  void hforward(){ cast().hforward(); }
-  void hproduct(){ cast().hproduct(); }
-  void hreverse(){ cast().hreverse(); }
-};
-
-template<class ScalarType>
-class A2DScalarType {
-public:
-  A2DScalarType( ScalarType value=0.0, ScalarType bvalue=0.0,
-                 ScalarType pvalue=0.0, ScalarType hvalue=0.0 ) :
-                 value(value), bvalue(bvalue), pvalue(pvalue), hvalue(hvalue) {}
-
-  ScalarType value;
-  ScalarType bvalue;
-  ScalarType pvalue;
-  ScalarType hvalue;
-};
-
-template<class MatType>
-class A2DMat {
-public:
-  A2DMat( MatType *A_, MatType *Ab_=NULL, MatType *Ad2_=NULL, MatType *Ab2_=NULL ){
-    A = A_;
-    Ab = Ab_;
-    Ad2 = Ad2_;
-    Ab2 = Ab2_;
-  }
-
-  MatType& value(){ return *A; }
-  const MatType& value() const { return *A; }
-
-  MatType& bvalue(){ return *Ab; }
-  const MatType& bvalue() const { return *Ab; }
-
-  MatType& pvalue(){ return *Ad2; }
-  const MatType& pvalue() const { return *Ad2; }
-
-  MatType& hvalue(){ return *Ab2; }
-  const MatType& hvalue() const { return *Ab2; }
-
-  MatType* A; // Matrix
-  MatType* Ab; // Reverse mode derivative value
-  MatType *Ad2; // Projected second derivative value
-  MatType *Ab2; // Reverse mode second derivative
+  ADMat<SMatType>& SObj;
+  ADMat<EMatType>& EObj;
+  ADScalar<ScalarType>& output;
 };
 
 template<class SMatType, class EMatType, class ScalarType>
-class Symm3x3SymmMultTrace : public A2DExpression<Symm3x3SymmMultTrace<SMatType, EMatType, ScalarType> > {
+inline ADSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType>
+Symm3x3SymmMultTrace( ADMat<SMatType>& S, ADMat<EMatType>& E, ADScalar<ScalarType>& trace ){
+  return ADSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType>(S, E, trace);
+}
+
+template<class SMatType, class EMatType, class ScalarType>
+class A2DSymm3x3SymmMultTraceExpr : public A2DExpression<A2DSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType> > {
 public:
-  Symm3x3SymmMultTrace( A2DMat<SMatType>& SObj, A2DMat<EMatType>& EObj, A2DScalarType<ScalarType>& output ) :
+  A2DSymm3x3SymmMultTraceExpr( A2DMat<SMatType>& SObj, A2DMat<EMatType>& EObj, A2DScalar<ScalarType>& output ) :
     SObj(SObj), EObj(EObj), output(output) {
     const SMatType& S = SObj.value();
     const EMatType& E = EObj.value();
@@ -334,13 +170,90 @@ public:
 
   A2DMat<SMatType>& SObj;
   A2DMat<EMatType>& EObj;
-  A2DScalarType<ScalarType>& output;
+  A2DScalar<ScalarType>& output;
+};
+
+template<class SMatType, class EMatType, class ScalarType>
+inline A2DSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType>
+Symm3x3SymmMultTrace( A2DMat<SMatType>& S, A2DMat<EMatType>& E, A2DScalar<ScalarType>& trace ){
+  return A2DSymm3x3SymmMultTraceExpr<SMatType, EMatType, ScalarType>(S, E, trace);
+}
+
+template<class ScalarType>
+inline void Symm3x3IsotropicConstitutive( const ScalarType& mu, const ScalarType& lambda,
+                                          const SymmMat<ScalarType, 3>& E, SymmMat<ScalarType, 3>& S ){
+  ScalarType tr = lambda * (E(0, 0) + E(1, 1) + E(2, 2));
+  ScalarType mu2 = 2.0 * mu;
+  S(0, 0) = mu2 * E(0, 0) + tr;
+  S(0, 1) = mu2 * E(0, 1);
+  S(0, 2) = mu2 * E(0, 2);
+  S(1, 1) = mu2 * E(1, 1) + tr;
+  S(1, 2) = mu2 * E(1, 2);
+  S(2, 2) = mu2 * E(2, 2) + tr;
+}
+
+template<class ScalarType, class EMatType, class SMatType>
+class ADSymm3x3IsotropicConstitutiveExpr : public ADExpression<ADSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType> >{
+public:
+  ADSymm3x3IsotropicConstitutiveExpr( const ScalarType& mu, const ScalarType& lambda,
+                                      ADMat<EMatType>& EObj, ADMat<SMatType>& SObj ) : mu(mu), lambda(lambda), EObj(EObj), SObj(SObj) {
+    const EMatType& E = EObj.value();
+    SMatType& S = SObj.value();
+    ScalarType tr = lambda * (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType mu2 = 2.0 * mu;
+    S(0, 0) = mu2 * E(0, 0) + tr;
+    S(0, 1) = mu2 * E(0, 1);
+    S(0, 2) = mu2 * E(0, 2);
+    S(1, 1) = mu2 * E(1, 1) + tr;
+    S(1, 2) = mu2 * E(1, 2);
+    S(2, 2) = mu2 * E(2, 2) + tr;
+  }
+
+  void forward(){
+    const EMatType& Ed = EObj.bvalue();
+    SMatType& Sd = SObj.pvalue();
+
+    ScalarType tr = lambda * (Ed(0, 0) + Ed(1, 1) + Ed(2, 2));
+    ScalarType mu2 = 2.0 * mu;
+    Sd(0, 0) = mu2 * Ed(0, 0) + tr;
+    Sd(0, 1) = mu2 * Ed(0, 1);
+    Sd(0, 2) = mu2 * Ed(0, 2);
+    Sd(1, 1) = mu2 * Ed(1, 1) + tr;
+    Sd(1, 2) = mu2 * Ed(1, 2);
+    Sd(2, 2) = mu2 * Ed(2, 2) + tr;
+  }
+
+  void reverse(){
+    const SMatType& Sb = SObj.bvalue();
+    EMatType& Eb = EObj.bvalue();
+
+    ScalarType tr = lambda * (Sb(0, 0) + Sb(1, 1) + Sb(2, 2));
+    ScalarType mu2 = 2.0 * mu;
+    Eb(0, 0) += mu2 * Sb(0, 0) + tr;
+    Eb(0, 1) += mu2 * Sb(0, 1);
+    Eb(0, 2) += mu2 * Sb(0, 2);
+    Eb(1, 1) += mu2 * Sb(1, 1) + tr;
+    Eb(1, 2) += mu2 * Sb(1, 2);
+    Eb(2, 2) += mu2 * Sb(2, 2) + tr;
+  }
+
+  const ScalarType& mu;
+  const ScalarType& lambda;
+  ADMat<EMatType>& EObj;
+  ADMat<SMatType>& SObj;
 };
 
 template<class ScalarType, class EMatType, class SMatType>
-class Symm3x3IsotropicConstitutive : public A2DExpression<Symm3x3IsotropicConstitutive<ScalarType, EMatType, SMatType> >{
+inline ADSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType>
+Symm3x3IsotropicConstitutive( const ScalarType& mu, const ScalarType& lambda,
+                                          ADMat<EMatType>& E, ADMat<SMatType>& S ){
+  return ADSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType>(mu, lambda, E, S);
+}
+
+template<class ScalarType, class EMatType, class SMatType>
+class A2DSymm3x3IsotropicConstitutiveExpr : public A2DExpression<A2DSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType> >{
 public:
-  Symm3x3IsotropicConstitutive( const ScalarType& mu, const ScalarType& lambda,
+  A2DSymm3x3IsotropicConstitutiveExpr( const ScalarType& mu, const ScalarType& lambda,
                                 A2DMat<EMatType>& EObj, A2DMat<SMatType>& SObj ) : mu(mu), lambda(lambda), EObj(EObj), SObj(SObj) {
     const EMatType& E = EObj.value();
     SMatType& S = SObj.value();
@@ -404,10 +317,93 @@ public:
   A2DMat<SMatType>& SObj;
 };
 
+template<class ScalarType, class EMatType, class SMatType>
+inline A2DSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType>
+Symm3x3IsotropicConstitutive( const ScalarType& mu, const ScalarType& lambda,
+                              A2DMat<EMatType>& E, A2DMat<SMatType>& S ){
+  return A2DSymm3x3IsotropicConstitutiveExpr<ScalarType, EMatType, SMatType>(mu, lambda, E, S);
+}
+
+
+template<class ScalarType>
+inline void Mat3x3GreenStrain( const Mat<ScalarType, 3, 3>& Ux, SymmMat<ScalarType, 3>& E ){
+  E(0, 0) = Ux(0, 0) + 0.5*(Ux(0, 0) * Ux(0, 0) + Ux(1, 0) * Ux(1, 0) + Ux(2, 0) * Ux(2, 0));
+  E(1, 1) = Ux(1, 1) + 0.5*(Ux(0, 1) * Ux(0, 1) + Ux(1, 1) * Ux(1, 1) + Ux(2, 1) * Ux(2, 1));
+  E(2, 2) = Ux(2, 2) + 0.5*(Ux(0, 2) * Ux(0, 2) + Ux(1, 2) * Ux(1, 2) + Ux(2, 2) * Ux(2, 2));
+
+  E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0) + Ux(0, 0) * Ux(0, 1) + Ux(1, 0) * Ux(1, 1) + Ux(2, 0) * Ux(2, 1));
+  E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0) + Ux(0, 0) * Ux(0, 2) + Ux(1, 0) * Ux(1, 2) + Ux(2, 0) * Ux(2, 2));
+  E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1) + Ux(0, 1) * Ux(0, 2) + Ux(1, 1) * Ux(1, 2) + Ux(2, 1) * Ux(2, 2));
+}
+
 template<class UxMatType, class EMatType>
-class Mat3x3GreenStrain : public A2DExpression<Mat3x3GreenStrain<UxMatType, EMatType> > {
+class ADMat3x3GreenStrainExpr : public ADExpression<ADMat3x3GreenStrainExpr<UxMatType, EMatType> > {
 public:
-  Mat3x3GreenStrain( A2DMat<UxMatType>& UxObj, A2DMat<EMatType>& EObj ) : UxObj(UxObj), EObj(EObj) {
+  ADMat3x3GreenStrainExpr( ADMat<UxMatType>& UxObj, ADMat<EMatType>& EObj ) : UxObj(UxObj), EObj(EObj) {
+    const UxMatType& Ux = UxObj.value();
+    EMatType& E = EObj.value();
+    E(0, 0) = Ux(0, 0) + 0.5*(Ux(0, 0) * Ux(0, 0) + Ux(1, 0) * Ux(1, 0) + Ux(2, 0) * Ux(2, 0));
+    E(1, 1) = Ux(1, 1) + 0.5*(Ux(0, 1) * Ux(0, 1) + Ux(1, 1) * Ux(1, 1) + Ux(2, 1) * Ux(2, 1));
+    E(2, 2) = Ux(2, 2) + 0.5*(Ux(0, 2) * Ux(0, 2) + Ux(1, 2) * Ux(1, 2) + Ux(2, 2) * Ux(2, 2));
+
+    E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0) + Ux(0, 0) * Ux(0, 1) + Ux(1, 0) * Ux(1, 1) + Ux(2, 0) * Ux(2, 1));
+    E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0) + Ux(0, 0) * Ux(0, 2) + Ux(1, 0) * Ux(1, 2) + Ux(2, 0) * Ux(2, 2));
+    E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1) + Ux(0, 1) * Ux(0, 2) + Ux(1, 1) * Ux(1, 2) + Ux(2, 1) * Ux(2, 2));
+  }
+
+  void forward(){
+    const UxMatType& Ux = UxObj.value();
+    const UxMatType& Uxd = UxObj.bvalue();
+    EMatType& Ed = EObj.bvalue();
+
+    Ed(0, 0) = Uxd(0, 0) + Ux(0, 0) * Uxd(0, 0) + Ux(1, 0) * Uxd(1, 0) + Ux(2, 0) * Uxd(2, 0);
+    Ed(1, 1) = Uxd(1, 1) + Ux(0, 1) * Uxd(0, 1) + Ux(1, 1) * Uxd(1, 1) + Ux(2, 1) * Uxd(2, 1);
+    Ed(2, 2) = Uxd(2, 2) + Ux(0, 2) * Uxd(0, 2) + Ux(1, 2) * Uxd(1, 2) + Ux(2, 2) * Uxd(2, 2);
+
+    Ed(0, 1) = 0.5*(Uxd(0, 1) + Uxd(1, 0) +
+                    Ux(0, 0) * Uxd(0, 1) + Ux(1, 0) * Uxd(1, 1) + Ux(2, 0) * Uxd(2, 1) +
+                    Uxd(0, 0) * Ux(0, 1) + Uxd(1, 0) * Ux(1, 1) + Uxd(2, 0) * Ux(2, 1));
+    Ed(0, 2) = 0.5*(Uxd(0, 2) + Uxd(2, 0) +
+                    Ux(0, 0) * Uxd(0, 2) + Ux(1, 0) * Uxd(1, 2) + Ux(2, 0) * Uxd(2, 2) +
+                    Uxd(0, 0) * Ux(0, 2) + Uxd(1, 0) * Ux(1, 2) + Uxd(2, 0) * Ux(2, 2));
+    Ed(1, 2) = 0.5*(Uxd(1, 2) + Uxd(2, 1) +
+                    Ux(0, 1) * Uxd(0, 2) + Ux(1, 1) * Uxd(1, 2) + Ux(2, 1) * Uxd(2, 2) +
+                    Uxd(0, 1) * Ux(0, 2) + Uxd(1, 1) * Ux(1, 2) + Uxd(2, 1) * Ux(2, 2));
+  }
+
+  void reverse(){
+    const UxMatType& Ux = UxObj.value();
+    const EMatType& Eb = EObj.bvalue();
+    UxMatType& Uxb = UxObj.bvalue();
+
+    // Uxb = (I + Ux) * Eb
+    Uxb(0, 0) +=       (Ux(0, 0) + 1.0) * Eb(0, 0) + 0.5 * Ux(0, 1) * Eb(0, 1) + 0.5 * Ux(0, 2) * Eb(0, 2);
+    Uxb(0, 1) += 0.5 * (Ux(0, 0) + 1.0) * Eb(0, 1) +       Ux(0, 1) * Eb(1, 1) + 0.5 * Ux(0, 2) * Eb(1, 2);
+    Uxb(0, 2) += 0.5 * (Ux(0, 0) + 1.0) * Eb(0, 2) + 0.5 * Ux(0, 1) * Eb(1, 2) +       Ux(0, 2) * Eb(2, 2);
+
+    Uxb(1, 0) +=       Ux(1, 0) * Eb(0, 0) + 0.5 * (Ux(1, 1) + 1.0) * Eb(0, 1) + 0.5 * Ux(1, 2) * Eb(0, 2);
+    Uxb(1, 1) += 0.5 * Ux(1, 0) * Eb(0, 1) +       (Ux(1, 1) + 1.0) * Eb(1, 1) + 0.5 * Ux(1, 2) * Eb(1, 2);
+    Uxb(1, 2) += 0.5 * Ux(1, 0) * Eb(0, 2) + 0.5 * (Ux(1, 1) + 1.0) * Eb(1, 2) +       Ux(1, 2) * Eb(2, 2);
+
+    Uxb(2, 0) +=       Ux(2, 0) * Eb(0, 0) + 0.5 * Ux(2, 1) * Eb(0, 1) + 0.5 * (Ux(2, 2) + 1.0) * Eb(0, 2);
+    Uxb(2, 1) += 0.5 * Ux(2, 0) * Eb(0, 1) +       Ux(2, 1) * Eb(1, 1) + 0.5 * (Ux(2, 2) + 1.0) * Eb(1, 2);
+    Uxb(2, 2) += 0.5 * Ux(2, 0) * Eb(0, 2) + 0.5 * Ux(2, 1) * Eb(1, 2) +       (Ux(2, 2) + 1.0) * Eb(2, 2);
+  }
+
+  ADMat<UxMatType>& UxObj;
+  ADMat<EMatType>& EObj;
+};
+
+template<class UxMatType, class EMatType>
+inline ADMat3x3GreenStrainExpr<UxMatType, EMatType>
+Mat3x3GreenStrain( ADMat<UxMatType>& Ux, ADMat<EMatType>& E ){
+  return ADMat3x3GreenStrainExpr<UxMatType, EMatType>(Ux, E);
+}
+
+template<class UxMatType, class EMatType>
+class A2DMat3x3GreenStrainExpr : public A2DExpression<A2DMat3x3GreenStrainExpr<UxMatType, EMatType> > {
+public:
+  A2DMat3x3GreenStrainExpr( A2DMat<UxMatType>& UxObj, A2DMat<EMatType>& EObj ) : UxObj(UxObj), EObj(EObj) {
     const UxMatType& Ux = UxObj.value();
     EMatType& E = EObj.value();
     E(0, 0) = Ux(0, 0) + 0.5*(Ux(0, 0) * Ux(0, 0) + Ux(1, 0) * Ux(1, 0) + Ux(2, 0) * Ux(2, 0));
@@ -499,6 +495,11 @@ public:
   A2DMat<EMatType>& EObj;
 };
 
+template<class UxMatType, class EMatType>
+inline A2DMat3x3GreenStrainExpr<UxMatType, EMatType>
+Mat3x3GreenStrain( A2DMat<UxMatType>& Ux, A2DMat<EMatType>& E ){
+  return A2DMat3x3GreenStrainExpr<UxMatType, EMatType>(Ux, E);
+}
 
 
 /*

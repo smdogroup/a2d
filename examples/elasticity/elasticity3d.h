@@ -34,39 +34,45 @@ public:
 
   template<typename T, class IdxType, class QuadPointData, class MatType>
   static T compute_energy( IdxType i, IdxType j, QuadPointData& data, MatType& Ux ){
-    typedef SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
 
     T mu(data(i, j, 0)), lambda(data(i, j, 1));
-    T output, outputb(1.0);
+    T output;
 
-    Mat3x3GreenStrain<MatType, SymmMat3x3> strain(Ux, E);
-    Symm3x3IsotropicConstitutive<T, SymmMat3x3, SymmMat3x3> stress(mu, lambda, E, S);
-    Symm3x3SymmMultTrace<SymmMat3x3, SymmMat3x3, T> trace(E, S, output);
+    SymmMat3x3 E, S;
+    A2D::Mat3x3GreenStrain(Ux, E);
+    A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    return outpu;
+    return output;
   }
 
   template<typename T, class IdxType, class QuadPointData, class MatType>
   static T compute_residual( IdxType i, IdxType j, QuadPointData& data,
                              MatType& Uxi, MatType& Uxd ){
-    typedef SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
 
     T mu(data(i, j, 0)), lambda(data(i, j, 1));
     T output, outputb(1.0);
 
-    Mat3x3GreenStrain<MatType, SymmMat3x3> strain(Ux, E);
-    Symm3x3IsotropicConstitutive<T, SymmMat3x3, SymmMat3x3> stress(mu, lambda, E, S);
-    Symm3x3SymmMultTrace<SymmMat3x3, SymmMat3x3, T> trace(E, S, output);
+    SymmMat3x3 E0, Eb, S0, Eb;
+    A2D::ADMat<MatType> Ux(Uxi, Uxid);
+    A2D::ADMat<SymmMat3x3> E(E0, Eb);
+    A2D::ADMat<SymmMat3x3> S(S0, Sb);
+    A2D::ADScalar<T> output;
 
-    trace.reverse(outputb, Eb, Sb);
-    stress.reverse(Sb, Eb);
-    strain.reverse(Eb, Uxd);
+    auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+    auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+
+    output.bvalue = 1.0;
+
+    trace.reverse();
+    stress.reverse();
+    strain.reverse();
 
     return output;
   }
-
-
-
 };
 
 const double GaussQuadPts2[] = { -0.577350269189626, 0.577350269189626 };

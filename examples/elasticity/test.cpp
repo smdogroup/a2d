@@ -16,10 +16,10 @@ int main( int argc, char *argv[] ){
   SymmMat3x3 E, Eb, Ed, Eh;
   SymmMat3x3 S, Sb, Sd, Sh;
 
-  A2D::A2DScalarType<ScalarType> output;
-  A2D::A2DMat<Mat3x3> UxObj(&Ux, &Uxb, &Uxd, &Uxh);
-  A2D::A2DMat<SymmMat3x3> EObj(&E, &Eb, &Ed, &Eh);
-  A2D::A2DMat<SymmMat3x3> SObj(&S, &Sb, &Sd, &Sh);
+  A2D::A2DScalar<ScalarType> output;
+  A2D::A2DMat<Mat3x3> UxObj(Ux, Uxb, Uxd, Uxh);
+  A2D::A2DMat<SymmMat3x3> EObj(E, Eb, Ed, Eh);
+  A2D::A2DMat<SymmMat3x3> SObj(S, Sb, Sd, Sh);
 
   ScalarType mu(0.2533), lambda(0.71236);
 
@@ -37,9 +37,9 @@ int main( int argc, char *argv[] ){
     }
   }
 
-  A2D::Mat3x3GreenStrain<Mat3x3, SymmMat3x3> strain(UxObj, EObj);
-  A2D::Symm3x3IsotropicConstitutive<ScalarType, SymmMat3x3, SymmMat3x3> constitutive(mu, lambda, EObj, SObj);
-  A2D::Symm3x3SymmMultTrace<SymmMat3x3, SymmMat3x3, ScalarType> trace(SObj, EObj, output);
+  auto strain = A2D::Mat3x3GreenStrain(UxObj, EObj);
+  auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, EObj, SObj);
+  auto trace = A2D::Symm3x3SymmMultTrace(SObj, EObj, output);
 
   output.bvalue = 1.0;
 

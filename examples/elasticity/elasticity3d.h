@@ -2,6 +2,7 @@
 #define ELASTICITY_3D_H
 
 #include "a2dtmp.h"
+#include <cstddef>
 
 /*
   Scatter the variables stored at the nodes to the a data structure

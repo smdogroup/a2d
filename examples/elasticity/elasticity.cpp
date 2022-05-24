@@ -9,6 +9,8 @@
 
 #define USE_COMPLEX 1
 
+using namespace A2D;
+
 /*
   Finite-element computations using templating/auto-diff and multi-dimensional arrays
 */

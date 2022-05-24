@@ -49,7 +49,7 @@ public:
 
   template<typename T, class IdxType, class QuadPointData, class MatType>
   static T compute_residual( IdxType i, IdxType j, QuadPointData& data,
-                             MatType& Uxi, MatType& Uxd ){
+                             MatType& Uxi, MatType& Uxid ){
     typedef A2D::SymmMat<T, 3> SymmMat3x3;
 
     T mu(data(i, j, 0)), lambda(data(i, j, 1));

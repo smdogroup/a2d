@@ -21,7 +21,6 @@ namespace A2D {
 
     void reverse(){ cast().reverse(); }
     void hforward(){ cast().hforward(); }
-    void hproduct(){ cast().hproduct(); }
     void hreverse(){ cast().hreverse(); }
   };
 

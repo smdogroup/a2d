@@ -3,6 +3,30 @@
 #include <iomanip>
 #include <complex>
 
+/*
+  The first derivative of a function f(y(x)) is
+
+  df/dx = df/dy * dy/dx
+
+  The second derivative of the same function is
+
+  d^2f/dx^2 * px = df/dy * (d^2y/dx^2 * p) + d^2f/dy^2 * (dy/dx * p) * (dy/dx)
+
+  # Definition of partial derivatives bar{x} = bx
+  bx = df/dx
+  by = df/dy
+
+  # Definition of directional derivatives p_x, p_y
+  px = p
+  py = dy/dx * p
+
+  # Definition of projected second derivative
+  hx = d^2f/dx^2 * px
+  hy = d^2f/dy^2 * py
+
+  # The projected second derivative requires the computation
+  hx = by * (d^2y/dx^2 * px) + hy * (dy/dx)
+*/
 int main( int argc, char *argv[] ){
   // typedef int32_t IndexType;
   typedef std::complex<double> ScalarType;
@@ -12,6 +36,7 @@ int main( int argc, char *argv[] ){
 
   double dh = 1e-30;
 
+  /*
   Mat3x3 Jd, Uxid;
 
   Mat3x3 J, Jb;
@@ -78,14 +103,15 @@ int main( int argc, char *argv[] ){
   std::cout << "result: " << std::setw(20) << res << " fd: " << std::setw(20) << fd
     << " error: " << std::setw(20) << error << std::endl;
 
-  /*
-
+  // */
   Mat3x3 Ux, Uxb, Uxd, Uxh;
+  Mat3x3 U, Ub, Ud, Uh;
   SymmMat3x3 E, Eb, Ed, Eh;
   SymmMat3x3 S, Sb, Sd, Sh;
 
   A2D::A2DScalar<ScalarType> output;
   A2D::A2DMat<Mat3x3> UxObj(Ux, Uxb, Uxd, Uxh);
+  A2D::A2DMat<Mat3x3> UObj(U, Ub, Ud, Uh);
   A2D::A2DMat<SymmMat3x3> EObj(E, Eb, Ed, Eh);
   A2D::A2DMat<SymmMat3x3> SObj(S, Sb, Sd, Sh);
 
@@ -105,7 +131,8 @@ int main( int argc, char *argv[] ){
     }
   }
 
-  auto strain = A2D::Mat3x3GreenStrain(UxObj, EObj);
+  auto inv = A2D::Mat3x3Inverse(UxObj, UObj);
+  auto strain = A2D::Mat3x3GreenStrain(UObj, EObj);
   auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, EObj, SObj);
   auto trace = A2D::Symm3x3SymmMultTrace(SObj, EObj, output);
 
@@ -114,6 +141,7 @@ int main( int argc, char *argv[] ){
   trace.reverse();
   constitutive.reverse();
   strain.reverse();
+  inv.reverse();
 
   ScalarType result = 0.0;
   for ( int i = 0; i < 3; i++ ){
@@ -129,13 +157,14 @@ int main( int argc, char *argv[] ){
   std::cout << "result: " << std::setw(20) << res << " fd: " << std::setw(20) << fd
     << " error: " << std::setw(20) << error << std::endl;
 
+  inv.hforward();
   strain.hforward();
   constitutive.hforward();
-  trace.hproduct();
+  trace.hforward();
+  trace.hreverse();
   constitutive.hreverse();
   strain.hreverse();
-
-  strain.hproduct();
+  inv.hreverse();
 
   for ( int i = 0; i < 3; i++ ){
     for ( int j = 0; j < 3; j++ ){
@@ -147,8 +176,8 @@ int main( int argc, char *argv[] ){
         " fd: " << std::setw(20) << fd << " error: " << std::setw(20) <<  error << std::endl;
     }
   }
-  */
 
+  // */
 
   return (0);
 }

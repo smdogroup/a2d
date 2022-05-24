@@ -32,14 +32,19 @@ class NonlinearElasticity3D {
 public:
   static const int NUM_VARS = 3;
 
-  template<typename T, class IdxType, class QuadPointData, class MatType>
-  static T compute_energy( IdxType i, IdxType j, QuadPointData& data, MatType& Ux ){
+  template<typename T, class IdxType, class QuadPointData>
+  static T compute_energy( IdxType i, IdxType j, QuadPointData& data,
+                           A2D::Mat<T, 3, 3>& Jinv,
+                           A2D::Mat<T, 3, 3>& Uxi ){
     typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
 
     T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    Mat3x3 Ux;
+    SymmMat3x3 E, S;
     T output;
 
-    SymmMat3x3 E, S;
+    A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
     A2D::Mat3x3GreenStrain(Ux, E);
     A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     A2D::Symm3x3SymmMultTrace(S, E, output);
@@ -47,33 +52,231 @@ public:
     return output;
   }
 
-  template<typename T, class IdxType, class QuadPointData, class MatType>
+  template<typename T, class IdxType, class QuadPointData>
   static T compute_residual( IdxType i, IdxType j, QuadPointData& data,
-                             MatType& Uxi, MatType& Uxid ){
+                             T wdetJ,
+                             A2D::Mat<T, 3, 3>& Jinv,
+                             A2D::Mat<T, 3, 3>& Uxi0,
+                             A2D::Mat<T, 3, 3>& Uxib ){
     typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
 
     T mu(data(i, j, 0)), lambda(data(i, j, 1));
-    T output, outputb(1.0);
+    Mat3x3 Ux0, Uxb;
+    SymmMat3x3 E0, Eb;
+    SymmMat3x3 S0, Sb;
 
-    SymmMat3x3 E0, Eb, S0, Sb;
-    A2D::ADMat<MatType> Ux(Uxi, Uxid);
-    A2D::ADMat<SymmMat3x3> E(E0, Eb);
+    A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
+    A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
     A2D::ADMat<SymmMat3x3> S(S0, Sb);
+    A2D::ADMat<SymmMat3x3> E(E0, Eb);
     A2D::ADScalar<T> output;
 
+    auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
     auto strain = A2D::Mat3x3GreenStrain(Ux, E);
     auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    output.bvalue = 1.0;
+    output.bvalue = wdetJ;
 
     trace.reverse();
-    stress.reverse();
+    constitutive.reverse();
     strain.reverse();
+    mult.reverse();
+
+    return output.value;
+  }
+
+  template<typename T, class IdxType, class QuadPointData>
+  static T compute_jacobian( IdxType i, IdxType j, QuadPointData& data,
+                             T wdetJ,
+                             A2D::Mat<T, 3, 3>& Jinv,
+                             A2D::Mat<T, 3, 3>& Uxi0,
+                             A2D::Mat<T, 3, 3>& Uxib,
+                             A2D::SymmTensor<T, 3, 3>& jac ){
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    Mat3x3 Ux0, Uxb, Uxp, Uxh;
+    Mat3x3 Uxip, Uxih;
+    SymmMat3x3 E0, Eb, Ep, Eh;
+    SymmMat3x3 S0, Sb, Sp, Sh;
+
+    A2D::A2DMat<Mat3x3> Uxi(Uxi0, Uxib, Uxip, Uxih);
+    A2D::A2DMat<Mat3x3> Ux(Ux0, Uxb, Uxp, Uxh);
+    A2D::A2DMat<SymmMat3x3> S(S0, Sb, Sp, Sh);
+    A2D::A2DMat<SymmMat3x3> E(E0, Eb, Ep, Eh);
+    A2D::A2DScalar<T> output;
+
+    auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+    auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+    auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+
+    output.bvalue = wdetJ;
+
+    trace.reverse();
+    constitutive.reverse();
+    strain.reverse();
+    mult.reverse();
+
+    for ( int i = 0; i < 3; i++ ){
+      for ( int j = 0; j < 3; j++ ){
+        // Zero the derivatives
+        Uxih.zero();
+        Uxh.zero();
+        Sh.zero();
+        Eh.zero();
+
+        Uxip.zero();
+        Uxip(i, j) = 1.0;
+
+        mult.hforward();
+        strain.hforward();
+        constitutive.hforward();
+        trace.hreverse();
+        constitutive.hreverse();
+        strain.hreverse();
+        mult.hreverse();
+
+        for ( int k = 0; k < 3; k++ ){
+          for ( int l = 0; l < 3; l++ ){
+            jac(i, j, k, l) = Uxih(k, l);
+          }
+        }
+      }
+    }
+
+    return output.value;
+  }
+};
+
+
+class LinearElasticity3D {
+public:
+  static const int NUM_VARS = 3;
+
+  template<typename T, class IdxType, class QuadPointData>
+  static T compute_energy( IdxType i, IdxType j, QuadPointData& data,
+                           A2D::Mat<T, 3, 3>& Jinv,
+                           A2D::Mat<T, 3, 3>& Uxi ){
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    Mat3x3 Ux;
+    SymmMat3x3 E, S;
+    T output;
+
+    A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+    A2D::Mat3x3LinearGreenStrain(Ux, E);
+    A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    A2D::Symm3x3SymmMultTrace(S, E, output);
 
     return output;
   }
+
+  template<typename T, class IdxType, class QuadPointData>
+  static T compute_residual( IdxType i, IdxType j, QuadPointData& data,
+                             T wdetJ,
+                             A2D::Mat<T, 3, 3>& Jinv,
+                             A2D::Mat<T, 3, 3>& Uxi0,
+                             A2D::Mat<T, 3, 3>& Uxib ){
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    Mat3x3 Ux0, Uxb;
+    SymmMat3x3 E0, Eb;
+    SymmMat3x3 S0, Sb;
+
+    A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
+    A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
+    A2D::ADMat<SymmMat3x3> S(S0, Sb);
+    A2D::ADMat<SymmMat3x3> E(E0, Eb);
+    A2D::ADScalar<T> output;
+
+    auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+    auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
+    auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+
+    output.bvalue = wdetJ;
+
+    trace.reverse();
+    constitutive.reverse();
+    strain.reverse();
+    mult.reverse();
+
+    return output.value;
+  }
+
+  template<typename T, class IdxType, class QuadPointData>
+  static T compute_jacobian( IdxType i, IdxType j, QuadPointData& data,
+                             T wdetJ,
+                             A2D::Mat<T, 3, 3>& Jinv,
+                             A2D::Mat<T, 3, 3>& Uxi0,
+                             A2D::Mat<T, 3, 3>& Uxib,
+                             A2D::SymmTensor<T, 3, 3>& jac ){
+    typedef A2D::SymmMat<T, 3> SymmMat3x3;
+    typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+    T mu(data(i, j, 0)), lambda(data(i, j, 1));
+    Mat3x3 Ux0, Uxb, Uxp, Uxh;
+    Mat3x3 Uxip, Uxih;
+    SymmMat3x3 E0, Eb, Ep, Eh;
+    SymmMat3x3 S0, Sb, Sp, Sh;
+
+    A2D::A2DMat<Mat3x3> Uxi(Uxi0, Uxib, Uxip, Uxih);
+    A2D::A2DMat<Mat3x3> Ux(Ux0, Uxb, Uxp, Uxh);
+    A2D::A2DMat<SymmMat3x3> S(S0, Sb, Sp, Sh);
+    A2D::A2DMat<SymmMat3x3> E(E0, Eb, Ep, Eh);
+    A2D::A2DScalar<T> output;
+
+    auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+    auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
+    auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
+    auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+
+    output.bvalue = wdetJ;
+
+    trace.reverse();
+    constitutive.reverse();
+    strain.reverse();
+    mult.reverse();
+
+    for ( int i = 0; i < 3; i++ ){
+      for ( int j = 0; j < 3; j++ ){
+        // Zero the derivatives
+        Uxih.zero();
+        Uxh.zero();
+        Sh.zero();
+        Eh.zero();
+
+        Uxip.zero();
+        Uxip(i, j) = 1.0;
+
+        mult.hforward();
+        strain.hforward();
+        constitutive.hforward();
+        trace.hreverse();
+        constitutive.hreverse();
+        strain.hreverse();
+        mult.hreverse();
+
+        for ( int k = 0; k < 3; k++ ){
+          for ( int l = 0; l < 3; l++ ){
+            jac(i, j, k, l) = Uxih(k, l);
+          }
+        }
+      }
+    }
+
+    return output.value;
+  }
 };
+
 
 const double GaussQuadPts2[] = { -0.577350269189626, 0.577350269189626 };
 const double GaussQuadWts2[] = {  1.0,               1.0 };
@@ -137,11 +340,11 @@ public:
   */
   template<typename T,
            class ElementNodeArray,
-           class QuadPointJacobianArray,
-           class QuadPointDetJArray>
+           class QuadPointDetJArray,
+           class QuadPointJacobianArray>
   static void compute_jtrans( ElementNodeArray& X,
-                              QuadPointJacobianArray& Jinv,
-                              QuadPointDetJArray& detJ ){
+                              QuadPointDetJArray& detJ,
+                              QuadPointJacobianArray& Jinv ){
     for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -203,11 +406,9 @@ public:
   template<typename T,
            const int num_vars,
            class ElementSolutionArray,
-           class QuadPointJacobianArray,
            class QuadPointGradientArray>
   static void gradient( ElementSolutionArray& U,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Ux ){
+                        QuadPointGradientArray& Uxi ){
     for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -229,34 +430,24 @@ public:
       n3x[1] = 0.5;
 
       for ( std::size_t i = 0; i < U.extent(0); i++ ){
-        A2D::Mat<T, 3, 3> jinv(Jinv, i, j);
-
         for ( int ii = 0; ii < num_vars; ii++ ){
-          A2D::Vec<T, 3> Uxi;
-          Uxi(0) =
+          Uxi(i, j, ii, 0) =
             n3[0] * (n2[0] * (n1x[0] * U(i, 0, ii) + n1x[1] * U(i, 1, ii)) +
                      n2[1] * (n1x[0] * U(i, 2, ii) + n1x[1] * U(i, 3, ii))) +
             n3[1] * (n2[0] * (n1x[0] * U(i, 4, ii) + n1x[1] * U(i, 5, ii)) +
                      n2[1] * (n1x[0] * U(i, 6, ii) + n1x[1] * U(i, 7, ii)));
 
-          Uxi(1) =
+          Uxi(i, j, ii, 1) =
             n3[0] * (n2x[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
                      n2x[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
             n3[1] * (n2x[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
                      n2x[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
 
-          Uxi(2) =
+          Uxi(i, j, ii, 2) =
             n3x[0] * (n2[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
                       n2[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
             n3x[1] * (n2[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
                       n2[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
-
-          A2D::Vec<T, 3> Ux;
-          A2D::MatTrans3x3VecMult(JinvObj, UxiObj, UxObj);
-
-          for ( int jj = 0; jj < 3; jj++ ){
-            Ux(i, j, ii, jj) = UxObj(jj);
-          }
         }
       }
     }
@@ -264,44 +455,51 @@ public:
 
   template<typename T,
            class Model,
-           class QuadPointGradientArray,
            class QuadPointModelDataArray,
+           class QuadPointDetJArray,
            class QuadPointJacobianArray,
-           class QuadPointDetJArray>
-  static void energy( QuadPointGradientArray& Ux,
-                      QuadPointModelDataArray& Edata,
-                      QuadPointJacobianArray& Jinv,
+           class QuadPointGradientArray>
+  static void energy( QuadPointModelDataArray& Edata,
                       QuadPointDetJArray& detJ,
+                      QuadPointJacobianArray& Jinv,
+                      QuadPointGradientArray& Uxi,
                       T& energy ){
     for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double weight = Quadrature::getQuadWeight(j);
 
-      for ( std::size_t i = 0; i < Ux.extent(0); i++ ){
-        // Extract U,x to UxObj
-        Mat<T, Model::NUM_VARS, 3> UxObj(Ux, i, j);
-
-        for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
+      for ( std::size_t i = 0; i < Uxi.extent(0); i++ ){
+        // Extract Jinv
+        A2D::Mat<T, 3, 3> Jinv0;
+        for ( int ii = 0; ii < 3; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
-            UxObj(ii, jj) = Ux(i, j, ii, jj);
+            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
           }
         }
 
-        energy += weight * detJ(i, j) * Model::getEnergy(i, j, Edata, UxObj);
+        // Extract Uxi0
+        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0;
+        for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+          }
+        }
+
+        energy += weight * detJ(i, j) * Model::compute_energy(i, j, Edata, Jinv0, Uxi0);
       }
     }
   }
 
   template<typename T,
            class Model,
-           class QuadPointGradientArray,
            class QuadPointModelDataArray,
-           class QuadPointJacobianArray,
            class QuadPointDetJArray,
+           class QuadPointJacobianArray,
+           class QuadPointGradientArray,
            class ElementResidualArray>
-  static void residuals( QuadPointGradientArray& Ux,
-                         QuadPointModelDataArray& Edata,
-                         QuadPointJacobianArray& Jinv,
+  static void residuals( QuadPointModelDataArray& Edata,
                          QuadPointDetJArray& detJ,
+                         QuadPointJacobianArray& Jinv,
+                         QuadPointGradientArray& Uxi,
                          ElementResidualArray& res ){
     for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
       double pt[3];
@@ -324,40 +522,164 @@ public:
       n3x[0] = -0.5;
       n3x[1] = 0.5;
 
-      for ( std::size_t i = 0; i < Ux.extent(0); i++ ){
-        // Extract U,x
-        Mat<T, Model::NUM_VARS, 3> UxObj(Ux, i, j);
-        Mat<T, Model::NUM_VARS, 3> dUxObj;
+      double N1x[8], N2x[8], N3x[8];
+      N1x[0] = n3[0] * n2[0] * n1x[0];
+      N1x[1] = n3[0] * n2[0] * n1x[1];
+      N1x[2] = n3[0] * n2[1] * n1x[0];
+      N1x[3] = n3[0] * n2[1] * n1x[1];
+      N1x[4] = n3[1] * n2[0] * n1x[0];
+      N1x[5] = n3[1] * n2[0] * n1x[1];
+      N1x[6] = n3[1] * n2[1] * n1x[0];
+      N1x[7] = n3[1] * n2[1] * n1x[1];
 
-        // Extract the energy and residual
-        dUxObj.zero();
-        Model::getEnergyAndResidual(i, j, Edata, UxObj, dUxObj);
+      N2x[0] = n3[0] * n2x[0] * n1[0];
+      N2x[1] = n3[0] * n2x[0] * n1[1];
+      N2x[2] = n3[0] * n2x[1] * n1[0];
+      N2x[3] = n3[0] * n2x[1] * n1[1];
+      N2x[4] = n3[1] * n2x[0] * n1[0];
+      N2x[5] = n3[1] * n2x[0] * n1[1];
+      N2x[6] = n3[1] * n2x[1] * n1[0];
+      N2x[7] = n3[1] * n2x[1] * n1[1];
+
+      N3x[0] = n3x[0] * n2[0] * n1[0];
+      N3x[1] = n3x[0] * n2[0] * n1[1];
+      N3x[2] = n3x[0] * n2[1] * n1[0];
+      N3x[3] = n3x[0] * n2[1] * n1[1];
+      N3x[4] = n3x[1] * n2[0] * n1[0];
+      N3x[5] = n3x[1] * n2[0] * n1[1];
+      N3x[6] = n3x[1] * n2[1] * n1[0];
+      N3x[7] = n3x[1] * n2[1] * n1[1];
+
+      for ( std::size_t i = 0; i < Uxi.extent(0); i++ ){
+        A2D::Mat<T, 3, 3> Jinv0;
+        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
+
+        // Extract Jinv
+        for ( int ii = 0; ii < 3; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
+          }
+        }
+
+        // Extract Uxi0
+        for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+          }
+        }
+
+        Model::compute_residual(i, j, Edata, weight * detJ(i, j), Jinv0, Uxi0, Uxib);
 
         for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
-          A2D::Vec3<T> UxiObj;
-          UxiObj(0) =
-            n3[0] * (n2[0] * (n1x[0] * U(i, 0, ii) + n1x[1] * U(i, 1, ii)) +
-                     n2[1] * (n1x[0] * U(i, 2, ii) + n1x[1] * U(i, 3, ii))) +
-            n3[1] * (n2[0] * (n1x[0] * U(i, 4, ii) + n1x[1] * U(i, 5, ii)) +
-                     n2[1] * (n1x[0] * U(i, 6, ii) + n1x[1] * U(i, 7, ii)));
+          for ( int k = 0; k < 8; k++ ){
+            res(i, k, ii) +=
+              N1x[k] * Uxib(ii, 0) + N2x[k] * Uxib(ii, 1) + N3x[k] * Uxib(ii, 2);
+          }
+        }
+      }
+    }
+  }
 
-          UxiObj(1) =
-            n3[0] * (n2x[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
-                     n2x[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
-            n3[1] * (n2x[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
-                     n2x[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
+  template<typename T,
+           class Model,
+           class QuadPointModelDataArray,
+           class QuadPointDetJArray,
+           class QuadPointJacobianArray,
+           class QuadPointGradientArray,
+           class ElementResidualArray>
+  static void jacobians( QuadPointModelDataArray& Edata,
+                         QuadPointDetJArray& detJ,
+                         QuadPointJacobianArray& Jinv,
+                         QuadPointGradientArray& Uxi,
+                         ElementResidualArray& jac ){
+    for ( std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++ ){
+      double pt[3];
+      Quadrature::getQuadPoint(j, pt);
+      double weight = Quadrature::getQuadWeight(j);
 
-          UxiObj(2) =
-            n3x[0] * (n2[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
-                      n2[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
-            n3x[1] * (n2[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
-                      n2[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
+      double n1[2], n2[2], n3[2];
+      n1[0] = 0.5*(1.0 - pt[0]);
+      n1[1] = 0.5*(1.0 + pt[0]);
+      n2[0] = 0.5*(1.0 - pt[1]);
+      n2[1] = 0.5*(1.0 + pt[1]);
+      n3[0] = 0.5*(1.0 - pt[2]);
+      n3[1] = 0.5*(1.0 + pt[2]);
 
-          A2D::Vec3<T> UxObj;
-          A2D::MatTrans3x3VecMult<T> multObj(JinvObj, UxiObj, UxObj);
+      double n1x[2], n2x[2], n3x[2];
+      n1x[0] = -0.5;
+      n1x[1] = 0.5;
+      n2x[0] = -0.5;
+      n2x[1] = 0.5;
+      n3x[0] = -0.5;
+      n3x[1] = 0.5;
 
+      double N1x[8], N2x[8], N3x[8];
+      N1x[0] = n3[0] * n2[0] * n1x[0];
+      N1x[1] = n3[0] * n2[0] * n1x[1];
+      N1x[2] = n3[0] * n2[1] * n1x[0];
+      N1x[3] = n3[0] * n2[1] * n1x[1];
+      N1x[4] = n3[1] * n2[0] * n1x[0];
+      N1x[5] = n3[1] * n2[0] * n1x[1];
+      N1x[6] = n3[1] * n2[1] * n1x[0];
+      N1x[7] = n3[1] * n2[1] * n1x[1];
+
+      N2x[0] = n3[0] * n2x[0] * n1[0];
+      N2x[1] = n3[0] * n2x[0] * n1[1];
+      N2x[2] = n3[0] * n2x[1] * n1[0];
+      N2x[3] = n3[0] * n2x[1] * n1[1];
+      N2x[4] = n3[1] * n2x[0] * n1[0];
+      N2x[5] = n3[1] * n2x[0] * n1[1];
+      N2x[6] = n3[1] * n2x[1] * n1[0];
+      N2x[7] = n3[1] * n2x[1] * n1[1];
+
+      N3x[0] = n3x[0] * n2[0] * n1[0];
+      N3x[1] = n3x[0] * n2[0] * n1[1];
+      N3x[2] = n3x[0] * n2[1] * n1[0];
+      N3x[3] = n3x[0] * n2[1] * n1[1];
+      N3x[4] = n3x[1] * n2[0] * n1[0];
+      N3x[5] = n3x[1] * n2[0] * n1[1];
+      N3x[6] = n3x[1] * n2[1] * n1[0];
+      N3x[7] = n3x[1] * n2[1] * n1[1];
+
+      for ( std::size_t i = 0; i < Uxi.extent(0); i++ ){
+        A2D::Mat<T, 3, 3> Jinv0;
+        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
+
+        // Extract Jinv
+        for ( int ii = 0; ii < 3; ii++ ){
           for ( int jj = 0; jj < 3; jj++ ){
-            Ux(i, j, ii, jj) = UxObj(jj);
+            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
+          }
+        }
+
+        // Extract Uxi0
+        for ( int ii = 0; ii < Model::NUM_VARS; ii++ ){
+          for ( int jj = 0; jj < 3; jj++ ){
+            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+          }
+        }
+
+        // The Jacobian of the energy
+        A2D::SymmTensor<T, Model::NUM_VARS, 3> ja;
+
+        Model::compute_jacobian(i, j, Edata, weight * detJ(i, j), Jinv0, Uxi0, Uxib, ja);
+
+        for ( int ky = 0; ky < 8; ky++ ){
+          for ( int kx = 0; kx < 8; kx++ ){
+            for ( int iy = 0; iy < Model::NUM_VARS; iy++ ){
+              for ( int ix = 0; ix < Model::NUM_VARS; ix++ ){
+                jac(i, ky, kx, iy, ix) +=
+                  N1x[ky] * ( N1x[kx] * ja(iy, 0, ix, 0) +
+                              N2x[kx] * ja(iy, 0, ix, 1) +
+                              N3x[kx] * ja(iy, 0, ix, 2) ) +
+                  N2x[ky] * ( N1x[kx] * ja(iy, 1, ix, 0) +
+                              N2x[kx] * ja(iy, 1, ix, 1) +
+                              N3x[kx] * ja(iy, 1, ix, 2) ) +
+                  N3x[ky] * ( N1x[kx] * ja(iy, 2, ix, 0) +
+                              N2x[kx] * ja(iy, 2, ix, 1) +
+                              N3x[kx] * ja(iy, 2, ix, 2) );
+              }
+            }
           }
         }
       }

@@ -224,6 +224,327 @@ namespace A2D {
     return A2DMat3x3MatMultExpr<AMatType, BMatType, CMatType, AT, BT>(AObj, BObj, CObj);
   }
 
+  template<typename ScalarType, class BMatType, class CMatType, bool AT=false, bool BT=false>
+  class ADpMat3x3MatMultExpr : public ADExpression<ADpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT> > {
+  public:
+    typedef Mat<ScalarType, 3, 3> Mat3x3;
+
+    ADpMat3x3MatMultExpr( Mat3x3& A, ADMat<BMatType>& BObj, ADMat<CMatType>& CObj ) : A(A), BObj(BObj), CObj(CObj) {
+      const BMatType& B = BObj.value();
+      CMatType& C = CObj.value();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, B, C);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, B, C);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, B, C);
+      }
+      else {
+        Mat3x3MatMultCore(A, B, C);
+      }
+    }
+
+    void forward(){
+      const BMatType& B = BObj.value();
+      const BMatType& Bb = BObj.bvalue();
+      CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, Bb, Cb);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, Bb, Cb);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, Bb, Cb);
+      }
+      else {
+        Mat3x3MatMultCore(A, Bb, Cb);
+      }
+    }
+
+    void reverse(){
+      const BMatType& B = BObj.value();
+      BMatType& Bb = BObj.bvalue();
+      const CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(Cb, A, Bb);
+      }
+      else if (AT){
+        Mat3x3MatMultAddCore(A, Cb, Bb);
+      }
+      else if (BT){
+        MatTrans3x3MatMultAddCore(Cb, A, Bb);
+      }
+      else {
+        MatTrans3x3MatMultAddCore(A, Cb, Bb);
+      }
+    }
+
+    Mat3x3& A;
+    ADMat<BMatType>& BObj;
+    ADMat<CMatType>& CObj;
+  };
+
+  template<class ScalarType, class BMatType, class CMatType, bool AT=false, bool BT=false>
+  inline ADpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT>
+  Mat3x3MatMult( Mat<ScalarType, 3, 3>& A, ADMat<BMatType>& BObj, ADMat<CMatType>& CObj ){
+    return ADpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT>(A, BObj, CObj);
+  }
+
+  template<typename ScalarType, class AMatType, class CMatType, bool AT=false, bool BT=false>
+  class ADMat3x3pMatMultExpr : public ADExpression<ADMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT> > {
+  public:
+    typedef Mat<ScalarType, 3, 3> Mat3x3;
+
+    ADMat3x3pMatMultExpr( ADMat<AMatType>& AObj, Mat3x3& B, ADMat<CMatType>& CObj ) : AObj(AObj), B(B), CObj(CObj) {
+      const AMatType& A = AObj.value();
+      CMatType& C = CObj.value();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, B, C);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, B, C);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, B, C);
+      }
+      else {
+        Mat3x3MatMultCore(A, B, C);
+      }
+    }
+
+    void forward(){
+      const AMatType& A = AObj.value();
+      const AMatType& Ab = AObj.bvalue();
+      CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(Ab, B, Cb);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(Ab, B, Cb);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(Ab, B, Cb);
+      }
+      else {
+        Mat3x3MatMultCore(Ab, B, Cb);
+      }
+    }
+
+    void reverse(){
+      const AMatType& A = AObj.value();
+      AMatType& Ab = AObj.bvalue();
+      const CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(B, Cb, Ab);
+      }
+      else if (AT){
+        Mat3x3MatTransMultAddCore(B, Cb, Ab);
+      }
+      else if (BT){
+        Mat3x3MatMultAddCore(Cb, B, Ab);
+      }
+      else {
+        Mat3x3MatTransMultAddCore(Cb, B, Ab);
+      }
+    }
+
+    ADMat<AMatType>& AObj;
+    Mat3x3& B;
+    ADMat<CMatType>& CObj;
+  };
+
+  template<typename ScalarType, class AMatType, class CMatType, bool AT=false, bool BT=false>
+  inline ADMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT>
+  Mat3x3MatMult( ADMat<AMatType>& AObj, Mat<ScalarType, 3, 3>& B, ADMat<CMatType>& CObj ){
+    return ADMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT>(AObj, B, CObj);
+  }
+
+  template<typename ScalarType, class BMatType, class CMatType, bool AT=false, bool BT=false>
+  class A2DpMat3x3MatMultExpr : public A2DExpression<A2DpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT> > {
+  public:
+    typedef Mat<ScalarType, 3, 3> Mat3x3;
+
+    A2DpMat3x3MatMultExpr( Mat3x3& A, A2DMat<BMatType>& BObj, A2DMat<CMatType>& CObj ) : A(A), BObj(BObj), CObj(CObj) {
+      const BMatType& B = BObj.value();
+      CMatType& C = CObj.value();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, B, C);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, B, C);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, B, C);
+      }
+      else {
+        Mat3x3MatMultCore(A, B, C);
+      }
+    }
+
+    void reverse(){
+      BMatType& Bb = BObj.bvalue();
+      const CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(Cb, A, Bb);
+      }
+      else if (AT){
+        Mat3x3MatMultAddCore(A, Cb, Bb);
+      }
+      else if (BT){
+        MatTrans3x3MatMultAddCore(Cb, A, Bb);
+      }
+      else {
+        MatTrans3x3MatMultAddCore(A, Cb, Bb);
+      }
+    }
+
+    void hforward(){
+      const BMatType& Bp = BObj.pvalue();
+      CMatType& Cp = CObj.pvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, Bp, Cp);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, Bp, Cp);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, Bp, Cp);
+      }
+      else {
+        Mat3x3MatMultCore(A, Bp, Cp);
+      }
+    }
+
+    void hreverse(){
+      BMatType& Bh = BObj.hvalue();
+      const CMatType& Ch = CObj.hvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(Ch, A, Bh);
+      }
+      else if (AT){
+        Mat3x3MatMultAddCore(A, Ch, Bh);
+      }
+      else if (BT){
+        MatTrans3x3MatMultAddCore(Ch, A, Bh);
+      }
+      else {
+        MatTrans3x3MatMultAddCore(A, Ch, Bh);
+      }
+    }
+
+
+    Mat3x3& A;
+    A2DMat<BMatType>& BObj;
+    A2DMat<CMatType>& CObj;
+  };
+
+  template<class ScalarType, class BMatType, class CMatType, bool AT=false, bool BT=false>
+  inline A2DpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT>
+  Mat3x3MatMult( Mat<ScalarType, 3, 3>& A, A2DMat<BMatType>& BObj, A2DMat<CMatType>& CObj ){
+    return A2DpMat3x3MatMultExpr<ScalarType, BMatType, CMatType, AT, BT>(A, BObj, CObj);
+  }
+
+  template<typename ScalarType, class AMatType, class CMatType, bool AT=false, bool BT=false>
+  class A2DMat3x3pMatMultExpr : public ADExpression<A2DMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT> > {
+  public:
+    typedef Mat<ScalarType, 3, 3> Mat3x3;
+
+    A2DMat3x3pMatMultExpr( A2DMat<AMatType>& AObj, Mat3x3& B, A2DMat<CMatType>& CObj ) : AObj(AObj), B(B), CObj(CObj) {
+      const AMatType& A = AObj.value();
+      CMatType& C = CObj.value();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(A, B, C);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(A, B, C);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(A, B, C);
+      }
+      else {
+        Mat3x3MatMultCore(A, B, C);
+      }
+    }
+
+    void reverse(){
+      AMatType& Ab = AObj.bvalue();
+      const CMatType& Cb = CObj.bvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(B, Cb, Ab);
+      }
+      else if (AT){
+        Mat3x3MatTransMultAddCore(B, Cb, Ab);
+      }
+      else if (BT){
+        Mat3x3MatMultAddCore(Cb, B, Ab);
+      }
+      else {
+        Mat3x3MatTransMultAddCore(Cb, B, Ab);
+      }
+    }
+
+    void hforward(){
+      const AMatType& Ap = AObj.pvalue();
+      CMatType& Cp = CObj.pvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultCore(Ap, B, Cp);
+      }
+      else if (AT){
+        MatTrans3x3MatMultCore(Ap, B, Cp);
+      }
+      else if (BT){
+        Mat3x3MatTransMultCore(Ap, B, Cp);
+      }
+      else {
+        Mat3x3MatMultCore(Ap, B, Cp);
+      }
+    }
+
+    void hreverse(){
+      AMatType& Ah = AObj.hvalue();
+      const CMatType& Ch = CObj.hvalue();
+
+      if (AT && BT){
+        MatTrans3x3MatTransMultAddCore(B, Ch, Ah);
+      }
+      else if (AT){
+        Mat3x3MatTransMultAddCore(B, Ch, Ah);
+      }
+      else if (BT){
+        Mat3x3MatMultAddCore(Ch, B, Ah);
+      }
+      else {
+        Mat3x3MatTransMultAddCore(Ch, B, Ah);
+      }
+    }
+
+    A2DMat<AMatType>& AObj;
+    Mat3x3& B;
+    A2DMat<CMatType>& CObj;
+  };
+
+  template<typename ScalarType, class AMatType, class CMatType, bool AT=false, bool BT=false>
+  inline A2DMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT>
+  Mat3x3MatMult( A2DMat<AMatType>& AObj, Mat<ScalarType, 3, 3>& B, A2DMat<CMatType>& CObj ){
+    return A2DMat3x3pMatMultExpr<ScalarType, AMatType, CMatType, AT, BT>(AObj, B, CObj);
+  }
+
   // template<typename ScalarType, bool AT=false, bool BT=false>
   // inline void Mat3x3MatMultAdd( const Mat<ScalarType, 3, 3>& A,
   //                               const Mat<ScalarType, 3, 3>& B,
@@ -981,22 +1302,22 @@ namespace A2D {
 
     void hforward(){
       const UxMatType& Ux = UxObj.value();
-      const UxMatType& Uxd = UxObj.pvalue();
-      EMatType& Ed = EObj.pvalue();
+      const UxMatType& Uxp = UxObj.pvalue();
+      EMatType& Ep = EObj.pvalue();
 
-      Ed(0, 0) = Uxd(0, 0) + Ux(0, 0) * Uxd(0, 0) + Ux(1, 0) * Uxd(1, 0) + Ux(2, 0) * Uxd(2, 0);
-      Ed(1, 1) = Uxd(1, 1) + Ux(0, 1) * Uxd(0, 1) + Ux(1, 1) * Uxd(1, 1) + Ux(2, 1) * Uxd(2, 1);
-      Ed(2, 2) = Uxd(2, 2) + Ux(0, 2) * Uxd(0, 2) + Ux(1, 2) * Uxd(1, 2) + Ux(2, 2) * Uxd(2, 2);
+      Ep(0, 0) = Uxp(0, 0) + Ux(0, 0) * Uxp(0, 0) + Ux(1, 0) * Uxp(1, 0) + Ux(2, 0) * Uxp(2, 0);
+      Ep(1, 1) = Uxp(1, 1) + Ux(0, 1) * Uxp(0, 1) + Ux(1, 1) * Uxp(1, 1) + Ux(2, 1) * Uxp(2, 1);
+      Ep(2, 2) = Uxp(2, 2) + Ux(0, 2) * Uxp(0, 2) + Ux(1, 2) * Uxp(1, 2) + Ux(2, 2) * Uxp(2, 2);
 
-      Ed(0, 1) = 0.5*(Uxd(0, 1) + Uxd(1, 0) +
-                      Ux(0, 0) * Uxd(0, 1) + Ux(1, 0) * Uxd(1, 1) + Ux(2, 0) * Uxd(2, 1) +
-                      Uxd(0, 0) * Ux(0, 1) + Uxd(1, 0) * Ux(1, 1) + Uxd(2, 0) * Ux(2, 1));
-      Ed(0, 2) = 0.5*(Uxd(0, 2) + Uxd(2, 0) +
-                      Ux(0, 0) * Uxd(0, 2) + Ux(1, 0) * Uxd(1, 2) + Ux(2, 0) * Uxd(2, 2) +
-                      Uxd(0, 0) * Ux(0, 2) + Uxd(1, 0) * Ux(1, 2) + Uxd(2, 0) * Ux(2, 2));
-      Ed(1, 2) = 0.5*(Uxd(1, 2) + Uxd(2, 1) +
-                      Ux(0, 1) * Uxd(0, 2) + Ux(1, 1) * Uxd(1, 2) + Ux(2, 1) * Uxd(2, 2) +
-                      Uxd(0, 1) * Ux(0, 2) + Uxd(1, 1) * Ux(1, 2) + Uxd(2, 1) * Ux(2, 2));
+      Ep(0, 1) = 0.5*(Uxp(0, 1) + Uxp(1, 0) +
+                      Ux(0, 0) * Uxp(0, 1) + Ux(1, 0) * Uxp(1, 1) + Ux(2, 0) * Uxp(2, 1) +
+                      Uxp(0, 0) * Ux(0, 1) + Uxp(1, 0) * Ux(1, 1) + Uxp(2, 0) * Ux(2, 1));
+      Ep(0, 2) = 0.5*(Uxp(0, 2) + Uxp(2, 0) +
+                      Ux(0, 0) * Uxp(0, 2) + Ux(1, 0) * Uxp(1, 2) + Ux(2, 0) * Uxp(2, 2) +
+                      Uxp(0, 0) * Ux(0, 2) + Uxp(1, 0) * Ux(1, 2) + Uxp(2, 0) * Ux(2, 2));
+      Ep(1, 2) = 0.5*(Uxp(1, 2) + Uxp(2, 1) +
+                      Ux(0, 1) * Uxp(0, 2) + Ux(1, 1) * Uxp(1, 2) + Ux(2, 1) * Uxp(2, 2) +
+                      Uxp(0, 1) * Ux(0, 2) + Uxp(1, 1) * Ux(1, 2) + Uxp(2, 1) * Ux(2, 2));
     }
 
     void hreverse(){
@@ -1039,6 +1360,150 @@ namespace A2D {
   inline A2DMat3x3GreenStrainExpr<UxMatType, EMatType>
   Mat3x3GreenStrain( A2DMat<UxMatType>& Ux, A2DMat<EMatType>& E ){
     return A2DMat3x3GreenStrainExpr<UxMatType, EMatType>(Ux, E);
+  }
+
+  template<class ScalarType>
+  inline void Mat3x3LinearGreenStrain( const Mat<ScalarType, 3, 3>& Ux, SymmMat<ScalarType, 3>& E ){
+    E(0, 0) = Ux(0, 0);
+    E(1, 1) = Ux(1, 1);
+    E(2, 2) = Ux(2, 2);
+
+    E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0));
+    E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0));
+    E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1));
+  }
+
+  template<class UxMatType, class EMatType>
+  class ADMat3x3LinearGreenStrainExpr : public ADExpression<ADMat3x3LinearGreenStrainExpr<UxMatType, EMatType> > {
+  public:
+    ADMat3x3LinearGreenStrainExpr( ADMat<UxMatType>& UxObj, ADMat<EMatType>& EObj ) : UxObj(UxObj), EObj(EObj) {
+      const UxMatType& Ux = UxObj.value();
+      EMatType& E = EObj.value();
+      E(0, 0) = Ux(0, 0);
+      E(1, 1) = Ux(1, 1);
+      E(2, 2) = Ux(2, 2);
+
+      E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0));
+      E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0));
+      E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1));
+    }
+
+    void forward(){
+      const UxMatType& Ux = UxObj.value();
+      const UxMatType& Uxb = UxObj.bvalue();
+      EMatType& Eb = EObj.bvalue();
+
+      Eb(0, 0) = Uxb(0, 0);
+      Eb(1, 1) = Uxb(1, 1);
+      Eb(2, 2) = Uxb(2, 2);
+
+      Eb(0, 1) = 0.5*(Uxb(0, 1) + Uxb(1, 0));
+      Eb(0, 2) = 0.5*(Uxb(0, 2) + Uxb(2, 0));
+      Eb(1, 2) = 0.5*(Uxb(1, 2) + Uxb(2, 1));
+    }
+
+    void reverse(){
+      const UxMatType& Ux = UxObj.value();
+      const EMatType& Eb = EObj.bvalue();
+      UxMatType& Uxb = UxObj.bvalue();
+
+      // Uxb = (I + Ux) * Eb
+      Uxb(0, 0) +=       Eb(0, 0);
+      Uxb(0, 1) += 0.5 * Eb(0, 1);
+      Uxb(0, 2) += 0.5 * Eb(0, 2);
+
+      Uxb(1, 0) += 0.5 * Eb(0, 1);
+      Uxb(1, 1) +=       Eb(1, 1);
+      Uxb(1, 2) += 0.5 * Eb(1, 2);
+
+      Uxb(2, 0) += 0.5 * Eb(0, 2);
+      Uxb(2, 1) += 0.5 * Eb(1, 2);
+      Uxb(2, 2) +=       Eb(2, 2);
+    }
+
+    ADMat<UxMatType>& UxObj;
+    ADMat<EMatType>& EObj;
+  };
+
+  template<class UxMatType, class EMatType>
+  inline ADMat3x3LinearGreenStrainExpr<UxMatType, EMatType>
+  Mat3x3LinearGreenStrain( ADMat<UxMatType>& Ux, ADMat<EMatType>& E ){
+    return ADMat3x3LinearGreenStrainExpr<UxMatType, EMatType>(Ux, E);
+  }
+
+  template<class UxMatType, class EMatType>
+  class A2DMat3x3LinearGreenStrainExpr : public A2DExpression<A2DMat3x3LinearGreenStrainExpr<UxMatType, EMatType> > {
+  public:
+    A2DMat3x3LinearGreenStrainExpr( A2DMat<UxMatType>& UxObj, A2DMat<EMatType>& EObj ) : UxObj(UxObj), EObj(EObj) {
+      const UxMatType& Ux = UxObj.value();
+      EMatType& E = EObj.value();
+      E(0, 0) = Ux(0, 0);
+      E(1, 1) = Ux(1, 1);
+      E(2, 2) = Ux(2, 2);
+
+      E(0, 1) = 0.5*(Ux(0, 1) + Ux(1, 0));
+      E(0, 2) = 0.5*(Ux(0, 2) + Ux(2, 0));
+      E(1, 2) = 0.5*(Ux(1, 2) + Ux(2, 1));
+    }
+
+    void reverse(){
+      const UxMatType& Ux = UxObj.value();
+      const EMatType& Eb = EObj.bvalue();
+      UxMatType& Uxb = UxObj.bvalue();
+
+      // Uxb = Eb
+      Uxb(0, 0) +=       Eb(0, 0);
+      Uxb(0, 1) += 0.5 * Eb(0, 1);
+      Uxb(0, 2) += 0.5 * Eb(0, 2);
+
+      Uxb(1, 0) += 0.5 * Eb(0, 1);
+      Uxb(1, 1) +=       Eb(1, 1);
+      Uxb(1, 2) += 0.5 * Eb(1, 2);
+
+      Uxb(2, 0) += 0.5 * Eb(0, 2);
+      Uxb(2, 1) += 0.5 * Eb(1, 2);
+      Uxb(2, 2) +=       Eb(2, 2);
+    }
+
+    void hforward(){
+      const UxMatType& Ux = UxObj.value();
+      const UxMatType& Uxp = UxObj.pvalue();
+      EMatType& Ep = EObj.pvalue();
+
+      Ep(0, 0) = Uxp(0, 0);
+      Ep(1, 1) = Uxp(1, 1);
+      Ep(2, 2) = Uxp(2, 2);
+
+      Ep(0, 1) = 0.5*(Uxp(0, 1) + Uxp(1, 0));
+      Ep(0, 2) = 0.5*(Uxp(0, 2) + Uxp(2, 0));
+      Ep(1, 2) = 0.5*(Uxp(1, 2) + Uxp(2, 1));
+    }
+
+    void hreverse(){
+      const EMatType& Eh = EObj.hvalue();
+      UxMatType& Uxh = UxObj.hvalue();
+
+      Uxh(0, 0) +=       Eh(0, 0);
+      Uxh(0, 1) += 0.5 * Eh(0, 1);
+      Uxh(0, 2) += 0.5 * Eh(0, 2);
+
+      Uxh(1, 0) += 0.5 * Eh(0, 1);
+      Uxh(1, 1) +=       Eh(1, 1);
+      Uxh(1, 2) += 0.5 * Eh(1, 2);
+
+      Uxh(2, 0) += 0.5 * Eh(0, 2);
+      Uxh(2, 1) += 0.5 * Eh(1, 2);
+      Uxh(2, 2) +=       Eh(2, 2);
+    }
+
+    A2DMat<UxMatType>& UxObj;
+    A2DMat<EMatType>& EObj;
+  };
+
+  template<class UxMatType, class EMatType>
+  inline A2DMat3x3LinearGreenStrainExpr<UxMatType, EMatType>
+  Mat3x3LinearGreenStrain( A2DMat<UxMatType>& Ux, A2DMat<EMatType>& E ){
+    return A2DMat3x3LinearGreenStrainExpr<UxMatType, EMatType>(Ux, E);
   }
 
 } // namespace A2D

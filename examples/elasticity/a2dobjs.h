@@ -24,12 +24,6 @@ namespace A2D {
         x[i] = vec(i);
       }
     }
-    template<class VecType, class... IdxType>
-    Vec( const VecType& vec, IdxType... idx ){
-      for ( int i = 0; i < N; i++ ){
-        x[i] = vec(idx..., i);
-      }
-    }
     void zero(){
       for ( int i = 0; i < N; i++ ){
         x[i] = 0.0;
@@ -67,14 +61,6 @@ namespace A2D {
       for ( int i = 0; i < M; i++ ){
         for ( int j = 0; j < N; j++ ){
           A[N*i + j] = mat(i, j);
-        }
-      }
-    }
-    template<class MatType, class... IdxType>
-    Mat( const MatType& mat, IdxType... idx ){
-      for ( int i = 0; i < M; i++ ){
-        for ( int j = 0; j < N; j++ ){
-          A[N*i + j] = mat(idx..., i, j);
         }
       }
     }
@@ -139,11 +125,11 @@ namespace A2D {
   };
 
   template<typename T, int M, int N>
-  class Mat2ndDeriv {
+  class SymmTensor {
   public:
     typedef T type;
     static const int TENSOR_SIZE = (M * N * (M * N + 1))/2;
-    Mat2ndDeriv(){
+    SymmTensor(){
       for ( int i = 0; i < TENSOR_SIZE; i++ ){
         A[i] = 0.0;
       }

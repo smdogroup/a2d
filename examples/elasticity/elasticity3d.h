@@ -45,7 +45,7 @@ class NonlinearElasticity3D {
     A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    return output;
+    return 0.5 * output;
   }
 
   template <typename T, class IdxType, class QuadPointData>
@@ -71,7 +71,7 @@ class NonlinearElasticity3D {
     auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    output.bvalue = wdetJ;
+    output.bvalue = 0.5 * wdetJ;
 
     trace.reverse();
     constitutive.reverse();
@@ -106,7 +106,7 @@ class NonlinearElasticity3D {
     auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    output.bvalue = wdetJ;
+    output.bvalue = 0.5 * wdetJ;
 
     trace.reverse();
     constitutive.reverse();
@@ -296,24 +296,22 @@ class HexBasis {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double n1[2], n2[2], n3[2];
-      n1[0] = 0.5 * (1.0 - pt[0]);
-      n1[1] = 0.5 * (1.0 + pt[0]);
-      n2[0] = 0.5 * (1.0 - pt[1]);
-      n2[1] = 0.5 * (1.0 + pt[1]);
-      n3[0] = 0.5 * (1.0 - pt[2]);
-      n3[1] = 0.5 * (1.0 + pt[2]);
+      double N[8];
+      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
+      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
+      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
+      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
+      N[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
+      N[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
+      N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+      N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
       for (std::size_t i = 0; i < input.extent(0); i++) {
         for (int ii = 0; ii < num_vars; ii++) {
-          output(i, j, ii) =
-              n3[0] *
-                  (n2[0] * (n1[0] * input(i, 0, ii) + n1[1] * input(i, 1, ii)) +
-                   n2[1] *
-                       (n1[0] * input(i, 2, ii) + n1[1] * input(i, 3, ii))) +
-              n3[1] *
-                  (n2[0] * (n1[0] * input(i, 4, ii) + n1[1] * input(i, 5, ii)) +
-                   n2[1] * (n1[0] * input(i, 6, ii) + n1[1] * input(i, 7, ii)));
+          output(i, j, ii) = N[0] * input(i, 0, ii) + N[1] * input(i, 1, ii) +
+                             N[2] * input(i, 2, ii) + N[3] * input(i, 3, ii) +
+                             N[4] * input(i, 4, ii) + N[5] * input(i, 5, ii) +
+                             N[6] * input(i, 6, ii) + N[7] * input(i, 7, ii);
         }
       }
     }
@@ -330,43 +328,54 @@ class HexBasis {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double n1[2], n2[2], n3[2];
-      n1[0] = 0.5 * (1.0 - pt[0]);
-      n1[1] = 0.5 * (1.0 + pt[0]);
-      n2[0] = 0.5 * (1.0 - pt[1]);
-      n2[1] = 0.5 * (1.0 + pt[1]);
-      n3[0] = 0.5 * (1.0 - pt[2]);
-      n3[1] = 0.5 * (1.0 + pt[2]);
+      double Nx[8];
+      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      double n1x[2], n2x[2], n3x[2];
-      n1x[0] = -0.5;
-      n1x[1] = 0.5;
-      n2x[0] = -0.5;
-      n2x[1] = 0.5;
-      n3x[0] = -0.5;
-      n3x[1] = 0.5;
+      double Ny[8];
+      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+
+      double Nz[8];
+      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
       for (std::size_t i = 0; i < X.extent(0); i++) {
         // Compute the Jacobian transformation
         A2D::Mat<T, 3, 3> J;
         for (int ii = 0; ii < 3; ii++) {
-          J(ii, 0) =
-              n3[0] * (n2[0] * (n1x[0] * X(i, 0, ii) + n1x[1] * X(i, 1, ii)) +
-                       n2[1] * (n1x[0] * X(i, 2, ii) + n1x[1] * X(i, 3, ii))) +
-              n3[1] * (n2[0] * (n1x[0] * X(i, 4, ii) + n1x[1] * X(i, 5, ii)) +
-                       n2[1] * (n1x[0] * X(i, 6, ii) + n1x[1] * X(i, 7, ii)));
+          J(ii, 0) = Nx[0] * X(i, 0, ii) + Nx[1] * X(i, 1, ii) +
+                     Nx[2] * X(i, 2, ii) + Nx[3] * X(i, 3, ii) +
+                     Nx[4] * X(i, 4, ii) + Nx[5] * X(i, 5, ii) +
+                     Nx[6] * X(i, 6, ii) + Nx[7] * X(i, 7, ii);
 
-          J(ii, 1) =
-              n3[0] * (n2x[0] * (n1[0] * X(i, 0, ii) + n1[1] * X(i, 1, ii)) +
-                       n2x[1] * (n1[0] * X(i, 2, ii) + n1[1] * X(i, 3, ii))) +
-              n3[1] * (n2x[0] * (n1[0] * X(i, 4, ii) + n1[1] * X(i, 5, ii)) +
-                       n2x[1] * (n1[0] * X(i, 6, ii) + n1[1] * X(i, 7, ii)));
+          J(ii, 1) = Ny[0] * X(i, 0, ii) + Ny[1] * X(i, 1, ii) +
+                     Ny[2] * X(i, 2, ii) + Ny[3] * X(i, 3, ii) +
+                     Ny[4] * X(i, 4, ii) + Ny[5] * X(i, 5, ii) +
+                     Ny[6] * X(i, 6, ii) + Ny[7] * X(i, 7, ii);
 
-          J(ii, 2) =
-              n3x[0] * (n2[0] * (n1[0] * X(i, 0, ii) + n1[1] * X(i, 1, ii)) +
-                        n2[1] * (n1[0] * X(i, 2, ii) + n1[1] * X(i, 3, ii))) +
-              n3x[1] * (n2[0] * (n1[0] * X(i, 4, ii) + n1[1] * X(i, 5, ii)) +
-                        n2[1] * (n1[0] * X(i, 6, ii) + n1[1] * X(i, 7, ii)));
+          J(ii, 2) = Nz[0] * X(i, 0, ii) + Nz[1] * X(i, 1, ii) +
+                     Nz[2] * X(i, 2, ii) + Nz[3] * X(i, 3, ii) +
+                     Nz[4] * X(i, 4, ii) + Nz[5] * X(i, 5, ii) +
+                     Nz[6] * X(i, 6, ii) + Nz[7] * X(i, 7, ii);
         }
 
         // Compute the 3x3 matrix inverse
@@ -391,41 +400,52 @@ class HexBasis {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double n1[2], n2[2], n3[2];
-      n1[0] = 0.5 * (1.0 - pt[0]);
-      n1[1] = 0.5 * (1.0 + pt[0]);
-      n2[0] = 0.5 * (1.0 - pt[1]);
-      n2[1] = 0.5 * (1.0 + pt[1]);
-      n3[0] = 0.5 * (1.0 - pt[2]);
-      n3[1] = 0.5 * (1.0 + pt[2]);
+      double Nx[8];
+      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      double n1x[2], n2x[2], n3x[2];
-      n1x[0] = -0.5;
-      n1x[1] = 0.5;
-      n2x[0] = -0.5;
-      n2x[1] = 0.5;
-      n3x[0] = -0.5;
-      n3x[1] = 0.5;
+      double Ny[8];
+      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+
+      double Nz[8];
+      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
       for (std::size_t i = 0; i < U.extent(0); i++) {
         for (int ii = 0; ii < num_vars; ii++) {
-          Uxi(i, j, ii, 0) =
-              n3[0] * (n2[0] * (n1x[0] * U(i, 0, ii) + n1x[1] * U(i, 1, ii)) +
-                       n2[1] * (n1x[0] * U(i, 2, ii) + n1x[1] * U(i, 3, ii))) +
-              n3[1] * (n2[0] * (n1x[0] * U(i, 4, ii) + n1x[1] * U(i, 5, ii)) +
-                       n2[1] * (n1x[0] * U(i, 6, ii) + n1x[1] * U(i, 7, ii)));
+          Uxi(i, j, ii, 0) = Nx[0] * U(i, 0, ii) + Nx[1] * U(i, 1, ii) +
+                             Nx[2] * U(i, 2, ii) + Nx[3] * U(i, 3, ii) +
+                             Nx[4] * U(i, 4, ii) + Nx[5] * U(i, 5, ii) +
+                             Nx[6] * U(i, 6, ii) + Nx[7] * U(i, 7, ii);
 
-          Uxi(i, j, ii, 1) =
-              n3[0] * (n2x[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
-                       n2x[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
-              n3[1] * (n2x[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
-                       n2x[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
+          Uxi(i, j, ii, 1) = Ny[0] * U(i, 0, ii) + Ny[1] * U(i, 1, ii) +
+                             Ny[2] * U(i, 2, ii) + Ny[3] * U(i, 3, ii) +
+                             Ny[4] * U(i, 4, ii) + Ny[5] * U(i, 5, ii) +
+                             Ny[6] * U(i, 6, ii) + Ny[7] * U(i, 7, ii);
 
-          Uxi(i, j, ii, 2) =
-              n3x[0] * (n2[0] * (n1[0] * U(i, 0, ii) + n1[1] * U(i, 1, ii)) +
-                        n2[1] * (n1[0] * U(i, 2, ii) + n1[1] * U(i, 3, ii))) +
-              n3x[1] * (n2[0] * (n1[0] * U(i, 4, ii) + n1[1] * U(i, 5, ii)) +
-                        n2[1] * (n1[0] * U(i, 6, ii) + n1[1] * U(i, 7, ii)));
+          Uxi(i, j, ii, 2) = Nz[0] * U(i, 0, ii) + Nz[1] * U(i, 1, ii) +
+                             Nz[2] * U(i, 2, ii) + Nz[3] * U(i, 3, ii) +
+                             Nz[4] * U(i, 4, ii) + Nz[5] * U(i, 5, ii) +
+                             Nz[6] * U(i, 6, ii) + Nz[7] * U(i, 7, ii);
         }
       }
     }
@@ -475,49 +495,35 @@ class HexBasis {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double n1[2], n2[2], n3[2];
-      n1[0] = 0.5 * (1.0 - pt[0]);
-      n1[1] = 0.5 * (1.0 + pt[0]);
-      n2[0] = 0.5 * (1.0 - pt[1]);
-      n2[1] = 0.5 * (1.0 + pt[1]);
-      n3[0] = 0.5 * (1.0 - pt[2]);
-      n3[1] = 0.5 * (1.0 + pt[2]);
+      double Nx[8];
+      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      double n1x[2], n2x[2], n3x[2];
-      n1x[0] = -0.5;
-      n1x[1] = 0.5;
-      n2x[0] = -0.5;
-      n2x[1] = 0.5;
-      n3x[0] = -0.5;
-      n3x[1] = 0.5;
+      double Ny[8];
+      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
 
-      double N1x[8], N2x[8], N3x[8];
-      N1x[0] = n3[0] * n2[0] * n1x[0];
-      N1x[1] = n3[0] * n2[0] * n1x[1];
-      N1x[2] = n3[0] * n2[1] * n1x[0];
-      N1x[3] = n3[0] * n2[1] * n1x[1];
-      N1x[4] = n3[1] * n2[0] * n1x[0];
-      N1x[5] = n3[1] * n2[0] * n1x[1];
-      N1x[6] = n3[1] * n2[1] * n1x[0];
-      N1x[7] = n3[1] * n2[1] * n1x[1];
-
-      N2x[0] = n3[0] * n2x[0] * n1[0];
-      N2x[1] = n3[0] * n2x[0] * n1[1];
-      N2x[2] = n3[0] * n2x[1] * n1[0];
-      N2x[3] = n3[0] * n2x[1] * n1[1];
-      N2x[4] = n3[1] * n2x[0] * n1[0];
-      N2x[5] = n3[1] * n2x[0] * n1[1];
-      N2x[6] = n3[1] * n2x[1] * n1[0];
-      N2x[7] = n3[1] * n2x[1] * n1[1];
-
-      N3x[0] = n3x[0] * n2[0] * n1[0];
-      N3x[1] = n3x[0] * n2[0] * n1[1];
-      N3x[2] = n3x[0] * n2[1] * n1[0];
-      N3x[3] = n3x[0] * n2[1] * n1[1];
-      N3x[4] = n3x[1] * n2[0] * n1[0];
-      N3x[5] = n3x[1] * n2[0] * n1[1];
-      N3x[6] = n3x[1] * n2[1] * n1[0];
-      N3x[7] = n3x[1] * n2[1] * n1[1];
+      double Nz[8];
+      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
       for (std::size_t i = 0; i < Uxi.extent(0); i++) {
         A2D::Mat<T, 3, 3> Jinv0;
@@ -542,8 +548,8 @@ class HexBasis {
 
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
           for (int k = 0; k < 8; k++) {
-            res(i, k, ii) += N1x[k] * Uxib(ii, 0) + N2x[k] * Uxib(ii, 1) +
-                             N3x[k] * Uxib(ii, 2);
+            res(i, k, ii) +=
+                Nx[k] * Uxib(ii, 0) + Ny[k] * Uxib(ii, 1) + Nz[k] * Uxib(ii, 2);
           }
         }
       }
@@ -562,49 +568,35 @@ class HexBasis {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double n1[2], n2[2], n3[2];
-      n1[0] = 0.5 * (1.0 - pt[0]);
-      n1[1] = 0.5 * (1.0 + pt[0]);
-      n2[0] = 0.5 * (1.0 - pt[1]);
-      n2[1] = 0.5 * (1.0 + pt[1]);
-      n3[0] = 0.5 * (1.0 - pt[2]);
-      n3[1] = 0.5 * (1.0 + pt[2]);
+      double Nx[8];
+      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      double n1x[2], n2x[2], n3x[2];
-      n1x[0] = -0.5;
-      n1x[1] = 0.5;
-      n2x[0] = -0.5;
-      n2x[1] = 0.5;
-      n3x[0] = -0.5;
-      n3x[1] = 0.5;
+      double Ny[8];
+      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
 
-      double N1x[8], N2x[8], N3x[8];
-      N1x[0] = n3[0] * n2[0] * n1x[0];
-      N1x[1] = n3[0] * n2[0] * n1x[1];
-      N1x[2] = n3[0] * n2[1] * n1x[0];
-      N1x[3] = n3[0] * n2[1] * n1x[1];
-      N1x[4] = n3[1] * n2[0] * n1x[0];
-      N1x[5] = n3[1] * n2[0] * n1x[1];
-      N1x[6] = n3[1] * n2[1] * n1x[0];
-      N1x[7] = n3[1] * n2[1] * n1x[1];
-
-      N2x[0] = n3[0] * n2x[0] * n1[0];
-      N2x[1] = n3[0] * n2x[0] * n1[1];
-      N2x[2] = n3[0] * n2x[1] * n1[0];
-      N2x[3] = n3[0] * n2x[1] * n1[1];
-      N2x[4] = n3[1] * n2x[0] * n1[0];
-      N2x[5] = n3[1] * n2x[0] * n1[1];
-      N2x[6] = n3[1] * n2x[1] * n1[0];
-      N2x[7] = n3[1] * n2x[1] * n1[1];
-
-      N3x[0] = n3x[0] * n2[0] * n1[0];
-      N3x[1] = n3x[0] * n2[0] * n1[1];
-      N3x[2] = n3x[0] * n2[1] * n1[0];
-      N3x[3] = n3x[0] * n2[1] * n1[1];
-      N3x[4] = n3x[1] * n2[0] * n1[0];
-      N3x[5] = n3x[1] * n2[0] * n1[1];
-      N3x[6] = n3x[1] * n2[1] * n1[0];
-      N3x[7] = n3x[1] * n2[1] * n1[1];
+      double Nz[8];
+      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
       for (std::size_t i = 0; i < Uxi.extent(0); i++) {
         A2D::Mat<T, 3, 3> Jinv0;
@@ -634,16 +626,15 @@ class HexBasis {
           for (int kx = 0; kx < 8; kx++) {
             for (int iy = 0; iy < Model::NUM_VARS; iy++) {
               for (int ix = 0; ix < Model::NUM_VARS; ix++) {
-                jac(i, ky, kx, iy, ix) +=
-                    N1x[ky] * (N1x[kx] * ja(iy, 0, ix, 0) +
-                               N2x[kx] * ja(iy, 0, ix, 1) +
-                               N3x[kx] * ja(iy, 0, ix, 2)) +
-                    N2x[ky] * (N1x[kx] * ja(iy, 1, ix, 0) +
-                               N2x[kx] * ja(iy, 1, ix, 1) +
-                               N3x[kx] * ja(iy, 1, ix, 2)) +
-                    N3x[ky] * (N1x[kx] * ja(iy, 2, ix, 0) +
-                               N2x[kx] * ja(iy, 2, ix, 1) +
-                               N3x[kx] * ja(iy, 2, ix, 2));
+                jac(i, ky, kx, iy, ix) += Nx[ky] * (Nx[kx] * ja(iy, 0, ix, 0) +
+                                                    Ny[kx] * ja(iy, 0, ix, 1) +
+                                                    Nz[kx] * ja(iy, 0, ix, 2)) +
+                                          Ny[ky] * (Nx[kx] * ja(iy, 1, ix, 0) +
+                                                    Ny[kx] * ja(iy, 1, ix, 1) +
+                                                    Nz[kx] * ja(iy, 1, ix, 2)) +
+                                          Nz[ky] * (Nx[kx] * ja(iy, 2, ix, 0) +
+                                                    Ny[kx] * ja(iy, 2, ix, 1) +
+                                                    Nz[kx] * ja(iy, 2, ix, 2));
               }
             }
           }

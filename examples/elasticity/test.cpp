@@ -1,7 +1,8 @@
-#include "a2dtmp.h"
-#include <iostream>
-#include <iomanip>
 #include <complex>
+#include <iomanip>
+#include <iostream>
+
+#include "a2dtmp.h"
 
 /*
   The first derivative of a function f(y(x)) is
@@ -27,7 +28,7 @@
   # The projected second derivative requires the computation
   hx = by * (d^2y/dx^2 * px) + hy * (dy/dx)
 */
-int main( int argc, char *argv[] ){
+int main(int argc, char *argv[]) {
   // typedef int32_t IndexType;
   typedef std::complex<double> ScalarType;
   typedef A2D::Mat<ScalarType, 3, 3> Mat3x3;
@@ -54,17 +55,17 @@ int main( int argc, char *argv[] ){
   ScalarType mu(0.2533), lambda(0.71236);
 
   // Set random values
-  for ( int i = 0; i < 3; i++ ){
-    for ( int j = 0; j < 3; j++ ){
-      Uxi0(i, j) = -1.0 + 2.0 * rand()/RAND_MAX;
-      J0(i, j) = -1.0 + 2.0 * rand()/RAND_MAX;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      Uxi0(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      J0(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
 
-      Uxip(i, j) = -1.0 + 2.0 * rand()/RAND_MAX;
+      Uxip(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
     }
   }
 
-  for ( int i = 0; i < 3; i++ ){
-    for ( int j = 0; j < 3; j++ ){
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       Uxi0(i, j) = Uxi0(i, j) + ScalarType(0.0, dh) * Uxip(i, j);
     }
   }
@@ -84,18 +85,18 @@ int main( int argc, char *argv[] ){
   jinv.reverse();
 
   ScalarType result = 0.0;
-  for ( int i = 0; i < 3; i++ ){
-    for ( int j = 0; j < 3; j++ ){
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       result += Uxib(i, j) * Uxip(i, j) + Jb(i, j) * Jp(i, j);
     }
   }
 
   // double forward = output.valueb.real();
   double res = result.real();
-  double fd = output.value.imag()/dh;
-  double error = (res - fd)/fd;
-  std::cout << "result: " << std::setw(20) << res << " fd: " << std::setw(20) << fd
-    << " error: " << std::setw(20) << error << std::endl;
+  double fd = output.value.imag() / dh;
+  double error = (res - fd) / fd;
+  std::cout << "result: " << std::setw(20) << res << " fd: " << std::setw(20)
+            << fd << " error: " << std::setw(20) << error << std::endl;
 
   jinv.hforward();
   mult.hforward();
@@ -108,14 +109,15 @@ int main( int argc, char *argv[] ){
   mult.hreverse();
   jinv.hreverse();
 
-  for ( int i = 0; i < 3; i++ ){
-    for ( int j = 0; j < 3; j++ ){
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       double res = Uxih(i, j).real();
-      double fd = Uxib(i, j).imag()/dh;
-      double error = (res - fd)/fd;
+      double fd = Uxib(i, j).imag() / dh;
+      double error = (res - fd) / fd;
 
-      std::cout << i << ", " << j << " result: " << std::setw(20) << res <<
-        " fd: " << std::setw(20) << fd << " error: " << std::setw(20) <<  error << std::endl;
+      std::cout << i << ", " << j << " result: " << std::setw(20) << res
+                << " fd: " << std::setw(20) << fd << " error: " << std::setw(20)
+                << error << std::endl;
     }
   }
 

@@ -1,9 +1,8 @@
-import numpy as np
 cimport numpy as np
 
 np.import_array()
 
-cdef extern: # linear_elasticity.cpp":
+cdef extern from "elasticity_impl.h":
     void compute_residual( int nelems,
                            int nnodes,
                            int *conn_data,
@@ -20,12 +19,12 @@ cdef extern: # linear_elasticity.cpp":
                            double *U_data,
                            double *jac_data )
 
-cdef compute_res(
+cpdef compute_res(
         np.ndarray[int, ndim=2] conn,
-        np.ndarray[float, ndim=2] X,
-        np.ndarray[float, ndim=2] data,
-        np.ndarray[float, ndim=2] U,
-        np.ndarray[float, ndim=3] res):
+        np.ndarray[double, ndim=2] X,
+        np.ndarray[double, ndim=3] data,
+        np.ndarray[double, ndim=2] U,
+        np.ndarray[double, ndim=3] res):
 
     cdef int nelems = conn.shape[0]
     cdef int nnodes = X.shape[0]
@@ -35,12 +34,12 @@ cdef compute_res(
         <double*>U.data, <double*>res.data)
 
 
-cdef compute_jac(
+cpdef compute_jac(
         np.ndarray[int, ndim=2] conn,
-        np.ndarray[float, ndim=2] X,
-        np.ndarray[float, ndim=2] data,
-        np.ndarray[float, ndim=2] U,
-        np.ndarray[float, ndim=5] jac):
+        np.ndarray[double, ndim=2] X,
+        np.ndarray[double, ndim=3] data,
+        np.ndarray[double, ndim=2] U,
+        np.ndarray[double, ndim=5] jac):
 
     cdef int nelems = conn.shape[0]
     cdef int nnodes = X.shape[0]

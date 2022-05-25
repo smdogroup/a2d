@@ -1,5 +1,4 @@
-#include "elasticity3d.h"
-#include "multiarray.h"
+#include "elasticity_impl.h"
 
 using namespace A2D;
 

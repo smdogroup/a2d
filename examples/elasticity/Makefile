@@ -9,3 +9,6 @@ elasticity:
 
 test:
 	${CXX} -03 -g -I../../src/ -std=c++11 -o test test.cpp
+
+interface:
+	python3 setup.py build_ext --inplace

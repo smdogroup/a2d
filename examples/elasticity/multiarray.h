@@ -31,7 +31,12 @@ struct ___get_extent<r, dim0, dims...> {
 template <std::size_t... dims>
 class FLayout {
  public:
-  FLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {}
+  FLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {
+    size = dim1;
+    for (int i = 1; i < get_rank(); i++) {
+      size *= get_extent(i);
+    }
+  }
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
 
@@ -49,7 +54,10 @@ class FLayout {
     return i1 + dim1 * __compute_index<0>(idx...);
   }
 
+  const std::size_t get_size() { return size; }
+
  private:
+  std::size_t size;
   std::size_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
@@ -73,7 +81,12 @@ class FLayout {
 template <std::size_t... dims>
 class CLayout {
  public:
-  CLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {}
+  CLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {
+    size = dim1;
+    for (int i = 1; i < get_rank(); i++) {
+      size *= get_extent(i);
+    }
+  }
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
 
@@ -91,7 +104,10 @@ class CLayout {
     return __compute_index<0>(i1, idx...);
   }
 
+  const std::size_t get_size() { return size; }
+
  private:
+  std::size_t size;
   std::size_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
@@ -127,6 +143,13 @@ class MultiArray {
 
   const std::size_t extent(std::size_t index) const {
     return layout.get_extent(index);
+  }
+
+  void zero() {
+    std::size_t len = layout.get_size();
+    for (std::size_t i = 0; i < len; i++) {
+      data[i] = 0.0;
+    }
   }
 };
 

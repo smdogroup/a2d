@@ -28,7 +28,7 @@
   # The projected second derivative requires the computation
   hx = by * (d^2y/dx^2 * px) + hy * (dy/dx)
 */
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   // typedef int32_t IndexType;
   typedef std::complex<double> ScalarType;
   typedef A2D::Mat<ScalarType, 3, 3> Mat3x3;
@@ -37,20 +37,22 @@ int main(int argc, char *argv[]) {
 
   double dh = 1e-30;
 
-  Mat3x3 J0, Jb, Jp, Jh;
-  Mat3x3 Jinv0, Jinvb, Jinvp, Jinvh;
-  Mat3x3 Uxi0, Uxib, Uxip, Uxih;
-  Mat3x3 Ux0, Uxb, Uxp, Uxh;
-  SymmMat3x3 E0, Eb, Ep, Eh;
-  SymmMat3x3 S0, Sb, Sp, Sh;
+  // Compute all components of the Jacobian matrix at once
+  const int N = 9;
+  Mat3x3 J0, Jb;
+  Mat3x3 Jinv0, Jinvb;
+  Mat3x3 Uxi0, Uxib;
+  Mat3x3 Ux0, Uxb;
+  SymmMat3x3 E0, Eb;
+  SymmMat3x3 S0, Sb;
 
-  A2D::A2DMat<Mat3x3> J(J0, Jb, Jp, Jh);
-  A2D::A2DMat<Mat3x3> Jinv(Jinv0, Jinvb, Jinvp, Jinvh);
-  A2D::A2DMat<Mat3x3> Uxi(Uxi0, Uxib, Uxip, Uxih);
-  A2D::A2DMat<Mat3x3> Ux(Ux0, Uxb, Uxp, Uxh);
-  A2D::A2DMat<SymmMat3x3> S(S0, Sb, Sp, Sh);
-  A2D::A2DMat<SymmMat3x3> E(E0, Eb, Ep, Eh);
-  A2D::A2DScalar<ScalarType> output;
+  A2D::A2DMat<N, Mat3x3> J(J0, Jb);
+  A2D::A2DMat<N, Mat3x3> Jinv(Jinv0, Jinvb);
+  A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+  A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+  A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
+  A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+  A2D::A2DScalar<N, ScalarType> output;
 
   ScalarType mu(0.2533), lambda(0.71236);
 
@@ -59,15 +61,21 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < 3; j++) {
       Uxi0(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
       J0(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
-
-      Uxip(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
     }
   }
 
+  Mat3x3 P, result;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      Uxi0(i, j) = Uxi0(i, j) + ScalarType(0.0, dh) * Uxip(i, j);
+      P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      Uxi0(i, j) = Uxi0(i, j) + ScalarType(0.0, dh) * P(i, j);
     }
+  }
+
+  // Set up the perturb value
+  for (int k = 0; k < N; k++) {
+    Mat3x3& Up = Uxi.pvalue(k);
+    Up(k / 3, k % 3) = 1.0;
   }
 
   auto jinv = A2D::Mat3x3Inverse(J, Jinv);
@@ -84,20 +92,6 @@ int main(int argc, char *argv[]) {
   mult.reverse();
   jinv.reverse();
 
-  ScalarType result = 0.0;
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      result += Uxib(i, j) * Uxip(i, j) + Jb(i, j) * Jp(i, j);
-    }
-  }
-
-  // double forward = output.valueb.real();
-  double res = result.real();
-  double fd = output.value.imag() / dh;
-  double error = (res - fd) / fd;
-  std::cout << "result: " << std::setw(20) << res << " fd: " << std::setw(20)
-            << fd << " error: " << std::setw(20) << error << std::endl;
-
   jinv.hforward();
   mult.hforward();
   strain.hforward();
@@ -109,9 +103,20 @@ int main(int argc, char *argv[]) {
   mult.hreverse();
   jinv.hreverse();
 
+  // Compute the product of the Hessian with P
+  for (int k = 0; k < N; k++) {
+    const Mat3x3& Uh = Uxi.hvalue(k);
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        result(i, j) += Uh(i, j) * P(k / 3, k % 3);
+      }
+    }
+  }
+
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      double res = Uxih(i, j).real();
+      double res = result(i, j).real();
       double fd = Uxib(i, j).imag() / dh;
       double error = (res - fd) / fd;
 

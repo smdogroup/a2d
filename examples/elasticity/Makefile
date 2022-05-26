@@ -1,14 +1,11 @@
 
-default: test elasticity elasticity_impl
+default: test elasticity interface
 
-elasticity_impl:
-	${CXX} -O3 -g -I../../src/ -std=c++11 -c elasticity_impl.cpp
-
-elasticity:
+elasticity: elasticity.cpp
 	${CXX} -O3 -g -I../../src/ -std=c++11 -o elasticity elasticity.cpp
 
-test:
+test: test.cpp
 	${CXX} -O3 -g -I../../src/ -std=c++11 -o test test.cpp
 
-interface:
+interface: elasticity_impl.cpp
 	python3 setup.py build_ext --inplace

@@ -122,6 +122,50 @@ class SymmMat {
   T A[MAT_SIZE];
 };
 
+/*
+  Full 4-th order tensor without any symmetry.
+
+  This tensor class is required for mixed second order derivatives of
+  two matrices X and Y such that
+
+  A(i, j, k, l) = d^2 f/dX(i, j) dY(k, l)
+*/
+template <typename T, int M, int N, int P, int Q>
+class Tensor {
+ public:
+  typedef T type;
+  static const int TENSOR_SIZE = M * N * P * Q;
+  Tensor() {
+    for (int i = 0; i < TENSOR_SIZE; i++) {
+      A[i] = 0.0;
+    }
+  }
+  template <class IdxType>
+  T& operator()(const IdxType i, const IdxType j, const IdxType k,
+                const IdxType l) {
+    return A[l + Q * (k + P * (j + N * i))];
+  }
+  template <class IdxType>
+  const T& operator()(const IdxType i, const IdxType j, const IdxType k,
+                      const IdxType l) const {
+    return A[l + Q * (k + P * (j + N * i))];
+  }
+
+  T A[TENSOR_SIZE];
+};
+
+/*
+  Basic 4-th order symmetric tensor.
+
+  This class stores a symmetric tensor found by taking the second order
+  derivatives of a non-symmetric matrix
+
+  A(i, j, k, l) = d^2 f/dX(i, j) dX(k, l)
+
+  As a result:
+
+  A(i, j, k, l) = A(k, l, i, j).
+*/
 template <typename T, int M, int N>
 class SymmTensor {
  public:
@@ -132,7 +176,6 @@ class SymmTensor {
       A[i] = 0.0;
     }
   }
-
   template <class IdxType>
   T& operator()(const IdxType i, const IdxType j, const IdxType k,
                 const IdxType l) {
@@ -161,6 +204,38 @@ class SymmTensor {
   T A[TENSOR_SIZE];
 };
 
+/*
+  Mixed symmetric
+
+  A(i, j, k, l) = d^2 f/d X[i, j] d Y[k, l]
+*/
+/*
+template <typename T, int M, int N, P>
+class Symm {
+  typedef T type;
+  static const int TENSOR_SIZE = ;
+};
+*/
+/*
+
+
+  A(i, j, k, l) = d^2 f/dX[i, j] dX[k, l]
+
+  where X[i, j] = X[j, i]
+
+  As a result:
+
+  A(i, j, k, l) = A(k, l, i, j)
+  A(i, j, k, l) = A(j, i, k, l)
+  A(i, j, k, l) = A(i, j, l, k)
+*/
+/*
+template <typename T, int M>
+class SymmSymmTensor {
+  typedef T type;
+  static const int TENSOR_SIZE = ;
+}
+*/
 }  // namespace A2D
 
 #endif  // A2D_OBJS_H

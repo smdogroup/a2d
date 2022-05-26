@@ -34,19 +34,6 @@ class ADScalar {
   ScalarType bvalue;
 };
 
-template <class ScalarType>
-class A2DScalar {
- public:
-  A2DScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0,
-            ScalarType pvalue = 0.0, ScalarType hvalue = 0.0)
-      : value(value), bvalue(bvalue), pvalue(pvalue), hvalue(hvalue) {}
-
-  ScalarType value;
-  ScalarType bvalue;
-  ScalarType pvalue;
-  ScalarType hvalue;
-};
-
 template <class MatType>
 class ADMat {
  public:
@@ -62,11 +49,27 @@ class ADMat {
   MatType& Ab;  // Reverse mode derivative value
 };
 
-template <class MatType>
+template <int N, class ScalarType>
+class A2DScalar {
+ public:
+  A2DScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
+      : value(value), bvalue(bvalue) {
+    for (int i = 0; i < N; i++) {
+      pvalue[i] = 0.0;
+      hvalue[i] = 0.0;
+    }
+  }
+
+  ScalarType value;
+  ScalarType bvalue;
+  ScalarType pvalue[N];
+  ScalarType hvalue[N];
+};
+
+template <int N, class MatType>
 class A2DMat {
  public:
-  A2DMat(MatType& A, MatType& Ab, MatType& Ap, MatType& Ah)
-      : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
+  A2DMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
 
   MatType& value() { return A; }
   const MatType& value() const { return A; }
@@ -74,16 +77,16 @@ class A2DMat {
   MatType& bvalue() { return Ab; }
   const MatType& bvalue() const { return Ab; }
 
-  MatType& pvalue() { return Ap; }
-  const MatType& pvalue() const { return Ap; }
+  MatType& pvalue(const int i) { return Ap[i]; }
+  const MatType& pvalue(const int i) const { return Ap[i]; }
 
-  MatType& hvalue() { return Ah; }
-  const MatType& hvalue() const { return Ah; }
+  MatType& hvalue(const int i) { return Ah[i]; }
+  const MatType& hvalue(const int i) const { return Ah[i]; }
 
-  MatType& A;   // Matrix
-  MatType& Ab;  // Reverse mode derivative value
-  MatType& Ap;  // Projected second derivative value
-  MatType& Ah;  // Reverse mode second derivative
+  MatType& A;     // Matrix
+  MatType& Ab;    // Reverse mode derivative value
+  MatType Ap[N];  // Projected second derivative value
+  MatType Ah[N];  // Reverse mode second derivative
 };
 
 }  // namespace A2D

@@ -95,11 +95,18 @@ class NonlinearElasticity3D {
     SymmMat3x3 E0, Eb, Ep, Eh;
     SymmMat3x3 S0, Sb, Sp, Sh;
 
-    A2D::A2DMat<Mat3x3> Uxi(Uxi0, Uxib, Uxip, Uxih);
-    A2D::A2DMat<Mat3x3> Ux(Ux0, Uxb, Uxp, Uxh);
-    A2D::A2DMat<SymmMat3x3> S(S0, Sb, Sp, Sh);
-    A2D::A2DMat<SymmMat3x3> E(E0, Eb, Ep, Eh);
-    A2D::A2DScalar<T> output;
+    const int N = 9;
+    A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+    A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+    A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
+    A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+    A2D::A2DScalar<N, T> output;
+
+    // Set up the seed values
+    for (int k = 0; k < N; k++) {
+      Mat3x3& Up = Uxi.pvalue(k);
+      Up(k / 3, k % 3) = 1.0;
+    }
 
     auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
     auto strain = A2D::Mat3x3GreenStrain(Ux, E);
@@ -113,29 +120,19 @@ class NonlinearElasticity3D {
     strain.reverse();
     mult.reverse();
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        // Zero the derivatives
-        Uxih.zero();
-        Uxh.zero();
-        Sh.zero();
-        Eh.zero();
+    mult.hforward();
+    strain.hforward();
+    constitutive.hforward();
+    trace.hreverse();
+    constitutive.hreverse();
+    strain.hreverse();
+    mult.hreverse();
 
-        Uxip.zero();
-        Uxip(i, j) = 1.0;
-
-        mult.hforward();
-        strain.hforward();
-        constitutive.hforward();
-        trace.hreverse();
-        constitutive.hreverse();
-        strain.hreverse();
-        mult.hreverse();
-
-        for (int k = 0; k < 3; k++) {
-          for (int l = 0; l < 3; l++) {
-            jac(i, j, k, l) = Uxih(k, l);
-          }
+    for (int k = 0; k < N; k++) {
+      Mat3x3& Uxih = Uxi.hvalue(k);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          jac(i, j, k / 3, k % 3) = Uxih(i, j);
         }
       }
     }
@@ -214,47 +211,44 @@ class LinearElasticity3D {
     SymmMat3x3 E0, Eb, Ep, Eh;
     SymmMat3x3 S0, Sb, Sp, Sh;
 
-    A2D::A2DMat<Mat3x3> Uxi(Uxi0, Uxib, Uxip, Uxih);
-    A2D::A2DMat<Mat3x3> Ux(Ux0, Uxb, Uxp, Uxh);
-    A2D::A2DMat<SymmMat3x3> S(S0, Sb, Sp, Sh);
-    A2D::A2DMat<SymmMat3x3> E(E0, Eb, Ep, Eh);
-    A2D::A2DScalar<T> output;
+    const int N = 9;
+    A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+    A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+    A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
+    A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+    A2D::A2DScalar<N, T> output;
+
+    // Set up the seed values
+    for (int k = 0; k < N; k++) {
+      Mat3x3& Up = Uxi.pvalue(k);
+      Up(k / 3, k % 3) = 1.0;
+    }
 
     auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
     auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
     auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
     auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
 
-    output.bvalue = wdetJ;
+    output.bvalue = 0.5 * wdetJ;
 
     trace.reverse();
     constitutive.reverse();
     strain.reverse();
     mult.reverse();
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        // Zero the derivatives
-        Uxih.zero();
-        Uxh.zero();
-        Sh.zero();
-        Eh.zero();
+    mult.hforward();
+    strain.hforward();
+    constitutive.hforward();
+    trace.hreverse();
+    constitutive.hreverse();
+    strain.hreverse();
+    mult.hreverse();
 
-        Uxip.zero();
-        Uxip(i, j) = 1.0;
-
-        mult.hforward();
-        strain.hforward();
-        constitutive.hforward();
-        trace.hreverse();
-        constitutive.hreverse();
-        strain.hreverse();
-        mult.hreverse();
-
-        for (int k = 0; k < 3; k++) {
-          for (int l = 0; l < 3; l++) {
-            jac(i, j, k, l) = Uxih(k, l);
-          }
+    for (int k = 0; k < N; k++) {
+      Mat3x3& Uxih = Uxi.hvalue(k);
+      for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+          jac(i, j, k / 3, k % 3) = Uxih(i, j);
         }
       }
     }

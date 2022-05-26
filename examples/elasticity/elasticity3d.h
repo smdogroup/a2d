@@ -9,6 +9,10 @@
 template <class Basis>
 class NonlinearElasticity3D {
  public:
+  static const int SPATIAL_DIM = 3;
+  static const int NUM_DATA = 2;
+  static const int NUM_VARS = 3;
+
   template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
             class QuadPointJacobianArray, class QuadPointGradientArray>
   static void energy(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
@@ -161,6 +165,10 @@ class NonlinearElasticity3D {
 template <class Basis>
 class LinearElasticity3D {
  public:
+  static const int SPATIAL_DIM = 3;
+  static const int NUM_DATA = 2;
+  static const int NUM_VARS = 3;
+
   template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
             class QuadPointJacobianArray, class QuadPointGradientArray>
   static void energy(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,

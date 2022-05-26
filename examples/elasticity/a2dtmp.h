@@ -1497,7 +1497,6 @@ class ADMat3x3LinearGreenStrainExpr
   }
 
   void forward() {
-    const UxMatType& Ux = UxObj.value();
     const UxMatType& Uxb = UxObj.bvalue();
     EMatType& Eb = EObj.bvalue();
 
@@ -1511,7 +1510,6 @@ class ADMat3x3LinearGreenStrainExpr
   }
 
   void reverse() {
-    const UxMatType& Ux = UxObj.value();
     const EMatType& Eb = EObj.bvalue();
     UxMatType& Uxb = UxObj.bvalue();
 
@@ -1559,7 +1557,6 @@ class A2DMat3x3LinearGreenStrainExpr
   }
 
   void reverse() {
-    const UxMatType& Ux = UxObj.value();
     const EMatType& Eb = EObj.bvalue();
     UxMatType& Uxb = UxObj.bvalue();
 

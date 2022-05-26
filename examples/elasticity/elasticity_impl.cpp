@@ -8,7 +8,7 @@ void compute_residual(int nelems, int nnodes, int* conn_data, double* X_data,
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef NonlinearElasticity3D<Basis> Model;
+  typedef LinearElasticity3D<Basis> Model;
   typedef double ScalarType;
 
   const int vars_per_node = 3;
@@ -87,7 +87,7 @@ void compute_jacobian(int nelems, int nnodes, int* conn_data, double* X_data,
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef NonlinearElasticity3D<Basis> Model;
+  typedef LinearElasticity3D<Basis> Model;
   typedef double ScalarType;
 
   const int vars_per_node = 3;

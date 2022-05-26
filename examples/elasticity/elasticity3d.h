@@ -166,8 +166,8 @@ class LinearElasticity3D {
   static void energy(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
                      QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
                      T& energy) {
-    Basis::template energy<T, NonlinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, energy);
+    Basis::template energy<T, LinearElasticity3D<Basis>::Impl>(data, detJ, Jinv,
+                                                               Uxi, energy);
   }
 
   template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
@@ -177,7 +177,7 @@ class LinearElasticity3D {
                         QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& res) {
-    Basis::template residuals<T, NonlinearElasticity3D<Basis>::Impl>(
+    Basis::template residuals<T, LinearElasticity3D<Basis>::Impl>(
         data, detJ, Jinv, Uxi, res);
   }
 
@@ -188,7 +188,7 @@ class LinearElasticity3D {
                         QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& jac) {
-    Basis::template jacobians<T, NonlinearElasticity3D<Basis>::Impl>(
+    Basis::template jacobians<T, LinearElasticity3D<Basis>::Impl>(
         data, detJ, Jinv, Uxi, jac);
   }
 

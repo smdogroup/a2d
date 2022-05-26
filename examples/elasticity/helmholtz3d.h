@@ -23,14 +23,6 @@ class HelmholtzPDE {
 
   class Impl {
    public:
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_energy(IdxType i, IdxType j, QuadPointData& data,
-                            A2D::Mat<T, 3, 3>& Jinv, A2D::Vec<T, 3>& U,
-                            A2D::Mat<T, 3, 3>& Uxi) {
-      // A2D::Mat3x3VecMult(Uxi, Jinv, Ux);
-
-      return 0.5
-    }
   };
 };
 

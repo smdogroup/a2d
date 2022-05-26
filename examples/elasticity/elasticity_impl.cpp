@@ -8,7 +8,7 @@ void compute_residual(int nelems, int nnodes, int* conn_data, double* X_data,
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef NonlinearElasticity3D Model;
+  typedef NonlinearElasticity3D<Basis> Model;
   typedef double ScalarType;
 
   const int vars_per_node = 3;
@@ -60,9 +60,9 @@ void compute_residual(int nelems, int nnodes, int* conn_data, double* X_data,
                                                            Uxi_data);
 
   // Zero the residual array
-  for (int i = 0; i < res.extent(0); i++) {
-    for (int j = 0; j < res.extent(1); j++) {
-      for (int k = 0; k < res.extent(2); k++) {
+  for (std::size_t i = 0; i < res.extent(0); i++) {
+    for (std::size_t j = 0; j < res.extent(1); j++) {
+      for (std::size_t k = 0; k < res.extent(2); k++) {
         res(i, j, k) = 0.0;
       }
     }
@@ -71,7 +71,7 @@ void compute_residual(int nelems, int nnodes, int* conn_data, double* X_data,
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
   Basis::gradient<ScalarType, vars_per_node>(Ue, Uxi);
-  Basis::residuals<ScalarType, Model>(data, detJ, Jinv, Uxi, res);
+  Model::residuals<ScalarType>(data, detJ, Jinv, Uxi, res);
 
   // Free data
   delete[] Xe_data;
@@ -87,7 +87,7 @@ void compute_jacobian(int nelems, int nnodes, int* conn_data, double* X_data,
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef NonlinearElasticity3D Model;
+  typedef NonlinearElasticity3D<Basis> Model;
   typedef double ScalarType;
 
   const int vars_per_node = 3;
@@ -140,11 +140,11 @@ void compute_jacobian(int nelems, int nnodes, int* conn_data, double* X_data,
                                                            Uxi_data);
 
   // Zero the Jacobian
-  for (int i = 0; i < jac.extent(0); i++) {
-    for (int j = 0; j < jac.extent(1); j++) {
-      for (int k = 0; k < jac.extent(2); k++) {
-        for (int l = 0; l < jac.extent(3); l++) {
-          for (int m = 0; m < jac.extent(4); m++) {
+  for (std::size_t i = 0; i < jac.extent(0); i++) {
+    for (std::size_t j = 0; j < jac.extent(1); j++) {
+      for (std::size_t k = 0; k < jac.extent(2); k++) {
+        for (std::size_t l = 0; l < jac.extent(3); l++) {
+          for (std::size_t m = 0; m < jac.extent(4); m++) {
             jac(i, j, k, l, m) = 0.0;
           }
         }
@@ -155,7 +155,7 @@ void compute_jacobian(int nelems, int nnodes, int* conn_data, double* X_data,
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
   Basis::gradient<ScalarType, vars_per_node>(Ue, Uxi);
-  Basis::jacobians<ScalarType, Model>(data, detJ, Jinv, Uxi, jac);
+  Model::jacobians<ScalarType>(data, detJ, Jinv, Uxi, jac);
 
   // Free data
   delete[] Xe_data;

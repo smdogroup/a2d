@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef NonlinearElasticity3D Model;
+  typedef NonlinearElasticity3D<Basis> Model;
 
   const int nx = 24;
   const int ny = 64;
@@ -171,9 +171,9 @@ int main(int argc, char* argv[]) {
   Basis::gradient<ScalarType, vars_per_node>(Ue, Uxi);
 
   ScalarType energy;
-  Basis::energy<ScalarType, Model>(data, detJ, Jinv, Uxi, energy);
-  Basis::residuals<ScalarType, Model>(data, detJ, Jinv, Uxi, res);
-  Basis::jacobians<ScalarType, Model>(data, detJ, Jinv, Uxi, jac);
+  Model::energy<ScalarType>(data, detJ, Jinv, Uxi, energy);
+  Model::residuals<ScalarType>(data, detJ, Jinv, Uxi, res);
+  Model::jacobians<ScalarType>(data, detJ, Jinv, Uxi, jac);
 
 #ifdef USE_COMPLEX
 

@@ -333,7 +333,6 @@ class ADMat3x3pMatMultExpr
   }
 
   void reverse() {
-    const AMatType& A = AObj.value();
     AMatType& Ab = AObj.bvalue();
     const CMatType& Cb = CObj.bvalue();
 

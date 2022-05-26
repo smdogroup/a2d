@@ -9,3 +9,6 @@ test: test.cpp
 
 interface: elasticity_impl.cpp
 	python3 setup.py build_ext --inplace
+
+clean:
+	rm -rf test elasticity ./build model.*.so

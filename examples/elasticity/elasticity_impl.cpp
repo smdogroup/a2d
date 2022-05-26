@@ -67,13 +67,7 @@ void compute_residual(int nelems, int nnodes, int* conn_data, double* X_data,
       Uxi(element_Uxi_layout, Uxi_data);
 
   // Zero the residual array
-  for (std::size_t i = 0; i < res.extent(0); i++) {
-    for (std::size_t j = 0; j < res.extent(1); j++) {
-      for (std::size_t k = 0; k < res.extent(2); k++) {
-        res(i, j, k) = 0.0;
-      }
-    }
-  }
+  res.zero();
 
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
@@ -155,17 +149,7 @@ void compute_jacobian(int nelems, int nnodes, int* conn_data, double* X_data,
       Uxi(element_Uxi_layout, Uxi_data);
 
   // Zero the Jacobian
-  for (std::size_t i = 0; i < jac.extent(0); i++) {
-    for (std::size_t j = 0; j < jac.extent(1); j++) {
-      for (std::size_t k = 0; k < jac.extent(2); k++) {
-        for (std::size_t l = 0; l < jac.extent(3); l++) {
-          for (std::size_t m = 0; m < jac.extent(4); m++) {
-            jac(i, j, k, l, m) = 0.0;
-          }
-        }
-      }
-    }
-  }
+  jac.zero();
 
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
@@ -254,13 +238,7 @@ void compute_helmholtz_residual(int nelems, int nnodes, int* conn_data,
       Uxi(element_Uxi_layout, Uxi_data);
 
   // Zero the residual array
-  for (std::size_t i = 0; i < res.extent(0); i++) {
-    for (std::size_t j = 0; j < res.extent(1); j++) {
-      for (std::size_t k = 0; k < res.extent(2); k++) {
-        res(i, j, k) = 0.0;
-      }
-    }
-  }
+  res.zero();
 
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
@@ -351,17 +329,7 @@ void compute_helmholtz_jacobian(int nelems, int nnodes, int* conn_data,
       Uxi(element_Uxi_layout, Uxi_data);
 
   // Zero the Jacobian
-  for (std::size_t i = 0; i < jac.extent(0); i++) {
-    for (std::size_t j = 0; j < jac.extent(1); j++) {
-      for (std::size_t k = 0; k < jac.extent(2); k++) {
-        for (std::size_t l = 0; l < jac.extent(3); l++) {
-          for (std::size_t m = 0; m < jac.extent(4); m++) {
-            jac(i, j, k, l, m) = 0.0;
-          }
-        }
-      }
-    }
-  }
+  jac.zero();
 
   // Interpolate the material data to the nodes
   Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);

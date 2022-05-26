@@ -42,7 +42,7 @@ class HelmholtzPDE {
     template <typename T, class IdxType, class QuadPointData>
     static T compute_residual(IdxType i, IdxType j, QuadPointData& data,
                               T wdetJ, A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
-      // Ub(0) = wdetJ * U0(0);
+      Ub(0) = wdetJ * U0(0);
 
       return 0.0;
     }
@@ -86,7 +86,7 @@ class HelmholtzPDE {
     static T compute_jacobian(IdxType i, IdxType j, QuadPointData& data,
                               T wdetJ, A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
                               A2D::Mat<T, 1, 1>& jac) {
-      // jac(0, 0) = wdetJ;
+      jac(0, 0) = wdetJ;
 
       return 0.0;
     }

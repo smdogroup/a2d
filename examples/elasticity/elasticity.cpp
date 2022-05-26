@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 
         ScalarType result = 0.0;
         for (int jx = 0; jx < nodes_per_elem; jx++) {
-          for (int ix = 0; ix < 3; ix++) {
+          for (int ix = 0; ix < vars_per_node; ix++) {
             result += jac(i, jy, jx, iy, ix) * Pe(i, jx, ix);
           }
         }

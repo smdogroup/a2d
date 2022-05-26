@@ -33,7 +33,7 @@ class FLayout {
  public:
   FLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {
     size = dim1;
-    for (int i = 1; i < get_rank(); i++) {
+    for (std::size_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
@@ -83,7 +83,7 @@ class CLayout {
  public:
   CLayout(const std::size_t dim1) : dim1(dim1), static_extents{dims...} {
     size = dim1;
-    for (int i = 1; i < get_rank(); i++) {
+    for (std::size_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }

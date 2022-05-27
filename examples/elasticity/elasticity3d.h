@@ -74,15 +74,14 @@ class NonlinearElasticity3D
 
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
       Mat3x3 Ux;
-      SymmMat3x3 E, S;
+      SymmMat3x3 E;
       T output;
 
       A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       A2D::Mat3x3GreenStrain(Ux, E);
-      A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      A2D::Symm3x3SymmMultTrace(S, E, output);
+      A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      return 0.5 * output * wdetJ;
+      return output * wdetJ;
     }
 
     template <typename T, class I, class QuadPointData>
@@ -95,23 +94,19 @@ class NonlinearElasticity3D
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
       Mat3x3 Ux0, Uxb;
       SymmMat3x3 E0, Eb;
-      SymmMat3x3 S0, Sb;
 
       A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
       A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
-      A2D::ADMat<SymmMat3x3> S(S0, Sb);
       A2D::ADMat<SymmMat3x3> E(E0, Eb);
       A2D::ADScalar<T> output;
 
       auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      output.bvalue = 0.5 * wdetJ;
+      output.bvalue = wdetJ;
 
-      trace.reverse();
-      constitutive.reverse();
+      energy.reverse();
       strain.reverse();
       mult.reverse();
 
@@ -127,15 +122,12 @@ class NonlinearElasticity3D
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb, Uxp, Uxh;
-      Mat3x3 Uxip, Uxih;
-      SymmMat3x3 E0, Eb, Ep, Eh;
-      SymmMat3x3 S0, Sb, Sp, Sh;
+      Mat3x3 Ux0, Uxb;
+      SymmMat3x3 E0, Eb;
 
       const int N = 9;
       A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
       A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
       A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
       A2D::A2DScalar<N, T> output;
 
@@ -147,21 +139,17 @@ class NonlinearElasticity3D
 
       auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      output.bvalue = 0.5 * wdetJ;
+      output.bvalue = wdetJ;
 
-      trace.reverse();
-      constitutive.reverse();
+      energy.reverse();
       strain.reverse();
       mult.reverse();
 
       mult.hforward();
       strain.hforward();
-      constitutive.hforward();
-      trace.hreverse();
-      constitutive.hreverse();
+      energy.hreverse();
       strain.hreverse();
       mult.hreverse();
 
@@ -246,15 +234,14 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
 
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
       Mat3x3 Ux;
-      SymmMat3x3 E, S;
+      SymmMat3x3 E;
       T output;
 
       A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       A2D::Mat3x3LinearGreenStrain(Ux, E);
-      A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      A2D::Symm3x3SymmMultTrace(S, E, output);
+      A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      return 0.5 * output * wdetJ;
+      return output * wdetJ;
     }
 
     template <typename T, class I, class QuadPointData>
@@ -267,23 +254,19 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
       Mat3x3 Ux0, Uxb;
       SymmMat3x3 E0, Eb;
-      SymmMat3x3 S0, Sb;
 
       A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
       A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
-      A2D::ADMat<SymmMat3x3> S(S0, Sb);
       A2D::ADMat<SymmMat3x3> E(E0, Eb);
       A2D::ADScalar<T> output;
 
       auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-      auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      output.bvalue = 0.5 * wdetJ;
+      output.bvalue = wdetJ;
 
-      trace.reverse();
-      constitutive.reverse();
+      energy.reverse();
       strain.reverse();
       mult.reverse();
 
@@ -299,15 +282,12 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
       T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb, Uxp, Uxh;
-      Mat3x3 Uxip, Uxih;
-      SymmMat3x3 E0, Eb, Ep, Eh;
-      SymmMat3x3 S0, Sb, Sp, Sh;
+      Mat3x3 Ux0, Uxb;
+      SymmMat3x3 E0, Eb;
 
       const int N = 9;
       A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
       A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
       A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
       A2D::A2DScalar<N, T> output;
 
@@ -319,21 +299,17 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
 
       auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
       auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-      auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-      auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      output.bvalue = 0.5 * wdetJ;
+      output.bvalue = wdetJ;
 
-      trace.reverse();
-      constitutive.reverse();
+      energy.reverse();
       strain.reverse();
       mult.reverse();
 
       mult.hforward();
       strain.hforward();
-      constitutive.hforward();
-      trace.hreverse();
-      constitutive.hreverse();
+      energy.hreverse();
       strain.hreverse();
       mult.hreverse();
 

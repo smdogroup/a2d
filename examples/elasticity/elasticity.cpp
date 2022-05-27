@@ -28,8 +28,8 @@ int main(int argc, char* argv[]) {
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
   // typedef HelmholtzPDE<IndexType, ScalarType, Basis> Model;
-  // typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
-  typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
+  typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
+  // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
   const int nx = 24;
   const int ny = 64;

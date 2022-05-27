@@ -44,17 +44,15 @@ int main(int argc, char* argv[]) {
   Mat3x3 Uxi0, Uxib;
   Mat3x3 Ux0, Uxb;
   SymmMat3x3 E0, Eb;
-  SymmMat3x3 S0, Sb;
 
   A2D::A2DMat<N, Mat3x3> J(J0, Jb);
   A2D::A2DMat<N, Mat3x3> Jinv(Jinv0, Jinvb);
   A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
   A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-  A2D::A2DMat<N, SymmMat3x3> S(S0, Sb);
   A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
   A2D::A2DScalar<N, ScalarType> output;
 
-  ScalarType mu(0.2533), lambda(0.71236);
+  ScalarType mu(0.5140), lambda(0.13414);
 
   // Set random values
   for (int i = 0; i < 3; i++) {
@@ -67,7 +65,10 @@ int main(int argc, char* argv[]) {
   Mat3x3 P, result;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      if (i == 0 && j == 0) {
+        P(i, j) = 1.0;
+      }
+      // P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
       Uxi0(i, j) = Uxi0(i, j) + ScalarType(0.0, dh) * P(i, j);
     }
   }
@@ -81,13 +82,11 @@ int main(int argc, char* argv[]) {
   auto jinv = A2D::Mat3x3Inverse(J, Jinv);
   auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
   auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-  auto constitutive = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-  auto trace = A2D::Symm3x3SymmMultTrace(S, E, output);
+  auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
   output.bvalue = 1.0;
 
-  trace.reverse();
-  constitutive.reverse();
+  energy.reverse();
   strain.reverse();
   mult.reverse();
   jinv.reverse();
@@ -95,13 +94,22 @@ int main(int argc, char* argv[]) {
   jinv.hforward();
   mult.hforward();
   strain.hforward();
-  constitutive.hforward();
-  trace.hforward();
-  trace.hreverse();
-  constitutive.hreverse();
+  energy.hreverse();
   strain.hreverse();
   mult.hreverse();
   jinv.hreverse();
+
+  // Test the derivative
+  double fd = output.value.imag() / dh;
+  double res = 0.0;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      res += Uxib(i, j).real() * P(i, j).real();
+    }
+  }
+  double error = (res - fd) / fd;
+  std::cout << " result: " << std::setw(20) << res << " fd: " << std::setw(20)
+            << fd << " error: " << std::setw(20) << error << std::endl;
 
   // Compute the product of the Hessian with P
   for (int k = 0; k < N; k++) {

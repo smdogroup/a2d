@@ -373,10 +373,11 @@ class HexBasis {
         Model::compute_jacobian(i, j, data, weight * detJ(i, j), U0, Ub, ja);
 
         for (int ky = 0; ky < 8; ky++) {
-          for (int kx = 0; kx < 8; kx++) {
-            for (int iy = 0; iy < Model::NUM_VARS; iy++) {
-              for (int ix = 0; ix < Model::NUM_VARS; ix++) {
-                jac(i, ky, kx, iy, ix) += N[ky] * N[kx] * ja(iy, ix);
+          for (int iy = 0; iy < Model::NUM_VARS; iy++) {
+            for (int ix = 0; ix < Model::NUM_VARS; ix++) {
+              T n = N[ky] * ja(iy, ix);
+              for (int kx = 0; kx < 8; kx++) {
+                jac(i, ky, kx, iy, ix) += N[kx] * n;
               }
             }
           }
@@ -452,18 +453,18 @@ class HexBasis {
                                 Uxib, ja);
 
         for (int ky = 0; ky < 8; ky++) {
-          for (int kx = 0; kx < 8; kx++) {
-            for (int iy = 0; iy < Model::NUM_VARS; iy++) {
-              for (int ix = 0; ix < Model::NUM_VARS; ix++) {
-                jac(i, ky, kx, iy, ix) += Nx[ky] * (Nx[kx] * ja(iy, 0, ix, 0) +
-                                                    Ny[kx] * ja(iy, 0, ix, 1) +
-                                                    Nz[kx] * ja(iy, 0, ix, 2)) +
-                                          Ny[ky] * (Nx[kx] * ja(iy, 1, ix, 0) +
-                                                    Ny[kx] * ja(iy, 1, ix, 1) +
-                                                    Nz[kx] * ja(iy, 1, ix, 2)) +
-                                          Nz[ky] * (Nx[kx] * ja(iy, 2, ix, 0) +
-                                                    Ny[kx] * ja(iy, 2, ix, 1) +
-                                                    Nz[kx] * ja(iy, 2, ix, 2));
+          for (int iy = 0; iy < Model::NUM_VARS; iy++) {
+            for (int ix = 0; ix < Model::NUM_VARS; ix++) {
+              T nx = Nx[ky] * ja(iy, 0, ix, 0) + Ny[ky] * ja(iy, 1, ix, 0) +
+                     Nz[ky] * ja(iy, 2, ix, 0);
+              T ny = Nx[ky] * ja(iy, 0, ix, 1) + Ny[ky] * ja(iy, 1, ix, 1) +
+                     Nz[ky] * ja(iy, 2, ix, 1);
+              T nz = Nx[ky] * ja(iy, 0, ix, 2) + Ny[ky] * ja(iy, 1, ix, 2) +
+                     Nz[ky] * ja(iy, 2, ix, 2);
+
+              for (int kx = 0; kx < 8; kx++) {
+                jac(i, ky, kx, iy, ix) +=
+                    Nx[kx] * nx + Ny[kx] * ny + Nz[kx] * nz;
               }
             }
           }

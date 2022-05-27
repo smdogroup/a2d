@@ -6,6 +6,7 @@
 #include "a2dtmp.h"
 #include "elasticity3d.h"
 #include "helmholtz3d.h"
+#include "mpi.h"
 #include "multiarray.h"
 
 #define USE_COMPLEX 1
@@ -27,6 +28,7 @@ int main(int argc, char* argv[]) {
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
   // typedef HelmholtzPDE<IndexType, ScalarType, Basis> Model;
+  // typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
   typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
   const int nx = 24;
@@ -125,11 +127,16 @@ int main(int argc, char* argv[]) {
   jac.zero();
 
   model.add_residuals(residual);
+
+  double t0 = MPI_Wtime();
   model.add_jacobians();
+  t0 = MPI_Wtime() - t0;
+
+  std::cout << "Jacobian time: " << t0 << std::endl;
 
 #ifdef USE_COMPLEX
 
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 3; i++) {
     for (int jy = 0; jy < nodes_per_elem; jy++) {
       for (int iy = 0; iy < vars_per_node; iy++) {
         double fd = res(i, jy, iy).imag() / dh;

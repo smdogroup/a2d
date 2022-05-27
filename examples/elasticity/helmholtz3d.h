@@ -3,54 +3,75 @@
 
 #include "a2dtmp.h"
 #include "basis3d.h"
+#include "model.h"
+#include "multiarray.h"
 
-template <class Basis>
-class HelmholtzPDE {
+template <class IdxType, class ScalarType, class Basis>
+class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
  public:
-  static const int SPATIAL_DIM = 3;
-  static const int NUM_DATA = 1;
-  static const int NUM_VARS = 1;
+  // Finite-element basis class
+  static const int NUM_VARS = 1;  // Number of variables per node
+  static const int NUM_DATA = 1;  // Data points per quadrature point
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointSolutionArray,
-            class QuadPointGradientArray, class ElementResidualArray>
-  static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv, QuadPointSolutionArray& U,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& res) {
-    Basis::template residuals<T, HelmholtzPDE<Basis>::Impl>(data, detJ, Jinv,
-                                                            Uxi, res);
-    Basis::template residuals<T, HelmholtzPDE<Basis>::Impl>(data, detJ, U, res);
+  // Short cut for base class name
+  typedef PDEModel<IdxType, ScalarType, Basis, 1, 1> base;
+
+  HelmholtzPDE(const int nelems, const int nnodes)
+      : PDEModel<IdxType, ScalarType, Basis, 1, 1>(nelems, nnodes) {}
+
+  template <class ResArray>
+  void add_residuals(ResArray& res) {
+    // Get data for computing the residuals
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadSolnArray& Uq = this->get_quad_solution();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemResArray& elem_res = this->get_elem_res();
+
+    Basis::template residuals<ScalarType,
+                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_res);
+    Basis::template residuals<ScalarType,
+                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Uq, elem_res);
+
+    typename base::ConnArray& conn = this->get_conn();
+    element_gather_add(conn, elem_res, res);
   }
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointSolutionArray,
-            class QuadPointGradientArray, class ElementResidualArray>
-  static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv, QuadPointSolutionArray& U,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& jac) {
-    Basis::template jacobians<T, HelmholtzPDE<Basis>::Impl>(data, detJ, Jinv,
-                                                            Uxi, jac);
-    Basis::template jacobians<T, HelmholtzPDE<Basis>::Impl>(data, detJ, U, jac);
+  void add_jacobians() {
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadSolnArray& Uq = this->get_quad_solution();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemJacArray& elem_jac = this->get_elem_jac();
+
+    Basis::template jacobians<ScalarType,
+                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_jac);
+    Basis::template jacobians<ScalarType,
+                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Uq, elem_jac);
   }
 
   class Impl {
    public:
     static const int NUM_VARS = 1;
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_residual(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
+    template <typename T, class I, class QuadPointData>
+    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
       Ub(0) = wdetJ * U0(0);
 
       return 0.0;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_residual(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 1, 3>& Uxi, A2D::Mat<T, 1, 3>& Uxib) {
+    template <typename T, class I, class QuadPointData>
+    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 1, 3>& Uxi,
+                              A2D::Mat<T, 1, 3>& Uxib) {
       T r0 = data(i, j, 0);
 
       A2D::Vec<T, 3> Ux;
@@ -82,19 +103,19 @@ class HelmholtzPDE {
       return 0.0;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_jacobian(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
+    template <typename T, class I, class QuadPointData>
+    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
                               A2D::Mat<T, 1, 1>& jac) {
       jac(0, 0) = wdetJ;
 
       return 0.0;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_jacobian(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 1, 3>& Uxi0, A2D::Mat<T, 1, 3>& Uxib,
+    template <typename T, class I, class QuadPointData>
+    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 1, 3>& Uxi0,
+                              A2D::Mat<T, 1, 3>& Uxib,
                               A2D::SymmTensor<T, 1, 3>& jac) {
       T r0 = data(i, j, 0);
       T r2 = r0 * r0 * wdetJ;

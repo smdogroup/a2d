@@ -22,6 +22,19 @@ struct ___get_extent<r, dim0, dims...> {
   static const std::size_t extent = ___get_extent<r - 1, dims...>::extent;
 };
 
+template <std::size_t... dims>
+struct __get_size;
+
+template <std::size_t dim0, std::size_t... dims>
+struct __get_size<dim0, dims...> {
+  static const std::size_t size = dim0 * __get_size<dims...>::size;
+};
+
+template <std::size_t dim0>
+struct __get_size<dim0> {
+  static const std::size_t size = dim0;
+};
+
 /*
   Fortran ordering
 
@@ -39,8 +52,12 @@ class FLayout {
   }
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
-
   static const std::size_t get_rank() { return rank; }
+
+  // Get the size of the array required given the first dimension
+  static int get_size(std::size_t dim) {
+    return dim * __get_size<dims...>::size;
+  }
 
   const std::size_t get_extent(std::size_t index) const {
     if (index == 0) {
@@ -89,8 +106,12 @@ class CLayout {
   }
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
-
   static const std::size_t get_rank() { return rank; }
+
+  // Get the size of the array required given the first dimension
+  static int get_size(std::size_t dim) {
+    return dim * __get_size<dims...>::size;
+  }
 
   const std::size_t get_extent(std::size_t index) const {
     if (index == 0) {
@@ -129,7 +150,19 @@ class CLayout {
 template <typename T, class Layout>
 class MultiArray {
  public:
-  MultiArray(Layout& layout, T* data) : layout(layout), data(data) {}
+  MultiArray(Layout& layout, T* data_ = NULL) : layout(layout), data(data_) {
+    if (data) {
+      data_owner = false;
+    } else {
+      data_owner = true;
+      data = new T[layout.get_size()];
+    }
+  }
+  ~MultiArray() {
+    if (data_owner) {
+      delete[] data;
+    }
+  }
 
   Layout& layout;
   T* data;
@@ -151,6 +184,11 @@ class MultiArray {
       data[i] = 0.0;
     }
   }
+
+ private:
+  MultiArray(const MultiArray<T, Layout>&) {}
+
+  bool data_owner;
 };
 
 }  // namespace A2D

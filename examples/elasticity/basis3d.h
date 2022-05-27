@@ -1,25 +1,7 @@
 #ifndef BRICK_BASIS_3D_H
 #define BRICK_BASIS_3D_H
 
-/*
-  Scatter the variables stored at the nodes to the a data structure
-  that stores the element variables at each element node.
-*/
-template <class ConnArray, class NodeArray, class ElementArray>
-void element_scatter(ConnArray& conn, NodeArray& X, ElementArray& Xe) {
-  // Loop over the elements
-  for (std::size_t i = 0; i < conn.extent(0); i++) {
-    // Loop over each element nodes
-    for (std::size_t j = 0; j < conn.extent(1); j++) {
-      const std::size_t index = conn(i, j);
-
-      // Loop over the variables
-      for (std::size_t k = 0; k < X.extent(1); k++) {
-        Xe(i, j, k) = X(index, k);
-      }
-    }
-  }
-}
+#include <cstddef>
 
 const double GaussQuadPts2[] = {-0.577350269189626, 0.577350269189626};
 const double GaussQuadWts2[] = {1.0, 1.0};
@@ -44,6 +26,8 @@ template <class Quadrature>
 class HexBasis {
  public:
   static const int NUM_NODES = 8;
+  static const int SPATIAL_DIM = 3;
+  typedef Quadrature quadrature;
 
   /*
     Interpolate from element-oriented data to quadrature point data
@@ -248,7 +232,7 @@ class HexBasis {
             class QuadPointDetJArray, class QuadPointSolutionArray,
             class ElementResidualArray>
   static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointSolutionArray& U, ElementResidualArray& res) {
+                        QuadPointSolutionArray& Uq, ElementResidualArray& res) {
     for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -267,7 +251,7 @@ class HexBasis {
       for (std::size_t i = 0; i < detJ.extent(0); i++) {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          U0(ii) = U(i, j);
+          U0(ii) = Uq(i, j, ii);
         }
 
         Model::compute_residual(i, j, data, weight * detJ(i, j), U0, Ub);
@@ -361,7 +345,7 @@ class HexBasis {
             class QuadPointDetJArray, class QuadPointSolutionArray,
             class ElementResidualArray>
   static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointSolutionArray& U, ElementResidualArray& jac) {
+                        QuadPointSolutionArray& Uq, ElementResidualArray& jac) {
     for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -380,7 +364,7 @@ class HexBasis {
       for (std::size_t i = 0; i < detJ.extent(0); i++) {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          U0(ii) = U(i, j);
+          U0(ii) = Uq(i, j, ii);
         }
 
         // The Jacobian of the energy

@@ -26,55 +26,29 @@ int main(int argc, char* argv[]) {
 
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
-  typedef HelmholtzPDE<Basis> Model;
-  // typedef NonlinearElasticity3D<Basis> Model;
-
-  const int data_per_point = Model::NUM_DATA;
-  const int spatial_dim = Model::SPATIAL_DIM;
-  const int vars_per_node = Model::NUM_VARS;
-  const int nodes_per_elem = Basis::NUM_NODES;
-  const int num_quad_pts = Quadrature::NUM_QUAD_PTS;
+  // typedef HelmholtzPDE<IndexType, ScalarType, Basis> Model;
+  typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
   const int nx = 24;
   const int ny = 64;
   const int nz = 64;
   const int nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const int nelems = nx * ny * nz;
+  const int vars_per_node = Model::NUM_VARS;
+  const int nodes_per_elem = Basis::NUM_NODES;
 
-  IndexType* conn_data = new IndexType[nodes_per_elem * nelems];
-  CLayout<nodes_per_elem> conn_layout(nelems);
-  MultiArray<IndexType, CLayout<nodes_per_elem> > conn(conn_layout, conn_data);
+  Model model(nelems, nnodes);
 
-  ScalarType* X_data = new ScalarType[spatial_dim * nnodes];
-  CLayout<spatial_dim> node_layout(nnodes);
-  MultiArray<ScalarType, CLayout<spatial_dim> > X(node_layout, X_data);
+  typename Model::base::ConnArray& conn = model.get_conn();
+  typename Model::base::NodeArray& X = model.get_nodes();
+  typename Model::base::SolutionArray& U = model.get_solution();
 
-  ScalarType* U_data = new ScalarType[vars_per_node * nnodes];
-  CLayout<vars_per_node> solution_layout(nnodes);
-  MultiArray<ScalarType, CLayout<vars_per_node> > U(solution_layout, U_data);
+  // Create a new solution array
+  typename Model::base::SolutionArray& P = *model.new_solution();
+  typename Model::base::ElemSolnArray& Pe = *model.new_elem_solution();
 
-  ScalarType* P_data = new ScalarType[vars_per_node * nnodes];
-  MultiArray<ScalarType, CLayout<vars_per_node> > P(solution_layout, P_data);
-
-  ScalarType* Xe_data = new ScalarType[spatial_dim * nodes_per_elem * nelems];
-  CLayout<nodes_per_elem, spatial_dim> node_element_layout(nelems);
-  MultiArray<ScalarType, CLayout<nodes_per_elem, spatial_dim> > Xe(
-      node_element_layout, Xe_data);
-
-  ScalarType* Ue_data = new ScalarType[vars_per_node * nodes_per_elem * nelems];
-  CLayout<nodes_per_elem, vars_per_node> solution_element_layout(nelems);
-  MultiArray<ScalarType, CLayout<nodes_per_elem, vars_per_node> > Ue(
-      solution_element_layout, Ue_data);
-
-  ScalarType* Pe_data = new ScalarType[vars_per_node * nodes_per_elem * nelems];
-  MultiArray<ScalarType, CLayout<nodes_per_elem, vars_per_node> > Pe(
-      solution_element_layout, Pe_data);
-
-  // Allocate space for the data
-  ScalarType* mat_data = new ScalarType[data_per_point * num_quad_pts * nelems];
-  CLayout<num_quad_pts, data_per_point> element_mat_layout(nelems);
-  MultiArray<ScalarType, CLayout<num_quad_pts, data_per_point> > data(
-      element_mat_layout, mat_data);
+  // Residual vector
+  typename Model::base::SolutionArray& residual = *model.new_solution();
 
 #ifdef USE_COMPLEX
   double dh = 1e-30;
@@ -83,16 +57,6 @@ int main(int argc, char* argv[]) {
   double dh = 1e-6;
   ScalarType perturb = dh;
 #endif  // USE_COMPLEX
-
-  // Set the values of the solution
-  for (int i = 0; i < nnodes; i++) {
-    for (int j = 0; j < vars_per_node; j++) {
-      U(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
-      P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
-
-      U(i, j) = U(i, j) + perturb * P(i, j);
-    }
-  }
 
   // Set the node locations
   for (int k = 0; k < nz + 1; k++) {
@@ -125,79 +89,43 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  element_scatter(conn, U, Ue);
-  element_scatter(conn, X, Xe);
-  element_scatter(conn, P, Pe);
+  typename Model::base::QuadDataArray& data = model.get_quad_data();
 
-  // Store data for Uq
-  ScalarType* Uq_data = new ScalarType[vars_per_node * num_quad_pts * nelems];
-  CLayout<num_quad_pts, vars_per_node> solution_quadpt_layout(nelems);
-  MultiArray<ScalarType, CLayout<num_quad_pts, vars_per_node> > Uq(
-      solution_quadpt_layout, Uq_data);
-
-  Basis::interp<vars_per_node>(Ue, Uq);
-
-  // Store data for detJ
-  ScalarType* detJ_data = new ScalarType[num_quad_pts * nelems];
-  CLayout<num_quad_pts> element_detJ_layout(nelems);
-  MultiArray<ScalarType, CLayout<num_quad_pts> > detJ(element_detJ_layout,
-                                                      detJ_data);
-
-  // Store the data for Jinv
-  ScalarType* Jinv_data =
-      new ScalarType[spatial_dim * spatial_dim * num_quad_pts * nelems];
-  CLayout<num_quad_pts, spatial_dim, spatial_dim> element_grad_layout(nelems);
-  MultiArray<ScalarType, CLayout<num_quad_pts, spatial_dim, spatial_dim> > Jinv(
-      element_grad_layout, Jinv_data);
-
-  // Store data for Uxi
-  ScalarType* Uxi_data =
-      new ScalarType[vars_per_node * spatial_dim * num_quad_pts * nelems];
-  CLayout<num_quad_pts, vars_per_node, spatial_dim> element_Uxi_layout(nelems);
-  MultiArray<ScalarType, CLayout<num_quad_pts, vars_per_node, spatial_dim> >
-      Uxi(element_Uxi_layout, Uxi_data);
-
-  // Allocate space for the residuals
-  ScalarType* res_data =
-      new ScalarType[vars_per_node * nodes_per_elem * nelems];
-  CLayout<nodes_per_elem, vars_per_node> res_layout(nelems);
-  MultiArray<ScalarType, CLayout<nodes_per_elem, vars_per_node> > res(
-      res_layout, res_data);
-
-  ScalarType* jac_data =
-      new ScalarType[nelems * nodes_per_elem * nodes_per_elem * vars_per_node *
-                     vars_per_node];
-  CLayout<nodes_per_elem, nodes_per_elem, vars_per_node, vars_per_node>
-      jac_layout(nelems);
-  MultiArray<ScalarType, CLayout<nodes_per_elem, nodes_per_elem, vars_per_node,
-                                 vars_per_node> >
-      jac(jac_layout, jac_data);
-
-  double pt_data[] = {0.3, 1.2};
-
-  for (int i = 0; i < nelems; i++) {
-    for (int j = 0; j < num_quad_pts; j++) {
-      for (int k = 0; k < data_per_point; k++) {
+  double pt_data[] = {1.23, 2.45};
+  for (std::size_t i = 0; i < data.extent(0); i++) {
+    for (std::size_t j = 0; j < data.extent(1); j++) {
+      for (std::size_t k = 0; k < data.extent(2); k++) {
         data(i, j, k) = pt_data[k];
       }
     }
   }
 
-  // Zero the residual
-  res.zero();
+  // Now reset the nodes
+  model.reset_nodes();
 
-  // Zero the Jacobian
+  // Set the values of the solution
+  for (int i = 0; i < nnodes; i++) {
+    for (int j = 0; j < vars_per_node; j++) {
+      U(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      U(i, j) = U(i, j) + perturb * P(i, j);
+    }
+  }
+
+  // Reset the soultion
+  model.reset_solution();
+
+  element_scatter(conn, P, Pe);
+
+  typename Model::base::ElemResArray& res = model.get_elem_res();
+  typename Model::base::ElemJacArray& jac = model.get_elem_jac();
+
+  residual.zero();
+  res.zero();
   jac.zero();
 
-  Basis::compute_jtrans<ScalarType>(Xe, detJ, Jinv);
-  Basis::gradient<ScalarType, vars_per_node>(Ue, Uxi);
-
-  // ScalarType energy;
-  // Model::energy<ScalarType>(data, detJ, Jinv, Uxi, energy);
-  // Model::residuals<ScalarType>(data, detJ, Jinv, Uxi, res);
-  // Model::jacobians<ScalarType>(data, detJ, Jinv, Uxi, jac);
-  Model::residuals<ScalarType>(data, detJ, Jinv, Uq, Uxi, res);
-  Model::jacobians<ScalarType>(data, detJ, Jinv, Uq, Uxi, jac);
+  model.add_residuals(residual);
+  model.add_jacobians();
 
 #ifdef USE_COMPLEX
 

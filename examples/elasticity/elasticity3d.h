@@ -1,55 +1,73 @@
 #ifndef ELASTICITY_3D_H
 #define ELASTICITY_3D_H
 
-#include <cstddef>
-
 #include "a2dtmp.h"
 #include "basis3d.h"
+#include "model.h"
+#include "multiarray.h"
 
-template <class Basis>
-class NonlinearElasticity3D {
+template <class IdxType, class ScalarType, class Basis>
+class NonlinearElasticity3D
+    : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
  public:
-  static const int SPATIAL_DIM = 3;
-  static const int NUM_DATA = 2;
-  static const int NUM_VARS = 3;
+  // Finite-element basis class
+  static const int NUM_VARS = 3;  // Number of variables per node
+  static const int NUM_DATA = 2;  // Data points per quadrature point
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray>
-  static void energy(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                     QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
-                     T& energy) {
-    Basis::template energy<T, NonlinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, energy);
+  // Short cut for base class name
+  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2> base;
+
+  NonlinearElasticity3D(const int nelems, const int nnodes)
+      : PDEModel<IdxType, ScalarType, Basis, 3, 2>(nelems, nnodes) {}
+
+  ScalarType energy() {
+    ScalarType engry;
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+
+    Basis::template energy<
+        ScalarType, NonlinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, engry);
+
+    return engry;
   }
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray,
-            class ElementResidualArray>
-  static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& res) {
-    Basis::template residuals<T, NonlinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, res);
+  template <class ResArray>
+  void add_residuals(ResArray& res) {
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemResArray& elem_res = this->get_elem_res();
+
+    Basis::template residuals<
+        ScalarType, NonlinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_res);
+
+    typename base::ConnArray& conn = this->get_conn();
+    element_gather_add(conn, elem_res, res);
   }
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray,
-            class ElementResidualArray>
-  static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& jac) {
-    Basis::template jacobians<T, NonlinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, jac);
+  void add_jacobians() {
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemJacArray& elem_jac = this->get_elem_jac();
+
+    Basis::template jacobians<
+        ScalarType, NonlinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_jac);
   }
 
   class Impl {
    public:
     static const int NUM_VARS = 3;
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_energy(IdxType i, IdxType j, QuadPointData& data, T wdetJ,
+    template <typename T, class I, class QuadPointData>
+    static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
                             A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
@@ -67,10 +85,9 @@ class NonlinearElasticity3D {
       return 0.5 * output * wdetJ;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_residual(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 3, 3>& Uxi0,
+    template <typename T, class I, class QuadPointData>
+    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
                               A2D::Mat<T, 3, 3>& Uxib) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
@@ -101,10 +118,10 @@ class NonlinearElasticity3D {
       return output.value;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_jacobian(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
+    template <typename T, class I, class QuadPointData>
+    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
+                              A2D::Mat<T, 3, 3>& Uxib,
                               A2D::SymmTensor<T, 3, 3>& jac) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
@@ -162,50 +179,67 @@ class NonlinearElasticity3D {
   };
 };
 
-template <class Basis>
-class LinearElasticity3D {
+template <class IdxType, class ScalarType, class Basis>
+class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
  public:
-  static const int SPATIAL_DIM = 3;
-  static const int NUM_DATA = 2;
-  static const int NUM_VARS = 3;
+  // Finite-element basis class
+  static const int NUM_VARS = 3;  // Number of variables per node
+  static const int NUM_DATA = 2;  // Data points per quadrature point
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray>
-  static void energy(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                     QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
-                     T& energy) {
-    Basis::template energy<T, LinearElasticity3D<Basis>::Impl>(data, detJ, Jinv,
-                                                               Uxi, energy);
+  // Short cut for base class name
+  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2> base;
+
+  LinearElasticity3D(const int nelems, const int nnodes)
+      : PDEModel<IdxType, ScalarType, Basis, 3, 2>(nelems, nnodes) {}
+
+  ScalarType energy() {
+    ScalarType engry;
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+
+    Basis::template energy<
+        ScalarType, LinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, engry);
+
+    return engry;
   }
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray,
-            class ElementResidualArray>
-  static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& res) {
-    Basis::template residuals<T, LinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, res);
+  template <class ResArray>
+  void add_residuals(ResArray& res) {
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemResArray& elem_res = this->get_elem_res();
+
+    Basis::template residuals<
+        ScalarType, LinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_res);
+
+    typename base::ConnArray& conn = this->get_conn();
+    element_gather_add(conn, elem_res, res);
   }
 
-  template <typename T, class QuadPointModelDataArray, class QuadPointDetJArray,
-            class QuadPointJacobianArray, class QuadPointGradientArray,
-            class ElementResidualArray>
-  static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
-                        ElementResidualArray& jac) {
-    Basis::template jacobians<T, LinearElasticity3D<Basis>::Impl>(
-        data, detJ, Jinv, Uxi, jac);
+  void add_jacobians() {
+    typename base::QuadDataArray& data = this->get_quad_data();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
+    typename base::ElemJacArray& elem_jac = this->get_elem_jac();
+
+    Basis::template jacobians<
+        ScalarType, LinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
+        data, detJ, Jinv, Uxi, elem_jac);
   }
 
   class Impl {
    public:
     static const int NUM_VARS = 3;
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_energy(IdxType i, IdxType j, QuadPointData& data, T wdetJ,
+    template <typename T, class I, class QuadPointData>
+    static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
                             A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
@@ -223,10 +257,9 @@ class LinearElasticity3D {
       return 0.5 * output * wdetJ;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_residual(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 3, 3>& Uxi0,
+    template <typename T, class I, class QuadPointData>
+    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
                               A2D::Mat<T, 3, 3>& Uxib) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
@@ -257,10 +290,10 @@ class LinearElasticity3D {
       return output.value;
     }
 
-    template <typename T, class IdxType, class QuadPointData>
-    static T compute_jacobian(IdxType i, IdxType j, QuadPointData& data,
-                              T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
-                              A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
+    template <typename T, class I, class QuadPointData>
+    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
+                              A2D::Mat<T, 3, 3>& Uxib,
                               A2D::SymmTensor<T, 3, 3>& jac) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;

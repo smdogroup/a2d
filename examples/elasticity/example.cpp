@@ -2,13 +2,15 @@
 
 #include "a2dtmp.h"
 #include "elasticity3d.h"
+#include "helmholtz3d.h"
 #include "multiarray.h"
 
 typedef int IndexType;
 typedef double ScalarType;
-typedef HexQuadrature Quadrature;
+
 typedef HexBasis<HexQuadrature> Basis;
-typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
+typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Elasticity;
+typedef HelmholtzPDE<IndexType, ScalarType, Basis> Helmholtz;
 
 namespace py = pybind11;
 
@@ -32,36 +34,70 @@ void declare_multiarray(py::module& m, const char typestr[]) {
             array.data, sizeof(typename multiarray::type),
             py::format_descriptor<typename multiarray::type>::format(), ndims,
             shape, strides);
-      });
+      })
+      .def("zero", &multiarray::zero);
 }
 
 PYBIND11_MODULE(example, m) {
   m.doc() = "Wrapping for the a2d model class";
 
   // Declare the array types
-  declare_multiarray<typename Model::ConnArray>(m, "ConnArray");
-  declare_multiarray<typename Model::SolutionArray>(m, "SolutionArray");
-  if (!std::is_same<typename Model::SolutionArray,
-                    typename Model::NodeArray>::value) {
-    declare_multiarray<typename Model::NodeArray>(m, "NodeArray");
+  declare_multiarray<typename Elasticity::ConnArray>(m,
+                                                     "Elasticity::ConnArray");
+  declare_multiarray<typename Elasticity::SolutionArray>(
+      m, "Elasticity::SolutionArray");
+  if (!std::is_same<typename Elasticity::SolutionArray,
+                    typename Elasticity::NodeArray>::value) {
+    declare_multiarray<typename Elasticity::NodeArray>(m,
+                                                       "Elasticity::NodeArray");
   }
-  declare_multiarray<typename Model::QuadDataArray>(m, "QuadDataArray");
-  declare_multiarray<typename Model::ElemJacArray>(m, "ElemJacArray");
+  declare_multiarray<typename Elasticity::QuadDataArray>(
+      m, "Elasticity::QuadDataArray");
+  declare_multiarray<typename Elasticity::ElemJacArray>(
+      m, "Elasticity::ElemJacArray");
 
   // Wrap the model function
-  py::class_<Model>(m, "Model")
+  py::class_<Elasticity>(m, "Elasticity")
       .def(py::init<const int, const int>())
-      .def("get_conn", &Model::get_conn, py::return_value_policy::reference)
-      .def("get_nodes", &Model::get_nodes, py::return_value_policy::reference)
-      .def("reset_nodes", &Model::reset_nodes)
-      .def("get_solution", &Model::get_solution,
+      .def("get_conn", &Elasticity::get_conn,
            py::return_value_policy::reference)
-      .def("reset_solution", &Model::reset_solution)
-      .def("get_quad_data", &Model::get_quad_data,
+      .def("get_nodes", &Elasticity::get_nodes,
            py::return_value_policy::reference)
-      .def("add_residuals", &Model::add_residuals)
-      .def("add_jacobians", &Model::add_jacobians,
+      .def("reset_nodes", &Elasticity::reset_nodes)
+      .def("get_solution", &Elasticity::get_solution,
            py::return_value_policy::reference)
-      .def("get_elem_jac", &Model::get_quad_data,
+      .def("reset_solution", &Elasticity::reset_solution)
+      .def("get_quad_data", &Elasticity::get_quad_data,
+           py::return_value_policy::reference)
+      .def("add_residuals", &Elasticity::add_residuals)
+      .def("add_jacobians", &Elasticity::add_jacobians,
+           py::return_value_policy::reference)
+      .def("get_elem_jac", &Elasticity::get_elem_jac,
+           py::return_value_policy::reference);
+
+  // Declare the array types unique for the Helmholtz problem
+  declare_multiarray<typename Helmholtz::SolutionArray>(
+      m, "Helmholtz::SolutionArray");
+  declare_multiarray<typename Helmholtz::QuadDataArray>(
+      m, "Helmholtz::QuadDataArray");
+  declare_multiarray<typename Helmholtz::ElemJacArray>(
+      m, "Helmholtz::ElemJacArray");
+
+  // Wrap the model function
+  py::class_<Helmholtz>(m, "Helmholtz")
+      .def(py::init<const int, const int>())
+      .def("get_conn", &Helmholtz::get_conn, py::return_value_policy::reference)
+      .def("get_nodes", &Helmholtz::get_nodes,
+           py::return_value_policy::reference)
+      .def("reset_nodes", &Helmholtz::reset_nodes)
+      .def("get_solution", &Helmholtz::get_solution,
+           py::return_value_policy::reference)
+      .def("reset_solution", &Helmholtz::reset_solution)
+      .def("get_quad_data", &Helmholtz::get_quad_data,
+           py::return_value_policy::reference)
+      .def("add_residuals", &Helmholtz::add_residuals)
+      .def("add_jacobians", &Helmholtz::add_jacobians,
+           py::return_value_policy::reference)
+      .def("get_elem_jac", &Helmholtz::get_elem_jac,
            py::return_value_policy::reference);
 }

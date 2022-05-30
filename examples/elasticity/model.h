@@ -48,7 +48,7 @@ template <class IdxType, class ScalarType, class Basis, int vars_per_node,
           int data_per_point>
 class PDEModel {
  public:
-  PDEModel(const int nelems, const int nnodes)
+  PDEModel(const std::size_t nelems, const std::size_t nnodes)
       : nelems(nelems),
         nnodes(nnodes),
         conn_layout(nelems),

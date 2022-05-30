@@ -3,6 +3,8 @@
 
 #include <cstddef>
 
+#include "parallel.h"
+
 const double GaussQuadPts2[] = {-0.577350269189626, 0.577350269189626};
 const double GaussQuadWts2[] = {1.0, 1.0};
 
@@ -100,7 +102,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      for (std::size_t i = 0; i < X.extent(0); i++) {
+      const std::size_t npts = X.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
         // Compute the Jacobian transformation
         A2D::Mat<T, 3, 3> J;
         for (int ii = 0; ii < 3; ii++) {
@@ -131,7 +134,7 @@ class HexBasis {
             Jinv(i, j, ii, jj) = jinv(ii, jj);
           }
         }
-      }
+      });
     }
   }
 
@@ -172,7 +175,9 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      for (std::size_t i = 0; i < U.extent(0); i++) {
+      const std::size_t npts = U.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
+        // for (std::size_t i = 0; i < U.extent(0); i++) {
         for (int ii = 0; ii < num_vars; ii++) {
           Uxi(i, j, ii, 0) = Nx[0] * U(i, 0, ii) + Nx[1] * U(i, 1, ii) +
                              Nx[2] * U(i, 2, ii) + Nx[3] * U(i, 3, ii) +
@@ -189,7 +194,7 @@ class HexBasis {
                              Nz[4] * U(i, 4, ii) + Nz[5] * U(i, 5, ii) +
                              Nz[6] * U(i, 6, ii) + Nz[7] * U(i, 7, ii);
         }
-      }
+      });
     }
   }
 
@@ -202,7 +207,8 @@ class HexBasis {
     for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double weight = Quadrature::getQuadWeight(j);
 
-      for (std::size_t i = 0; i < Uxi.extent(0); i++) {
+      const std::size_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&](std::size_t i) -> void {
         // Extract Jinv
         A2D::Mat<T, 3, 3> Jinv0;
         for (int ii = 0; ii < 3; ii++) {
@@ -221,7 +227,7 @@ class HexBasis {
 
         T wdetJ = weight * detJ(i, j);
         energy += Model::compute_energy(i, j, Edata, wdetJ, Jinv0, Uxi0);
-      }
+      });
     }
   }
 
@@ -248,7 +254,8 @@ class HexBasis {
       N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
       N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      for (std::size_t i = 0; i < detJ.extent(0); i++) {
+      const std::size_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, N](std::size_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
@@ -261,7 +268,7 @@ class HexBasis {
             res(i, k, ii) += N[k] * Ub(ii);
           }
         }
-      }
+      });
     }
   }
 
@@ -310,7 +317,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      for (std::size_t i = 0; i < detJ.extent(0); i++) {
+      const std::size_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 
@@ -337,7 +345,7 @@ class HexBasis {
                 Nx[k] * Uxib(ii, 0) + Ny[k] * Uxib(ii, 1) + Nz[k] * Uxib(ii, 2);
           }
         }
-      }
+      });
     }
   }
 
@@ -361,7 +369,8 @@ class HexBasis {
       N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
       N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      for (std::size_t i = 0; i < detJ.extent(0); i++) {
+      const std::size_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, N](std::size_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
@@ -382,7 +391,7 @@ class HexBasis {
             }
           }
         }
-      }
+      });
     }
   }
 
@@ -428,7 +437,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      for (std::size_t i = 0; i < detJ.extent(0); i++) {
+      const std::size_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 
@@ -469,7 +479,7 @@ class HexBasis {
             }
           }
         }
-      }
+      });
     }
   }
 };

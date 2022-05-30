@@ -204,38 +204,6 @@ class SymmTensor {
   T A[TENSOR_SIZE];
 };
 
-/*
-  Mixed symmetric
-
-  A(i, j, k, l) = d^2 f/d X[i, j] d Y[k, l]
-*/
-/*
-template <typename T, int M, int N, P>
-class Symm {
-  typedef T type;
-  static const int TENSOR_SIZE = ;
-};
-*/
-/*
-
-
-  A(i, j, k, l) = d^2 f/dX[i, j] dX[k, l]
-
-  where X[i, j] = X[j, i]
-
-  As a result:
-
-  A(i, j, k, l) = A(k, l, i, j)
-  A(i, j, k, l) = A(j, i, k, l)
-  A(i, j, k, l) = A(i, j, l, k)
-*/
-/*
-template <typename T, int M>
-class SymmSymmTensor {
-  typedef T type;
-  static const int TENSOR_SIZE = ;
-}
-*/
 }  // namespace A2D
 
 #endif  // A2D_OBJS_H

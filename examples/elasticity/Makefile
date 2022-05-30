@@ -1,20 +1,16 @@
 
-default: test elasticity interface
+default: test elasticity extension
 
 CXX = mpicxx
 
 elasticity: elasticity.cpp
-	${CXX} -O3 -g -I../../src/ -std=c++11 -o elasticity elasticity.cpp
+	${CXX} -Xpreprocessor -fopenmp -O3 -I../../src/ -std=c++11 -o elasticity elasticity.cpp -lomp
 
 test: test.cpp
-	${CXX} -O3 -g -I../../src/ -std=c++11 -o test test.cpp
-
-interface: elasticity_impl.cpp
-	python3 setup.py build_ext --inplace
-
-clean:
-	rm -rf test elasticity ./build model.*.so
-
+	${CXX} -O3 -I../../src/ -std=c++11 -o test test.cpp
 
 extension:
-	${CXX} -O3 -Wall -dynamiclib -undefined dynamic_lookup -std=c++11 -fPIC ${shell python -m pybind11 --includes} example.cpp -o example${shell python-config --extension-suffix}
+	${CXX} -O3 -Wall -dynamiclib -undefined dynamic_lookup -std=c++11 -fopenmp -fPIC ${shell python -m pybind11 --includes} example.cpp -o example${shell python-config --extension-suffix}
+
+clean:
+	rm -rf test elasticity ./build *.so

@@ -50,6 +50,13 @@ class FLayout {
       size *= get_extent(i);
     }
   }
+  FLayout(const FLayout<dims...>& src)
+      : dim1(src.dim1), static_extents{dims...} {
+    size = dim1;
+    for (std::size_t i = 1; i < get_rank(); i++) {
+      size *= get_extent(i);
+    }
+  }
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
   static const std::size_t get_rank() { return rank; }

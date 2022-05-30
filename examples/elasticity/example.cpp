@@ -18,23 +18,23 @@ template <class multiarray>
 void declare_multiarray(py::module& m, const char typestr[]) {
   py::class_<multiarray>(m, typestr, py::buffer_protocol())
       .def_buffer([](multiarray& array) -> py::buffer_info {
-    std::size_t ndims = array.rank();
-    std::vector<std::size_t> shape(ndims);
-    std::vector<std::size_t> strides(ndims);
+        std::size_t ndims = array.rank();
+        std::vector<std::size_t> shape(ndims);
+        std::vector<std::size_t> strides(ndims);
 
-    for (std::size_t i = 0; i < ndims; i++) {
-      shape[i] = array.extent(i);
-      strides[i] = sizeof(typename multiarray::type);
-      for (std::size_t j = 0; j < i; j++) {
-        strides[j] *= array.extent(i);
-      }
-    }
+        for (std::size_t i = 0; i < ndims; i++) {
+          shape[i] = array.extent(i);
+          strides[i] = sizeof(typename multiarray::type);
+          for (std::size_t j = 0; j < i; j++) {
+            strides[j] *= array.extent(i);
+          }
+        }
 
-    return py::buffer_info(
-        array.data, sizeof(typename multiarray::type),
-        py::format_descriptor<typename multiarray::type>::format(), ndims,
-        shape, strides);
-      }
+        return py::buffer_info(
+            array.data, sizeof(typename multiarray::type),
+            py::format_descriptor<typename multiarray::type>::format(), ndims,
+            shape, strides);
+      })
       .def("zero", &multiarray::zero);
 }
 

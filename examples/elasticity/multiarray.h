@@ -55,7 +55,7 @@ class FLayout {
   static const std::size_t get_rank() { return rank; }
 
   // Get the size of the array required given the first dimension
-  static int get_size(std::size_t dim) {
+  static std::size_t get_size(std::size_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
@@ -104,12 +104,20 @@ class CLayout {
       size *= get_extent(i);
     }
   }
+  CLayout(const CLayout<dims...>& src)
+      : dim1(src.dim1), static_extents{dims...} {
+    size = dim1;
+    for (std::size_t i = 1; i < get_rank(); i++) {
+      size *= get_extent(i);
+    }
+  }
+
   const std::size_t dim1;
   static const std::size_t rank = sizeof...(dims) + 1;
   static const std::size_t get_rank() { return rank; }
 
   // Get the size of the array required given the first dimension
-  static int get_size(std::size_t dim) {
+  static std::size_t get_size(std::size_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
@@ -150,6 +158,8 @@ class CLayout {
 template <typename T, class Layout>
 class MultiArray {
  public:
+  typedef T type;
+
   MultiArray(Layout& layout, T* data_ = NULL) : layout(layout), data(data_) {
     if (data) {
       data_owner = false;
@@ -157,6 +167,10 @@ class MultiArray {
       data_owner = true;
       data = new T[layout.get_size()];
     }
+  }
+  MultiArray(const MultiArray<T, Layout>& src)
+      : layout(src.layout), data(src.data) {
+    data_owner = false;
   }
   ~MultiArray() {
     if (data_owner) {
@@ -186,8 +200,6 @@ class MultiArray {
   }
 
  private:
-  MultiArray(const MultiArray<T, Layout>&) {}
-
   bool data_owner;
 };
 

@@ -34,8 +34,7 @@ class NonlinearElasticity3D
     return engry;
   }
 
-  template <class ResArray>
-  void add_residuals(ResArray& res) {
+  void add_residuals(typename base::SolutionArray& res) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -194,8 +193,7 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
     return engry;
   }
 
-  template <class ResArray>
-  void add_residuals(ResArray& res) {
+  void add_residuals(typename base::SolutionArray& res) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();

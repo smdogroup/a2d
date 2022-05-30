@@ -59,9 +59,9 @@ class PDEModel {
         quad_data_layout(nelems),
         quad_node_layout(nelems),
         quad_soln_layout(nelems),
+        quad_grad_layout(nelems),
         quad_detJ_layout(nelems),
         quad_jtrans_layout(nelems),
-        quad_grad_layout(nelems),
         res_layout(nelems),
         jac_layout(nelems) {
     // Allocate the connectivity

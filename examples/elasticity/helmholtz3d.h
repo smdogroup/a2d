@@ -19,8 +19,7 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
   HelmholtzPDE(const int nelems, const int nnodes)
       : PDEModel<IdxType, ScalarType, Basis, 1, 1>(nelems, nnodes) {}
 
-  template <class ResArray>
-  void add_residuals(ResArray& res) {
+  void add_residuals(typename base::SolutionArray& res) {
     // Get data for computing the residuals
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();

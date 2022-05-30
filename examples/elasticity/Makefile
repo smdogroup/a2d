@@ -14,3 +14,7 @@ interface: elasticity_impl.cpp
 
 clean:
 	rm -rf test elasticity ./build model.*.so
+
+
+extension:
+	${CXX} -g -Wall -dynamiclib -undefined dynamic_lookup -std=c++11 -fPIC ${shell python -m pybind11 --includes} example.cpp -o example${shell python-config --extension-suffix}

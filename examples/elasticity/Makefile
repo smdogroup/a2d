@@ -1,16 +1,16 @@
 
+include Makefile.in
+
 default: test elasticity extension
 
-CXX = mpicxx
-
 elasticity: elasticity.cpp
-	${CXX} -Xpreprocessor -fopenmp -O3 -I../../src/ -std=c++11 -o elasticity elasticity.cpp -lomp
+	${CXX} ${OPENMP_ARGS} -O3 -I../../src/ -std=c++11 -o elasticity elasticity.cpp ${OPENMP_LIB}
 
 test: test.cpp
-	${CXX} -Xpreprocessor -fopenmp -O3 -I../../src/ -std=c++11 -o test test.cpp -lomp
+	${CXX} ${OPENMP_ARGS} -O3 -I../../src/ -std=c++11 -o test test.cpp ${OPENMP_LIB}
 
 extension:
-	${CXX} -O3 -Wall -dynamiclib -undefined dynamic_lookup -std=c++11 -Xpreprocessor -fopenmp -fPIC ${shell python -m pybind11 --includes} example.cpp -lomp -o example${shell python-config --extension-suffix}
+	${CXX} -O3 ${OPENMP_ARGS} ${LIB_ARGS} ${shell python -m pybind11 --includes} example.cpp -o example${shell python3-config --extension-suffix} ${OPENMP_LIB}
 
 clean:
 	rm -rf test elasticity ./build *.so

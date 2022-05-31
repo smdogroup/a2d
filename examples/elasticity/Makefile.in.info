@@ -1,0 +1,12 @@
+
+# Configuration for linux
+CXX = mpicxx
+OPENMP_ARGS = -fopenmp
+OPENMP_LIB =
+LIB_ARGS = -shared -fPIC
+
+# Configuration for MAC
+# CXX = mpicxx
+# OPENMP_ARGS = -Xpreprocessor -fopenmp
+# OPENMP_LIB = -lomp
+# LIB_ARGS =-dynamiclib -undefined dynamic_lookup -fPIC

@@ -163,6 +163,112 @@ class NonlinearElasticity3D
 
       return output.value;
     }
+
+    template <typename T, class I, class QuadPointData>
+    static void compute_res_adjoint_data(I i, I j, QuadPointData& data, T wdetJ,
+                                         A2D::Mat<T, 3, 3>& Jinv,
+                                         A2D::Mat<T, 3, 3>& Uxi0,
+                                         A2D::Mat<T, 3, 3>& Psixi0,
+                                         QuadPointData& dfdx) {
+      // typedef A2D::SymmMat<T, 3> SymmMat3x3;
+      // typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+      // T mu(data(i, j, 0)), lambda(data(i, j, 1));
+      // Mat3x3 Ux0, Uxb;
+      // SymmMat3x3 E0, Eb;
+
+      // const int N = 9;
+      // A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+      // A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+      // A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+      // A2D::A2DScalar<N, T> output;
+
+      // // Set up the seed values
+      // for (int k = 0; k < N; k++) {
+      //   Mat3x3& Up = Uxi.pvalue(k);
+      //   Up(k / 3, k % 3) = 1.0;
+      // }
+
+      // auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+      // auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+      // auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+      // output.bvalue = wdetJ;
+
+      // energy.reverse();
+      // strain.reverse();
+      // mult.reverse();
+
+      // mult.hforward();
+      // strain.hforward();
+      // energy.hreverse();
+      // strain.hreverse();
+      // mult.hreverse();
+
+      // for (int k = 0; k < N; k++) {
+      //   Mat3x3& Uxih = Uxi.hvalue(k);
+      //   for (int i = 0; i < 3; i++) {
+      //     for (int j = 0; j < 3; j++) {
+      //       jac(i, j, k / 3, k % 3) = Uxih(i, j);
+      //     }
+      //   }
+      // }
+
+      // return output.value;
+    }
+
+    template <typename T, class I, class QuadPointData>
+    static void compute_res_adjoint_nodes(I i, I j, QuadPointData& data,
+                                          T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
+                                          A2D::Mat<T, 3, 3>& Uxi0,
+                                          A2D::Mat<T, 3, 3>& Psixi0,
+                                          A2D::SymmTensor<T, 3, 3>& jac) {
+      // typedef A2D::SymmMat<T, 3> SymmMat3x3;
+      // typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+      // T mu(data(i, j, 0)), lambda(data(i, j, 1));
+      // Mat3x3 Ux0, Uxb;
+      // SymmMat3x3 E0, Eb;
+
+      // const int N = 9;
+      // A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+      // A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+      // A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+      // A2D::A2DScalar<N, T> output;
+
+      // // Set up the seed values
+      // for (int k = 0; k < N; k++) {
+      //   Mat3x3& Up = Uxi.pvalue(k);
+      //   Up(k / 3, k % 3) = 1.0;
+      // }
+
+      // auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+      // auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+      // auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+      // output.bvalue = wdetJ;
+
+      // energy.reverse();
+      // strain.reverse();
+      // mult.reverse();
+
+      // mult.hforward();
+      // strain.hforward();
+      // energy.hreverse();
+      // strain.hreverse();
+      // mult.hreverse();
+
+      // for (int k = 0; k < N; k++) {
+      //   Mat3x3& Uxih = Uxi.hvalue(k);
+      //   for (int i = 0; i < 3; i++) {
+      //     for (int j = 0; j < 3; j++) {
+      //       jac(i, j, k / 3, k % 3) = Uxih(i, j);
+      //     }
+      //   }
+      // }
+
+      // return output.value;
+    }
   };
 };
 

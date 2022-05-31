@@ -60,17 +60,16 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
     static const int NUM_VARS = 1;
 
     template <typename T, class I, class QuadPointData>
-    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
+    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
       Ub(0) = wdetJ * U0(0);
-
-      return 0.0;
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 1, 3>& Uxi,
-                              A2D::Mat<T, 1, 3>& Uxib) {
+    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 1, 3>& Uxi,
+                                 A2D::Mat<T, 1, 3>& Uxib) {
       T r0 = data(i, j, 0);
 
       A2D::Vec<T, 3> Ux;
@@ -98,24 +97,21 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
           Uxb(0) * Jinv(1, 0) + Uxb(1) * Jinv(1, 1) + Uxb(2) * Jinv(1, 2);
       Uxib(0, 2) =
           Uxb(0) * Jinv(2, 0) + Uxb(1) * Jinv(2, 1) + Uxb(2) * Jinv(2, 2);
-
-      return 0.0;
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
-                              A2D::Mat<T, 1, 1>& jac) {
+    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
+                                 A2D::Mat<T, 1, 1>& jac) {
       jac(0, 0) = wdetJ;
-
-      return 0.0;
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 1, 3>& Uxi0,
-                              A2D::Mat<T, 1, 3>& Uxib,
-                              A2D::SymmTensor<T, 1, 3>& jac) {
+    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 1, 3>& Uxi0,
+                                 A2D::Mat<T, 1, 3>& Uxib,
+                                 A2D::SymmTensor<T, 1, 3>& jac) {
       T r0 = data(i, j, 0);
       T r2 = r0 * r0 * wdetJ;
 
@@ -142,8 +138,6 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
       jac(0, 1, 0, 2) =
           r2 * (Jinv(1, 0) * Jinv(2, 0) + Jinv(1, 1) * Jinv(2, 1) +
                 Jinv(1, 2) * Jinv(2, 2));
-
-      return 0.0;
     }
   };
 };

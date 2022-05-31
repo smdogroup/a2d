@@ -84,9 +84,10 @@ class NonlinearElasticity3D
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
-                              A2D::Mat<T, 3, 3>& Uxib) {
+    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 3, 3>& Uxi0,
+                                 A2D::Mat<T, 3, 3>& Uxib) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
@@ -108,15 +109,14 @@ class NonlinearElasticity3D
       energy.reverse();
       strain.reverse();
       mult.reverse();
-
-      return output.value;
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
-                              A2D::Mat<T, 3, 3>& Uxib,
-                              A2D::SymmTensor<T, 3, 3>& jac) {
+    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 3, 3>& Uxi0,
+                                 A2D::Mat<T, 3, 3>& Uxib,
+                                 A2D::SymmTensor<T, 3, 3>& jac) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
@@ -160,8 +160,6 @@ class NonlinearElasticity3D
           }
         }
       }
-
-      return output.value;
     }
 
     template <typename T, class I, class QuadPointData>
@@ -349,9 +347,10 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
-                              A2D::Mat<T, 3, 3>& Uxib) {
+    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 3, 3>& Uxi0,
+                                 A2D::Mat<T, 3, 3>& Uxib) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
@@ -373,15 +372,14 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
       energy.reverse();
       strain.reverse();
       mult.reverse();
-
-      return output.value;
     }
 
     template <typename T, class I, class QuadPointData>
-    static T compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                              A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi0,
-                              A2D::Mat<T, 3, 3>& Uxib,
-                              A2D::SymmTensor<T, 3, 3>& jac) {
+    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
+                                 A2D::Mat<T, 3, 3>& Jinv,
+                                 A2D::Mat<T, 3, 3>& Uxi0,
+                                 A2D::Mat<T, 3, 3>& Uxib,
+                                 A2D::SymmTensor<T, 3, 3>& jac) {
       typedef A2D::SymmMat<T, 3> SymmMat3x3;
       typedef A2D::Mat<T, 3, 3> Mat3x3;
 
@@ -425,8 +423,6 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
           }
         }
       }
-
-      return output.value;
     }
   };
 };

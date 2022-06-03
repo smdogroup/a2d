@@ -1,7 +1,13 @@
 #ifndef A2D_OBJS_H
 #define A2D_OBJS_H
 
+#include <cmath>
+#include <complex>
+#include <cstdint>
+
 namespace A2D {
+
+typedef uint32_t index_t;
 
 template <typename T, int N>
 class Vec {

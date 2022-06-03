@@ -11,13 +11,13 @@
 template <class ConnArray, class NodeArray, class ElementArray>
 void element_scatter(ConnArray& conn, NodeArray& X, ElementArray& Xe) {
   // Loop over the elements
-  for (std::size_t i = 0; i < conn.extent(0); i++) {
+  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
     // Loop over each element nodes
-    for (std::size_t j = 0; j < conn.extent(1); j++) {
-      const std::size_t index = conn(i, j);
+    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
+      const A2D::index_t index = conn(i, j);
 
       // Loop over the variables
-      for (std::size_t k = 0; k < X.extent(1); k++) {
+      for (A2D::index_t k = 0; k < X.extent(1); k++) {
         Xe(i, j, k) = X(index, k);
       }
     }
@@ -31,13 +31,13 @@ void element_scatter(ConnArray& conn, NodeArray& X, ElementArray& Xe) {
 template <class ConnArray, class ElementArray, class NodeArray>
 void element_gather_add(ConnArray& conn, ElementArray& Xe, NodeArray& X) {
   // Loop over the elements
-  for (std::size_t i = 0; i < conn.extent(0); i++) {
+  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
     // Loop over each element nodes
-    for (std::size_t j = 0; j < conn.extent(1); j++) {
-      const std::size_t index = conn(i, j);
+    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
+      const A2D::index_t index = conn(i, j);
 
       // Loop over the variables
-      for (std::size_t k = 0; k < X.extent(1); k++) {
+      for (A2D::index_t k = 0; k < X.extent(1); k++) {
         X(index, k) += Xe(i, j, k);
       }
     }
@@ -48,7 +48,7 @@ template <class IdxType, class ScalarType, class Basis, int vars_per_node,
           int data_per_point>
 class PDEModel {
  public:
-  PDEModel(const std::size_t nelems, const std::size_t nnodes)
+  PDEModel(const A2D::index_t nelems, const A2D::index_t nnodes)
       : nelems(nelems),
         nnodes(nnodes),
         conn_layout(nelems),
@@ -74,14 +74,30 @@ class PDEModel {
     detJ_ = new QuadDetArray(quad_detJ_layout);
     Jinv_ = new QuadJtransArray(quad_jtrans_layout);
 
+    // // Derivatives with respect to node locations
+    // dfdX_ = new NodeArray(node_layout);
+    // dfdXe_ = new ElemNodeArray(elem_node_layout);
+    // dfdXq_ = new QuadNodeArray(quad_node_layout);
+    // dfddetJ_ = new QuadDetArray(quad_detJ_layout);
+    // dfdJinv_ = new QuadJtransArray(quad_jtrans_layout);
+
     // Solution information
     U_ = new SolutionArray(solution_layout);
     Ue_ = new ElemSolnArray(elem_soln_layout);
     Uq_ = new QuadSolnArray(quad_soln_layout);
     Uxi_ = new QuadGradArray(quad_grad_layout);
 
+    // // Adjoint information
+    // Psi_ = new SolutionArray(solution_layout);
+    // Psie_ = new ElemSolnArray(elem_soln_layout);
+    // Psiq_ = new QuadSolnArray(quad_soln_layout);
+    // Psixi_ = new QuadGradArray(quad_grad_layout);
+
     // Material data
     data_ = new QuadDataArray(quad_data_layout);
+
+    // // Derivatives with respect to material data
+    // dfddata_ = new QuadDataArray(quad_data_layout);
 
     // Residual data
     res_ = new ElemResArray(res_layout);
@@ -98,6 +114,10 @@ class PDEModel {
     delete Ue_;
     delete Uq_;
     delete Uxi_;
+    // delete Psi_;
+    // delete Psie_;
+    // delete Psiq_;
+    // delete Psixi_;
     delete data_;
     delete res_;
     delete jac_;
@@ -232,6 +252,12 @@ class PDEModel {
   ElemSolnArray* Ue_;
   QuadSolnArray* Uq_;
   QuadGradArray* Uxi_;
+
+  // Adjoint information
+  SolutionArray* Psi_;
+  ElemSolnArray* Psie_;
+  QuadSolnArray* Psiq_;
+  QuadGradArray* Psixi_;
 
   // Material data
   QuadDataArray* data_;

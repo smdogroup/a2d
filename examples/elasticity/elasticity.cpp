@@ -8,6 +8,9 @@
 #include "helmholtz3d.h"
 #include "mpi.h"
 #include "multiarray.h"
+#include "sparse_matrix.h"
+#include "sparse_numeric.h"
+#include "sparse_symbolic.h"
 
 #define USE_COMPLEX 1
 
@@ -31,9 +34,9 @@ int main(int argc, char* argv[]) {
   typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
   // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
-  const int nx = 24;
-  const int ny = 64;
-  const int nz = 64;
+  const int nx = 8;
+  const int ny = 8;
+  const int nz = 8;
   const int nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const int nelems = nx * ny * nz;
   const int vars_per_node = Model::NUM_VARS;
@@ -94,9 +97,9 @@ int main(int argc, char* argv[]) {
   typename Model::base::QuadDataArray& data = model.get_quad_data();
 
   double pt_data[] = {1.23, 2.45};
-  for (std::size_t i = 0; i < data.extent(0); i++) {
-    for (std::size_t j = 0; j < data.extent(1); j++) {
-      for (std::size_t k = 0; k < data.extent(2); k++) {
+  for (A2D::index_t i = 0; i < data.extent(0); i++) {
+    for (A2D::index_t j = 0; j < data.extent(1); j++) {
+      for (A2D::index_t k = 0; k < data.extent(2); k++) {
         data(i, j, k) = pt_data[k];
       }
     }
@@ -157,6 +160,61 @@ int main(int argc, char* argv[]) {
   }
 
 #endif  // USE_COMPLEX
+
+  CLayout<2> bcs_layout((nz + 1) * (ny + 1));
+  MultiArray<index_t, CLayout<2>> bcs(bcs_layout);
+  bcs.zero();
+
+  index_t index = 0;
+  for (int k = 0; k < nz + 1; k++) {
+    for (int j = 0; j < ny + 1; j++) {
+      int i = 0;
+      int node = i + (nx + 1) * (j + (ny + 1) * k);
+
+      for (int ii = 0; ii < 3; ii++) {
+        bcs(index, 0) = node;
+        bcs(index, 1) |= 1U << ii;
+      }
+    }
+  }
+
+  typedef A2D::BSRMat<IndexType, ScalarType, vars_per_node, vars_per_node>
+      SparseMat;
+
+  // Create the sparse matrix representing the Jacobian matrix
+  SparseMat* J =
+      BSRMatFromConnectivity2<IndexType, ScalarType, vars_per_node>(conn);
+
+  // Form the Jacobian matrix
+  J->zero();
+  BSRMatAddElementMatrices(conn, model.get_elem_jac(), *J);
+
+  // // Zero rows associated with the boundary conditions
+  BSRMatZeroBCRows(bcs, *J);
+
+  // Form the sparse factorization
+  SparseMat* Jfact = BSRMatFactorSymbolic(*J);
+
+  std::cout << "nonzero ratio " << 1.0 * Jfact->nnz / J->nnz << std::endl;
+
+  // Copy values to the matrix
+  BSRMatCopy(*J, *Jfact);
+
+  // Perform the numerical factorization
+  BSRMatFactor(*Jfact);
+
+  for (index_t i = 0; i < residual.extent(0); i++) {
+    for (index_t j = 0; i < residual.extent(0); i++) {
+      residual(i, j) = 1.0;
+    }
+  }
+
+  // Zero the dirichlet BCs
+  VecZeroBCRows(bcs, residual);
+
+  BSRMatApplyFactor(*Jfact, residual, U);
+
+  // BSRMatVecMult(*J, U, residual);
 
   return (0);
 }

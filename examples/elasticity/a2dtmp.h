@@ -1291,6 +1291,78 @@ Symm3x3IsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
                                                             output);
 }
 
+template <class ScalarType, class EMatType>
+class ADSymm3x3ADIsotropicEnergyExpr
+    : public ADExpression<
+          ADSymm3x3ADIsotropicEnergyExpr<ScalarType, EMatType> > {
+ public:
+  ADSymm3x3ADIsotropicEnergyExpr(ADScalar<ScalarType>& mu,
+                                 ADScalar<ScalarType>& lambda,
+                                 ADMat<EMatType>& EObj,
+                                 ADScalar<ScalarType>& output)
+      : mu(mu), lambda(lambda), EObj(EObj), output(output) {
+    const EMatType& E = EObj.value();
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+
+    output.value = mu.value * trE + 0.5 * lambda.value * tr * tr;
+  }
+
+  void forward() {
+    const EMatType& E = EObj.value();
+    const EMatType& Ed = EObj.bvalue();
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trd = (Ed(0, 0) + Ed(1, 1) + Ed(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+    ScalarType trEd =
+        2.0 *
+        (E(0, 0) * Ed(0, 0) + E(1, 1) * Ed(1, 1) + E(2, 2) * Ed(2, 2) +
+         2.0 * (E(0, 1) * Ed(0, 1) + E(0, 2) * Ed(0, 2) + E(1, 2) * Ed(1, 2)));
+
+    output.bvalue = mu.value * trEd + lambda.value * tr * trd +
+                    mu.bvalue * trE + 0.5 * lambda.bvalue * tr * tr;
+  }
+
+  void reverse() {
+    const EMatType& E = EObj.value();
+    EMatType& Eb = EObj.bvalue();
+    const ScalarType mu2 = 2.0 * mu.value;
+
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+
+    Eb(0, 0) += (mu2 * E(0, 0) + lambda.value * tr) * output.bvalue;
+    Eb(1, 1) += (mu2 * E(1, 1) + lambda.value * tr) * output.bvalue;
+    Eb(2, 2) += (mu2 * E(2, 2) + lambda.value * tr) * output.bvalue;
+
+    Eb(0, 1) += 2.0 * mu2 * E(0, 1) * output.bvalue;
+    Eb(0, 2) += 2.0 * mu2 * E(0, 2) * output.bvalue;
+    Eb(1, 2) += 2.0 * mu2 * E(1, 2) * output.bvalue;
+
+    mu.bvalue = trE * output.bvalue;
+    lambda.bvalue = 0.5 * tr * tr * output.bvalue;
+  }
+
+  ADScalar<ScalarType>& mu;
+  ADScalar<ScalarType>& lambda;
+  ADMat<EMatType>& EObj;
+  ADScalar<ScalarType>& output;
+};
+
+template <class ScalarType, class EMatType>
+inline ADSymm3x3ADIsotropicEnergyExpr<ScalarType, EMatType>
+Symm3x3IsotropicEnergy(ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
+                       ADMat<EMatType>& E, ADScalar<ScalarType>& output) {
+  return ADSymm3x3ADIsotropicEnergyExpr<ScalarType, EMatType>(mu, lambda, E,
+                                                              output);
+}
+
 template <int N, class ScalarType, class EMatType>
 class A2DSymm3x3IsotropicEnergyExpr
     : public A2DExpression<
@@ -1383,6 +1455,112 @@ Symm3x3IsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
                        A2DScalar<N, ScalarType>& output) {
   return A2DSymm3x3IsotropicEnergyExpr<N, ScalarType, EMatType>(mu, lambda, E,
                                                                 output);
+}
+
+template <int N, class ScalarType, class EMatType>
+class A2DSymm3x3A2DIsotropicEnergyExpr
+    : public A2DExpression<
+          A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType, EMatType> > {
+ public:
+  A2DSymm3x3A2DIsotropicEnergyExpr(A2DScalar<N, ScalarType>& mu,
+                                   A2DScalar<N, ScalarType>& lambda,
+                                   A2DMat<N, EMatType>& EObj,
+                                   A2DScalar<N, ScalarType>& output)
+      : mu(mu), lambda(lambda), EObj(EObj), output(output) {
+    const EMatType& E = EObj.value();
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+
+    output.value = mu.value * trE + 0.5 * lambda.value * tr * tr;
+  }
+
+  void reverse() {
+    const EMatType& E = EObj.value();
+    EMatType& Eb = EObj.bvalue();
+    const ScalarType mu2 = 2.0 * mu.value;
+
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+
+    Eb(0, 0) += (mu2 * E(0, 0) + lambda.value * tr) * output.bvalue;
+    Eb(1, 1) += (mu2 * E(1, 1) + lambda.value * tr) * output.bvalue;
+    Eb(2, 2) += (mu2 * E(2, 2) + lambda.value * tr) * output.bvalue;
+
+    Eb(0, 1) += 2.0 * mu2 * E(0, 1) * output.bvalue;
+    Eb(0, 2) += 2.0 * mu2 * E(0, 2) * output.bvalue;
+    Eb(1, 2) += 2.0 * mu2 * E(1, 2) * output.bvalue;
+
+    mu.bvalue = trE * output.bvalue;
+    lambda.bvalue = 0.5 * tr * tr * output.bvalue;
+  }
+
+  void hforward() {
+    const EMatType& E = EObj.value();
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+    ScalarType trE =
+        E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
+        2.0 * (E(0, 1) * E(0, 1) + E(0, 2) * E(0, 2) + E(1, 2) * E(1, 2));
+
+    for (int i = 0; i < N; i++) {
+      const EMatType& Ep = EObj.pvalue(i);
+      ScalarType trd = (Ep(0, 0) + Ep(1, 1) + Ep(2, 2));
+      ScalarType trEd =
+          2.0 * (E(0, 0) * Ep(0, 0) + E(1, 1) * Ep(1, 1) + E(2, 2) * Ep(2, 2) +
+                 2.0 * (E(0, 1) * Ep(0, 1) + E(0, 2) * Ep(0, 2) +
+                        E(1, 2) * Ep(1, 2)));
+
+      output.pvalue[i] = mu.value * trEd + lambda.value * tr * trd +
+                         mu.pvalue[i] * trE + 0.5 * lambda.pvalue[i] * tr * tr;
+    }
+  }
+
+  void hreverse() {
+    const EMatType& E = EObj.value();
+    const ScalarType mu2 = 2.0 * mu.value;
+    ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
+
+    for (int i = 0; i < N; i++) {
+      const EMatType& Ep = EObj.pvalue(i);
+      EMatType& Eh = EObj.hvalue(i);
+
+      // by * (d^2y/dx^2 * px)
+      ScalarType trp = (Ep(0, 0) + Ep(1, 1) + Ep(2, 2));
+      Eh(0, 0) += (mu2 * Ep(0, 0) + lambda.value * trp) * output.bvalue;
+      Eh(1, 1) += (mu2 * Ep(1, 1) + lambda.value * trp) * output.bvalue;
+      Eh(2, 2) += (mu2 * Ep(2, 2) + lambda.value * trp) * output.bvalue;
+
+      Eh(0, 1) += 2.0 * mu2 * Ep(0, 1) * output.bvalue;
+      Eh(0, 2) += 2.0 * mu2 * Ep(0, 2) * output.bvalue;
+      Eh(1, 2) += 2.0 * mu2 * Ep(1, 2) * output.bvalue;
+
+      // hy * (dy/dx)
+      Eh(0, 0) += (mu2 * E(0, 0) + lambda.value * tr) * output.hvalue[i];
+      Eh(1, 1) += (mu2 * E(1, 1) + lambda.value * tr) * output.hvalue[i];
+      Eh(2, 2) += (mu2 * E(2, 2) + lambda.value * tr) * output.hvalue[i];
+
+      Eh(0, 1) += 2.0 * mu2 * E(0, 1) * output.hvalue[i];
+      Eh(0, 2) += 2.0 * mu2 * E(0, 2) * output.hvalue[i];
+      Eh(1, 2) += 2.0 * mu2 * E(1, 2) * output.hvalue[i];
+    }
+  }
+
+  A2DScalar<N, ScalarType>& mu;
+  A2DScalar<N, ScalarType>& lambda;
+  A2DMat<N, EMatType>& EObj;
+  A2DScalar<N, ScalarType>& output;
+};
+
+template <int N, class ScalarType, class EMatType>
+inline A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType, EMatType>
+Symm3x3IsotropicEnergy(A2DScalar<N, ScalarType>& mu,
+                       A2DScalar<N, ScalarType>& lambda, A2DMat<N, EMatType>& E,
+                       A2DScalar<N, ScalarType>& output) {
+  return A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType, EMatType>(mu, lambda,
+                                                                   E, output);
 }
 
 template <class ScalarType>

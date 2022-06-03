@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include "a2dtmp.h"
+#include "a2dtypes.h"
 
 /*
   The first derivative of a function f(y(x)) is
@@ -11,15 +12,15 @@
 
   The second derivative of the same function is
 
-  d^2f/dx^2 * px = df/dy * (d^2y/dx^2 * p) + d^2f/dy^2 * (dy/dx * p) * (dy/dx)
+  d^2f/dx^2 * px = df/dy * (d^2y/dx^2 * px) + d^2f/dy^2 * (dy/dx * px) * (dy/dx)
 
   # Definition of partial derivatives bar{x} = bx
   bx = df/dx
   by = df/dy
 
-  # Definition of directional derivatives p_x, p_y
-  px = p
-  py = dy/dx * p
+  # Definition of directional derivatives
+  px = input
+  py = dy/dx * px
 
   # Definition of projected second derivative
   hx = d^2f/dx^2 * px
@@ -65,10 +66,7 @@ int main(int argc, char* argv[]) {
   Mat3x3 P, result;
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      if (i == 0 && j == 0) {
-        P(i, j) = 1.0;
-      }
-      // P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
+      P(i, j) = -1.0 + 2.0 * rand() / RAND_MAX;
       Uxi0(i, j) = Uxi0(i, j) + ScalarType(0.0, dh) * P(i, j);
     }
   }

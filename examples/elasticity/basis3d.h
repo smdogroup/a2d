@@ -36,7 +36,7 @@ class HexBasis {
   */
   template <const int num_vars, class ElementArray, class QuadPointArray>
   static void interp(ElementArray& input, QuadPointArray& output) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -50,14 +50,15 @@ class HexBasis {
       N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
       N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      for (std::size_t i = 0; i < input.extent(0); i++) {
+      const A2D::index_t npts = input.extent(0);
+      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
         for (int ii = 0; ii < num_vars; ii++) {
           output(i, j, ii) = N[0] * input(i, 0, ii) + N[1] * input(i, 1, ii) +
                              N[2] * input(i, 2, ii) + N[3] * input(i, 3, ii) +
                              N[4] * input(i, 4, ii) + N[5] * input(i, 5, ii) +
                              N[6] * input(i, 6, ii) + N[7] * input(i, 7, ii);
         }
-      }
+      });
     }
   }
 
@@ -68,7 +69,7 @@ class HexBasis {
             class QuadPointJacobianArray>
   static void compute_jtrans(ElementNodeArray& X, QuadPointDetJArray& detJ,
                              QuadPointJacobianArray& Jinv) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -102,8 +103,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      const std::size_t npts = X.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
+      const A2D::index_t npts = X.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         // Compute the Jacobian transformation
         A2D::Mat<T, 3, 3> J;
         for (int ii = 0; ii < 3; ii++) {
@@ -141,7 +142,7 @@ class HexBasis {
   template <typename T, const int num_vars, class ElementSolutionArray,
             class QuadPointGradientArray>
   static void gradient(ElementSolutionArray& U, QuadPointGradientArray& Uxi) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
@@ -175,9 +176,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      const std::size_t npts = U.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
-        // for (std::size_t i = 0; i < U.extent(0); i++) {
+      const A2D::index_t npts = U.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         for (int ii = 0; ii < num_vars; ii++) {
           Uxi(i, j, ii, 0) = Nx[0] * U(i, 0, ii) + Nx[1] * U(i, 1, ii) +
                              Nx[2] * U(i, 2, ii) + Nx[3] * U(i, 3, ii) +
@@ -204,11 +204,11 @@ class HexBasis {
   static void energy(QuadPointModelDataArray& Edata, QuadPointDetJArray& detJ,
                      QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
                      T& energy) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double weight = Quadrature::getQuadWeight(j);
 
-      const std::size_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&](std::size_t i) -> void {
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&](A2D::index_t i) -> void {
         // Extract Jinv
         A2D::Mat<T, 3, 3> Jinv0;
         for (int ii = 0; ii < 3; ii++) {
@@ -239,7 +239,7 @@ class HexBasis {
             class ElementResidualArray>
   static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
                         QuadPointSolutionArray& Uq, ElementResidualArray& res) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
@@ -254,8 +254,8 @@ class HexBasis {
       N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
       N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      const std::size_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, N](std::size_t i) -> void {
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
@@ -282,7 +282,7 @@ class HexBasis {
                         QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& res) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
@@ -317,8 +317,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      const std::size_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 
@@ -354,7 +354,7 @@ class HexBasis {
             class ElementResidualArray>
   static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
                         QuadPointSolutionArray& Uq, ElementResidualArray& jac) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
@@ -369,8 +369,8 @@ class HexBasis {
       N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
       N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
 
-      const std::size_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, N](std::size_t i) -> void {
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
         for (int ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
@@ -402,7 +402,7 @@ class HexBasis {
                         QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& jac) {
-    for (std::size_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
@@ -437,8 +437,8 @@ class HexBasis {
       Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
       Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
-      const std::size_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](std::size_t i) -> void {
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 

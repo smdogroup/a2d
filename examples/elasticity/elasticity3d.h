@@ -166,106 +166,85 @@ class NonlinearElasticity3D
     static void compute_res_adjoint_data(I i, I j, QuadPointData& data, T wdetJ,
                                          A2D::Mat<T, 3, 3>& Jinv,
                                          A2D::Mat<T, 3, 3>& Uxi0,
-                                         A2D::Mat<T, 3, 3>& Psixi0,
+                                         A2D::Mat<T, 3, 3>& Psi,
                                          QuadPointData& dfdx) {
-      // typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      // typedef A2D::Mat<T, 3, 3> Mat3x3;
+      typedef A2D::SymmMat<T, 3> SymmMat3x3;
+      typedef A2D::Mat<T, 3, 3> Mat3x3;
 
-      // T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      // Mat3x3 Ux0, Uxb;
-      // SymmMat3x3 E0, Eb;
+      Mat3x3 Ux0, Uxb, Uxib;
+      SymmMat3x3 E0, Eb;
 
-      // const int N = 9;
-      // A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
-      // A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      // A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
-      // A2D::A2DScalar<N, T> output;
+      const int N = 1;
+      A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+      A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+      A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+      A2D::A2DScalar<N, T> output;
+      A2D::A2DScalar<N, T> mu(data(i, j, 0)), lambda(data(i, j, 1));
 
-      // // Set up the seed values
-      // for (int k = 0; k < N; k++) {
-      //   Mat3x3& Up = Uxi.pvalue(k);
-      //   Up(k / 3, k % 3) = 1.0;
-      // }
+      // Copy over the Psi values
+      Uxi.Ap[0] = Psi;
 
-      // auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      // auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      // auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+      auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      // output.bvalue = wdetJ;
+      output.bvalue = wdetJ;
 
-      // energy.reverse();
-      // strain.reverse();
-      // mult.reverse();
+      energy.reverse();
+      strain.reverse();
+      mult.reverse();
 
-      // mult.hforward();
-      // strain.hforward();
-      // energy.hreverse();
-      // strain.hreverse();
-      // mult.hreverse();
+      mult.hforward();
+      strain.hforward();
+      energy.hreverse();
+      strain.hreverse();
+      mult.hreverse();
 
-      // for (int k = 0; k < N; k++) {
-      //   Mat3x3& Uxih = Uxi.hvalue(k);
-      //   for (int i = 0; i < 3; i++) {
-      //     for (int j = 0; j < 3; j++) {
-      //       jac(i, j, k / 3, k % 3) = Uxih(i, j);
-      //     }
-      //   }
-      // }
-
-      // return output.value;
+      dfdx(i, j, 0) += mu.hvalue[0];
+      dfdx(i, j, 1) += lambda.hvalue[0];
     }
 
     template <typename T, class I, class QuadPointData>
     static void compute_res_adjoint_nodes(I i, I j, QuadPointData& data,
-                                          T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
+                                          T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                                           A2D::Mat<T, 3, 3>& Uxi0,
-                                          A2D::Mat<T, 3, 3>& Psixi0,
-                                          A2D::SymmTensor<T, 3, 3>& jac) {
-      // typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      // typedef A2D::Mat<T, 3, 3> Mat3x3;
+                                          A2D::Mat<T, 3, 3>& Psi, T dfdwdetJ,
+                                          A2D::Mat<T, 3, 3>& dfdJinv) {
+      typedef A2D::SymmMat<T, 3> SymmMat3x3;
+      typedef A2D::Mat<T, 3, 3> Mat3x3;
 
-      // T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      // Mat3x3 Ux0, Uxb;
-      // SymmMat3x3 E0, Eb;
+      Mat3x3 Ux0, Uxb, Uxib, Jinvb;
+      SymmMat3x3 E0, Eb;
 
-      // const int N = 9;
-      // A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
-      // A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      // A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
-      // A2D::A2DScalar<N, T> output;
+      const int N = 1;
+      A2D::A2DMat<N, Mat3x3> Jinv(Jinv0, Jinvb);
+      A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
+      A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
+      A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+      A2D::A2DScalar<N, T> output;
+      T mu(data(i, j, 0)), lambda(data(i, j, 1));
 
-      // // Set up the seed values
-      // for (int k = 0; k < N; k++) {
-      //   Mat3x3& Up = Uxi.pvalue(k);
-      //   Up(k / 3, k % 3) = 1.0;
-      // }
+      // Copy over the Psi values
+      Uxi.Ap[0] = Psi;
 
-      // auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      // auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      // auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+      auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-      // output.bvalue = wdetJ;
+      output.bvalue = wdetJ;
 
-      // energy.reverse();
-      // strain.reverse();
-      // mult.reverse();
+      energy.reverse();
+      strain.reverse();
+      mult.reverse();
 
-      // mult.hforward();
-      // strain.hforward();
-      // energy.hreverse();
-      // strain.hreverse();
-      // mult.hreverse();
+      mult.hforward();
+      strain.hforward();
+      energy.hreverse();
+      strain.hreverse();
+      mult.hreverse();
 
-      // for (int k = 0; k < N; k++) {
-      //   Mat3x3& Uxih = Uxi.hvalue(k);
-      //   for (int i = 0; i < 3; i++) {
-      //     for (int j = 0; j < 3; j++) {
-      //       jac(i, j, k / 3, k % 3) = Uxih(i, j);
-      //     }
-      //   }
-      // }
-
-      // return output.value;
+      dfdwdetJ = output.value;
+      dfdJinv = Jinv.Ah;
     }
   };
 };

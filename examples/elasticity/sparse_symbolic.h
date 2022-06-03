@@ -1,6 +1,7 @@
 #ifndef SPARSE_SYMBOLIC_H
 #define SPARSE_SYMBOLIC_H
 
+#include <limits>
 #include <set>
 #include <vector>
 
@@ -236,269 +237,152 @@ BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
   return bsr;
 }
 
-//                        I *rowp, I **cols) {
-//   // Allocate space for the temporary row info
-//   int *rlevs = new int[ncols];
-//   int *rcols = new int[ncols];
+/*
+  Compute the non-zero pattern for C = A * B
+*/
+template <typename I, typename T, index_t M, index_t N, index_t P>
+BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
+                                          BSRMat<I, T, N, P>& B,
+                                          double fill_factor = 2.0) {
+  I nrows = A.nbrows;
+  I ncols = B.nbcols;
+  I nnz = 0;
 
-//   for (I i = 0; i < nrows; i++) {
-//     I nr = 0;  // Number of entries in the current row
+  // Column indices associated with the current row
+  const I empty = std::numeric_limits<I>::max();
+  const I first_entry = std::numeric_limits<I>::max() - 1;
+  std::vector<I> next(ncols, empty);
 
-//     // Add the matrix elements to the current row of the matrix.
-//     // These new elements are sorted.
-//     int diag_flag = 0;
-//     for (I jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-//       if (mat->data->cols[j] == i) {
-//         diag_flag = 1;
-//       }
-//       rcols[nr] = mat->data->cols[j];
-//       rlevs[nr] = 0;
-//       nr++;
-//     }
+  // Row, column and diagonal index data for the new factored matrix
+  std::vector<I> rowp(nrows + 1);
+  std::vector<I> cols(index_t(fill_factor * A.nnz));
 
-//     // No diagonal element associated with row i, add one!
-//     if (!diag_flag) {
-//       nr = TacsMergeSortedArrays(nr, rcols, 1, &i);
-//     }
+  // Compute the non-zero structure of the resulting matrix C = A * B
+  // one row at a time
+  for (I i = 0; i < A.nbros; i++) {
+    int head = first_entry;
+    I num_cols = 0;  // The size of the temporary cols array
 
-//     // Now, perform the symbolic factorization -- this generates new
-//     entries I j = 0; for (; rcols[j] < i; j++) {  // For entries in this
-//     row, before the diagonal
-//       int clev = rlevs[j];       // the level of fill for this entry
+    // Add the non-zero pattern to this matrix from each row of B
+    // for each column of A.
+    I jp_end = A.rowp[i + 1];
+    for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+      I j = A.cols[jp];
 
-//       int p = j + 1;                   // The index into rcols
-//       int k_end = rowp[rcols[j] + 1];  // the end of row number cols[j]
+      // Merge the two arrays into cols
+      I kp_end = B.rowp[j + 1];
+      for (I kp = B.rowp[j]; kp < kp_end; kp++) {
+        I k = B.cols[kp];
+        if (next[k] == empty) {
+          next[k] = head;
+          head = k;
+          num_cols++;
+        }
+      }
+    }
 
-//       // Start with the first entry after the diagonal in row, cols[j]
-//       // k is the index into cols for row cols[j]
-//       for (int k = diag[rcols[j]] + 1; k < k_end; k++) {
-//         // Increment p to an entry where we may have cols[k] == rcols[p]
-//         while (p < nr && rcols[p] < cols[k]) {
-//           p++;
-//         }
+    if (nnz + num_cols > cols.size()) {
+      cols.resize(nnz + num_cols + A.nnz);
+    }
 
-//         // The element already exists, check if it has a lower level of
-//         fill
-//         // and update the fill level if necessary
-//         if (p < nr && rcols[p] == cols[k]) {
-//           if (rlevs[p] > (clev + levs[k] + 1)) {
-//             rlevs[p] = clev + levs[k] + 1;
-//           }
-//         } else if ((clev + levs[k] + 1) <= levFill) {
-//           // The element does not exist but should since the level of
-//           // fill is low enough. Insert the new entry into the list,
-//           // but keep the list sorted
-//           for (int n = nr; n > p; n--) {
-//             rlevs[n] = rlevs[n - 1];
-//             rcols[n] = rcols[n - 1];
-//           }
+    // Reverse through the list
+    for (I j = 0; j < num_cols; j++) {
+      cols[nnz] = head;
+      I temp = head;
+      head = next[head];
+      next[temp] = -1;
+    }
 
-//           rlevs[p] = clev + levs[k] + 1;
-//           rcols[p] = cols[k];
-//           nr++;
-//         }
-//       }
-//     }
+    rowp[i + 1] = nnz;
+  }
 
-//     // Check if the size will be exceeded by adding the new elements
-//     if (size + nr > max_size) {
-//       int mat_ext = (int)((fill - 1.0) * mat_size);
-//       if (nr > mat_ext) {
-//         mat_ext = nr;
-//       }
-//       max_size = max_size + mat_ext;
-//       TacsExtendArray(&cols, size, max_size);
-//       TacsExtendArray(&levs, size, max_size);
-//     }
+  // Sort the CSR data
+  SortCSRData(nrows, rowp, cols);
 
-//     // Now, put the new entries into the cols/levs arrays
-//     for (int k = 0; k < nr; k++) {
-//       cols[size] = rcols[k];
-//       levs[size] = rlevs[k];
-//       size++;
-//     }
+  BSRMat<I, T, M, M>* bsr =
+      new BSRMat<I, T, M, M>(nrows, nrows, nnz, rowp, cols);
 
-//     rowp[i + 1] = size;
-//     diag[i] = j + rowp[i];
-//   }
-// }
+  return bsr;
+}
 
-// template <class I, class T>
-// I maximal_independent_set_serial(const I num_rows, const I Ap[],
-//                                  const int Ap_size, const I Aj[],
-//                                  const int Aj_size, const T active, const T
-//                                  C, const T F, T x[], const int x_size) {
-//   I N = 0;
+/*
+  Compute the non-zero pattern for C = S + A * B
+*/
+template <typename I, typename T, index_t M, index_t N, index_t P>
+BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, P>& S,
+                                          BSRMat<I, T, M, N>& A,
+                                          BSRMat<I, T, N, P>& B,
+                                          double fill_factor = 2.0) {
+  I nrows = A.nbrows;
+  I ncols = B.nbcols;
+  I nnz = 0;
 
-//   for (I i = 0; i < num_rows; i++) {
-//     if (x[i] != active) continue;
+  // Column indices associated with the current row
+  const I empty = std::numeric_limits<I>::max();
+  const I first_entry = std::numeric_limits<I>::max() - 1;
+  std::vector<I> next(ncols, empty);
 
-//     x[i] = C;
-//     N++;
+  // Row, column and diagonal index data for the new factored matrix
+  std::vector<I> rowp(nrows + 1);
+  std::vector<I> cols(index_t(fill_factor * A.nnz));
 
-//     for (I jj = Ap[i]; jj < Ap[i + 1]; jj++) {
-//       const I j = Aj[jj];
-//       if (x[j] == active) {
-//         x[j] = F;
-//       }
-//     }
-//   }
+  // Compute the non-zero structure of the resulting matrix C = A * B
+  // one row at a time
+  for (I i = 0; i < A.nbros; i++) {
+    int head = first_entry;
+    I num_cols = 0;  // The size of the temporary cols array
 
-//   return N;
-// }
+    // Merge the two arrays into cols
+    I jp_end = S.rowp[i + 1];
+    for (I jp = S.rowp[i]; jp < jp_end; jp++) {
+      I j = S.cols[jp];
+      if (next[j] == empty) {
+        next[j] = head;
+        head = j;
+        num_cols++;
+      }
+    }
 
-// template <class I, class T, class R>
-// I maximal_independent_set_parallel(const I num_rows, const I Ap[],
-//                                    const int Ap_size, const I Aj[],
-//                                    const int Aj_size, const T active, const
-//                                    T C, const T F, T x[], const int x_size,
-//                                    const R y[], const int y_size,
-//                                    const I max_iters) {
-//   I N = 0;
-//   I num_iters = 0;
+    // Add the non-zero pattern to this matrix from each row of B
+    // for each column of A.
+    jp_end = A.rowp[i + 1];
+    for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+      I j = A.cols[jp];
 
-//   bool active_nodes = true;
+      I kp_end = B.rowp[j + 1];
+      for (I kp = B.rowp[j]; kp < kp_end; kp++) {
+        I k = B.cols[kp];
+        if (next[k] == empty) {
+          next[k] = head;
+          head = k;
+          num_cols++;
+        }
+      }
+    }
 
-//   while (active_nodes && (max_iters == -1 || num_iters < max_iters)) {
-//     active_nodes = false;
+    if (nnz + num_cols > cols.size()) {
+      cols.resize(nnz + num_cols + A.nnz);
+    }
 
-//     num_iters++;
+    // Reverse through the list
+    for (I j = 0; j < num_cols; j++) {
+      cols[nnz] = head;
+      I temp = head;
+      head = next[head];
+      next[temp] = -1;
+    }
 
-//     for (I i = 0; i < num_rows; i++) {
-//       const R yi = y[i];
+    rowp[i + 1] = nnz;
+  }
 
-//       if (x[i] != active) continue;
+  // Sort the CSR data
+  SortCSRData(nrows, rowp, cols);
 
-//       const I row_start = Ap[i];
-//       const I row_end = Ap[i + 1];
+  BSRMat<I, T, M, M>* bsr =
+      new BSRMat<I, T, M, M>(nrows, nrows, nnz, rowp, cols);
 
-//       I jj;
-
-//       for (jj = row_start; jj < row_end; jj++) {
-//         const I j = Aj[jj];
-//         const T xj = x[j];
-
-//         if (xj == C) {
-//           x[i] = F;  // neighbor is MIS
-//           break;
-//         }
-
-//         if (xj == active) {
-//           const R yj = y[j];
-//           if (yj > yi)
-//             break;  // neighbor is larger
-//           else if (yj == yi && j > i)
-//             break;  // tie breaker goes to neighbor
-//         }
-//       }
-
-//       if (jj == row_end) {
-//         for (jj = row_start; jj < row_end; jj++) {
-//           const I j = Aj[jj];
-//           if (x[j] == active) x[j] = F;
-//         }
-//         N++;
-//         x[i] = C;
-//       } else {
-//         active_nodes = true;
-//       }
-//     }
-//   }  // end while
-
-//   return N;
-// }
-
-// /*
-//   Symbolic factorization stage
-// */
-// template <class I>
-// void BSRFactorSymbolic(int nbrows, int ncols, const I *rowp, const I *cols,
-//                        I *rowp, I **cols) {
-//   // Allocate space for the temporary row info
-//   int *rlevs = new int[ncols];
-//   int *rcols = new int[ncols];
-
-//   for (I i = 0; i < nrows; i++) {
-//     I nr = 0;  // Number of entries in the current row
-
-//     // Add the matrix elements to the current row of the matrix.
-//     // These new elements are sorted.
-//     int diag_flag = 0;
-//     for (I jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-//       if (mat->data->cols[j] == i) {
-//         diag_flag = 1;
-//       }
-//       rcols[nr] = mat->data->cols[j];
-//       rlevs[nr] = 0;
-//       nr++;
-//     }
-
-//     // No diagonal element associated with row i, add one!
-//     if (!diag_flag) {
-//       nr = TacsMergeSortedArrays(nr, rcols, 1, &i);
-//     }
-
-//     // Now, perform the symbolic factorization -- this generates new
-//     entries I j = 0; for (; rcols[j] < i; j++) {  // For entries in this
-//     row, before the diagonal
-//       int clev = rlevs[j];       // the level of fill for this entry
-
-//       int p = j + 1;                   // The index into rcols
-//       int k_end = rowp[rcols[j] + 1];  // the end of row number cols[j]
-
-//       // Start with the first entry after the diagonal in row, cols[j]
-//       // k is the index into cols for row cols[j]
-//       for (int k = diag[rcols[j]] + 1; k < k_end; k++) {
-//         // Increment p to an entry where we may have cols[k] == rcols[p]
-//         while (p < nr && rcols[p] < cols[k]) {
-//           p++;
-//         }
-
-//         // The element already exists, check if it has a lower level of
-//         fill
-//         // and update the fill level if necessary
-//         if (p < nr && rcols[p] == cols[k]) {
-//           if (rlevs[p] > (clev + levs[k] + 1)) {
-//             rlevs[p] = clev + levs[k] + 1;
-//           }
-//         } else if ((clev + levs[k] + 1) <= levFill) {
-//           // The element does not exist but should since the level of
-//           // fill is low enough. Insert the new entry into the list,
-//           // but keep the list sorted
-//           for (int n = nr; n > p; n--) {
-//             rlevs[n] = rlevs[n - 1];
-//             rcols[n] = rcols[n - 1];
-//           }
-
-//           rlevs[p] = clev + levs[k] + 1;
-//           rcols[p] = cols[k];
-//           nr++;
-//         }
-//       }
-//     }
-
-//     // Check if the size will be exceeded by adding the new elements
-//     if (size + nr > max_size) {
-//       int mat_ext = (int)((fill - 1.0) * mat_size);
-//       if (nr > mat_ext) {
-//         mat_ext = nr;
-//       }
-//       max_size = max_size + mat_ext;
-//       TacsExtendArray(&cols, size, max_size);
-//       TacsExtendArray(&levs, size, max_size);
-//     }
-
-//     // Now, put the new entries into the cols/levs arrays
-//     for (int k = 0; k < nr; k++) {
-//       cols[size] = rcols[k];
-//       levs[size] = rlevs[k];
-//       size++;
-//     }
-
-//     rowp[i + 1] = size;
-//     diag[i] = j + rowp[i];
-//   }
-// }
+  return bsr;
+}
 
 }  // namespace A2D
 

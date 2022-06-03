@@ -12,7 +12,7 @@
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
 
-#define USE_COMPLEX 1
+#define USE_COMPLEX
 
 using namespace A2D;
 
@@ -34,9 +34,9 @@ int main(int argc, char* argv[]) {
   typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
   // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
-  const int nx = 8;
-  const int ny = 8;
-  const int nz = 8;
+  const int nx = 6;
+  const int ny = 6;
+  const int nz = 6;
   const int nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const int nelems = nx * ny * nz;
   const int vars_per_node = Model::NUM_VARS;
@@ -54,6 +54,7 @@ int main(int argc, char* argv[]) {
 
   // Residual vector
   typename Model::base::SolutionArray& residual = *model.new_solution();
+  typename Model::base::SolutionArray& solution = *model.new_solution();
 
 #ifdef USE_COMPLEX
   double dh = 1e-30;
@@ -139,7 +140,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_COMPLEX
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 3 && i < jac.extent(0); i++) {
     for (int jy = 0; jy < nodes_per_elem; jy++) {
       for (int iy = 0; iy < vars_per_node; iy++) {
         double fd = res(i, jy, iy).imag() / dh;
@@ -171,8 +172,9 @@ int main(int argc, char* argv[]) {
       int i = 0;
       int node = i + (nx + 1) * (j + (ny + 1) * k);
 
+      // Set the boundary conditions
+      bcs(index, 0) = node;
       for (int ii = 0; ii < 3; ii++) {
-        bcs(index, 0) = node;
         bcs(index, 1) |= 1U << ii;
       }
     }
@@ -203,18 +205,14 @@ int main(int argc, char* argv[]) {
   // Perform the numerical factorization
   BSRMatFactor(*Jfact);
 
-  for (index_t i = 0; i < residual.extent(0); i++) {
-    for (index_t j = 0; i < residual.extent(0); i++) {
-      residual(i, j) = 1.0;
-    }
-  }
-
   // Zero the dirichlet BCs
   VecZeroBCRows(bcs, residual);
 
-  BSRMatApplyFactor(*Jfact, residual, U);
+  // Compute solution = J^{-1} * residual
+  BSRMatApplyFactor(*Jfact, residual, solution);
 
-  // BSRMatVecMult(*J, U, residual);
+  // Compute J * solution = residual?
+  BSRMatVecMult(*J, solution, U);
 
   return (0);
 }

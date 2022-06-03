@@ -44,7 +44,7 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
                    MultiArray<T, CLayout<M>> &y) {
   A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
     auto yb = MakeSlice(y, i);
-    // yb.zero();
+    yb.zero();
 
     I jp = A.rowp[i];
     I jp_end = A.rowp[i + 1];
@@ -154,7 +154,7 @@ void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
             A.Avals(jp, j, k) = 0.0;
           }
 
-          if (A.cols[jp] == i) {
+          if (A.cols[jp] == index) {
             A.Avals(jp, j, j) = 1.0;
           }
         }
@@ -222,7 +222,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
           kp++;
         }
 
-        // A[k] = A[k] - A[j] * A[p]
+        // A[kp] = A[kp] - D * A[p]
         if (kp < row_end && A.cols[kp] == A.cols[pp]) {
           auto Akp = MakeSlice(A.Avals, kp);
           auto App = MakeSlice(A.Avals, pp);
@@ -240,21 +240,23 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
       }
     }
 
-    if (A.cols[jp] == i) {
-      diag[i] = jp;
-      auto Ab = MakeSlice(A.Avals, jp);
+    if (A.cols[jp] != i) {
+      std::cerr << "Failure in factorization of row " << i << ": No diagonal"
+                << std::endl;
+    }
+    diag[i] = jp;
+    auto Ab = MakeSlice(A.Avals, jp);
 
-      // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
-      int fail = blockInverse<T, M>(Ab, D, ipiv);
+    // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
+    int fail = blockInverse<T, M>(Ab, D, ipiv);
 
-      if (fail) {
-        std::cerr << "Failure in factorization of row " << i << " block row "
-                  << fail << std::endl;
-      } else {
-        for (I n = 0; n < M; n++) {
-          for (I m = 0; m < M; m++) {
-            Ab(n, m) = D(n, m);
-          }
+    if (fail) {
+      std::cerr << "Failure in factorization of row " << i << " block row "
+                << fail << std::endl;
+    } else {
+      for (I n = 0; n < M; n++) {
+        for (I m = 0; m < M; m++) {
+          Ab(n, m) = D(n, m);
         }
       }
     }

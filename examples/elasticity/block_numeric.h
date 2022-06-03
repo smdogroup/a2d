@@ -47,7 +47,7 @@ inline void blockGemvSub(const AType& A, const xType& x, yType& y) {
     for (int j = 0; j < N; j++) {
       prod += A(i, j) * x(j);
     }
-    y(i) += prod;
+    y(i) -= prod;
   }
 }
 

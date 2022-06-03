@@ -9,6 +9,9 @@
 
 namespace A2D {
 
+/*
+  Given the CSR data, sort each row
+*/
 template <typename I>
 void SortCSRData(I nrows, std::vector<I>& rowp, std::vector<I>& cols) {
   // Sort the cols array
@@ -21,6 +24,9 @@ void SortCSRData(I nrows, std::vector<I>& rowp, std::vector<I>& cols) {
   }
 }
 
+/*
+  Compute the non-zero pattern of the matrix based on the connectivity pattern
+*/
 template <typename I, typename T, index_t M, class ConnArray>
 BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
   // Set the number of elements
@@ -309,10 +315,10 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
   Compute the non-zero pattern for C = S + A * B
 */
 template <typename I, typename T, index_t M, index_t N, index_t P>
-BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, P>& S,
-                                          BSRMat<I, T, M, N>& A,
-                                          BSRMat<I, T, N, P>& B,
-                                          double fill_factor = 2.0) {
+BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
+                                             BSRMat<I, T, M, N>& A,
+                                             BSRMat<I, T, N, P>& B,
+                                             double fill_factor = 2.0) {
   I nrows = A.nbrows;
   I ncols = B.nbcols;
   I nnz = 0;

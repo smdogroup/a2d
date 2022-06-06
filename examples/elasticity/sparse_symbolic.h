@@ -265,8 +265,8 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
-  for (I i = 0; i < A.nbros; i++) {
-    int head = first_entry;
+  for (I i = 0; i < A.nbrows; i++) {
+    I head = first_entry;
     I num_cols = 0;  // The size of the temporary cols array
 
     // Add the non-zero pattern to this matrix from each row of B
@@ -294,9 +294,10 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
     // Reverse through the list
     for (I j = 0; j < num_cols; j++) {
       cols[nnz] = head;
+      nnz++;
       I temp = head;
       head = next[head];
-      next[temp] = -1;
+      next[temp] = empty;
     }
 
     rowp[i + 1] = nnz;
@@ -305,8 +306,8 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
   // Sort the CSR data
   SortCSRData(nrows, rowp, cols);
 
-  BSRMat<I, T, M, M>* bsr =
-      new BSRMat<I, T, M, M>(nrows, nrows, nnz, rowp, cols);
+  BSRMat<I, T, M, P>* bsr =
+      new BSRMat<I, T, M, P>(nrows, ncols, nnz, rowp, cols);
 
   return bsr;
 }
@@ -334,7 +335,7 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
-  for (I i = 0; i < A.nbros; i++) {
+  for (I i = 0; i < A.nbrows; i++) {
     int head = first_entry;
     I num_cols = 0;  // The size of the temporary cols array
 
@@ -373,9 +374,10 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
     // Reverse through the list
     for (I j = 0; j < num_cols; j++) {
       cols[nnz] = head;
+      nnz++;
       I temp = head;
       head = next[head];
-      next[temp] = -1;
+      next[temp] = empty;
     }
 
     rowp[i + 1] = nnz;
@@ -384,10 +386,94 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
   // Sort the CSR data
   SortCSRData(nrows, rowp, cols);
 
-  BSRMat<I, T, M, M>* bsr =
-      new BSRMat<I, T, M, M>(nrows, nrows, nnz, rowp, cols);
+  BSRMat<I, T, M, P>* bsr =
+      new BSRMat<I, T, M, P>(nrows, ncols, nnz, rowp, cols);
 
   return bsr;
+}
+
+/*
+Compute the non-zero pattern of the transpose of the matrix
+*/
+template <typename I, typename T, index_t M, index_t N>
+BSRMat<I, T, N, M>* BSRMatMakeTransposeSymbolic(BSRMat<I, T, M, N>& A) {
+  // The number of rows and columns for the transposed matrix
+  I nrows = A.nbcols;
+  I ncols = A.nbrows;
+
+  std::vector<I> rowp(nrows + 1, 0);
+
+  // Count up the number of references
+  for (I i = 0; i < A.nbrows; i++) {
+    for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
+      I j = A.cols[jp];
+      rowp[j + 1]++;
+    }
+  }
+
+  for (I i = 0; i < nrows; i++) {
+    rowp[i + 1] += rowp[i];
+  }
+
+  I nnz = rowp[nrows];
+  std::vector<I> cols(nnz);
+  for (I i = 0; i < A.nbrows; i++) {
+    for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
+      I j = A.cols[jp];
+      cols[rowp[j]] = i;
+      rowp[j]++;
+    }
+  }
+
+  // Re-set the rowp array
+  for (I i = nrows; i > 0; i--) {
+    rowp[i] = rowp[i - 1];
+  }
+  rowp[0] = 0;
+
+  // Create the new BSR matrix
+  BSRMat<I, T, N, M>* At =
+      new BSRMat<I, T, N, M>(nrows, ncols, nnz, rowp, cols);
+
+  return At;
+}
+
+/*
+  Make a transpose matrix
+*/
+template <typename I, typename T, index_t M, index_t N>
+BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
+  BSRMat<I, T, N, M>* At = BSRMatMakeTransposeSymbolic(A);
+
+  // Loop over the values in A
+  for (I i = 0; i < A.nbrows; i++) {
+    for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
+      I j = A.cols[jp];
+      auto A0 = MakeSlice(A.Avals, jp);
+
+      I* col_ptr = At->find_column_index(j, i);
+      if (col_ptr) {
+        I jp = col_ptr - At->cols;
+        auto At0 = MakeSlice(At->Avals, jp);
+
+        for (I k1 = 0; k1 < M; k1++) {
+          for (I k2 = 0; k2 < N; k2++) {
+            At0(k2, k1) = A0(k1, k2);
+          }
+        }
+      }
+    }
+  }
+
+  return At;
+}
+
+/*
+  Duplicate the non-zero pattern of A without copying the values
+*/
+template <typename I, typename T, index_t M, index_t N>
+BSRMat<I, T, M, N>* BSRMatDuplicate(BSRMat<I, T, M, N>& A) {
+  return new BSRMat<I, T, M, N>(A.nbrows, A.nbcols, A.nnz, A.rowp, A.cols);
 }
 
 }  // namespace A2D

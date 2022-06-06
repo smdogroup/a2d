@@ -1,6 +1,8 @@
 #ifndef BLOCK_NUMERIC_H
 #define BLOCK_NUMERIC_H
 
+namespace A2D {
+
 double fabs(std::complex<double>& a) {
   if (a.real() >= 0.0) {
     return a.real();
@@ -229,5 +231,7 @@ int blockInverse(AType& A, AinvType& Ainv, IType& ipiv) {
 
   return fail;
 }
+
+}  // namespace A2D
 
 #endif  // BLOCK_NUMERIC_H

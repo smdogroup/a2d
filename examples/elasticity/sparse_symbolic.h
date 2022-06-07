@@ -66,8 +66,8 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
     }
   }
 
-  // // Do an in-place sort of the row and column data
-  // SortCSRData(nnodes, node_to_elem_ptr, node_to_elem, node_to_elem);
+  // Do an in-place sort of the row and column data
+  SortCSRData(nnodes, node_to_elem_ptr, node_to_elem, node_to_elem);
 
   // Reset the element pointer
   std::vector<I> rowp(nnodes + 1);

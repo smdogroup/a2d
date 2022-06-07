@@ -14,7 +14,7 @@ namespace A2D {
   The output consists of an array with all positive entries. Entries in the
   aggregation array outside the range [0, nrows) indicate an unaggregated
   variable.
- */
+*/
 template <class I, class IdxArrayType>
 I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
                             const IdxArrayType& cols, std::vector<I>& aggr,
@@ -29,14 +29,13 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
   // First pass
   for (I i = 0; i < nrows; i++) {
     if (aggr[i] == not_aggregated) {
-      const I jp_start = rowp[i];
-      const I jp_end = rowp[i + 1];
-
       // Determine whether all neighbors of this node are free (not already
       // aggregates)
       bool has_aggregated_neighbors = false;
       bool has_neighbors = false;
-      for (I jp = jp_start; jp < jp_end; jp++) {
+
+      const I jp_end = rowp[i + 1];
+      for (I jp = rowp[i]; jp < jp_end; jp++) {
         const I j = cols[jp];
         if (i != j) {
           has_neighbors = true;
@@ -54,7 +53,7 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
         // Make an aggregate out of this node and its neighbors
         aggr[i] = num_aggregates;
         cpts[num_aggregates] = i;
-        for (I jp = jp_start; jp < jp_end; jp++) {
+        for (I jp = rowp[i]; jp < jp_end; jp++) {
           aggr[cols[jp]] = num_aggregates;
         }
         num_aggregates++;
@@ -81,13 +80,11 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
   for (I i = 0; i < nrows; i++) {
     if (aggr[i] == not_aggregated) {
       // node i has not been aggregated
-      const I jp_start = rowp[i];
-      const I jp_end = rowp[i + 1];
-
       aggr[i] = num_aggregates;
       cpts[num_aggregates] = i;  // y stores a list of the Cpts
 
-      for (I jp = jp_start; jp < jp_end; jp++) {
+      const I jp_end = rowp[i + 1];
+      for (I jp = rowp[i]; jp < jp_end; jp++) {
         const I j = cols[jp];
 
         if (aggr[j] == 0) {  // unmarked neighbors
@@ -228,8 +225,6 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
   Compute the Jacobi smoothing for the tentative prolongation operator P0
 
   P = (I - omega/rho(D^{-1} A) * rho(D^{-1} A ) * P0
-
-  Note: This code destroys the entries in A!
 */
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
@@ -237,7 +232,7 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
                                                   BSRMat<I, T, M, M>& Dinv,
                                                   BSRMat<I, T, M, N>& P0,
                                                   T* rho_) {
-  // DinvA <- Dinv * A
+  // Compute DinvA <- Dinv * A
   BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
     auto D = MakeSlice(Dinv.Avals, Dinv.rowp[i]);
@@ -271,6 +266,11 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   return P;
 }
 
+/*
+  Given the matrix A and the near null space basis B compute the block diagonal
+  inverse of the matrix A, the prolongation and restriction operators, the
+  reduced matrix Ar and the new near null space basis.
+*/
 template <typename I, typename T, index_t M, index_t N>
 void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
                             MultiArray<T, CLayout<M, N>>& B,
@@ -415,7 +415,7 @@ class BSRMatAmgLevelData {
     if (Afact) {
       BSRMatApplyFactor(*Afact, *b, *x);
     } else {
-      // Pre-smooth with a non-zero right-hand-side
+      // Pre-smooth with either a zero or non-zero x
       if (level == 0) {
         BSRApplySOR(*Dinv, *A, omega, *b, *x);
       } else {

@@ -154,15 +154,15 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_COMPLEX
 
-  for (int i = 0; i < 3 && i < jac.extent(0); i++) {
+  for (int i = 0; i < 3 && i < elem_jac.extent(0); i++) {
     for (int jy = 0; jy < nodes_per_elem; jy++) {
       for (int iy = 0; iy < vars_per_node; iy++) {
-        double fd = res(i, jy, iy).imag() / dh;
+        double fd = elem_res(i, jy, iy).imag() / dh;
 
         ScalarType result = 0.0;
         for (int jx = 0; jx < nodes_per_elem; jx++) {
           for (int ix = 0; ix < vars_per_node; ix++) {
-            result += jac(i, jy, jx, iy, ix) * Pe(i, jx, ix);
+            result += elem_jac(i, jy, jx, iy, ix) * Pe(i, jx, ix);
           }
         }
 
@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Apply the boundary conditions to the null space
-  // VecZeroBCRows(bcs, B);
+  VecZeroBCRows(bcs, B);
 
   double t1 = MPI_Wtime();
 

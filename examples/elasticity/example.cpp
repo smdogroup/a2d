@@ -18,7 +18,7 @@ template <class multiarray>
 void declare_multiarray(py::module& m, const char typestr[]) {
   py::class_<multiarray>(m, typestr, py::buffer_protocol())
       .def_buffer([](multiarray& array) -> py::buffer_info {
-        std::size_t ndims = array.rank();
+        std::size_t ndims = array.get_rank();
         std::vector<std::size_t> shape(ndims);
         std::vector<std::size_t> strides(ndims);
 

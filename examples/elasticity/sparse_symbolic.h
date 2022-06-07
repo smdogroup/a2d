@@ -1,10 +1,10 @@
 #ifndef SPARSE_SYMBOLIC_H
 #define SPARSE_SYMBOLIC_H
 
+#include <algorithm>
 #include <limits>
 #include <set>
 #include <vector>
-#include <algorithm>
 
 #include "sparse_matrix.h"
 
@@ -100,10 +100,10 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
 
   I nnz = rowp[nnodes];
 
-  BSRMat<I, T, M, M>* bsr =
+  BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
 
-  return bsr;
+  return A;
 }
 
 template <typename I, typename T, index_t M, class ConnArray>
@@ -163,10 +163,10 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity2(ConnArray& conn) {
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
 
-  BSRMat<I, T, M, M>* bsr =
+  BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
 
-  return bsr;
+  return A;
 }
 
 /*
@@ -394,7 +394,7 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
 }
 
 /*
-Compute the non-zero pattern of the transpose of the matrix
+  Compute the non-zero pattern of the transpose of the matrix
 */
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, N, M>* BSRMatMakeTransposeSymbolic(BSRMat<I, T, M, N>& A) {
@@ -450,18 +450,23 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
   for (I i = 0; i < A.nbrows; i++) {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       I j = A.cols[jp];
-      auto A0 = MakeSlice(A.Avals, jp);
+      auto A0 = MakeSlice(A.Avals, jp);  // Set A0 = A(i, j)
 
-      I* col_ptr = At->find_column_index(j, i);
+      I* col_ptr = At->find_column_index(j, i);  // Find At(j, i)
       if (col_ptr) {
-        I jp = col_ptr - At->cols;
-        auto At0 = MakeSlice(At->Avals, jp);
+        I kp = col_ptr - At->cols;
+        auto At0 = MakeSlice(At->Avals, kp);
 
         for (I k1 = 0; k1 < M; k1++) {
           for (I k2 = 0; k2 < N; k2++) {
             At0(k2, k1) = A0(k1, k2);
           }
         }
+      } else {
+        std::cerr
+            << "BSRMatMakeTranspose: Non-zero pattern does not match cannot "
+               "copy values"
+            << std::endl;
       }
     }
   }

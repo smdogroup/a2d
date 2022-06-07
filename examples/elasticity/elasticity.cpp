@@ -32,12 +32,12 @@ int main(int argc, char* argv[]) {
   typedef HexQuadrature Quadrature;
   typedef HexBasis<HexQuadrature> Basis;
   // typedef HelmholtzPDE<IndexType, ScalarType, Basis> Model;
-  typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
-  // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
+  // typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
+  typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
-  const int nx = 32;
-  const int ny = 32;
-  const int nz = 32;
+  const int nx = 64;
+  const int ny = 64;
+  const int nz = 64;
   const int nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const int nelems = nx * ny * nz;
   const int vars_per_node = Model::NUM_VARS;
@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
   // Residual vector
   typename Model::base::SolutionArray& residual = *model.new_solution();
   typename Model::base::SolutionArray& solution = *model.new_solution();
+  typename Model::base::SolutionArray& res = *model.new_solution();
 
 #ifdef USE_COMPLEX
   double dh = 1e-30;
@@ -84,14 +85,26 @@ int main(int argc, char* argv[]) {
       for (int i = 0; i < nx; i++) {
         int elem = i + nx * (j + ny * k);
 
+        int conn_coord[8];
         for (int kk = 0, index = 0; kk < 2; kk++) {
           for (int jj = 0; jj < 2; jj++) {
             for (int ii = 0; ii < 2; ii++, index++) {
-              conn(elem, index) =
+              conn_coord[index] =
                   (i + ii) + (nx + 1) * ((j + jj) + (ny + 1) * (k + kk));
             }
           }
         }
+
+        // Convert to the correct connectivity
+        conn(elem, 0) = conn_coord[0];
+        conn(elem, 1) = conn_coord[1];
+        conn(elem, 2) = conn_coord[3];
+        conn(elem, 3) = conn_coord[2];
+
+        conn(elem, 4) = conn_coord[4];
+        conn(elem, 5) = conn_coord[5];
+        conn(elem, 6) = conn_coord[7];
+        conn(elem, 7) = conn_coord[6];
       }
     }
   }
@@ -124,12 +137,12 @@ int main(int argc, char* argv[]) {
 
   element_scatter(conn, P, Pe);
 
-  typename Model::base::ElemResArray& res = model.get_elem_res();
-  typename Model::base::ElemJacArray& jac = model.get_elem_jac();
+  typename Model::base::ElemResArray& elem_res = model.get_elem_res();
+  typename Model::base::ElemJacArray& elem_jac = model.get_elem_jac();
 
   residual.zero();
-  res.zero();
-  jac.zero();
+  elem_res.zero();
+  elem_jac.zero();
 
   model.add_residuals(residual);
 
@@ -196,7 +209,7 @@ int main(int argc, char* argv[]) {
   BSRMatZeroBCRows(bcs, J);
 
   // The near null-space basis for 3D elasticity
-  const index_t null_space_basis = 6;
+  const index_t null_space_basis = 3;
   CLayout<vars_per_node, null_space_basis> near_nullspace_layout(nnodes);
   MultiArray<ScalarType, CLayout<vars_per_node, null_space_basis>> B(
       near_nullspace_layout);
@@ -208,27 +221,34 @@ int main(int argc, char* argv[]) {
     B(i, 1, 1) = 1.0;
     B(i, 2, 2) = 1.0;
 
-    // Rotation about the x-axis
-    B(i, 1, 3) = X(i, 2);
-    B(i, 2, 3) = -X(i, 1);
+    if (null_space_basis == 6) {
+      // Rotation about the x-axis
+      B(i, 1, 3) = X(i, 2);
+      B(i, 2, 3) = -X(i, 1);
 
-    // Rotation about the y-axis
-    B(i, 0, 4) = X(i, 2);
-    B(i, 2, 4) = -X(i, 0);
+      // Rotation about the y-axis
+      B(i, 0, 4) = X(i, 2);
+      B(i, 2, 4) = -X(i, 0);
 
-    // Rotation about the z-axis
-    B(i, 0, 5) = X(i, 0);
-    B(i, 1, 5) = -X(i, 1);
+      // Rotation about the z-axis
+      B(i, 0, 5) = X(i, 1);
+      B(i, 1, 5) = -X(i, 0);
+    }
   }
 
   // Apply the boundary conditions to the null space
-  VecZeroBCRows(bcs, B);
+  // VecZeroBCRows(bcs, B);
 
-  double omega = 0.75;
+  double t1 = MPI_Wtime();
+
+  double omega = 0.5;
   BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node, null_space_basis>*
       amg = new BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node,
                                    null_space_basis>(omega, &J, &B);
-  amg->makeAmgLevels(3);
+  amg->makeAmgLevels(4);
+
+  t1 = MPI_Wtime() - t1;
+  std::cout << "Set up time for AMG: " << t1 << std::endl;
 
   // Set the residuals and apply the boundary conditions
   for (IndexType i = 0; i < solution.extent(0); i++) {
@@ -236,18 +256,27 @@ int main(int argc, char* argv[]) {
       solution(i, j) = 1.0;
     }
   }
+  residual.zero();
   VecZeroBCRows(bcs, solution);
   BSRMatVecMult(J, solution, residual);
+
+  // Set the solution back to zero
   solution.zero();
 
-  for (int i = 0; i < 200; i++) {
+  for (int i = 0; i < 100; i++) {
     amg->applyMg(residual, solution);
-    std::cout << solution(0, 0) << std::endl;
+
+    // Compute the residual norm
+    res.copy(residual);
+    BSRMatVecMultSub(J, solution, res);
+    ScalarType norm = std::sqrt(res.dot(res));
+
+    std::cout << "norm: " << std::setw(10) << norm << std::endl;
   }
 
-  for (IndexType i = 0; i < 10 && i < residual.extent(0); i++) {
-    for (IndexType j = 0; j < residual.extent(1); j++) {
-      std::cout << "Res(" << i << ", " << j << "): " << solution(i, j)
+  for (IndexType i = 0; i < 10 && i < solution.extent(0); i++) {
+    for (IndexType j = 0; j < solution.extent(1); j++) {
+      std::cout << "Solution(" << i << ", " << j << "): " << solution(i, j)
                 << std::endl;
     }
   }

@@ -62,10 +62,25 @@ inline void blockGemvSub(const AType& A, const xType& x, yType& y) {
 }
 
 /*
-  Compute y += scale * A * x
+  Compute y = scale * A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 inline void blockGemvScale(T scale, const AType& A, const xType& x, yType& y) {
+  for (int i = 0; i < M; i++) {
+    T prod = 0.0;
+    for (int j = 0; j < N; j++) {
+      prod += A(i, j) * x(j);
+    }
+    y(i) = scale * prod;
+  }
+}
+
+/*
+  Compute y += scale * A * x
+*/
+template <typename T, int M, int N, class AType, class xType, class yType>
+inline void blockGemvAddScale(T scale, const AType& A, const xType& x,
+                              yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -139,7 +154,7 @@ inline void blockGemmSub(const AType& A, const BType& B, CType& C) {
 }
 
 /*
-  Compute: C += scale * A * B
+  Compute: C = scale * A * B
 
   A in M x N
   B in N x P
@@ -148,6 +163,28 @@ inline void blockGemmSub(const AType& A, const BType& B, CType& C) {
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 inline void blockGemmScale(T scale, const AType& A, const BType& B, CType& C) {
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < P; j++) {
+      T prod = 0.0;
+      for (int k = 0; k < N; k++) {
+        prod += A(i, k) * B(k, j);
+      }
+      C(i, j) = scale * prod;
+    }
+  }
+}
+
+/*
+  Compute: C += scale * A * B
+
+  A in M x N
+  B in N x P
+  C in M x P
+*/
+template <typename T, int M, int N, int P, class AType, class BType,
+          class CType>
+inline void blockGemmAddScale(T scale, const AType& A, const BType& B,
+                              CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;

@@ -2,6 +2,7 @@
 #define MULTI_ARRAY_H
 
 #include <cstddef>
+#include <numeric>
 #include <type_traits>
 
 namespace A2D {
@@ -188,29 +189,53 @@ class MultiArray {
   Layout layout;
   T* data;
 
+  /*
+    Non-constant access to array elements
+  */
   template <class... IdxType>
   T& operator()(IdxType... idx) {
     return data[layout.compute_index(idx...)];
   }
 
+  /*
+    Constant access to array elements
+  */
   template <class... IdxType>
   const T& operator()(IdxType... idx) const {
     return data[layout.compute_index(idx...)];
   }
 
-  const index_t rank() const { return layout.get_rank(); }
+  /*
+    Get the rank of the the multi-dimensional array
+  */
+  const index_t get_rank() const { return layout.get_rank(); }
 
+  /*
+    Get the extent of one of the dimensions
+  */
   const index_t extent(index_t index) const { return layout.get_extent(index); }
 
+  /*
+    Zero all elements in the array
+  */
   void zero() {
     index_t len = layout.get_size();
-    for (index_t i = 0; i < len; i++) {
-      data[i] = 0.0;
-    }
+    std::fill(data, data + len, T(0));
   }
 
+  /*
+    Copy elements from the source to this vector
+  */
   void copy(MultiArray<T, Layout>& src) {
+    index_t len = layout.get_size();
     std::copy(src.data, src.data + src.layout.get_size(), data);
+  }
+
+  /*
+    Take the dot product with the source vector data
+  */
+  T dot(MultiArray<T, Layout>& src) {
+    return std::inner_product(data, data + layout.get_size(), src.data, T(0));
   }
 
  private:
@@ -225,16 +250,25 @@ class MultiArraySlice {
     data = &array.data[array.layout.get_size(idx)];
   }
 
-  template <class... IdxType>
-  const T& operator()(IdxType... idx) const {
-    return data[__compute_index<0, IdxType...>(0, idx...)];
-  }
-
+  /*
+    Non-constant access to array elements
+  */
   template <class... IdxType>
   T& operator()(IdxType... idx) {
     return data[__compute_index<0, IdxType...>(0, idx...)];
   }
 
+  /*
+    Constant access to array elements
+  */
+  template <class... IdxType>
+  const T& operator()(IdxType... idx) const {
+    return data[__compute_index<0, IdxType...>(0, idx...)];
+  }
+
+  /*
+    Zero the entries of the slice
+  */
   void zero() {
     for (index_t i = 0; i < size; i++) {
       data[i] = 0.0;

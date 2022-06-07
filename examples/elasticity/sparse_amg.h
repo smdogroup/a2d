@@ -236,7 +236,7 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
                                                   BSRMat<I, T, M, M>& A,
                                                   BSRMat<I, T, M, M>& Dinv,
                                                   BSRMat<I, T, M, N>& P0,
-                                                  T *rho_) {
+                                                  T* rho_) {
   // DinvA <- Dinv * A
   BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
@@ -250,7 +250,7 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
 
   // Estimate the spectral radius using Gerhsgorin
   T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
-  if (rho_){
+  if (rho_) {
     *rho_ = rho;
   }
 
@@ -260,10 +260,10 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   // Compute the non-zero pattern of the smoothed prolongation operator
   BSRMat<I, T, M, N>* P = BSRMatMatMultAddSymbolic(P0, *DinvA, P0);
 
-  // Copy values P <- P0
+  // Copy values P0 -> P
   BSRMatCopy(P0, *P);
 
-  // Compute P = P0 - scale * Dinv * A * P0
+  // Compute (P0 - scale * Dinv * A * P0) -> P
   BSRMatMatMultAddScale(-scale, *DinvA, P0, *P);
 
   delete DinvA;
@@ -276,8 +276,7 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
                             MultiArray<T, CLayout<M, N>>& B,
                             BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
                             BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
-                            MultiArray<T, CLayout<N, N>>** Br,
-                            T *rho_) {
+                            MultiArray<T, CLayout<N, N>>** Br, T* rho_) {
   // Compute the strength of connection S - need to fix this
   // S = BSRMatStrength(A);
 
@@ -300,7 +299,8 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
   BSRMat<I, T, M, M>* Dinv_ = BSRMatExtractBlockDiagonal(A, inverse);
 
   // Smooth the prolongation operator
-  BSRMat<I, T, M, N>* P_ = BSRJacobiProlongationSmoother(omega, A, *Dinv_, *P0, rho_);
+  BSRMat<I, T, M, N>* P_ =
+      BSRJacobiProlongationSmoother(omega, A, *Dinv_, *P0, rho_);
 
   // Make the transpose operator
   BSRMat<I, T, N, M>* PT_ = BSRMatMakeTranspose(*P_);
@@ -308,33 +308,6 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
   // AP = A * P
   BSRMat<I, T, M, N>* AP = BSRMatMatMultSymbolic(A, *P_);
   BSRMatMatMult(A, *P_, *AP);
-
-  // // Test the matrix-matrix multiplication here..
-  // // Compute y = AP * x and z2 = P * x. y2 = A * z2
-  // MultiArray<T, CLayout<N>> x(CLayout<N>(P_->nbcols));
-  // MultiArray<T, CLayout<M>> y1(CLayout<M>(A.nbrows));
-
-  // for (I i = 0; i < P_->nbcols; i++) {
-  //   for (I j = 0; j < N; j++) {
-  //     x(i, j) = -0.251 + 0.0345 * i - 0.543 * j;
-  //   }
-  // }
-
-  // BSRMatVecMult(*AP, x, y1);
-
-  // MultiArray<T, CLayout<M>> z2(CLayout<M>(A.nbcols));
-  // MultiArray<T, CLayout<M>> y2(CLayout<M>(A.nbrows));
-
-  // BSRMatVecMult(*P_, x, z2);
-  // BSRMatVecMult(A, z2, y2);
-
-  // for (I i = 0; i < y1.extent(0) && i < 10; i++) {
-  //   for (I j = 0; j < y1.extent(1); j++) {
-  //     std::cout << std::setw(20) << y1(i, j) << " " << std::setw(20) << y2(i,
-  //     j)
-  //               << " " << std::setw(20) << y1(i, j) - y2(i, j) << std::endl;
-  //   }
-  // }
 
   // Ar = PT * AP = PT * A * P
   BSRMat<I, T, N, N>* Ar_ = BSRMatMatMultSymbolic(*PT_, *AP);
@@ -359,6 +332,7 @@ class BSRMatAmgLevelData {
       : omega(omega),
         rho(0.0),
         scale(0.0),
+        level(-1),
         A(A),
         B(B),
         P(NULL),
@@ -384,9 +358,13 @@ class BSRMatAmgLevelData {
     applyMg();
   }
 
-  void makeAmgLevels(int num_levels) { makeAmgLevels(0, num_levels); }
+  void makeAmgLevels(int num_levels, bool print_info = true) {
+    makeAmgLevels(0, num_levels, print_info);
+  }
 
-  void makeAmgLevels(int level, int num_levels) {
+  void makeAmgLevels(int _level, int num_levels, bool print_info) {
+    level = _level;
+
     if (level == num_levels - 1) {
       CLayout<M> layout(A->nbrows);
       x = new MultiArray<T, CLayout<M>>(layout);
@@ -400,6 +378,11 @@ class BSRMatAmgLevelData {
 
       // Perform the numerical factorization
       BSRMatFactor(*Afact);
+
+      if (print_info) {
+        std::cout << std::setw(10) << level << std::setw(15) << A->nbrows
+                  << std::setw(15) << Afact->nnz << std::endl;
+      }
     } else {
       CLayout<M> layout(A->nbrows);
       r = new MultiArray<T, CLayout<M>>(layout);
@@ -412,8 +395,19 @@ class BSRMatAmgLevelData {
       next = new BSRMatAmgLevelData<I, T, N, N>(omega);
       BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
                                          &(next->A), &(next->B), &rho);
-      next->makeAmgLevels(level + 1, num_levels);
-      scale = omega/rho;
+      if (print_info) {
+        if (level == 0) {
+          std::cout << std::setw(10) << "Level" << std::setw(15) << "n(A)"
+                    << std::setw(15) << "nnz(A)" << std::setw(15) << "nnz(P)"
+                    << std::setw(15) << "rho" << std::endl;
+        }
+        std::cout << std::setw(10) << level << std::setw(15) << A->nbrows
+                  << std::setw(15) << A->nnz << std::setw(15) << P->nnz
+                  << std::setw(15) << rho << std::endl;
+      }
+
+      next->makeAmgLevels(level + 1, num_levels, print_info);
+      scale = omega / rho;
     }
   }
 
@@ -421,8 +415,12 @@ class BSRMatAmgLevelData {
     if (Afact) {
       BSRMatApplyFactor(*Afact, *b, *x);
     } else {
-      // Pre-smooth
-      BSRApplySOR(*Dinv, *A, omega, *b, *x);
+      // Pre-smooth with a non-zero right-hand-side
+      if (level == 0) {
+        BSRApplySOR(*Dinv, *A, omega, *b, *x);
+      } else {
+        BSRApplySORZero(*Dinv, *A, omega, *b, *x);
+      }
 
       // Compute the residuals r = b - A * x
       r->copy(*b);
@@ -431,6 +429,7 @@ class BSRMatAmgLevelData {
       // Restrict the residual to the next lowest level
       BSRMatVecMult(*PT, *r, *next->b);
 
+      // Apply multigrid on the next lowest level
       next->applyMg();
 
       // Interpolate up from the next lowest grid level
@@ -440,6 +439,9 @@ class BSRMatAmgLevelData {
       BSRApplySOR(*Dinv, *A, omega, *b, *x);
     }
   }
+
+  // Integer for the level
+  int level;
 
   // Data for the matrix
   BSRMat<I, T, M, M>* A;

@@ -8,9 +8,10 @@ template <typename I, typename T, index_t M, index_t N>
 class BSRMat {
  public:
   template <class VecType>
-  BSRMat(index_t nbrows, index_t nbcols, index_t nnz,
-         const VecType &_rowp, const VecType &_cols)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), layout(nnz), Avals(layout) {
+  BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
+         const VecType &_cols)
+      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals(CLayout<M, N>(nnz)) {
+    data_owner = true;
     rowp = new I[nbrows + 1];
     cols = new I[nnz];
 
@@ -25,11 +26,17 @@ class BSRMat {
     // Set the diagonal to NULL until factorization
     diag = NULL;
   }
+  BSRMat(const BSRMat &src)
+      : nbrows(src.nbrows), nbcols(src.nbcols), nnz(src.nnz), Avals(src.Avals) {
+    data_owner = false;
+  }
   ~BSRMat() {
-    delete[] rowp;
-    delete[] cols;
-    if (diag) {
-      delete[] diag;
+    if (data_owner) {
+      delete[] rowp;
+      delete[] cols;
+      if (diag) {
+        delete[] diag;
+      }
     }
   }
 
@@ -64,8 +71,10 @@ class BSRMat {
   I *diag;  // length: nbrows
 
   // MultiArray data - length: nnz
-  CLayout<M, N> layout;
   MultiArray<T, CLayout<M, N>> Avals;
+
+ private:
+  bool data_owner;
 };
 
 }  // namespace A2D

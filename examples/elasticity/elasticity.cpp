@@ -8,11 +8,12 @@
 #include "helmholtz3d.h"
 #include "mpi.h"
 #include "multiarray.h"
+#include "sparse_amg.h"
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
 
-#define USE_COMPLEX
+// #define USE_COMPLEX
 
 using namespace A2D;
 
@@ -21,7 +22,7 @@ using namespace A2D;
   arrays
 */
 int main(int argc, char* argv[]) {
-  typedef int32_t IndexType;
+  typedef A2D::index_t IndexType;
 #ifdef USE_COMPLEX
   typedef std::complex<double> ScalarType;
 #else
@@ -34,9 +35,9 @@ int main(int argc, char* argv[]) {
   typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
   // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
 
-  const int nx = 6;
-  const int ny = 6;
-  const int nz = 6;
+  const int nx = 32;
+  const int ny = 32;
+  const int nz = 32;
   const int nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const int nelems = nx * ny * nz;
   const int vars_per_node = Model::NUM_VARS;
@@ -184,35 +185,69 @@ int main(int argc, char* argv[]) {
       SparseMat;
 
   // Create the sparse matrix representing the Jacobian matrix
-  SparseMat* J =
-      BSRMatFromConnectivity2<IndexType, ScalarType, vars_per_node>(conn);
+  SparseMat& J =
+      *BSRMatFromConnectivity2<IndexType, ScalarType, vars_per_node>(conn);
 
   // Form the Jacobian matrix
-  J->zero();
-  BSRMatAddElementMatrices(conn, model.get_elem_jac(), *J);
+  J.zero();
+  BSRMatAddElementMatrices(conn, model.get_elem_jac(), J);
 
   // // Zero rows associated with the boundary conditions
-  BSRMatZeroBCRows(bcs, *J);
+  BSRMatZeroBCRows(bcs, J);
 
-  // Form the sparse factorization
-  SparseMat* Jfact = BSRMatFactorSymbolic(*J);
+  // The near null-space basis for 3D elasticity
+  const index_t null_space_basis = 6;
+  CLayout<vars_per_node, null_space_basis> near_nullspace_layout(nnodes);
+  MultiArray<ScalarType, CLayout<vars_per_node, null_space_basis>> B(
+      near_nullspace_layout);
 
-  std::cout << "nonzero ratio " << 1.0 * Jfact->nnz / J->nnz << std::endl;
+  // Form the near null - space basis
+  B.zero();
+  for (IndexType i = 0; i < nnodes; i++) {
+    B(i, 0, 0) = 1.0;
+    B(i, 1, 1) = 1.0;
+    B(i, 2, 2) = 1.0;
 
-  // Copy values to the matrix
-  BSRMatCopy(*J, *Jfact);
+    // Rotation about the x-axis
+    B(i, 1, 3) = X(i, 2);
+    B(i, 2, 3) = -X(i, 1);
 
-  // Perform the numerical factorization
-  BSRMatFactor(*Jfact);
+    // Rotation about the y-axis
+    B(i, 0, 4) = X(i, 2);
+    B(i, 2, 4) = -X(i, 0);
 
-  // Zero the dirichlet BCs
+    // Rotation about the z-axis
+    B(i, 0, 5) = X(i, 0);
+    B(i, 1, 5) = -X(i, 1);
+  }
+
+  // Apply the boundary conditions to the null space
+  VecZeroBCRows(bcs, B);
+
+  double omega = 1.0;
+  BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node, null_space_basis>*
+      amg = new BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node,
+                                   null_space_basis>(omega, &J, &B);
+  amg->makeAmgLevels(4);
+
+  // Set the residuals and apply the boundary conditions
+  for (IndexType i = 0; i < residual.extent(0); i++) {
+    for (IndexType j = 0; j < residual.extent(1); j++) {
+      residual(i, j) = 1.0;
+    }
+  }
   VecZeroBCRows(bcs, residual);
 
-  // Compute solution = J^{-1} * residual
-  BSRMatApplyFactor(*Jfact, residual, solution);
+  for (int i = 0; i < 200; i++) {
+    amg->applyMg(residual, solution);
+  }
 
-  // Compute J * solution = residual?
-  BSRMatVecMult(*J, solution, U);
+  for (IndexType i = 0; i < 10 && i < residual.extent(0); i++) {
+    for (IndexType j = 0; j < residual.extent(1); j++) {
+      std::cout << "Res(" << i << ", " << j << "): " << solution(i, j)
+                << std::endl;
+    }
+  }
 
   return (0);
 }

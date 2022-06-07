@@ -60,6 +60,48 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
 }
 
 /*
+  Compute the matrix-vector product: y += A * x
+*/
+template <typename I, typename T, index_t M, index_t N>
+void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
+                      MultiArray<T, CLayout<M>> &y) {
+  A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
+    auto yb = MakeSlice(y, i);
+
+    I jp = A.rowp[i];
+    I jp_end = A.rowp[i + 1];
+    for (; jp < jp_end; jp++) {
+      I j = A.cols[jp];
+      auto xb = MakeSlice(x, j);
+      auto Ab = MakeSlice(A.Avals, jp);
+
+      blockGemvAdd<T, M, N>(Ab, xb, yb);
+    }
+  });
+}
+
+/*
+  Compute the matrix-vector product: y -= A * x
+*/
+template <typename I, typename T, index_t M, index_t N>
+void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
+                      MultiArray<T, CLayout<M>> &y) {
+  A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
+    auto yb = MakeSlice(y, i);
+
+    I jp = A.rowp[i];
+    I jp_end = A.rowp[i + 1];
+    for (; jp < jp_end; jp++) {
+      I j = A.cols[jp];
+      auto xb = MakeSlice(x, j);
+      auto Ab = MakeSlice(A.Avals, jp);
+
+      blockGemvSub<T, M, N>(Ab, xb, yb);
+    }
+  });
+}
+
+/*
   Compute the numerical matrix-matrix product
 
   C = A * B
@@ -346,14 +388,14 @@ template <typename I, typename T, index_t M>
 void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
   A2D::Vec<T, M> ty;
 
-  for (I i = A.nbrows - 1; i >= 0; i--) {
-    auto yi = MakeSlice(y, i);
+  for (I i = A.nbrows; i > 0; i--) {
+    auto yi = MakeSlice(y, i - 1);
     for (I j = 0; j < M; j++) {
       ty(j) = yi(j);
     }
 
-    I diag = A.diag[i];
-    I end = A.rowp[i + 1];
+    I diag = A.diag[i - 1];
+    I end = A.rowp[i];
     I jp = diag + 1;
 
     for (; jp < end; jp++) {
@@ -461,14 +503,15 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 
   A2D::Vec<T, M> t;
 
-  for (I i = 0, nnz = 0; i < nrows; i++) {
-    if (Dinv.rowp[i + 1] - Dinv.rowp[i] > 0) {
+  for (I i = 0; i < nrows; i++) {
+    if (Dinv.rowp[i + 1] - Dinv.rowp[i] == 1) {
       // Copy over the values
       for (I m = 0; m < M; m++) {
-        t[m] = b(i, m);
+        t(m) = b(i, m);
       }
 
-      for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
         I j = A.cols[jp];
 
         if (i != j) {
@@ -482,7 +525,7 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
       // x = (1 - omega) * x + omega * D^{-1} * t
       auto xb = MakeSlice(x, i);
       for (I m = 0; m < M; m++) {
-        xb(m) = (1.0 - omega) * x(m);
+        xb(m) = (1.0 - omega) * xb(m);
       }
 
       auto D = MakeSlice(Dinv.Avals, Dinv.rowp[i]);

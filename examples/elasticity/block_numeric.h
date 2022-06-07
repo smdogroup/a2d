@@ -3,11 +3,19 @@
 
 namespace A2D {
 
-double fabs(std::complex<double>& a) {
+double fabs(std::complex<double> a) {
   if (a.real() >= 0.0) {
     return a.real();
   } else {
     return -a.real();
+  }
+}
+
+double fabs(double a) {
+  if (a >= 0.0) {
+    return a;
+  } else {
+    return -a;
   }
 }
 

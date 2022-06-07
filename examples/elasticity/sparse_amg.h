@@ -11,22 +11,24 @@ namespace A2D {
 /*
   Compute aggregates for a matrix A stored in CSR format
 
-  - It is assumed that S is symmetric.
-  - A may contain diagonal entries (self loops)
-  - Unaggregated nodes are marked with a -1
+  The output consists of an array with all positive entries. Entries in the
+  aggregation array outside the range [0, nrows) indicate an unaggregated
+  variable.
  */
-template <class I, class IdxArrayType, class AggArrayType>
-I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
-                            const IdxArrayType& cols, AggArrayType& aggr,
-                            AggArrayType& cpts) {
-  // Bj[n] == -1 means i-th node has not been aggregated
-  std::fill(aggr, aggr + nrows, 0);
+template <class I, class IdxArrayType>
+I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
+                            const IdxArrayType& cols, std::vector<I>& aggr,
+                            std::vector<I>& cpts) {
+  const I not_aggregated = std::numeric_limits<I>::max();
+  const I do_not_aggregate = std::numeric_limits<I>::max() - 1;
 
-  I next_aggregate = 1;
+  // Initially fill the array with the not_aggregated tag
+  std::fill(aggr.begin(), aggr.begin() + nrows, not_aggregated);
+  I num_aggregates = 0;
 
   // First pass
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] == 0) {
+    if (aggr[i] == not_aggregated) {
       const I jp_start = rowp[i];
       const I jp_end = rowp[i + 1];
 
@@ -38,7 +40,7 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
         const I j = cols[jp];
         if (i != j) {
           has_neighbors = true;
-          if (aggr[j]) {
+          if (aggr[j] != not_aggregated) {
             has_aggregated_neighbors = true;
             break;
           }
@@ -47,15 +49,15 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
 
       if (!has_neighbors) {
         // isolated node, do not aggregate
-        aggr[i] = -nrows;
+        aggr[i] = do_not_aggregate;  // do not aggregate this node
       } else if (!has_aggregated_neighbors) {
         // Make an aggregate out of this node and its neighbors
-        aggr[i] = next_aggregate;
-        cpts[next_aggregate - 1] = i;
+        aggr[i] = num_aggregates;
+        cpts[num_aggregates] = i;
         for (I jp = jp_start; jp < jp_end; jp++) {
-          aggr[cols[jp]] = next_aggregate;
+          aggr[cols[jp]] = num_aggregates;
         }
-        next_aggregate++;
+        num_aggregates++;
       }
     }
   }
@@ -63,52 +65,42 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
   // Second pass
   // Add unaggregated nodes to any neighboring aggregate
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] == 0) {
+    if (aggr[i] == not_aggregated) {
       for (I jp = rowp[i]; jp < rowp[i + 1]; jp++) {
         const I j = cols[jp];
 
-        const I xj = aggr[j];
-        if (xj > 0) {
-          aggr[i] = -xj;
+        if (aggr[j] != not_aggregated) {
+          aggr[i] = aggr[j];
           break;
         }
       }
     }
   }
 
-  next_aggregate--;
-
   // Third pass
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] != 0) {
-      // node i has been aggregated
-      if (aggr[i] > 0) {
-        aggr[i] = aggr[i] - 1;
-      } else if (aggr[i] == -nrows) {
-        aggr[i] = -1;
-      } else {
-        aggr[i] = -aggr[i] - 1;
-      }
-    } else {
+    if (aggr[i] == not_aggregated) {
       // node i has not been aggregated
       const I jp_start = rowp[i];
       const I jp_end = rowp[i + 1];
 
-      aggr[i] = next_aggregate;
-      cpts[next_aggregate] = i;  // y stores a list of the Cpts
+      aggr[i] = num_aggregates;
+      cpts[num_aggregates] = i;  // y stores a list of the Cpts
 
       for (I jp = jp_start; jp < jp_end; jp++) {
         const I j = cols[jp];
 
         if (aggr[j] == 0) {  // unmarked neighbors
-          aggr[j] = next_aggregate;
+          aggr[j] = num_aggregates;
         }
       }
-      next_aggregate++;
+      num_aggregates++;
+    } else if (aggr[i] == do_not_aggregate) {
+      aggr[i] = nrows + 1;
     }
   }
 
-  return next_aggregate;
+  return num_aggregates;
 }
 
 /*
@@ -125,18 +117,16 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
   The columns of P are orthonormal.
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatMakeTentativeProlongation(const I nrows, const I num_aggregates,
-                                     const I aggr[],
-                                     MultiArray<T, CLayout<M, N>>& B,
-                                     MultiArray<T, CLayout<N, N>>& R,
-                                     BSRMat<I, T, M, N>** P,
-                                     double toler = 1e-10) {
+BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
+    const I nrows, const I num_aggregates, std::vector<I>& aggr,
+    MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
+    double toler = 1e-10) {
   // Form the non-zero pattern for PT
   std::vector<I> rowp(num_aggregates + 1, 0);
 
   I nnz = 0;
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0) {
+    if (aggr[i] >= 0 && aggr[i] < nrows) {
       rowp[aggr[i] + 1]++;
       nnz++;
     }
@@ -148,7 +138,7 @@ void BSRMatMakeTentativeProlongation(const I nrows, const I num_aggregates,
 
   std::vector<I> cols(nnz);
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0) {
+    if (aggr[i] >= 0 && aggr[i] < nrows) {
       cols[rowp[aggr[i]]] = i;
       rowp[aggr[i]]++;
     }
@@ -231,7 +221,7 @@ void BSRMatMakeTentativeProlongation(const I nrows, const I num_aggregates,
     }
   }
 
-  *P = BSRMatMakeTranspose(PT);
+  return BSRMatMakeTranspose(PT);
 }
 
 /*
@@ -244,122 +234,229 @@ void BSRMatMakeTentativeProlongation(const I nrows, const I num_aggregates,
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
                                                   BSRMat<I, T, M, M>& A,
+                                                  BSRMat<I, T, M, M>& Dinv,
                                                   BSRMat<I, T, M, N>& P0) {
-  // Get the diagonal block D^{-1}
-  bool inverse = true;
-  BSRMat<I, T, M, M>& Dinv = *BSRMatExtractBlockDiagonal(A, inverse);
-
   // DinvA <- Dinv * A
-  BSRMat<I, T, M, M>& DinvA = *BSRMatDuplicate(A);
+  BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
     auto D = MakeSlice(Dinv.Avals, Dinv.rowp[i]);
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       auto A0 = MakeSlice(A.Avals, jp);
-      auto DinvA0 = MakeSlice(DinvA.Avals, jp);
+      auto DinvA0 = MakeSlice(DinvA->Avals, jp);
       blockGemm<T, M, M, M>(D, A0, DinvA0);
     }
   }
 
   // Estimate the spectral radius using Gerhsgorin
-  T rho = BSRMatGershgorinSpectralEstimate(DinvA);
+  T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
 
   // Compute the scalar multiple for the matrix-multiplication
   T scale = omega / rho;
 
   // Compute the non-zero pattern of the smoothed prolongation operator
-  BSRMat<I, T, M, N>* P = BSRMatMatMultAddSymbolic(P0, DinvA, P0);
+  BSRMat<I, T, M, N>* P = BSRMatMatMultAddSymbolic(P0, *DinvA, P0);
 
   // Copy values P <- P0
   BSRMatCopy(P0, *P);
 
   // Compute P = P0 - scale * Dinv * A * P0
-  BSRMatMatMultAddScale(-scale, DinvA, P0, *P);
+  BSRMatMatMultAddScale(-scale, *DinvA, P0, *P);
+
+  delete DinvA;
 
   return P;
 }
 
-// template <typename I, typename T, index_t M, index_t N>
-// class BSRMatAmgLevelData {
-//  public:
-//   BSRMatAmgLevelData() : A(NULL), B(NULL), P(NULL), PT(NULL) {}
+template <typename I, typename T, index_t M, index_t N>
+void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
+                            MultiArray<T, CLayout<M, N>>& B,
+                            BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
+                            BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
+                            MultiArray<T, CLayout<N, N>>** Br) {
+  // Compute the strength of connection S - need to fix this
+  // S = BSRMatStrength(A);
 
-//   // The near null-space candidates
-//   BSRMat<I, T, M, N>* B;
+  // Compute the aggregation - based on the strength of connection
+  std::vector<I> aggr(A.nbcols);
+  std::vector<I> cpts(A.nbcols);
+  I num_aggregates =
+      BSRMatStandardAggregation(A.nbrows, A.rowp, A.cols, aggr, cpts);
 
-//   // Data for the matrices
-//   BSRMat<I, T, M, M>* A;
-//   BSRMat<I, T, M, N>* P;
-//   BSRMat<I, T, N, M>* PT;
+  // Based on the aggregates, form a tentative prolongation operator
+  CLayout<N, N> Br_layout(num_aggregates);
+  MultiArray<T, CLayout<N, N>>* Br_ =
+      new MultiArray<T, CLayout<N, N>>(Br_layout);
 
-//   // Data for the smoother
-//   T omega;
-//   BSRMat<I, T, M, M>* Dinv;
+  BSRMat<I, T, M, N>* P0 =
+      BSRMatMakeTentativeProlongation(A.nbrows, num_aggregates, aggr, B, *Br_);
 
-//   // Data for the solution
-//   MultiArray<T, CLayout<M>>* x;
-//   MultiArray<T, CLayout<M>>* b;
-//   MultiArray<T, CLayout<M>>* r;
-// };
+  // Get the diagonal block D^{-1}
+  bool inverse = true;
+  BSRMat<I, T, M, M>* Dinv_ = BSRMatExtractBlockDiagonal(A, inverse);
 
-// template <typename I, typename T, index_t M, index_t N>
-// void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
-//                             MultiArray<T, CLayout<M, N>>& B,
-//                             BSRMat<I, T, M, N>* P, BSRMat<I, T, N, N>* Ar,
-//                             BSRMat<I, T, N, N>* Br) {
-//   // Compute the strength of connection S - need to fix this
-//   // S = BSRMatStrength(A);
+  // Smooth the prolongation operator
+  BSRMat<I, T, M, N>* P_ = BSRJacobiProlongationSmoother(omega, A, *Dinv_, *P0);
 
-//   // Compute the aggregation - based on the strength of connection
-//   std::vector<I> aggr(A.nbcols);
-//   std::vector<I> cpts(A.nbcols);
-//   I num_aggregates =
-//       BSRMatStandardAggregation(A.nbrows, A.rowp, A.cols, aggr, cpts);
+  // Make the transpose operator
+  BSRMat<I, T, N, M>* PT_ = BSRMatMakeTranspose(*P_);
 
-//   // Based on the aggregates, form a tentative prolongation operator
-//   BSRMat<I, T, M, N>* P0;
-//   BSRMatMakeTentativeProlongation(A.nbrows, num_aggregates, aggr, B, R, &P0);
+  // AP = A * P
+  BSRMat<I, T, M, N>* AP = BSRMatMatMultSymbolic(A, *P_);
+  BSRMatMatMult(A, *P_, *AP);
 
-//   // Smooth the prolongation operator
-//   BSRMat<I, T, M, N>* P = BSRJacobiProlongationSmoother(omega, A, *P0);
+  // // Test the matrix-matrix multiplication here..
+  // // Compute y = AP * x and z2 = P * x. y2 = A * z2
+  // MultiArray<T, CLayout<N>> x(CLayout<N>(P_->nbcols));
+  // MultiArray<T, CLayout<M>> y1(CLayout<M>(A.nbrows));
 
-//   // Make the transpose operator
-//   BSRMat<I, T, N, M>* PT = BSRMatMakeTranspose(P);
+  // for (I i = 0; i < P_->nbcols; i++) {
+  //   for (I j = 0; j < N; j++) {
+  //     x(i, j) = -0.251 + 0.0345 * i - 0.543 * j;
+  //   }
+  // }
 
-//   // AP = A * P
-//   BSRMat<I, T, M, N>* AP = BSRMatMatMultSymbolic(A, P);
-//   BSRMatMatMult(A, P, AP);
+  // BSRMatVecMult(*AP, x, y1);
 
-//   // Ar = PT * AP = PT * A * P
-//   BSRMat<I, T, N, N>* Ar = BSRMatMatMultSymbolic(PT, AP);
-//   BSRMatMatMult(PT, AP, *Ar);
-// }
+  // MultiArray<T, CLayout<M>> z2(CLayout<M>(A.nbcols));
+  // MultiArray<T, CLayout<M>> y2(CLayout<M>(A.nbrows));
 
-// template <typename I, typename T, index_t M, index_t N>
-// class BSRMatSmoothedAmg {
-//  public:
-//   int nlevels;
+  // BSRMatVecMult(*P_, x, z2);
+  // BSRMatVecMult(A, z2, y2);
 
-//   void applyFactor(MultiArray<T, CLayout<M>>& x, MultiArray<T, CLayout<M>>&
-//   y) {
+  // for (I i = 0; i < y1.extent(0) && i < 10; i++) {
+  //   for (I j = 0; j < y1.extent(1); j++) {
+  //     std::cout << std::setw(20) << y1(i, j) << " " << std::setw(20) << y2(i,
+  //     j)
+  //               << " " << std::setw(20) << y1(i, j) - y2(i, j) << std::endl;
+  //   }
+  // }
 
-//   }
+  // Ar = PT * AP = PT * A * P
+  BSRMat<I, T, N, N>* Ar_ = BSRMatMatMultSymbolic(*PT_, *AP);
+  BSRMatMatMult(*PT_, *AP, *Ar_);
 
-//   void applyMg(int level) {
-//     // Pre-smooth at the current level
-//     BSRApplySOR(data[level]->Dinv, data[level]->A, data[level]->b,
-//                 data[level]->x);
+  // Copy over the values
+  *Dinv = Dinv_;
+  *P = P_;
+  *PT = PT_;
+  *Ar = Ar_;
+  *Br = Br_;
 
-//     // Compute r = b - A * x
+  delete P0;
+  delete AP;
+}
 
-//     // Restrict the residual to the next lowest level
+template <typename I, typename T, index_t M, index_t N>
+class BSRMatAmgLevelData {
+ public:
+  BSRMatAmgLevelData(T omega = 1.0, BSRMat<I, T, M, M>* A = NULL,
+                     MultiArray<T, CLayout<M, N>>* B = NULL)
+      : omega(omega),
+        A(A),
+        B(B),
+        P(NULL),
+        PT(NULL),
+        Dinv(NULL),
+        Afact(NULL),
+        x(NULL),
+        b(NULL),
+        r(NULL),
+        next(NULL) {}
 
-//     // r
+  void applyMg(MultiArray<T, CLayout<M>>& b_, MultiArray<T, CLayout<M>>& x_) {
+    b = &b_;
+    x = &x_;
+    applyMg();
+  }
 
-//     BSRApplySOR(data[level]->)
-//   }
+  void applyFactor(MultiArray<T, CLayout<M>>& b_,
+                   MultiArray<T, CLayout<M>>& x_) {
+    b = &b_;
+    x = &x_;
+    x->zero();
+    applyMg();
+  }
 
-//  private:
-// };
+  void makeAmgLevels(int num_levels) { makeAmgLevels(0, num_levels); }
+
+  void makeAmgLevels(int level, int num_levels) {
+    if (level == num_levels - 1) {
+      CLayout<M> layout(A->nbrows);
+      x = new MultiArray<T, CLayout<M>>(layout);
+      b = new MultiArray<T, CLayout<M>>(layout);
+
+      // Form the sparse factorization
+      Afact = BSRMatFactorSymbolic(*A);
+
+      // Copy values to the matrix
+      BSRMatCopy(*A, *Afact);
+
+      // Perform the numerical factorization
+      BSRMatFactor(*Afact);
+    } else {
+      CLayout<M> layout(A->nbrows);
+      r = new MultiArray<T, CLayout<M>>(layout);
+      if (level > 0) {
+        r = new MultiArray<T, CLayout<M>>(layout);
+        x = new MultiArray<T, CLayout<M>>(layout);
+        b = new MultiArray<T, CLayout<M>>(layout);
+      }
+
+      next = new BSRMatAmgLevelData<I, T, N, N>(omega);
+      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
+                                         &(next->A), &(next->B));
+      next->makeAmgLevels(level + 1, num_levels);
+    }
+  }
+
+  void applyMg() {
+    if (Afact) {
+      BSRMatApplyFactor(*Afact, *b, *x);
+    } else {
+      // Pre-smooth
+      BSRApplySOR(*Dinv, *A, omega, *b, *x);
+
+      // Compute the residuals r = b - A * x
+      r->copy(*b);
+      BSRMatVecMultSub(*A, *x, *r);
+
+      // Restrict the residual to the next lowest level
+      BSRMatVecMult(*PT, *r, *next->b);
+
+      next->applyMg();
+
+      // Interpolate up from the next lowest grid level
+      BSRMatVecMultAdd(*P, *next->x, *x);
+
+      // Post-smooth
+      BSRApplySOR(*Dinv, *A, omega, *b, *x);
+    }
+  }
+
+  // Data for the matrix
+  BSRMat<I, T, M, M>* A;
+
+  // The near null-space candidates
+  MultiArray<T, CLayout<M, N>>* B;
+
+  // Data for the prolongation and restriction
+  BSRMat<I, T, M, N>* P;
+  BSRMat<I, T, N, M>* PT;
+
+  // Data for the smoother
+  T omega;
+  BSRMat<I, T, M, M>* Dinv;
+
+  // Data for the full factorization (on the lowest level only)
+  BSRMat<I, T, M, M>* Afact;
+
+  // Data for the solution
+  MultiArray<T, CLayout<M>>* x;
+  MultiArray<T, CLayout<M>>* b;
+  MultiArray<T, CLayout<M>>* r;
+
+  BSRMatAmgLevelData<I, T, N, N>* next;
+};
 
 }  // namespace A2D
 

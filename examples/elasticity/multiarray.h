@@ -167,7 +167,7 @@ class MultiArray {
  public:
   typedef T type;
 
-  MultiArray(Layout& layout, T* data_ = NULL) : layout(layout), data(data_) {
+  MultiArray(Layout layout, T* data_ = NULL) : layout(layout), data(data_) {
     if (data) {
       data_owner = false;
     } else {
@@ -185,7 +185,7 @@ class MultiArray {
     }
   }
 
-  Layout& layout;
+  Layout layout;
   T* data;
 
   template <class... IdxType>
@@ -207,6 +207,10 @@ class MultiArray {
     for (index_t i = 0; i < len; i++) {
       data[i] = 0.0;
     }
+  }
+
+  void copy(MultiArray<T, Layout>& src) {
+    std::copy(src.data, src.data + src.layout.get_size(), data);
   }
 
  private:

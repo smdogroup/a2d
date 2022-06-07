@@ -191,6 +191,7 @@ int main(int argc, char* argv[]) {
       for (int ii = 0; ii < 3; ii++) {
         bcs(index, 1) |= 1U << ii;
       }
+      index++;
     }
   }
 
@@ -209,7 +210,7 @@ int main(int argc, char* argv[]) {
   BSRMatZeroBCRows(bcs, J);
 
   // The near null-space basis for 3D elasticity
-  const index_t null_space_basis = 3;
+  const index_t null_space_basis = 6;
   CLayout<vars_per_node, null_space_basis> near_nullspace_layout(nnodes);
   MultiArray<ScalarType, CLayout<vars_per_node, null_space_basis>> B(
       near_nullspace_layout);
@@ -241,7 +242,7 @@ int main(int argc, char* argv[]) {
 
   double t1 = MPI_Wtime();
 
-  double omega = 0.5;
+  double omega = 1.333;
   BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node, null_space_basis>*
       amg = new BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node,
                                    null_space_basis>(omega, &J, &B);
@@ -263,21 +264,17 @@ int main(int argc, char* argv[]) {
   // Set the solution back to zero
   solution.zero();
 
-  for (int i = 0; i < 100; i++) {
+  for (int i = 0; i < 51; i++) {
     amg->applyMg(residual, solution);
 
     // Compute the residual norm
-    res.copy(residual);
-    BSRMatVecMultSub(J, solution, res);
-    ScalarType norm = std::sqrt(res.dot(res));
+    if (i % 5 == 0) {
+      res.copy(residual);
+      BSRMatVecMultSub(J, solution, res);
+      ScalarType norm = std::sqrt(res.dot(res));
 
-    std::cout << "norm: " << std::setw(10) << norm << std::endl;
-  }
-
-  for (IndexType i = 0; i < 10 && i < solution.extent(0); i++) {
-    for (IndexType j = 0; j < solution.extent(1); j++) {
-      std::cout << "Solution(" << i << ", " << j << "): " << solution(i, j)
-                << std::endl;
+      std::cout << "|A * x - b|[" << std::setw(3) << i << "]: " << std::setw(15)
+                << norm << std::endl;
     }
   }
 

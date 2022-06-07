@@ -146,12 +146,16 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
   }
   rowp[0] = 0;
 
+  // Zero the entries in R
+  R.zero();
+
   // Create the transpose of the matrix
   BSRMat<I, T, N, M> PT(num_aggregates, nrows, nnz, rowp, cols);
 
   for (I i = 0; i < PT.nbrows; i++) {
     // Copy the block from the near null-space candidates into P
-    for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+    const I jp_end = PT.rowp[i + 1];
+    for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
       I j = PT.cols[jp];
       for (I k1 = 0; k1 < N; k1++) {
         for (I k2 = 0; k2 < M; k2++) {
@@ -164,7 +168,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
     for (I k = 0; k < N; k++) {
       // Take the initial norm of the row
       T init_norm = 0.0;
-      for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+      for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
           init_norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
         }
@@ -175,7 +179,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       // Take the dot product between rows k and j
       for (I j = 0; j < k; j++) {
         T dot = 0.0;
-        for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+        for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
           for (I m = 0; m < M; m++) {
             dot += PT.Avals(jp, j, m) * PT.Avals(jp, k, m);
           }
@@ -185,7 +189,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
         R(i, j, k) = dot;
 
         // Subtract the dot product time row j from row k
-        for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+        for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
           for (I m = 0; m < M; m++) {
             PT.Avals(jp, k, m) -= dot * PT.Avals(jp, j, m);
           }
@@ -194,7 +198,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
       // Take the norm of row k
       T norm = 0.0;
-      for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+      for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
           norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
         }
@@ -206,11 +210,11 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       T scale = 0.0;
       if (fabs(norm) > toler * theta) {
         scale = 1.0 / norm;
+        R(i, k, k) = norm;
       }
 
       // Set the scale value
-      R(i, k, k) = scale;
-      for (I jp = PT.rowp[i]; jp < PT.rowp[i + 1]; jp++) {
+      for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
           PT.Avals(jp, k, m) *= scale;
         }

@@ -126,7 +126,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   I nnz = 0;
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < nrows) {
+    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
       rowp[aggr[i] + 1]++;
       nnz++;
     }
@@ -138,13 +138,13 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   std::vector<I> cols(nnz);
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < nrows) {
+    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
       cols[rowp[aggr[i]]] = i;
       rowp[aggr[i]]++;
     }
   }
 
-  for (I i = nrows; i > 0; i--) {
+  for (I i = num_aggregates; i > 0; i--) {
     rowp[i] = rowp[i - 1];
   }
   rowp[0] = 0;
@@ -235,7 +235,8 @@ template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
                                                   BSRMat<I, T, M, M>& A,
                                                   BSRMat<I, T, M, M>& Dinv,
-                                                  BSRMat<I, T, M, N>& P0) {
+                                                  BSRMat<I, T, M, N>& P0,
+                                                  T *rho_) {
   // DinvA <- Dinv * A
   BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
@@ -249,6 +250,9 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
 
   // Estimate the spectral radius using Gerhsgorin
   T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
+  if (rho_){
+    *rho_ = rho;
+  }
 
   // Compute the scalar multiple for the matrix-multiplication
   T scale = omega / rho;
@@ -272,7 +276,8 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
                             MultiArray<T, CLayout<M, N>>& B,
                             BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
                             BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
-                            MultiArray<T, CLayout<N, N>>** Br) {
+                            MultiArray<T, CLayout<N, N>>** Br,
+                            T *rho_) {
   // Compute the strength of connection S - need to fix this
   // S = BSRMatStrength(A);
 
@@ -295,7 +300,7 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
   BSRMat<I, T, M, M>* Dinv_ = BSRMatExtractBlockDiagonal(A, inverse);
 
   // Smooth the prolongation operator
-  BSRMat<I, T, M, N>* P_ = BSRJacobiProlongationSmoother(omega, A, *Dinv_, *P0);
+  BSRMat<I, T, M, N>* P_ = BSRJacobiProlongationSmoother(omega, A, *Dinv_, *P0, rho_);
 
   // Make the transpose operator
   BSRMat<I, T, N, M>* PT_ = BSRMatMakeTranspose(*P_);
@@ -352,6 +357,8 @@ class BSRMatAmgLevelData {
   BSRMatAmgLevelData(T omega = 1.0, BSRMat<I, T, M, M>* A = NULL,
                      MultiArray<T, CLayout<M, N>>* B = NULL)
       : omega(omega),
+        rho(0.0),
+        scale(0.0),
         A(A),
         B(B),
         P(NULL),
@@ -404,8 +411,9 @@ class BSRMatAmgLevelData {
 
       next = new BSRMatAmgLevelData<I, T, N, N>(omega);
       BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
-                                         &(next->A), &(next->B));
+                                         &(next->A), &(next->B), &rho);
       next->makeAmgLevels(level + 1, num_levels);
+      scale = omega/rho;
     }
   }
 
@@ -445,6 +453,8 @@ class BSRMatAmgLevelData {
 
   // Data for the smoother
   T omega;
+  T rho;
+  T scale;
   BSRMat<I, T, M, M>* Dinv;
 
   // Data for the full factorization (on the lowest level only)

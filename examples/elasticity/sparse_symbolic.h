@@ -4,6 +4,7 @@
 #include <limits>
 #include <set>
 #include <vector>
+#include <algorithm>
 
 #include "sparse_matrix.h"
 

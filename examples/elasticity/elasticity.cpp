@@ -224,22 +224,25 @@ int main(int argc, char* argv[]) {
   // Apply the boundary conditions to the null space
   VecZeroBCRows(bcs, B);
 
-  double omega = 1.0;
+  double omega = 0.75;
   BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node, null_space_basis>*
       amg = new BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node,
                                    null_space_basis>(omega, &J, &B);
-  amg->makeAmgLevels(4);
+  amg->makeAmgLevels(3);
 
   // Set the residuals and apply the boundary conditions
-  for (IndexType i = 0; i < residual.extent(0); i++) {
-    for (IndexType j = 0; j < residual.extent(1); j++) {
-      residual(i, j) = 1.0;
+  for (IndexType i = 0; i < solution.extent(0); i++) {
+    for (IndexType j = 0; j < solution.extent(1); j++) {
+      solution(i, j) = 1.0;
     }
   }
-  VecZeroBCRows(bcs, residual);
+  VecZeroBCRows(bcs, solution);
+  BSRMatVecMult(J, solution, residual);
+  solution.zero();
 
   for (int i = 0; i < 200; i++) {
     amg->applyMg(residual, solution);
+    std::cout << solution(0, 0) << std::endl;
   }
 
   for (IndexType i = 0; i < 10 && i < residual.extent(0); i++) {

@@ -32,6 +32,10 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
             }
           }
         }
+        else {
+          std::cerr << "BSRMatAddElementMatrices missing entry (" << row << ", "
+                    << col << ") " << std::endl;
+        }
       }
     }
   }
@@ -461,7 +465,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
     if (col_ptr) {
       I jp = col_ptr - A.cols;
       auto A0 = MakeSlice(A.Avals, jp);
-      auto D0 = MakeSlice(D->Avals, nnz);
+      auto D0 = MakeSlice(D->Avals, D->nnz);
 
       // Copy the values
       for (I k1 = 0; k1 < M; k1++) {
@@ -487,7 +491,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       D->cols[D->nnz] = i;
       D->nnz++;
     }
-    D->rowp[i + 1] = nnz;
+    D->rowp[i + 1] = D->nnz;
   }
 
   return D;
@@ -559,7 +563,7 @@ T BSRMatGershgorinSpectralEstimate(BSRMat<I, T, M, M> &A) {
       T rho0 = a + (R - fabs(a));
 
       if (fabs(rho0) > fabs(rho)) {
-        rho = R;
+        rho = rho0;
       }
     }
   }

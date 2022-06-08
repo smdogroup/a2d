@@ -237,16 +237,28 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // const index_t null_space_basis = 1;
+  // CLayout<vars_per_node, null_space_basis> near_nullspace_layout(nnodes);
+  // MultiArray<ScalarType, CLayout<vars_per_node, null_space_basis>> B(
+  //     near_nullspace_layout);
+
+  // // Form the near null - space basis
+  // B.zero();
+  // for (IndexType i = 0; i < nnodes; i++) {
+  //   B(i, 0, 0) = 1.0;
+  // }
+
   // Apply the boundary conditions to the null space
   VecZeroBCRows(bcs, B);
 
   double t1 = MPI_Wtime();
 
+  int num_levels = 4;
   double omega = 1.333;
-  BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node, null_space_basis>*
-      amg = new BSRMatAmgLevelData<IndexType, ScalarType, vars_per_node,
-                                   null_space_basis>(omega, &J, &B);
-  amg->makeAmgLevels(4);
+  bool print_info = true;
+  BSRMatAmg<IndexType, ScalarType, vars_per_node, null_space_basis>* amg =
+      new BSRMatAmg<IndexType, ScalarType, vars_per_node, null_space_basis>(
+          num_levels, omega, &J, &B, print_info);
 
   t1 = MPI_Wtime() - t1;
   std::cout << "Set up time for AMG: " << t1 << std::endl;
@@ -264,19 +276,10 @@ int main(int argc, char* argv[]) {
   // Set the solution back to zero
   solution.zero();
 
-  for (int i = 0; i < 51; i++) {
-    amg->applyMg(residual, solution);
-
-    // Compute the residual norm
-    if (i % 5 == 0) {
-      res.copy(residual);
-      BSRMatVecMultSub(J, solution, res);
-      ScalarType norm = std::sqrt(res.dot(res));
-
-      std::cout << "|A * x - b|[" << std::setw(3) << i << "]: " << std::setw(15)
-                << norm << std::endl;
-    }
-  }
+  IndexType monitor = 5;
+  IndexType max_iters = 50;
+  amg->cg(residual, solution, monitor, max_iters);
+  // amg->mg(residual, solution, monitor, max_iters);
 
   return (0);
 }

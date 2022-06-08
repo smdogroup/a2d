@@ -329,10 +329,10 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
 }
 
 template <typename I, typename T, index_t M, index_t N>
-class BSRMatAmgLevelData {
+class BSRMatAmg {
  public:
-  BSRMatAmgLevelData(T omega = 1.0, BSRMat<I, T, M, M>* A = NULL,
-                     MultiArray<T, CLayout<M, N>>* B = NULL)
+  BSRMatAmg(int num_levels, T omega, BSRMat<I, T, M, M>* A,
+            MultiArray<T, CLayout<M, N>>* B, bool print_info = false)
       : omega(omega),
         rho(0.0),
         scale(0.0),
@@ -346,27 +346,210 @@ class BSRMatAmgLevelData {
         x(NULL),
         b(NULL),
         r(NULL),
-        next(NULL) {}
-
-  void applyMg(MultiArray<T, CLayout<M>>& b_, MultiArray<T, CLayout<M>>& x_) {
-    b = &b_;
-    x = &x_;
-    applyMg();
-  }
-
-  void applyFactor(MultiArray<T, CLayout<M>>& b_,
-                   MultiArray<T, CLayout<M>>& x_) {
-    b = &b_;
-    x = &x_;
-    x->zero();
-    applyMg();
-  }
-
-  void makeAmgLevels(int num_levels, bool print_info = true) {
+        next(NULL) {
     makeAmgLevels(0, num_levels, print_info);
   }
+  ~BSRMatAmg() {
+    if (A) {
+      delete A;
+    }
+    if (B) {
+      delete B;
+    }
+    if (P) {
+      delete P;
+    }
+    if (PT) {
+      delete PT;
+    }
+    if (Dinv) {
+      delete Dinv;
+    }
+    if (Afact) {
+      delete Afact;
+    }
+    if (x) {
+      delete x;
+    }
+    if (b) {
+      delete b;
+    }
+    if (r) {
+      delete r;
+    }
+    if (next) {
+      delete next;
+    }
+  }
 
+  /*
+    Apply multigrid repeatedly until convergence
+  */
+  bool mg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
+          I monitor = 0, I max_iters = 500, double rtol = 1e-8,
+          double atol = 1e-30) {
+    // R == the residual
+    MultiArray<T, CLayout<M>> R(b0.layout);
+
+    bool solve_flag = false;
+    xk.zero();
+    R.copy(b0);
+    T init_norm = std::sqrt(R.dot(R));
+
+    if (monitor) {
+      std::cout << "MG |A * x - b|[" << std::setw(3) << 0
+                << "]: " << std::setw(15) << init_norm << std::endl;
+    }
+
+    for (I iter = 0; iter < max_iters; iter++) {
+      applyMg(b0, xk);
+
+      R.copy(b0);
+      BSRMatVecMultSub(*A, xk, R);
+      T res_norm = std::sqrt(R.dot(R));
+
+      if ((iter + 1) % monitor == 0) {
+        std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
+                  << "]: " << std::setw(15) << res_norm << std::endl;
+      }
+
+      if (fabs(res_norm) < atol || fabs(res_norm) < rtol * fabs(init_norm)) {
+        solve_flag = true;
+        break;
+      }
+    }
+
+    return solve_flag;
+  }
+
+  /*
+    Apply the preconditioned conjugate gradient method
+  */
+  bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
+          I monitor = 0, I max_iters = 500, double rtol = 1e-8,
+          double atol = 1e-30, I iters_per_reset = 100) {
+    // R, Z and P and work are temporary vectors
+    // R == the residual
+    MultiArray<T, CLayout<M>> R(b0.layout);
+    MultiArray<T, CLayout<M>> Z(b0.layout);
+    MultiArray<T, CLayout<M>> P(b0.layout);
+    MultiArray<T, CLayout<M>> work(b0.layout);
+
+    bool solve_flag = false;
+    xk.zero();
+    R.copy(b0);  // R = b0
+    T init_norm = std::sqrt(R.dot(R));
+
+    for (I reset = 0, iter = 0; iter < max_iters; reset++) {
+      if (reset > 0) {
+        R.copy(b0);
+        BSRMatVecMultSub(*A, xk, R);  // R = b0 - A * xk
+      }
+
+      if (monitor && reset == 0) {
+        std::cout << "PCG |A * x - b|[" << std::setw(3) << iter
+                  << "]: " << std::setw(15) << init_norm << std::endl;
+      }
+
+      if (fabs(init_norm) > atol) {
+        // Apply the preconditioner Z = M^{-1} R
+        applyFactor(R, Z);
+
+        // Set P = Z
+        P.copy(Z);
+
+        for (I i = 0; i < iters_per_reset && iter < max_iters; i++, iter++) {
+          BSRMatVecMult(*A, P, work);    // work = A * P
+          T temp = R.dot(Z);             // temp = (R, Z)
+          T alpha = temp / work.dot(P);  // alpha = (R, Z)/(A * P, P)
+          xk.axpy(alpha, P);             // x = x + alpha * P
+          R.axpy(-alpha, work);          // R' = R - alpha * A * P
+          applyFactor(R, Z);             // Z' = M^{-1} * R
+          T beta = R.dot(Z) / temp;      // beta = (R', Z')/(R, Z)
+          P.axpby(1.0, beta, Z);         // P' = Z' + beta * P
+
+          T res_norm = std::sqrt(R.dot(R));
+
+          if ((iter + 1) % monitor == 0) {
+            std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
+                      << "]: " << std::setw(15) << res_norm << std::endl;
+          }
+
+          if (fabs(res_norm) < atol ||
+              fabs(res_norm) < rtol * fabs(init_norm)) {
+            solve_flag = true;
+            break;
+          }
+        }
+      }
+
+      if (solve_flag) {
+        break;
+      }
+    }
+
+    return solve_flag;
+  }
+
+  /*
+    Apply one cycle of multigrid with the right-hand-side b and the non-zero
+    solution x.
+  */
+  void applyMg(MultiArray<T, CLayout<M>>& b_, MultiArray<T, CLayout<M>>& x_) {
+    // Set temporary variables
+    MultiArray<T, CLayout<M>>* bt = b;
+    MultiArray<T, CLayout<M>>* xt = x;
+    b = &b_;
+    x = &x_;
+    bool zero_solution = false;
+    applyMg();
+    b = bt;
+    x = xt;
+  }
+
+  /*
+    Apply the multigrid cycle as a preconditioner. This will overwrite
+    whatever entries are in x.
+  */
+  void applyFactor(MultiArray<T, CLayout<M>>& b_,
+                   MultiArray<T, CLayout<M>>& x_) {
+    // Set temporary variables
+    MultiArray<T, CLayout<M>>* bt = b;
+    MultiArray<T, CLayout<M>>* xt = x;
+    b = &b_;
+    x = &x_;
+    bool zero_solution = true;
+    applyMg(zero_solution);
+    b = bt;
+    x = xt;
+  }
+
+ private:
+  // Private constructor for initializing the class
+  BSRMatAmg(T omega)
+      : omega(omega),
+        rho(0.0),
+        scale(0.0),
+        level(-1),
+        A(NULL),
+        B(NULL),
+        P(NULL),
+        PT(NULL),
+        Dinv(NULL),
+        Afact(NULL),
+        x(NULL),
+        b(NULL),
+        r(NULL),
+        next(NULL) {}
+
+  // Declare a friend since the template parameters may be different at
+  // different levels
+  template <typename UI, typename UT, index_t UM, index_t UN>
+  friend class BSRMatAmg;
+
+  // Make the different multigrid levels
   void makeAmgLevels(int _level, int num_levels, bool print_info) {
+    // Set the multigrid level
     level = _level;
 
     if (level == num_levels - 1) {
@@ -396,7 +579,7 @@ class BSRMatAmgLevelData {
         b = new MultiArray<T, CLayout<M>>(layout);
       }
 
-      next = new BSRMatAmgLevelData<I, T, N, N>(omega);
+      next = new BSRMatAmg<I, T, N, N>(omega);
       BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
                                          &(next->A), &(next->B), &rho);
       if (print_info) {
@@ -415,26 +598,29 @@ class BSRMatAmgLevelData {
     }
   }
 
-  void applyMg() {
+  void applyMg(bool zero_solution = false) {
     if (Afact) {
       BSRMatApplyFactor(*Afact, *b, *x);
     } else {
       // Pre-smooth with either a zero or non-zero x
-      if (level == 0) {
-        BSRApplySOR(*Dinv, *A, omega, *b, *x);
-      } else {
+      if (zero_solution) {
         BSRApplySORZero(*Dinv, *A, omega, *b, *x);
+      } else {
+        BSRApplySOR(*Dinv, *A, omega, *b, *x);
       }
 
       // Compute the residuals r = b - A * x
       r->copy(*b);
       BSRMatVecMultSub(*A, *x, *r);
 
+      // Now zero the solution on all subsequent levels
+      zero_solution = true;
+
       // Restrict the residual to the next lowest level
       BSRMatVecMult(*PT, *r, *next->b);
 
       // Apply multigrid on the next lowest level
-      next->applyMg();
+      next->applyMg(zero_solution);
 
       // Interpolate up from the next lowest grid level
       BSRMatVecMultAdd(*P, *next->x, *x);
@@ -471,7 +657,7 @@ class BSRMatAmgLevelData {
   MultiArray<T, CLayout<M>>* b;
   MultiArray<T, CLayout<M>>* r;
 
-  BSRMatAmgLevelData<I, T, N, N>* next;
+  BSRMatAmg<I, T, N, N>* next;
 };
 
 }  // namespace A2D

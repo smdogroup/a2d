@@ -219,7 +219,7 @@ class MultiArray {
     Zero all elements in the array
   */
   void zero() {
-    index_t len = layout.get_size();
+    const index_t len = layout.get_size();
     std::fill(data, data + len, T(0));
   }
 
@@ -227,15 +227,36 @@ class MultiArray {
     Copy elements from the source to this vector
   */
   void copy(MultiArray<T, Layout>& src) {
-    index_t len = layout.get_size();
-    std::copy(src.data, src.data + src.layout.get_size(), data);
+    const index_t len = layout.get_size();
+    std::copy(src.data, src.data + len, data);
   }
 
   /*
     Take the dot product with the source vector data
   */
   T dot(MultiArray<T, Layout>& src) {
-    return std::inner_product(data, data + layout.get_size(), src.data, T(0));
+    const index_t len = layout.get_size();
+    return std::inner_product(data, data + len, src.data, T(0));
+  }
+
+  /*
+    Axpy: this = alpha * x + this
+  */
+  void axpy(T alpha, MultiArray<T, Layout>& x) {
+    const index_t len = layout.get_size();
+    for (index_t i = 0; i < len; i++) {
+      data[i] += alpha * x.data[i];
+    }
+  }
+
+  /*
+    Axpby: this = alpha * x + beta * this
+  */
+  void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
+    const index_t len = layout.get_size();
+    for (index_t i = 0; i < len; i++) {
+      data[i] = alpha * x.data[i] + beta * data[i];
+    }
   }
 
  private:

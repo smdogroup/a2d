@@ -414,6 +414,10 @@ class BSRMatAmg {
       }
 
       if (fabs(res_norm) < atol || fabs(res_norm) < rtol * fabs(init_norm)) {
+        if (monitor && !((iter + 1) % monitor == 0)) {
+          std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
+                    << "]: " << std::setw(15) << res_norm << std::endl;
+        }
         solve_flag = true;
         break;
       }
@@ -423,7 +427,10 @@ class BSRMatAmg {
   }
 
   /*
-    Apply the preconditioned conjugate gradient method
+    Apply the preconditioned conjugate gradient method.
+
+    This uses the variant of PCG from the paper "Inexact Preconditioned
+    Conjugate Gradient Method with Inner-Outer Iteration" by Golub and Ye.
   */
   bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
@@ -458,15 +465,14 @@ class BSRMatAmg {
         // Set P = Z
         P.copy(Z);
 
+        // Compute rz = (R, Z)
+        T rz = R.dot(Z);
+
         for (I i = 0; i < iters_per_reset && iter < max_iters; i++, iter++) {
-          BSRMatVecMult(*A, P, work);    // work = A * P
-          T temp = R.dot(Z);             // temp = (R, Z)
-          T alpha = temp / work.dot(P);  // alpha = (R, Z)/(A * P, P)
-          xk.axpy(alpha, P);             // x = x + alpha * P
-          R.axpy(-alpha, work);          // R' = R - alpha * A * P
-          applyFactor(R, Z);             // Z' = M^{-1} * R
-          T beta = R.dot(Z) / temp;      // beta = (R', Z')/(R, Z)
-          P.axpby(1.0, beta, Z);         // P' = Z' + beta * P
+          BSRMatVecMult(*A, P, work);  // work = A * P
+          T alpha = rz / work.dot(P);  // alpha = (R, Z)/(A * P, P)
+          xk.axpy(alpha, P);           // x = x + alpha * P
+          R.axpy(-alpha, work);        // R' = R - alpha * A * P
 
           T res_norm = std::sqrt(R.dot(R));
 
@@ -477,9 +483,22 @@ class BSRMatAmg {
 
           if (fabs(res_norm) < atol ||
               fabs(res_norm) < rtol * fabs(init_norm)) {
+            if (monitor && !((iter + 1) % monitor == 0)) {
+              std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
+                        << "]: " << std::setw(15) << res_norm << std::endl;
+            }
+
             solve_flag = true;
             break;
           }
+
+          applyFactor(R, work);             // work = Z' = M^{-1} * R
+          T rz_new = R.dot(work);           // rz_new = (R', Z')
+          T rz_old = R.dot(Z);              // rz_old = (R', Z)
+          T beta = (rz_new - rz_old) / rz;  // beta = (R', Z' - Z)/(R, Z)
+          P.axpby(1.0, beta, work);         // P' = Z' + beta * P
+          Z.copy(work);                     // Z <- Z'
+          rz = rz_new;                      // rz <- (R', Z')
         }
       }
 

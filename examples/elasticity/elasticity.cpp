@@ -277,9 +277,9 @@ int main(int argc, char* argv[]) {
   solution.zero();
 
   IndexType monitor = 5;
-  IndexType max_iters = 50;
+  IndexType max_iters = 80;
   amg->cg(residual, solution, monitor, max_iters);
-  // amg->mg(residual, solution, monitor, max_iters);
+  amg->mg(residual, solution, monitor, max_iters);
 
   return (0);
 }

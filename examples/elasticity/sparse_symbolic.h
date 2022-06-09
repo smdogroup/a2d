@@ -44,6 +44,69 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
   }
   nnodes++;
 
+  // Insert all the nodes into the node set
+  std::set<std::pair<I, I>> node_set;
+  for (I i = 0; i < nelems; i++) {
+    for (I j1 = 0; j1 < conn.extent(1); j1++) {
+      for (I j2 = 0; j2 < conn.extent(1); j2++) {
+        node_set.insert(std::pair<I, I>(conn(i, j1), conn(i, j2)));
+      }
+    }
+  }
+
+  // Find the number of nodes referenced by other nodes
+  std::vector<I> rowp(nnodes + 1);
+
+  typename std::set<std::pair<I, I>>::iterator it;
+  for (it = node_set.begin(); it != node_set.end(); it++) {
+    rowp[it->first + 1] += 1;
+  }
+
+  // Set the pointer into the rows
+  rowp[0] = 0;
+  for (I i = 0; i < nnodes; i++) {
+    rowp[i + 1] += rowp[i];
+  }
+
+  I nnz = rowp[nnodes];
+  std::vector<I> cols(nnz);
+
+  for (it = node_set.begin(); it != node_set.end(); it++) {
+    cols[rowp[it->first]] = it->second;
+    rowp[it->first]++;
+  }
+
+  // Reset the pointer into the nodes
+  for (I i = nnodes; i > 0; i--) {
+    rowp[i] = rowp[i - 1];
+  }
+  rowp[0] = 0;
+
+  // Sort the cols array
+  SortCSRData(nnodes, rowp, cols);
+
+  BSRMat<I, T, M, M>* A =
+      new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
+
+  return A;
+}
+
+template <typename I, typename T, index_t M, class ConnArray>
+BSRMat<I, T, M, M>* BSRMatFromConnectivityDeprecated(ConnArray& conn) {
+  // Set the number of elements
+  I nelems = conn.extent(0);
+
+  // Find the number of nodes
+  I nnodes = 0;
+  for (I i = 0; i < conn.extent(0); i++) {
+    for (I j = 0; j < conn.extent(1); j++) {
+      if (conn(i, j) > nnodes) {
+        nnodes = conn(i, j);
+      }
+    }
+  }
+  nnodes++;
+
   // Create data to store node -> element connectivity
   std::vector<I> node_to_elem_ptr(nnodes + 1);
   for (I i = 0; i < conn.extent(0); i++) {
@@ -99,69 +162,6 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
   }
 
   I nnz = rowp[nnodes];
-
-  BSRMat<I, T, M, M>* A =
-      new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
-
-  return A;
-}
-
-template <typename I, typename T, index_t M, class ConnArray>
-BSRMat<I, T, M, M>* BSRMatFromConnectivity2(ConnArray& conn) {
-  // Set the number of elements
-  I nelems = conn.extent(0);
-
-  // Find the number of nodes
-  I nnodes = 0;
-  for (I i = 0; i < conn.extent(0); i++) {
-    for (I j = 0; j < conn.extent(1); j++) {
-      if (conn(i, j) > nnodes) {
-        nnodes = conn(i, j);
-      }
-    }
-  }
-  nnodes++;
-
-  // Insert all the nodes into the node set
-  std::set<std::pair<I, I>> node_set;
-  for (I i = 0; i < nelems; i++) {
-    for (I j1 = 0; j1 < conn.extent(1); j1++) {
-      for (I j2 = 0; j2 < conn.extent(1); j2++) {
-        node_set.insert(std::pair<I, I>(conn(i, j1), conn(i, j2)));
-      }
-    }
-  }
-
-  // Find the number of nodes referenced by other nodes
-  std::vector<I> rowp(nnodes + 1);
-
-  typename std::set<std::pair<I, I>>::iterator it;
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    rowp[it->first + 1] += 1;
-  }
-
-  // Set the pointer into the rows
-  rowp[0] = 0;
-  for (I i = 0; i < nnodes; i++) {
-    rowp[i + 1] += rowp[i];
-  }
-
-  I nnz = rowp[nnodes];
-  std::vector<I> cols(nnz);
-
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    cols[rowp[it->first]] = it->second;
-    rowp[it->first]++;
-  }
-
-  // Reset the pointer into the nodes
-  for (I i = nnodes; i > 0; i--) {
-    rowp[i] = rowp[i - 1];
-  }
-  rowp[0] = 0;
-
-  // Sort the cols array
-  SortCSRData(nnodes, rowp, cols);
 
   BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);

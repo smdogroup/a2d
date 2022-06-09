@@ -224,6 +224,14 @@ class MultiArray {
   }
 
   /*
+    Fill all the values in the array with the specified value
+  */
+  void fill(T value) {
+    const index_t len = layout.get_size();
+    std::fill(data, data + len, value);
+  }
+
+  /*
     Copy elements from the source to this vector
   */
   void copy(MultiArray<T, Layout>& src) {

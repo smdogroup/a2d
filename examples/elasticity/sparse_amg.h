@@ -1,6 +1,9 @@
 #ifndef SPARSE_AMG_H
 #define SPARSE_AMG_H
 
+#include <iomanip>
+#include <iostream>
+
 #include "block_numeric.h"
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"

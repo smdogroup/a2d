@@ -6,20 +6,25 @@
 #include "model.h"
 #include "multiarray.h"
 
+namespace A2D {
+
 template <class IdxType, class ScalarType, class Basis>
-class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
+class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> {
  public:
   // Finite-element basis class
   static const int NUM_VARS = 1;  // Number of variables per node
   static const int NUM_DATA = 1;  // Data points per quadrature point
 
   // Short cut for base class name
-  typedef PDEModel<IdxType, ScalarType, Basis, 1, 1> base;
+  typedef PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> base;
 
-  HelmholtzPDE(const int nelems, const int nnodes)
-      : PDEModel<IdxType, ScalarType, Basis, 1, 1>(nelems, nnodes) {}
+  HelmholtzPDE(const int nelems, const int nnodes, const int nbcs)
+      : PDEModel<IdxType, ScalarType, Basis, 1, 1, 1>(nelems, nnodes, nbcs) {
+    typename base::NullSpaceArray& B = this->get_null_space();
+    B.fill(1.0);
+  }
 
-  void add_residuals(typename base::SolutionArray& res) {
+  void add_residual(typename base::SolutionArray& res) {
     // Get data for computing the residuals
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
@@ -36,10 +41,12 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
         data, detJ, Uq, elem_res);
 
     typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
     element_gather_add(conn, elem_res, res);
+    A2D::VecZeroBCRows(bcs, res);
   }
 
-  void add_jacobians() {
+  void add_jacobian(typename base::SparseMat& J) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -53,6 +60,11 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
     Basis::template jacobians<ScalarType,
                               HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
         data, detJ, Uq, elem_jac);
+
+    typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
+    A2D::BSRMatAddElementMatrices(conn, elem_jac, J);
+    A2D::BSRMatZeroBCRows(bcs, J);
   }
 
   class Impl {
@@ -141,5 +153,7 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1> {
     }
   };
 };
+
+}  // namespace A2D
 
 #endif  // HELMHOLTZ_3D_H

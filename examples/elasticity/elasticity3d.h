@@ -6,19 +6,57 @@
 #include "model.h"
 #include "multiarray.h"
 
+namespace A2D {
+
 template <class IdxType, class ScalarType, class Basis>
 class NonlinearElasticity3D
-    : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
+    : public PDEModel<IdxType, ScalarType, Basis, 3, 2, 6> {
  public:
   // Finite-element basis class
   static const int NUM_VARS = 3;  // Number of variables per node
   static const int NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
-  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2> base;
+  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2, 6> base;
 
-  NonlinearElasticity3D(const int nelems, const int nnodes)
-      : PDEModel<IdxType, ScalarType, Basis, 3, 2>(nelems, nnodes) {}
+  NonlinearElasticity3D(const int nelems, const int nnodes, const int nbcs)
+      : PDEModel<IdxType, ScalarType, Basis, 3, 2, 6>(nelems, nnodes, nbcs) {}
+
+  void reset_nodes() {
+    typename base::ConnArray& conn = this->get_conn();
+    typename base::NodeArray& X = this->get_nodes();
+    typename base::ElemNodeArray& Xe = this->get_elem_nodes();
+    typename base::QuadNodeArray& Xq = this->get_quad_nodes();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::NullSpaceArray& B = this->get_null_space();
+
+    element_scatter(conn, X, Xe);
+    Basis::template interp<base::spatial_dim>(Xe, Xq);
+    Basis::template compute_jtrans<ScalarType>(Xe, detJ, Jinv);
+
+    B.zero();
+    for (IdxType i = 0; i < this->nnodes; i++) {
+      B(i, 0, 0) = 1.0;
+      B(i, 1, 1) = 1.0;
+      B(i, 2, 2) = 1.0;
+
+      // Rotation about the x-axis
+      B(i, 1, 3) = X(i, 2);
+      B(i, 2, 3) = -X(i, 1);
+
+      // Rotation about the y-axis
+      B(i, 0, 4) = X(i, 2);
+      B(i, 2, 4) = -X(i, 0);
+
+      // Rotation about the z-axis
+      B(i, 0, 5) = X(i, 1);
+      B(i, 1, 5) = -X(i, 0);
+    }
+
+    typename base::BCsArray& bcs = this->get_bcs();
+    A2D::VecZeroBCRows(bcs, B);
+  }
 
   ScalarType energy() {
     ScalarType engry;
@@ -34,7 +72,7 @@ class NonlinearElasticity3D
     return engry;
   }
 
-  void add_residuals(typename base::SolutionArray& res) {
+  void add_residual(typename base::SolutionArray& res) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -46,10 +84,12 @@ class NonlinearElasticity3D
         data, detJ, Jinv, Uxi, elem_res);
 
     typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
     element_gather_add(conn, elem_res, res);
+    A2D::VecZeroBCRows(bcs, res);
   }
 
-  void add_jacobians() {
+  void add_jacobian(typename base::SparseMat& J) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -59,6 +99,11 @@ class NonlinearElasticity3D
     Basis::template jacobians<
         ScalarType, NonlinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
         data, detJ, Jinv, Uxi, elem_jac);
+
+    typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
+    A2D::BSRMatAddElementMatrices(conn, elem_jac, J);
+    A2D::BSRMatZeroBCRows(bcs, J);
   }
 
   class Impl {
@@ -250,17 +295,54 @@ class NonlinearElasticity3D
 };
 
 template <class IdxType, class ScalarType, class Basis>
-class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
+class LinearElasticity3D
+    : public PDEModel<IdxType, ScalarType, Basis, 3, 2, 6> {
  public:
   // Finite-element basis class
   static const int NUM_VARS = 3;  // Number of variables per node
   static const int NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
-  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2> base;
+  typedef PDEModel<IdxType, ScalarType, Basis, 3, 2, 6> base;
 
-  LinearElasticity3D(const int nelems, const int nnodes)
-      : PDEModel<IdxType, ScalarType, Basis, 3, 2>(nelems, nnodes) {}
+  LinearElasticity3D(const int nelems, const int nnodes, const int nbcs)
+      : PDEModel<IdxType, ScalarType, Basis, 3, 2, 6>(nelems, nnodes, nbcs) {}
+
+  void reset_nodes() {
+    typename base::ConnArray& conn = this->get_conn();
+    typename base::NodeArray& X = this->get_nodes();
+    typename base::ElemNodeArray& Xe = this->get_elem_nodes();
+    typename base::QuadNodeArray& Xq = this->get_quad_nodes();
+    typename base::QuadDetArray& detJ = this->get_detJ();
+    typename base::QuadJtransArray& Jinv = this->get_Jinv();
+    typename base::NullSpaceArray& B = this->get_null_space();
+
+    element_scatter(conn, X, Xe);
+    Basis::template interp<base::spatial_dim>(Xe, Xq);
+    Basis::template compute_jtrans<ScalarType>(Xe, detJ, Jinv);
+
+    B.zero();
+    for (IdxType i = 0; i < this->nnodes; i++) {
+      B(i, 0, 0) = 1.0;
+      B(i, 1, 1) = 1.0;
+      B(i, 2, 2) = 1.0;
+
+      // Rotation about the x-axis
+      B(i, 1, 3) = X(i, 2);
+      B(i, 2, 3) = -X(i, 1);
+
+      // Rotation about the y-axis
+      B(i, 0, 4) = X(i, 2);
+      B(i, 2, 4) = -X(i, 0);
+
+      // Rotation about the z-axis
+      B(i, 0, 5) = X(i, 1);
+      B(i, 1, 5) = -X(i, 0);
+    }
+
+    typename base::BCsArray& bcs = this->get_bcs();
+    A2D::VecZeroBCRows(bcs, B);
+  }
 
   ScalarType energy() {
     ScalarType engry;
@@ -276,7 +358,7 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
     return engry;
   }
 
-  void add_residuals(typename base::SolutionArray& res) {
+  void add_residual(typename base::SolutionArray& res) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -288,10 +370,12 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
         data, detJ, Jinv, Uxi, elem_res);
 
     typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
     element_gather_add(conn, elem_res, res);
+    A2D::VecZeroBCRows(bcs, res);
   }
 
-  void add_jacobians() {
+  void add_jacobian(typename base::SparseMat& J) {
     typename base::QuadDataArray& data = this->get_quad_data();
     typename base::QuadDetArray& detJ = this->get_detJ();
     typename base::QuadJtransArray& Jinv = this->get_Jinv();
@@ -301,6 +385,11 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
     Basis::template jacobians<
         ScalarType, LinearElasticity3D<IdxType, ScalarType, Basis>::Impl>(
         data, detJ, Jinv, Uxi, elem_jac);
+
+    typename base::ConnArray& conn = this->get_conn();
+    typename base::BCsArray& bcs = this->get_bcs();
+    A2D::BSRMatAddElementMatrices(conn, elem_jac, J);
+    A2D::BSRMatZeroBCRows(bcs, J);
   }
 
   class Impl {
@@ -405,5 +494,7 @@ class LinearElasticity3D : public PDEModel<IdxType, ScalarType, Basis, 3, 2> {
     }
   };
 };
+
+}  // namespace A2D
 
 #endif  // ELASTICITY_3D_H

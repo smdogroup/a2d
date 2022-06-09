@@ -3,6 +3,12 @@
 
 #include "a2dtmp.h"
 #include "multiarray.h"
+#include "sparse_amg.h"
+#include "sparse_matrix.h"
+#include "sparse_numeric.h"
+#include "sparse_symbolic.h"
+
+namespace A2D {
 
 /*
   Scatter the variables stored at the nodes to the a data structure
@@ -44,15 +50,19 @@ void element_gather_add(ConnArray& conn, ElementArray& Xe, NodeArray& X) {
   }
 }
 
-template <class IdxType, class ScalarType, class Basis, int vars_per_node,
-          int data_per_point>
+template <typename I, typename T, class Basis, int vars_per_node,
+          int data_per_point, int null_space_size>
 class PDEModel {
  public:
-  PDEModel(const A2D::index_t nelems, const A2D::index_t nnodes)
+  PDEModel(const A2D::index_t nelems, const A2D::index_t nnodes,
+           const A2D::index_t nbcs)
       : nelems(nelems),
         nnodes(nnodes),
+        nbcs(nbcs),
         conn_layout(nelems),
         node_layout(nnodes),
+        bcs_layout(nbcs),
+        null_space_layout(nnodes),
         solution_layout(nnodes),
         elem_node_layout(nelems),
         elem_soln_layout(nelems),
@@ -66,6 +76,8 @@ class PDEModel {
         jac_layout(nelems) {
     // Allocate the connectivity
     conn_ = new ConnArray(conn_layout);
+    bcs_ = new BCsArray(bcs_layout);
+    B_ = new NullSpaceArray(null_space_layout);
 
     // Node location information
     X_ = new NodeArray(node_layout);
@@ -74,30 +86,14 @@ class PDEModel {
     detJ_ = new QuadDetArray(quad_detJ_layout);
     Jinv_ = new QuadJtransArray(quad_jtrans_layout);
 
-    // // Derivatives with respect to node locations
-    // dfdX_ = new NodeArray(node_layout);
-    // dfdXe_ = new ElemNodeArray(elem_node_layout);
-    // dfdXq_ = new QuadNodeArray(quad_node_layout);
-    // dfddetJ_ = new QuadDetArray(quad_detJ_layout);
-    // dfdJinv_ = new QuadJtransArray(quad_jtrans_layout);
-
     // Solution information
     U_ = new SolutionArray(solution_layout);
     Ue_ = new ElemSolnArray(elem_soln_layout);
     Uq_ = new QuadSolnArray(quad_soln_layout);
     Uxi_ = new QuadGradArray(quad_grad_layout);
 
-    // // Adjoint information
-    // Psi_ = new SolutionArray(solution_layout);
-    // Psie_ = new ElemSolnArray(elem_soln_layout);
-    // Psiq_ = new QuadSolnArray(quad_soln_layout);
-    // Psixi_ = new QuadGradArray(quad_grad_layout);
-
     // Material data
     data_ = new QuadDataArray(quad_data_layout);
-
-    // // Derivatives with respect to material data
-    // dfddata_ = new QuadDataArray(quad_data_layout);
 
     // Residual data
     res_ = new ElemResArray(res_layout);
@@ -105,6 +101,8 @@ class PDEModel {
   }
   ~PDEModel() {
     delete conn_;
+    delete bcs_;
+    delete B_;
     delete X_;
     delete Xe_;
     delete Xq_;
@@ -114,29 +112,31 @@ class PDEModel {
     delete Ue_;
     delete Uq_;
     delete Uxi_;
-    // delete Psi_;
-    // delete Psie_;
-    // delete Psiq_;
-    // delete Psixi_;
     delete data_;
     delete res_;
     delete jac_;
   }
 
-  const int nelems;  // Number of elements in the model
-  const int nnodes;  // Number of nodes in the model
+  const index_t nelems;  // Number of elements in the model
+  const index_t nnodes;  // Number of nodes in the model
+  const index_t nbcs;    // Number of nodes with Dirichlet bcs
 
-  // static const int vars_per_node = Model::NUM_VARS;
-  // static const int data_per_point = Model::NUM_DATA;
+  static const index_t vpn = vars_per_node;
+  static const index_t dpp = data_per_point;
+  static const index_t nss = null_space_size;
 
-  static const int spatial_dim = Basis::SPATIAL_DIM;
-  static const int nodes_per_elem = Basis::NUM_NODES;
-  static const int quad_pts_per_elem = Basis::quadrature::NUM_QUAD_PTS;
+  static const index_t spatial_dim = Basis::SPATIAL_DIM;
+  static const index_t nodes_per_elem = Basis::NUM_NODES;
+  static const index_t quad_pts_per_elem = Basis::quadrature::NUM_QUAD_PTS;
 
   // Basic layouts
   typedef A2D::CLayout<nodes_per_elem> ConnLayout;
+  typedef A2D::CLayout<2> BCsLayout;
   typedef A2D::CLayout<spatial_dim> NodeLayout;
   typedef A2D::CLayout<vars_per_node> SolutionLayout;
+
+  // Near null space layout - for the AMG preconditioner
+  typedef A2D::CLayout<vars_per_node, null_space_size> NullSpaceLayout;
 
   // Layouts with element view
   typedef A2D::CLayout<nodes_per_elem, spatial_dim> ElemNodeLayout;
@@ -158,28 +158,36 @@ class PDEModel {
                        vars_per_node>
       JacLayout;
 
-  // Typedef the array types
-  typedef A2D::MultiArray<IdxType, ConnLayout> ConnArray;
+  // Jacobian matrix
+  typedef A2D::BSRMat<I, T, vars_per_node, vars_per_node> SparseMat;
 
-  typedef A2D::MultiArray<ScalarType, NodeLayout> NodeArray;
-  typedef A2D::MultiArray<ScalarType, ElemNodeLayout> ElemNodeArray;
-  typedef A2D::MultiArray<ScalarType, QuadNodeLayout> QuadNodeArray;
-  typedef A2D::MultiArray<ScalarType, QuadDetLayout> QuadDetArray;
-  typedef A2D::MultiArray<ScalarType, QuadJtransLayout> QuadJtransArray;
+  // Sparse matrix multigrid type
+  typedef A2D::BSRMatAmg<I, T, vars_per_node, null_space_size> SparseAmg;
+
+  // Typedef the array types
+  typedef A2D::MultiArray<I, ConnLayout> ConnArray;
+  typedef A2D::MultiArray<I, BCsLayout> BCsArray;
+  typedef A2D::MultiArray<T, NodeLayout> NodeArray;
+  typedef A2D::MultiArray<T, ElemNodeLayout> ElemNodeArray;
+  typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
+  typedef A2D::MultiArray<T, QuadNodeLayout> QuadNodeArray;
+  typedef A2D::MultiArray<T, QuadDetLayout> QuadDetArray;
+  typedef A2D::MultiArray<T, QuadJtransLayout> QuadJtransArray;
 
   // Solution information
-  typedef A2D::MultiArray<ScalarType, SolutionLayout> SolutionArray;
-  typedef A2D::MultiArray<ScalarType, ElemSolnLayout> ElemSolnArray;
-  typedef A2D::MultiArray<ScalarType, QuadSolnLayout> QuadSolnArray;
-  typedef A2D::MultiArray<ScalarType, QuadGradLayout> QuadGradArray;
+  typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
+  typedef A2D::MultiArray<T, ElemSolnLayout> ElemSolnArray;
+  typedef A2D::MultiArray<T, QuadSolnLayout> QuadSolnArray;
+  typedef A2D::MultiArray<T, QuadGradLayout> QuadGradArray;
 
   // Material data
-  typedef A2D::MultiArray<ScalarType, QuadDataLayout> QuadDataArray;
+  typedef A2D::MultiArray<T, QuadDataLayout> QuadDataArray;
 
   // Residual data
-  typedef A2D::MultiArray<ScalarType, ResLayout> ElemResArray;
-  typedef A2D::MultiArray<ScalarType, JacLayout> ElemJacArray;
+  typedef A2D::MultiArray<T, ResLayout> ElemResArray;
+  typedef A2D::MultiArray<T, JacLayout> ElemJacArray;
 
+  // Create a new solution/residual vector
   SolutionArray* new_solution() { return new SolutionArray(solution_layout); }
   ElemSolnArray* new_elem_solution() {
     return new ElemSolnArray(elem_soln_layout);
@@ -187,24 +195,40 @@ class PDEModel {
 
   ConnArray& get_conn() { return *conn_; }
   NodeArray& get_nodes() { return *X_; }
-  void reset_nodes() {
+  BCsArray& get_bcs() { return *bcs_; }
+  NullSpaceArray& get_null_space() { return *B_; }
+  virtual void reset_nodes() {
     element_scatter(*conn_, *X_, *Xe_);
     Basis::template interp<spatial_dim>(*Xe_, *Xq_);
-    Basis::template compute_jtrans<ScalarType>(*Xe_, *detJ_, *Jinv_);
+    Basis::template compute_jtrans<T>(*Xe_, *detJ_, *Jinv_);
   }
 
   SolutionArray& get_solution() { return *U_; }
   void reset_solution() {
     element_scatter(*conn_, *U_, *Ue_);
     Basis::template interp<vars_per_node>(*Ue_, *Uq_);
-    Basis::template gradient<ScalarType, vars_per_node>(*Ue_, *Uxi_);
+    Basis::template gradient<T, vars_per_node>(*Ue_, *Uxi_);
   }
 
   QuadDataArray& get_quad_data() { return *data_; }
-  ElemResArray& get_elem_res() { return *res_; }
-  ElemJacArray& get_elem_jac() { return *jac_; }
+
+  // Get a new matrix
+  SparseMat* new_matrix() {
+    return A2D::BSRMatFromConnectivity<I, T, vars_per_node>(*conn_);
+  }
+
+  // With a matrix, create a preconditioner. Note that the entries
+  // in the matrix must be filled at this point, e.g. after a call to
+  // add_jacobian
+  SparseAmg* new_amg(int num_levels, double omega, SparseMat* mat,
+                     bool print_info = false) {
+    NullSpaceArray& B = get_null_space();
+    return new SparseAmg(num_levels, omega, mat, &B, print_info);
+  }
 
  protected:
+  ElemResArray& get_elem_res() { return *res_; }
+  ElemJacArray& get_elem_jac() { return *jac_; }
   ElemNodeArray& get_elem_nodes() { return *Xe_; }
   QuadNodeArray& get_quad_nodes() { return *Xq_; }
   QuadDetArray& get_detJ() { return *detJ_; }
@@ -218,6 +242,8 @@ class PDEModel {
   ConnLayout conn_layout;
   NodeLayout node_layout;
   SolutionLayout solution_layout;
+  BCsLayout bcs_layout;
+  NullSpaceLayout null_space_layout;
 
   // Layout instances with element view
   ElemNodeLayout elem_node_layout;
@@ -239,6 +265,10 @@ class PDEModel {
 
   // Instances of the multi-dimensional arrays
   ConnArray* conn_;
+  BCsArray* bcs_;
+
+  // Near null space array
+  NullSpaceArray* B_;
 
   // Node location information
   NodeArray* X_;
@@ -253,12 +283,6 @@ class PDEModel {
   QuadSolnArray* Uq_;
   QuadGradArray* Uxi_;
 
-  // Adjoint information
-  SolutionArray* Psi_;
-  ElemSolnArray* Psie_;
-  QuadSolnArray* Psiq_;
-  QuadGradArray* Psixi_;
-
   // Material data
   QuadDataArray* data_;
 
@@ -266,5 +290,7 @@ class PDEModel {
   ElemResArray* res_;
   ElemJacArray* jac_;
 };
+
+}  // namespace A2D
 
 #endif  // A2D_MODEL_H

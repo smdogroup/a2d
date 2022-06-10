@@ -13,8 +13,6 @@
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
 
-// #define USE_COMPLEX
-
 using namespace A2D;
 
 /*
@@ -22,13 +20,10 @@ using namespace A2D;
   arrays
 */
 int main(int argc, char* argv[]) {
-  typedef A2D::index_t IndexType;
-  typedef double ScalarType;
-  typedef HexQuadrature Quadrature;
-  typedef HexBasis<HexQuadrature> Basis;
-  typedef HelmholtzPDE<IndexType, ScalarType, Basis> Model;
-  // typedef NonlinearElasticity3D<IndexType, ScalarType, Basis> Model;
-  // typedef LinearElasticity3D<IndexType, ScalarType, Basis> Model;
+  typedef index_t I;
+  typedef double T;
+  typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
+  typedef ElasticityPDE<I, T> PDE;
 
   const index_t nx = 64;
   const index_t ny = 64;
@@ -36,34 +31,14 @@ int main(int argc, char* argv[]) {
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
-  const index_t vars_per_node = Model::NUM_VARS;
-  const index_t nodes_per_elem = Basis::NUM_NODES;
 
-  Model model(nelems, nnodes, nbcs);
+  FEModel<I, T, PDE> model(nnodes, nbcs);
+  LinElasticityElement3D<I, T, Basis> element(nelems);
 
-  typename Model::base::ConnArray& conn = model.get_conn();
-  typename Model::base::BCsArray& bcs = model.get_bcs();
-  typename Model::base::NodeArray& X = model.get_nodes();
-  typename Model::base::SolutionArray& U = model.get_solution();
-
-  // Create a new solution array
-  typename Model::base::SolutionArray& P = *model.new_solution();
-  typename Model::base::ElemSolnArray& Pe = *model.new_elem_solution();
-
-  // Residual vector
-  typename Model::base::SolutionArray& residual = *model.new_solution();
-  typename Model::base::SolutionArray& solution = *model.new_solution();
-  typename Model::base::SolutionArray& res = *model.new_solution();
-
-#ifdef USE_COMPLEX
-  double dh = 1e-30;
-  ScalarType perturb = ScalarType(0.0, dh);
-#else
-  double dh = 1e-6;
-  ScalarType perturb = dh;
-#endif  // USE_COMPLEX
+  model.add_element(&element);
 
   // Set the boundary conditions
+  auto bcs = model.get_bcs();
   index_t index = 0;
   for (int k = 0; k < nz + 1; k++) {
     for (int j = 0; j < ny + 1; j++) {
@@ -79,20 +54,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Set the node locations
-  for (int k = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++) {
-      for (int i = 0; i < nx + 1; i++) {
-        int node = i + (nx + 1) * (j + (ny + 1) * k);
-
-        X(node, 0) = 1.0 * i / nx;
-        X(node, 1) = 1.0 * j / ny;
-        X(node, 2) = 1.0 * k / nz;
-      }
-    }
-  }
-
-  // Set the element connectivity
+  // Set the connectivity
+  auto conn = element.get_conn();
   for (int k = 0; k < nz; k++) {
     for (int j = 0; j < ny; j++) {
       for (int i = 0; i < nx; i++) {
@@ -122,8 +85,26 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  typename Model::base::QuadDataArray& data = model.get_quad_data();
+  // Set the node locations
+  auto X = model.get_nodes();
+  for (int k = 0; k < nz + 1; k++) {
+    for (int j = 0; j < ny + 1; j++) {
+      for (int i = 0; i < nx + 1; i++) {
+        int node = i + (nx + 1) * (j + (ny + 1) * k);
 
+        X(node, 0) = 1.0 * i / nx;
+        X(node, 1) = 1.0 * j / ny;
+        X(node, 2) = 1.0 * k / nz;
+      }
+    }
+  }
+
+  // Set the node locations - Note: This must be done after setting the
+  // connectivity!
+  model.set_nodes(X);
+
+  // Set the element data
+  auto data = element.get_quad_data();
   double pt_data[] = {1.23, 2.45};
   for (A2D::index_t i = 0; i < data.extent(0); i++) {
     for (A2D::index_t j = 0; j < data.extent(1); j++) {
@@ -133,14 +114,10 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Now reset the nodes
-  model.reset_nodes();
-
   // Compute the Jacobian matrix
   double t0 = MPI_Wtime();
-  typename Model::base::SparseMat* J = model.new_matrix();
-  J->zero();
-  model.add_jacobian(*J);
+  auto J = model.new_matrix();
+  model.jacobian(*J);
   t0 = MPI_Wtime() - t0;
 
   std::cout << "Jacobian time: " << t0 << std::endl;
@@ -149,31 +126,29 @@ int main(int argc, char* argv[]) {
   int num_levels = 4;
   double omega = 1.333;
   bool print_info = true;
-
-  typename Model::base::SparseAmg* amg =
-      model.new_amg(num_levels, omega, J, print_info);
-
+  auto amg = model.new_amg(num_levels, omega, J, print_info);
   t1 = MPI_Wtime() - t1;
   std::cout << "Set up time for AMG: " << t1 << std::endl;
 
   // Set the residuals and apply the boundary conditions
-  solution.fill(1.0);
-  residual.zero();
-  VecZeroBCRows(bcs, solution);
-  BSRMatVecMult(*J, solution, residual);
+  auto solution = model.new_solution();
+  auto residual = model.new_solution();
+  solution->fill(1.0);
+  residual->zero();
+  BSRMatVecMult(*J, *solution, *residual);
 
   // Set the solution back to zero
-  solution.zero();
+  solution->zero();
 
-  IndexType monitor = 10;
-  IndexType max_iters = 80;
+  index_t monitor = 10;
+  index_t max_iters = 80;
   double t2 = MPI_Wtime();
-  amg->cg(residual, solution, monitor, max_iters);
+  amg->cg(*residual, *solution, monitor, max_iters);
   t2 = MPI_Wtime() - t2;
   std::cout << "Conjugate gradient solution time: " << t2 << std::endl;
 
   double t3 = MPI_Wtime();
-  amg->mg(residual, solution, monitor, max_iters);
+  amg->mg(*residual, *solution, monitor, max_iters);
   t3 = MPI_Wtime() - t3;
   std::cout << "Multigrid solution time: " << t3 << std::endl;
 

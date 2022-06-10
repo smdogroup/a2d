@@ -9,16 +9,22 @@ nnodes = (nx + 1) * (ny + 1) * (nz + 1)
 nelems = nx * ny * nz
 nbcs = (ny + 1) * (nz + 1)
 
-if "helmholtz" in sys.argv:
-    model = example.Helmholtz(nelems, nnodes, nbcs)
-else:
-    model = example.Elasticity(nelems, nnodes, nbcs)
+model = example.ElasticityModel(nnodes, nbcs)
 
 # Get the model data
 bcs = np.array(model.get_bcs(), copy=False)
-conn = np.array(model.get_conn(), copy=False)
-X = np.array(model.get_nodes(), copy=False)
-data = np.array(model.get_quad_data(), copy=False)
+X_ = model.get_nodes()
+X = np.array(X_, copy=False)
+
+# Set up the element
+hex = example.ElasticityHexElement(nelems)
+
+# Add the model to the element
+model.add_element(hex)
+
+# Get the data from the element
+conn = np.array(hex.get_conn(), copy=False)
+data = np.array(hex.get_quad_data(), copy=False)
 
 # Set the node locations
 nodes = np.zeros((nx + 1, ny + 1, nz + 1), dtype=int)
@@ -55,20 +61,17 @@ for k in range(nz + 1):
         bcs[index, 1] = bcs_val
         index += 1
 
-model.reset_nodes()
-
-# Set the model data
-data = np.array(model.get_quad_data(), copy=False)
-
 if data.shape[2] == 2:
     data[:, :, 0] = 1.23
     data[:, :, 1] = 2.45
 else:
     data[:] = 1.0
 
+# Set the nodes
+model.set_nodes(X_)
+
 J = model.new_matrix()
-J.zero()
-model.add_jacobian(J)
+model.jacobian(J)
 
 # Set the AMG information
 num_levels = 4

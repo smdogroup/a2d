@@ -508,69 +508,65 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 
   A2D::Vec<T, M> t;
 
-  for (I i = 0; i < nrows; i++) {
-    // Copy over the values
-    for (I m = 0; m < M; m++) {
-      t(m) = b(i, m);
-    }
+  if (A.perm) {
+    for (I irow = 0; irow < nrows; irow++) {
+      // Find the new permutation of rows
+      I i = A.perm[irow];
 
-    const int jp_end = A.rowp[i + 1];
-    for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-      I j = A.cols[jp];
-
-      if (i != j) {
-        auto xb = MakeSlice(x, j);
-        auto Ab = MakeSlice(A.Avals, jp);
-
-        blockGemvSub<T, M, M>(Ab, xb, t);
+      // Copy over the values
+      for (I m = 0; m < M; m++) {
+        t(m) = b(i, m);
       }
-    }
 
-    // x = (1 - omega) * x + omega * D^{-1} * t
-    auto xb = MakeSlice(x, i);
-    for (I m = 0; m < M; m++) {
-      xb(m) = (1.0 - omega) * xb(m);
-    }
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+        I j = A.cols[jp];
 
-    auto D = MakeSlice(Dinv.Avals, i);
-    blockGemvAddScale<T, M, M>(omega, D, t, xb);
-  }
-}
+        if (i != j) {
+          auto xb = MakeSlice(x, j);
+          auto Ab = MakeSlice(A.Avals, jp);
 
-/*
-  Apply a step of SOR to the system A*x = b for x assumed zero (even if it is
-  not zero).
-*/
-template <typename I, typename T, index_t M>
-void BSRApplySORZero(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
-                     MultiArray<T, CLayout<M>> &b,
-                     MultiArray<T, CLayout<M>> &x) {
-  I nrows = A.nbrows;
-
-  A2D::Vec<T, M> t;
-
-  for (I i = 0; i < nrows; i++) {
-    // Copy over the values
-    for (I m = 0; m < M; m++) {
-      t(m) = b(i, m);
-    }
-
-    const int jp_end = A.rowp[i + 1];
-    for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-      I j = A.cols[jp];
-
-      if (j < i) {
-        auto xb = MakeSlice(x, j);
-        auto Ab = MakeSlice(A.Avals, jp);
-
-        blockGemvSub<T, M, M>(Ab, xb, t);
+          blockGemvSub<T, M, M>(Ab, xb, t);
+        }
       }
-    }
 
-    // x = omega * D^{-1} * t
-    auto xb = MakeSlice(x, i);
-    auto D = MakeSlice(Dinv.Avals, i);
-    blockGemvScale<T, M, M>(omega, D, t, xb);
+      // x = (1 - omega) * x + omega * D^{-1} * t
+      auto xb = MakeSlice(x, i);
+      for (I m = 0; m < M; m++) {
+        xb(m) = (1.0 - omega) * xb(m);
+      }
+
+      auto D = MakeSlice(Dinv.Avals, i);
+      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+    }
+  } else {
+    for (I i = 0; i < nrows; i++) {
+      // Copy over the values
+      for (I m = 0; m < M; m++) {
+        t(m) = b(i, m);
+      }
+
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+        I j = A.cols[jp];
+
+        if (i != j) {
+          auto xb = MakeSlice(x, j);
+          auto Ab = MakeSlice(A.Avals, jp);
+
+          blockGemvSub<T, M, M>(Ab, xb, t);
+        }
+      }
+
+      // x = (1 - omega) * x + omega * D^{-1} * t
+      auto xb = MakeSlice(x, i);
+      for (I m = 0; m < M; m++) {
+        xb(m) = (1.0 - omega) * xb(m);
+      }
+
+      auto D = MakeSlice(Dinv.Avals, i);
+      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+    }
   }
 }
 

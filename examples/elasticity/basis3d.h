@@ -5,58 +5,202 @@
 
 #include "parallel.h"
 
+namespace A2D {
+
 const double GaussQuadPts2[] = {-0.577350269189626, 0.577350269189626};
 const double GaussQuadWts2[] = {1.0, 1.0};
 
-class HexQuadrature {
+class Hex8ptQuadrature {
  public:
-  static const int NUM_QUAD_PTS = 8;
+  static const index_t NUM_QUAD_PTS = 8;
 
-  static unsigned int getNumQuadPoints() { return NUM_QUAD_PTS; }
-  static void getQuadPoint(const int index, double pt[]) {
+  static void getQuadPoint(const index_t index, double pt[]) {
     pt[0] = GaussQuadPts2[index % 2];
     pt[1] = GaussQuadPts2[(index % 4) / 2];
     pt[2] = GaussQuadPts2[index / 4];
   }
-  static double getQuadWeight(const int index) {
+
+  static double getQuadWeight(const index_t index) {
     return (GaussQuadWts2[index % 2] * GaussQuadWts2[(index % 4) / 2] *
             GaussQuadWts2[index / 4]);
   }
 };
 
-template <class Quadrature>
-class HexBasis {
+class HexTriLinear {
  public:
-  static const int NUM_NODES = 8;
-  static const int SPATIAL_DIM = 3;
+  static const index_t NUM_NODES = 8;
+
+  static void evalBasis(const double pt[], double N[]) {
+    N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
+    N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
+    N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
+    N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
+    N[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
+    N[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
+    N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+    N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+  }
+
+  static void evalBasisDeriv(const double pt[], double Nx[], double Ny[],
+                             double Nz[]) {
+    Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+    Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
+    Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+    Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
+    Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+    Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
+    Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+    Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
+
+    Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+    Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+    Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
+    Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
+    Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+    Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+    Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
+    Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
+
+    Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+    Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+    Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+    Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+    Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+    Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+    Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+    Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+  }
+};
+
+const double TetrahedronWts5[] = {-2.0 / 15.0, 3.0 / 40.0};
+const double TetrahedronPts5[] = {
+    0.25,      0.25,      0.25, 1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0, 0.5, 1.0 / 6.0,
+    1.0 / 6.0, 1.0 / 6.0, 0.5,  1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0, 0.5};
+
+class Tetra5ptQuadrature {
+ public:
+  static const index_t NUM_QUAD_PTS = 5;
+
+  static void getQuadPoint(index_t n, double pt[]) {
+    if (n == 0) {
+      pt[0] = TetrahedronPts5[0];
+      pt[1] = TetrahedronPts5[1];
+      pt[2] = TetrahedronPts5[2];
+    } else if (n == 1) {
+      pt[0] = TetrahedronPts5[3];
+      pt[1] = TetrahedronPts5[4];
+      pt[2] = TetrahedronPts5[5];
+    } else if (n == 2) {
+      pt[0] = TetrahedronPts5[6];
+      pt[1] = TetrahedronPts5[7];
+      pt[2] = TetrahedronPts5[8];
+    } else if (n == 3) {
+      pt[0] = TetrahedronPts5[9];
+      pt[1] = TetrahedronPts5[10];
+      pt[2] = TetrahedronPts5[11];
+    } else if (n == 4) {
+      pt[0] = TetrahedronPts5[12];
+      pt[1] = TetrahedronPts5[13];
+      pt[2] = TetrahedronPts5[14];
+    }
+  }
+
+  static double getQuadWeight(index_t n) {
+    if (n == 0) {
+      return TetrahedronWts5[0];
+    } else if (n == 1 || n == 2 || n == 3 || n == 4) {
+      return TetrahedronWts5[1];
+    }
+    return 0.0;
+  }
+};
+
+class TetraQuadraticBasis {
+ public:
+  static const index_t NUM_NODES = 10;
+  static void evalBasis(const double pt[], double N[]) {
+    double l0 = 1.0 - pt[0] - pt[1] - pt[2];
+    double l1 = pt[0];
+    double l2 = pt[1];
+    double l3 = pt[2];
+
+    // Corner nodes
+    N[0] = l0 * (2.0 * l0 - 1.0);
+    N[1] = l1 * (2.0 * l1 - 1.0);
+    N[2] = l2 * (2.0 * l2 - 1.0);
+    N[3] = l3 * (2.0 * l3 - 1.0);
+
+    // Mid-side nodes
+    N[4] = 4.0 * l1 * l0;
+    N[5] = 4.0 * l1 * l2;
+    N[6] = 4.0 * l2 * l0;
+    N[7] = 4.0 * l3 * l0;
+    N[8] = 4.0 * l1 * l3;
+    N[9] = 4.0 * l3 * l2;
+  }
+  static void evalBasisDeriv(const double pt[], double Nx[], double Ny[],
+                             double Nz[]) {
+    Nx[0] = 4.0 * pt[0] + 4.0 * pt[1] + 4.0 * pt[2] - 3.0;
+    Nx[1] = 4.0 * pt[0] - 1.0;
+    Nx[2] = 0.0;
+    Nx[3] = 0.0;
+    Nx[4] = -4.0 * (2.0 * pt[0] + pt[1] + pt[2] - 1.0);
+    Nx[5] = 4.0 * pt[1];
+    Nx[6] = -4.0 * pt[1];
+    Nx[7] = -4.0 * pt[2];
+    Nx[8] = 4.0 * pt[2];
+    Nx[9] = 0.0;
+
+    Ny[0] = 4.0 * pt[0] + 4.0 * pt[1] + 4.0 * pt[2] - 3.0;
+    Ny[1] = 0.0;
+    Ny[2] = 4.0 * pt[1] - 1.0;
+    Ny[3] = 0.0;
+    Ny[4] = -4.0 * pt[0];
+    Ny[5] = 4.0 * pt[0];
+    Ny[6] = -4.0 * (pt[0] + 2.0 * pt[1] + pt[2] - 1.0);
+    Ny[7] = -4.0 * pt[2];
+    Ny[8] = 0.0;
+    Ny[9] = 4.0 * pt[2];
+
+    Nz[0] = 4.0 * pt[0] + 4.0 * pt[1] + 4.0 * pt[2] - 3.0;
+    Nz[1] = 0.0;
+    Nz[2] = 0.0;
+    Nz[3] = 4.0 * pt[2] - 1.0;
+    Nz[4] = -4.0 * pt[0];
+    Nz[5] = 0.0;
+    Nz[6] = -4.0 * pt[1];
+    Nz[7] = -4.0 * (pt[0] + pt[1] + 2.0 * pt[2] - 1.0);
+    Nz[8] = 4.0 * pt[0];
+    Nz[9] = 4.0 * pt[1];
+  }
+};
+
+template <class Basis, class Quadrature>
+class Basis3D {
+ public:
+  static const index_t NUM_NODES = Basis::NUM_NODES;
+  static const index_t SPATIAL_DIM = 3;
   typedef Quadrature quadrature;
 
   /*
     Interpolate from element-oriented data to quadrature point data
   */
-  template <const int num_vars, class ElementArray, class QuadPointArray>
+  template <const index_t num_vars, class ElementArray, class QuadPointArray>
   static void interp(ElementArray& input, QuadPointArray& output) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double N[8];
-      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
-      N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+      double N[Basis::NUM_NODES];
+      Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
-        for (int ii = 0; ii < num_vars; ii++) {
-          output(i, j, ii) = N[0] * input(i, 0, ii) + N[1] * input(i, 1, ii) +
-                             N[2] * input(i, 2, ii) + N[3] * input(i, 3, ii) +
-                             N[4] * input(i, 4, ii) + N[5] * input(i, 5, ii) +
-                             N[6] * input(i, 6, ii) + N[7] * input(i, 7, ii);
+        for (index_t ii = 0; ii < num_vars; ii++) {
+          output(i, j, ii) = 0.0;
+          for (index_t kk = 0; kk < NUM_NODES; kk++) {
+            output(i, j, ii) += N[kk] * input(i, kk, ii);
+          }
         }
       });
     }
@@ -69,59 +213,26 @@ class HexBasis {
             class QuadPointJacobianArray>
   static void compute_jtrans(ElementNodeArray& X, QuadPointDetJArray& detJ,
                              QuadPointJacobianArray& Jinv) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double Nx[8];
-      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-
-      double Ny[8];
-      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-
-      double Nz[8];
-      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
-      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      double Nx[Basis::NUM_NODES], Ny[Basis::NUM_NODES], Nz[Basis::NUM_NODES];
+      Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = X.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         // Compute the Jacobian transformation
         A2D::Mat<T, 3, 3> J;
-        for (int ii = 0; ii < 3; ii++) {
-          J(ii, 0) = Nx[0] * X(i, 0, ii) + Nx[1] * X(i, 1, ii) +
-                     Nx[2] * X(i, 2, ii) + Nx[3] * X(i, 3, ii) +
-                     Nx[4] * X(i, 4, ii) + Nx[5] * X(i, 5, ii) +
-                     Nx[6] * X(i, 6, ii) + Nx[7] * X(i, 7, ii);
-
-          J(ii, 1) = Ny[0] * X(i, 0, ii) + Ny[1] * X(i, 1, ii) +
-                     Ny[2] * X(i, 2, ii) + Ny[3] * X(i, 3, ii) +
-                     Ny[4] * X(i, 4, ii) + Ny[5] * X(i, 5, ii) +
-                     Ny[6] * X(i, 6, ii) + Ny[7] * X(i, 7, ii);
-
-          J(ii, 2) = Nz[0] * X(i, 0, ii) + Nz[1] * X(i, 1, ii) +
-                     Nz[2] * X(i, 2, ii) + Nz[3] * X(i, 3, ii) +
-                     Nz[4] * X(i, 4, ii) + Nz[5] * X(i, 5, ii) +
-                     Nz[6] * X(i, 6, ii) + Nz[7] * X(i, 7, ii);
+        for (index_t ii = 0; ii < 3; ii++) {
+          J(ii, 0u) = 0.0;
+          J(ii, 1u) = 0.0;
+          J(ii, 2u) = 0.0;
+          for (index_t kk = 0; kk < NUM_NODES; kk++) {
+            J(ii, 0u) += Nx[kk] * X(i, kk, ii);
+            J(ii, 1u) += Ny[kk] * X(i, kk, ii);
+            J(ii, 2u) += Nz[kk] * X(i, kk, ii);
+          }
         }
 
         // Compute the 3x3 matrix inverse
@@ -130,8 +241,8 @@ class HexBasis {
         A2D::Mat3x3Det(J, detJ(i, j));
 
         // Copy values of the inverse of the Jacobian
-        for (int ii = 0; ii < 3; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Jinv(i, j, ii, jj) = jinv(ii, jj);
           }
         }
@@ -139,60 +250,28 @@ class HexBasis {
     }
   }
 
-  template <typename T, const int num_vars, class ElementSolutionArray,
+  template <typename T, const index_t num_vars, class ElementSolutionArray,
             class QuadPointGradientArray>
   static void gradient(ElementSolutionArray& U, QuadPointGradientArray& Uxi) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
 
-      double Nx[8];
-      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-
-      double Ny[8];
-      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-
-      double Nz[8];
-      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
-      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      double Nx[Basis::NUM_NODES], Ny[Basis::NUM_NODES], Nz[Basis::NUM_NODES];
+      Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = U.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
-        for (int ii = 0; ii < num_vars; ii++) {
-          Uxi(i, j, ii, 0) = Nx[0] * U(i, 0, ii) + Nx[1] * U(i, 1, ii) +
-                             Nx[2] * U(i, 2, ii) + Nx[3] * U(i, 3, ii) +
-                             Nx[4] * U(i, 4, ii) + Nx[5] * U(i, 5, ii) +
-                             Nx[6] * U(i, 6, ii) + Nx[7] * U(i, 7, ii);
+        for (index_t ii = 0; ii < num_vars; ii++) {
+          Uxi(i, j, ii, 0u) = 0.0;
+          Uxi(i, j, ii, 1u) = 0.0;
+          Uxi(i, j, ii, 2u) = 0.0;
 
-          Uxi(i, j, ii, 1) = Ny[0] * U(i, 0, ii) + Ny[1] * U(i, 1, ii) +
-                             Ny[2] * U(i, 2, ii) + Ny[3] * U(i, 3, ii) +
-                             Ny[4] * U(i, 4, ii) + Ny[5] * U(i, 5, ii) +
-                             Ny[6] * U(i, 6, ii) + Ny[7] * U(i, 7, ii);
-
-          Uxi(i, j, ii, 2) = Nz[0] * U(i, 0, ii) + Nz[1] * U(i, 1, ii) +
-                             Nz[2] * U(i, 2, ii) + Nz[3] * U(i, 3, ii) +
-                             Nz[4] * U(i, 4, ii) + Nz[5] * U(i, 5, ii) +
-                             Nz[6] * U(i, 6, ii) + Nz[7] * U(i, 7, ii);
+          for (index_t kk = 0; kk < NUM_NODES; kk++) {
+            Uxi(i, j, ii, 0u) += Nx[kk] * U(i, kk, ii);
+            Uxi(i, j, ii, 1u) += Ny[kk] * U(i, kk, ii);
+            Uxi(i, j, ii, 2u) += Nz[kk] * U(i, kk, ii);
+          }
         }
       });
     }
@@ -204,23 +283,23 @@ class HexBasis {
   static void energy(QuadPointModelDataArray& Edata, QuadPointDetJArray& detJ,
                      QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
                      T& energy) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double weight = Quadrature::getQuadWeight(j);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&](A2D::index_t i) -> void {
         // Extract Jinv
         A2D::Mat<T, 3, 3> Jinv0;
-        for (int ii = 0; ii < 3; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Jinv0(ii, jj) = Jinv(i, j, ii, jj);
           }
         }
 
         // Extract Uxi0
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0;
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
@@ -239,32 +318,25 @@ class HexBasis {
             class ElementResidualArray>
   static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
                         QuadPointSolutionArray& Uq, ElementResidualArray& res) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double N[8];
-      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
-      N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+      double N[Basis::NUM_NODES];
+      Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
         }
 
         Model::compute_residual(i, j, data, weight * detJ(i, j), U0, Ub);
 
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          for (int k = 0; k < 8; k++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+          for (index_t k = 0; k < NUM_NODES; k++) {
             res(i, k, ii) += N[k] * Ub(ii);
           }
         }
@@ -282,40 +354,13 @@ class HexBasis {
                         QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& res) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double Nx[8];
-      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-
-      double Ny[8];
-      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-
-      double Nz[8];
-      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
-      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      double Nx[Basis::NUM_NODES], Ny[Basis::NUM_NODES], Nz[Basis::NUM_NODES];
+      Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
@@ -323,15 +368,15 @@ class HexBasis {
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 
         // Extract Jinv
-        for (int ii = 0; ii < 3; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Jinv0(ii, jj) = Jinv(i, j, ii, jj);
           }
         }
 
         // Extract Uxi0
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
@@ -339,10 +384,10 @@ class HexBasis {
         Model::compute_residual(i, j, data, weight * detJ(i, j), Jinv0, Uxi0,
                                 Uxib);
 
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          for (int k = 0; k < 8; k++) {
-            res(i, k, ii) +=
-                Nx[k] * Uxib(ii, 0) + Ny[k] * Uxib(ii, 1) + Nz[k] * Uxib(ii, 2);
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+          for (index_t k = 0; k < NUM_NODES; k++) {
+            res(i, k, ii) += Nx[k] * Uxib(ii, 0u) + Ny[k] * Uxib(ii, 1u) +
+                             Nz[k] * Uxib(ii, 2u);
           }
         }
       });
@@ -354,25 +399,18 @@ class HexBasis {
             class ElementResidualArray>
   static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
                         QuadPointSolutionArray& Uq, ElementResidualArray& jac) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double N[8];
-      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 - pt[2]);
-      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 - pt[2]);
-      N[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]) * (1.0 + pt[2]);
-      N[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
-      N[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]) * (1.0 + pt[2]);
+      double N[Basis::NUM_NODES];
+      Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
         A2D::Vec<T, Model::NUM_VARS> U0, Ub;
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
           U0(ii) = Uq(i, j, ii);
         }
 
@@ -381,11 +419,11 @@ class HexBasis {
 
         Model::compute_jacobian(i, j, data, weight * detJ(i, j), U0, Ub, ja);
 
-        for (int ky = 0; ky < 8; ky++) {
-          for (int iy = 0; iy < Model::NUM_VARS; iy++) {
-            for (int ix = 0; ix < Model::NUM_VARS; ix++) {
+        for (index_t ky = 0; ky < NUM_NODES; ky++) {
+          for (index_t iy = 0; iy < Model::NUM_VARS; iy++) {
+            for (index_t ix = 0; ix < Model::NUM_VARS; ix++) {
               T n = N[ky] * ja(iy, ix);
-              for (int kx = 0; kx < 8; kx++) {
+              for (index_t kx = 0; kx < NUM_NODES; kx++) {
                 jac(i, ky, kx, iy, ix) += N[kx] * n;
               }
             }
@@ -402,40 +440,13 @@ class HexBasis {
                         QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
                         QuadPointGradientArray& Uxi,
                         ElementResidualArray& jac) {
-    for (A2D::index_t j = 0; j < Quadrature::getNumQuadPoints(); j++) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double Nx[8];
-      Nx[0] = -0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[1] = 0.125 * (1.0 - pt[1]) * (1.0 - pt[2]);
-      Nx[2] = 0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[3] = -0.125 * (1.0 + pt[1]) * (1.0 - pt[2]);
-      Nx[4] = -0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[5] = 0.125 * (1.0 - pt[1]) * (1.0 + pt[2]);
-      Nx[6] = 0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-      Nx[7] = -0.125 * (1.0 + pt[1]) * (1.0 + pt[2]);
-
-      double Ny[8];
-      Ny[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[2] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[2]);
-      Ny[3] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[2]);
-      Ny[4] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-      Ny[5] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[2]);
-      Ny[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[2]);
-
-      double Nz[8];
-      Nz[0] = -0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[1] = -0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[2] = -0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[3] = -0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
-      Nz[4] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      Nz[5] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      Nz[6] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      Nz[7] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      double Nx[Basis::NUM_NODES], Ny[Basis::NUM_NODES], Nz[Basis::NUM_NODES];
+      Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
@@ -443,15 +454,15 @@ class HexBasis {
         A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
 
         // Extract Jinv
-        for (int ii = 0; ii < 3; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Jinv0(ii, jj) = Jinv(i, j, ii, jj);
           }
         }
 
         // Extract Uxi0
-        for (int ii = 0; ii < Model::NUM_VARS; ii++) {
-          for (int jj = 0; jj < 3; jj++) {
+        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
@@ -462,17 +473,17 @@ class HexBasis {
         Model::compute_jacobian(i, j, Edata, weight * detJ(i, j), Jinv0, Uxi0,
                                 Uxib, ja);
 
-        for (int ky = 0; ky < 8; ky++) {
-          for (int iy = 0; iy < Model::NUM_VARS; iy++) {
-            for (int ix = 0; ix < Model::NUM_VARS; ix++) {
-              T nx = Nx[ky] * ja(iy, 0, ix, 0) + Ny[ky] * ja(iy, 1, ix, 0) +
-                     Nz[ky] * ja(iy, 2, ix, 0);
-              T ny = Nx[ky] * ja(iy, 0, ix, 1) + Ny[ky] * ja(iy, 1, ix, 1) +
-                     Nz[ky] * ja(iy, 2, ix, 1);
-              T nz = Nx[ky] * ja(iy, 0, ix, 2) + Ny[ky] * ja(iy, 1, ix, 2) +
-                     Nz[ky] * ja(iy, 2, ix, 2);
+        for (index_t ky = 0; ky < NUM_NODES; ky++) {
+          for (index_t iy = 0; iy < Model::NUM_VARS; iy++) {
+            for (index_t ix = 0; ix < Model::NUM_VARS; ix++) {
+              T nx = Nx[ky] * ja(iy, 0u, ix, 0u) + Ny[ky] * ja(iy, 1u, ix, 0u) +
+                     Nz[ky] * ja(iy, 2u, ix, 0u);
+              T ny = Nx[ky] * ja(iy, 0u, ix, 1u) + Ny[ky] * ja(iy, 1u, ix, 1u) +
+                     Nz[ky] * ja(iy, 2u, ix, 1u);
+              T nz = Nx[ky] * ja(iy, 0u, ix, 2u) + Ny[ky] * ja(iy, 1u, ix, 2u) +
+                     Nz[ky] * ja(iy, 2u, ix, 2u);
 
-              for (int kx = 0; kx < 8; kx++) {
+              for (index_t kx = 0; kx < NUM_NODES; kx++) {
                 jac(i, ky, kx, iy, ix) +=
                     Nx[kx] * nx + Ny[kx] * ny + Nz[kx] * nz;
               }
@@ -483,5 +494,7 @@ class HexBasis {
     }
   }
 };
+
+}  // namespace A2D
 
 #endif  // BRICK_BASIS_3D_H

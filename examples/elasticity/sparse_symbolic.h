@@ -26,6 +26,64 @@ void SortCSRData(I nrows, std::vector<I>& rowp, std::vector<I>& cols) {
 }
 
 /*
+  Add the connectivity from a connectivity list
+*/
+template <typename I, class ConnArray>
+void BSRMatAddConnectivity(ConnArray& conn,
+                           std::set<std::pair<I, I>>& node_set) {
+  for (I i = 0; i < conn.extent(0); i++) {
+    for (I j1 = 0; j1 < conn.extent(1); j1++) {
+      for (I j2 = 0; j2 < conn.extent(1); j2++) {
+        node_set.insert(std::pair<I, I>(conn(i, j1), conn(i, j2)));
+      }
+    }
+  }
+}
+
+/*
+  Create a BSRMat from the set of node pairs
+*/
+template <typename I, typename T, index_t M>
+BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
+                                      std::set<std::pair<I, I>>& node_set) {
+  // Find the number of nodes referenced by other nodes
+  std::vector<I> rowp(nnodes + 1);
+
+  typename std::set<std::pair<I, I>>::iterator it;
+  for (it = node_set.begin(); it != node_set.end(); it++) {
+    rowp[it->first + 1] += 1;
+  }
+
+  // Set the pointer into the rows
+  rowp[0] = 0;
+  for (I i = 0; i < nnodes; i++) {
+    rowp[i + 1] += rowp[i];
+  }
+
+  I nnz = rowp[nnodes];
+  std::vector<I> cols(nnz);
+
+  for (it = node_set.begin(); it != node_set.end(); it++) {
+    cols[rowp[it->first]] = it->second;
+    rowp[it->first]++;
+  }
+
+  // Reset the pointer into the nodes
+  for (I i = nnodes; i > 0; i--) {
+    rowp[i] = rowp[i - 1];
+  }
+  rowp[0] = 0;
+
+  // Sort the cols array
+  SortCSRData(nnodes, rowp, cols);
+
+  BSRMat<I, T, M, M>* A =
+      new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
+
+  return A;
+}
+
+/*
   Compute the non-zero pattern of the matrix based on the connectivity pattern
 */
 template <typename I, typename T, index_t M, class ConnArray>
@@ -480,6 +538,85 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRMatDuplicate(BSRMat<I, T, M, N>& A) {
   return new BSRMat<I, T, M, N>(A.nbrows, A.nbcols, A.nnz, A.rowp, A.cols);
+}
+
+/*
+  Multicolor code for a single process using a greedy algorithm
+*/
+template <typename I, class VecType>
+I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
+                     VecType colors, VecType new_vars) {
+  // Allocate a temporary array to store the
+  const I empty = std::numeric_limits<I>::max();
+  std::vector<I> tmp(nvars + 1);
+  std::fill(tmp.begin(), tmp.begin() + nvars, empty);
+  for (I i = 0; i < nvars; i++) {
+    colors[i] = empty;
+  }
+
+  I num_colors = 0;
+  for (I i = 0; i < nvars; i++) {
+    // Find the minimum color that is not referred to by any adjacent
+    // node.
+    const I jp_end = rowp[i + 1];
+    for (I jp = rowp[i]; jp < jp_end; jp++) {
+      int j = cols[jp];
+      if (colors[j] != empty) {
+        tmp[colors[j]] = i;
+      }
+    }
+
+    // Set the color for this variable if it already exists
+    bool flag = true;
+    for (I k = 0; k < num_colors; k++) {
+      if (tmp[k] != i) {
+        colors[i] = k;
+        flag = false;
+        break;
+      }
+    }
+
+    // Create a new color
+    if (flag) {
+      colors[i] = num_colors;
+      num_colors++;
+    }
+  }
+
+  // Now that all the nodes have been colored, order them
+  std::fill(tmp.begin(), tmp.begin() + num_colors + 1, 0);
+
+  // Count up the number of nodes for each color
+  for (I i = 0; i < nvars; i++) {
+    tmp[colors[i] + 1]++;
+  }
+
+  // Set tmp as an offset for each color
+  for (int i = 1; i < num_colors + 1; i++) {
+    tmp[i] += tmp[i - 1];
+  }
+
+  // Create the new color variables
+  for (int i = 0; i < nvars; i++) {
+    new_vars[i] = tmp[colors[i]];
+    tmp[colors[i]]++;
+  }
+
+  return num_colors;
+}
+
+template <typename I, typename T, index_t M>
+void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
+  A.perm = new I[A.nbrows];
+  I* iperm = new I[A.nbrows];
+
+  CSRMultiColorOrder(A.nbrows, A.rowp, A.cols, A.perm, iperm);
+
+  for (I i = 0; i < A.nbrows; i++) {
+    A.perm[iperm[i]] = i;
+  }
+
+  delete[] iperm;
 }
 
 }  // namespace A2D

@@ -353,10 +353,10 @@ class BSRMatAmg {
     makeAmgLevels(0, num_levels, print_info);
   }
   ~BSRMatAmg() {
-    if (A) {
+    if (level > 0 && A) {
       delete A;
     }
-    if (B) {
+    if (level > 0 && B) {
       delete B;
     }
     if (P) {
@@ -601,6 +601,10 @@ class BSRMatAmg {
         b = new MultiArray<T, CLayout<M>>(layout);
       }
 
+      // Multicolor order this level
+      BSRMatMultiColorOrder(*A);
+
+      // Find the new level
       next = new BSRMatAmg<I, T, N, N>(omega);
       BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
                                          &(next->A), &(next->B), &rho);
@@ -626,10 +630,9 @@ class BSRMatAmg {
     } else {
       // Pre-smooth with either a zero or non-zero x
       if (zero_solution) {
-        BSRApplySORZero(*Dinv, *A, omega, *b, *x);
-      } else {
-        BSRApplySOR(*Dinv, *A, omega, *b, *x);
+        x->zero();
       }
+      BSRApplySOR(*Dinv, *A, omega, *b, *x);
 
       // Compute the residuals r = b - A * x
       r->copy(*b);

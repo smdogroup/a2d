@@ -25,6 +25,8 @@ class BSRMat {
 
     // Set the diagonal to NULL until factorization
     diag = NULL;
+    perm = NULL;
+    iperm = NULL;
   }
   BSRMat(const BSRMat &src)
       : nbrows(src.nbrows), nbcols(src.nbcols), nnz(src.nnz), Avals(src.Avals) {
@@ -36,6 +38,12 @@ class BSRMat {
       delete[] cols;
       if (diag) {
         delete[] diag;
+      }
+      if (perm) {
+        delete[] perm;
+      }
+      if (iperm) {
+        delete[] iperm;
       }
     }
   }
@@ -69,6 +77,12 @@ class BSRMat {
 
   // Pointer to the diagonal block
   I *diag;  // length: nbrows
+
+  // permutation perm[new var] = old var
+  I *perm;
+
+  // Inverse permutation iperm[old var] = new var
+  I *iperm;
 
   // MultiArray data - length: nnz
   MultiArray<T, CLayout<M, N>> Avals;

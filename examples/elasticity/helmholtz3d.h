@@ -8,76 +8,101 @@
 
 namespace A2D {
 
-template <class IdxType, class ScalarType, class Basis>
-class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> {
+/*
+  Store all the type information about the PDE in one place
+*/
+template <typename I, typename T>
+class HelmholtzPDE {
  public:
-  // Finite-element basis class
-  static const int NUM_VARS = 1;  // Number of variables per node
-  static const int NUM_DATA = 1;  // Data points per quadrature point
+  static const index_t spatial_dim = 3;
+  static const index_t vars_per_node = 1;
+  static const index_t null_space_dim = 1;
+  static const index_t data_per_point = 1;
 
-  // Short cut for base class name
-  typedef PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> base;
+  // Layout for the boundary conditions
+  typedef A2D::CLayout<2> BCsLayout;
+  typedef A2D::MultiArray<I, BCsLayout> BCsArray;
 
-  HelmholtzPDE(const int nelems, const int nnodes, const int nbcs)
-      : PDEModel<IdxType, ScalarType, Basis, 1, 1, 1>(nelems, nnodes, nbcs) {
-    typename base::NullSpaceArray& B = this->get_null_space();
+  // Layout for the nodes
+  typedef A2D::CLayout<spatial_dim> NodeLayout;
+  typedef A2D::MultiArray<T, NodeLayout> NodeArray;
+
+  // Layout for the solution
+  typedef A2D::CLayout<vars_per_node> SolutionLayout;
+  typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
+
+  // Near null space layout - for the AMG preconditioner
+  typedef A2D::CLayout<vars_per_node, null_space_dim> NullSpaceLayout;
+  typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
+
+  // Jacobian matrix
+  typedef A2D::BSRMat<I, T, vars_per_node, vars_per_node> SparseMat;
+
+  // Sparse matrix multigrid type
+  typedef A2D::BSRMatAmg<I, T, vars_per_node, null_space_dim> SparseAmg;
+
+  static void compute_null_space(NodeArray& X, NullSpaceArray& B) {
     B.fill(1.0);
   }
+};
 
-  void add_residual(typename base::SolutionArray& res) {
-    // Get data for computing the residuals
-    typename base::QuadDataArray& data = this->get_quad_data();
-    typename base::QuadDetArray& detJ = this->get_detJ();
-    typename base::QuadJtransArray& Jinv = this->get_Jinv();
-    typename base::QuadSolnArray& Uq = this->get_quad_solution();
-    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
-    typename base::ElemResArray& elem_res = this->get_elem_res();
+template <typename I, typename T, class Basis>
+class HelmholtzElement3D
+    : public ElementBasis<I, T, HelmholtzPDE<I, T>, Basis> {
+ public:
+  // Finite-element basis class
+  static const index_t NUM_VARS = 1;  // Number of variables per node
+  static const index_t NUM_DATA = 1;  // Data points per quadrature point
 
-    Basis::template residuals<ScalarType,
-                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
-        data, detJ, Jinv, Uxi, elem_res);
-    Basis::template residuals<ScalarType,
-                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
-        data, detJ, Uq, elem_res);
+  // Short cut for base class name
+  typedef ElementBasis<I, T, HelmholtzPDE<I, T>, Basis> base;
 
-    typename base::ConnArray& conn = this->get_conn();
-    typename base::BCsArray& bcs = this->get_bcs();
-    element_gather_add(conn, elem_res, res);
-    A2D::VecZeroBCRows(bcs, res);
+  HelmholtzElement3D(const int nelems)
+      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems) {}
+
+  // Add the residual contribution
+  void add_residual(typename HelmholtzPDE<I, T>::SolutionArray& res) {
+    // Allocate the element residual
+    typename base::ElemResArray elem_res(this->get_elem_res_layout());
+    elem_res.zero();
+
+    Basis::template residuals<T, HelmholtzElement3D<I, T, Basis>::Impl>(
+        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
+        this->get_quad_gradient(), elem_res);
+    Basis::template residuals<T, HelmholtzElement3D<I, T, Basis>::Impl>(
+        this->get_quad_data(), this->get_detJ(), this->get_quad_solution(),
+        elem_res);
+
+    element_gather_add(this->get_conn(), elem_res, res);
   }
 
-  void add_jacobian(typename base::SparseMat& J) {
-    typename base::QuadDataArray& data = this->get_quad_data();
-    typename base::QuadDetArray& detJ = this->get_detJ();
-    typename base::QuadJtransArray& Jinv = this->get_Jinv();
-    typename base::QuadSolnArray& Uq = this->get_quad_solution();
-    typename base::QuadGradArray& Uxi = this->get_quad_gradient();
-    typename base::ElemJacArray& elem_jac = this->get_elem_jac();
+  // Add the element Jacobian contribution
+  void add_jacobian(typename HelmholtzPDE<I, T>::SparseMat& J) {
+    typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
+    elem_jac.zero();
 
-    Basis::template jacobians<ScalarType,
-                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
-        data, detJ, Jinv, Uxi, elem_jac);
-    Basis::template jacobians<ScalarType,
-                              HelmholtzPDE<IdxType, ScalarType, Basis>::Impl>(
-        data, detJ, Uq, elem_jac);
+    Basis::template jacobians<T, HelmholtzElement3D<I, T, Basis>::Impl>(
+        this->get_quad_data(), this->get_detJ(), this->get_quad_gradient(),
+        elem_jac);
 
-    typename base::ConnArray& conn = this->get_conn();
-    typename base::BCsArray& bcs = this->get_bcs();
-    A2D::BSRMatAddElementMatrices(conn, elem_jac, J);
-    A2D::BSRMatZeroBCRows(bcs, J);
+    Basis::template jacobians<T, HelmholtzElement3D<I, T, Basis>::Impl>(
+        this->get_quad_data(), this->get_detJ(), this->get_quad_solution(),
+        elem_jac);
+
+    A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
 
   class Impl {
    public:
-    static const int NUM_VARS = 1;
+    static const index_t NUM_VARS = 1;
 
-    template <typename T, class I, class QuadPointData>
+    template <class QuadPointData>
     static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
                                  A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
       Ub(0) = wdetJ * U0(0);
     }
 
-    template <typename T, class I, class QuadPointData>
+    template <class QuadPointData>
     static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
                                  A2D::Mat<T, 3, 3>& Jinv,
                                  A2D::Mat<T, 1, 3>& Uxi,
@@ -99,7 +124,8 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> {
       Uxb(2) = wdetJ * r0 * r0 * Ux(2);
 
       // Ux = Uxi * Jinv
-      // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv = Jinv * Uxb^{T} * dot{Uxi}
+      // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv
+      //                 = Jinv * Uxb^{T} * dot{Uxi}
       // => Uxib^{T} = Jinv * Uxb^{T}
       // => Uxib = Uxb * Jinv^{T}
 
@@ -111,14 +137,14 @@ class HelmholtzPDE : public PDEModel<IdxType, ScalarType, Basis, 1, 1, 1> {
           Uxb(0) * Jinv(2, 0) + Uxb(1) * Jinv(2, 1) + Uxb(2) * Jinv(2, 2);
     }
 
-    template <typename T, class I, class QuadPointData>
+    template <class QuadPointData>
     static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
                                  A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
                                  A2D::Mat<T, 1, 1>& jac) {
       jac(0, 0) = wdetJ;
     }
 
-    template <typename T, class I, class QuadPointData>
+    template <class QuadPointData>
     static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
                                  A2D::Mat<T, 3, 3>& Jinv,
                                  A2D::Mat<T, 1, 3>& Uxi0,

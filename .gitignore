@@ -2,3 +2,5 @@
 build/
 *.dSYM
 *.so
+.vscode
+Makefile.in

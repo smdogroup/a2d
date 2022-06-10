@@ -3,9 +3,14 @@
 
 namespace A2D {
 
-// C = A * B
-template <int M, int P, int N, class AMatType, class BMatType, class CMatType>
-void MatMatMultCore(const AMatType& A, const BMatType& B, const CMatType& C) {
+/**
+ * @brief mat-mat multiplication C = A * B
+ * @param A, M-by-N matrix
+ * @param B, N-by-P matrix
+ * @param C, M-by-P matrix, output
+ */
+template <int M, int N, int P, class AMatType, class BMatType, class CMatType>
+void MatMatMultCore(const AMatType& A, const BMatType& B, CMatType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       C(i, j) = 0.0;
@@ -16,10 +21,14 @@ void MatMatMultCore(const AMatType& A, const BMatType& B, const CMatType& C) {
   }
 }
 
-// C = A^{T} * B
-template <int M, int P, int N, class AMatType, class BMatType, class CMatType>
-void MatTransMatMultCore(const AMatType& A, const BMatType& B,
-                         const CMatType& C) {
+/**
+ * @brief mat-mat multiplication C = AT * B
+ * @param A, N-by-M matrix
+ * @param B, N-by-P matrix
+ * @param C, M-by-P matrix, output
+ */
+template <int M, int N, int P, class AMatType, class BMatType, class CMatType>
+void MatTransMatMultCore(const AMatType& A, const BMatType& B, CMatType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       C(i, j) = 0.0;
@@ -30,10 +39,14 @@ void MatTransMatMultCore(const AMatType& A, const BMatType& B,
   }
 }
 
-// C = A * B^{T}
-template <int M, int P, int N, class AMatType, class BMatType, class CMatType>
-void MatMatTransMultCore(const AMatType& A, const BMatType& B,
-                         const CMatType& C) {
+/**
+ * @brief mat-mat multiplication C = A * BT
+ * @param A, M-by-N matrix
+ * @param B, P-by-N matrix
+ * @param C, M-by-P matrix, output
+ */
+template <int M, int N, int P, class AMatType, class BMatType, class CMatType>
+void MatMatTransMultCore(const AMatType& A, const BMatType& B, CMatType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       C(i, j) = 0.0;
@@ -44,10 +57,15 @@ void MatMatTransMultCore(const AMatType& A, const BMatType& B,
   }
 }
 
-// C = A^{T} * B^{T}
-template <int M, int P, int N, class AMatType, class BMatType, class CMatType>
+/**
+ * @brief mat-mat multiplication C = AT * BT
+ * @param A, N-by-M matrix
+ * @param B, P-by-N matrix
+ * @param C, M-by-P matrix, output
+ */
+template <int M, int N, int P, class AMatType, class BMatType, class CMatType>
 void MatTransMatTransMultCore(const AMatType& A, const BMatType& B,
-                              const CMatType& C) {
+                              CMatType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       C(i, j) = 0.0;

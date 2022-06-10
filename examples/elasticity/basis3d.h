@@ -72,7 +72,7 @@ class HexTriLinear {
   }
 };
 
-const double TetrahedronWts5[] = {-2.0 / 15.0, 3.0 / 40.0};
+const double TetrahedronWts5[] = {-4.0 / 5.0, 9.0 / 20.0};
 const double TetrahedronPts5[] = {
     0.25,      0.25,      0.25, 1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0, 0.5, 1.0 / 6.0,
     1.0 / 6.0, 1.0 / 6.0, 0.5,  1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0, 0.5};

@@ -48,3 +48,8 @@ target_link_libraries(
   test_matcore
   gtest_main
 )
+
+target_link_libraries(
+  test_matcore2d
+  gtest_main
+)

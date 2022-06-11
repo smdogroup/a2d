@@ -190,31 +190,59 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
     return;
   }
 
-  for (I i = 0; i < src.nbrows; i++) {
-    I kp = dest.rowp[i];
-    I kp_end = dest.rowp[i + 1];
+  if (dest.perm && dest.iperm) {
+    for (I i = 0; i < src.nbrows; i++) {
+      I idest = dest.iperm[i];
 
-    I jp = src.rowp[i];
-    I jp_end = src.rowp[i + 1];
+      I jp = src.rowp[i];
+      I jp_end = src.rowp[i + 1];
 
-    for (; (jp < jp_end) && (kp < kp_end); jp++) {
-      while (dest.cols[kp] < src.cols[jp] && kp < kp_end) {
-        kp++;
-      }
+      for (; jp < jp_end; jp++) {
+        I jdest = dest.iperm[src.cols[jp]];
 
-      // Copy the matrix if the two entries are equal
-      // and the size of both block--matrices is the same
-      if (kp < kp_end) {
-        if (dest.cols[kp] == src.cols[jp]) {
+        I *col_ptr = dest.find_column_index(idest, jdest);
+        if (col_ptr) {
+          I kp = col_ptr - dest.cols;
+
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < N; k2++) {
               dest.Avals(kp, k1, k2) = src.Avals(jp, k1, k2);
             }
           }
         } else {
-          std::cerr << "BSRMatCopy: Non-zero pattern does not match cannot "
-                       "copy values"
+          std::cerr << "BSRMatCopy: Non-zero pattern does not match - cannot "
+                       "copy values for permuted matrix"
                     << std::endl;
+        }
+      }
+    }
+  } else {
+    for (I i = 0; i < src.nbrows; i++) {
+      I kp = dest.rowp[i];
+      I kp_end = dest.rowp[i + 1];
+
+      I jp = src.rowp[i];
+      I jp_end = src.rowp[i + 1];
+
+      for (; (jp < jp_end) && (kp < kp_end); jp++) {
+        while (dest.cols[kp] < src.cols[jp] && kp < kp_end) {
+          kp++;
+        }
+
+        // Copy the matrix if the two entries are equal
+        // and the size of both block--matrices is the same
+        if (kp < kp_end) {
+          if (dest.cols[kp] == src.cols[jp]) {
+            for (I k1 = 0; k1 < M; k1++) {
+              for (I k2 = 0; k2 < N; k2++) {
+                dest.Avals(kp, k1, k2) = src.Avals(jp, k1, k2);
+              }
+            }
+          } else {
+            std::cerr << "BSRMatCopy: Non-zero pattern does not match - cannot "
+                         "copy values"
+                      << std::endl;
+          }
         }
       }
     }
@@ -367,17 +395,33 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
 */
 template <typename I, typename T, index_t M>
 void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
-  for (I i = 0; i < A.nbrows; i++) {
-    auto yi = MakeSlice(y, i);
+  if (A.perm && A.iperm) {
+    for (I i = 0; i < A.nbrows; i++) {
+      auto yi = MakeSlice(y, A.perm[i]);
 
-    I end = A.diag[i];
-    I jp = A.rowp[i];
-    for (; jp < end; jp++) {
-      I j = A.cols[jp];
-      auto yj = MakeSlice(y, j);
-      auto Ab = MakeSlice(A.Avals, jp);
+      I end = A.diag[i];
+      I jp = A.rowp[i];
+      for (; jp < end; jp++) {
+        I j = A.cols[jp];
+        auto yj = MakeSlice(y, A.perm[j]);
+        auto Ab = MakeSlice(A.Avals, jp);
 
-      blockGemvSub<T, M, M>(Ab, yj, yi);
+        blockGemvSub<T, M, M>(Ab, yj, yi);
+      }
+    }
+  } else {
+    for (I i = 0; i < A.nbrows; i++) {
+      auto yi = MakeSlice(y, i);
+
+      I end = A.diag[i];
+      I jp = A.rowp[i];
+      for (; jp < end; jp++) {
+        I j = A.cols[jp];
+        auto yj = MakeSlice(y, j);
+        auto Ab = MakeSlice(A.Avals, jp);
+
+        blockGemvSub<T, M, M>(Ab, yj, yi);
+      }
     }
   }
 }
@@ -389,26 +433,50 @@ template <typename I, typename T, index_t M>
 void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
   A2D::Vec<T, M> ty;
 
-  for (I i = A.nbrows; i > 0; i--) {
-    auto yi = MakeSlice(y, i - 1);
-    for (I j = 0; j < M; j++) {
-      ty(j) = yi(j);
+  if (A.perm && A.iperm) {
+    for (I i = A.nbrows; i > 0; i--) {
+      auto yi = MakeSlice(y, A.perm[i - 1]);
+      for (I j = 0; j < M; j++) {
+        ty(j) = yi(j);
+      }
+
+      I diag = A.diag[i - 1];
+      I end = A.rowp[i];
+      I jp = diag + 1;
+
+      for (; jp < end; jp++) {
+        I j = A.cols[jp];
+        auto yj = MakeSlice(y, A.perm[j]);
+        auto Ab = MakeSlice(A.Avals, jp);
+
+        blockGemvSub<T, M, M>(Ab, yj, ty);
+      }
+
+      auto D = MakeSlice(A.Avals, diag);
+      blockGemv<T, M, M>(D, ty, yi);
     }
+  } else {
+    for (I i = A.nbrows; i > 0; i--) {
+      auto yi = MakeSlice(y, i - 1);
+      for (I j = 0; j < M; j++) {
+        ty(j) = yi(j);
+      }
 
-    I diag = A.diag[i - 1];
-    I end = A.rowp[i];
-    I jp = diag + 1;
+      I diag = A.diag[i - 1];
+      I end = A.rowp[i];
+      I jp = diag + 1;
 
-    for (; jp < end; jp++) {
-      I j = A.cols[jp];
-      auto yj = MakeSlice(y, j);
-      auto Ab = MakeSlice(A.Avals, jp);
+      for (; jp < end; jp++) {
+        I j = A.cols[jp];
+        auto yj = MakeSlice(y, j);
+        auto Ab = MakeSlice(A.Avals, jp);
 
-      blockGemvSub<T, M, M>(Ab, yj, ty);
+        blockGemvSub<T, M, M>(Ab, yj, ty);
+      }
+
+      auto D = MakeSlice(A.Avals, diag);
+      blockGemv<T, M, M>(D, ty, yi);
     }
-
-    auto D = MakeSlice(A.Avals, diag);
-    blockGemv<T, M, M>(D, ty, yi);
   }
 }
 
@@ -506,40 +574,47 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
                  MultiArray<T, CLayout<M>> &b, MultiArray<T, CLayout<M>> &x) {
   I nrows = A.nbrows;
 
-  A2D::Vec<T, M> t;
-
   if (A.perm) {
-    for (I irow = 0; irow < nrows; irow++) {
-      // Find the new permutation of rows
-      I i = A.perm[irow];
+    for (I color = 0, offset = 0; color < A.num_colors; color++) {
+      const index_t count = A.color_count[color];
 
-      // Copy over the values
-      for (I m = 0; m < M; m++) {
-        t(m) = b(i, m);
-      }
+      // for (I irow = 0; irow < count; irow++) {
+      A2D::parallel_for(count, [&](index_t irow) -> void {
+        I i = A.perm[irow + offset];
 
-      const int jp_end = A.rowp[i + 1];
-      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-        I j = A.cols[jp];
-
-        if (i != j) {
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
-
-          blockGemvSub<T, M, M>(Ab, xb, t);
+        // Copy over the values
+        A2D::Vec<T, M> t;
+        for (I m = 0; m < M; m++) {
+          t(m) = b(i, m);
         }
-      }
 
-      // x = (1 - omega) * x + omega * D^{-1} * t
-      auto xb = MakeSlice(x, i);
-      for (I m = 0; m < M; m++) {
-        xb(m) = (1.0 - omega) * xb(m);
-      }
+        const int jp_end = A.rowp[i + 1];
+        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+          I j = A.cols[jp];
 
-      auto D = MakeSlice(Dinv.Avals, i);
-      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+          if (i != j) {
+            auto xb = MakeSlice(x, j);
+            auto Ab = MakeSlice(A.Avals, jp);
+
+            blockGemvSub<T, M, M>(Ab, xb, t);
+          }
+        }
+
+        // x = (1 - omega) * x + omega * D^{-1} * t
+        auto xb = MakeSlice(x, i);
+        for (I m = 0; m < M; m++) {
+          xb(m) = (1.0 - omega) * xb(m);
+        }
+
+        auto D = MakeSlice(Dinv.Avals, i);
+        blockGemvAddScale<T, M, M>(omega, D, t, xb);
+      });
+
+      offset += count;
     }
   } else {
+    A2D::Vec<T, M> t;
+
     for (I i = 0; i < nrows; i++) {
       // Copy over the values
       for (I m = 0; m < M; m++) {

@@ -25,8 +25,14 @@ class BSRMat {
 
     // Set the diagonal to NULL until factorization
     diag = NULL;
+
+    // Set the permutation array and its inverse to NULL
     perm = NULL;
     iperm = NULL;
+
+    // Set the color count to NULL
+    num_colors = 0;
+    color_count = NULL;
   }
   BSRMat(const BSRMat &src)
       : nbrows(src.nbrows), nbcols(src.nbcols), nnz(src.nnz), Avals(src.Avals) {
@@ -44,6 +50,9 @@ class BSRMat {
       }
       if (iperm) {
         delete[] iperm;
+      }
+      if (color_count) {
+        delete[] color_count;
       }
     }
   }
@@ -83,6 +92,10 @@ class BSRMat {
 
   // Inverse permutation iperm[old var] = new var
   I *iperm;
+
+  // When coloring is used, its ordering is stored in the permutation array
+  I num_colors;    // Number of colors
+  I *color_count;  // Number of nodes with this color
 
   // MultiArray data - length: nnz
   MultiArray<T, CLayout<M, N>> Avals;

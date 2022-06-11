@@ -579,8 +579,14 @@ class BSRMatAmg {
       x = new MultiArray<T, CLayout<M>>(layout);
       b = new MultiArray<T, CLayout<M>>(layout);
 
-      // Form the sparse factorization
-      Afact = BSRMatFactorSymbolic(*A);
+      // Form the sparse factorization - if the matrix is large and sparse, use
+      // AMD, otherwise don't bother re-ordering.
+      if (A->nbrows >= 20 && A->nnz < 0.25 * A->nbrows * A->nbrows) {
+        Afact = BSRMatAMDFactorSymbolic(*A);
+
+      } else {
+        Afact = BSRMatFactorSymbolic(*A);
+      }
 
       // Copy values to the matrix
       BSRMatCopy(*A, *Afact);
@@ -602,7 +608,7 @@ class BSRMatAmg {
       }
 
       // Multicolor order this level
-      BSRMatMultiColorOrder(*A);
+      BSRMatMultiColorOrder(A);
 
       // Find the new level
       next = new BSRMatAmg<I, T, N, N>(omega);

@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+#include "sparse_amd.h"
 #include "sparse_matrix.h"
 
 namespace A2D {
@@ -227,21 +228,15 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivityDeprecated(ConnArray& conn) {
   return A;
 }
 
-/*
-  Symbolic factorization stage
-*/
-template <typename I, typename T, index_t M>
-BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
-                                         double fill_factor = 5.0) {
-  I nrows = A.nbrows;
+template <typename I, class VecType>
+I CSRFactorSymbolic(const I nrows, const VecType Arowp, const VecType Acols,
+                    std::vector<I>& rowp, std::vector<I>& cols) {
   I nnz = 0;
 
   // Column indices associated with the current row
   std::vector<I> rcols(nrows);
 
   // Row, column and diagonal index data for the new factored matrix
-  std::vector<I> rowp(nrows + 1);
-  std::vector<I> cols(index_t(fill_factor * A.nnz));
   std::vector<I> diag(nrows);
 
   rowp[0] = 0;
@@ -250,8 +245,8 @@ BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
 
     // Add the matrix elements to the current row of the matrix.
     // These new elements are sorted.
-    for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
-      rcols[nr] = A.cols[jp];
+    for (I jp = Arowp[i]; jp < Arowp[i + 1]; jp++) {
+      rcols[nr] = Acols[jp];
       nr++;
     }
 
@@ -284,7 +279,7 @@ BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
 
     // Make sure that we don't exceed the capacity of the vector
     if (nnz + nr > cols.size()) {
-      cols.resize(nnz + nr + A.nnz);
+      cols.resize(2 * nnz + nr);
     }
 
     // Add the new elements
@@ -296,10 +291,109 @@ BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
     diag[i] = rowp[i] + j;
   }
 
-  BSRMat<I, T, M, M>* bsr =
-      new BSRMat<I, T, M, M>(nrows, nrows, nnz, rowp, cols);
+  return nnz;
+}
 
-  return bsr;
+/*
+  Find the reordering to reduce the fill in during factorization
+*/
+template <typename I, typename T, index_t M>
+BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
+                                            double fill_factor = 5.0) {
+  // Copy over the non-zero structure of the matrix
+  int nrows = A.nbrows;
+  int* rowp = new int[A.nbrows + 1];
+  int* cols = new int[A.nnz];
+  int* perm_ = new int[A.nbrows];
+
+  // Copy the values to rowp and cols
+  std::copy(A.rowp, A.rowp + (A.nbrows + 1), rowp);
+  std::copy(A.cols, A.cols + A.nnz, cols);
+
+  // Compute the re-ordering
+  int* interface_nodes = NULL;
+  int ninterface_nodes = 0;
+  int ndep_vars = 0;
+  int* dep_vars = NULL;
+  int* indep_ptr = NULL;
+  int* indep_vars = NULL;
+  int use_exact_degree = 0;
+  amd_order_interface(nrows, rowp, cols, perm_, interface_nodes,
+                      ninterface_nodes, ndep_vars, dep_vars, indep_ptr,
+                      indep_vars, use_exact_degree);
+
+  // Free up the old space
+  delete[] rowp;
+  delete[] cols;
+
+  // Set up the factorization
+  // perm[new var] = old_var
+  // iperm[old var] = new var
+
+  // Set the permutation array
+  I* perm = new I[A.nbrows];
+  I* iperm = new I[A.nbrows];
+  std::copy(perm_, perm_ + A.nbrows, perm);
+
+  for (I i = 0; i < A.nbrows; i++) {
+    iperm[perm[i]] = i;
+  }
+
+  delete[] perm_;
+
+  // Allocate the new arrays for re-ordering the vector
+  std::vector<I> Arowp(A.nbrows + 1);
+  std::vector<I> Acols(A.nnz);
+
+  // Re-order the matrix
+  Arowp[0] = 0;
+  I nnz = 0;
+  for (I i = 0; i < A.nbrows; i++) {  // Loop over the new rows of the matrix
+    I iold = perm[i];
+
+    // Find the old column numbres and convert them to new ones
+    for (I jp = A.rowp[iold]; jp < A.rowp[iold + 1]; jp++, nnz++) {
+      Acols[nnz] = iperm[A.cols[jp]];
+    }
+
+    // After copying, update the size
+    Arowp[i + 1] = Arowp[i] + (A.rowp[iold + 1] - A.rowp[iold]);
+  }
+
+  // Sort the data for the permuted matrix
+  SortCSRData(A.nbrows, Arowp, Acols);
+
+  // Compute the symbolic matrix
+  std::vector<I> Afrowp(A.nbrows + 1);
+  std::vector<I> Afcols(index_t(fill_factor * nnz));
+
+  I Afnnz = CSRFactorSymbolic(A.nbrows, Arowp, Acols, Afrowp, Afcols);
+
+  BSRMat<I, T, M, M>* Afactor =
+      new BSRMat<I, T, M, M>(A.nbrows, A.nbrows, Afnnz, Afrowp, Afcols);
+
+  // Set up the non-zero pattern for the new matrix
+  Afactor->perm = perm;
+  Afactor->iperm = iperm;
+
+  return Afactor;
+}
+
+/*
+  Symbolic factorization stage
+*/
+template <typename I, typename T, index_t M>
+BSRMat<I, T, M, M>* BSRMatFactorSymbolic(BSRMat<I, T, M, M>& A,
+                                         double fill_factor = 5.0) {
+  std::vector<I> rowp(A.nbrows + 1);
+  std::vector<I> cols(index_t(fill_factor * A.nnz));
+
+  I nnz = CSRFactorSymbolic(A.nbrows, A.rowp, A.cols, rowp, cols);
+
+  BSRMat<I, T, M, M>* Afactor =
+      new BSRMat<I, T, M, M>(A.nbrows, A.nbrows, nnz, rowp, cols);
+
+  return Afactor;
 }
 
 /*
@@ -545,7 +639,7 @@ BSRMat<I, T, M, N>* BSRMatDuplicate(BSRMat<I, T, M, N>& A) {
 */
 template <typename I, class VecType>
 I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
-                     VecType colors, VecType new_vars) {
+                     VecType colors, VecType perm) {
   // Allocate a temporary array to store the
   const I empty = std::numeric_limits<I>::max();
   std::vector<I> tmp(nvars + 1);
@@ -598,7 +692,7 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 
   // Create the new color variables
   for (int i = 0; i < nvars; i++) {
-    new_vars[i] = tmp[colors[i]];
+    perm[tmp[colors[i]]] = i;
     tmp[colors[i]]++;
   }
 
@@ -606,17 +700,23 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 }
 
 template <typename I, typename T, index_t M>
-void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
-  A.perm = new I[A.nbrows];
-  I* iperm = new I[A.nbrows];
+void BSRMatMultiColorOrder(BSRMat<I, T, M, M>* A) {
+  A->perm = new I[A->nbrows];
+  I* colors = new I[A->nbrows];
 
-  CSRMultiColorOrder(A.nbrows, A.rowp, A.cols, A.perm, iperm);
+  // Use A->perm as a temporary variable to avoid double allocation
+  A->num_colors =
+      CSRMultiColorOrder(A->nbrows, A->rowp, A->cols, colors, A->perm);
 
-  for (I i = 0; i < A.nbrows; i++) {
-    A.perm[iperm[i]] = i;
+  // Count up the number of nodes with each color
+  A->color_count = new I[A->num_colors];
+  std::fill(A->color_count, A->color_count + A->num_colors, 0);
+
+  for (I i = 0; i < A->nbrows; i++) {
+    A->color_count[colors[i]]++;
   }
 
-  delete[] iperm;
+  delete[] colors;
 }
 
 }  // namespace A2D

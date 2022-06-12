@@ -9,6 +9,46 @@
 namespace A2D {
 
 /*
+  Scatter the variables stored at the nodes to the a data structure
+  that stores the element variables at each element node.
+*/
+template <class ConnArray, class NodeArray, class ElementArray>
+void VecElementScatter(ConnArray &conn, NodeArray &X, ElementArray &Xe) {
+  // Loop over the elements
+  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
+    // Loop over each element nodes
+    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
+      const A2D::index_t index = conn(i, j);
+
+      // Loop over the variables
+      for (A2D::index_t k = 0; k < X.extent(1); k++) {
+        Xe(i, j, k) = X(index, k);
+      }
+    }
+  }
+}
+
+/*
+  Gather the variables stored at the nodes to the a data structure
+  that stores the element variables at each element node.
+*/
+template <class ConnArray, class ElementArray, class NodeArray>
+void VecElementGatherAdd(ConnArray &conn, ElementArray &Xe, NodeArray &X) {
+  // Loop over the elements
+  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
+    // Loop over each element nodes
+    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
+      const A2D::index_t index = conn(i, j);
+
+      // Loop over the variables
+      for (A2D::index_t k = 0; k < X.extent(1); k++) {
+        X(index, k) += Xe(i, j, k);
+      }
+    }
+  }
+}
+
+/*
   Add values into the BSR matrix
 */
 template <typename I, typename T, index_t M, class ConnArray, class JacArray>

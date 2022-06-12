@@ -73,7 +73,7 @@ class HelmholtzElement3D
         this->get_quad_data(), this->get_detJ(), this->get_quad_solution(),
         elem_res);
 
-    element_gather_add(this->get_conn(), elem_res, res);
+    VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
 
   // Add the element Jacobian contribution

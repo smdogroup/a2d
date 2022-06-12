@@ -94,7 +94,7 @@ class NonlinElasticityElement3D
         this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
         this->get_quad_gradient(), elem_res);
 
-    element_gather_add(this->get_conn(), elem_res, res);
+    VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
 
   void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {
@@ -242,7 +242,7 @@ class LinElasticityElement3D
         this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
         this->get_quad_gradient(), elem_res);
 
-    element_gather_add(this->get_conn(), elem_res, res);
+    VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
 
   void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {

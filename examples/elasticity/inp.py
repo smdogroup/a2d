@@ -1,6 +1,5 @@
 import numpy as np
-from parse_inp import InpParser
-from utils import to_vtk
+from parse_inp import InpParser, to_vtk
 import example
 
 # Parse the inp file

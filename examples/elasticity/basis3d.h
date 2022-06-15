@@ -185,7 +185,7 @@ class Basis3D {
   /*
     Interpolate from element-oriented data to quadrature point data
   */
-  template <const index_t num_vars, class ElementArray, class QuadPointArray>
+  template <const index_t M, class ElementArray, class QuadPointArray>
   static void interp(ElementArray& input, QuadPointArray& output) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
@@ -196,7 +196,7 @@ class Basis3D {
 
       const A2D::index_t npts = input.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
-        for (index_t ii = 0; ii < num_vars; ii++) {
+        for (index_t ii = 0; ii < M; ii++) {
           output(i, j, ii) = 0.0;
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
             output(i, j, ii) += N[kk] * input(i, kk, ii);
@@ -277,17 +277,17 @@ class Basis3D {
     }
   }
 
-  template <typename T, class Model, class QuadPointModelDataArray,
-            class QuadPointDetJArray, class QuadPointJacobianArray,
-            class QuadPointGradientArray>
-  static void energy(QuadPointModelDataArray& Edata, QuadPointDetJArray& detJ,
-                     QuadPointJacobianArray& Jinv, QuadPointGradientArray& Uxi,
-                     T& energy) {
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointJacobianArray, class QuadPointGradientArray>
+  static T integrate(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
+                     QuadPointGradientArray& Uxi,
+                     const FunctorType& integrand) {
+    T value = 0.0;
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double weight = Quadrature::getQuadWeight(j);
 
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&](A2D::index_t i) -> void {
+      value += A2D::parallel_reduce<T>(npts, [&](A2D::index_t i) -> T {
         // Extract Jinv
         A2D::Mat<T, 3, 3> Jinv0;
         for (index_t ii = 0; ii < 3; ii++) {
@@ -297,27 +297,28 @@ class Basis3D {
         }
 
         // Extract Uxi0
-        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0;
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        A2D::Mat<T, M, 3> Uxi0;
+        for (index_t ii = 0; ii < M; ii++) {
           for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
 
         T wdetJ = weight * detJ(i, j);
-        energy += Model::compute_energy(i, j, Edata, wdetJ, Jinv0, Uxi0);
+        return integrand(i, j, wdetJ, Jinv0, Uxi0);
       });
     }
+
+    return value;
   }
 
   /*
     Residuals that depend on U
   */
-  template <typename T, class Model, class QuadPointModelDataArray,
-            class QuadPointDetJArray, class QuadPointSolutionArray,
-            class ElementResidualArray>
-  static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointSolutionArray& Uq, ElementResidualArray& res) {
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointSolutionArray, class ElementResidualArray>
+  static void residuals(QuadPointDetJArray& detJ, QuadPointSolutionArray& Uq,
+                        const FunctorType& resfunc, ElementResidualArray& res) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -328,16 +329,18 @@ class Basis3D {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
-        A2D::Vec<T, Model::NUM_VARS> U0, Ub;
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        A2D::Vec<T, M> U0, Ub;
+        for (index_t ii = 0; ii < M; ii++) {
           U0(ii) = Uq(i, j, ii);
         }
 
-        Model::compute_residual(i, j, data, weight * detJ(i, j), U0, Ub);
+        T wdetJ = weight * detJ(i, j);
+        resfunc(i, j, wdetJ, U0, Ub);
 
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        auto resi = MakeSlice(res, i);
+        for (index_t ii = 0; ii < M; ii++) {
           for (index_t k = 0; k < NUM_NODES; k++) {
-            res(i, k, ii) += N[k] * Ub(ii);
+            resi(k, ii) += N[k] * Ub(ii);
           }
         }
       });
@@ -347,12 +350,11 @@ class Basis3D {
   /*
     Residuals that depend on U,xi
   */
-  template <typename T, class Model, class QuadPointModelDataArray,
-            class QuadPointDetJArray, class QuadPointJacobianArray,
-            class QuadPointGradientArray, class ElementResidualArray>
-  static void residuals(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointJacobianArray, class QuadPointGradientArray,
+            class ElementResidualArray>
+  static void residuals(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
+                        QuadPointGradientArray& Uxi, const FunctorType& resfunc,
                         ElementResidualArray& res) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
@@ -365,7 +367,7 @@ class Basis3D {
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
-        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
+        A2D::Mat<T, M, 3> Uxi0, Uxib;
 
         // Extract Jinv
         for (index_t ii = 0; ii < 3; ii++) {
@@ -375,30 +377,30 @@ class Basis3D {
         }
 
         // Extract Uxi0
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        for (index_t ii = 0; ii < M; ii++) {
           for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
 
-        Model::compute_residual(i, j, data, weight * detJ(i, j), Jinv0, Uxi0,
-                                Uxib);
+        T wdetJ = weight * detJ(i, j);
+        resfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib);
 
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        auto resi = MakeSlice(res, i);
+        for (index_t ii = 0; ii < M; ii++) {
           for (index_t k = 0; k < NUM_NODES; k++) {
-            res(i, k, ii) += Nx[k] * Uxib(ii, 0u) + Ny[k] * Uxib(ii, 1u) +
-                             Nz[k] * Uxib(ii, 2u);
+            resi(k, ii) += Nx[k] * Uxib(ii, 0u) + Ny[k] * Uxib(ii, 1u) +
+                           Nz[k] * Uxib(ii, 2u);
           }
         }
       });
     }
   }
 
-  template <typename T, class Model, class QuadPointModelDataArray,
-            class QuadPointDetJArray, class QuadPointSolutionArray,
-            class ElementResidualArray>
-  static void jacobians(QuadPointModelDataArray& data, QuadPointDetJArray& detJ,
-                        QuadPointSolutionArray& Uq, ElementResidualArray& jac) {
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointSolutionArray, class ElementJacArray>
+  static void jacobians(QuadPointDetJArray& detJ, QuadPointSolutionArray& Uq,
+                        const FunctorType& jacfunc, ElementJacArray& jac) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
       Quadrature::getQuadPoint(j, pt);
@@ -409,19 +411,20 @@ class Basis3D {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
-        A2D::Vec<T, Model::NUM_VARS> U0, Ub;
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        A2D::Vec<T, M> U0, Ub;
+        for (index_t ii = 0; ii < M; ii++) {
           U0(ii) = Uq(i, j, ii);
         }
 
         // The Jacobian of the energy
-        A2D::Mat<T, Model::NUM_VARS, Model::NUM_VARS> ja;
+        A2D::SymmMat<T, M> ja;
+        T wdetJ = weight * detJ(i, j);
+        jacfunc(i, j, wdetJ, U0, ja);
 
-        Model::compute_jacobian(i, j, data, weight * detJ(i, j), U0, Ub, ja);
-
+        auto jaci = MakeSlice(jac, i);
         for (index_t ky = 0; ky < NUM_NODES; ky++) {
-          for (index_t iy = 0; iy < Model::NUM_VARS; iy++) {
-            for (index_t ix = 0; ix < Model::NUM_VARS; ix++) {
+          for (index_t iy = 0; iy < M; iy++) {
+            for (index_t ix = 0; ix < M; ix++) {
               T n = N[ky] * ja(iy, ix);
               for (index_t kx = 0; kx < NUM_NODES; kx++) {
                 jac(i, ky, kx, iy, ix) += N[kx] * n;
@@ -433,12 +436,11 @@ class Basis3D {
     }
   }
 
-  template <typename T, class Model, class QuadPointModelDataArray,
-            class QuadPointDetJArray, class QuadPointJacobianArray,
-            class QuadPointGradientArray, class ElementResidualArray>
-  static void jacobians(QuadPointModelDataArray& Edata,
-                        QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
-                        QuadPointGradientArray& Uxi,
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointJacobianArray, class QuadPointGradientArray,
+            class ElementResidualArray>
+  static void jacobians(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
+                        QuadPointGradientArray& Uxi, const FunctorType& jacfunc,
                         ElementResidualArray& jac) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
@@ -451,7 +453,7 @@ class Basis3D {
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
-        A2D::Mat<T, Model::NUM_VARS, 3> Uxi0, Uxib;
+        A2D::Mat<T, M, 3> Uxi0, Uxib;
 
         // Extract Jinv
         for (index_t ii = 0; ii < 3; ii++) {
@@ -461,21 +463,22 @@ class Basis3D {
         }
 
         // Extract Uxi0
-        for (index_t ii = 0; ii < Model::NUM_VARS; ii++) {
+        for (index_t ii = 0; ii < M; ii++) {
           for (index_t jj = 0; jj < 3; jj++) {
             Uxi0(ii, jj) = Uxi(i, j, ii, jj);
           }
         }
 
         // The Jacobian of the energy
-        A2D::SymmTensor<T, Model::NUM_VARS, 3> ja;
+        A2D::SymmTensor<T, M, 3> ja;
 
-        Model::compute_jacobian(i, j, Edata, weight * detJ(i, j), Jinv0, Uxi0,
-                                Uxib, ja);
+        T wdetJ = weight * detJ(i, j);
+        jacfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib, ja);
 
+        auto jaci = MakeSlice(jac, i);
         for (index_t ky = 0; ky < NUM_NODES; ky++) {
-          for (index_t iy = 0; iy < Model::NUM_VARS; iy++) {
-            for (index_t ix = 0; ix < Model::NUM_VARS; ix++) {
+          for (index_t iy = 0; iy < M; iy++) {
+            for (index_t ix = 0; ix < M; ix++) {
               T nx = Nx[ky] * ja(iy, 0u, ix, 0u) + Ny[ky] * ja(iy, 1u, ix, 0u) +
                      Nz[ky] * ja(iy, 2u, ix, 0u);
               T ny = Nx[ky] * ja(iy, 0u, ix, 1u) + Ny[ky] * ja(iy, 1u, ix, 1u) +
@@ -484,8 +487,7 @@ class Basis3D {
                      Nz[ky] * ja(iy, 2u, ix, 2u);
 
               for (index_t kx = 0; kx < NUM_NODES; kx++) {
-                jac(i, ky, kx, iy, ix) +=
-                    Nx[kx] * nx + Ny[kx] * ny + Nz[kx] * nz;
+                jaci(ky, kx, iy, ix) += Nx[kx] * nx + Ny[kx] * ny + Nz[kx] * nz;
               }
             }
           }

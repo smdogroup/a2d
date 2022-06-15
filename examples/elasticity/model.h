@@ -12,6 +12,14 @@
 
 namespace A2D {
 
+/*
+  Element base class.
+
+  This defines an element that is compatible with the given PDE. You can
+  set the node locations into the element, add the non-zero-pattern of the
+  Jacobian matrix via the add_node_set as well as adding the residual and
+  Jacobian contributions
+*/
 template <typename I, typename T, class PDE>
 class Element {
  public:
@@ -19,10 +27,125 @@ class Element {
   virtual void set_nodes(typename PDE::NodeArray& X) = 0;
   virtual void add_node_set(std::set<std::pair<I, I>>& node_set) = 0;
   virtual void set_solution(typename PDE::SolutionArray& U) = 0;
+  virtual T energy() { return T(0.0); }
   virtual void add_residual(typename PDE::SolutionArray& res) = 0;
   virtual void add_jacobian(typename PDE::SparseMat& jac) = 0;
+  virtual void add_adjoint_dfdnodes(typename PDE::SolutionArray& psi,
+                                    typename PDE::NodeArray& dfdx) {}
 };
 
+/*
+  Constitutive base class.
+
+  This is an optional layer of classes that define a relationship between
+  the design variables and the material data stored in each class.
+
+  The constitutive object implementation is responsible for storing the
+  associated element and defining that relationship for a given type of PDE.
+*/
+template <typename I, typename T, class PDE>
+class Constitutive {
+ public:
+  virtual ~Constitutive() {}
+  virtual void set_design_vars(typename PDE::DesignArray& x) = 0;
+  virtual void add_dfdx(typename PDE::DesignArray& dfdx) = 0;
+  virtual void add_adjoint_dfdx(typename PDE::SolutionArray& psi,
+                                typename PDE::NodeArray& dfdx) = 0;
+};
+
+/*
+  ElementFunction base class.
+
+  This class enables the computation of a function that sums up over all
+  the elements within the element.
+*/
+template <typename I, typename T, class PDE>
+class ElementFunctional {
+ public:
+  virtual ~ElementFunctional() {}
+  virtual T eval_functional() = 0;
+  virtual void add_dfdu(typename PDE::SolutionArray& dfdu) = 0;
+  virtual void add_dfdx(typename PDE::NodeArray& dfdx) = 0;
+};
+
+/*
+  Container class for all functionals.
+
+  The functional must be the result of a sum over the ElementFunctions in the
+  container.
+*/
+template <typename I, typename T, class PDE>
+class Functional {
+ public:
+  Functional() { num_functionals = 0; }
+  virtual ~Functional() {}
+
+  void add_functional(ElementFunctional<I, T, PDE>* functional) {
+    functionals[num_functionals] = functional;
+    num_functionals++;
+  }
+
+  index_t get_num_functionals() { return num_functionals; }
+  ElementFunctional<I, T, PDE>* get_functional(index_t index) {
+    return functionals[index];
+  }
+
+  /*
+    Evaluate the functional by summing the values over all components
+  */
+  T eval_functional(Functional& functional) {
+    T value = 0.0;
+    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
+      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
+      value += functional.eval_functional();
+    }
+  }
+
+  /*
+    Compute the derivative of the functional w.r.t. state variables
+  */
+  void eval_dfdu(Functional& functional, typename PDE::SolutionArray& dfdu) {
+    dfdu.zero();
+    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
+      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
+      functional.add_dfdu(dfdu);
+    }
+  }
+
+  /*
+    Compute the derivative of the functional w.r.t. design variables
+  */
+  void eval_dfdx(Functional& functional, typename PDE::DesignArray& dfdx) {
+    dfdx.zero();
+    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
+      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
+      functional.add_dfdx(dfdx);
+    }
+  }
+
+  /*
+    Compute the derivative of the functional w.r.t. nodes
+  */
+  void eval_dfdnodes(Functional& functional, typename PDE::NodeArray& dfdx) {
+    dfdx.zero();
+    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
+      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
+      functional.add_dfdx(dfdx);
+    }
+  }
+
+ private:
+  index_t num_functionals;
+  ElementFunctional<I, T, PDE>* functionals[10];
+};
+
+/*
+  The FE Model base class.
+
+  This class holds all the elements and constitutive objects in the
+  model. It is used to compute the residual, Jacobian and derivatives
+  needed for adjoint-based gradient evaluation
+*/
 template <typename I, typename T, class PDE>
 class FEModel {
  public:
@@ -38,11 +161,29 @@ class FEModel {
         U(solution_layout),
         B(null_space_layout) {
     num_elements = 0;
+    num_constitutive = 0;
   }
   ~FEModel() {}
 
+  /*
+    Set the design variables into the elements -
+
+    The constitutive objects serve as a mapping from the design variables
+    x to the material parameter data stored in each element array.
+  */
+  void set_design_vars(typename PDE::DesignArray& x) {
+    for (I i = 0; i < num_constitutive; i++) {
+      constitutive[i]->set_design_vars(x);
+    }
+  }
+
   // void add_element(Element<I, T, PDE>* element) {
   // elements.push_back(element); }
+
+  void add_constitutive(Constitutive<I, T, PDE>* con) {
+    constitutive[num_constitutive] = con;
+    num_constitutive++;
+  }
 
   void add_element(Element<I, T, PDE>* element) {
     elements[num_elements] = element;
@@ -73,6 +214,17 @@ class FEModel {
     for (I i = 0; i < num_elements; i++) {
       elements[i]->set_solution(U);
     }
+  }
+
+  // Zero the dirichlet boundary conditions
+  void zero_bcs(typename PDE::SolutionArray& U) { A2D::VecZeroBCRows(bcs, U); }
+
+  T energy() {
+    T value = 0.0;
+    for (I i = 0; i < num_elements; i++) {
+      value += elements[i]->energy();
+    }
+    return value;
   }
 
   void residual(typename PDE::SolutionArray& res) {
@@ -124,6 +276,9 @@ class FEModel {
   // std::list<Element<I, T, PDE>*> elements;
   index_t num_elements;
   Element<I, T, PDE>* elements[10];
+
+  index_t num_constitutive;
+  Constitutive<I, T, PDE>* constitutive;
 
   const index_t nnodes;  // Number of nodes in the model
   const index_t nbcs;    // Number of nodes with Dirichlet bcs
@@ -255,7 +410,7 @@ class ElementBasis : public Element<I, T, PDE> {
   // virtual void add_residual(typename PDE::SolutionArray& res) = 0;
   // virtual void add_jacobian(typename PDE::SparseMat& jac) = 0;
 
- protected:
+  // Expose the underlying element data
   ElemNodeArray& get_elem_nodes() { return Xe; }
   QuadNodeArray& get_quad_nodes() { return Xq; }
   QuadDetArray& get_detJ() { return detJ; }
@@ -298,6 +453,17 @@ class ElementBasis : public Element<I, T, PDE> {
   QuadDetArray detJ;
   QuadJtransArray Jinv;
   QuadDataArray data;
+};
+
+/*
+  A minimal set of data needed for the ElementFunctional class
+*/
+template <typename I, typename T, class PDE, class Basis>
+class FunctionalBasis : public ElementFunctional<I, T, PDE> {
+ public:
+  FunctionalBasis(ElementBasis<I, T, PDE, Basis>& element) : element(element) {}
+
+  ElementBasis<I, T, PDE, Basis>& element;
 };
 
 }  // namespace A2D

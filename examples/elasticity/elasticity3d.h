@@ -31,6 +31,10 @@ class ElasticityPDE {
   typedef A2D::CLayout<vars_per_node> SolutionLayout;
   typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
 
+  // Layout for the design variables
+  typedef A2D::CLayout<1> DesignLayout;
+  typedef A2D::MultiArray<T, DesignLayout> DesignArray;
+
   // Near null space layout - for the AMG preconditioner
   typedef A2D::CLayout<vars_per_node, null_space_dim> NullSpaceLayout;
   typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
@@ -78,10 +82,27 @@ class NonlinElasticityElement3D
       : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
 
   T energy() {
-    T engry = 0.0;
-    Basis::template energy<T, NonlinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), engry);
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    T engry = Basis::template integrate<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3>& Uxi0) -> T {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux;
+          A2D::SymmMat<T, 3> E;
+          T output;
+
+          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
+          A2D::Mat3x3GreenStrain(Ux, E);
+          A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          return wdetJ * output;
+        });
+
     return engry;
   }
 
@@ -90,9 +111,36 @@ class NonlinElasticityElement3D
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
     elem_res.zero();
 
-    Basis::template residuals<T, NonlinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), elem_res);
+    // Retrieve the element data
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    Basis::template residuals<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux0, Uxb;
+          A2D::SymmMat<T, 3> E0, Eb;
+
+          A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
+          A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
+          A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::ADScalar<T> output;
+
+          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          output.bvalue = wdetJ;
+
+          energy.reverse();
+          strain.reverse();
+          mult.reverse();
+        },
+        elem_res);
 
     VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
@@ -101,114 +149,62 @@ class NonlinElasticityElement3D
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
     elem_jac.zero();
 
-    Basis::template jacobians<T, NonlinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), elem_jac);
+    // Retrieve the element data
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    Basis::template jacobians<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
+                A2D::SymmTensor<T, 3, 3>& jac) -> void {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux0, Uxb;
+          A2D::SymmMat<T, 3> E0, Eb;
+
+          const int N = 9;
+          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::A2DScalar<N, T> output;
+
+          // Set up the seed values
+          for (int k = 0; k < N; k++) {
+            A2D::Mat<T, 3, 3>& Up = Uxi.pvalue(k);
+            Up(k / 3, k % 3) = 1.0;
+          }
+
+          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          output.bvalue = wdetJ;
+
+          energy.reverse();
+          strain.reverse();
+          mult.reverse();
+
+          mult.hforward();
+          strain.hforward();
+          energy.hreverse();
+          strain.hreverse();
+          mult.hreverse();
+
+          for (int k = 0; k < N; k++) {
+            A2D::Mat<T, 3, 3>& Uxih = Uxi.hvalue(k);
+            for (int i = 0; i < 3; i++) {
+              for (int j = 0; j < 3; j++) {
+                jac(i, j, k / 3, k % 3) = Uxih(i, j);
+              }
+            }
+          }
+        },
+        elem_jac);
 
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
-
-  class Impl {
-   public:
-    static const index_t NUM_VARS = 3;
-
-    template <class QuadPointData>
-    static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
-                            A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux;
-      SymmMat3x3 E;
-      T output;
-
-      A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      A2D::Mat3x3GreenStrain(Ux, E);
-      A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      return output * wdetJ;
-    }
-
-    template <class QuadPointData>
-    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 3, 3>& Uxi0,
-                                 A2D::Mat<T, 3, 3>& Uxib) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb;
-      SymmMat3x3 E0, Eb;
-
-      A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
-      A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
-      A2D::ADMat<SymmMat3x3> E(E0, Eb);
-      A2D::ADScalar<T> output;
-
-      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      output.bvalue = wdetJ;
-
-      energy.reverse();
-      strain.reverse();
-      mult.reverse();
-    }
-
-    template <class QuadPointData>
-    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 3, 3>& Uxi0,
-                                 A2D::Mat<T, 3, 3>& Uxib,
-                                 A2D::SymmTensor<T, 3, 3>& jac) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb;
-      SymmMat3x3 E0, Eb;
-
-      const int N = 9;
-      A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
-      A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
-      A2D::A2DScalar<N, T> output;
-
-      // Set up the seed values
-      for (int k = 0; k < N; k++) {
-        Mat3x3& Up = Uxi.pvalue(k);
-        Up(k / 3, k % 3) = 1.0;
-      }
-
-      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      output.bvalue = wdetJ;
-
-      energy.reverse();
-      strain.reverse();
-      mult.reverse();
-
-      mult.hforward();
-      strain.hforward();
-      energy.hreverse();
-      strain.hreverse();
-      mult.hreverse();
-
-      for (int k = 0; k < N; k++) {
-        Mat3x3& Uxih = Uxi.hvalue(k);
-        for (int i = 0; i < 3; i++) {
-          for (int j = 0; j < 3; j++) {
-            jac(i, j, k / 3, k % 3) = Uxih(i, j);
-          }
-        }
-      }
-    }
-  };
 };
 
 template <typename I, typename T, class Basis>
@@ -226,10 +222,27 @@ class LinElasticityElement3D
       : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
 
   T energy() {
-    T engry = 0.0;
-    Basis::template energy<T, LinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), engry);
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    T engry = Basis::template integrate<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3> Uxi0) -> T {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux;
+          A2D::SymmMat<T, 3> E;
+          T output;
+
+          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
+          A2D::Mat3x3LinearGreenStrain(Ux, E);
+          A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          return wdetJ * output;
+        });
+
     return engry;
   }
 
@@ -238,9 +251,36 @@ class LinElasticityElement3D
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
     elem_res.zero();
 
-    Basis::template residuals<T, LinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), elem_res);
+    // Retrieve the element data
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    Basis::template residuals<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux0, Uxb;
+          A2D::SymmMat<T, 3> E0, Eb;
+
+          A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
+          A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
+          A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::ADScalar<T> output;
+
+          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
+          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          output.bvalue = wdetJ;
+
+          energy.reverse();
+          strain.reverse();
+          mult.reverse();
+        },
+        elem_res);
 
     VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
@@ -249,115 +289,106 @@ class LinElasticityElement3D
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
     elem_jac.zero();
 
-    Basis::template jacobians<T, LinElasticityElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), elem_jac);
+    // Retrieve the element data
+    auto data = this->get_quad_data();
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uxi = this->get_quad_gradient();
+
+    Basis::template jacobians<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
+                A2D::SymmTensor<T, 3, 3>& jac) -> void {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux0, Uxb;
+          A2D::SymmMat<T, 3> E0, Eb;
+
+          const int N = 9;
+          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::A2DScalar<N, T> output;
+
+          // Set up the seed values
+          for (int k = 0; k < N; k++) {
+            A2D::Mat<T, 3, 3>& Up = Uxi.pvalue(k);
+            Up(k / 3, k % 3) = 1.0;
+          }
+
+          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
+          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+          output.bvalue = wdetJ;
+
+          energy.reverse();
+          strain.reverse();
+          mult.reverse();
+
+          mult.hforward();
+          strain.hforward();
+          energy.hreverse();
+          strain.hreverse();
+          mult.hreverse();
+
+          for (int k = 0; k < N; k++) {
+            A2D::Mat<T, 3, 3>& Uxih = Uxi.hvalue(k);
+            for (int i = 0; i < 3; i++) {
+              for (int j = 0; j < 3; j++) {
+                jac(i, j, k / 3, k % 3) = Uxih(i, j);
+              }
+            }
+          }
+        },
+        elem_jac);
 
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
-
-  class Impl {
-   public:
-    static const index_t NUM_VARS = 3;
-
-    template <class QuadPointData>
-    static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
-                            A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux;
-      SymmMat3x3 E;
-      T output;
-
-      A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      A2D::Mat3x3LinearGreenStrain(Ux, E);
-      A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      return output * wdetJ;
-    }
-
-    template <class QuadPointData>
-    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 3, 3>& Uxi0,
-                                 A2D::Mat<T, 3, 3>& Uxib) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb;
-      SymmMat3x3 E0, Eb;
-
-      A2D::ADMat<Mat3x3> Uxi(Uxi0, Uxib);
-      A2D::ADMat<Mat3x3> Ux(Ux0, Uxb);
-      A2D::ADMat<SymmMat3x3> E(E0, Eb);
-      A2D::ADScalar<T> output;
-
-      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      output.bvalue = wdetJ;
-
-      energy.reverse();
-      strain.reverse();
-      mult.reverse();
-    }
-
-    template <class QuadPointData>
-    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 3, 3>& Uxi0,
-                                 A2D::Mat<T, 3, 3>& Uxib,
-                                 A2D::SymmTensor<T, 3, 3>& jac) {
-      typedef A2D::SymmMat<T, 3> SymmMat3x3;
-      typedef A2D::Mat<T, 3, 3> Mat3x3;
-
-      T mu(data(i, j, 0)), lambda(data(i, j, 1));
-      Mat3x3 Ux0, Uxb;
-      SymmMat3x3 E0, Eb;
-
-      const int N = 9;
-      A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
-      A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-      A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
-      A2D::A2DScalar<N, T> output;
-
-      // Set up the seed values
-      for (int k = 0; k < N; k++) {
-        Mat3x3& Up = Uxi.pvalue(k);
-        Up(k / 3, k % 3) = 1.0;
-      }
-
-      auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-      auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-      auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
-
-      output.bvalue = wdetJ;
-
-      energy.reverse();
-      strain.reverse();
-      mult.reverse();
-
-      mult.hforward();
-      strain.hforward();
-      energy.hreverse();
-      strain.hreverse();
-      mult.hreverse();
-
-      for (int k = 0; k < N; k++) {
-        Mat3x3& Uxih = Uxi.hvalue(k);
-        for (int i = 0; i < 3; i++) {
-          for (int j = 0; j < 3; j++) {
-            jac(i, j, k / 3, k % 3) = Uxih(i, j);
-          }
-        }
-      }
-    }
-  };
 };
+
+// template <typename I, typename T, class Basis>
+// class StressIntegral3D
+//     : public FunctionalBasis<I, T, ElasticityPDE<I, T>, Basis> {
+//  public:
+//   StressIntegral3D(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element)
+//       : FunctionalBasis<I, T, ElasticityPDE<I, T>, Basis>(element) {}
+
+//   T eval_functional() {
+//     T engry = 0.0;
+//     Basis::template energy<T, NonlinElasticityElement3D<I, T, Basis>::Impl>(
+//         this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
+//         this->get_quad_gradient(), engry);
+//     return engry;
+//   }
+
+//   void add_dfdu(typename ElasticityPDE<I, T>::SolutionArray& dfdu) {}
+//   void add_dfdx(typename ElasticityPDE<I, T>::NodeArray& dfdx) {}
+
+//   class Impl {
+//    public:
+//     static const index_t NUM_VARS = 3;
+
+//     template <class QuadPointData>
+//     static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
+//                             A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi)
+//                             {
+//       typedef A2D::SymmMat<T, 3> SymmMat3x3;
+//       typedef A2D::Mat<T, 3, 3> Mat3x3;
+
+//       T mu(data(i, j, 0)), lambda(data(i, j, 1));
+//       Mat3x3 Ux;
+//       SymmMat3x3 E;
+//       T output;
+
+//       A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
+//       A2D::Mat3x3GreenStrain(Ux, E);
+//       A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+
+//       return output * wdetJ;
+//     }
+//   };
+// };
 
 }  // namespace A2D
 

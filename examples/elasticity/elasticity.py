@@ -74,7 +74,7 @@ J = model.new_matrix()
 model.jacobian(J)
 
 # Set the AMG information
-num_levels = 4
+num_levels = 3
 omega = 4.0 / 3.0
 print_info = True
 amg = model.new_amg(num_levels, omega, J, print_info)

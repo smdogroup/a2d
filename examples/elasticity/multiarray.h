@@ -328,6 +328,12 @@ MultiArraySlice<T, ldims...> MakeSlice(MultiArray<T, CLayout<ldims...>>& array,
   return MultiArraySlice<T, ldims...>(array, idx);
 }
 
+template <typename T, typename IdxType, index_t dim0, index_t... ldims>
+MultiArraySlice<T, ldims...> MakeSlice(
+    MultiArray<T, CLayout<dim0, ldims...>>& array, IdxType idx0, IdxType idx1) {
+  return MultiArraySlice<T, ldims...>(array, idx0, idx1);
+}
+
 }  // namespace A2D
 
 #endif  // MULTI_ARRAY_H

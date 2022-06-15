@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
   typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
   typedef ElasticityPDE<I, T> PDE;
 
-  const index_t nx = 64;
+  const index_t nx = 128;
   const index_t ny = 64;
   const index_t nz = 64;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
@@ -117,18 +117,21 @@ int main(int argc, char* argv[]) {
   // Compute the Jacobian matrix
   double t0 = MPI_Wtime();
   auto J = model.new_matrix();
-  model.jacobian(*J);
   t0 = MPI_Wtime() - t0;
-
-  std::cout << "Jacobian time: " << t0 << std::endl;
+  std::cout << "Jacobian initialization time: " << t0 << std::endl;
 
   double t1 = MPI_Wtime();
+  model.jacobian(*J);
+  t1 = MPI_Wtime() - t1;
+  std::cout << "Jacobian computational time: " << t1 << std::endl;
+
+  double t2 = MPI_Wtime();
   int num_levels = 4;
   double omega = 1.333;
   bool print_info = true;
   auto amg = model.new_amg(num_levels, omega, J, print_info);
-  t1 = MPI_Wtime() - t1;
-  std::cout << "Set up time for AMG: " << t1 << std::endl;
+  t2 = MPI_Wtime() - t2;
+  std::cout << "Set up time for AMG: " << t2 << std::endl;
 
   // Set the residuals and apply the boundary conditions
   auto solution = model.new_solution();
@@ -142,15 +145,19 @@ int main(int argc, char* argv[]) {
 
   index_t monitor = 10;
   index_t max_iters = 80;
-  double t2 = MPI_Wtime();
-  amg->cg(*residual, *solution, monitor, max_iters);
-  t2 = MPI_Wtime() - t2;
-  std::cout << "Conjugate gradient solution time: " << t2 << std::endl;
-
   double t3 = MPI_Wtime();
-  amg->mg(*residual, *solution, monitor, max_iters);
+  amg->cg(*residual, *solution, monitor, max_iters);
   t3 = MPI_Wtime() - t3;
-  std::cout << "Multigrid solution time: " << t3 << std::endl;
+  std::cout << "Conjugate gradient solution time: " << t3 << std::endl;
+
+  double t4 = MPI_Wtime();
+  amg->mg(*residual, *solution, monitor, max_iters);
+  t4 = MPI_Wtime() - t4;
+  std::cout << "Multigrid solution time: " << t4 << std::endl;
+
+  model.set_solution(*solution);
+  T energy = model.energy();
+  std::cout << "Model energy: " << energy << std::endl;
 
   return (0);
 }

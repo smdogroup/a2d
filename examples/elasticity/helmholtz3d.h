@@ -31,6 +31,10 @@ class HelmholtzPDE {
   typedef A2D::CLayout<vars_per_node> SolutionLayout;
   typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
 
+  // Layout for the design variables
+  typedef A2D::CLayout<1> DesignLayout;
+  typedef A2D::MultiArray<T, DesignLayout> DesignArray;
+
   // Near null space layout - for the AMG preconditioner
   typedef A2D::CLayout<vars_per_node, null_space_dim> NullSpaceLayout;
   typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
@@ -57,8 +61,11 @@ class HelmholtzElement3D
   // Short cut for base class name
   typedef ElementBasis<I, T, HelmholtzPDE<I, T>, Basis> base;
 
-  HelmholtzElement3D(const int nelems)
-      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems) {}
+  HelmholtzElement3D(const int nelems, double r0)
+      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems), r0(r0) {}
+
+  // The radius (global value)
+  const double r0;
 
   // Add the residual contribution
   void add_residual(typename HelmholtzPDE<I, T>::SolutionArray& res) {
@@ -66,11 +73,51 @@ class HelmholtzElement3D
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
     elem_res.zero();
 
-    Basis::template residuals<T, HelmholtzElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-        this->get_quad_gradient(), elem_res);
-    Basis::template residuals<T, HelmholtzElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_quad_solution(),
+    // Retrieve the element data
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uq = this->get_quad_solution();
+    auto Uxi = this->get_quad_gradient();
+
+    double r2 = r0 * r0;
+
+    Basis::template residuals<T, NUM_VARS>(
+        detJ, Uq,
+        [](index_t i, index_t j, T wdetJ, A2D::Vec<T, 1>& U0,
+           A2D::Vec<T, 1>& Ub) -> void { Ub(0) = wdetJ * U0(0); },
+        elem_res);
+
+    Basis::template residuals<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&r2](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
+              A2D::Mat<T, 1, 3>& Uxi, A2D::Mat<T, 1, 3>& Uxib) -> void {
+          A2D::Vec<T, 3> Ux;
+          // Ux = Uxi * Jinv
+          Ux(0) = Uxi(0, 0) * Jinv(0, 0) + Uxi(0, 1) * Jinv(1, 0) +
+                  Uxi(0, 2) * Jinv(2, 0);
+          Ux(1) = Uxi(0, 0) * Jinv(0, 1) + Uxi(0, 1) * Jinv(1, 1) +
+                  Uxi(0, 2) * Jinv(2, 1);
+          Ux(2) = Uxi(0, 0) * Jinv(0, 2) + Uxi(0, 1) * Jinv(1, 2) +
+                  Uxi(0, 2) * Jinv(2, 2);
+
+          A2D::Vec<T, 3> Uxb;
+          Uxb(0) = wdetJ * r2 * Ux(0);
+          Uxb(1) = wdetJ * r2 * Ux(1);
+          Uxb(2) = wdetJ * r2 * Ux(2);
+
+          // Ux = Uxi * Jinv
+          // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv
+          //                 = Jinv * Uxb^{T} * dot{Uxi}
+          // => Uxib^{T} = Jinv * Uxb^{T}
+          // => Uxib = Uxb * Jinv^{T}
+
+          Uxib(0, 0) =
+              Uxb(0) * Jinv(0, 0) + Uxb(1) * Jinv(0, 1) + Uxb(2) * Jinv(0, 2);
+          Uxib(0, 1) =
+              Uxb(0) * Jinv(1, 0) + Uxb(1) * Jinv(1, 1) + Uxb(2) * Jinv(1, 2);
+          Uxib(0, 2) =
+              Uxb(0) * Jinv(2, 0) + Uxb(1) * Jinv(2, 1) + Uxb(2) * Jinv(2, 2);
+        },
         elem_res);
 
     VecElementGatherAdd(this->get_conn(), elem_res, res);
@@ -81,103 +128,55 @@ class HelmholtzElement3D
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
     elem_jac.zero();
 
-    Basis::template jacobians<T, HelmholtzElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_quad_gradient(),
+    // Retrieve the element data
+    auto detJ = this->get_detJ();
+    auto Jinv = this->get_Jinv();
+    auto Uq = this->get_quad_solution();
+    auto Uxi = this->get_quad_gradient();
+
+    double r2 = r0 * r0;
+
+    Basis::template jacobians<T, NUM_VARS>(
+        detJ, Uq,
+        [](index_t i, index_t j, T wdetJ, A2D::Vec<T, 1>& U0,
+           A2D::SymmMat<T, 1>& jac) -> void { jac(0, 0) = wdetJ; },
         elem_jac);
 
-    Basis::template jacobians<T, HelmholtzElement3D<I, T, Basis>::Impl>(
-        this->get_quad_data(), this->get_detJ(), this->get_quad_solution(),
+    Basis::template jacobians<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&r2](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv,
+              A2D::Mat<T, 1, 3>& Uxi, A2D::Mat<T, 1, 3>& Uxib,
+              A2D::SymmTensor<T, 1, 3>& jac) -> void {
+          T wr2 = r2 * wdetJ;
+
+          // Uxib = Uxb * Jinv^{T}
+          // Uxb = r0 * r0 * Uxb = r0 * r0 * Uxi * Jinv
+          // Uxib = r0 * r0 * Jinv * Jinv^{T}
+
+          jac(0, 0, 0, 0) =
+              r2 * (Jinv(0, 0) * Jinv(0, 0) + Jinv(0, 1) * Jinv(0, 1) +
+                    Jinv(0, 2) * Jinv(0, 2));
+          jac(0, 1, 0, 1) =
+              r2 * (Jinv(1, 0) * Jinv(1, 0) + Jinv(1, 1) * Jinv(1, 1) +
+                    Jinv(1, 2) * Jinv(1, 2));
+          jac(0, 2, 0, 2) =
+              r2 * (Jinv(2, 0) * Jinv(2, 0) + Jinv(2, 1) * Jinv(2, 1) +
+                    Jinv(2, 2) * Jinv(2, 2));
+
+          jac(0, 0, 0, 1) =
+              r2 * (Jinv(0, 0) * Jinv(1, 0) + Jinv(0, 1) * Jinv(1, 1) +
+                    Jinv(0, 2) * Jinv(1, 2));
+          jac(0, 0, 0, 2) =
+              r2 * (Jinv(0, 0) * Jinv(2, 0) + Jinv(0, 1) * Jinv(2, 1) +
+                    Jinv(0, 2) * Jinv(2, 2));
+          jac(0, 1, 0, 2) =
+              r2 * (Jinv(1, 0) * Jinv(2, 0) + Jinv(1, 1) * Jinv(2, 1) +
+                    Jinv(1, 2) * Jinv(2, 2));
+        },
         elem_jac);
 
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
-
-  class Impl {
-   public:
-    static const index_t NUM_VARS = 1;
-
-    template <class QuadPointData>
-    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub) {
-      Ub(0) = wdetJ * U0(0);
-    }
-
-    template <class QuadPointData>
-    static void compute_residual(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 1, 3>& Uxi,
-                                 A2D::Mat<T, 1, 3>& Uxib) {
-      T r0 = data(i, j, 0);
-
-      A2D::Vec<T, 3> Ux;
-      // Ux = Uxi * Jinv
-      Ux(0) = Uxi(0, 0) * Jinv(0, 0) + Uxi(0, 1) * Jinv(1, 0) +
-              Uxi(0, 2) * Jinv(2, 0);
-      Ux(1) = Uxi(0, 0) * Jinv(0, 1) + Uxi(0, 1) * Jinv(1, 1) +
-              Uxi(0, 2) * Jinv(2, 1);
-      Ux(2) = Uxi(0, 0) * Jinv(0, 2) + Uxi(0, 1) * Jinv(1, 2) +
-              Uxi(0, 2) * Jinv(2, 2);
-
-      A2D::Vec<T, 3> Uxb;
-      Uxb(0) = wdetJ * r0 * r0 * Ux(0);
-      Uxb(1) = wdetJ * r0 * r0 * Ux(1);
-      Uxb(2) = wdetJ * r0 * r0 * Ux(2);
-
-      // Ux = Uxi * Jinv
-      // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv
-      //                 = Jinv * Uxb^{T} * dot{Uxi}
-      // => Uxib^{T} = Jinv * Uxb^{T}
-      // => Uxib = Uxb * Jinv^{T}
-
-      Uxib(0, 0) =
-          Uxb(0) * Jinv(0, 0) + Uxb(1) * Jinv(0, 1) + Uxb(2) * Jinv(0, 2);
-      Uxib(0, 1) =
-          Uxb(0) * Jinv(1, 0) + Uxb(1) * Jinv(1, 1) + Uxb(2) * Jinv(1, 2);
-      Uxib(0, 2) =
-          Uxb(0) * Jinv(2, 0) + Uxb(1) * Jinv(2, 1) + Uxb(2) * Jinv(2, 2);
-    }
-
-    template <class QuadPointData>
-    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Vec<T, 1>& U0, A2D::Vec<T, 1>& Ub,
-                                 A2D::Mat<T, 1, 1>& jac) {
-      jac(0, 0) = wdetJ;
-    }
-
-    template <class QuadPointData>
-    static void compute_jacobian(I i, I j, QuadPointData& data, T wdetJ,
-                                 A2D::Mat<T, 3, 3>& Jinv,
-                                 A2D::Mat<T, 1, 3>& Uxi0,
-                                 A2D::Mat<T, 1, 3>& Uxib,
-                                 A2D::SymmTensor<T, 1, 3>& jac) {
-      T r0 = data(i, j, 0);
-      T r2 = r0 * r0 * wdetJ;
-
-      // Uxib = Uxb * Jinv^{T}
-      // Uxb = r0 * r0 * Uxb = r0 * r0 * Uxi * Jinv
-      // Uxib = r0 * r0 * Jinv * Jinv^{T}
-
-      jac(0, 0, 0, 0) =
-          r2 * (Jinv(0, 0) * Jinv(0, 0) + Jinv(0, 1) * Jinv(0, 1) +
-                Jinv(0, 2) * Jinv(0, 2));
-      jac(0, 1, 0, 1) =
-          r2 * (Jinv(1, 0) * Jinv(1, 0) + Jinv(1, 1) * Jinv(1, 1) +
-                Jinv(1, 2) * Jinv(1, 2));
-      jac(0, 2, 0, 2) =
-          r2 * (Jinv(2, 0) * Jinv(2, 0) + Jinv(2, 1) * Jinv(2, 1) +
-                Jinv(2, 2) * Jinv(2, 2));
-
-      jac(0, 0, 0, 1) =
-          r2 * (Jinv(0, 0) * Jinv(1, 0) + Jinv(0, 1) * Jinv(1, 1) +
-                Jinv(0, 2) * Jinv(1, 2));
-      jac(0, 0, 0, 2) =
-          r2 * (Jinv(0, 0) * Jinv(2, 0) + Jinv(0, 1) * Jinv(2, 1) +
-                Jinv(0, 2) * Jinv(2, 2));
-      jac(0, 1, 0, 2) =
-          r2 * (Jinv(1, 0) * Jinv(2, 0) + Jinv(1, 1) * Jinv(2, 1) +
-                Jinv(1, 2) * Jinv(2, 2));
-    }
-  };
 };
 
 }  // namespace A2D

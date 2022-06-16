@@ -2,6 +2,7 @@
 #define SPARSE_AMD_H
 
 #include <algorithm>
+#include <cstring>
 
 /*
   Compare two integers. This is used when sorting an array.

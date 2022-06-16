@@ -3,7 +3,7 @@
 
 #include "a2dtmp.h"
 #include "basis3d.h"
-#include "model.h"
+#include "element.h"
 #include "multiarray.h"
 
 namespace A2D {
@@ -80,6 +80,10 @@ class NonlinElasticityElement3D
 
   NonlinElasticityElement3D(const index_t nelems)
       : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
+
+  template <typename IdxType>
+  NonlinElasticityElement3D(const index_t nelems, const IdxType conn_[])
+      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems, conn_) {}
 
   T energy() {
     auto data = this->get_quad_data();
@@ -221,6 +225,10 @@ class LinElasticityElement3D
   LinElasticityElement3D(const index_t nelems)
       : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
 
+  template <typename IdxType>
+  LinElasticityElement3D(const index_t nelems, const IdxType conn_[])
+      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems, conn_) {}
+
   T energy() {
     auto data = this->get_quad_data();
     auto detJ = this->get_detJ();
@@ -346,6 +354,42 @@ class LinElasticityElement3D
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
 };
+
+// template <typename I, typename T, class Basis>
+// class TopoOptConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
+//  public:
+//   TopoOptConstitutive(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>&
+//   element,
+//                       T E, T nu)
+//       : element(element), E(E), nu(nu) {
+//     mu = 0.5 * E / (1.0 + nu);
+//     lambda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+//   }
+
+//   // Set the design variables
+//   void set_design_vars(typename ElasticityPDE<I, T>::DesignArray& x) {
+//     // Allocate the
+//     // x -> xe -> xq
+//     auto conn = element.get_conn();
+//     VecElementScatter(element.get_conn(), x, xe);
+//     Basis::template interp<1>(xe, xq);
+
+//     auto data = element.get_quad_data();
+//     for (I i = 0; i < conn.extent(0); i++) {
+//       for (I j = 0; j < conn.extent(1); j++) {
+//         data(i, j, 0) = mu * penalty(xq(i, j));
+//       }
+//     }
+//   }
+
+//   // Compute the psi^{T} * dR/d(data) * d(data)/dx
+//   void add_adjoint_dfdx(typename PDE::SolutionArray& psi,
+//                         typename PDE::NodeArray& dfdx) {}
+
+//  private:
+//   T E, nu;
+//   T mu, lambda;
+// };
 
 // template <typename I, typename T, class Basis>
 // class StressIntegral3D

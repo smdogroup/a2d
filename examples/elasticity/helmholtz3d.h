@@ -3,7 +3,7 @@
 
 #include "a2dtmp.h"
 #include "basis3d.h"
-#include "model.h"
+#include "element.h"
 #include "multiarray.h"
 
 namespace A2D {
@@ -63,6 +63,10 @@ class HelmholtzElement3D
 
   HelmholtzElement3D(const int nelems, double r0)
       : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems), r0(r0) {}
+
+  template <typename IdxType>
+  HelmholtzElement3D(const index_t nelems, const IdxType conn_[])
+      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems, conn_) {}
 
   // The radius (global value)
   const double r0;

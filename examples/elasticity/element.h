@@ -1,14 +1,9 @@
-#ifndef A2D_MODEL_H
-#define A2D_MODEL_H
+#ifndef A2D_ELEMENT_H
+#define A2D_ELEMENT_H
 
-#include <list>
-
-#include "a2dtmp.h"
 #include "multiarray.h"
 #include "sparse_amg.h"
 #include "sparse_matrix.h"
-#include "sparse_numeric.h"
-#include "sparse_symbolic.h"
 
 namespace A2D {
 
@@ -137,7 +132,7 @@ class ElementBasis : public Element<I, T, PDE> {
     // Set the connectivity
     for (I i = 0; i < nelems; i++) {
       for (I j = 0; j < nodes_per_elem; j++) {
-        conn(i, j) = conn_[nodes_per_elem * i + j];]
+        conn(i, j) = conn_[nodes_per_elem * i + j];
       }
     }
   }
@@ -224,3 +219,7 @@ class ElementBasis : public Element<I, T, PDE> {
   QuadJtransArray Jinv;
   QuadDataArray data;
 };
+
+}  // namespace A2D
+
+#endif  // A2D_ELEMENT_H

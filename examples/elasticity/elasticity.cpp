@@ -6,12 +6,8 @@
 #include "a2dtmp.h"
 #include "elasticity3d.h"
 #include "helmholtz3d.h"
+#include "model.h"
 #include "mpi.h"
-#include "multiarray.h"
-#include "sparse_amg.h"
-#include "sparse_matrix.h"
-#include "sparse_numeric.h"
-#include "sparse_symbolic.h"
 
 using namespace A2D;
 

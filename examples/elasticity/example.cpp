@@ -1,3 +1,4 @@
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
 #include "elasticity3d.h"
@@ -62,16 +63,9 @@ PYBIND11_MODULE(example, m) {
   // Declare the array types
   declare_array<typename ElasticityPDE<Itype, Ttype>::SolutionArray>(
       m, "ElasticityModel::SolutionArray");
-  declare_array<typename ElasticityPDE<Itype, Ttype>::BCsArray>(
-      m, "ElasticityModel::BCsArray");
 
-  declare_array<typename ElasticityHexElement::ConnArray>(
-      m, "ElasticityHexElement::ConnArray");
   declare_array<typename ElasticityHexElement::QuadDataArray>(
       m, "ElasticityHexElement::QuadDataArray");
-
-  declare_array<typename ElasticityTetElement::ConnArray>(
-      m, "ElasticityTetElement::ConnArray");
   declare_array<typename ElasticityTetElement::QuadDataArray>(
       m, "ElasticityTetElement::QuadDataArray");
 
@@ -81,25 +75,80 @@ PYBIND11_MODULE(example, m) {
   // Wrap the elasticity elements
   py::class_<ElasticityHexElement, ElasticityElementBase>(
       m, "ElasticityHexElement")
-      .def(py::init<const index_t>())
-      .def("get_conn", &ElasticityHexElement::get_conn)
+      .def(py::init([](py::array_t<int, py::array::c_style> conn) {
+        py::buffer_info buf = conn.request();
+
+        if (buf.ndim != 2) {
+          throw std::runtime_error(
+              "ElasticityHexElement: Connectivity dimension must be two");
+        }
+        if (buf.shape[1] != ElasticityHexElement::nodes_per_elem) {
+          throw std::runtime_error(
+              "ElasticityHexElement: Second connectivity dimension must match "
+              "number of nodes per element");
+        }
+
+        index_t nelems = buf.shape[0];
+        int* ptr = static_cast<int*>(buf.ptr);
+        return new ElasticityHexElement(nelems, ptr);
+      }))
       .def("get_quad_data", &ElasticityHexElement::get_quad_data);
 
   py::class_<ElasticityTetElement, ElasticityElementBase>(
       m, "ElasticityTetElement")
-      .def(py::init<const index_t>())
-      .def("get_conn", &ElasticityTetElement::get_conn)
+      .def(py::init([](py::array_t<int, py::array::c_style> conn) {
+        py::buffer_info buf = conn.request();
+
+        if (buf.ndim != 2) {
+          throw std::runtime_error(
+              "ElasticityTetElement: Connectivity dimension must be two");
+        }
+        if (buf.shape[1] != ElasticityTetElement::nodes_per_elem) {
+          throw std::runtime_error(
+              "ElasticityTetElement: Second connectivity dimension must match "
+              "number of nodes per element");
+        }
+
+        index_t nelems = buf.shape[0];
+        int* ptr = static_cast<int*>(buf.ptr);
+        return new ElasticityTetElement(nelems, ptr);
+      }))
       .def("get_quad_data", &ElasticityTetElement::get_quad_data);
 
   // Wrap the model
   py::class_<ElasticityModel>(m, "ElasticityModel")
-      .def(py::init<const index_t, const index_t>())
+      .def(py::init([](py::array_t<Ttype, py::array::c_style> X,
+                       py::array_t<int, py::array::c_style> bcs) {
+        py::buffer_info Xbuf = X.request();
+        py::buffer_info bcsbuf = bcs.request();
+
+        // Check the buffer shapes
+        if (Xbuf.ndim != 2) {
+          throw std::runtime_error("Model: Node array dimension must be two");
+        }
+        if (Xbuf.shape[1] != 3) {
+          throw std::runtime_error(
+              "Model: There must be 3 coordinates per node");
+        }
+        if (bcsbuf.ndim != 2) {
+          throw std::runtime_error(
+              "Model: The bcs array must have two dimensions");
+        }
+        if (bcsbuf.shape[1] != 2) {
+          throw std::runtime_error(
+              "Model: The bcs array must have two values index and fixed "
+              "dof");
+        }
+
+        index_t nnodes = Xbuf.shape[0];
+        index_t nbcs = bcsbuf.shape[0];
+        Ttype* Xptr = static_cast<Ttype*>(Xbuf.ptr);
+        int* bcsptr = static_cast<int*>(bcsbuf.ptr);
+        return new ElasticityModel(nnodes, Xptr, nbcs, bcsptr);
+      }))
       .def("add_element", &ElasticityModel::add_element)
       .def("new_solution", &ElasticityModel::new_solution)
-      .def("get_nodes", &ElasticityModel::get_nodes,
-           py::return_value_policy::reference)
-      .def("get_bcs", &ElasticityModel::get_bcs,
-           py::return_value_policy::reference)
+      .def("init", &ElasticityModel::init)
       .def("set_nodes", &ElasticityModel::set_nodes)
       .def("set_solution", &ElasticityModel::set_solution)
       .def("residual", &ElasticityModel::residual)

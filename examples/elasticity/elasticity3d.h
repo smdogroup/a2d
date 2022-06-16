@@ -4,6 +4,7 @@
 #include "a2dtmp.h"
 #include "basis3d.h"
 #include "element.h"
+#include "functional.h"
 #include "multiarray.h"
 
 namespace A2D {
@@ -391,48 +392,52 @@ class LinElasticityElement3D
 //   T mu, lambda;
 // };
 
-// template <typename I, typename T, class Basis>
-// class StressIntegral3D
-//     : public FunctionalBasis<I, T, ElasticityPDE<I, T>, Basis> {
-//  public:
-//   StressIntegral3D(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element)
-//       : FunctionalBasis<I, T, ElasticityPDE<I, T>, Basis>(element) {}
+template <typename I, typename T, class Basis>
+class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
+ public:
+  StressIntegral3D(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element,
+                   T yield_stress)
+      : element(element), yield_stress(yield_stress) {}
 
-//   T eval_functional() {
-//     T engry = 0.0;
-//     Basis::template energy<T, NonlinElasticityElement3D<I, T, Basis>::Impl>(
-//         this->get_quad_data(), this->get_detJ(), this->get_Jinv(),
-//         this->get_quad_gradient(), engry);
-//     return engry;
-//   }
+  static const int NUM_VARS = 3;
 
-//   void add_dfdu(typename ElasticityPDE<I, T>::SolutionArray& dfdu) {}
-//   void add_dfdx(typename ElasticityPDE<I, T>::NodeArray& dfdx) {}
+  T eval_functional() {
+    auto data = element.get_quad_data();
+    auto detJ = element.get_detJ();
+    auto Jinv = element.get_Jinv();
+    auto Uxi = element.get_quad_gradient();
+    T ys = yield_stress;
 
-//   class Impl {
-//    public:
-//     static const index_t NUM_VARS = 3;
+    T integral = Basis::template integrate<T, NUM_VARS>(
+        detJ, Jinv, Uxi,
+        [&data, &ys](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+                     A2D::Mat<T, 3, 3>& Uxi0) -> T {
+          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+          A2D::Mat<T, 3, 3> Ux;
+          A2D::SymmMat<T, 3> E, S;
+          T output;
 
-//     template <class QuadPointData>
-//     static T compute_energy(I i, I j, QuadPointData& data, T wdetJ,
-//                             A2D::Mat<T, 3, 3>& Jinv, A2D::Mat<T, 3, 3>& Uxi)
-//                             {
-//       typedef A2D::SymmMat<T, 3> SymmMat3x3;
-//       typedef A2D::Mat<T, 3, 3> Mat3x3;
+          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
+          A2D::Mat3x3GreenStrain(Ux, E);
+          A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
 
-//       T mu(data(i, j, 0)), lambda(data(i, j, 1));
-//       Mat3x3 Ux;
-//       SymmMat3x3 E;
-//       T output;
+          T trS = S(0, 0) + S(1, 1) + S(2, 2);
+          T trSS = 0.0;
+          A2D::Symm3x3SymmMultTrace(S, S, trSS);
 
-//       A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-//       A2D::Mat3x3GreenStrain(Ux, E);
-//       A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          // output = 3.0/2.0 *(tr(S * S) - 1.0/3.0 * tr(S)**2);
+          output = 1.5 * trSS - 0.5 * trS * trS;
 
-//       return output * wdetJ;
-//     }
-//   };
-// };
+          return wdetJ * output;
+        });
+
+    return integral;
+  }
+
+ private:
+  ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element;
+  T yield_stress;
+};
 
 }  // namespace A2D
 

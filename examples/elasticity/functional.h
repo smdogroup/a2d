@@ -1,6 +1,8 @@
 #ifndef A2D_FUNCTIONAL_H
 #define A2D_FUNCTIONAL_H
 
+#include <list>
+
 #include "element.h"
 
 namespace A2D {
@@ -16,8 +18,8 @@ class ElementFunctional {
  public:
   virtual ~ElementFunctional() {}
   virtual T eval_functional() = 0;
-  virtual void add_dfdu(typename PDE::SolutionArray& dfdu) = 0;
-  virtual void add_dfdx(typename PDE::NodeArray& dfdx) = 0;
+  virtual void add_dfdu(typename PDE::SolutionArray& dfdu) {}
+  virtual void add_dfdx(typename PDE::NodeArray& dfdx) {}
 };
 
 /*
@@ -29,79 +31,61 @@ class ElementFunctional {
 template <typename I, typename T, class PDE>
 class Functional {
  public:
-  Functional() { num_functionals = 0; }
+  Functional() {}
   virtual ~Functional() {}
 
   void add_functional(ElementFunctional<I, T, PDE>* functional) {
-    functionals[num_functionals] = functional;
-    num_functionals++;
-  }
-
-  index_t get_num_functionals() { return num_functionals; }
-  ElementFunctional<I, T, PDE>* get_functional(index_t index) {
-    return functionals[index];
+    functionals.push_back(functional);
   }
 
   /*
     Evaluate the functional by summing the values over all components
   */
-  T eval_functional(Functional& functional) {
+  T eval_functional() {
     T value = 0.0;
-    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
-      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
-      value += functional.eval_functional();
+    for (auto it = functionals.begin(); it != functionals.end(); it++) {
+      ElementFunctional<I, T, PDE>* functional = *it;
+      value += functional->eval_functional();
     }
+    return value;
   }
 
   /*
     Compute the derivative of the functional w.r.t. state variables
   */
-  void eval_dfdu(Functional& functional, typename PDE::SolutionArray& dfdu) {
+  void eval_dfdu(typename PDE::SolutionArray& dfdu) {
     dfdu.zero();
-    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
-      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
-      functional.add_dfdu(dfdu);
+    for (auto it = functionals.begin(); it != functionals.end(); it++) {
+      ElementFunctional<I, T, PDE>* functional = *it;
+      functional->add_dfdu(dfdu);
     }
   }
 
   /*
     Compute the derivative of the functional w.r.t. design variables
   */
-  void eval_dfdx(Functional& functional, typename PDE::DesignArray& dfdx) {
+  void eval_dfdx(typename PDE::DesignArray& dfdx) {
     dfdx.zero();
-    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
-      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
-      functional.add_dfdx(dfdx);
+    for (auto it = functionals.begin(); it != functionals.end(); it++) {
+      ElementFunctional<I, T, PDE>* functional = *it;
+      functional->add_dfdx(dfdx);
     }
   }
 
   /*
     Compute the derivative of the functional w.r.t. nodes
   */
-  void eval_dfdnodes(Functional& functional, typename PDE::NodeArray& dfdx) {
+  void eval_dfdnodes(typename PDE::NodeArray& dfdx) {
     dfdx.zero();
-    for (index_t index = 0; index < functional.get_num_functionals(); index++) {
-      ElementFunctional<I, T, PDE>* elem = functional.get_functional(index);
-      functional.add_dfdx(dfdx);
+    for (auto it = functionals.begin(); it != functionals.end(); it++) {
+      ElementFunctional<I, T, PDE>* functional = *it;
+      functional->add_dfdx(dfdx);
     }
   }
 
  private:
-  index_t num_functionals;
-  ElementFunctional<I, T, PDE>* functionals[10];
+  std::list<ElementFunctional<I, T, PDE>*> functionals;
 };
-
-// /*
-//   A minimal set of data needed for the ElementFunctional class
-// */
-// template <typename I, typename T, class PDE, class Basis>
-// class FunctionalBasis : public ElementFunctional<I, T, PDE> {
-//  public:
-//   FunctionalBasis(ElementBasis<I, T, PDE, Basis>& element) : element(element)
-//   {}
-
-//   ElementBasis<I, T, PDE, Basis>& element;
-// };
 
 }  // namespace A2D
 

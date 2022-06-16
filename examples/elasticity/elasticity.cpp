@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
   typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
   typedef ElasticityPDE<I, T> PDE;
 
-  const index_t nx = 128;
+  const index_t nx = 64;
   const index_t ny = 64;
   const index_t nz = 64;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
@@ -154,6 +154,14 @@ int main(int argc, char* argv[]) {
   model.set_solution(*solution);
   T energy = model.energy();
   std::cout << "Model energy: " << energy << std::endl;
+
+  // Allocate the stress functional
+  StressIntegral3D<I, T, Basis> stress_functional(element, 1.0);
+
+  Functional<I, T, PDE> functional;
+  functional.add_functional(&stress_functional);
+
+  std::cout << "Stress integral " << functional.eval_functional() << std::endl;
 
   return (0);
 }

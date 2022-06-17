@@ -597,6 +597,7 @@ BSRMat<I, T, N, M>* BSRMatMakeTransposeSymbolic(BSRMat<I, T, M, N>& A) {
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
   BSRMat<I, T, N, M>* At = BSRMatMakeTransposeSymbolic(A);
+  At->zero();
 
   // Loop over the values in A
   for (I i = 0; i < A.nbrows; i++) {

@@ -4,6 +4,7 @@
 #include <list>
 
 #include "a2dtmp.h"
+#include "constitutive.h"
 #include "element.h"
 #include "multiarray.h"
 #include "sparse_amg.h"
@@ -33,9 +34,7 @@ class FEModel {
         bcs(bcs_layout),
         X(node_layout),
         U(solution_layout),
-        B(null_space_layout) {
-    // num_elements = 0;
-  }
+        B(null_space_layout) {}
   template <typename Ttype, typename IdxType>
   FEModel(const index_t nnodes, const Ttype X_[], const index_t nbcs,
           const IdxType bcs_[])
@@ -49,8 +48,6 @@ class FEModel {
         X(node_layout),
         U(solution_layout),
         B(null_space_layout) {
-    // num_elements = 0;
-
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
       for (I j = 0; j < 3; j++) {
@@ -67,7 +64,20 @@ class FEModel {
   }
   ~FEModel() {}
 
+  const index_t nnodes;  // Number of nodes in the model
+  const index_t nbcs;    // Number of nodes with Dirichlet bcs
+
+  /*
+    Add an element object to the model
+  */
   void add_element(Element<I, T, PDE>* element) { elements.push_back(element); }
+
+  /*
+    Add a constitutive object to the model
+  */
+  void add_constitutive(Constitutive<I, T, PDE>* con) {
+    constitutive.push_back(con);
+  }
 
   /*
     Perform initialization tasks after nodes, connectivities and elements have
@@ -80,13 +90,27 @@ class FEModel {
     }
   }
 
-  // Create a new solution vector
+  /*
+    Create a new solution vector
+  */
   typename PDE::SolutionArray* new_solution() {
     return new typename PDE::SolutionArray(solution_layout);
   }
 
+  /*
+    Get the node locations
+  */
   typename PDE::NodeArray& get_nodes() { return X; }
+
+  /*
+    Get the boundary conditions
+  */
   typename PDE::BCsArray& get_bcs() { return bcs; }
+
+  /*
+    Get the solution
+  */
+  typename PDE::SolutionArray& get_solution() { return U; }
 
   /*
     Set new node locations for each of the elements
@@ -155,6 +179,27 @@ class FEModel {
   }
 
   /*
+    Set the design variables
+  */
+  void set_design_vars(typename PDE::DesignArray& x) {
+    for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
+      Constitutive<I, T, PDE>* con = *it;
+      con->set_design_vars(x);
+    }
+  }
+
+  /*
+    Add the derivative of the adjoint-residual product
+  */
+  void add_adjoint_dfdx(typename PDE::SolutionArray& psi,
+                        typename PDE::DesignArray& dfdx) {
+    for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
+      Constitutive<I, T, PDE>* con = *it;
+      con->add_adjoint_dfdx(psi, dfdx);
+    }
+  }
+
+  /*
     Create a new matrix
   */
   typename PDE::SparseMat* new_matrix() {
@@ -179,9 +224,7 @@ class FEModel {
 
  private:
   std::list<Element<I, T, PDE>*> elements;
-
-  const index_t nnodes;  // Number of nodes in the model
-  const index_t nbcs;    // Number of nodes with Dirichlet bcs
+  std::list<Constitutive<I, T, PDE>*> constitutive;
 
   typename PDE::BCsLayout bcs_layout;
   typename PDE::NodeLayout node_layout;

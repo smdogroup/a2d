@@ -38,7 +38,6 @@ class ElementBasis : public Element<I, T, PDE> {
   static const index_t spatial_dim = PDE::spatial_dim;
   static const index_t vars_per_node = PDE::vars_per_node;
   static const index_t data_per_point = PDE::data_per_point;
-
   static const index_t nodes_per_elem = Basis::NUM_NODES;
   static const index_t quad_pts_per_elem = Basis::quadrature::NUM_QUAD_PTS;
 
@@ -146,6 +145,9 @@ class ElementBasis : public Element<I, T, PDE> {
   // Get the data associated with the quadrature points
   QuadDataArray& get_quad_data() { return data; }
 
+  // Get the layout associated with the quadrature point data
+  QuadDataLayout& get_quad_data_layout() { return quad_data_layout; }
+
   // Get the layout associated with the element residuals
   ElemResLayout& get_elem_res_layout() { return elem_res_layout; }
 
@@ -175,6 +177,9 @@ class ElementBasis : public Element<I, T, PDE> {
   // virtual void add_residual(typename PDE::SolutionArray& res) = 0;
   // virtual void add_jacobian(typename PDE::SparseMat& jac) = 0;
 
+  virtual void add_adjoint_dfddata(typename PDE::SolutionArray& psi,
+                                   QuadDataArray& dfdx) {}
+
   // Expose the underlying element data
   ElemNodeArray& get_elem_nodes() { return Xe; }
   QuadNodeArray& get_quad_nodes() { return Xq; }
@@ -183,6 +188,15 @@ class ElementBasis : public Element<I, T, PDE> {
   ElemSolnArray& get_elem_solution() { return Ue; }
   QuadSolnArray& get_quad_solution() { return Uq; }
   QuadGradArray& get_quad_gradient() { return Uxi; }
+
+  // Get the layouts
+  ElemNodeLayout& get_elem_node_layout() { return elem_node_layout; }
+  QuadNodeLayout& get_quad_node_layout() { return quad_node_layout; }
+  QuadDetLayout& get_detJ_layout() { return quad_detJ_layout; }
+  QuadJtransLayout& get_jinv_layout() { return quad_jtrans_layout; }
+  ElemSolnLayout& get_elem_solution_layout() { return elem_soln_layout; }
+  QuadSolnLayout& get_quad_solution_layout() { return quad_soln_layout; }
+  QuadGradLayout& get_quad_gradient_layout() { return quad_grad_layout; }
 
  private:
   // Connectivity layout

@@ -18,6 +18,7 @@ class HelmholtzPDE {
   static const index_t vars_per_node = 1;
   static const index_t null_space_dim = 1;
   static const index_t data_per_point = 1;
+  static const index_t dvs_per_point = 1;
 
   // Layout for the boundary conditions
   typedef A2D::CLayout<2> BCsLayout;
@@ -32,7 +33,7 @@ class HelmholtzPDE {
   typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
 
   // Layout for the design variables
-  typedef A2D::CLayout<1> DesignLayout;
+  typedef A2D::CLayout<dvs_per_point> DesignLayout;
   typedef A2D::MultiArray<T, DesignLayout> DesignArray;
 
   // Near null space layout - for the AMG preconditioner

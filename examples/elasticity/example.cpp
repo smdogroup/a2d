@@ -29,8 +29,8 @@ typedef LinElasticityElement3D<Itype, Ttype, TetBasis> ElasticityTetElement;
 typedef typename ElasticityPDE<Itype, Ttype>::SparseAmg ElasticityAmg;
 typedef typename ElasticityPDE<Itype, Ttype>::SparseMat ElasticityMat;
 
-// typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg HelmholtzAmg;
-// typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat HelmholtzMat;
+typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg HelmholtzAmg;
+typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat HelmholtzMat;
 
 template <class multiarray>
 void declare_array(py::module& m, const char typestr[]) {

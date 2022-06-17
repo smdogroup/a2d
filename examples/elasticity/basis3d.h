@@ -207,6 +207,29 @@ class Basis3D {
   }
 
   /*
+    Add the contributions to the element-oriented data from quad point data
+  */
+  template <const index_t M, class ElementArray, class QuadPointArray>
+  static void interpReverseAdd(QuadPointArray& input, ElementArray& output) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+      double pt[3];
+      Quadrature::getQuadPoint(j, pt);
+
+      double N[Basis::NUM_NODES];
+      Basis::evalBasis(pt, N);
+
+      const A2D::index_t npts = input.extent(0);
+      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
+        for (index_t ii = 0; ii < M; ii++) {
+          for (index_t kk = 0; kk < NUM_NODES; kk++) {
+            output(i, kk, ii) += N[kk] * input(i, j, ii);
+          }
+        }
+      });
+    }
+  }
+
+  /*
     Compute the Jacobian transformation at each quadrature point
   */
   template <typename T, class ElementNodeArray, class QuadPointDetJArray,
@@ -277,6 +300,9 @@ class Basis3D {
     }
   }
 
+  /*
+    Integrate a value over all the elements in the domain
+  */
   template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
             class QuadPointJacobianArray, class QuadPointGradientArray>
   static T integrate(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
@@ -492,6 +518,76 @@ class Basis3D {
             }
           }
         }
+      });
+    }
+  }
+
+  // /*
+  //   Adjoint-residual products for residuals that depend on U
+  // */
+  // template <typename T, index_t M, class FunctorType, class
+  // QuadPointDetJArray,
+  //           class QuadPointSolutionArray>
+  // static void adjoint_product(QuadPointDetJArray& detJ,
+  //                             QuadPointSolutionArray& Uq,
+  //                             QuadPointSolutionArray& Psiq,
+  //                             const FunctorType& func) {
+  //   for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+  //     double weight = Quadrature::getQuadWeight(j);
+  //     const A2D::index_t npts = detJ.extent(0);
+  //     A2D::parallel_for(npts, [&, weight](A2D::index_t i) -> void {
+  //       A2D::Vec<T, M> U0, Psi0, Ub;
+  //       for (index_t ii = 0; ii < M; ii++) {
+  //         U0(ii) = Uq(i, j, ii);
+  //         Psi0(ii) = Psiq(i, j, ii);
+  //       }
+
+  //       T wdetJ = weight * detJ(i, j);
+  //       func(i, j, wdetJ, U0, Psi0);
+  //     });
+  //   }
+  // }
+
+  /*
+    Adjoint-residual products for residuals that depend on U,xi
+  */
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointJacobianArray, class QuadPointGradientArray>
+  static void adjoint_product(QuadPointDetJArray& detJ,
+                              QuadPointJacobianArray& Jinv,
+                              QuadPointGradientArray& Uxi,
+                              QuadPointGradientArray& Psixi,
+                              const FunctorType& func) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+      double weight = Quadrature::getQuadWeight(j);
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, weight](A2D::index_t i) -> void {
+        A2D::Mat<T, 3, 3> Jinv0;
+        A2D::Mat<T, M, 3> Uxi0, Psi0;
+
+        // Extract Jinv
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
+            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
+          }
+        }
+
+        // Extract Uxi0
+        for (index_t ii = 0; ii < M; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
+            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+          }
+        }
+
+        // Extract Psixi0
+        for (index_t ii = 0; ii < M; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
+            Psi0(ii, jj) = Psixi(i, j, ii, jj);
+          }
+        }
+
+        T wdetJ = weight * detJ(i, j);
+        func(i, j, wdetJ, Jinv0, Uxi0, Psi0);
       });
     }
   }

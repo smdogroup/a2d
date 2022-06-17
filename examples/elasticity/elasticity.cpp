@@ -17,13 +17,13 @@ using namespace A2D;
 */
 int main(int argc, char* argv[]) {
   typedef index_t I;
-  typedef double T;
+  typedef std::complex<double> T;
   typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
   typedef ElasticityPDE<I, T> PDE;
 
-  const index_t nx = 64;
-  const index_t ny = 64;
-  const index_t nz = 64;
+  const index_t nx = 16;
+  const index_t ny = 16;
+  const index_t nz = 16;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -99,16 +99,34 @@ int main(int argc, char* argv[]) {
   // connectivity!
   model.set_nodes(X);
 
-  // Set the element data
-  auto data = element.get_quad_data();
-  double pt_data[] = {1.23, 2.45};
-  for (A2D::index_t i = 0; i < data.extent(0); i++) {
-    for (A2D::index_t j = 0; j < data.extent(1); j++) {
-      for (A2D::index_t k = 0; k < data.extent(2); k++) {
-        data(i, j, k) = pt_data[k];
-      }
+  // Set the element
+  T q = 5.0, E = 70e3, nu = 0.3;
+  RAMPIsoConstitutive<I, T, Basis> constitutive(element, q, E, nu);
+  model.add_constitutive(&constitutive);
+
+  // Create the design vector
+  A2D::CLayout<1> design_layout(model.nnodes);
+  A2D::MultiArray<T, A2D::CLayout<1>> x(design_layout);
+  A2D::MultiArray<T, A2D::CLayout<1>> dfdx(design_layout);
+
+  // Set the design variable direction
+  double dh = 1e-30;
+  A2D::MultiArray<T, A2D::CLayout<1>> px(design_layout);
+  for (I i = 0; i < px.extent(0); i++) {
+    for (I j = 0; j < px.extent(1); j++) {
+      px(i, j) = -1.0 + 2.0 * (i % 7) / 6.0;
     }
   }
+
+  // Set the design variable values
+  x.fill(1.0);
+  x.axpy(T(0.0, dh), px);
+  model.set_design_vars(x);
+
+  // Set up the stress functional
+  Functional<I, T, PDE> functional;
+  StressIntegral3D<I, T, Basis> stress_functional(element, 1.0);
+  functional.add_functional(&stress_functional);
 
   // Compute the Jacobian matrix
   double t0 = MPI_Wtime();
@@ -122,7 +140,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Jacobian computational time: " << t1 << std::endl;
 
   double t2 = MPI_Wtime();
-  int num_levels = 4;
+  int num_levels = 3;
   double omega = 1.333;
   bool print_info = true;
   auto amg = model.new_amg(num_levels, omega, J, print_info);
@@ -142,26 +160,33 @@ int main(int argc, char* argv[]) {
   index_t monitor = 10;
   index_t max_iters = 80;
   double t3 = MPI_Wtime();
-  amg->cg(*residual, *solution, monitor, max_iters);
+  amg->mg(*residual, *solution, monitor, max_iters);
   t3 = MPI_Wtime() - t3;
   std::cout << "Conjugate gradient solution time: " << t3 << std::endl;
-
-  double t4 = MPI_Wtime();
-  amg->mg(*residual, *solution, monitor, max_iters);
-  t4 = MPI_Wtime() - t4;
-  std::cout << "Multigrid solution time: " << t4 << std::endl;
 
   model.set_solution(*solution);
   T energy = model.energy();
   std::cout << "Model energy: " << energy << std::endl;
 
-  // Allocate the stress functional
-  StressIntegral3D<I, T, Basis> stress_functional(element, 1.0);
+  // Evaluate the functional
+  T fval = functional.eval_functional();
+  std::cout << "Stress integral " << fval.real() << std::endl;
 
-  Functional<I, T, PDE> functional;
-  functional.add_functional(&stress_functional);
+  // Evaluate the derivative
+  double t4 = MPI_Wtime();
+  functional.eval_dfdu(*residual);
+  model.zero_bcs(*residual);
+  amg->mg(*residual, *solution, monitor, max_iters);
+  t4 = MPI_Wtime() - t4;
 
-  std::cout << "Stress integral " << functional.eval_functional() << std::endl;
+  dfdx.zero();
+  model.add_adjoint_dfdx(*solution, dfdx);
+  T result = dfdx.dot(px);
+  T fd = fval.imag() / dh;
+  std::cout << "Result " << std::setw(20) << result << " FD " << std::setw(20)
+            << fd << " Error " << (fd - result) / fd << std::endl;
+
+  std::cout << "Multigrid solution time: " << t4 << std::endl;
 
   return (0);
 }

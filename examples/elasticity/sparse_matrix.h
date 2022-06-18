@@ -1,6 +1,8 @@
 #ifndef SPARSE_MATRIX_H
 #define SPARSE_MATRIX_H
 
+#include "multiarray.h"
+
 namespace A2D {
 
 // Block CSR matrix of length

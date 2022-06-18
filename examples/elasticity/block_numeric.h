@@ -1,6 +1,8 @@
 #ifndef BLOCK_NUMERIC_H
 #define BLOCK_NUMERIC_H
 
+#include <complex>
+
 namespace A2D {
 
 double fabs(std::complex<double> a) {

@@ -84,7 +84,7 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
     if (aggr[i] == not_aggregated) {
       // node i has not been aggregated
       aggr[i] = num_aggregates;
-      cpts[num_aggregates] = i;  // y stores a list of the Cpts
+      cpts[num_aggregates] = i;
 
       const I jp_end = rowp[i + 1];
       for (I jp = rowp[i]; jp < jp_end; jp++) {
@@ -214,6 +214,9 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       if (fabs(norm) > toler * theta) {
         scale = 1.0 / norm;
         R(i, k, k) = norm;
+      } else {
+        std::cerr << "BSRMatMakeTentativeProlongation: Zeroed column"
+                  << std::endl;
       }
 
       // Set the scale value
@@ -544,6 +547,68 @@ class BSRMatAmg {
     applyMg(zero_solution);
     b = bt;
     x = xt;
+  }
+
+  /*
+    Update the values of Galerkin projection at each level without
+    re-computing the basis
+  */
+  void update() {
+    if (Afact) {
+      // Copy values to the matrix
+      BSRMatCopy(*A, *Afact);
+
+      // Perform the numerical factorization
+      BSRMatFactor(*Afact);
+    } else if (next) {
+      delete Dinv;
+      bool inverse = true;
+      Dinv = BSRMatExtractBlockDiagonal(*A, inverse);
+
+      // AP = A * P
+      BSRMat<I, T, M, N>* AP = BSRMatMatMultSymbolic(*A, *P);
+      BSRMatMatMult(*A, *P, *AP);
+
+      // next->A = PT * AP = PT * A * P
+      BSRMatMatMult(*PT, *AP, *next->A);
+      delete AP;
+
+      next->update();
+    }
+  }
+
+  /*
+    Test the accuracy of the Galerkin operator
+  */
+  void testGalerkin() {
+    auto x0 = r->duplicate();
+    auto y0 = r->duplicate();
+    auto xr = next->r->duplicate();
+    auto yr1 = next->r->duplicate();
+    auto yr2 = next->r->duplicate();
+    xr->random();
+
+    // Compute P^{T} * A * P * xr
+    BSRMatVecMult(*P, *xr, *x0);
+    BSRMatVecMult(*A, *x0, *y0);
+    BSRMatVecMult(*PT, *y0, *yr1);
+
+    // Compute Ar * xr
+    BSRMatVecMult(*next->A, *xr, *yr2);
+
+    // compute the error
+    yr1->axpy(-1.0, *yr2);
+    T error = yr1->norm();
+    T rel_err = yr1->norm() / yr2->norm();
+    std::cout << "Galerkin operator check " << std::endl
+              << "||Ar * xr - P^{T} * A * P * xr||: " << error
+              << " rel. error: " << rel_err << std::endl;
+
+    delete x0;
+    delete y0;
+    delete xr;
+    delete yr1;
+    delete yr2;
   }
 
  private:

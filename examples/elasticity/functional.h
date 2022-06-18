@@ -19,7 +19,8 @@ class ElementFunctional {
   virtual ~ElementFunctional() {}
   virtual T eval_functional() = 0;
   virtual void add_dfdu(typename PDE::SolutionArray& dfdu) {}
-  virtual void add_dfdx(typename PDE::NodeArray& dfdx) {}
+  virtual void add_dfdx(typename PDE::DesignArray& dfdx) {}
+  virtual void add_dfdnodes(typename PDE::NodeArray& dfdx) {}
 };
 
 /*
@@ -79,7 +80,7 @@ class Functional {
     dfdx.zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
       ElementFunctional<I, T, PDE>* functional = *it;
-      functional->add_dfdx(dfdx);
+      functional->eval_dfdnodes(dfdx);
     }
   }
 

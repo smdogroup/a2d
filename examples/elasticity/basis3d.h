@@ -195,7 +195,7 @@ class Basis3D {
       Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
+      A2D::parallel_for(npts, [&, N, j](A2D::index_t i) -> void {
         for (index_t ii = 0; ii < M; ii++) {
           output(i, j, ii) = 0.0;
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
@@ -209,7 +209,7 @@ class Basis3D {
   /*
     Add the contributions to the element-oriented data from quad point data
   */
-  template <const index_t M, class ElementArray, class QuadPointArray>
+  template <const index_t M, class QuadPointArray, class ElementArray>
   static void interpReverseAdd(QuadPointArray& input, ElementArray& output) {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double pt[3];
@@ -219,7 +219,7 @@ class Basis3D {
       Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
+      A2D::parallel_for(npts, [&, N, j](A2D::index_t i) -> void {
         for (index_t ii = 0; ii < M; ii++) {
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
             output(i, kk, ii) += N[kk] * input(i, j, ii);
@@ -391,35 +391,36 @@ class Basis3D {
       Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
-        A2D::Mat<T, 3, 3> Jinv0;
-        A2D::Mat<T, M, 3> Uxi0, Uxib;
+      A2D::parallel_for(
+          npts, [&, Nx, Ny, Nz, weight, j](A2D::index_t i) -> void {
+            A2D::Mat<T, 3, 3> Jinv0;
+            A2D::Mat<T, M, 3> Uxi0, Uxib;
 
-        // Extract Jinv
-        for (index_t ii = 0; ii < 3; ii++) {
-          for (index_t jj = 0; jj < 3; jj++) {
-            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
-          }
-        }
+            // Extract Jinv
+            for (index_t ii = 0; ii < 3; ii++) {
+              for (index_t jj = 0; jj < 3; jj++) {
+                Jinv0(ii, jj) = Jinv(i, j, ii, jj);
+              }
+            }
 
-        // Extract Uxi0
-        for (index_t ii = 0; ii < M; ii++) {
-          for (index_t jj = 0; jj < 3; jj++) {
-            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
-          }
-        }
+            // Extract Uxi0
+            for (index_t ii = 0; ii < M; ii++) {
+              for (index_t jj = 0; jj < 3; jj++) {
+                Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+              }
+            }
 
-        T wdetJ = weight * detJ(i, j);
-        resfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib);
+            T wdetJ = weight * detJ(i, j);
+            resfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib);
 
-        auto resi = MakeSlice(res, i);
-        for (index_t ii = 0; ii < M; ii++) {
-          for (index_t k = 0; k < NUM_NODES; k++) {
-            resi(k, ii) += Nx[k] * Uxib(ii, 0u) + Ny[k] * Uxib(ii, 1u) +
-                           Nz[k] * Uxib(ii, 2u);
-          }
-        }
-      });
+            auto resi = MakeSlice(res, i);
+            for (index_t ii = 0; ii < M; ii++) {
+              for (index_t k = 0; k < NUM_NODES; k++) {
+                resi(k, ii) += Nx[k] * Uxib(ii, 0u) + Ny[k] * Uxib(ii, 1u) +
+                               Nz[k] * Uxib(ii, 2u);
+              }
+            }
+          });
     }
   }
 
@@ -436,7 +437,7 @@ class Basis3D {
       Basis::evalBasis(pt, N);
 
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
+      A2D::parallel_for(npts, [&, N, weight, j](A2D::index_t i) -> void {
         A2D::Vec<T, M> U0, Ub;
         for (index_t ii = 0; ii < M; ii++) {
           U0(ii) = Uq(i, j, ii);
@@ -477,7 +478,7 @@ class Basis3D {
       Basis::evalBasisDeriv(pt, Nx, Ny, Nz);
 
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, Nx, Ny, Nz](A2D::index_t i) -> void {
+      A2D::parallel_for(npts, [&, Nx, Ny, Nz, weight, j](A2D::index_t i) {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, M, 3> Uxi0, Uxib;
 
@@ -561,7 +562,7 @@ class Basis3D {
     for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
       double weight = Quadrature::getQuadWeight(j);
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [&, weight](A2D::index_t i) -> void {
+      A2D::parallel_for(npts, [&, weight, j](A2D::index_t i) -> void {
         A2D::Mat<T, 3, 3> Jinv0;
         A2D::Mat<T, M, 3> Uxi0, Psi0;
 
@@ -579,7 +580,7 @@ class Basis3D {
           }
         }
 
-        // Extract Psixi0
+        // Extract Psi0
         for (index_t ii = 0; ii < M; ii++) {
           for (index_t jj = 0; jj < 3; jj++) {
             Psi0(ii, jj) = Psixi(i, j, ii, jj);

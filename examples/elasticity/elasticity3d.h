@@ -233,42 +233,41 @@ class NonlinElasticityElement3D
     Basis::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, psixi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                       A2D::Mat<T, 3, 3> Uxi0,
-                       A2D::Mat<T, 3, 3> Psixi0) -> void {
-          A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+                       A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0) -> void {
+          // A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
+          // A2D::SymmMat<T, 3> E0, Eb;
 
-          const int N = 1;
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
-          A2D::A2DScalar<N, T> output;
-          A2D::A2DScalar<N, T> mu(data(i, j, 0)), lambda(data(i, j, 1));
+          // const int N = 1;
+          // A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
+          // A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
+          // A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          // A2D::A2DScalar<N, T> output;
+          // A2D::A2DScalar<N, T> mu(data(i, j, 0)), lambda(data(i, j, 1));
 
-          // Set the seed values
-          A2D::Mat<T, 3, 3>& Psi = Uxi.pvalue(0);
-          for (int k2 = 0; k2 < 3; k2++) {
-            for (int k1 = 0; k1 < 3; k1++) {
-              Psi(k1, k2) = Psixi0(k1, k2);
-            }
-          }
+          // // Set the seed values
+          // A2D::Mat<T, 3, 3>& Psi = Uxi.pvalue(0);
+          // for (int k2 = 0; k2 < 3; k2++) {
+          //   for (int k1 = 0; k1 < 3; k1++) {
+          //     Psi(k1, k2) = Psixi0(k1, k2);
+          //   }
+          // }
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          // auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
+          // auto strain = A2D::Mat3x3GreenStrain(Ux, E);
+          // auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
 
-          output.bvalue = wdetJ;
+          // output.bvalue = wdetJ;
 
-          energy.reverse();
-          strain.reverse();
-          mult.reverse();
+          // energy.reverse();
+          // strain.reverse();
+          // mult.reverse();
 
-          mult.hforward();
-          strain.hforward();
-          energy.hreverse();
+          // mult.hforward();
+          // strain.hforward();
+          // energy.hreverse();
 
-          dfdx(i, j, 0) = mu.hvalue[0];
-          dfdx(i, j, 1) = lambda.hvalue[0];
+          // dfdx(i, j, 0) = mu.hvalue[0];
+          // dfdx(i, j, 1) = lambda.hvalue[0];
         });
   }
 };
@@ -426,18 +425,17 @@ class LinElasticityElement3D
     auto data = this->get_quad_data();
 
     // Compute the element adjoint data
-    typename base::ElemSolnArray psie(this->get_elem_solution_layout());
-    typename base::QuadGradArray psixi(this->get_quad_gradient_layout());
+    typename base::ElemSolnArray pe(this->get_elem_solution_layout());
+    typename base::QuadGradArray pxi(this->get_quad_gradient_layout());
 
-    VecElementScatter(conn, psi, psie);
-    Basis::template gradient<T, NUM_VARS>(psie, psixi);
+    VecElementScatter(conn, psi, pe);
+    Basis::template gradient<T, NUM_VARS>(pe, pxi);
 
     // Compute the product
     Basis::template adjoint_product<T, NUM_VARS>(
-        detJ, Jinv, Uxi, psixi,
+        detJ, Jinv, Uxi, pxi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                       A2D::Mat<T, 3, 3> Uxi0,
-                       A2D::Mat<T, 3, 3> Psixi0) -> void {
+                       A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0) -> void {
           A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
           A2D::SymmMat<T, 3> E0, Eb;
 
@@ -452,7 +450,7 @@ class LinElasticityElement3D
           A2D::Mat<T, 3, 3>& Psi = Uxi.pvalue(0);
           for (int k2 = 0; k2 < 3; k2++) {
             for (int k1 = 0; k1 < 3; k1++) {
-              Psi(k1, k2) = Psixi0(k1, k2);
+              Psi(k1, k2) = Pxi0(k1, k2);
             }
           }
 
@@ -530,8 +528,10 @@ class RAMPIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
                         typename ElasticityPDE<I, T>::DesignArray& dfdx) {
     typename ElementBasis<I, T, ElasticityPDE<I, T>, Basis>::QuadDataArray
         dfddata(element.get_quad_data_layout());
-
     dfddata.zero();
+
+    // Compute the product of the adjoint with the derivatives of
+    // the residuals w.r.t. the element data
     element.add_adjoint_dfddata(psi, dfddata);
 
     // Set the result into the dfdxq array
@@ -539,14 +539,15 @@ class RAMPIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
     for (I i = 0; i < dfddata.extent(0); i++) {
       for (I j = 0; j < dfddata.extent(1); j++) {
         T denom = (1.0 + q * (1.0 - xq(i, j, 0)));
-        T dpenalty = 1.0 / (denom * denom);
+        T dpenalty = (q + 1.0) / (denom * denom);
 
-        dfdxq(i, j) =
+        dfdxq(i, j, 0) =
             dpenalty * (mu * dfddata(i, j, 0) + lambda * dfddata(i, j, 1));
       }
     }
 
     ElemDesignArray dfdxe(elem_design_layout);
+    dfdxe.zero();
     Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element.get_conn();
@@ -579,9 +580,12 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
   typedef ElementBasis<I, T, ElasticityPDE<I, T>, Basis> base;
   typedef ElasticityPDE<I, T> PDE;
 
-  StressIntegral3D(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element,
-                   T yield_stress)
-      : element(element), yield_stress(yield_stress) {}
+  StressIntegral3D(ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element, T E,
+                   T nu, T yield_stress)
+      : element(element), E(E), nu(nu), yield_stress(yield_stress) {
+    mu0 = 0.5 * E / (1.0 + nu);
+    lambda0 = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+  }
 
   static const int NUM_VARS = 3;
 
@@ -591,15 +595,17 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
     auto Jinv = element.get_Jinv();
     auto Uxi = element.get_quad_gradient();
     T ys = yield_stress;
+    T mu = mu0;
+    T lambda = lambda0;
 
     T integral = Basis::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data, ys](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                    A2D::Mat<T, 3, 3>& Uxi0) -> T {
-          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+        [&data, mu, lambda, ys](index_t i, index_t j, T wdetJ,
+                                A2D::Mat<T, 3, 3>& Jinv0,
+                                A2D::Mat<T, 3, 3>& Uxi0) -> T {
           A2D::Mat<T, 3, 3> Ux;
           A2D::SymmMat<T, 3> E, S;
-          T output, trS, trSS;
+          T vm, trS, trSS;
 
           A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
           A2D::Mat3x3GreenStrain(Ux, E);
@@ -608,9 +614,9 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
           A2D::Symm3x3SymmMultTrace(S, S, trSS);
 
           // von Mises = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
-          output = 1.5 * trSS - 0.5 * trS * trS;
+          vm = (1.5 * trSS - 0.5 * trS * trS) / ys;
 
-          return wdetJ * output;
+          return wdetJ * vm;
         });
 
     return integral;
@@ -625,12 +631,14 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
     auto Jinv = element.get_Jinv();
     auto Uxi = element.get_quad_gradient();
     T ys = yield_stress;
+    T mu = mu0;
+    T lambda = lambda0;
 
     Basis::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
-          T mu(data(i, j, 0)), lambda(data(i, j, 1));
+        [&data, mu, lambda, ys](
+            index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
+            A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
           A2D::Mat<T, 3, 3> Ux0, Uxb;
           A2D::SymmMat<T, 3> E0, Eb;
           A2D::SymmMat<T, 3> S0, Sb;
@@ -639,7 +647,7 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
           A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
           A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
           A2D::ADMat<A2D::SymmMat<T, 3>> S(S0, Sb);
-          A2D::ADScalar<T> output, trS, trSS;
+          A2D::ADScalar<T> trS, trSS;
 
           auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
           auto strain = A2D::Mat3x3GreenStrain(Ux, E);
@@ -647,8 +655,8 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
           auto trace1 = A2D::Symm3x3Trace(S, trS);
           auto trace2 = A2D::Symm3x3SymmMultTrace(S, S, trSS);
 
-          trSS.bvalue = 1.5 * wdetJ;
-          trS.bvalue = -trS.value * wdetJ;
+          trSS.bvalue = 1.5 * wdetJ / ys;
+          trS.bvalue = -trS.value * wdetJ / ys;
 
           trace2.reverse();
           trace1.reverse();
@@ -663,7 +671,15 @@ class StressIntegral3D : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
 
  private:
   ElementBasis<I, T, ElasticityPDE<I, T>, Basis>& element;
+
+  // Constitutive data
+  T E, nu;
+
+  // The yield stress
   T yield_stress;
+
+  // Parameter value
+  T mu0, lambda0;
 };
 
 }  // namespace A2D

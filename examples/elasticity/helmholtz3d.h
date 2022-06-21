@@ -66,8 +66,8 @@ class HelmholtzElement3D
       : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems), r0(r0) {}
 
   template <typename IdxType>
-  HelmholtzElement3D(const index_t nelems, const IdxType conn_[])
-      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems, conn_) {}
+  HelmholtzElement3D(const index_t nelems, const IdxType conn_[], double r0)
+      : ElementBasis<I, T, HelmholtzPDE<I, T>, Basis>(nelems, conn_), r0(r0) {}
 
   // The radius (global value)
   const double r0;

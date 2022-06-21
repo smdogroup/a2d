@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
 
   // Set up the stress functional
   Functional<I, T, PDE> functional;
-  TopoStressAggregation<I, T, Basis> agg_functional(constitutive);
+  TopoVonMisesAggregation<I, T, Basis> agg_functional(constitutive);
   functional.add_functional(&agg_functional);
 
   // Compute the Jacobian matrix

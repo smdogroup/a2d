@@ -9,22 +9,9 @@ nnodes = (nx + 1) * (ny + 1) * (nz + 1)
 nelems = nx * ny * nz
 nbcs = (ny + 1) * (nz + 1)
 
-model = example.ElasticityModel(nnodes, nbcs)
-
-# Get the model data
-bcs = np.array(model.get_bcs(), copy=False)
-X_ = model.get_nodes()
-X = np.array(X_, copy=False)
-
-# Set up the element
-hex = example.ElasticityHexElement(nelems)
-
-# Add the model to the element
-model.add_element(hex)
-
-# Get the data from the element
-conn = np.array(hex.get_conn(), copy=False)
-data = np.array(hex.get_quad_data(), copy=False)
+conn = np.zeros((nelems, 8), dtype=np.int32)
+X = np.zeros((nnodes, 3), dtype=np.double)
+bcs = np.zeros((nbcs, 2), dtype=np.int32)
 
 # Set the node locations
 nodes = np.zeros((nx + 1, ny + 1, nz + 1), dtype=int)
@@ -61,15 +48,49 @@ for k in range(nz + 1):
         bcs[index, 1] = bcs_val
         index += 1
 
-if data.shape[2] == 2:
-    data[:, :, 0] = 1.23
-    data[:, :, 1] = 2.45
-else:
-    data[:] = 1.0
+# Set the constitutive data
+q = 5.0
+E = 70e3
+nu = 0.3
+density = 1.0
+design_stress = 1e3
 
-# Set the nodes
-model.set_nodes(X_)
+# Get the model data
+model = example.Elasticity_Model(X, bcs)
 
+# Set up the element
+hex = example.Elasticity_C3D8(conn)
+con = example.TopoIsoConstitutive_C3D8(hex, q, E, nu, density, design_stress)
+
+# Add the model to the element
+model.add_element(hex)
+
+# Add the constitutive class
+model.add_constitutive(con)
+
+# Initialize the model
+model.init()
+
+# Get the model data
+helmholtz_model = example.Helmholtz_Model(X, bcs)
+
+# Set up the element
+length_scale = 0.25
+r0 = length_scale / (2.0 * np.sqrt(3.0))
+helmholtz_hex = example.Helmholtz_C3D8(conn, r0)
+
+# Add the model to the element
+helmholtz_model.add_element(helmholtz_hex)
+
+# Initialize the model
+helmholtz_model.init()
+
+xref = helmholtz_model.new_solution()
+x = np.array(xref, copy=False)
+x[:] = 1.0
+model.set_design_vars(xref)
+
+# Create the new matrix
 J = model.new_matrix()
 model.jacobian(J)
 

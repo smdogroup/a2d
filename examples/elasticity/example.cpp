@@ -14,23 +14,40 @@ using namespace A2D;
 typedef A2D::index_t Itype;
 typedef double Ttype;
 
-typedef Basis3D<HexTriLinear, Hex8ptQuadrature> HexBasis;
-typedef Basis3D<TetraQuadraticBasis, Tetra5ptQuadrature> TetBasis;
+typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis_C3D8;
+typedef Basis3D<TetraQuadraticBasis, Tetra5ptQuadrature> Basis_C3D10;
 
-typedef FEModel<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> HelmholtzModel;
-typedef FEModel<Itype, Ttype, ElasticityPDE<Itype, Ttype>> ElasticityModel;
+typedef Element<Itype, Ttype, ElasticityPDE<Itype, Ttype>> Elasticity_Element;
+typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D8> Elasticity_C3D8;
+typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D10> Elasticity_C3D10;
 
-typedef Element<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
-    ElasticityElementBase;
+typedef FEModel<Itype, Ttype, ElasticityPDE<Itype, Ttype>> Elasticity_Model;
+typedef typename ElasticityPDE<Itype, Ttype>::SparseAmg Elasticity_Amg;
+typedef typename ElasticityPDE<Itype, Ttype>::SparseMat Elasticity_Mat;
 
-typedef LinElasticityElement3D<Itype, Ttype, HexBasis> ElasticityHexElement;
-typedef LinElasticityElement3D<Itype, Ttype, TetBasis> ElasticityTetElement;
+typedef Functional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+    Elasticity_Functional;
+typedef ElementFunctional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+    Elasticity_ElementFunctional;
 
-typedef typename ElasticityPDE<Itype, Ttype>::SparseAmg ElasticityAmg;
-typedef typename ElasticityPDE<Itype, Ttype>::SparseMat ElasticityMat;
+typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D8>
+    TopoVonMisesAggregation_C3D8;
+typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D10>
+    TopoVonMisesAggregation_C3D10;
 
-typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg HelmholtzAmg;
-typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat HelmholtzMat;
+typedef Constitutive<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+    Elasticity_Constitutive;
+typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D8> TopoIsoConstitutive_C3D8;
+typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D10>
+    TopoIsoConstitutive_C3D10;
+
+typedef Element<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> Helmholtz_Element;
+typedef HelmholtzElement3D<Itype, Ttype, Basis_C3D8> Helmholtz_C3D8;
+typedef HelmholtzElement3D<Itype, Ttype, Basis_C3D10> Helmholtz_C3D10;
+
+typedef FEModel<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> Helmholtz_Model;
+typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg Helmholtz_Amg;
+typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat Helmholtz_Mat;
 
 template <class multiarray>
 void declare_array(py::module& m, const char typestr[]) {
@@ -52,71 +69,36 @@ void declare_array(py::module& m, const char typestr[]) {
             array.data, sizeof(typename multiarray::type),
             py::format_descriptor<typename multiarray::type>::format(), ndims,
             shape, strides);
-      })
-      .def("zero", &multiarray::zero)
-      .def("fill", &multiarray::fill);
+      });
 }
 
-PYBIND11_MODULE(example, m) {
-  m.doc() = "Wrapping for the a2d model class";
-
-  // Declare the array types
-  declare_array<typename ElasticityPDE<Itype, Ttype>::SolutionArray>(
-      m, "ElasticityModel::SolutionArray");
-
-  declare_array<typename ElasticityHexElement::QuadDataArray>(
-      m, "ElasticityHexElement::QuadDataArray");
-  declare_array<typename ElasticityTetElement::QuadDataArray>(
-      m, "ElasticityTetElement::QuadDataArray");
-
-  // Virtual base class
-  py::class_<ElasticityElementBase>(m, "ElasticityElementBase");
-
+template <class element, class base, class... args>
+void declare_element(py::module& m, const char typestr[]) {
   // Wrap the elasticity elements
-  py::class_<ElasticityHexElement, ElasticityElementBase>(
-      m, "ElasticityHexElement")
-      .def(py::init([](py::array_t<int, py::array::c_style> conn) {
-        py::buffer_info buf = conn.request();
+  py::class_<element, base>(m, typestr)
+      .def(py::init(
+          [=](py::array_t<int, py::array::c_style> conn, args... vals) {
+            py::buffer_info buf = conn.request();
 
-        if (buf.ndim != 2) {
-          throw std::runtime_error(
-              "ElasticityHexElement: Connectivity dimension must be two");
-        }
-        if (buf.shape[1] != ElasticityHexElement::nodes_per_elem) {
-          throw std::runtime_error(
-              "ElasticityHexElement: Second connectivity dimension must match "
-              "number of nodes per element");
-        }
+            if (buf.ndim != 2) {
+              throw std::runtime_error("Connectivity dimension must be two");
+            }
+            if (buf.shape[1] != element::nodes_per_elem) {
+              throw std::runtime_error(
+                  "Second connectivity dimension must match "
+                  "number of nodes per element");
+            }
 
-        index_t nelems = buf.shape[0];
-        int* ptr = static_cast<int*>(buf.ptr);
-        return new ElasticityHexElement(nelems, ptr);
-      }))
-      .def("get_quad_data", &ElasticityHexElement::get_quad_data);
+            index_t nelems = buf.shape[0];
+            int* ptr = static_cast<int*>(buf.ptr);
+            return new element(nelems, ptr, vals...);
+          }));
+}
 
-  py::class_<ElasticityTetElement, ElasticityElementBase>(
-      m, "ElasticityTetElement")
-      .def(py::init([](py::array_t<int, py::array::c_style> conn) {
-        py::buffer_info buf = conn.request();
-
-        if (buf.ndim != 2) {
-          throw std::runtime_error(
-              "ElasticityTetElement: Connectivity dimension must be two");
-        }
-        if (buf.shape[1] != ElasticityTetElement::nodes_per_elem) {
-          throw std::runtime_error(
-              "ElasticityTetElement: Second connectivity dimension must match "
-              "number of nodes per element");
-        }
-
-        index_t nelems = buf.shape[0];
-        int* ptr = static_cast<int*>(buf.ptr);
-        return new ElasticityTetElement(nelems, ptr);
-      }))
-      .def("get_quad_data", &ElasticityTetElement::get_quad_data);
-
+template <class model>
+void declare_3dmodel(py::module& m, const char typestr[]) {
   // Wrap the model
-  py::class_<ElasticityModel>(m, "ElasticityModel")
+  py::class_<model>(m, typestr)
       .def(py::init([](py::array_t<Ttype, py::array::c_style> X,
                        py::array_t<int, py::array::c_style> bcs) {
         py::buffer_info Xbuf = X.request();
@@ -144,70 +126,91 @@ PYBIND11_MODULE(example, m) {
         index_t nbcs = bcsbuf.shape[0];
         Ttype* Xptr = static_cast<Ttype*>(Xbuf.ptr);
         int* bcsptr = static_cast<int*>(bcsbuf.ptr);
-        return new ElasticityModel(nnodes, Xptr, nbcs, bcsptr);
+        return new model(nnodes, Xptr, nbcs, bcsptr);
       }))
-      .def("add_element", &ElasticityModel::add_element)
-      .def("new_solution", &ElasticityModel::new_solution)
-      .def("init", &ElasticityModel::init)
-      .def("set_nodes", &ElasticityModel::set_nodes)
-      .def("set_solution", &ElasticityModel::set_solution)
-      .def("residual", &ElasticityModel::residual)
-      .def("jacobian", &ElasticityModel::jacobian)
-      .def("new_matrix", &ElasticityModel::new_matrix)
-      .def("new_amg", &ElasticityModel::new_amg, py::arg("num_levels"),
-           py::arg("omega"), py::arg("mat"), py::arg("print_info") = false);
+      .def("add_constitutive", &model::add_constitutive)
+      .def("add_element", &model::add_element)
+      .def("new_solution", &model::new_solution)
+      .def("init", &model::init)
+      .def("set_nodes", &model::set_nodes)
+      .def("set_solution", &model::set_solution)
+      .def("residual", &model::residual)
+      .def("jacobian", &model::jacobian)
+      .def("set_design_vars", &model::set_design_vars)
+      .def("add_adjoint_dfdx", &model::add_adjoint_dfdx)
+      .def("new_matrix", &model::new_matrix)
+      .def("new_amg", &model::new_amg, py::arg("num_levels"), py::arg("omega"),
+           py::arg("mat"), py::arg("print_info") = false);
+}
 
-  // Wrap the Matrix object
-  py::class_<ElasticityMat>(m, "ElasticityMat");
-
+template <class amg>
+void declare_amg(py::module& m, const char typestr[]) {
   // Wrap the Amg object
-  py::class_<ElasticityAmg>(m, "ElasticityAmg")
-      .def("mg", &ElasticityAmg::mg, "Multigrid method", py::arg("b"),
-           py::arg("x"), py::arg("monitor") = 0, py::arg("max_iters") = 500,
+  py::class_<amg>(m, typestr)
+      .def("mg", &amg::mg, "Multigrid method", py::arg("b"), py::arg("x"),
+           py::arg("monitor") = 0, py::arg("max_iters") = 500,
            py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30)
-      .def("cg", &ElasticityAmg::cg, "Conjugate gradient method", py::arg("b"),
+      .def("cg", &amg::cg, "Conjugate gradient method", py::arg("b"),
            py::arg("x"), py::arg("monitor") = 0, py::arg("max_iters") = 500,
            py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30,
            py::arg("iters_per_reset") = 100);
+}
 
-  //   // Declare the array types unique for the Helmholtz problem
-  //   declare_array<typename Helmholtz::SolutionArray>(m,
-  //                                                    "Helmholtz::SolutionArray");
-  //   declare_array<typename Helmholtz::QuadDataArray>(m,
-  //                                                    "Helmholtz::QuadDataArray");
+PYBIND11_MODULE(example, m) {
+  m.doc() = "Wrapping for the a2d model class";
 
-  //   // Wrap the model function
-  //   py::class_<Helmholtz>(m, "Helmholtz")
-  //       .def(py::init<const int, const int, const int>())
-  //       .def("get_conn", &Helmholtz::get_conn,
-  //       py::return_value_policy::reference) .def("get_bcs",
-  //       &Helmholtz::get_bcs, py::return_value_policy::reference)
-  //       .def("get_nodes", &Helmholtz::get_nodes,
-  //            py::return_value_policy::reference)
-  //       .def("reset_nodes", &Helmholtz::reset_nodes)
-  //       .def("get_solution", &Helmholtz::get_solution,
-  //            py::return_value_policy::reference)
-  //       .def("reset_solution", &Helmholtz::reset_solution)
-  //       .def("get_quad_data", &Helmholtz::get_quad_data,
-  //            py::return_value_policy::reference)
-  //       .def("add_residual", &Helmholtz::add_residual)
-  //       .def("add_jacobian", &Helmholtz::add_jacobian)
-  //       .def("new_solution", &Helmholtz::new_solution)
-  //       .def("new_matrix", &Helmholtz::new_matrix,
-  //            py::return_value_policy::reference)
-  //       .def("new_amg", &Helmholtz::new_amg,
-  //       py::return_value_policy::reference);
+  // Elasticity ----------------------------------------------------------
 
-  //   py::class_<HelmholtzMat>(m, "HelmholtzMat").def("zero",
-  //   &HelmholtzMat::zero);
+  // Declare the array types
+  declare_array<typename ElasticityPDE<Itype, Ttype>::SolutionArray>(
+      m, "Elasticity_Model::SolutionArray");
 
-  //   py::class_<HelmholtzAmg>(m, "HelmholtzAmg")
-  //       .def("mg", &HelmholtzAmg::mg, "Multigrid method", py::arg("b"),
-  //            py::arg("x"), py::arg("monitor") = 0, py::arg("max_iters") =
-  //            500, py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30)
-  //       .def("cg", &HelmholtzAmg::cg, "Conjugate gradient method",
-  //       py::arg("b"),
-  //            py::arg("x"), py::arg("monitor") = 0, py::arg("max_iters") =
-  //            500, py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30,
-  //            py::arg("iters_per_reset") = 100);
+  declare_3dmodel<Elasticity_Model>(m, "Elasticity_Model");
+
+  // Virtual base class
+  py::class_<Elasticity_Element>(m, "Elasticity_Element");
+
+  // Declare the base class
+  declare_element<Elasticity_C3D8, Elasticity_Element>(m, "Elasticity_C3D8");
+  declare_element<Elasticity_C3D10, Elasticity_Element>(m, "Elasticity_C3D10");
+
+  // Wrap the Matrix object
+  py::class_<Elasticity_Mat>(m, "Elasticity_Mat");
+
+  // Declare the associated AMG type
+  declare_amg<Elasticity_Amg>(m, "Elasticity_Amg");
+
+  // Declare the constitutive classes
+  py::class_<Elasticity_Constitutive>(m, "Elasticity_Constitutive");
+  py::class_<TopoIsoConstitutive_C3D8, Elasticity_Constitutive>(
+      m, "TopoIsoConstitutive_C3D8")
+      .def(
+          py::init<Elasticity_C3D8&, double, double, double, double, double>());
+  py::class_<TopoIsoConstitutive_C3D10, Elasticity_Constitutive>(
+      m, "TopoIsoConstitutive_C3D10")
+      .def(py::init<Elasticity_C3D10&, double, double, double, double,
+                    double>());
+
+  // Helmholtz ----------------------------------------------------------
+
+  // Declare the array types
+  declare_array<typename HelmholtzPDE<Itype, Ttype>::SolutionArray>(
+      m, "Helmholtz_Model::SolutionArray");
+
+  declare_3dmodel<Helmholtz_Model>(m, "Helmholtz_Model");
+
+  // Virtual base class
+  py::class_<Helmholtz_Element>(m, "Helmholtz_Element");
+
+  // Declare the base class
+  declare_element<Helmholtz_C3D8, Helmholtz_Element, double>(m,
+                                                             "Helmholtz_C3D8");
+  declare_element<Helmholtz_C3D10, Helmholtz_Element, double>(
+      m, "Helmholtz_C3D10");
+
+  // Wrap the Matrix object
+  py::class_<Helmholtz_Mat>(m, "Helmholtz_Mat");
+
+  // Declare the associated AMG type
+  declare_amg<Helmholtz_Amg>(m, "Helmholtz_Amg");
 }

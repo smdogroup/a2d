@@ -648,13 +648,14 @@ class TopoVolume : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
   Evalute the KS functional of the stress, given the constitutive class
 */
 template <typename I, typename T, class Basis>
-class TopoStressAggregation
+class TopoVonMisesAggregation
     : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
  public:
   static const int vars_per_node = ElasticityPDE<I, T>::vars_per_node;
   static const index_t dvs_per_point = ElasticityPDE<I, T>::dvs_per_point;
 
-  TopoStressAggregation(TopoIsoConstitutive<I, T, Basis>& con, T weight = 100.0)
+  TopoVonMisesAggregation(TopoIsoConstitutive<I, T, Basis>& con,
+                          T weight = 100.0)
       : con(con), weight(weight) {
     offset = 0.0;
     integral = 1.0;

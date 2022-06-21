@@ -56,7 +56,7 @@ class FEModel {
     }
 
     // Copy the bcs values
-    for (I i = 0; i < nnodes; i++) {
+    for (I i = 0; i < nbcs; i++) {
       for (I j = 0; j < 2; j++) {
         bcs(i, j) = bcs_[2 * i + j];
       }

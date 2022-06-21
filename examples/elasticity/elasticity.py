@@ -85,6 +85,13 @@ helmholtz_model.add_element(helmholtz_hex)
 # Initialize the model
 helmholtz_model.init()
 
+# Set up the volume functional
+volume = example.Elasticity_Functional()
+volume.add_functional(example.TopoVolume_C3D8(con))
+
+stress = example.Elasticity_Functional()
+stress.add_functional(example.TopoVonMisesAggregation_C3D8(con, 100.0))
+
 xref = helmholtz_model.new_solution()
 x = np.array(xref, copy=False)
 x[:] = 1.0
@@ -109,6 +116,8 @@ ans_array = np.array(ans, copy=False)
 
 res_array[:] = 1.0
 res_array[bcs[:, 0], :] = 0.0
+
+print('Volume = ', volume.eval_functional())
 
 monitor = 5
 max_iters = 100

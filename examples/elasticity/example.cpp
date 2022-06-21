@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 
 #include "elasticity3d.h"
+#include "functional.h"
 #include "helmholtz3d.h"
 #include "model.h"
 #include "multiarray.h"
@@ -29,6 +30,9 @@ typedef Functional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
     Elasticity_Functional;
 typedef ElementFunctional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
     Elasticity_ElementFunctional;
+
+typedef TopoVolume<Itype, Ttype, Basis_C3D8> TopoVolume_C3D8;
+typedef TopoVolume<Itype, Ttype, Basis_C3D10> TopoVolume_C3D10;
 
 typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D8>
     TopoVonMisesAggregation_C3D8;
@@ -190,6 +194,30 @@ PYBIND11_MODULE(example, m) {
       m, "TopoIsoConstitutive_C3D10")
       .def(py::init<Elasticity_C3D10&, double, double, double, double,
                     double>());
+
+  py::class_<Elasticity_Functional>(m, "Elasticity_Functional")
+      .def(py::init<>())
+      .def("add_functional", &Elasticity_Functional::add_functional)
+      .def("eval_functional", &Elasticity_Functional::eval_functional)
+      .def("eval_dfdu", &Elasticity_Functional::eval_dfdu)
+      .def("eval_dfdx", &Elasticity_Functional::eval_dfdx)
+      .def("eval_dfdnodes", &Elasticity_Functional::eval_dfdnodes);
+
+  py::class_<Elasticity_ElementFunctional>(m, "Elasticity_ElementFunctional");
+
+  py::class_<TopoVolume_C3D8, Elasticity_ElementFunctional>(m,
+                                                            "TopoVolume_C3D8")
+      .def(py::init<TopoIsoConstitutive_C3D8&>());
+  py::class_<TopoVolume_C3D10, Elasticity_ElementFunctional>(m,
+                                                             "TopoVolume_C3D10")
+      .def(py::init<TopoIsoConstitutive_C3D10&>());
+
+  py::class_<TopoVonMisesAggregation_C3D8, Elasticity_ElementFunctional>(
+      m, "TopoVonMisesAggregation_C3D8")
+      .def(py::init<TopoIsoConstitutive_C3D8&, double>());
+  py::class_<TopoVonMisesAggregation_C3D10, Elasticity_ElementFunctional>(
+      m, "TopoVonMisesAggregation_C3D10")
+      .def(py::init<TopoIsoConstitutive_C3D10&, double>());
 
   // Helmholtz ----------------------------------------------------------
 

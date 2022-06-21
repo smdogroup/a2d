@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  blockInverse<T, N>(A, Ainv, ipiv);
-  blockGemm<T, N, N, N>(Acopy, Ainv, A);
+  A2D::blockInverse<T, N>(A, Ainv, ipiv);
+  A2D::blockGemm<T, N, N, N>(Acopy, Ainv, A);
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {

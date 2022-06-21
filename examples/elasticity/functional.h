@@ -2,6 +2,7 @@
 #define A2D_FUNCTIONAL_H
 
 #include <list>
+#include <memory>
 
 #include "element.h"
 
@@ -35,7 +36,8 @@ class Functional {
   Functional() {}
   virtual ~Functional() {}
 
-  void add_functional(ElementFunctional<I, T, PDE>* functional) {
+  void add_functional(
+      std::shared_ptr<ElementFunctional<I, T, PDE>> functional) {
     functionals.push_back(functional);
   }
 
@@ -45,8 +47,7 @@ class Functional {
   T eval_functional() {
     T value = 0.0;
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      ElementFunctional<I, T, PDE>* functional = *it;
-      value += functional->eval_functional();
+      value += (*it)->eval_functional();
     }
     return value;
   }
@@ -57,8 +58,7 @@ class Functional {
   void eval_dfdu(typename PDE::SolutionArray& dfdu) {
     dfdu.zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      ElementFunctional<I, T, PDE>* functional = *it;
-      functional->add_dfdu(dfdu);
+      (*it)->add_dfdu(dfdu);
     }
   }
 
@@ -68,8 +68,7 @@ class Functional {
   void eval_dfdx(typename PDE::DesignArray& dfdx) {
     dfdx.zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      ElementFunctional<I, T, PDE>* functional = *it;
-      functional->add_dfdx(dfdx);
+      (*it)->add_dfdx(dfdx);
     }
   }
 
@@ -79,13 +78,12 @@ class Functional {
   void eval_dfdnodes(typename PDE::NodeArray& dfdx) {
     dfdx.zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      ElementFunctional<I, T, PDE>* functional = *it;
-      functional->eval_dfdnodes(dfdx);
+      (*it)->add_dfdnodes(dfdx);
     }
   }
 
  private:
-  std::list<ElementFunctional<I, T, PDE>*> functionals;
+  std::list<std::shared_ptr<ElementFunctional<I, T, PDE>>> functionals;
 };
 
 }  // namespace A2D

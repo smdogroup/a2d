@@ -337,8 +337,9 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
 template <typename I, typename T, index_t M, index_t N>
 class BSRMatAmg {
  public:
-  BSRMatAmg(int num_levels, T omega, BSRMat<I, T, M, M>* A,
-            MultiArray<T, CLayout<M, N>>* B, bool print_info = false)
+  BSRMatAmg(int num_levels, T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
+            bool print_info = false)
       : omega(omega),
         rho(0.0),
         scale(0.0),
@@ -356,12 +357,6 @@ class BSRMatAmg {
     makeAmgLevels(0, num_levels, print_info);
   }
   ~BSRMatAmg() {
-    if (level > 0 && A) {
-      delete A;
-    }
-    if (level > 0 && B) {
-      delete B;
-    }
     if (P) {
       delete P;
     }
@@ -730,10 +725,10 @@ class BSRMatAmg {
   int level;
 
   // Data for the matrix
-  BSRMat<I, T, M, M>* A;
+  std::shared_ptr<BSRMat<I, T, M, M>> A;
 
   // The near null-space candidates
-  MultiArray<T, CLayout<M, N>>* B;
+  std::shared_ptr<MultiArray<T, CLayout<M, N>>> B;
 
   // Data for the prolongation and restriction
   BSRMat<I, T, M, N>* P;
@@ -753,7 +748,7 @@ class BSRMatAmg {
   MultiArray<T, CLayout<M>>* b;
   MultiArray<T, CLayout<M>>* r;
 
-  BSRMatAmg<I, T, N, N>* next;
+  BSRMatAmg<I, T, N, N> next;
 };
 
 }  // namespace A2D

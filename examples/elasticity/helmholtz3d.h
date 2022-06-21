@@ -1,5 +1,5 @@
-#ifndef HELMHOLTZ_3D_H
-#define HELMHOLTZ_3D_H
+#ifndef A2D_HELMHOLTZ_3D_H
+#define A2D_HELMHOLTZ_3D_H
 
 #include "a2dtmp.h"
 #include "basis3d.h"
@@ -186,4 +186,4 @@ class HelmholtzElement3D
 
 }  // namespace A2D
 
-#endif  // HELMHOLTZ_3D_H
+#endif  // A2D_HELMHOLTZ_3D_H

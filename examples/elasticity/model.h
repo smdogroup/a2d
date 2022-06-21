@@ -2,6 +2,7 @@
 #define A2D_MODEL_H
 
 #include <list>
+#include <memory>
 
 #include "a2dtmp.h"
 #include "constitutive.h"
@@ -70,12 +71,14 @@ class FEModel {
   /*
     Add an element object to the model
   */
-  void add_element(Element<I, T, PDE>* element) { elements.push_back(element); }
+  void add_element(std::shared_ptr<Element<I, T, PDE>> element) {
+    elements.push_back(element);
+  }
 
   /*
     Add a constitutive object to the model
   */
-  void add_constitutive(Constitutive<I, T, PDE>* con) {
+  void add_constitutive(std::shared_ptr<Constitutive<I, T, PDE>> con) {
     constitutive.push_back(con);
   }
 
@@ -85,16 +88,22 @@ class FEModel {
   */
   void init() {
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->set_nodes(X);
+      (*it)->set_nodes(X);
     }
   }
 
   /*
     Create a new solution vector
   */
-  typename PDE::SolutionArray* new_solution() {
-    return new typename PDE::SolutionArray(solution_layout);
+  std::shared_ptr<typename PDE::SolutionArray> new_solution() {
+    return std::make_shared<typename PDE::SolutionArray>(solution_layout);
+  }
+
+  /*
+    Create a new node vector
+  */
+  std::shared_ptr<typename PDE::NodeArray> new_nodes() {
+    return std::make_shared<typename PDE::NodeArray>(solution_layout);
   }
 
   /*
@@ -115,29 +124,27 @@ class FEModel {
   /*
     Set new node locations for each of the elements
   */
-  void set_nodes(typename PDE::NodeArray& Xnew) {
+  void set_nodes(std::shared_ptr<typename PDE::NodeArray> Xnew) {
     X.copy(Xnew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->set_nodes(X);
+      (*it)->set_nodes(X);
     }
   }
 
   /*
     Set the solution into the vector
   */
-  void set_solution(typename PDE::SolutionArray& Unew) {
+  void set_solution(std::shared_ptr<typename PDE::SolutionArray> Unew) {
     U.copy(Unew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->set_solution(U);
+      (*it)->set_solution(U);
     }
   }
 
   /*
     Zero the dirichlet boundary conditions in the vector
   */
-  void zero_bcs(typename PDE::SolutionArray& U0) {
+  void zero_bcs(std::shared_ptr<typename PDE::SolutionArray> U0) {
     A2D::VecZeroBCRows(bcs, U0);
   }
 
@@ -148,8 +155,7 @@ class FEModel {
   T energy() {
     T value = 0.0;
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      value += element->energy();
+      value += (*it)->energy();
     }
     return value;
   }
@@ -157,11 +163,10 @@ class FEModel {
   /*
     Compute the residual
   */
-  void residual(typename PDE::SolutionArray& res) {
+  void residual(std::shared_ptr<typename PDE::SolutionArray> res) {
     res.zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->add_residual(res);
+      (*it)->add_residual(res);
     }
     A2D::VecZeroBCRows(bcs, res);
   }
@@ -169,11 +174,10 @@ class FEModel {
   /*
     Compute the Jacobian matrix
   */
-  void jacobian(typename PDE::SparseMat& jac) {
+  void jacobian(std::shared_ptr<typename PDE::SparseMat> jac) {
     jac.zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->add_jacobian(jac);
+      (*it)->add_jacobian(jac);
     }
     A2D::BSRMatZeroBCRows(bcs, jac);
   }
@@ -181,32 +185,29 @@ class FEModel {
   /*
     Set the design variables
   */
-  void set_design_vars(typename PDE::DesignArray& x) {
+  void set_design_vars(std::shared_ptr<typename PDE::DesignArray> x) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
-      Constitutive<I, T, PDE>* con = *it;
-      con->set_design_vars(x);
+      (*it)->set_design_vars(x);
     }
   }
 
   /*
     Add the derivative of the adjoint-residual product
   */
-  void add_adjoint_dfdx(typename PDE::SolutionArray& psi,
-                        typename PDE::DesignArray& dfdx) {
+  void add_adjoint_dfdx(std::shared_ptr<typename PDE::SolutionArray> psi,
+                        std::shared_ptr<typename PDE::DesignArray> dfdx) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
-      Constitutive<I, T, PDE>* con = *it;
-      con->add_adjoint_dfdx(psi, dfdx);
+      (*it)->add_adjoint_dfdx(psi, dfdx);
     }
   }
 
   /*
     Create a new matrix
   */
-  typename PDE::SparseMat* new_matrix() {
+  std::shared_ptr<typename PDE::SparseMat> new_matrix() {
     std::set<std::pair<I, I>> node_set;
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      Element<I, T, PDE>* element = *it;
-      element->add_node_set(node_set);
+      (*it)->add_node_set(node_set);
     }
     return A2D::BSRMatFromNodeSet<I, T, PDE::vars_per_node>(nnodes, node_set);
   }
@@ -214,17 +215,18 @@ class FEModel {
   // With a matrix, create a preconditioner. Note that the entries
   // in the matrix must be filled at this point, e.g. after a call to
   // add_jacobian
-  typename PDE::SparseAmg* new_amg(int num_levels, double omega,
-                                   typename PDE::SparseMat* mat,
-                                   bool print_info = false) {
+  std::shared_ptr<typename PDE::SparseAmg> new_amg(
+      int num_levels, double omega,
+      std::shared_ptr<typename PDE::SparseMat> mat, bool print_info = false) {
     PDE::compute_null_space(X, B);
     A2D::VecZeroBCRows(bcs, B);
-    return new typename PDE::SparseAmg(num_levels, omega, mat, &B, print_info);
+    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, mat, &B,
+                                                     print_info);
   }
 
  private:
-  std::list<Element<I, T, PDE>*> elements;
-  std::list<Constitutive<I, T, PDE>*> constitutive;
+  std::list<std::shared_ptr<Element<I, T, PDE>>> elements;
+  std::list<std::shared_ptr<Constitutive<I, T, PDE>>> constitutive;
 
   typename PDE::BCsLayout bcs_layout;
   typename PDE::NodeLayout node_layout;

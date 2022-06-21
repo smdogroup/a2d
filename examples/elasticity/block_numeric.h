@@ -21,6 +21,10 @@ double fabs(double a) {
   }
 }
 
+double RealPart(double a) { return a; }
+
+double RealPart(std::complex<double> a) { return a.real(); }
+
 /*
   Compute y = A * x
 */

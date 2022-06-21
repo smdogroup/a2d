@@ -81,14 +81,14 @@ void test_adjoint_product(DesignArray& x, FEModel<I, T, PDE>& model,
 */
 int main(int argc, char* argv[]) {
   typedef index_t I;
-  // typedef std::complex<double> T;
   typedef std::complex<double> T;
+  // typedef std::complex<double> T;
   typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
   typedef ElasticityPDE<I, T> PDE;
 
-  const index_t nx = 48;
-  const index_t ny = 48;
-  const index_t nz = 48;
+  const index_t nx = 32;
+  const index_t ny = 32;
+  const index_t nz = 32;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -166,7 +166,9 @@ int main(int argc, char* argv[]) {
 
   // Set the element
   T q = 5.0, E = 70e3, nu = 0.3;
-  RAMPIsoConstitutive<I, T, Basis> constitutive(element, q, E, nu);
+  T density = 1.0, design_stress = 1e3;
+  TopoIsoConstitutive<I, T, Basis> constitutive(element, q, E, nu, density,
+                                                design_stress);
   model.add_constitutive(&constitutive);
 
   // Create the design vector
@@ -178,11 +180,9 @@ int main(int argc, char* argv[]) {
   model.set_design_vars(x);
 
   // Set up the stress functional
-  double design_stress = 0.270e3;
   Functional<I, T, PDE> functional;
-  StressIntegral3D<I, T, Basis> stress_functional(element, E, nu,
-                                                  design_stress);
-  functional.add_functional(&stress_functional);
+  TopoStressAggregation<I, T, Basis> agg_functional(constitutive);
+  functional.add_functional(&agg_functional);
 
   // Compute the Jacobian matrix
   double t0 = MPI_Wtime();
@@ -224,6 +224,9 @@ int main(int argc, char* argv[]) {
 
   // Set the solution
   model.set_solution(*solution);
+
+  agg_functional.compute_offset();
+  functional.eval_functional();
 
   // Compute the adjoint right-hand-side
   auto dfdu = model.new_solution();

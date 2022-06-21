@@ -3,6 +3,7 @@
 
 #include <cstddef>
 
+#include "block_numeric.h"
 #include "parallel.h"
 
 namespace A2D {
@@ -303,6 +304,25 @@ class Basis3D {
   /*
     Integrate a value over all the elements in the domain
   */
+  template <typename T, class FunctorType, class QuadPointDetJArray>
+  static T integrate(QuadPointDetJArray& detJ, const FunctorType& integrand) {
+    T value = 0.0;
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+      double weight = Quadrature::getQuadWeight(j);
+
+      const A2D::index_t npts = detJ.extent(0);
+      value += A2D::parallel_reduce<T>(npts, [&](A2D::index_t i) -> T {
+        T wdetJ = weight * detJ(i, j);
+        return integrand(i, j, wdetJ);
+      });
+    }
+
+    return value;
+  }
+
+  /*
+    Integrate a value over all the elements in the domain
+  */
   template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
             class QuadPointJacobianArray, class QuadPointGradientArray>
   static T integrate(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
@@ -333,6 +353,48 @@ class Basis3D {
         T wdetJ = weight * detJ(i, j);
         return integrand(i, j, wdetJ, Jinv0, Uxi0);
       });
+    }
+
+    return value;
+  }
+
+  /*
+    Integrate a value over all the elements in the domain
+  */
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointJacobianArray, class QuadPointGradientArray>
+  static T maximum(QuadPointDetJArray& detJ, QuadPointJacobianArray& Jinv,
+                   QuadPointGradientArray& Uxi, const FunctorType& func) {
+    T value = -1e20;
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+      double weight = Quadrature::getQuadWeight(j);
+
+      const A2D::index_t npts = detJ.extent(0);
+      // value = A2D::parallel_reduce_max<T>(npts, [&](A2D::index_t i) -> T {
+      for (A2D::index_t i = 0; i < npts; i++) {
+        // Extract Jinv
+        A2D::Mat<T, 3, 3> Jinv0;
+        for (index_t ii = 0; ii < 3; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
+            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
+          }
+        }
+
+        // Extract Uxi0
+        A2D::Mat<T, M, 3> Uxi0;
+        for (index_t ii = 0; ii < M; ii++) {
+          for (index_t jj = 0; jj < 3; jj++) {
+            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+          }
+        }
+
+        T wdetJ = weight * detJ(i, j);
+        T val = func(i, j, wdetJ, Jinv0, Uxi0);
+        if (A2D::RealPart(val) > A2D::RealPart(value)) {
+          value = val;
+        }
+      }
+      // );
     }
 
     return value;

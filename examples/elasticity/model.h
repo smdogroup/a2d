@@ -34,8 +34,9 @@ class FEModel {
         null_space_layout(nnodes),
         bcs(bcs_layout),
         X(node_layout),
-        U(solution_layout),
-        B(null_space_layout) {}
+        U(solution_layout) {
+    B = std::make_shared<typename PDE::NullSpaceArray>(null_space_layout);
+  }
   template <typename Ttype, typename IdxType>
   FEModel(const index_t nnodes, const Ttype X_[], const index_t nbcs,
           const IdxType bcs_[])
@@ -47,8 +48,8 @@ class FEModel {
         null_space_layout(nnodes),
         bcs(bcs_layout),
         X(node_layout),
-        U(solution_layout),
-        B(null_space_layout) {
+        U(solution_layout) {
+    B = std::make_shared<typename PDE::NullSpaceArray>(null_space_layout);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
       for (I j = 0; j < 3; j++) {
@@ -125,7 +126,7 @@ class FEModel {
     Set new node locations for each of the elements
   */
   void set_nodes(std::shared_ptr<typename PDE::NodeArray> Xnew) {
-    X.copy(Xnew);
+    X.copy(*Xnew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_nodes(X);
     }
@@ -135,7 +136,7 @@ class FEModel {
     Set the solution into the vector
   */
   void set_solution(std::shared_ptr<typename PDE::SolutionArray> Unew) {
-    U.copy(Unew);
+    U.copy(*Unew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_solution(U);
     }
@@ -145,7 +146,7 @@ class FEModel {
     Zero the dirichlet boundary conditions in the vector
   */
   void zero_bcs(std::shared_ptr<typename PDE::SolutionArray> U0) {
-    A2D::VecZeroBCRows(bcs, U0);
+    A2D::VecZeroBCRows(bcs, *U0);
   }
 
   /*
@@ -164,22 +165,22 @@ class FEModel {
     Compute the residual
   */
   void residual(std::shared_ptr<typename PDE::SolutionArray> res) {
-    res.zero();
+    res->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      (*it)->add_residual(res);
+      (*it)->add_residual(*res);
     }
-    A2D::VecZeroBCRows(bcs, res);
+    A2D::VecZeroBCRows(bcs, *res);
   }
 
   /*
     Compute the Jacobian matrix
   */
   void jacobian(std::shared_ptr<typename PDE::SparseMat> jac) {
-    jac.zero();
+    jac->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
-      (*it)->add_jacobian(jac);
+      (*it)->add_jacobian(*jac);
     }
-    A2D::BSRMatZeroBCRows(bcs, jac);
+    A2D::BSRMatZeroBCRows(bcs, *jac);
   }
 
   /*
@@ -187,7 +188,7 @@ class FEModel {
   */
   void set_design_vars(std::shared_ptr<typename PDE::DesignArray> x) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
-      (*it)->set_design_vars(x);
+      (*it)->set_design_vars(*x);
     }
   }
 
@@ -197,7 +198,7 @@ class FEModel {
   void add_adjoint_dfdx(std::shared_ptr<typename PDE::SolutionArray> psi,
                         std::shared_ptr<typename PDE::DesignArray> dfdx) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
-      (*it)->add_adjoint_dfdx(psi, dfdx);
+      (*it)->add_adjoint_dfdx(*psi, *dfdx);
     }
   }
 
@@ -209,7 +210,8 @@ class FEModel {
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
     }
-    return A2D::BSRMatFromNodeSet<I, T, PDE::vars_per_node>(nnodes, node_set);
+    return std::shared_ptr<typename PDE::SparseMat>(
+        A2D::BSRMatFromNodeSet<I, T, PDE::vars_per_node>(nnodes, node_set));
   }
 
   // With a matrix, create a preconditioner. Note that the entries
@@ -218,9 +220,9 @@ class FEModel {
   std::shared_ptr<typename PDE::SparseAmg> new_amg(
       int num_levels, double omega,
       std::shared_ptr<typename PDE::SparseMat> mat, bool print_info = false) {
-    PDE::compute_null_space(X, B);
-    A2D::VecZeroBCRows(bcs, B);
-    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, mat, &B,
+    PDE::compute_null_space(X, *B);
+    A2D::VecZeroBCRows(bcs, *B);
+    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, mat, B,
                                                      print_info);
   }
 
@@ -236,7 +238,7 @@ class FEModel {
   typename PDE::BCsArray bcs;
   typename PDE::NodeArray X;
   typename PDE::SolutionArray U;
-  typename PDE::NullSpaceArray B;
+  std::shared_ptr<typename PDE::NullSpaceArray> B;
 };
 
 }  // namespace A2D

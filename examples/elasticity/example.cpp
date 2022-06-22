@@ -55,7 +55,8 @@ typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat Helmholtz_Mat;
 
 template <class multiarray>
 void declare_array(py::module& m, const char typestr[]) {
-  py::class_<multiarray>(m, typestr, py::buffer_protocol())
+  py::class_<multiarray, std::shared_ptr<multiarray>>(m, typestr,
+                                                      py::buffer_protocol())
       .def_buffer([](multiarray& array) -> py::buffer_info {
         std::size_t ndims = array.get_rank();
         std::vector<std::size_t> shape(ndims);
@@ -79,7 +80,7 @@ void declare_array(py::module& m, const char typestr[]) {
 template <class element, class base, class... args>
 void declare_element(py::module& m, const char typestr[]) {
   // Wrap the elasticity elements
-  py::class_<element, base>(m, typestr)
+  py::class_<element, base, std::shared_ptr<element>>(m, typestr)
       .def(py::init(
           [=](py::array_t<int, py::array::c_style> conn, args... vals) {
             py::buffer_info buf = conn.request();
@@ -102,7 +103,24 @@ void declare_element(py::module& m, const char typestr[]) {
 template <class model>
 void declare_3dmodel(py::module& m, const char typestr[]) {
   // Wrap the model
-  py::class_<model>(m, typestr)
+  py::class_<model, std::shared_ptr<model>>(m, typestr)
+      .def(py::init([](py::array_t<Ttype, py::array::c_style> X) {
+        py::buffer_info Xbuf = X.request();
+
+        // Check the buffer shapes
+        if (Xbuf.ndim != 2) {
+          throw std::runtime_error("Model: Node array dimension must be two");
+        }
+        index_t nnodes = Xbuf.shape[0];
+        if (nnodes > 0 && Xbuf.shape[1] != 3) {
+          throw std::runtime_error(
+              "Model: There must be 3 coordinates per node");
+        }
+
+        Ttype* Xptr = static_cast<Ttype*>(Xbuf.ptr);
+        int* bcs = NULL;
+        return new model(nnodes, Xptr, 0, bcs);
+      }))
       .def(py::init([](py::array_t<Ttype, py::array::c_style> X,
                        py::array_t<int, py::array::c_style> bcs) {
         py::buffer_info Xbuf = X.request();
@@ -112,7 +130,8 @@ void declare_3dmodel(py::module& m, const char typestr[]) {
         if (Xbuf.ndim != 2) {
           throw std::runtime_error("Model: Node array dimension must be two");
         }
-        if (Xbuf.shape[1] != 3) {
+        index_t nnodes = Xbuf.shape[0];
+        if (nnodes > 0 && Xbuf.shape[1] != 3) {
           throw std::runtime_error(
               "Model: There must be 3 coordinates per node");
         }
@@ -120,14 +139,13 @@ void declare_3dmodel(py::module& m, const char typestr[]) {
           throw std::runtime_error(
               "Model: The bcs array must have two dimensions");
         }
-        if (bcsbuf.shape[1] != 2) {
+        index_t nbcs = bcsbuf.shape[0];
+        if (nbcs > 0 && bcsbuf.shape[1] != 2) {
           throw std::runtime_error(
               "Model: The bcs array must have two values index and fixed "
               "dof");
         }
 
-        index_t nnodes = Xbuf.shape[0];
-        index_t nbcs = bcsbuf.shape[0];
         Ttype* Xptr = static_cast<Ttype*>(Xbuf.ptr);
         int* bcsptr = static_cast<int*>(bcsbuf.ptr);
         return new model(nnodes, Xptr, nbcs, bcsptr);
@@ -150,7 +168,7 @@ void declare_3dmodel(py::module& m, const char typestr[]) {
 template <class amg>
 void declare_amg(py::module& m, const char typestr[]) {
   // Wrap the Amg object
-  py::class_<amg>(m, typestr)
+  py::class_<amg, std::shared_ptr<amg>>(m, typestr)
       .def("mg", &amg::mg, "Multigrid method", py::arg("b"), py::arg("x"),
            py::arg("monitor") = 0, py::arg("max_iters") = 500,
            py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30)
@@ -172,28 +190,33 @@ PYBIND11_MODULE(example, m) {
   declare_3dmodel<Elasticity_Model>(m, "Elasticity_Model");
 
   // Virtual base class
-  py::class_<Elasticity_Element>(m, "Elasticity_Element");
+  py::class_<Elasticity_Element, std::shared_ptr<Elasticity_Element>>(
+      m, "Elasticity_Element");
 
   // Declare the base class
   declare_element<Elasticity_C3D8, Elasticity_Element>(m, "Elasticity_C3D8");
   declare_element<Elasticity_C3D10, Elasticity_Element>(m, "Elasticity_C3D10");
 
   // Wrap the Matrix object
-  py::class_<Elasticity_Mat>(m, "Elasticity_Mat");
+  py::class_<Elasticity_Mat, std::shared_ptr<Elasticity_Mat>>(m,
+                                                              "Elasticity_Mat");
 
   // Declare the associated AMG type
   declare_amg<Elasticity_Amg>(m, "Elasticity_Amg");
 
   // Declare the constitutive classes
-  py::class_<Elasticity_Constitutive>(m, "Elasticity_Constitutive");
-  py::class_<TopoIsoConstitutive_C3D8, Elasticity_Constitutive>(
+  py::class_<Elasticity_Constitutive, std::shared_ptr<Elasticity_Constitutive>>(
+      m, "Elasticity_Constitutive");
+  py::class_<TopoIsoConstitutive_C3D8, Elasticity_Constitutive,
+             std::shared_ptr<TopoIsoConstitutive_C3D8>>(
       m, "TopoIsoConstitutive_C3D8")
-      .def(
-          py::init<Elasticity_C3D8&, double, double, double, double, double>());
-  py::class_<TopoIsoConstitutive_C3D10, Elasticity_Constitutive>(
+      .def(py::init<std::shared_ptr<Elasticity_C3D8>, double, double, double,
+                    double, double>());
+  py::class_<TopoIsoConstitutive_C3D10, Elasticity_Constitutive,
+             std::shared_ptr<TopoIsoConstitutive_C3D10>>(
       m, "TopoIsoConstitutive_C3D10")
-      .def(py::init<Elasticity_C3D10&, double, double, double, double,
-                    double>());
+      .def(py::init<std::shared_ptr<Elasticity_C3D10>, double, double, double,
+                    double, double>());
 
   py::class_<Elasticity_Functional>(m, "Elasticity_Functional")
       .def(py::init<>())
@@ -203,21 +226,25 @@ PYBIND11_MODULE(example, m) {
       .def("eval_dfdx", &Elasticity_Functional::eval_dfdx)
       .def("eval_dfdnodes", &Elasticity_Functional::eval_dfdnodes);
 
-  py::class_<Elasticity_ElementFunctional>(m, "Elasticity_ElementFunctional");
+  py::class_<Elasticity_ElementFunctional,
+             std::shared_ptr<Elasticity_ElementFunctional>>(
+      m, "Elasticity_ElementFunctional");
 
-  py::class_<TopoVolume_C3D8, Elasticity_ElementFunctional>(m,
-                                                            "TopoVolume_C3D8")
-      .def(py::init<TopoIsoConstitutive_C3D8&>());
-  py::class_<TopoVolume_C3D10, Elasticity_ElementFunctional>(m,
-                                                             "TopoVolume_C3D10")
-      .def(py::init<TopoIsoConstitutive_C3D10&>());
+  py::class_<TopoVolume_C3D8, Elasticity_ElementFunctional,
+             std::shared_ptr<TopoVolume_C3D8>>(m, "TopoVolume_C3D8")
+      .def(py::init<std::shared_ptr<TopoIsoConstitutive_C3D8>>());
+  py::class_<TopoVolume_C3D10, Elasticity_ElementFunctional,
+             std::shared_ptr<TopoVolume_C3D10>>(m, "TopoVolume_C3D10")
+      .def(py::init<std::shared_ptr<TopoIsoConstitutive_C3D10>>());
 
-  py::class_<TopoVonMisesAggregation_C3D8, Elasticity_ElementFunctional>(
+  py::class_<TopoVonMisesAggregation_C3D8, Elasticity_ElementFunctional,
+             std::shared_ptr<TopoVonMisesAggregation_C3D8>>(
       m, "TopoVonMisesAggregation_C3D8")
-      .def(py::init<TopoIsoConstitutive_C3D8&, double>());
-  py::class_<TopoVonMisesAggregation_C3D10, Elasticity_ElementFunctional>(
+      .def(py::init<std::shared_ptr<TopoIsoConstitutive_C3D8>, double>());
+  py::class_<TopoVonMisesAggregation_C3D10, Elasticity_ElementFunctional,
+             std::shared_ptr<TopoVonMisesAggregation_C3D10>>(
       m, "TopoVonMisesAggregation_C3D10")
-      .def(py::init<TopoIsoConstitutive_C3D10&, double>());
+      .def(py::init<std::shared_ptr<TopoIsoConstitutive_C3D10>, double>());
 
   // Helmholtz ----------------------------------------------------------
 
@@ -228,7 +255,8 @@ PYBIND11_MODULE(example, m) {
   declare_3dmodel<Helmholtz_Model>(m, "Helmholtz_Model");
 
   // Virtual base class
-  py::class_<Helmholtz_Element>(m, "Helmholtz_Element");
+  py::class_<Helmholtz_Element, std::shared_ptr<Helmholtz_Element>>(
+      m, "Helmholtz_Element");
 
   // Declare the base class
   declare_element<Helmholtz_C3D8, Helmholtz_Element, double>(m,
@@ -237,7 +265,7 @@ PYBIND11_MODULE(example, m) {
       m, "Helmholtz_C3D10");
 
   // Wrap the Matrix object
-  py::class_<Helmholtz_Mat>(m, "Helmholtz_Mat");
+  py::class_<Helmholtz_Mat, std::shared_ptr<Helmholtz_Mat>>(m, "Helmholtz_Mat");
 
   // Declare the associated AMG type
   declare_amg<Helmholtz_Amg>(m, "Helmholtz_Amg");

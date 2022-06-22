@@ -701,20 +701,19 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 }
 
 template <typename I, typename T, index_t M>
-void BSRMatMultiColorOrder(BSRMat<I, T, M, M>* A) {
-  A->perm = new I[A->nbrows];
-  I* colors = new I[A->nbrows];
+void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
+  A.perm = new I[A.nbrows];
+  I* colors = new I[A.nbrows];
 
   // Use A->perm as a temporary variable to avoid double allocation
-  A->num_colors =
-      CSRMultiColorOrder(A->nbrows, A->rowp, A->cols, colors, A->perm);
+  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp, A.cols, colors, A.perm);
 
   // Count up the number of nodes with each color
-  A->color_count = new I[A->num_colors];
-  std::fill(A->color_count, A->color_count + A->num_colors, 0);
+  A.color_count = new I[A.num_colors];
+  std::fill(A.color_count, A.color_count + A.num_colors, 0);
 
-  for (I i = 0; i < A->nbrows; i++) {
-    A->color_count[colors[i]]++;
+  for (I i = 0; i < A.nbrows; i++) {
+    A.color_count[colors[i]]++;
   }
 
   delete[] colors;

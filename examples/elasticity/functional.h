@@ -55,30 +55,30 @@ class Functional {
   /*
     Compute the derivative of the functional w.r.t. state variables
   */
-  void eval_dfdu(typename PDE::SolutionArray& dfdu) {
-    dfdu.zero();
+  void eval_dfdu(std::shared_ptr<typename PDE::SolutionArray> dfdu) {
+    dfdu->zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      (*it)->add_dfdu(dfdu);
+      (*it)->add_dfdu(*dfdu);
     }
   }
 
   /*
     Compute the derivative of the functional w.r.t. design variables
   */
-  void eval_dfdx(typename PDE::DesignArray& dfdx) {
-    dfdx.zero();
+  void eval_dfdx(std::shared_ptr<typename PDE::DesignArray> dfdx) {
+    dfdx->zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      (*it)->add_dfdx(dfdx);
+      (*it)->add_dfdx(*dfdx);
     }
   }
 
   /*
     Compute the derivative of the functional w.r.t. nodes
   */
-  void eval_dfdnodes(typename PDE::NodeArray& dfdx) {
-    dfdx.zero();
+  void eval_dfdnodes(std::shared_ptr<typename PDE::NodeArray> dfdx) {
+    dfdx->zero();
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-      (*it)->add_dfdnodes(dfdx);
+      (*it)->add_dfdnodes(*dfdx);
     }
   }
 

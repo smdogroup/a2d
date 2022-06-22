@@ -19,7 +19,7 @@ namespace A2D {
   variable.
 */
 template <class I, class IdxArrayType>
-I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
+I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
                             const IdxArrayType& cols, std::vector<I>& aggr,
                             std::vector<I>& cpts) {
   const I not_aggregated = std::numeric_limits<I>::max();
@@ -118,8 +118,8 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
 */
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
-    const I nrows, const I num_aggregates, std::vector<I>& aggr,
-    MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
+    const I nrows, const I num_aggregates, const std::vector<I>& aggr,
+    const MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
     double toler = 1e-10) {
   // Form the non-zero pattern for PT
   std::vector<I> rowp(num_aggregates + 1, 0);
@@ -608,13 +608,14 @@ class BSRMatAmg {
 
  private:
   // Private constructor for initializing the class
-  BSRMatAmg(T omega)
+  BSRMatAmg(T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
       : omega(omega),
         rho(0.0),
         scale(0.0),
         level(-1),
-        A(NULL),
-        B(NULL),
+        A(A),
+        B(B),
         P(NULL),
         PT(NULL),
         Dinv(NULL),
@@ -668,12 +669,21 @@ class BSRMatAmg {
       }
 
       // Multicolor order this level
-      BSRMatMultiColorOrder(A);
+      BSRMatMultiColorOrder(*A);
+
+      // Multi-color the matrix
+      BSRMat<I, T, N, N>* Ar;
+      MultiArray<T, CLayout<N, N>>* Br;
 
       // Find the new level
-      next = new BSRMatAmg<I, T, N, N>(omega);
-      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
-                                         &(next->A), &(next->B), &rho);
+      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT, &Ar,
+                                         &Br, &rho);
+
+      // Allocate the next level
+      auto Anext = std::shared_ptr<BSRMat<I, T, N, N>>(Ar);
+      auto Bnext = std::shared_ptr<MultiArray<T, CLayout<N, N>>>(Br);
+      next = new BSRMatAmg<I, T, N, N>(omega, Anext, Bnext);
+
       if (print_info) {
         if (level == 0) {
           std::cout << std::setw(10) << "Level" << std::setw(15) << "n(A)"
@@ -748,7 +758,7 @@ class BSRMatAmg {
   MultiArray<T, CLayout<M>>* b;
   MultiArray<T, CLayout<M>>* r;
 
-  BSRMatAmg<I, T, N, N> next;
+  BSRMatAmg<I, T, N, N>* next;
 };
 
 }  // namespace A2D

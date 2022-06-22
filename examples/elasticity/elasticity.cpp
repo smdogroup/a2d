@@ -50,7 +50,7 @@ void test_adjoint_product(DesignArray& x,
   auto res = model->new_solution();
   auto adj = model->new_solution();
   adj->random();
-  model->zero_bcs(*adj);
+  model->zero_bcs(adj);
 
   auto dfdx = x.duplicate();
   auto px = x.duplicate();
@@ -58,7 +58,7 @@ void test_adjoint_product(DesignArray& x,
 
   // Compute the adjoint-residual product
   dfdx->zero();
-  model->add_adjoint_dfdx(*adj, *dfdx);
+  model->add_adjoint_dfdx(adj, dfdx);
   T result = dfdx->dot(*px);
 
   // Set the new values of the design variables
@@ -67,7 +67,7 @@ void test_adjoint_product(DesignArray& x,
 
   // Compute the complex-step
   res->zero();
-  model->residual(*res);
+  model->residual(res);
   T fd = (adj->dot(*res)).imag() / dh;
 
   std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 
   // Set the node locations - Note: This must be done after setting the
   // connectivity!
-  model->set_nodes(X);
+  model->init();
 
   // Set the element
   T q = 5.0, E = 70e3, nu = 0.3;
@@ -173,10 +173,10 @@ int main(int argc, char* argv[]) {
 
   // Create the design vector
   A2D::CLayout<1> design_layout(model->nnodes);
-  A2D::MultiArray<T, A2D::CLayout<1>> x(design_layout);
+  auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
 
   // Set the design variable values
-  x.fill(1.0);
+  x->fill(1.0);
   model->set_design_vars(x);
 
   // Set up the stress functional
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Jacobian initialization time: " << t0 << std::endl;
 
   double t1 = MPI_Wtime();
-  model->jacobian(*J);
+  model->jacobian(J);
   t1 = MPI_Wtime() - t1;
   std::cout << "Jacobian computational time: " << t1 << std::endl;
 
@@ -208,11 +208,11 @@ int main(int argc, char* argv[]) {
   auto solution = model->new_solution();
   auto residual = model->new_solution();
   solution->fill(1.0);
-  model->zero_bcs(*solution);
+  model->zero_bcs(solution);
 
   residual->zero();
   BSRMatVecMult(*J, *solution, *residual);
-  model->zero_bcs(*residual);
+  model->zero_bcs(residual);
 
   // Compute the solution
   index_t monitor = 10;
@@ -224,16 +224,16 @@ int main(int argc, char* argv[]) {
   std::cout << "Conjugate gradient solution time: " << t3 << std::endl;
 
   // Set the solution
-  model->set_solution(*solution);
+  model->set_solution(solution);
 
   agg_functional->compute_offset();
   functional->eval_functional();
 
   // Compute the adjoint right-hand-side
   auto dfdu = model->new_solution();
-  functional->eval_dfdu(*dfdu);
+  functional->eval_dfdu(dfdu);
   dfdu->scale(-1.0);
-  model->zero_bcs(*dfdu);
+  model->zero_bcs(dfdu);
 
   // Compute the adjoint variables
   auto adjoint = model->new_solution();
@@ -243,22 +243,24 @@ int main(int argc, char* argv[]) {
   std::cout << "Adjoint solution time: " << t3 << std::endl;
 
   // Complete the adjoint derivative
-  auto dfdx = x.duplicate();
+  auto dfdx =
+      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
   dfdx->zero();
-  functional->eval_dfdx(*dfdx);
-  model->add_adjoint_dfdx(*adjoint, *dfdx);
+  functional->eval_dfdx(dfdx);
+  model->add_adjoint_dfdx(adjoint, dfdx);
 
   // Compute a projected derivative and test against complex step
-  auto px = x.duplicate();
+  auto px =
+      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
   px->random();
   T ans = dfdx->dot(*px);
 
   // Set the new desigh variable values
   double dh = 1e-30;
-  x.fill(1.0);
-  x.axpy(T(0.0, dh), *px);
+  x->fill(1.0);
+  x->axpy(T(0.0, dh), *px);
   model->set_design_vars(x);
-  model->jacobian(*J);
+  model->jacobian(J);
   amg->update();
 
   double t5 = MPI_Wtime();
@@ -268,7 +270,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Conjugate gradient solution time: " << t5 << std::endl;
 
   // Set the solution
-  model->set_solution(*solution);
+  model->set_solution(solution);
 
   // Compute the complex-step result
   T fd = functional->eval_functional().imag() / dh;
@@ -281,12 +283,12 @@ int main(int argc, char* argv[]) {
             << (ans.real() - fd.real()) / ans.real() << std::endl;
 
   // // Set the design variable values
-  // x.fill(1.0);
+  // x->fill(1.0);
   // model->set_design_vars(x);
   // test_data_adjoint_product(*solution, element);
 
   // // Set the design variable values
-  // x.fill(1.0);
+  // x->fill(1.0);
   // model->set_design_vars(x);
   // test_adjoint_product(x, model);
 

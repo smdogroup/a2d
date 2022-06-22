@@ -233,39 +233,3 @@ opt = ParOpt.Optimizer(problem, options)
 # Set a new starting point
 opt.optimize()
 x, z, zw, zl, zu = opt.getOptimizedPoint()
-
-# stress = example.Elasticity_Functional()
-# stress.add_functional(example.TopoVonMisesAggregation_C3D8(con, 100.0))
-
-# xref = helmholtz_model.new_solution()
-# x = np.array(xref, copy=False)
-# x[:] = 0.5
-# model.set_design_vars(xref)
-
-# # Create the new matrix
-# J = model.new_matrix()
-# model.jacobian(J)
-
-# # Set the AMG information
-# num_levels = 3
-# omega = 4.0 / 3.0
-# print_info = True
-# amg = model.new_amg(num_levels, omega, J, print_info)
-
-# # Create the res and solution arrays
-# res = model.new_solution()
-# res_array = np.array(res, copy=False)
-
-# ans = model.new_solution()
-# ans_array = np.array(ans, copy=False)
-
-# res_array[:] = 1.0
-# res_array[bcs[:, 0], :] = 0.0
-
-# monitor = 5
-# max_iters = 100
-# amg.cg(res, ans, monitor, max_iters)
-# model.set_solution(ans)
-
-# print("Volume = ", volume.eval_functional())
-# print("Von Mises = ", stress.eval_functional())

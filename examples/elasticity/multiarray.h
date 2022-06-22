@@ -175,6 +175,7 @@ class MultiArray {
     } else {
       data_owner = true;
       data = new T[layout.get_size()];
+      zero();
     }
   }
   MultiArray(const MultiArray<T, Layout>& src)

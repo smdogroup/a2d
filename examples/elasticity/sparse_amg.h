@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 #include "block_numeric.h"
 #include "sparse_matrix.h"

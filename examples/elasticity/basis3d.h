@@ -585,31 +585,30 @@ class Basis3D {
     }
   }
 
-  // /*
-  //   Adjoint-residual products for residuals that depend on U
-  // */
-  // template <typename T, index_t M, class FunctorType, class
-  // QuadPointDetJArray,
-  //           class QuadPointSolutionArray>
-  // static void adjoint_product(QuadPointDetJArray& detJ,
-  //                             QuadPointSolutionArray& Uq,
-  //                             QuadPointSolutionArray& Psiq,
-  //                             const FunctorType& func) {
-  //   for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
-  //     double weight = Quadrature::getQuadWeight(j);
-  //     const A2D::index_t npts = detJ.extent(0);
-  //     A2D::parallel_for(npts, [&, weight](A2D::index_t i) -> void {
-  //       A2D::Vec<T, M> U0, Psi0, Ub;
-  //       for (index_t ii = 0; ii < M; ii++) {
-  //         U0(ii) = Uq(i, j, ii);
-  //         Psi0(ii) = Psiq(i, j, ii);
-  //       }
+  /*
+    Adjoint-residual products for residuals that depend on U
+  */
+  template <typename T, index_t M, class FunctorType, class QuadPointDetJArray,
+            class QuadPointSolutionArray>
+  static void adjoint_product(QuadPointDetJArray& detJ,
+                              QuadPointSolutionArray& Uq,
+                              QuadPointSolutionArray& Psiq,
+                              const FunctorType& func) {
+    for (A2D::index_t j = 0; j < Quadrature::NUM_QUAD_PTS; j++) {
+      double weight = Quadrature::getQuadWeight(j);
+      const A2D::index_t npts = detJ.extent(0);
+      A2D::parallel_for(npts, [&, weight](A2D::index_t i) -> void {
+        A2D::Vec<T, M> U0, Psi0;
+        for (index_t ii = 0; ii < M; ii++) {
+          U0(ii) = Uq(i, j, ii);
+          Psi0(ii) = Psiq(i, j, ii);
+        }
 
-  //       T wdetJ = weight * detJ(i, j);
-  //       func(i, j, wdetJ, U0, Psi0);
-  //     });
-  //   }
-  // }
+        T wdetJ = weight * detJ(i, j);
+        func(i, j, wdetJ, U0, Psi0);
+      });
+    }
+  }
 
   /*
     Adjoint-residual products for residuals that depend on U,xi

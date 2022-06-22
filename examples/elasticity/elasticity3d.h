@@ -116,7 +116,6 @@ class NonlinElasticityElement3D
   void add_residual(typename ElasticityPDE<I, T>::SolutionArray& res) {
     // Allocate the element residual
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
-    elem_res.zero();
 
     // Retrieve the element data
     auto data = this->get_quad_data();
@@ -154,7 +153,6 @@ class NonlinElasticityElement3D
 
   void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
-    elem_jac.zero();
 
     // Retrieve the element data
     auto data = this->get_quad_data();
@@ -318,7 +316,6 @@ class LinElasticityElement3D
   void add_residual(typename ElasticityPDE<I, T>::SolutionArray& res) {
     // Allocate the element residual
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
-    elem_res.zero();
 
     // Retrieve the element data
     auto data = this->get_quad_data();
@@ -356,7 +353,6 @@ class LinElasticityElement3D
 
   void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
-    elem_jac.zero();
 
     // Retrieve the element data
     auto data = this->get_quad_data();
@@ -435,7 +431,8 @@ class LinElasticityElement3D
     Basis::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                       A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0) -> void {
+                       A2D::Mat<T, 3, 3>& Uxi0,
+                       A2D::Mat<T, 3, 3>& Pxi0) -> void {
           A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
           A2D::SymmMat<T, 3> E0, Eb;
 
@@ -546,7 +543,6 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
                         typename ElasticityPDE<I, T>::DesignArray& dfdx) {
     typename ElementBasis<I, T, ElasticityPDE<I, T>, Basis>::QuadDataArray
         dfddata(element->get_quad_data_layout());
-    dfddata.zero();
 
     // Compute the product of the adjoint with the derivatives of
     // the residuals w.r.t. the element data
@@ -565,7 +561,6 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
     }
 
     ElemDesignArray dfdxe(elem_design_layout);
-    dfdxe.zero();
     Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();
@@ -626,7 +621,6 @@ class TopoVolume : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
 
     typename TopoIsoConstitutive<I, T, Basis>::QuadDesignArray dfdxq(
         con->get_quad_design_layout());
-    dfdxq.zero();
 
     T integral = Basis::template integrate<T>(
         detJ, [&xq, &dfdxq](index_t i, index_t j, T wdetJ) -> T {
@@ -636,7 +630,6 @@ class TopoVolume : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
 
     typename TopoIsoConstitutive<I, T, Basis>::ElemDesignArray dfdxe(
         con->get_elem_design_layout());
-    dfdxe.zero();
     Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();
@@ -756,7 +749,6 @@ class TopoVonMisesAggregation
     auto element = con->get_element();
     typename ElementBasis<I, T, ElasticityPDE<I, T>, Basis>::ElemResArray
         elem_dfdu(element->get_elem_res_layout());
-    elem_dfdu.zero();
 
     auto data = element->get_quad_data();
     auto detJ = element->get_detJ();
@@ -835,7 +827,6 @@ class TopoVonMisesAggregation
 
     typename TopoIsoConstitutive<I, T, Basis>::QuadDesignArray dfdxq(
         con->get_quad_design_layout());
-    dfdxq.zero();
 
     Basis::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
@@ -868,7 +859,6 @@ class TopoVonMisesAggregation
 
     typename TopoIsoConstitutive<I, T, Basis>::ElemDesignArray dfdxe(
         con->get_elem_design_layout());
-    dfdxe.zero();
     Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();

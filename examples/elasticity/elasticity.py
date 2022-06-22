@@ -25,6 +25,7 @@ class TopOpt(ParOpt.Problem):
         self.x_ref = self.fltr.new_solution()
         self.x = np.array(self.x_ref, copy=False)
         self.rho_ref = self.fltr.new_solution()
+        self.fltr_res_ref = self.fltr.new_solution()
 
         # Temporary vectors for derivatives
         self.dfdrho_ref = self.fltr.new_solution()
@@ -39,7 +40,7 @@ class TopOpt(ParOpt.Problem):
         # Set up the AMG for the filter problem
         omega = 4.0 / 3.0
         print_info = True
-        self.amg_f = self.fltr.new_amg(self.num_levels, omega, self.Kf, print_info)
+        self.fltr_amg = self.fltr.new_amg(self.num_levels, omega, self.Kf, print_info)
 
         # Set the scaling for the compliance
         self.compliance_scale = None
@@ -50,7 +51,7 @@ class TopOpt(ParOpt.Problem):
         """Get the variable values and bounds"""
         lb[:] = 1e-3
         ub[:] = 1.0
-        x[:] = 0.95
+        x[:] = 0.5
         return
 
     def evalObjCon(self, x):
@@ -58,16 +59,23 @@ class TopOpt(ParOpt.Problem):
         Return the objective, constraint and fail flag
         """
 
-        # Set the design variables
+        # Set the design variable values
         self.x[:, 0] = x[:]
+        self.fltr.set_design_vars(self.x_ref)
+
+        # Compute the filter residual
+        self.fltr.residual(self.fltr_res_ref)
+
+        # Scale the residual by -1.0 and solve for rho
         monitor = 5
         max_iters = 100
-        self.amg_f.cg(self.x_ref, self.rho_ref, monitor, max_iters)
+        self.fltr_res_ref.scale(-1.0)
+        self.fltr_amg.cg(self.fltr_res_ref, self.rho_ref, monitor, max_iters)
 
         # Set the design variable values
         self.model.set_design_vars(self.rho_ref)
 
-        # Set up the AMG for the structural problem
+        # Set up AMG for the structural problem
         self.model.jacobian(self.K)
         omega = 4.0 / 3.0
         print_info = True
@@ -85,6 +93,7 @@ class TopOpt(ParOpt.Problem):
 
         # Compute the volume
         volume = self.vol.eval_functional()
+        print('Volume = ', volume)
         con = np.array([1.0 - volume / self.vol_target])
 
         fail = 0
@@ -95,18 +104,31 @@ class TopOpt(ParOpt.Problem):
         Return the objective, constraint and fail flag
         """
 
+        monitor = 5
+        max_iters = 100
+
+        # Compliance gradient
+        # Compute df/d(rho)
         self.dfdrho[:] = 0.0
         self.model.add_adjoint_dfdx(self.u_ref, self.dfdrho_ref)
 
-        monitor = 5
-        max_iters = 100
-        self.amg_f.cg(self.dfdrho_ref, self.dfdx_ref, monitor, max_iters)
-        g[:] = -self.compliance_scale * self.dfdx[:, 0]
+        # Filter adjoint
+        self.fltr_amg.cg(self.dfdrho_ref, self.fltr_res_ref, monitor, max_iters)
 
+        self.dfdx[:] = 0.0
+        self.fltr.add_adjoint_dfdx(self.fltr_res_ref, self.dfdx_ref)
+        g[:] = self.compliance_scale * self.dfdx[:, 0]
+
+        # Volume gradient
         self.dfdrho[:] = 0.0
         self.vol.eval_dfdx(self.dfdrho_ref)
-        self.amg_f.cg(self.dfdrho_ref, self.dfdx_ref, monitor, max_iters)
-        A[0][:] = -(1.0 / self.vol_target) * self.dfdx[:, 0]
+
+        # Filter adjoint
+        self.fltr_amg.cg(self.dfdrho_ref, self.fltr_res_ref, monitor, max_iters)
+
+        self.dfdx[:] = 0.0
+        self.fltr.add_adjoint_dfdx(self.fltr_res_ref, self.dfdx_ref)
+        A[0][:] = (1.0 / self.vol_target) * self.dfdx[:, 0]
 
         fail = 0
         return fail
@@ -179,6 +201,10 @@ model.add_constitutive(con)
 # Initialize the model
 model.init()
 
+# Set up the volume functional
+volume = example.Elasticity_Functional()
+volume.add_functional(example.TopoVolume_C3D8(con))
+
 # Get the model data
 fltr = example.Helmholtz_Model(X)
 
@@ -190,13 +216,14 @@ helmholtz_hex = example.Helmholtz_C3D8(conn, r0)
 # Add the model to the element
 fltr.add_element(helmholtz_hex)
 
+# Set the constitutive model
+helmholtz_con = example.HelmholtzConstitutive_C3D8(helmholtz_hex)
+fltr.add_constitutive(helmholtz_con)
+
 # Initialize the model
 fltr.init()
 
-# Set up the volume functional
-volume = example.Elasticity_Functional()
-volume.add_functional(example.TopoVolume_C3D8(con))
-
+# Create
 vol_init = 1.0
 vol_target = 0.4 * vol_init
 problem = TopOpt(model, fltr, volume, vol_target, nvars=nnodes)
@@ -213,10 +240,10 @@ options = {
     "tr_max_size": 10.0,
     "tr_eta": 0.25,
     "tr_infeas_tol": 1e-6,
-    "tr_l1_tol": 1e-3,
+    "tr_l1_tol": 1e-6,
     "tr_linfty_tol": 0.0,
     "tr_adaptive_gamma_update": True,
-    "tr_max_iterations": 1000,
+    "tr_max_iterations": 100,
     "max_major_iters": 100,
     "penalty_gamma": 1e3,
     "qn_subspace_size": 10,

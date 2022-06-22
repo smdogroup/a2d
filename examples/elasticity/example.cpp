@@ -53,6 +53,13 @@ typedef FEModel<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> Helmholtz_Model;
 typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg Helmholtz_Amg;
 typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat Helmholtz_Mat;
 
+typedef Constitutive<Itype, Ttype, HelmholtzPDE<Itype, Ttype>>
+    Helmholtz_Constitutive;
+typedef HelmholtzConstitutive<Itype, Ttype, Basis_C3D8>
+    HelmholtzConstitutive_C3D8;
+typedef HelmholtzConstitutive<Itype, Ttype, Basis_C3D10>
+    HelmholtzConstitutive_C3D10;
+
 template <class multiarray>
 void declare_array(py::module& m, const char typestr[]) {
   py::class_<multiarray, std::shared_ptr<multiarray>>(m, typestr,
@@ -74,7 +81,12 @@ void declare_array(py::module& m, const char typestr[]) {
             array.data, sizeof(typename multiarray::type),
             py::format_descriptor<typename multiarray::type>::format(), ndims,
             shape, strides);
-      });
+      })
+      .def("zero", &multiarray::zero)
+      .def("fill", &multiarray::fill)
+      .def("scale", &multiarray::scale)
+      .def("random", &multiarray::random)
+      .def("norm", &multiarray::norm);
 }
 
 template <class element, class base, class... args>
@@ -263,6 +275,18 @@ PYBIND11_MODULE(example, m) {
                                                              "Helmholtz_C3D8");
   declare_element<Helmholtz_C3D10, Helmholtz_Element, double>(
       m, "Helmholtz_C3D10");
+
+  // Declare the constitutive classes
+  py::class_<Helmholtz_Constitutive, std::shared_ptr<Helmholtz_Constitutive>>(
+      m, "Helmholtz_Constitutive");
+  py::class_<HelmholtzConstitutive_C3D8, Helmholtz_Constitutive,
+             std::shared_ptr<HelmholtzConstitutive_C3D8>>(
+      m, "HelmholtzConstitutive_C3D8")
+      .def(py::init<std::shared_ptr<Helmholtz_C3D8>>());
+  py::class_<HelmholtzConstitutive_C3D10, Helmholtz_Constitutive,
+             std::shared_ptr<HelmholtzConstitutive_C3D10>>(
+      m, "HelmholtzConstitutive_C3D10")
+      .def(py::init<std::shared_ptr<Helmholtz_C3D10>>());
 
   // Wrap the Matrix object
   py::class_<Helmholtz_Mat, std::shared_ptr<Helmholtz_Mat>>(m, "Helmholtz_Mat");

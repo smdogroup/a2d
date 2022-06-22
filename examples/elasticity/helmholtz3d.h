@@ -161,24 +161,24 @@ class HelmholtzElement3D
           // Uxib = r0 * r0 * Jinv * Jinv^{T}
 
           jac(0, 0, 0, 0) =
-              r2 * (Jinv(0, 0) * Jinv(0, 0) + Jinv(0, 1) * Jinv(0, 1) +
-                    Jinv(0, 2) * Jinv(0, 2));
+              wr2 * (Jinv(0, 0) * Jinv(0, 0) + Jinv(0, 1) * Jinv(0, 1) +
+                     Jinv(0, 2) * Jinv(0, 2));
           jac(0, 1, 0, 1) =
-              r2 * (Jinv(1, 0) * Jinv(1, 0) + Jinv(1, 1) * Jinv(1, 1) +
-                    Jinv(1, 2) * Jinv(1, 2));
+              wr2 * (Jinv(1, 0) * Jinv(1, 0) + Jinv(1, 1) * Jinv(1, 1) +
+                     Jinv(1, 2) * Jinv(1, 2));
           jac(0, 2, 0, 2) =
-              r2 * (Jinv(2, 0) * Jinv(2, 0) + Jinv(2, 1) * Jinv(2, 1) +
-                    Jinv(2, 2) * Jinv(2, 2));
+              wr2 * (Jinv(2, 0) * Jinv(2, 0) + Jinv(2, 1) * Jinv(2, 1) +
+                     Jinv(2, 2) * Jinv(2, 2));
 
           jac(0, 0, 0, 1) =
-              r2 * (Jinv(0, 0) * Jinv(1, 0) + Jinv(0, 1) * Jinv(1, 1) +
-                    Jinv(0, 2) * Jinv(1, 2));
+              wr2 * (Jinv(0, 0) * Jinv(1, 0) + Jinv(0, 1) * Jinv(1, 1) +
+                     Jinv(0, 2) * Jinv(1, 2));
           jac(0, 0, 0, 2) =
-              r2 * (Jinv(0, 0) * Jinv(2, 0) + Jinv(0, 1) * Jinv(2, 1) +
-                    Jinv(0, 2) * Jinv(2, 2));
+              wr2 * (Jinv(0, 0) * Jinv(2, 0) + Jinv(0, 1) * Jinv(2, 1) +
+                     Jinv(0, 2) * Jinv(2, 2));
           jac(0, 1, 0, 2) =
-              r2 * (Jinv(1, 0) * Jinv(2, 0) + Jinv(1, 1) * Jinv(2, 1) +
-                    Jinv(1, 2) * Jinv(2, 2));
+              wr2 * (Jinv(1, 0) * Jinv(2, 0) + Jinv(1, 1) * Jinv(2, 1) +
+                     Jinv(1, 2) * Jinv(2, 2));
         },
         elem_jac);
 

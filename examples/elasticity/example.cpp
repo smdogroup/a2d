@@ -181,6 +181,7 @@ template <class amg>
 void declare_amg(py::module& m, const char typestr[]) {
   // Wrap the Amg object
   py::class_<amg, std::shared_ptr<amg>>(m, typestr)
+      .def("update", &amg::update)
       .def("mg", &amg::mg, "Multigrid method", py::arg("b"), py::arg("x"),
            py::arg("monitor") = 0, py::arg("max_iters") = 500,
            py::arg("rtol") = 1e-8, py::arg("atol") = 1e-30)

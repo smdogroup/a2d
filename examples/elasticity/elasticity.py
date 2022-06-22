@@ -2,7 +2,10 @@ import numpy as np
 from mpi4py import MPI
 import example
 from paropt import ParOpt
-
+try:
+    from utils import to_vtk
+except:
+    to_vtk = None
 
 class TopOpt(ParOpt.Problem):
     def __init__(self, model, fltr, vol, vol_target, num_levels=3, nvars=1, ncon=1):
@@ -25,6 +28,7 @@ class TopOpt(ParOpt.Problem):
         self.x_ref = self.fltr.new_solution()
         self.x = np.array(self.x_ref, copy=False)
         self.rho_ref = self.fltr.new_solution()
+        self.rho = np.array(self.rho_ref, copy=False)
         self.fltr_res_ref = self.fltr.new_solution()
 
         # Temporary vectors for derivatives
@@ -44,6 +48,9 @@ class TopOpt(ParOpt.Problem):
 
         # Set the scaling for the compliance
         self.compliance_scale = None
+
+        # Set the iteration count
+        self.vtk_iter = 0
 
         return
 
@@ -96,6 +103,21 @@ class TopOpt(ParOpt.Problem):
         print('Volume = ', volume)
         con = np.array([1.0 - volume / self.vol_target])
 
+        # Export to vtk every 10 iters
+        if self.vtk_iter % 10 == 0 and to_vtk is not None:
+            nodal_sol = {
+                'ux': self.u[:, 0],
+                'uy': self.u[:, 1],
+                'uz': self.u[:, 2],
+                'dv': self.x[:, 0],
+                'rho': self.rho[:, 0]
+            }
+
+            to_vtk(conn, X, nodal_sol=nodal_sol,
+                vtk_name=f"result_{self.vtk_iter}.vtk")
+
+        self.vtk_iter += 1
+
         fail = 0
         return fail, obj, con
 
@@ -134,9 +156,14 @@ class TopOpt(ParOpt.Problem):
         return fail
 
 
-nx = 64
-ny = 64
-nz = 64
+nx = 96
+ny = 48
+nz = 48
+
+lx = 2.0
+ly = 1.0
+lz = 1.0
+
 nnodes = (nx + 1) * (ny + 1) * (nz + 1)
 nelems = nx * ny * nz
 nbcs = (ny + 1) * (nz + 1)
@@ -151,9 +178,9 @@ for k in range(nz + 1):
     for j in range(ny + 1):
         for i in range(nx + 1):
             nodes[i, j, k] = i + (nx + 1) * (j + (ny + 1) * k)
-            X[nodes[i, j, k], 0] = 1.0 * i / nx
-            X[nodes[i, j, k], 1] = 1.0 * j / ny
-            X[nodes[i, j, k], 2] = 1.0 * k / nz
+            X[nodes[i, j, k], 0] = lx * i / nx
+            X[nodes[i, j, k], 1] = ly * j / ny
+            X[nodes[i, j, k], 2] = lz * k / nz
 
 # Set the connectivity
 for k in range(nz):
@@ -209,7 +236,7 @@ volume.add_functional(example.TopoVolume_C3D8(con))
 fltr = example.Helmholtz_Model(X)
 
 # Set up the element
-length_scale = 0.05
+length_scale = 0.025 * ly
 r0 = length_scale / (2.0 * np.sqrt(3.0))
 helmholtz_hex = example.Helmholtz_C3D8(conn, r0)
 
@@ -223,36 +250,39 @@ fltr.add_constitutive(helmholtz_con)
 # Initialize the model
 fltr.init()
 
-# Create
+# Create the optimization problem
 vol_init = 1.0
 vol_target = 0.4 * vol_init
 problem = TopOpt(model, fltr, volume, vol_target, nvars=nnodes)
 
-problem.f[nodes[-1, 0, 0], 2] = 1e3
-problem.f[nodes[-1, -1, -1], 1] = 1e3
+problem.f[nodes[-1, -1, 0], 2] = 1e3
+problem.f[nodes[-1, 0, -1], 1] = -1e3
 
 problem.checkGradients()
 
-options = {
-    "algorithm": "tr",
-    "tr_init_size": 0.05,
-    "tr_min_size": 1e-6,
-    "tr_max_size": 10.0,
-    "tr_eta": 0.25,
-    "tr_infeas_tol": 1e-6,
-    "tr_l1_tol": 1e-6,
-    "tr_linfty_tol": 0.0,
-    "tr_adaptive_gamma_update": True,
-    "tr_max_iterations": 100,
-    "max_major_iters": 100,
-    "penalty_gamma": 1e3,
-    "qn_subspace_size": 10,
-    "qn_type": "bfgs",
-    "abs_res_tol": 1e-8,
-    "starting_point_strategy": "affine_step",
-    "barrier_strategy": "mehrotra_predictor_corrector",
-    "use_line_search": False,
-}
+options = {"algorithm": "mma"}
+
+# options = {
+#     "algorithm": "tr",
+#     "tr_init_size": 0.05,
+#     "tr_min_size": 1e-6,
+#     "tr_max_size": 10.0,
+#     "tr_eta": 0.25,
+#     "tr_infeas_tol": 1e-6,
+#     "tr_l1_tol": 1e-6,
+#     "tr_linfty_tol": 0.0,
+#     "tr_adaptive_gamma_update": True,
+#     "tr_max_iterations": 2,
+#     "max_major_iters": 100,
+#     "penalty_gamma": 1e3,
+#     "qn_subspace_size": 2,
+#     "hessian_reset_freq": 2,
+#     "qn_type": "bfgs",
+#     "abs_res_tol": 1e-8,
+#     "starting_point_strategy": "affine_step",
+#     "barrier_strategy": "mehrotra_predictor_corrector",
+#     "use_line_search": False,
+# }
 
 # Set up the optimizer
 opt = ParOpt.Optimizer(problem, options)

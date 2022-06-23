@@ -1,6 +1,8 @@
 #ifndef BLOCK_NUMERIC_H
 #define BLOCK_NUMERIC_H
 
+#include <complex>
+
 namespace A2D {
 
 double fabs(std::complex<double> a) {
@@ -18,6 +20,10 @@ double fabs(double a) {
     return -a;
   }
 }
+
+double RealPart(double a) { return a; }
+
+double RealPart(std::complex<double> a) { return a.real(); }
 
 /*
   Compute y = A * x

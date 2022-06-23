@@ -22,41 +22,33 @@ nu = 0.3
 mu = 0.5 * E / (1.0 + nu)
 lambda_ = (E * nu) / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
+# Allocate the type of BCs to use
 nbcs = len(bcs)
-model = example.ElasticityModel(nnodes, nbcs)
-
-hex = example.ElasticityHexElement(hex_conn.shape[0])
-mhex_conn = np.array(hex.get_conn(), copy=False)
-mhex_conn[:] = hex_conn
-
-hex_data = np.array(hex.get_quad_data(), copy=False)
-hex_data[:, :, 0] = mu
-hex_data[:, :, 1] = lambda_
-
-tet = example.ElasticityTetElement(tet_conn.shape[0])
-mtet_conn = np.array(tet.get_conn(), copy=False)
-mtet_conn[:] = tet_conn
-
-tet_data = np.array(tet.get_quad_data(), copy=False)
-tet_data[:, :, 0] = mu
-tet_data[:, :, 1] = lambda_
-
-model.add_element(hex)
-model.add_element(tet)
+mbcs = np.zeros((nbcs, 2), dtype=np.int32)
 
 # Set the boundary conditions
 bcs_val = 1 | 2 | 4  # 2^0 | 2^1 | 2^2 - each indicates a fixed dof
-mbcs = np.array(model.get_bcs(), copy=False)
 for index, k in enumerate(bcs):
     mbcs[index, 0] = k
     mbcs[index, 1] = bcs_val
 
-# Copy over the nodes to the model and set them. This has
-# to happen after setting the connectivity
-X_ = model.get_nodes()  # Get the nodes as a raw buffer
-mX = np.array(X_, copy=False)
-mX[:] = X[:]
-model.set_nodes(X_)
+# Create the model class
+model = example.ElasticityModel(X, mbcs)
+
+hex = example.ElasticityHexElement(hex_conn.astype(np.int32))
+hex_data = np.array(hex.get_quad_data(), copy=False)
+hex_data[:, :, 0] = mu
+hex_data[:, :, 1] = lambda_
+
+tet = example.ElasticityTetElement(tet_conn.astype(np.int32))
+tet_data = np.array(tet.get_quad_data(), copy=False)
+tet_data[:, :, 0] = mu
+tet_data[:, :, 1] = lambda_
+
+# Add the elements to the model
+model.add_element(hex)
+model.add_element(tet)
+model.init()
 
 J = model.new_matrix()
 model.jacobian(J)

@@ -1,9 +1,3 @@
-/*
-  0: (0, 0)  1: (0, 1)  2: (0, 2)
-  3: (1, 0)  4: (1, 1)  5: (1, 2)
-  6: (2, 0)  7: (2, 1)  8: (2, 2)
-*/
-
 #ifndef A2D_TMP_H
 #define A2D_TMP_H
 
@@ -917,6 +911,93 @@ inline A2DMat3x3InverseExpr<N, MatType, InvMatType> Mat3x3Inverse(
   return A2DMat3x3InverseExpr<N, MatType, InvMatType>(AObj, AinvObj);
 }
 
+// SymmTrace
+template <typename ScalarType>
+inline void Symm3x3Trace(const SymmMat<ScalarType, 3>& S, ScalarType& trace) {
+  trace = S(0, 0) + S(1, 1) + S(2, 2);
+}
+
+template <class SMatType, class ScalarType>
+class ADSymm3x3TraceExpr
+    : public ADExpression<ADSymm3x3TraceExpr<SMatType, ScalarType> > {
+ public:
+  ADSymm3x3TraceExpr(ADMat<SMatType>& SObj, ADScalar<ScalarType>& output)
+      : SObj(SObj), output(output) {
+    const SMatType& S = SObj.value();
+    output.value = S(0, 0) + S(1, 1) + S(2, 2);
+  }
+
+  void forward() {
+    const SMatType& Sd = SObj.bvalue();
+    output.pvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
+  }
+
+  void reverse() {
+    SMatType& Sb = SObj.bvalue();
+
+    Sb(0, 0) += output.bvalue;
+    Sb(1, 1) += output.bvalue;
+    Sb(2, 2) += output.bvalue;
+  }
+
+  ADMat<SMatType>& SObj;
+  ADScalar<ScalarType>& output;
+};
+
+template <class SMatType, class ScalarType>
+inline ADSymm3x3TraceExpr<SMatType, ScalarType> Symm3x3Trace(
+    ADMat<SMatType>& S, ADScalar<ScalarType>& trace) {
+  return ADSymm3x3TraceExpr<SMatType, ScalarType>(S, trace);
+}
+
+template <int N, class SMatType, class ScalarType>
+class A2DSymm3x3TraceExpr
+    : public A2DExpression<A2DSymm3x3TraceExpr<N, SMatType, ScalarType> > {
+ public:
+  A2DSymm3x3TraceExpr(A2DMat<N, SMatType>& SObj,
+                      A2DScalar<N, ScalarType>& output)
+      : SObj(SObj), output(output) {
+    const SMatType& S = SObj.value();
+    output.value = S(0, 0) + S(1, 1) + S(2, 2);
+  }
+
+  void reverse() {
+    SMatType& Sb = SObj.bvalue();
+
+    Sb(0, 0) += output.bvalue;
+    Sb(1, 1) += output.bvalue;
+    Sb(2, 2) += output.bvalue;
+  }
+
+  // Compute E.pvalue() = J * Ux.pvalue()
+  void hforward() {
+    for (int i = 0; i < N; i++) {
+      const SMatType& Sp = SObj.pvalue(i);
+      output.pvalue[i] = Sp(0, 0) + Sp(1, 1) + Sp(2, 2);
+    }
+  }
+
+  void hreverse() {
+    for (int i = 0; i < N; i++) {
+      const SMatType& Sp = SObj.pvalue(i);
+      SMatType& Sh = SObj.hvalue(i);
+
+      Sh(0, 0) += output.hvalue[i];
+      Sh(1, 1) += output.hvalue[i];
+      Sh(2, 2) += output.hvalue[i];
+    }
+  }
+
+  A2DMat<N, SMatType>& SObj;
+  A2DScalar<N, ScalarType>& output;
+};
+
+template <int N, class SMatType, class ScalarType>
+inline A2DSymm3x3TraceExpr<N, SMatType, ScalarType> Symm3x3Trace(
+    A2DMat<N, SMatType>& S, A2DScalar<N, ScalarType>& trace) {
+  return A2DSymm3x3TraceExpr<N, SMatType, ScalarType>(S, trace);
+}
+
 // Symm3x3SymmMultTrace
 template <typename ScalarType>
 inline void Symm3x3SymmMultTrace(const SymmMat<ScalarType, 3>& S,
@@ -1571,6 +1652,11 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
 
       // by * (d^2y/dx^2 * px)
       ScalarType trp = (Ep(0, 0) + Ep(1, 1) + Ep(2, 2));
+      ScalarType trEp =
+          2.0 * (E(0, 0) * Ep(0, 0) + E(1, 1) * Ep(1, 1) + E(2, 2) * Ep(2, 2) +
+                 2.0 * (E(0, 1) * Ep(0, 1) + E(0, 2) * Ep(0, 2) +
+                        E(1, 2) * Ep(1, 2)));
+
       Eh(0, 0) += (mu2 * Ep(0, 0) + lambda.value * trp) * output.bvalue;
       Eh(1, 1) += (mu2 * Ep(1, 1) + lambda.value * trp) * output.bvalue;
       Eh(2, 2) += (mu2 * Ep(2, 2) + lambda.value * trp) * output.bvalue;
@@ -1578,6 +1664,9 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
       Eh(0, 1) += 2.0 * mu2 * Ep(0, 1) * output.bvalue;
       Eh(0, 2) += 2.0 * mu2 * Ep(0, 2) * output.bvalue;
       Eh(1, 2) += 2.0 * mu2 * Ep(1, 2) * output.bvalue;
+
+      mu.hvalue[i] += trEp * output.bvalue;
+      lambda.hvalue[i] += tr * trp * output.bvalue;
 
       // hy * (dy/dx)
       Eh(0, 0) += (mu2 * E(0, 0) + lambda.value * tr) * output.hvalue[i];

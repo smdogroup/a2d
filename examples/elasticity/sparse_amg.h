@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <memory>
 
 #include "block_numeric.h"
 #include "sparse_matrix.h"
@@ -19,7 +20,7 @@ namespace A2D {
   variable.
 */
 template <class I, class IdxArrayType>
-I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
+I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
                             const IdxArrayType& cols, std::vector<I>& aggr,
                             std::vector<I>& cpts) {
   const I not_aggregated = std::numeric_limits<I>::max();
@@ -84,7 +85,7 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
     if (aggr[i] == not_aggregated) {
       // node i has not been aggregated
       aggr[i] = num_aggregates;
-      cpts[num_aggregates] = i;  // y stores a list of the Cpts
+      cpts[num_aggregates] = i;
 
       const I jp_end = rowp[i + 1];
       for (I jp = rowp[i]; jp < jp_end; jp++) {
@@ -118,8 +119,8 @@ I BSRMatStandardAggregation(const I nrows, IdxArrayType& rowp,
 */
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
-    const I nrows, const I num_aggregates, std::vector<I>& aggr,
-    MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
+    const I nrows, const I num_aggregates, const std::vector<I>& aggr,
+    const MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
     double toler = 1e-10) {
   // Form the non-zero pattern for PT
   std::vector<I> rowp(num_aggregates + 1, 0);
@@ -214,6 +215,9 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       if (fabs(norm) > toler * theta) {
         scale = 1.0 / norm;
         R(i, k, k) = norm;
+      } else {
+        std::cerr << "BSRMatMakeTentativeProlongation: Zeroed column"
+                  << std::endl;
       }
 
       // Set the scale value
@@ -334,8 +338,9 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
 template <typename I, typename T, index_t M, index_t N>
 class BSRMatAmg {
  public:
-  BSRMatAmg(int num_levels, T omega, BSRMat<I, T, M, M>* A,
-            MultiArray<T, CLayout<M, N>>* B, bool print_info = false)
+  BSRMatAmg(int num_levels, T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
+            bool print_info = false)
       : omega(omega),
         rho(0.0),
         scale(0.0),
@@ -353,12 +358,6 @@ class BSRMatAmg {
     makeAmgLevels(0, num_levels, print_info);
   }
   ~BSRMatAmg() {
-    if (level > 0 && A) {
-      delete A;
-    }
-    if (level > 0 && B) {
-      delete B;
-    }
     if (P) {
       delete P;
     }
@@ -546,15 +545,78 @@ class BSRMatAmg {
     x = xt;
   }
 
+  /*
+    Update the values of Galerkin projection at each level without
+    re-computing the basis
+  */
+  void update() {
+    if (Afact) {
+      // Copy values to the matrix
+      BSRMatCopy(*A, *Afact);
+
+      // Perform the numerical factorization
+      BSRMatFactor(*Afact);
+    } else if (next) {
+      delete Dinv;
+      bool inverse = true;
+      Dinv = BSRMatExtractBlockDiagonal(*A, inverse);
+
+      // AP = A * P
+      BSRMat<I, T, M, N>* AP = BSRMatMatMultSymbolic(*A, *P);
+      BSRMatMatMult(*A, *P, *AP);
+
+      // next->A = PT * AP = PT * A * P
+      BSRMatMatMult(*PT, *AP, *next->A);
+      delete AP;
+
+      next->update();
+    }
+  }
+
+  /*
+    Test the accuracy of the Galerkin operator
+  */
+  void testGalerkin() {
+    auto x0 = r->duplicate();
+    auto y0 = r->duplicate();
+    auto xr = next->r->duplicate();
+    auto yr1 = next->r->duplicate();
+    auto yr2 = next->r->duplicate();
+    xr->random();
+
+    // Compute P^{T} * A * P * xr
+    BSRMatVecMult(*P, *xr, *x0);
+    BSRMatVecMult(*A, *x0, *y0);
+    BSRMatVecMult(*PT, *y0, *yr1);
+
+    // Compute Ar * xr
+    BSRMatVecMult(*next->A, *xr, *yr2);
+
+    // compute the error
+    yr1->axpy(-1.0, *yr2);
+    T error = yr1->norm();
+    T rel_err = yr1->norm() / yr2->norm();
+    std::cout << "Galerkin operator check " << std::endl
+              << "||Ar * xr - P^{T} * A * P * xr||: " << error
+              << " rel. error: " << rel_err << std::endl;
+
+    delete x0;
+    delete y0;
+    delete xr;
+    delete yr1;
+    delete yr2;
+  }
+
  private:
   // Private constructor for initializing the class
-  BSRMatAmg(T omega)
+  BSRMatAmg(T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
       : omega(omega),
         rho(0.0),
         scale(0.0),
         level(-1),
-        A(NULL),
-        B(NULL),
+        A(A),
+        B(B),
         P(NULL),
         PT(NULL),
         Dinv(NULL),
@@ -608,12 +670,21 @@ class BSRMatAmg {
       }
 
       // Multicolor order this level
-      BSRMatMultiColorOrder(A);
+      BSRMatMultiColorOrder(*A);
+
+      // Multi-color the matrix
+      BSRMat<I, T, N, N>* Ar;
+      MultiArray<T, CLayout<N, N>>* Br;
 
       // Find the new level
-      next = new BSRMatAmg<I, T, N, N>(omega);
-      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT,
-                                         &(next->A), &(next->B), &rho);
+      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT, &Ar,
+                                         &Br, &rho);
+
+      // Allocate the next level
+      auto Anext = std::shared_ptr<BSRMat<I, T, N, N>>(Ar);
+      auto Bnext = std::shared_ptr<MultiArray<T, CLayout<N, N>>>(Br);
+      next = new BSRMatAmg<I, T, N, N>(omega, Anext, Bnext);
+
       if (print_info) {
         if (level == 0) {
           std::cout << std::setw(10) << "Level" << std::setw(15) << "n(A)"
@@ -665,10 +736,10 @@ class BSRMatAmg {
   int level;
 
   // Data for the matrix
-  BSRMat<I, T, M, M>* A;
+  std::shared_ptr<BSRMat<I, T, M, M>> A;
 
   // The near null-space candidates
-  MultiArray<T, CLayout<M, N>>* B;
+  std::shared_ptr<MultiArray<T, CLayout<M, N>>> B;
 
   // Data for the prolongation and restriction
   BSRMat<I, T, M, N>* P;

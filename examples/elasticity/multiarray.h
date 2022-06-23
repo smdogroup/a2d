@@ -2,6 +2,7 @@
 #define MULTI_ARRAY_H
 
 #include <cstddef>
+#include <cstdlib>
 #include <numeric>
 #include <type_traits>
 
@@ -174,6 +175,7 @@ class MultiArray {
     } else {
       data_owner = true;
       data = new T[layout.get_size()];
+      zero();
     }
   }
   MultiArray(const MultiArray<T, Layout>& src)
@@ -240,11 +242,50 @@ class MultiArray {
   }
 
   /*
+    Copy elements from the source to this vector
+  */
+  void scale(T alpha) {
+    const index_t len = layout.get_size();
+    for (index_t i = 0; i < len; i++) {
+      data[i] *= alpha;
+    }
+  }
+
+  /*
+    Duplicate the array
+  */
+  MultiArray<T, Layout>* duplicate() {
+    const index_t len = layout.get_size();
+    MultiArray<T, Layout>* array = new MultiArray<T, Layout>(layout);
+    std::copy(data, data + len, array->data);
+    return array;
+  }
+
+  /*
+    Set a random seed for the data
+  */
+  void random(T lower = -1.0, T upper = 1.0) {
+    const index_t len = layout.get_size();
+    for (index_t i = 0; i < len; i++) {
+      data[i] =
+          lower + ((upper - lower) * (1.0 * std::rand())) / (1.0 * RAND_MAX);
+    }
+  }
+
+  /*
     Take the dot product with the source vector data
   */
   T dot(MultiArray<T, Layout>& src) {
     const index_t len = layout.get_size();
     return std::inner_product(data, data + len, src.data, T(0));
+  }
+
+  /*
+    Norm of the array
+  */
+  T norm() {
+    const index_t len = layout.get_size();
+    return std::sqrt(std::inner_product(data, data + len, data, T(0)));
   }
 
   /*

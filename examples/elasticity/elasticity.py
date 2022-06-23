@@ -1,19 +1,81 @@
 import numpy as np
 from mpi4py import MPI
+import argparse
 import example
 from paropt import ParOpt
 try:
     from utils import to_vtk
+    from parse_inp import InpParser
 except:
     to_vtk = None
+    InpParser = None
 
 class TopOpt(ParOpt.Problem):
-    def __init__(self, model, fltr, vol, vol_target, num_levels=3, nvars=1, ncon=1):
+    def __init__(self, X, conn, bcs, vol_target, filter_length, num_levels=3,
+        q=5.0, E=70e3, nu=0.3, density=1.0, design_stress=0.27e3):
+
+        self.X = X
+        self.conn = conn
+
+        # Initialize the super class
+        ncon = 1
+        nvars = X.shape[0]
         super(TopOpt, self).__init__(MPI.COMM_SELF, nvars, ncon)
 
-        self.model = model
-        self.fltr = fltr
-        self.vol = vol
+        # Create the model for solving the elasticity problem
+        self.model = example.Elasticity_Model(X, bcs)
+
+        # Set up the volume functional
+        self.vol = example.Elasticity_Functional()
+
+        # Add the element to the model
+        if 'C3D8' in conn:
+            element = example.Elasticity_C3D8(conn['C3D8'])
+            self.model.add_element(element)
+            con = example.TopoIsoConstitutive_C3D8(element, q, E, nu, density, design_stress)
+            self.model.add_constitutive(con)
+            self.vol.add_functional(example.TopoVolume_C3D8(con))
+        elif 'C3D8R' in conn:
+            element = example.Elasticity_C3D8(conn['C3D8R'])
+            self.model.add_element(element)
+            con = example.TopoIsoConstitutive_C3D8(element, q, E, nu, density, design_stress)
+            self.model.add_constitutive(con)
+            self.vol.add_functional(example.TopoVolume_C3D8(con))
+        elif 'C3D10' in conn:
+            element = example.Elasticity_C3D10(conn['C3D10'])
+            self.model.add_element(element)
+            con = example.TopoIsoConstitutive_C3D10(element, q, E, nu, density, design_stress)
+            self.model.add_constitutive(con)
+            self.vol.add_functional(example.TopoVolume_C3D10(con))
+
+        # Initialize the model
+        self.model.init()
+
+        # Create the filter model
+        self.fltr = example.Helmholtz_Model(X)
+
+        # Set up the element
+        r0 = filter_length / (2.0 * np.sqrt(3.0))
+
+        if 'C3D8' in conn:
+            element = example.Helmholtz_C3D8(conn['C3D8'], r0)
+            self.fltr.add_element(element)
+            con = example.HelmholtzConstitutive_C3D8(element)
+            self.fltr.add_constitutive(con)
+        elif 'C3D8R' in conn:
+            element = example.Helmholtz_C3D8(conn['C3D8R'], r0)
+            self.fltr.add_element(element)
+            con = example.HelmholtzConstitutive_C3D8(element)
+            self.fltr.add_constitutive(con)
+        elif 'C3D10' in conn:
+            element = example.Helmholtz_C3D10(conn['C3D10'], r0)
+            self.fltr.add_element(element)
+            con = example.HelmholtzConstitutive_C310(element)
+            self.fltr.add_constitutive(con)
+
+        # Initialize the model
+        self.fltr.init()
+
         self.vol_target = vol_target
         self.num_levels = num_levels
 
@@ -105,16 +167,17 @@ class TopOpt(ParOpt.Problem):
 
         # Export to vtk every 10 iters
         if self.vtk_iter % 10 == 0 and to_vtk is not None:
-            nodal_sol = {
-                'ux': self.u[:, 0],
-                'uy': self.u[:, 1],
-                'uz': self.u[:, 2],
-                'dv': self.x[:, 0],
-                'rho': self.rho[:, 0]
-            }
+            for key in self.conn:
+                nodal_sol = {
+                    'ux': self.u[:, 0],
+                    'uy': self.u[:, 1],
+                    'uz': self.u[:, 2],
+                    'dv': self.x[:, 0],
+                    'rho': self.rho[:, 0]
+                }
 
-            to_vtk(conn, X, nodal_sol=nodal_sol,
-                vtk_name=f"result_{self.vtk_iter}.vtk")
+                to_vtk(self.conn[key], self.X, nodal_sol=nodal_sol,
+                    vtk_name=f"result_{key}_{self.vtk_iter}.vtk")
 
         self.vtk_iter += 1
 
@@ -156,133 +219,119 @@ class TopOpt(ParOpt.Problem):
         return fail
 
 
-nx = 96
-ny = 48
-nz = 48
+parser = argparse.ArgumentParser(description='Perform compliance minimization')
+parser.add_argument('--inp', type=str, default='', help='Input file')
+parser.add_argument('--opt', type=str, default='mma', help='Optimizer type')
+parser.add_argument('--bc_key', type=str, default='', help='Boundary condition')
+parser.add_argument('--vol_target', type=float, default=0.4, help='Volume target')
+parser.add_argument('--filter_length', type=float, default=0.025, help='Filter length')
+args = parser.parse_args()
 
-lx = 2.0
-ly = 1.0
-lz = 1.0
+filename = args.inp
+bc_key = args.bc_key
+vol_target = args.vol_target
+filter_length = args.filter_length
 
-nnodes = (nx + 1) * (ny + 1) * (nz + 1)
-nelems = nx * ny * nz
-nbcs = (ny + 1) * (nz + 1)
+if os.path.isfile(filename):
+    conn, X, groups = inp_parser.parse()
 
-conn = np.zeros((nelems, 8), dtype=np.int32)
-X = np.zeros((nnodes, 3), dtype=np.double)
-bcs = np.zeros((nbcs, 2), dtype=np.int32)
+    # Set the boundary conditions, using the bits of the value to indicate
+    # which values to fix
+    bcs_val = 1 | 2 | 4  # 2^0 | 2^1 | 2^2
+    bcs = np.zeros(len(groups[bc_key]), dtype=np.int32)
+    for k, node in groups[bc_key]:
+        bcs[k, 0] = node
+        bcs[k, 1] = bcs_val
+else:
+    nx = 96
+    ny = 48
+    nz = 48
 
-# Set the node locations
-nodes = np.zeros((nx + 1, ny + 1, nz + 1), dtype=int)
-for k in range(nz + 1):
-    for j in range(ny + 1):
-        for i in range(nx + 1):
-            nodes[i, j, k] = i + (nx + 1) * (j + (ny + 1) * k)
-            X[nodes[i, j, k], 0] = lx * i / nx
-            X[nodes[i, j, k], 1] = ly * j / ny
-            X[nodes[i, j, k], 2] = lz * k / nz
+    lx = 2.0
+    ly = 1.0
+    lz = 1.0
 
-# Set the connectivity
-for k in range(nz):
-    for j in range(ny):
-        for i in range(nx):
-            elem = i + nx * (j + ny * k)
-            conn[elem, 0] = nodes[i, j, k]
-            conn[elem, 1] = nodes[i + 1, j, k]
-            conn[elem, 2] = nodes[i + 1, j + 1, k]
-            conn[elem, 3] = nodes[i, j + 1, k]
+    nnodes = (nx + 1) * (ny + 1) * (nz + 1)
+    nelems = nx * ny * nz
+    nbcs = (ny + 1) * (nz + 1)
 
-            conn[elem, 4] = nodes[i, j, k + 1]
-            conn[elem, 5] = nodes[i + 1, j, k + 1]
-            conn[elem, 6] = nodes[i + 1, j + 1, k + 1]
-            conn[elem, 7] = nodes[i, j + 1, k + 1]
+    conn_c3d8 = np.zeros((nelems, 8), dtype=np.int32)
+    X = np.zeros((nnodes, 3), dtype=np.double)
+    bcs = np.zeros((nbcs, 2), dtype=np.int32)
 
-# Set the boundary conditions, using the bits of the value to indicate
-# which values to fix
-bcs_val = 1 | 2 | 4  # 2^0 | 2^1 | 2^2
-index = 0
-for k in range(nz + 1):
-    for j in range(ny + 1):
-        bcs[index, 0] = nodes[0, j, k]
-        bcs[index, 1] = bcs_val
-        index += 1
+    # Set the node locations
+    nodes = np.zeros((nx + 1, ny + 1, nz + 1), dtype=int)
+    for k in range(nz + 1):
+        for j in range(ny + 1):
+            for i in range(nx + 1):
+                nodes[i, j, k] = i + (nx + 1) * (j + (ny + 1) * k)
+                X[nodes[i, j, k], 0] = lx * i / nx
+                X[nodes[i, j, k], 1] = ly * j / ny
+                X[nodes[i, j, k], 2] = lz * k / nz
 
-# Set the constitutive data
-q = 5.0
-E = 70e3
-nu = 0.3
-density = 1.0
-design_stress = 1e3
+    # Set the connectivity
+    for k in range(nz):
+        for j in range(ny):
+            for i in range(nx):
+                elem = i + nx * (j + ny * k)
+                conn_c3d8[elem, 0] = nodes[i, j, k]
+                conn_c3d8[elem, 1] = nodes[i + 1, j, k]
+                conn_c3d8[elem, 2] = nodes[i + 1, j + 1, k]
+                conn_c3d8[elem, 3] = nodes[i, j + 1, k]
 
-# Get the model data
-model = example.Elasticity_Model(X, bcs)
+                conn_c3d8[elem, 4] = nodes[i, j, k + 1]
+                conn_c3d8[elem, 5] = nodes[i + 1, j, k + 1]
+                conn_c3d8[elem, 6] = nodes[i + 1, j + 1, k + 1]
+                conn_c3d8[elem, 7] = nodes[i, j + 1, k + 1]
 
-# Add the element to the model
-hex = example.Elasticity_C3D8(conn)
-model.add_element(hex)
+    # Set the boundary conditions, using the bits of the value to indicate
+    # which values to fix
+    bcs_val = 1 | 2 | 4  # 2^0 | 2^1 | 2^2
+    index = 0
+    for k in range(nz + 1):
+        for j in range(ny + 1):
+            bcs[index, 0] = nodes[0, j, k]
+            bcs[index, 1] = bcs_val
+            index += 1
 
-# Add the constitutive object to the model
-con = example.TopoIsoConstitutive_C3D8(hex, q, E, nu, density, design_stress)
-model.add_constitutive(con)
+    conn = {'C3D8': conn_c3d8}
 
-# Initialize the model
-model.init()
+    vol_target = 0.4 * lx * ly * lz
+    filter_length = 0.025 * ly
 
-# Set up the volume functional
-volume = example.Elasticity_Functional()
-volume.add_functional(example.TopoVolume_C3D8(con))
+problem = TopOpt(X, conn_dict, bcs, vol_target, filter_length, q=5.0, E=70e3,
+                 nu=0.3, density=1.0, design_stress=0.27e3)
 
-# Get the model data
-fltr = example.Helmholtz_Model(X)
-
-# Set up the element
-length_scale = 0.025 * ly
-r0 = length_scale / (2.0 * np.sqrt(3.0))
-helmholtz_hex = example.Helmholtz_C3D8(conn, r0)
-
-# Add the model to the element
-fltr.add_element(helmholtz_hex)
-
-# Set the constitutive model
-helmholtz_con = example.HelmholtzConstitutive_C3D8(helmholtz_hex)
-fltr.add_constitutive(helmholtz_con)
-
-# Initialize the model
-fltr.init()
-
-# Create the optimization problem
-vol_init = 1.0
-vol_target = 0.4 * vol_init
-problem = TopOpt(model, fltr, volume, vol_target, nvars=nnodes)
-
+# Set the forces
 problem.f[nodes[-1, -1, 0], 2] = 1e3
 problem.f[nodes[-1, 0, -1], 1] = -1e3
 
 problem.checkGradients()
 
-options = {"algorithm": "mma"}
-
-# options = {
-#     "algorithm": "tr",
-#     "tr_init_size": 0.05,
-#     "tr_min_size": 1e-6,
-#     "tr_max_size": 10.0,
-#     "tr_eta": 0.25,
-#     "tr_infeas_tol": 1e-6,
-#     "tr_l1_tol": 1e-6,
-#     "tr_linfty_tol": 0.0,
-#     "tr_adaptive_gamma_update": True,
-#     "tr_max_iterations": 2,
-#     "max_major_iters": 100,
-#     "penalty_gamma": 1e3,
-#     "qn_subspace_size": 2,
-#     "hessian_reset_freq": 2,
-#     "qn_type": "bfgs",
-#     "abs_res_tol": 1e-8,
-#     "starting_point_strategy": "affine_step",
-#     "barrier_strategy": "mehrotra_predictor_corrector",
-#     "use_line_search": False,
-# }
+if 'tr' in sys.argv:
+    options = {
+        "algorithm": "tr",
+        "tr_init_size": 0.05,
+        "tr_min_size": 1e-6,
+        "tr_max_size": 10.0,
+        "tr_eta": 0.25,
+        "tr_infeas_tol": 1e-6,
+        "tr_l1_tol": 1e-6,
+        "tr_linfty_tol": 0.0,
+        "tr_adaptive_gamma_update": True,
+        "tr_max_iterations": 2,
+        "max_major_iters": 100,
+        "penalty_gamma": 1e3,
+        "qn_subspace_size": 2,
+        "hessian_reset_freq": 2,
+        "qn_type": "bfgs",
+        "abs_res_tol": 1e-8,
+        "starting_point_strategy": "affine_step",
+        "barrier_strategy": "mehrotra_predictor_corrector",
+        "use_line_search": False,
+    }
+else:
+    options = {"algorithm": "mma"}
 
 # Set up the optimizer
 opt = ParOpt.Optimizer(problem, options)

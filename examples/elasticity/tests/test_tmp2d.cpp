@@ -1405,6 +1405,110 @@ TEST_F(InvA, A2D) {
   expect_mat_eq<2, 2, Mat>(A__.hvalue(0), Ah_out, 1e-8);
 }
 
+// Test suite: trace = tr(S)
+class SymmTrace : public ADExpressionTest {
+ protected:
+  const T tr_out = 0.4624610100000000;
+
+  // AD
+  const T AD_trb_out = 0.9831364800000001;
+  const T AD_Sb_out[4] = {0.9831364800000001, 0.0000000000000000,
+                          0.0000000000000000, 0.9831364800000001};
+
+  // A2D
+  const T A2D_Sb_out[4] = {0.3362232400000000, 0.0000000000000000,
+                           0.0000000000000000, 0.3362232400000000};
+  const T A2D_Sh_out[4] = {0.7315793000000000, 0.0000000000000000,
+                           0.0000000000000000, 0.7315793000000000};
+  const T A2D_trp_out = 0.9831364800000001;
+};
+
+TEST_F(SymmTrace, A) {
+  // Set inputs
+  const T *S_in = S_data;
+  SMat S(S_in);
+
+  // Set outputs
+  T trace;
+
+  // Compute
+  Symm2x2Trace(S, trace);
+  expect_val_eq(trace, tr_out);
+}
+
+TEST_F(SymmTrace, AD) {
+  // Set inputs
+  const T *S_in = S_data;
+  const T *Sb_in = dS_data;
+  SMat S(S_in), Sb(Sb_in);
+
+  // Set outputs
+  auto trb_out = AD_trb_out;
+  auto Sb_out = AD_Sb_out;
+
+  // AD types
+  ADSMat S_(S, Sb);
+  ADScalar trace_;
+
+  auto expr = Symm2x2Trace(S_, trace_);
+
+  // Check expression result
+  expect_val_eq(trace_.value, tr_out);
+
+  // Check forward
+  expr.forward();
+  expect_val_eq(trace_.bvalue, trb_out);
+
+  // Check reverse
+  Sb.zero();
+  expr.reverse();
+  expect_mat_eq<2, 2, SMat>(Sb, Sb_out);
+}
+
+TEST_F(SymmTrace, A2D) {
+  // Set inputs
+  const T *S_in = S_data;
+  const T *Sp_in = dS_data;
+  const T trb = sb_data;
+  const T trh = sh_data;
+
+  SMat S(S_in), Sp(Sp_in);
+
+  // Set outputs
+  auto Sb_out = A2D_Sb_out;
+  auto Sh_out = A2D_Sh_out;
+  auto trp_out = A2D_trp_out;
+
+  SMat Sb, Eb;
+
+  // A2D types
+  A2DSMat S__(S, Sb);
+  A2DScalar trace__(0.0, trb);
+
+  auto expr = Symm2x2Trace(S__, trace__);
+
+  // Check expression
+  expect_val_eq(trace__.value, tr_out);
+
+  // Check hforward
+  for (I i = 0; i < 2; i++) {
+    for (I j = i; j < 2; j++) {
+      S__.pvalue(0)(i, j) = Sp(i, j);
+    }
+  }
+  expr.hforward();
+  expect_val_eq(trace__.pvalue[0], trp_out);
+
+  // Check reverse
+  expr.reverse();
+  expect_mat_eq<2, 2, SMat>(Sb, Sb_out);
+
+  // Check hreverse
+  trace__.hvalue[0] = trh;
+  expr.hreverse();
+  expect_mat_eq<2, 2, SMat>(S__.hvalue(0), Sh_out);
+}
+
 // Test suite: trace = tr(SE)
 class SymmMultTrace : public ADExpressionTest {
  protected:

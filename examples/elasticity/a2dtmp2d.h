@@ -831,6 +831,90 @@ inline A2DMat2x2InverseExpr<N, MatType, InvMatType> Mat2x2Inverse(
   return A2DMat2x2InverseExpr<N, MatType, InvMatType>(AObj, AinvObj);
 }
 
+// SymmTrace
+template <typename ScalarType>
+inline void Symm2x2Trace(const SymmMat<ScalarType, 2>& S, ScalarType& trace) {
+  trace = S(0, 0) + S(1, 1);
+}
+
+template <class SMatType, class ScalarType>
+class ADSymm2x2TraceExpr
+    : public ADExpression<ADSymm2x2TraceExpr<SMatType, ScalarType> > {
+ public:
+  ADSymm2x2TraceExpr(ADMat<SMatType>& SObj, ADScalar<ScalarType>& output)
+      : SObj(SObj), output(output) {
+    const SMatType& S = SObj.value();
+    output.value = S(0, 0) + S(1, 1);
+  }
+
+  void forward() {
+    const SMatType& Sd = SObj.bvalue();
+    output.bvalue = Sd(0, 0) + Sd(1, 1);
+  }
+
+  void reverse() {
+    SMatType& Sb = SObj.bvalue();
+
+    Sb(0, 0) += output.bvalue;
+    Sb(1, 1) += output.bvalue;
+  }
+
+  ADMat<SMatType>& SObj;
+  ADScalar<ScalarType>& output;
+};
+
+template <class SMatType, class ScalarType>
+inline ADSymm2x2TraceExpr<SMatType, ScalarType> Symm2x2Trace(
+    ADMat<SMatType>& S, ADScalar<ScalarType>& trace) {
+  return ADSymm2x2TraceExpr<SMatType, ScalarType>(S, trace);
+}
+
+template <int N, class SMatType, class ScalarType>
+class A2DSymm2x2TraceExpr
+    : public A2DExpression<A2DSymm2x2TraceExpr<N, SMatType, ScalarType> > {
+ public:
+  A2DSymm2x2TraceExpr(A2DMat<N, SMatType>& SObj,
+                      A2DScalar<N, ScalarType>& output)
+      : SObj(SObj), output(output) {
+    const SMatType& S = SObj.value();
+    output.value = S(0, 0) + S(1, 1);
+  }
+
+  void reverse() {
+    SMatType& Sb = SObj.bvalue();
+
+    Sb(0, 0) += output.bvalue;
+    Sb(1, 1) += output.bvalue;
+  }
+
+  // Compute E.pvalue() = J * Ux.pvalue()
+  void hforward() {
+    for (int i = 0; i < N; i++) {
+      const SMatType& Sp = SObj.pvalue(i);
+      output.pvalue[i] = Sp(0, 0) + Sp(1, 1);
+    }
+  }
+
+  void hreverse() {
+    for (int i = 0; i < N; i++) {
+      const SMatType& Sp = SObj.pvalue(i);
+      SMatType& Sh = SObj.hvalue(i);
+
+      Sh(0, 0) += output.hvalue[i];
+      Sh(1, 1) += output.hvalue[i];
+    }
+  }
+
+  A2DMat<N, SMatType>& SObj;
+  A2DScalar<N, ScalarType>& output;
+};
+
+template <int N, class SMatType, class ScalarType>
+inline A2DSymm2x2TraceExpr<N, SMatType, ScalarType> Symm2x2Trace(
+    A2DMat<N, SMatType>& S, A2DScalar<N, ScalarType>& trace) {
+  return A2DSymm2x2TraceExpr<N, SMatType, ScalarType>(S, trace);
+}
+
 // Symm2x2SymmMultTrace
 template <typename ScalarType>
 inline void Symm2x2SymmMultTrace(const SymmMat<ScalarType, 2>& S,

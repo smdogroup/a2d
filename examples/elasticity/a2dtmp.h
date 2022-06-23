@@ -929,7 +929,7 @@ class ADSymm3x3TraceExpr
 
   void forward() {
     const SMatType& Sd = SObj.bvalue();
-    output.pvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
+    output.bvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
   }
 
   void reverse() {
@@ -1681,21 +1681,15 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
       lambda.hvalue[i] += 0.5 * tr * tr * output.hvalue[i];
 
       // account for Hessian blocks w.r.t. E and mu or lambda
-      Eh(0, 0) +=
-          (2 * E(0, 0) * mu.pvalue[i] + tr * lambda.pvalue[i]) * output.bvalue;
-      Eh(1, 1) +=
-          (2 * E(1, 1) * mu.pvalue[i] + tr * lambda.pvalue[i]) * output.bvalue;
-      Eh(2, 2) +=
-          (2 * E(2, 2) * mu.pvalue[i] + tr * lambda.pvalue[i]) * output.bvalue;
-      Eh(0, 1) += 4 * E(0, 1) * mu.pvalue[i] * output.bvalue;
-      Eh(0, 2) += 4 * E(0, 2) * mu.pvalue[i] * output.bvalue;
-      Eh(1, 2) += 4 * E(1, 2) * mu.pvalue[i] * output.bvalue;
-
-      mu.hvalue[i] +=
-          (2 * (E(0, 0) * Ep(0, 0) + E(1, 1) * Ep(1, 1) + E(2, 2) * Ep(2, 2)) +
-           4 * (E(0, 1) * Ep(0, 1) + E(0, 2) * Ep(0, 2) + E(1, 2) * Ep(1, 2))) *
-          output.bvalue;
-      lambda.hvalue[i] += tr * trp * output.bvalue;
+      Eh(0, 0) += (2.0 * E(0, 0) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(1, 1) += (2.0 * E(1, 1) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(2, 2) += (2.0 * E(2, 2) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(0, 1) += 4.0 * E(0, 1) * mu.pvalue[i] * output.bvalue;
+      Eh(0, 2) += 4.0 * E(0, 2) * mu.pvalue[i] * output.bvalue;
+      Eh(1, 2) += 4.0 * E(1, 2) * mu.pvalue[i] * output.bvalue;
     }
   }
 

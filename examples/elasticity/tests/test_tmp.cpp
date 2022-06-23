@@ -1600,6 +1600,119 @@ TEST_F(InvA, A2D) {
                            1e-5);  // TODO: double-check this tolerance
 }
 
+// Test suite: trace = tr(S)
+class SymmTrace : public ADExpressionTest {
+ protected:
+  const T tr_out = 1.2536821800000000;
+
+  // AD
+  const T AD_trb_out = 1.0853507099999999;
+  const T AD_Sb_out[9] = {
+      1.0853507099999999, 0.0000000000000000, 0.0000000000000000,
+      0.0000000000000000, 1.0853507099999999, 0.0000000000000000,
+      0.0000000000000000, 0.0000000000000000, 1.0853507099999999};
+
+  // A2D
+  const T A2D_Sb_out[9] = {
+      0.3362232400000000, 0.0000000000000000, 0.0000000000000000,
+      0.0000000000000000, 0.3362232400000000, 0.0000000000000000,
+      0.0000000000000000, 0.0000000000000000, 0.3362232400000000};
+  const T A2D_Sh_out[9] = {
+      0.7315793000000000, 0.0000000000000000, 0.0000000000000000,
+      0.0000000000000000, 0.7315793000000000, 0.0000000000000000,
+      0.0000000000000000, 0.0000000000000000, 0.7315793000000000};
+  const T A2D_trp_out = 1.0853507099999999;
+};
+
+TEST_F(SymmTrace, A) {
+  // Set inputs
+  const T *S_in = S_data;
+  SMat S(S_in);
+
+  // Set outputs
+  T trace;
+
+  // Compute
+  Symm3x3Trace(S, trace);
+  expect_val_eq(trace, tr_out);
+}
+
+TEST_F(SymmTrace, AD) {
+  // Set inputs
+  const T *S_in = S_data;
+  const T *Sb_in = dS_data;
+  SMat S(S_in), Sb(Sb_in);
+
+  // Set outputs
+  auto trb_out = AD_trb_out;
+  auto Sb_out = AD_Sb_out;
+
+  // AD types
+  ADSMat S_(S, Sb);
+  ADScalar trace_;
+
+  auto expr = Symm3x3Trace(S_, trace_);
+
+  // Check expression result
+  expect_val_eq(trace_.value, tr_out);
+
+  // Check forward
+  expr.forward();
+  expect_val_eq(trace_.bvalue, trb_out);
+
+  // print_mat<3, 3, SMat>(Sb);
+  // print_mat<3, 3, SMat>(Eb);
+
+  // Check reverse
+  Sb.zero();
+  expr.reverse();
+  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
+}
+
+TEST_F(SymmTrace, A2D) {
+  // Set inputs
+  const T *S_in = S_data;
+  const T *Sp_in = dS_data;
+  const T trb = sb_data;
+  const T trh = sh_data;
+
+  SMat S(S_in), Sp(Sp_in);
+
+  // Set outputs
+  auto Sb_out = A2D_Sb_out;
+  auto Sh_out = A2D_Sh_out;
+  auto trp_out = A2D_trp_out;
+
+  SMat Sb, Eb;
+
+  // A2D types
+  A2DSMat S__(S, Sb);
+  A2DScalar trace__(0.0, trb);
+
+  auto expr = Symm3x3Trace(S__, trace__);
+
+  // Check expression
+  expect_val_eq(trace__.value, tr_out);
+
+  // Check hforward
+  for (I i = 0; i < 3; i++) {
+    for (I j = i; j < 3; j++) {
+      S__.pvalue(0)(i, j) = Sp(i, j);
+    }
+  }
+  expr.hforward();
+  expect_val_eq(trace__.pvalue[0], trp_out);
+
+  // Check reverse
+  expr.reverse();
+  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
+
+  // Check hreverse
+  trace__.hvalue[0] = trh;
+  expr.hreverse();
+  expect_mat_eq<3, 3, SMat>(S__.hvalue(0), Sh_out);
+}
+
 // Test suite: trace = tr(SE)
 class SymmMultTrace : public ADExpressionTest {
  protected:

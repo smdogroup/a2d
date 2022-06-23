@@ -333,6 +333,9 @@ def mat2symm(Mat):
     S = S.reshape(-1, 1)
     return S
 
+def SymmTrace(Ssymm):
+    return symm2mat(Ssymm).trace()
+
 def SymmMultTrace(Asymm, Bsymm):
     A = symm2mat(Asymm)
     B = symm2mat(Bsymm)
@@ -564,6 +567,44 @@ def generate_reference_values(ndim, A, B, Ab, Bb, Cb, Ch, S, E, Sb, Eb, Sh, sb,
     print_flatten_16(_Cp, end='')
     print("};")
 
+    # SymmTrace
+    print("\nSymmTrace\n")
+
+    # SymmTrace: A
+    _S = S.copy()
+    _tr = SymmTrace(_S)
+    print(f"const T tr_out = {_tr:.16f};")
+
+    # SymmTrace: AD
+    case = "AD"
+    _S = S.copy()
+    _Sb = Sb.copy()
+    _trb = Mat_forward(SymmTrace, _S, _Sb)
+    _Sb = Mat_reverse(SymmTrace, _S, _trb)
+    print(f"\n//{case}")
+    print(f"const T {case}_trb_out = {_trb:.16f};")
+    print(f"const T {case}_Sb_out[{ndim * ndim}] = {{", end='')
+    print_flatten_16(symm2mat(_Sb), end='')
+    print("};")
+
+    # SymmTrace: A2D
+    case = "A2D"
+    _S = S.copy()
+    _Sp = Sb.copy()
+    _sb = sb
+    _sh = sh
+    _sp = Mat_forward(SymmTrace, _S, _Sp)
+    _Sb = Mat_reverse(SymmTrace, _S, _sb)
+    _Sh = Mat_hreverse(SymmTrace, _S, _Sp, _sb, _sh)
+    print(f"\n//{case}")
+    print(f"const T {case}_Sb_out[{ndim * ndim}] = {{", end='')
+    print_flatten_16(symm2mat(_Sb), end='')
+    print("};")
+    print(f"const T {case}_Sh_out[{ndim * ndim}] = {{", end='')
+    print_flatten_16(symm2mat(_Sh), end='')
+    print("};")
+    print(f"const T {case}_trp_out = {_sp:.16f};")
+
     # SymmMultTrace
     print("\nSymmMultTrace\n")
 
@@ -725,8 +766,6 @@ def generate_reference_values(ndim, A, B, Ab, Bb, Cb, Ch, S, E, Sb, Eb, Sh, sb,
     print(f"const T {case}_muh_out = {_Eh[-2,0]:.16f};")
     print(f"const T {case}_lamb_out = {_Eb[-1,0]:.16f};")
     print(f"const T {case}_lamh_out = {_Eh[-1,0]:.16f};")
-
-    exit()
 
     # GreenStrain
     print("\nGreenStrain\n")

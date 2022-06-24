@@ -255,7 +255,10 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   }
 
   // Estimate the spectral radius using Gerhsgorin
-  T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
+  // T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
+
+  // Spectral estimate using Arnoldi
+  T rho = BSRMatArnoldiSpectralRadius(*DinvA);
   if (rho_) {
     *rho_ = rho;
   }
@@ -278,24 +281,103 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
 }
 
 /*
+  Compute the strength of connection matrix with the given tolerance
+*/
+template <typename I, typename T, index_t M>
+void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
+                                std::vector<I>& rowp, std::vector<I>& cols) {
+  // Frobenius norm squared for each diagonal entry
+  std::vector<T> d(A.nbrows);
+
+  if (A.diag) {
+    for (I i = 0; i < A.nbrows; i++) {
+      I jp = A.diag[i];
+
+      auto D = MakeSlice(A.Avals, jp);
+      d[i] = 0.0;
+      for (I ii = 0; ii < M; ii++) {
+        for (I jj = 0; jj < M; jj++) {
+          d[i] += D(ii, jj) * D(ii, jj);
+        }
+      }
+    }
+  } else {
+    for (I i = 0; i < A.nbrows; i++) {
+      I* col_ptr = A.find_column_index(i, i);
+
+      if (col_ptr) {
+        I jp = col_ptr - A.cols;
+
+        auto D = MakeSlice(A.Avals, jp);
+        d[i] = 0.0;
+        for (I ii = 0; ii < M; ii++) {
+          for (I jj = 0; jj < M; jj++) {
+            d[i] += D(ii, jj) * D(ii, jj);
+          }
+        }
+      }
+    }
+  }
+
+  rowp[0] = 0;
+  for (I i = 0, nnz = 0; i < A.nbrows; i++) {
+    I jp_end = A.rowp[i + 1];
+    for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+      I j = A.cols[jp];
+
+      if (i == j) {
+        cols[nnz] = j;
+        nnz++;
+      } else {
+        // Compute the Frobenius norm of the entry
+        T af = 0.0;
+        auto Aij = MakeSlice(A.Avals, jp);
+        for (I ii = 0; ii < M; ii++) {
+          for (I jj = 0; jj < M; jj++) {
+            af += Aij(ii, jj) * Aij(ii, jj);
+          }
+        }
+
+        if (A2D::RealPart(af * af) >=
+            A2D::RealPart(epsilon * epsilon * d[i] * d[j])) {
+          cols[nnz] = j;
+          nnz++;
+        }
+      }
+    }
+
+    rowp[i + 1] = nnz;
+  }
+}
+
+/*
   Given the matrix A and the near null space basis B compute the block diagonal
   inverse of the matrix A, the prolongation and restriction operators, the
   reduced matrix Ar and the new near null space basis.
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
+void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
                             MultiArray<T, CLayout<M, N>>& B,
                             BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
                             BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
                             MultiArray<T, CLayout<N, N>>** Br, T* rho_) {
-  // Compute the strength of connection S - need to fix this
-  // S = BSRMatStrength(A);
-
-  // Compute the aggregation - based on the strength of connection
+  I num_aggregates = 0;
   std::vector<I> aggr(A.nbcols);
   std::vector<I> cpts(A.nbcols);
-  I num_aggregates =
-      BSRMatStandardAggregation(A.nbrows, A.rowp, A.cols, aggr, cpts);
+
+  if (fabs(epsilon) != 0.0) {
+    // Compute the strength of connection S - need to fix this
+    std::vector<I> Srowp(A.nbrows + 1);
+    std::vector<I> Scols(A.nnz);
+    BSRMatStrengthOfConnection(epsilon, A, Srowp, Scols);
+
+    // Compute the aggregation - based on the strength of connection
+    num_aggregates =
+        BSRMatStandardAggregation(A.nbrows, Srowp, Scols, aggr, cpts);
+  } else {
+    num_aggregates =
+        BSRMatStandardAggregation(A.nbrows, A.rowp, A.cols, aggr, cpts);
+  }
 
   // Based on the aggregates, form a tentative prolongation operator
   CLayout<N, N> Br_layout(num_aggregates);
@@ -338,12 +420,13 @@ void BSRMatSmoothedAmgLevel(T omega, BSRMat<I, T, M, M>& A,
 template <typename I, typename T, index_t M, index_t N>
 class BSRMatAmg {
  public:
-  BSRMatAmg(int num_levels, T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+  BSRMatAmg(int num_levels, T omega, T epsilon,
+            std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
             bool print_info = false)
       : omega(omega),
+        epsilon(epsilon),
         rho(0.0),
-        scale(0.0),
         level(-1),
         A(A),
         B(B),
@@ -609,11 +692,11 @@ class BSRMatAmg {
 
  private:
   // Private constructor for initializing the class
-  BSRMatAmg(T omega, std::shared_ptr<BSRMat<I, T, M, M>> A,
+  BSRMatAmg(T omega, T epsilon, std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
       : omega(omega),
+        epsilon(epsilon),
         rho(0.0),
-        scale(0.0),
         level(-1),
         A(A),
         B(B),
@@ -677,13 +760,13 @@ class BSRMatAmg {
       MultiArray<T, CLayout<N, N>>* Br;
 
       // Find the new level
-      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, *A, *B, &Dinv, &P, &PT, &Ar,
-                                         &Br, &rho);
+      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, epsilon, *A, *B, &Dinv, &P, &PT,
+                                         &Ar, &Br, &rho);
 
       // Allocate the next level
       auto Anext = std::shared_ptr<BSRMat<I, T, N, N>>(Ar);
       auto Bnext = std::shared_ptr<MultiArray<T, CLayout<N, N>>>(Br);
-      next = new BSRMatAmg<I, T, N, N>(omega, Anext, Bnext);
+      next = new BSRMatAmg<I, T, N, N>(omega, epsilon, Anext, Bnext);
 
       if (print_info) {
         if (level == 0) {
@@ -697,7 +780,6 @@ class BSRMatAmg {
       }
 
       next->makeAmgLevels(level + 1, num_levels, print_info);
-      scale = omega / rho;
     }
   }
 
@@ -709,7 +791,8 @@ class BSRMatAmg {
       if (zero_solution) {
         x->zero();
       }
-      BSRApplySOR(*Dinv, *A, omega, *b, *x);
+      T omega0 = 1.0;
+      BSRApplySOR(*Dinv, *A, omega0, *b, *x);
 
       // Compute the residuals r = b - A * x
       r->copy(*b);
@@ -728,7 +811,7 @@ class BSRMatAmg {
       BSRMatVecMultAdd(*P, *next->x, *x);
 
       // Post-smooth
-      BSRApplySOR(*Dinv, *A, omega, *b, *x);
+      BSRApplySOR(*Dinv, *A, omega0, *b, *x);
     }
   }
 
@@ -745,11 +828,11 @@ class BSRMatAmg {
   BSRMat<I, T, M, N>* P;
   BSRMat<I, T, N, M>* PT;
 
-  // Data for the smoother
-  T omega;
-  T rho;
-  T scale;
-  BSRMat<I, T, M, M>* Dinv;
+  T omega;    // Omega value for constructing the prolongation operator
+  T epsilon;  // Strength of connection value
+  T rho;      // Estimate of the spectral radius
+
+  BSRMat<I, T, M, M>* Dinv;  // Block diagonal inverse
 
   // Data for the full factorization (on the lowest level only)
   BSRMat<I, T, M, M>* Afact;

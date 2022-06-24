@@ -81,6 +81,7 @@ void test_adjoint_product(DesignArray& x,
   arrays
 */
 int main(int argc, char* argv[]) {
+  MPI_Init(&argc, &argv);
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
@@ -293,6 +294,6 @@ int main(int argc, char* argv[]) {
   // test_adjoint_product(x, model);
 
   // amg->testGalerkin();
-
+  MPI_Finalize();
   return (0);
 }

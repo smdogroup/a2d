@@ -697,7 +697,6 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
     for (I color = 0, offset = 0; color < A.num_colors; color++) {
       const index_t count = A.color_count[color];
 
-      // for (I irow = 0; irow < count; irow++) {
       A2D::parallel_for(count, [&](index_t irow) -> void {
         I i = A.perm[irow + offset];
 
@@ -731,10 +730,80 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 
       offset += count;
     }
+
+    I offset = A.nbrows - A.color_count[A.num_colors - 1];
+    for (I color = A.num_colors; color > 0; color--) {
+      const index_t count = A.color_count[color - 1];
+
+      A2D::parallel_for(count, [&](index_t irow) -> void {
+        I i = A.perm[irow + offset];
+
+        // Copy over the values
+        A2D::Vec<T, M> t;
+        for (I m = 0; m < M; m++) {
+          t(m) = b(i, m);
+        }
+
+        const int jp_end = A.rowp[i + 1];
+        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+          I j = A.cols[jp];
+
+          if (i != j) {
+            auto xb = MakeSlice(x, j);
+            auto Ab = MakeSlice(A.Avals, jp);
+
+            blockGemvSub<T, M, M>(Ab, xb, t);
+          }
+        }
+
+        // x = (1 - omega) * x + omega * D^{-1} * t
+        auto xb = MakeSlice(x, i);
+        for (I m = 0; m < M; m++) {
+          xb(m) = (1.0 - omega) * xb(m);
+        }
+
+        auto D = MakeSlice(Dinv.Avals, i);
+        blockGemvAddScale<T, M, M>(omega, D, t, xb);
+      });
+
+      if (color >= 2) {
+        offset -= A.color_count[color - 2];
+      }
+    }
   } else {
     A2D::Vec<T, M> t;
 
     for (I i = 0; i < nrows; i++) {
+      // Copy over the values
+      for (I m = 0; m < M; m++) {
+        t(m) = b(i, m);
+      }
+
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+        I j = A.cols[jp];
+
+        if (i != j) {
+          auto xb = MakeSlice(x, j);
+          auto Ab = MakeSlice(A.Avals, jp);
+
+          blockGemvSub<T, M, M>(Ab, xb, t);
+        }
+      }
+
+      // x = (1 - omega) * x + omega * D^{-1} * t
+      auto xb = MakeSlice(x, i);
+      for (I m = 0; m < M; m++) {
+        xb(m) = (1.0 - omega) * xb(m);
+      }
+
+      auto D = MakeSlice(Dinv.Avals, i);
+      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+    }
+
+    for (I index = nrows; index > 0; index--) {
+      I i = index - 1;
+
       // Copy over the values
       for (I m = 0; m < M; m++) {
         t(m) = b(i, m);
@@ -810,8 +879,8 @@ extern void dgeev_(const char *JOBVL, const char *JOBVR, int *N, double *A,
 */
 template <typename I, typename T, index_t M>
 T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
-  double *H = new T[size * (size + 1)];
-  std::fill(H, H + size, T(0.0));
+  double *H = new double[size * (size + 1)];
+  std::fill(H, H + size, 0.0);
 
   // Allocate space for the vectors
   MultiArray<T, CLayout<M>> **W;
@@ -860,7 +929,7 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   T rho = 0.0;
   for (int i = 0; i < size; i++) {
     double val = sqrt(eigreal[i] * eigreal[i] + eigimag[i] * eigimag[i]);
-    if (val > rho) {
+    if (val > A2D::fabs(rho)) {
       rho = val;
     }
   }
@@ -871,8 +940,8 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
     delete W[i];
   }
   delete[] W;
-  delete eigreal;
-  delete eigimag;
+  delete[] eigreal;
+  delete[] eigimag;
   delete[] work;
 
   return rho;

@@ -792,7 +792,7 @@ class BSRMatAmg {
         x->zero();
       }
       T omega0 = 1.0;
-      BSRApplySOR(*Dinv, *A, omega0, *b, *x);
+      BSRApplySSOR(*Dinv, *A, omega0, *b, *x);
 
       // Compute the residuals r = b - A * x
       r->copy(*b);
@@ -811,7 +811,7 @@ class BSRMatAmg {
       BSRMatVecMultAdd(*P, *next->x, *x);
 
       // Post-smooth
-      BSRApplySOR(*Dinv, *A, omega0, *b, *x);
+      BSRApplySSOR(*Dinv, *A, omega0, *b, *x);
     }
   }
 

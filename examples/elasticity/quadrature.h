@@ -26,7 +26,7 @@ class Quad4ptQuadrature {
   }
 };
 
-class QuadBiLinear {
+class QuadBiLinearBasis {
  public:
   static const index_t NUM_NODES = 4;
 
@@ -68,7 +68,7 @@ class Hex8ptQuadrature {
   }
 };
 
-class HexTriLinear {
+class HexTriLinearBasis {
  public:
   static const index_t NUM_NODES = 8;
 

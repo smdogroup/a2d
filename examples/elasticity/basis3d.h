@@ -11,12 +11,12 @@
 
 namespace A2D {
 
-template <index_t spatial_dim, class Basis, class Quadrature>
-class BasisModel {
+template <index_t spatial_dim, class BasisFunc, class Quadrature>
+class Basis {
  public:
   static_assert(spatial_dim == 3 or spatial_dim == 2,
                 "spatial_dim must be 2 or 3");
-  static const index_t NUM_NODES = Basis::NUM_NODES;
+  static const index_t NUM_NODES = BasisFunc::NUM_NODES;
   static const index_t SPATIAL_DIM = spatial_dim;
   typedef Quadrature quadrature;
 
@@ -35,8 +35,8 @@ class BasisModel {
       double pt[SPATIAL_DIM];
       Quadrature::getQuadPoint(j, pt);
 
-      double N[Basis::NUM_NODES];
-      Basis::evalBasis(pt, N);
+      double N[BasisFunc::NUM_NODES];
+      BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
       A2D::parallel_for(npts, [&, N, j](A2D::index_t i) -> void {
@@ -66,8 +66,8 @@ class BasisModel {
       double pt[SPATIAL_DIM];
       Quadrature::getQuadPoint(j, pt);
 
-      double N[Basis::NUM_NODES];
-      Basis::evalBasis(pt, N);
+      double N[BasisFunc::NUM_NODES];
+      BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
       A2D::parallel_for(npts, [&, N, j](A2D::index_t i) -> void {
@@ -100,8 +100,8 @@ class BasisModel {
       double pt[SPATIAL_DIM];
       Quadrature::getQuadPoint(j, pt);
 
-      double Nxyz[Basis::NUM_NODES * SPATIAL_DIM];
-      Basis::evalBasisDeriv(pt, Nxyz);
+      double Nxyz[BasisFunc::NUM_NODES * SPATIAL_DIM];
+      BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = X.extent(0);
       A2D::parallel_for(npts, [&, Nxyz](A2D::index_t i) -> void {
@@ -113,7 +113,7 @@ class BasisModel {
           }
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
             for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
-              J(ii, ll) += Nxyz[kk + ll * Basis::NUM_NODES] * X(i, kk, ii);
+              J(ii, ll) += Nxyz[kk + ll * BasisFunc::NUM_NODES] * X(i, kk, ii);
             }
           }
         }
@@ -152,8 +152,8 @@ class BasisModel {
       double pt[SPATIAL_DIM];
       Quadrature::getQuadPoint(j, pt);
 
-      double Nxyz[Basis::NUM_NODES * SPATIAL_DIM];
-      Basis::evalBasisDeriv(pt, Nxyz);
+      double Nxyz[BasisFunc::NUM_NODES * SPATIAL_DIM];
+      BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = U.extent(0);
       A2D::parallel_for(npts, [&, Nxyz](A2D::index_t i) -> void {
@@ -165,7 +165,7 @@ class BasisModel {
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
             for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
               Uxi(i, j, ii, ll) +=
-                  Nxyz[kk + ll * Basis::NUM_NODES] * U(i, kk, ii);
+                  Nxyz[kk + ll * BasisFunc::NUM_NODES] * U(i, kk, ii);
             }
           }
         }
@@ -334,8 +334,8 @@ class BasisModel {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double N[Basis::NUM_NODES];
-      Basis::evalBasis(pt, N);
+      double N[BasisFunc::NUM_NODES];
+      BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N](A2D::index_t i) -> void {
@@ -388,8 +388,8 @@ class BasisModel {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double Nxyz[Basis::NUM_NODES * SPATIAL_DIM];
-      Basis::evalBasisDeriv(pt, Nxyz);
+      double Nxyz[BasisFunc::NUM_NODES * SPATIAL_DIM];
+      BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nxyz, weight, j](A2D::index_t i) -> void {
@@ -417,7 +417,8 @@ class BasisModel {
         for (index_t ii = 0; ii < vars_per_node; ii++) {
           for (index_t k = 0; k < NUM_NODES; k++) {
             for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-              resi(k, ii) += Nxyz[k + idim * Basis::NUM_NODES] * Uxib(ii, idim);
+              resi(k, ii) +=
+                  Nxyz[k + idim * BasisFunc::NUM_NODES] * Uxib(ii, idim);
             }
           }
         }
@@ -451,8 +452,8 @@ class BasisModel {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double N[Basis::NUM_NODES];
-      Basis::evalBasis(pt, N);
+      double N[BasisFunc::NUM_NODES];
+      BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, N, weight, j](A2D::index_t i) -> void {
@@ -514,8 +515,8 @@ class BasisModel {
       Quadrature::getQuadPoint(j, pt);
       double weight = Quadrature::getQuadWeight(j);
 
-      double Nxyz[Basis::NUM_NODES * SPATIAL_DIM];
-      Basis::evalBasisDeriv(pt, Nxyz);
+      double Nxyz[BasisFunc::NUM_NODES * SPATIAL_DIM];
+      BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(npts, [&, Nxyz, weight, j](A2D::index_t i) {
@@ -551,7 +552,7 @@ class BasisModel {
               for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
                 nxyz[idim] = 0.0;
                 for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
-                  nxyz[idim] += Nxyz[ky + jdim * Basis::NUM_NODES] *
+                  nxyz[idim] += Nxyz[ky + jdim * BasisFunc::NUM_NODES] *
                                 ja(iy, jdim, ix, idim);
                 }
               }
@@ -559,7 +560,7 @@ class BasisModel {
               for (index_t kx = 0; kx < NUM_NODES; kx++) {
                 for (index_t iidim = 0; iidim < SPATIAL_DIM; iidim++) {
                   jaci(ky, kx, iy, ix) +=
-                      Nxyz[kx + iidim * Basis::NUM_NODES] * nxyz[iidim];
+                      Nxyz[kx + iidim * BasisFunc::NUM_NODES] * nxyz[iidim];
                 }
               }
             }

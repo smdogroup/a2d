@@ -3,84 +3,14 @@
 #include <iomanip>
 #include <iostream>
 
+#include "a2dprofiler.h"
 #include "a2dtmp.h"
-#include "a2dtmp2d.h"
 #include "elasticity3d.h"
 #include "helmholtz3d.h"
 #include "model.h"
-#include "mpi.h"
 
 using namespace A2D;
 
-template <typename I, typename T, class PDE, class Basis>
-void test_data_adjoint_product(typename PDE::SolutionArray& u,
-                               ElementBasis<I, T, PDE, Basis>& element,
-                               double dh = 1e-30) {
-  auto data = element.get_quad_data();
-  auto dfddata = data.duplicate();
-  auto pdata = data.duplicate();
-  pdata->random();
-
-  // Create the adjoint
-  auto adj = u.duplicate();
-  adj->random();
-
-  // Compute the exact dot product
-  dfddata->zero();
-  element.add_adjoint_dfddata(*adj, *dfddata);
-  T result = dfddata->dot(*pdata);
-
-  // Now, compute the complex-step value
-  data.axpy(T(0.0, dh), *pdata);
-
-  auto res = u.duplicate();
-  res->zero();
-  element.add_residual(*res);
-  T fd = (adj->dot(*res)).imag() / dh;
-
-  std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
-            << fd.real() << std::endl;
-  std::cout << "Adjoint-data result: " << std::setw(20) << std::setprecision(16)
-            << result.real() << std::endl;
-}
-
-template <typename I, typename T, class PDE, class DesignArray>
-void test_adjoint_product(DesignArray& x,
-                          std::shared_ptr<FEModel<I, T, PDE>> model,
-                          double dh = 1e-30) {
-  auto res = model->new_solution();
-  auto adj = model->new_solution();
-  adj->random();
-  model->zero_bcs(adj);
-
-  auto dfdx = x.duplicate();
-  auto px = x.duplicate();
-  px->random();
-
-  // Compute the adjoint-residual product
-  dfdx->zero();
-  model->add_adjoint_dfdx(adj, dfdx);
-  T result = dfdx->dot(*px);
-
-  // Set the new values of the design variables
-  x.axpy(T(0.0, dh), *px);
-  model->set_design_vars(x);
-
-  // Compute the complex-step
-  res->zero();
-  model->residual(res);
-  T fd = (adj->dot(*res)).imag() / dh;
-
-  std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
-            << fd.real() << std::endl;
-  std::cout << "Adjoint-data result: " << std::setw(20) << std::setprecision(16)
-            << result.real() << std::endl;
-}
-
-/*
-  Finite-element computations using templating/auto-diff and multi-dimensional
-  arrays
-*/
 int main(int argc, char* argv[]) {
   typedef index_t I;
   typedef std::complex<double> T;
@@ -187,23 +117,21 @@ int main(int argc, char* argv[]) {
   functional->add_functional(agg_functional);
 
   // Compute the Jacobian matrix
-  double t0 = MPI_Wtime();
+  Timer* t;
+  t = new Timer("Jacobian initialization");
   auto J = model->new_matrix();
-  t0 = MPI_Wtime() - t0;
-  std::cout << "Jacobian initialization time: " << t0 << std::endl;
+  delete t;
 
-  double t1 = MPI_Wtime();
+  t = new Timer("Jacobian computation");
   model->jacobian(J);
-  t1 = MPI_Wtime() - t1;
-  std::cout << "Jacobian computational time: " << t1 << std::endl;
+  delete t;
 
-  double t2 = MPI_Wtime();
+  t = new Timer("AMG Set up");
   int num_levels = 3;
   double omega = 1.333;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, J, print_info);
-  t2 = MPI_Wtime() - t2;
-  std::cout << "Set up time for AMG: " << t2 << std::endl;
+  delete t;
 
   // Set the residuals and apply the boundary conditions
   auto solution = model->new_solution();
@@ -218,11 +146,10 @@ int main(int argc, char* argv[]) {
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 80;
-  double t3 = MPI_Wtime();
+  t = new Timer("CG solution");
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
-  t3 = MPI_Wtime() - t3;
-  std::cout << "Conjugate gradient solution time: " << t3 << std::endl;
+  delete t;
 
   // Set the solution
   model->set_solution(solution);
@@ -238,10 +165,9 @@ int main(int argc, char* argv[]) {
 
   // Compute the adjoint variables
   auto adjoint = model->new_solution();
-  double t4 = MPI_Wtime();
+  t = new Timer("Adjoint solution");
   amg->mg(*dfdu, *adjoint, monitor, max_iters);
-  t4 = MPI_Wtime() - t4;
-  std::cout << "Adjoint solution time: " << t3 << std::endl;
+  delete t;
 
   // Complete the adjoint derivative
   auto dfdx =
@@ -264,11 +190,10 @@ int main(int argc, char* argv[]) {
   model->jacobian(J);
   amg->update();
 
-  double t5 = MPI_Wtime();
+  t = new Timer("CG solution");
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
-  t5 = MPI_Wtime() - t5;
-  std::cout << "Conjugate gradient solution time: " << t5 << std::endl;
+  delete t;
 
   // Set the solution
   model->set_solution(solution);
@@ -282,18 +207,6 @@ int main(int argc, char* argv[]) {
             << ans.real() << std::endl;
   std::cout << "Relative error:      " << std::setw(20) << std::setprecision(16)
             << (ans.real() - fd.real()) / ans.real() << std::endl;
-
-  // // Set the design variable values
-  // x->fill(1.0);
-  // model->set_design_vars(x);
-  // test_data_adjoint_product(*solution, element);
-
-  // // Set the design variable values
-  // x->fill(1.0);
-  // model->set_design_vars(x);
-  // test_adjoint_product(x, model);
-
-  // amg->testGalerkin();
 
   return (0);
 }

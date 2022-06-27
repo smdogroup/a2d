@@ -15,8 +15,8 @@ using namespace A2D;
 typedef A2D::index_t Itype;
 typedef double Ttype;
 
-typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis_C3D8;
-typedef Basis3D<TetraQuadraticBasis, Tetra5ptQuadrature> Basis_C3D10;
+typedef BasisModel<3, HexTriLinear, Hex8ptQuadrature> Basis_C3D8;
+typedef BasisModel<3, TetraQuadraticBasis, Tetra5ptQuadrature> Basis_C3D10;
 
 typedef Element<Itype, Ttype, ElasticityPDE<Itype, Ttype>> Elasticity_Element;
 typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D8> Elasticity_C3D8;

@@ -6,6 +6,8 @@
 #include <numeric>
 #include <type_traits>
 
+#include "a2dobjs.h"
+
 namespace A2D {
 
 /*
@@ -46,20 +48,20 @@ struct __get_size<dim0> {
 template <index_t... dims>
 class FLayout {
  public:
-  FLayout(const index_t dim1) : dim1(dim1), static_extents{dims...} {
-    size = dim1;
+  FLayout(const index_t dim0) : dim0(dim0), static_extents{dims...} {
+    size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
   FLayout(const FLayout<dims...>& src)
-      : dim1(src.dim1), static_extents{dims...} {
-    size = dim1;
+      : dim0(src.dim0), static_extents{dims...} {
+    size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
-  const index_t dim1;
+  const index_t dim0;
   static const index_t rank = sizeof...(dims) + 1;
   static const index_t get_rank() { return rank; }
 
@@ -70,14 +72,14 @@ class FLayout {
 
   const index_t get_extent(index_t index) const {
     if (index == 0) {
-      return dim1;
+      return dim0;
     }
     return static_extents[index - 1];
   }
 
   template <class Idx, class... IdxType>
   const index_t compute_index(Idx i1, IdxType... idx) const {
-    return i1 + dim1 * __compute_index<0>(idx...);
+    return i1 + dim0 * __compute_index<0>(idx...);
   }
 
   const index_t get_size() { return size; }
@@ -102,27 +104,29 @@ class FLayout {
   C ordering
 
   Given an entry (i, j, k) in a multi-dimensional array, the c ordering
-  stores entry A(i, j, k) in the location (i * dim2 + j) * dim3 + k.
+  stores entry A(i, j, k) in the location (i * dim0 + j) * dim1 + k.
 */
 template <index_t... dims>
 class CLayout {
  public:
-  CLayout(const index_t dim1) : dim1(dim1), static_extents{dims...} {
-    size = dim1;
+  CLayout(const index_t dim0) : dim0(dim0), static_extents{dims...} {
+    size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
   CLayout(const CLayout<dims...>& src)
-      : dim1(src.dim1), static_extents{dims...} {
-    size = dim1;
+      : dim0(src.dim0), static_extents{dims...} {
+    size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
 
-  const index_t dim1;
-  static const index_t rank = sizeof...(dims) + 1;
+  const index_t dim0;
+  static const index_t rank = sizeof...(dims) + 1;  // total number of
+                                                    // dimensions (fixed and
+                                                    // variable)
   static const index_t get_rank() { return rank; }
 
   // Get the size of the array required given the first dimension
@@ -132,7 +136,7 @@ class CLayout {
 
   const index_t get_extent(index_t index) const {
     if (index == 0) {
-      return dim1;
+      return dim0;
     }
     return static_extents[index - 1];
   }

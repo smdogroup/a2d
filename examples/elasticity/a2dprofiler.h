@@ -50,7 +50,7 @@ class Timer {
               .c_str());
     } else {
       std::fprintf(
-          fp, "%s%s called\n",
+          fp, "%s%s executed\n",
           std::string(NUM_SPACE_EACH_RECUR * TIMER_RECURSION_COUNTER, ' ')
               .c_str(),
           fun_name.c_str());
@@ -79,7 +79,7 @@ class Timer {
       std::fprintf(
           fp, "%-80s(%lld ms)\n",
           (std::string(NUM_SPACE_EACH_RECUR * TIMER_RECURSION_COUNTER, ' ') +
-           fun_name + " return")
+           fun_name + " exits")
               .c_str(),
           t_elapse);
     }

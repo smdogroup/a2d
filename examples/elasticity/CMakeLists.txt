@@ -6,14 +6,19 @@ project(A2D VERSION 0.1)
 
 # Set options
 option(BUILD_TESTS "Compile the unit test executables" OFF)
-option(BUILD_TOYS "Compile the toy executables" OFF)
+option(BUILD_TOYS "Compile the toy executables" ON)
+option(DEBUG "a debug build" OFF)
 
 # Specify c++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
-set(CMAKE_CXX_FLAGS "-g -O3")
+if (DEBUG)
+  set(CMAKE_CXX_FLAGS "-g")
+else()
+  set(CMAKE_CXX_FLAGS "-g -O3")
+endif()
 
 # Require MPI
 find_package(MPI REQUIRED)

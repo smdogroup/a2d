@@ -10,12 +10,12 @@ namespace A2D {
   The mapping from design variables to element data is not defined and depends
   on the nature of the design variable.
 */
-template <typename I, typename T, class PDE>
-class Constitutive {
+template <typename I, typename T, class PDEInfo>
+class ConstitutiveBase {
  public:
-  virtual void set_design_vars(typename PDE::DesignArray& x) {}
-  virtual void add_adjoint_dfdx(typename PDE::SolutionArray& psi,
-                                typename PDE::DesignArray& dfdx) {}
+  virtual void set_design_vars(typename PDEInfo::DesignArray& x) {}
+  virtual void add_adjoint_dfdx(typename PDEInfo::SolutionArray& psi,
+                                typename PDEInfo::DesignArray& dfdx) {}
 };
 
 }  // namespace A2D

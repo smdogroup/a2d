@@ -222,7 +222,8 @@ class HelmholtzElement3D
 
 template <typename I, typename T, class BasisOps>
 class HelmholtzConstitutive
-    : public Constitutive<I, T, HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
+    : public ConstitutiveBase<I, T,
+                              HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
   static const index_t dvs_per_point =
       HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;

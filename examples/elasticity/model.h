@@ -79,7 +79,7 @@ class FEModel {
   /*
     Add a constitutive object to the model
   */
-  void add_constitutive(std::shared_ptr<Constitutive<I, T, PDEInfo>> con) {
+  void add_constitutive(std::shared_ptr<ConstitutiveBase<I, T, PDEInfo>> con) {
     constitutive.push_back(con);
   }
 
@@ -229,7 +229,7 @@ class FEModel {
 
  private:
   std::list<std::shared_ptr<ElementBase<I, T, PDEInfo>>> elements;
-  std::list<std::shared_ptr<Constitutive<I, T, PDEInfo>>> constitutive;
+  std::list<std::shared_ptr<ConstitutiveBase<I, T, PDEInfo>>> constitutive;
 
   typename PDEInfo::BCsLayout bcs_layout;
   typename PDEInfo::NodeLayout node_layout;

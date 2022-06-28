@@ -47,7 +47,8 @@ typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D8>
 typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D10>
     TopoVonMisesAggregation_C3D10;
 
-typedef Constitutive<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+typedef ConstitutiveBase<Itype, Ttype,
+                         ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Constitutive;
 typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D8> TopoIsoConstitutive_C3D8;
 typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D10>
@@ -65,7 +66,8 @@ typedef typename HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseAmg
 typedef typename HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseMat
     Helmholtz_Mat;
 
-typedef Constitutive<Itype, Ttype, HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+typedef ConstitutiveBase<Itype, Ttype,
+                         HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Helmholtz_Constitutive;
 typedef HelmholtzConstitutive<Itype, Ttype, Basis_C3D8>
     HelmholtzConstitutive_C3D8;

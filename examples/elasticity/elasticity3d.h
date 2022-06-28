@@ -506,8 +506,8 @@ class LinElasticityElement3D
 
 template <typename I, typename T, class BasisOps>
 class TopoIsoConstitutive
-    : public Constitutive<I, T,
-                          ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
+    : public ConstitutiveBase<I, T,
+                              ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
   static const index_t dvs_per_point =
       ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;

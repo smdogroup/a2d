@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "a2dprofiler.h"
-#include "a2dtmp.h"
+#include "a2dtmp3d.h"
 #include "elasticity3d.h"
 #include "helmholtz3d.h"
 #include "model.h"
@@ -12,82 +12,67 @@
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
+  static const index_t SPATIAL_DIM = 2;
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
-  typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
-  typedef ElasticityPDEInfo<3, I, T> PDE;
+  typedef BasisOps<SPATIAL_DIM, QuadBiLinearBasisFunc, Quad4ptQuadrature> Basis;
+  typedef ElasticityPDEInfo<SPATIAL_DIM, I, T> PDE;
 
   const index_t nx = 32;
   const index_t ny = 32;
-  const index_t nz = 32;
-  const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
-  const index_t nelems = nx * ny * nz;
-  const index_t nbcs = (ny + 1) * (nz + 1);
+  const index_t nnodes = (nx + 1) * (ny + 1);
+  const index_t nelems = nx * ny;
+  const index_t nbcs = (ny + 1);
 
   auto model = std::make_shared<FEModel<I, T, PDE>>(nnodes, nbcs);
-  auto element = std::make_shared<LinElasticityElement3D<I, T, Basis>>(nelems);
+  auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
   // Set the boundary conditions
   auto bcs = model->get_bcs();
   index_t index = 0;
-  for (int k = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++) {
-      int i = 0;
-      int node = i + (nx + 1) * (j + (ny + 1) * k);
+  for (int j = 0; j < ny + 1; j++) {
+    int i = 0;
+    int node = i + (nx + 1) * j;
 
-      // Set the boundary conditions
-      bcs(index, 0) = node;
-      for (int ii = 0; ii < 3; ii++) {
-        bcs(index, 1) |= 1U << ii;
-      }
-      index++;
+    // Set the boundary conditions
+    bcs(index, 0) = node;
+    for (int ii = 0; ii < SPATIAL_DIM; ii++) {
+      bcs(index, 1) |= 1U << ii;
     }
+    index++;
   }
 
   // Set the connectivity
   auto conn = element->get_conn();
-  for (int k = 0; k < nz; k++) {
-    for (int j = 0; j < ny; j++) {
-      for (int i = 0; i < nx; i++) {
-        int elem = i + nx * (j + ny * k);
+  for (int j = 0; j < ny; j++) {
+    for (int i = 0; i < nx; i++) {
+      int elem = i + nx * j;
 
-        int conn_coord[8];
-        for (int kk = 0, index = 0; kk < 2; kk++) {
-          for (int jj = 0; jj < 2; jj++) {
-            for (int ii = 0; ii < 2; ii++, index++) {
-              conn_coord[index] =
-                  (i + ii) + (nx + 1) * ((j + jj) + (ny + 1) * (k + kk));
-            }
-          }
+      int conn_coord[4];
+      for (int jj = 0, index = 0; jj < 2; jj++) {
+        for (int ii = 0; ii < 2; ii++, index++) {
+          conn_coord[index] = (i + ii) + (nx + 1) * (j + jj);
         }
-
-        // Convert to the correct connectivity
-        conn(elem, 0) = conn_coord[0];
-        conn(elem, 1) = conn_coord[1];
-        conn(elem, 2) = conn_coord[3];
-        conn(elem, 3) = conn_coord[2];
-
-        conn(elem, 4) = conn_coord[4];
-        conn(elem, 5) = conn_coord[5];
-        conn(elem, 6) = conn_coord[7];
-        conn(elem, 7) = conn_coord[6];
       }
+
+      // Convert to the correct connectivity
+      conn(elem, 0) = conn_coord[0];
+      conn(elem, 1) = conn_coord[1];
+      conn(elem, 2) = conn_coord[3];
+      conn(elem, 3) = conn_coord[2];
     }
   }
 
   // Set the node locations
   auto X = model->get_nodes();
-  for (int k = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++) {
-      for (int i = 0; i < nx + 1; i++) {
-        int node = i + (nx + 1) * (j + (ny + 1) * k);
+  for (int j = 0; j < ny + 1; j++) {
+    for (int i = 0; i < nx + 1; i++) {
+      int node = i + (nx + 1) * j;
 
-        X(node, 0) = 1.0 * i / nx;
-        X(node, 1) = 1.0 * j / ny;
-        X(node, 2) = 1.0 * k / nz;
-      }
+      X(node, 0) = 1.0 * i / nx;
+      X(node, 1) = 1.0 * j / ny;
     }
   }
 

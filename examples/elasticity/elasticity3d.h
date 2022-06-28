@@ -1,7 +1,8 @@
 #ifndef A2D_ELASTICITY_3D_H
 #define A2D_ELASTICITY_3D_H
 
-#include "a2dtmp.h"
+#include "a2dtmp2d.h"
+#include "a2dtmp3d.h"
 #include "basis.h"
 #include "constitutive.h"
 #include "element.h"
@@ -88,12 +89,13 @@ class ElasticityPDEInfo {
 };
 
 template <typename I, typename T, class BasisOps>
-class NonlinElasticityElement3D
+class NonlinElasticityElement
     : public ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                           BasisOps> {
  public:
   // Finite-element basis class
-  static const index_t NUM_VARS = 3;  // Number of variables per node
+  static const index_t SPATIAL_DIM = BasisOps::SPATIAL_DIM;
+  static const index_t NUM_VARS = SPATIAL_DIM;  // Number of variables per node
   static const index_t NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
@@ -101,12 +103,12 @@ class NonlinElasticityElement3D
                        BasisOps>
       base;
 
-  NonlinElasticityElement3D(const index_t nelems)
+  NonlinElasticityElement(const index_t nelems)
       : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                      BasisOps>(nelems) {}
 
   template <typename IdxType>
-  NonlinElasticityElement3D(const index_t nelems, const IdxType conn_[])
+  NonlinElasticityElement(const index_t nelems, const IdxType conn_[])
       : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                      BasisOps>(nelems, conn_) {}
 
@@ -118,16 +120,17 @@ class NonlinElasticityElement3D
 
     T engry = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0) -> T {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0) -> T {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux;
-          A2D::SymmMat<T, 3> E;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux;
+          A2D::SymmMat<T, SPATIAL_DIM> E;
           T output;
 
-          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
-          A2D::Mat3x3GreenStrain(Ux, E);
-          A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          A2D::MatMatMult(Uxi0, Jinv0, Ux);
+          A2D::MatGreenStrain(Ux, E);
+          A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           return wdetJ * output;
         });
@@ -148,20 +151,22 @@ class NonlinElasticityElement3D
 
     BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxib) -> void {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::ADMat<A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::ADScalar<T> output;
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -186,28 +191,30 @@ class NonlinElasticityElement3D
 
     BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
-                A2D::SymmTensor<T, 3, 3>& jac) -> void {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxib,
+                A2D::SymmTensor<T, SPATIAL_DIM, SPATIAL_DIM>& jac) -> void {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
-          const int N = 9;
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          const int N = SPATIAL_DIM * SPATIAL_DIM;
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::A2DScalar<N, T> output;
 
           // Set up the seed values
           for (int k = 0; k < N; k++) {
-            A2D::Mat<T, 3, 3>& Up = Uxi.pvalue(k);
-            Up(k / 3, k % 3) = 1.0;
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Up = Uxi.pvalue(k);
+            Up(k / SPATIAL_DIM, k % SPATIAL_DIM) = 1.0;
           }
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -222,10 +229,10 @@ class NonlinElasticityElement3D
           mult.hreverse();
 
           for (int k = 0; k < N; k++) {
-            A2D::Mat<T, 3, 3>& Uxih = Uxi.hvalue(k);
-            for (int i = 0; i < 3; i++) {
-              for (int j = 0; j < 3; j++) {
-                jac(i, j, k / 3, k % 3) = Uxih(i, j);
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxih = Uxi.hvalue(k);
+            for (int i = 0; i < SPATIAL_DIM; i++) {
+              for (int j = 0; j < SPATIAL_DIM; j++) {
+                jac(i, j, k / SPATIAL_DIM, k % SPATIAL_DIM) = Uxih(i, j);
               }
             }
           }
@@ -255,29 +262,31 @@ class NonlinElasticityElement3D
     // Compute the product
     BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
-        [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                       A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0) -> void {
-          A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+        [&data, &dfdx](index_t i, index_t j, T wdetJ,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxi0,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Pxi0) -> void {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxib, Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
           const int N = 1;
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::A2DScalar<N, T> output;
           A2D::A2DScalar<N, T> mu(data(i, j, 0)), lambda(data(i, j, 1));
 
           // Set the seed values
-          A2D::Mat<T, 3, 3>& Psi = Uxi.pvalue(0);
-          for (int k2 = 0; k2 < 3; k2++) {
-            for (int k1 = 0; k1 < 3; k1++) {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Psi = Uxi.pvalue(0);
+          for (int k2 = 0; k2 < SPATIAL_DIM; k2++) {
+            for (int k1 = 0; k1 < SPATIAL_DIM; k1++) {
               Psi(k1, k2) = Pxi0(k1, k2);
             }
           }
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -296,12 +305,13 @@ class NonlinElasticityElement3D
 };
 
 template <typename I, typename T, class BasisOps>
-class LinElasticityElement3D
+class LinElasticityElement
     : public ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                           BasisOps> {
  public:
   // Finite-element basis class
-  static const index_t NUM_VARS = 3;  // Number of variables per node
+  static const index_t SPATIAL_DIM = BasisOps::SPATIAL_DIM;
+  static const index_t NUM_VARS = SPATIAL_DIM;  // Number of variables per node
   static const index_t NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
@@ -309,12 +319,12 @@ class LinElasticityElement3D
                        BasisOps>
       base;
 
-  LinElasticityElement3D(const index_t nelems)
+  LinElasticityElement(const index_t nelems)
       : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                      BasisOps>(nelems) {}
 
   template <typename IdxType>
-  LinElasticityElement3D(const index_t nelems, const IdxType conn_[])
+  LinElasticityElement(const index_t nelems, const IdxType conn_[])
       : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
                      BasisOps>(nelems, conn_) {}
 
@@ -326,16 +336,17 @@ class LinElasticityElement3D
 
     T elem_energy = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3> Uxi0) -> T {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxi0) -> T {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux;
-          A2D::SymmMat<T, 3> E;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux;
+          A2D::SymmMat<T, SPATIAL_DIM> E;
           T output;
 
-          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
-          A2D::Mat3x3LinearGreenStrain(Ux, E);
-          A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          A2D::MatMatMult(Uxi0, Jinv0, Ux);
+          A2D::MatLinearGreenStrain(Ux, E);
+          A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           return wdetJ * output;
         });
@@ -356,20 +367,22 @@ class LinElasticityElement3D
 
     BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxib) -> void {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::ADMat<A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::ADScalar<T> output;
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatLinearGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -394,28 +407,30 @@ class LinElasticityElement3D
 
     BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
-                A2D::SymmTensor<T, 3, 3>& jac) -> void {
+        [&data](index_t i, index_t j, T wdetJ,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxib,
+                A2D::SymmTensor<T, SPATIAL_DIM, SPATIAL_DIM>& jac) -> void {
           T mu(data(i, j, 0)), lambda(data(i, j, 1));
-          A2D::Mat<T, 3, 3> Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
-          const int N = 9;
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          const int N = SPATIAL_DIM * SPATIAL_DIM;
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::A2DScalar<N, T> output;
 
           // Set up the seed values
           for (int k = 0; k < N; k++) {
-            A2D::Mat<T, 3, 3>& Up = Uxi.pvalue(k);
-            Up(k / 3, k % 3) = 1.0;
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Up = Uxi.pvalue(k);
+            Up(k / SPATIAL_DIM, k % SPATIAL_DIM) = 1.0;
           }
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatLinearGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -430,10 +445,11 @@ class LinElasticityElement3D
           mult.hreverse();
 
           for (int k = 0; k < N; k++) {
-            A2D::Mat<T, 3, 3>& Uxih = Uxi.hvalue(k);
-            for (int i = 0; i < 3; i++) {
-              for (int j = 0; j < 3; j++) {
-                jac(i, j, k / 3, k % 3) = Uxih(i, j);
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxih = Uxi.hvalue(k);
+            for (int i = 0; i < SPATIAL_DIM; i++) {
+              for (int j = 0; j < SPATIAL_DIM; j++) {
+                jac(i, j, k / (int)SPATIAL_DIM, k % (int)SPATIAL_DIM) =
+                    Uxih(i, j);
               }
             }
           }
@@ -463,30 +479,31 @@ class LinElasticityElement3D
     // Compute the product
     BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
-        [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-                       A2D::Mat<T, 3, 3>& Uxi0,
-                       A2D::Mat<T, 3, 3>& Pxi0) -> void {
-          A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
+        [&data, &dfdx](index_t i, index_t j, T wdetJ,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Pxi0) -> void {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxib, Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 
           const int N = 1;
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::A2DMat<N, A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::A2DMat<N, A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
           A2D::A2DScalar<N, T> output;
           A2D::A2DScalar<N, T> mu(data(i, j, 0)), lambda(data(i, j, 1));
 
           // Set the seed values
-          A2D::Mat<T, 3, 3>& Psi = Uxi.pvalue(0);
-          for (int k2 = 0; k2 < 3; k2++) {
-            for (int k1 = 0; k1 < 3; k1++) {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Psi = Uxi.pvalue(0);
+          for (int k2 = 0; k2 < SPATIAL_DIM; k2++) {
+            for (int k1 = 0; k1 < SPATIAL_DIM; k1++) {
               Psi(k1, k2) = Pxi0(k1, k2);
             }
           }
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-          auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatLinearGreenStrain(Ux, E);
+          auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
           output.bvalue = wdetJ;
 
@@ -509,6 +526,7 @@ class TopoIsoConstitutive
     : public ConstitutiveBase<I, T,
                               ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
+  static const index_t SPATIAL_DIM = BasisOps::SPATIAL_DIM;
   static const index_t dvs_per_point =
       ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
   static const index_t nodes_per_elem = BasisOps::NUM_NODES;
@@ -643,6 +661,7 @@ class TopoVolume
     : public ElementFunctional<I, T,
                                ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
+  static const index_t SPATIAL_DIM = BasisOps::SPATIAL_DIM;
   static const index_t vars_per_node =
       ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::vars_per_node;
   static const index_t dvs_per_point =
@@ -698,6 +717,7 @@ class TopoVonMisesAggregation
     : public ElementFunctional<I, T,
                                ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
+  static const index_t SPATIAL_DIM = BasisOps::SPATIAL_DIM;
   static const int vars_per_node =
       ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::vars_per_node;
   static const index_t dvs_per_point =
@@ -733,18 +753,19 @@ class TopoVonMisesAggregation
     // Compute the maximum value over all quadrature points
     offset = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        [&xq, qval, mu, lambda, ys](index_t i, index_t j, T wdetJ,
-                                    A2D::Mat<T, 3, 3>& Jinv0,
-                                    A2D::Mat<T, 3, 3>& Uxi0) -> T {
-          A2D::Mat<T, 3, 3> Ux;
-          A2D::SymmMat<T, 3> E, S;
+        [&xq, qval, mu, lambda, ys](
+            index_t i, index_t j, T wdetJ,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0) -> T {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux;
+          A2D::SymmMat<T, SPATIAL_DIM> E, S;
           T vm, trS, trSS;
 
-          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
-          A2D::Mat3x3GreenStrain(Ux, E);
-          A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-          A2D::Symm3x3Trace(S, trS);
-          A2D::Symm3x3SymmMultTrace(S, S, trSS);
+          A2D::MatMatMult(Uxi0, Jinv0, Ux);
+          A2D::MatGreenStrain(Ux, E);
+          A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
+          A2D::SymmTrace(S, trS);
+          A2D::SymmSymmMultTrace(S, S, trSS);
 
           // Compute the penalty = (q + 1) * x/(q * x + 1)
           T penalty = (qval + 1.0) * xq(i, j, 0) / (qval * xq(i, j, 0) + 1.0);
@@ -774,18 +795,19 @@ class TopoVonMisesAggregation
     // Compute the maximum value over all quadrature points
     integral = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        [&xq, qval, mu, lambda, ys, off, wgt](index_t i, index_t j, T wdetJ,
-                                              A2D::Mat<T, 3, 3>& Jinv0,
-                                              A2D::Mat<T, 3, 3>& Uxi0) -> T {
-          A2D::Mat<T, 3, 3> Ux;
-          A2D::SymmMat<T, 3> E, S;
+        [&xq, qval, mu, lambda, ys, off, wgt](
+            index_t i, index_t j, T wdetJ,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0) -> T {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux;
+          A2D::SymmMat<T, SPATIAL_DIM> E, S;
           T vm, trS, trSS;
 
-          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
-          A2D::Mat3x3GreenStrain(Ux, E);
-          A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-          A2D::Symm3x3Trace(S, trS);
-          A2D::Symm3x3SymmMultTrace(S, S, trSS);
+          A2D::MatMatMult(Uxi0, Jinv0, Ux);
+          A2D::MatGreenStrain(Ux, E);
+          A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
+          A2D::SymmTrace(S, trS);
+          A2D::SymmSymmMultTrace(S, S, trSS);
 
           // Compute the penalty = (q + 1) * x/(q * x + 1)
           T penalty = (qval + 1.0) * xq(i, j, 0) / (qval * xq(i, j, 0) + 1.0);
@@ -823,23 +845,25 @@ class TopoVonMisesAggregation
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&xq, qval, mu, lambda, ys, off, wgt, intgrl](
-            index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-            A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
-          A2D::Mat<T, 3, 3> Ux0, Uxb;
-          A2D::SymmMat<T, 3> E0, Eb;
-          A2D::SymmMat<T, 3> S0, Sb;
+            index_t i, index_t j, T wdetJ,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxib) -> void {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux0, Uxb;
+          A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
+          A2D::SymmMat<T, SPATIAL_DIM> S0, Sb;
 
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
-          A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-          A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
-          A2D::ADMat<A2D::SymmMat<T, 3>> S(S0, Sb);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Uxi(Uxi0, Uxib);
+          A2D::ADMat<A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>> Ux(Ux0, Uxb);
+          A2D::ADMat<A2D::SymmMat<T, SPATIAL_DIM>> E(E0, Eb);
+          A2D::ADMat<A2D::SymmMat<T, SPATIAL_DIM>> S(S0, Sb);
           A2D::ADScalar<T> trS, trSS;
 
-          auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-          auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-          auto cons = A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-          auto trace1 = A2D::Symm3x3Trace(S, trS);
-          auto trace2 = A2D::Symm3x3SymmMultTrace(S, S, trSS);
+          auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+          auto strain = A2D::MatGreenStrain(Ux, E);
+          auto cons = A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
+          auto trace1 = A2D::SymmTrace(S, trS);
+          auto trace2 = A2D::SymmSymmMultTrace(S, S, trSS);
 
           // Compute the penalty = (q + 1) * x/(q * x + 1)
           T penalty = (qval + 1.0) * xq(i, j, 0) / (qval * xq(i, j, 0) + 1.0);
@@ -888,17 +912,18 @@ class TopoVonMisesAggregation
     BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&dfdxq, &xq, qval, mu, lambda, ys, off, wgt, intgrl](
-            index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
-            A2D::Mat<T, 3, 3>& Uxi0) -> T {
-          A2D::Mat<T, 3, 3> Ux;
-          A2D::SymmMat<T, 3> E, S;
+            index_t i, index_t j, T wdetJ,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0) -> T {
+          A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Ux;
+          A2D::SymmMat<T, SPATIAL_DIM> E, S;
           T trS, trSS;
 
-          A2D::Mat3x3MatMult(Uxi0, Jinv0, Ux);
-          A2D::Mat3x3GreenStrain(Ux, E);
-          A2D::Symm3x3IsotropicConstitutive(mu, lambda, E, S);
-          A2D::Symm3x3Trace(S, trS);
-          A2D::Symm3x3SymmMultTrace(S, S, trSS);
+          A2D::MatMatMult(Uxi0, Jinv0, Ux);
+          A2D::MatGreenStrain(Ux, E);
+          A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
+          A2D::SymmTrace(S, trS);
+          A2D::SymmSymmMultTrace(S, S, trSS);
 
           // Compute the penalty = (q + 1) * x/(q * x + 1)
           T denom = (qval * xq(i, j, 0) + 1.0) * (qval * xq(i, j, 0) + 1.0);

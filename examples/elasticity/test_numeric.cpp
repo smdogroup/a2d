@@ -1,7 +1,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp.h"
+#include "a2dtmp3d.h"
 #include "a2dtypes.h"
 #include "block_numeric.h"
 #include "sparse_matrix.h"
@@ -17,9 +17,9 @@ void reisdual(T mu, T lambda, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
   A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
   A2D::ADScalar<T> output;
 
-  auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-  auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-  auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+  auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+  auto strain = A2D::MatLinearGreenStrain(Ux, E);
+  auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
   output.bvalue = wdetJ;
 
@@ -50,9 +50,9 @@ void adjoint_product(T mu0, T lambda0, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
     }
   }
 
-  auto mult = A2D::Mat3x3MatMult(Uxi, Jinv0, Ux);
-  auto strain = A2D::Mat3x3LinearGreenStrain(Ux, E);
-  auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+  auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
+  auto strain = A2D::MatLinearGreenStrain(Ux, E);
+  auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
   output.bvalue = wdetJ;
 

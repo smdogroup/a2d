@@ -23,8 +23,8 @@ typedef BasisOps<3, TetraQuadraticBasisFunc, Tetra5ptQuadrature> Basis_C3D10;
 
 typedef ElementBase<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Element;
-typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D8> Elasticity_C3D8;
-typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D10> Elasticity_C3D10;
+typedef LinElasticityElement<Itype, Ttype, Basis_C3D8> Elasticity_C3D8;
+typedef LinElasticityElement<Itype, Ttype, Basis_C3D10> Elasticity_C3D10;
 
 typedef FEModel<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Model;

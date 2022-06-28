@@ -70,7 +70,7 @@ if (BUILD_TESTS)
   )
 
   target_link_libraries(
-    test_tmp
+    test_tmp3d
     gtest_main
   )
 

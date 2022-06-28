@@ -10,8 +10,8 @@ add_executable(
 )
 
 add_executable(
-  test_tmp
-  test_tmp.cpp
+  test_tmp3d
+  test_tmp3d.cpp
 )
 
 add_executable(
@@ -22,5 +22,5 @@ add_executable(
 # Set include dirs for the test executables
 target_include_directories(test_matcore PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(test_matcore2d PRIVATE ${CMAKE_SOURCE_DIR})
-target_include_directories(test_tmp PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(test_tmp3d PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(test_tmp2d PRIVATE ${CMAKE_SOURCE_DIR})

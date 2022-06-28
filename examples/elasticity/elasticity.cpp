@@ -3,8 +3,8 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp.h"
 #include "a2dtmp2d.h"
+#include "a2dtmp3d.h"
 #include "elasticity3d.h"
 #include "helmholtz3d.h"
 #include "model.h"
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
   const index_t nbcs = (ny + 1) * (nz + 1);
 
   auto model = std::make_shared<FEModel<I, T, PDE>>(nnodes, nbcs);
-  auto element = std::make_shared<LinElasticityElement3D<I, T, Basis>>(nelems);
+  auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
   // Set the boundary conditions

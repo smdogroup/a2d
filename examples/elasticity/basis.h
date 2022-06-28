@@ -3,8 +3,8 @@
 
 #include <cstddef>
 
-#include "a2dtmp.h"
 #include "a2dtmp2d.h"
+#include "a2dtmp3d.h"
 #include "block_numeric.h"
 #include "parallel.h"
 #include "quadrature.h"
@@ -676,28 +676,30 @@ class BasisOps {
     }
   }
 
- private:
-  template <typename ScalarType>
-  static inline void MatInverse(const Mat<ScalarType, 3, 3>& A,
-                                Mat<ScalarType, 3, 3>& Ainv) {
-    A2D::Mat3x3Inverse(A, Ainv);
-  }
+  //  private:
+  //   template <typename ScalarType>
+  //   static inline void MatInverse(const Mat<ScalarType, 3, 3>& A,
+  //                                 Mat<ScalarType, 3, 3>& Ainv) {
+  //     A2D::Mat3x3Inverse(A, Ainv);
+  //   }
 
-  template <typename ScalarType>
-  static inline void MatInverse(const Mat<ScalarType, 2, 2>& A,
-                                Mat<ScalarType, 2, 2>& Ainv) {
-    A2D::Mat2x2Inverse(A, Ainv);
-  }
+  //   template <typename ScalarType>
+  //   static inline void MatInverse(const Mat<ScalarType, 2, 2>& A,
+  //                                 Mat<ScalarType, 2, 2>& Ainv) {
+  //     A2D::Mat2x2Inverse(A, Ainv);
+  //   }
 
-  template <typename ScalarType>
-  static inline void MatDet(const Mat<ScalarType, 3, 3>& A, ScalarType& det) {
-    A2D::Mat3x3Det(A, det);
-  }
+  //   template <typename ScalarType>
+  //   static inline void MatDet(const Mat<ScalarType, 3, 3>& A, ScalarType&
+  //   det) {
+  //     A2D::Mat3x3Det(A, det);
+  //   }
 
-  template <typename ScalarType>
-  static inline void MatDet(const Mat<ScalarType, 2, 2>& A, ScalarType& det) {
-    A2D::Mat2x2Det(A, det);
-  }
+  //   template <typename ScalarType>
+  //   static inline void MatDet(const Mat<ScalarType, 2, 2>& A, ScalarType&
+  //   det) {
+  //     A2D::Mat2x2Det(A, det);
+  //   }
 };
 
 }  // namespace A2D

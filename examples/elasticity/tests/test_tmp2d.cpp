@@ -74,22 +74,22 @@ class MatxMat : public ADExpressionTest {
 };
 
 TEST_F(MatxMat, AB) {
-  Mat2x2MatMult<T, false, false>(A, B, AB);
+  MatMatMult<T, false, false>(A, B, AB);
   expect_mat_eq<2, 2, Mat>(AB, AB_data);
 }
 
 TEST_F(MatxMat, ATB) {
-  Mat2x2MatMult<T, true, false>(A, B, ATB);
+  MatMatMult<T, true, false>(A, B, ATB);
   expect_mat_eq<2, 2, Mat>(ATB, ATB_data);
 }
 
 TEST_F(MatxMat, ABT) {
-  Mat2x2MatMult<T, false, true>(A, B, ABT);
+  MatMatMult<T, false, true>(A, B, ABT);
   expect_mat_eq<2, 2, Mat>(ABT, ABT_data);
 }
 
 TEST_F(MatxMat, ATBT) {
-  Mat2x2MatMult<T, true, true>(A, B, ATBT);
+  MatMatMult<T, true, true>(A, B, ATBT);
   expect_mat_eq<2, 2, Mat>(ATBT, ATBT_data);
 }
 
@@ -138,7 +138,7 @@ TEST_F(ADMatxADMat, AB) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<Mat, Mat, Mat, false, false>(A_, B_, C_);
+  auto expr = MatMatMult<T, false, false>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -164,7 +164,7 @@ TEST_F(ADMatxADMat, ATB) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<Mat, Mat, Mat, true, false>(A_, B_, C_);
+  auto expr = MatMatMult<T, true, false>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -190,7 +190,7 @@ TEST_F(ADMatxADMat, ABT) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<Mat, Mat, Mat, false, true>(A_, B_, C_);
+  auto expr = MatMatMult<T, false, true>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -216,7 +216,7 @@ TEST_F(ADMatxADMat, ATBT) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<Mat, Mat, Mat, true, true>(A_, B_, C_);
+  auto expr = MatMatMult<T, true, true>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -310,7 +310,7 @@ TEST_F(A2DMatxA2DMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, Mat, Mat, Mat, false, false>(A__, B__, C__);
+  auto expr = MatMatMult<1, T, false, false>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -366,7 +366,7 @@ TEST_F(A2DMatxA2DMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, Mat, Mat, Mat, true, false>(A__, B__, C__);
+  auto expr = MatMatMult<1, T, true, false>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -422,7 +422,7 @@ TEST_F(A2DMatxA2DMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, Mat, Mat, Mat, false, true>(A__, B__, C__);
+  auto expr = MatMatMult<1, T, false, true>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -478,7 +478,7 @@ TEST_F(A2DMatxA2DMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, Mat, Mat, Mat, true, true>(A__, B__, C__);
+  auto expr = MatMatMult<1, T, true, true>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -545,7 +545,7 @@ TEST_F(ADMatxMat, AB) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, false, false>(A_, B, C_);
+  auto expr = MatMatMult<T, false, false>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -568,7 +568,7 @@ TEST_F(ADMatxMat, ATB) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, true, false>(A_, B, C_);
+  auto expr = MatMatMult<T, true, false>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -591,7 +591,7 @@ TEST_F(ADMatxMat, ABT) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, false, true>(A_, B, C_);
+  auto expr = MatMatMult<T, false, true>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -614,7 +614,7 @@ TEST_F(ADMatxMat, ATBT) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, true, true>(A_, B, C_);
+  auto expr = MatMatMult<T, true, true>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -665,7 +665,7 @@ TEST_F(MatxADMat, AB) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, false, false>(A, B_, C_);
+  auto expr = MatMatMult<T, false, false>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -688,7 +688,7 @@ TEST_F(MatxADMat, ATB) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, true, false>(A, B_, C_);
+  auto expr = MatMatMult<T, true, false>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -711,7 +711,7 @@ TEST_F(MatxADMat, ABT) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, false, true>(A, B_, C_);
+  auto expr = MatMatMult<T, false, true>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -734,7 +734,7 @@ TEST_F(MatxADMat, ATBT) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = Mat2x2MatMult<T, Mat, Mat, true, true>(A, B_, C_);
+  auto expr = MatMatMult<T, true, true>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -806,7 +806,7 @@ TEST_F(A2DMatxMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, false, false>(A__, B, C__);
+  auto expr = MatMatMult<1, T, false, false>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -855,7 +855,7 @@ TEST_F(A2DMatxMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, true, false>(A__, B, C__);
+  auto expr = MatMatMult<1, T, true, false>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -904,7 +904,7 @@ TEST_F(A2DMatxMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, false, true>(A__, B, C__);
+  auto expr = MatMatMult<1, T, false, true>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -953,7 +953,7 @@ TEST_F(A2DMatxMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, true, true>(A__, B, C__);
+  auto expr = MatMatMult<1, T, true, true>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -1038,7 +1038,7 @@ TEST_F(MatxA2DMat, AB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, false, false>(A, B__, C__);
+  auto expr = MatMatMult<1, T, false, false>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, AB_data);
@@ -1087,7 +1087,7 @@ TEST_F(MatxA2DMat, ATB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, true, false>(A, B__, C__);
+  auto expr = MatMatMult<1, T, true, false>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATB_data);
@@ -1136,7 +1136,7 @@ TEST_F(MatxA2DMat, ABT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, false, true>(A, B__, C__);
+  auto expr = MatMatMult<1, T, false, true>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ABT_data);
@@ -1185,7 +1185,7 @@ TEST_F(MatxA2DMat, ATBT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = Mat2x2MatMult<1, T, Mat, Mat, true, true>(A, B__, C__);
+  auto expr = MatMatMult<1, T, true, true>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<2, 2, Mat>(C, ATBT_data);
@@ -1232,7 +1232,7 @@ class DetA : public ADExpressionTest {
 TEST_F(DetA, A) {
   Mat A(A_data);
   T det;
-  Mat2x2Det(A, det);
+  MatDet(A, det);
   expect_val_eq(det, detA_data);
 }
 
@@ -1246,7 +1246,7 @@ TEST_F(DetA, AD) {
   auto Ab_out = AD_Ab_out;
   ADScalar det;
 
-  auto expr = Mat2x2Det(A_, det);
+  auto expr = MatDet(A_, det);
 
   // Check expression result
   expect_val_eq(det.value, detA_data);
@@ -1281,7 +1281,7 @@ TEST_F(DetA, A2D) {
   A2DMat A__(A, Ab);
   A2DScalar s__(0.0, sb);
 
-  auto expr = Mat2x2Det(A__, s__);
+  auto expr = MatDet(A__, s__);
 
   // Check expression result
   expect_val_eq(s__.value, detA_data);
@@ -1325,7 +1325,7 @@ class InvA : public ADExpressionTest {
 
 TEST_F(InvA, A) {
   Mat A(A_data), invA;
-  Mat2x2Inverse(A, invA);
+  MatInverse(A, invA);
   expect_mat_eq<2, 2, Mat>(invA, invA_data, 1e-14);
 }
 
@@ -1344,7 +1344,7 @@ TEST_F(InvA, AD) {
   ADMat A_(A, Ab), invA_(invA, invAb);
 
   // Check expression result
-  auto expr = Mat2x2Inverse(A_, invA_);
+  auto expr = MatInverse(A_, invA_);
   expect_mat_eq<2, 2, Mat>(invA, invA_data, 1e-14);
 
   // Check forward
@@ -1377,7 +1377,7 @@ TEST_F(InvA, A2D) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = Mat2x2Inverse(A__, C__);
+  auto expr = MatInverse(A__, C__);
 
   // Check exprssion
   expect_mat_eq<2, 2, Mat>(C, invA_data, 1e-14);
@@ -1406,7 +1406,7 @@ TEST_F(InvA, A2D) {
 }
 
 // Test suite: trace = tr(S)
-class SymmTrace : public ADExpressionTest {
+class SymmTracesSuite : public ADExpressionTest {
  protected:
   const T tr_out = 0.4624610100000000;
 
@@ -1423,7 +1423,7 @@ class SymmTrace : public ADExpressionTest {
   const T A2D_trp_out = 0.9831364800000001;
 };
 
-TEST_F(SymmTrace, A) {
+TEST_F(SymmTracesSuite, A) {
   // Set inputs
   const T *S_in = S_data;
   SMat S(S_in);
@@ -1432,11 +1432,11 @@ TEST_F(SymmTrace, A) {
   T trace;
 
   // Compute
-  Symm2x2Trace(S, trace);
+  SymmTrace(S, trace);
   expect_val_eq(trace, tr_out);
 }
 
-TEST_F(SymmTrace, AD) {
+TEST_F(SymmTracesSuite, AD) {
   // Set inputs
   const T *S_in = S_data;
   const T *Sb_in = dS_data;
@@ -1450,7 +1450,7 @@ TEST_F(SymmTrace, AD) {
   ADSMat S_(S, Sb);
   ADScalar trace_;
 
-  auto expr = Symm2x2Trace(S_, trace_);
+  auto expr = SymmTrace(S_, trace_);
 
   // Check expression result
   expect_val_eq(trace_.value, tr_out);
@@ -1465,7 +1465,7 @@ TEST_F(SymmTrace, AD) {
   expect_mat_eq<2, 2, SMat>(Sb, Sb_out);
 }
 
-TEST_F(SymmTrace, A2D) {
+TEST_F(SymmTracesSuite, A2D) {
   // Set inputs
   const T *S_in = S_data;
   const T *Sp_in = dS_data;
@@ -1485,7 +1485,7 @@ TEST_F(SymmTrace, A2D) {
   A2DSMat S__(S, Sb);
   A2DScalar trace__(0.0, trb);
 
-  auto expr = Symm2x2Trace(S__, trace__);
+  auto expr = SymmTrace(S__, trace__);
 
   // Check expression
   expect_val_eq(trace__.value, tr_out);
@@ -1541,7 +1541,7 @@ TEST_F(SymmMultTrace, A) {
   T trace;
 
   // Compute
-  Symm2x2SymmMultTrace(S, E, trace);
+  SymmSymmMultTrace(S, E, trace);
   expect_val_eq(trace, trSE);
 }
 
@@ -1562,7 +1562,7 @@ TEST_F(SymmMultTrace, AD) {
   ADSMat S_(S, Sb), E_(E, Eb);
   ADScalar trace_;
 
-  auto expr = Symm2x2SymmMultTrace(S_, E_, trace_);
+  auto expr = SymmSymmMultTrace(S_, E_, trace_);
 
   // Check expression result
   expect_val_eq(trace_.value, trSE);
@@ -1604,7 +1604,7 @@ TEST_F(SymmMultTrace, A2D) {
   A2DSMat E__(E, Eb);
   A2DScalar trace__(0.0, sb);
 
-  auto expr = Symm2x2SymmMultTrace(S__, E__, trace__);
+  auto expr = SymmSymmMultTrace(S__, E__, trace__);
 
   // Check expression
   expect_val_eq(trace__.value, trSE);
@@ -1661,7 +1661,7 @@ TEST_F(SymmIsoConstitutive, A) {
   SMat S;
 
   // Compute
-  Symm2x2IsotropicConstitutive(mu, lam, E, S);
+  SymmIsotropicConstitutive(mu, lam, E, S);
   expect_mat_eq<2, 2, SMat>(S, S_out);
 }
 
@@ -1680,7 +1680,7 @@ TEST_F(SymmIsoConstitutive, AD) {
   // AD datatypes
   ADSMat E_(E, Eb), S_(S, Sb);
 
-  auto expr = Symm2x2IsotropicConstitutive(mu, lam, E_, S_);
+  auto expr = SymmIsotropicConstitutive(mu, lam, E_, S_);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(S, S_out);
@@ -1713,7 +1713,7 @@ TEST_F(SymmIsoConstitutive, A2D) {
   // A2D types
   A2DSMat E__(E, Eb), S__(S, Sb);
 
-  auto expr = Symm2x2IsotropicConstitutive(mu, lam, E__, S__);
+  auto expr = SymmIsotropicConstitutive(mu, lam, E__, S__);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(S, S_out);
@@ -1788,7 +1788,7 @@ TEST_F(SymmIsoEnergy, A) {
   T w;
 
   // Compute
-  Symm2x2IsotropicEnergy(mu, lam, E, w);
+  SymmIsotropicEnergy(mu, lam, E, w);
   expect_val_eq(w, w_out);
 }
 
@@ -1807,7 +1807,7 @@ TEST_F(SymmIsoEnergy, AD_E_only) {
   ADScalar w_;
 
   // Compute
-  auto expr = Symm2x2IsotropicEnergy(mu, lam, E_, w_);
+  auto expr = SymmIsotropicEnergy(mu, lam, E_, w_);
 
   // Check expression
   expect_val_eq(w_.value, w_out);
@@ -1841,7 +1841,7 @@ TEST_F(SymmIsoEnergy, AD_E_mu_lam) {
   ADScalar w_;
 
   // Compute
-  auto expr = Symm2x2IsotropicEnergy(mu_, lam_, E_, w_);
+  auto expr = SymmIsotropicEnergy(mu_, lam_, E_, w_);
 
   // Check expression
   expect_val_eq(w_.value, w_out);
@@ -1877,7 +1877,7 @@ TEST_F(SymmIsoEnergy, A2D_E_only) {
   A2DScalar w__(0.0, wb);
 
   // Compute
-  auto expr = Symm2x2IsotropicEnergy(mu, lam, E__, w__);
+  auto expr = SymmIsotropicEnergy(mu, lam, E__, w__);
 
   // Check expression
   expect_val_eq(w__.value, w_out);
@@ -1931,7 +1931,7 @@ TEST_F(SymmIsoEnergy, A2D_E_mu_lam) {
   A2DScalar w__(0.0, wb_in);
 
   // Compute
-  auto expr = Symm2x2IsotropicEnergy(mu__, lam__, E__, w__);
+  auto expr = SymmIsotropicEnergy(mu__, lam__, E__, w__);
 
   // Check expression
   expect_val_eq(w__.value, w_out);
@@ -1990,7 +1990,7 @@ TEST_F(GreenStrain, A) {
   SMat E;
 
   // Compute
-  Mat2x2GreenStrain(Ux, E);
+  MatGreenStrain(Ux, E);
   expect_mat_eq<2, 2, SMat>(E, E_out);
 }
 
@@ -2010,7 +2010,7 @@ TEST_F(GreenStrain, AD) {
   ADSMat E_(E, Eb);
 
   // Compute
-  auto expr = Mat2x2GreenStrain(Ux_, E_);
+  auto expr = MatGreenStrain(Ux_, E_);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(E, E_out);
@@ -2047,7 +2047,7 @@ TEST_F(GreenStrain, A2D) {
   A2DSMat E__(E, Eb);
 
   // Compute
-  auto expr = Mat2x2GreenStrain(Ux__, E__);
+  auto expr = MatGreenStrain(Ux__, E__);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(E, E_out);
@@ -2104,7 +2104,7 @@ TEST_F(LinearGreenStrain, A) {
   SMat E;
 
   // Compute
-  Mat2x2LinearGreenStrain(Ux, E);
+  MatLinearGreenStrain(Ux, E);
   expect_mat_eq<2, 2, SMat>(E, E_out);
 }
 
@@ -2124,7 +2124,7 @@ TEST_F(LinearGreenStrain, AD) {
   ADSMat E_(E, Eb);
 
   // Compute
-  auto expr = Mat2x2LinearGreenStrain(Ux_, E_);
+  auto expr = MatLinearGreenStrain(Ux_, E_);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(E, E_out);
@@ -2161,7 +2161,7 @@ TEST_F(LinearGreenStrain, A2D) {
   A2DSMat E__(E, Eb);
 
   // Compute
-  auto expr = Mat2x2LinearGreenStrain(Ux__, E__);
+  auto expr = MatLinearGreenStrain(Ux__, E__);
 
   // Check expression result
   expect_mat_eq<2, 2, SMat>(E, E_out);

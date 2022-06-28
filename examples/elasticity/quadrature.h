@@ -26,7 +26,7 @@ class Quad4ptQuadrature {
   }
 };
 
-class QuadBiLinearBasis {
+class QuadBiLinearBasisFunc {
  public:
   static const index_t NUM_NODES = 4;
 
@@ -68,7 +68,7 @@ class Hex8ptQuadrature {
   }
 };
 
-class HexTriLinearBasis {
+class HexTriLinearBasisFunc {
  public:
   static const index_t NUM_NODES = 8;
 
@@ -189,7 +189,7 @@ class Tetra5ptQuadrature {
   }
 };
 
-class TetraQuadraticBasis {
+class TetraQuadraticBasisFunc {
  public:
   static const index_t NUM_NODES = 10;
   static void evalBasis(const double pt[], double N[]) {

@@ -2,7 +2,7 @@
 #define A2D_ELASTICITY_3D_H
 
 #include "a2dtmp.h"
-#include "basis3d.h"
+#include "basis.h"
 #include "constitutive.h"
 #include "element.h"
 #include "functional.h"
@@ -10,15 +10,21 @@
 
 namespace A2D {
 
-/*
-  Store all the type information about the PDE in one place
-*/
-template <typename I, typename T>
-class ElasticityPDE {
+/**
+ * @brief Store all the type information about the PDE in one place
+ *
+ * @tparam spatial_dim 2 or 3
+ * @tparam I index type
+ * @tparam T data type
+ */
+template <index_t spatial_dim, typename I, typename T>
+class ElasticityPDEInfo {
  public:
-  static const index_t spatial_dim = 3;
-  static const index_t vars_per_node = 3;
-  static const index_t null_space_dim = 6;
+  static_assert(spatial_dim == 3 or spatial_dim == 2,
+                "spatial_dim must be 2 or 3");
+  static const index_t SPATIAL_DIM = spatial_dim;
+  static const index_t vars_per_node = SPATIAL_DIM;
+  static const index_t null_space_dim = SPATIAL_DIM * (SPATIAL_DIM + 1) / 2;
   static const index_t data_per_point = 2;
   static const index_t dvs_per_point = 1;
 
@@ -27,7 +33,7 @@ class ElasticityPDE {
   typedef A2D::MultiArray<I, BCsLayout> BCsArray;
 
   // Layout for the nodes
-  typedef A2D::CLayout<spatial_dim> NodeLayout;
+  typedef A2D::CLayout<SPATIAL_DIM> NodeLayout;
   typedef A2D::MultiArray<T, NodeLayout> NodeArray;
 
   // Layout for the solution
@@ -50,43 +56,59 @@ class ElasticityPDE {
 
   static void compute_null_space(NodeArray& X, NullSpaceArray& B) {
     B.zero();
-    for (I i = 0; i < B.extent(0); i++) {
-      B(i, 0, 0) = 1.0;
-      B(i, 1, 1) = 1.0;
-      B(i, 2, 2) = 1.0;
+    if (SPATIAL_DIM == 3) {
+      for (I i = 0; i < B.extent(0); i++) {
+        B(i, 0, 0) = 1.0;
+        B(i, 1, 1) = 1.0;
+        B(i, 2, 2) = 1.0;
 
-      // Rotation about the x-axis
-      B(i, 1, 3) = X(i, 2);
-      B(i, 2, 3) = -X(i, 1);
+        // Rotation about the x-axis
+        B(i, 1, 3) = X(i, 2);
+        B(i, 2, 3) = -X(i, 1);
 
-      // Rotation about the y-axis
-      B(i, 0, 4) = X(i, 2);
-      B(i, 2, 4) = -X(i, 0);
+        // Rotation about the y-axis
+        B(i, 0, 4) = X(i, 2);
+        B(i, 2, 4) = -X(i, 0);
 
-      // Rotation about the z-axis
-      B(i, 0, 5) = X(i, 1);
-      B(i, 1, 5) = -X(i, 0);
+        // Rotation about the z-axis
+        B(i, 0, 5) = X(i, 1);
+        B(i, 1, 5) = -X(i, 0);
+      }
+    } else {
+      for (I i = 0; i < B.extent(0); i++) {
+        B(i, 0, 0) = 1.0;
+        B(i, 1, 1) = 1.0;
+
+        // Rotation about the z-axis
+        B(i, 0, 2) = X(i, 1);
+        B(i, 1, 2) = -X(i, 0);
+      }
     }
   }
 };
 
-template <typename I, typename T, class Basis>
+template <typename I, typename T, class BasisOps>
 class NonlinElasticityElement3D
-    : public ElementBasis<I, T, ElasticityPDE<I, T>, Basis> {
+    : public ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                          BasisOps> {
  public:
   // Finite-element basis class
   static const index_t NUM_VARS = 3;  // Number of variables per node
   static const index_t NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
-  typedef ElementBasis<I, T, ElasticityPDE<I, T>, Basis> base;
+  typedef ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                       BasisOps>
+      base;
 
   NonlinElasticityElement3D(const index_t nelems)
-      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
+      : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                     BasisOps>(nelems) {}
 
   template <typename IdxType>
   NonlinElasticityElement3D(const index_t nelems, const IdxType conn_[])
-      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems, conn_) {}
+      : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                     BasisOps>(nelems, conn_) {}
 
   T energy() {
     auto data = this->get_quad_data();
@@ -94,7 +116,7 @@ class NonlinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    T engry = Basis::template integrate<T, NUM_VARS>(
+    T engry = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3>& Uxi0) -> T {
@@ -113,7 +135,8 @@ class NonlinElasticityElement3D
     return engry;
   }
 
-  void add_residual(typename ElasticityPDE<I, T>::SolutionArray& res) {
+  void add_residual(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                               T>::SolutionArray& res) {
     // Allocate the element residual
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
 
@@ -123,7 +146,7 @@ class NonlinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    Basis::template residuals<T, NUM_VARS>(
+    BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
@@ -151,7 +174,8 @@ class NonlinElasticityElement3D
     VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
 
-  void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {
+  void add_jacobian(
+      typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data
@@ -160,7 +184,7 @@ class NonlinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    Basis::template jacobians<T, NUM_VARS>(
+    BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
@@ -211,7 +235,8 @@ class NonlinElasticityElement3D
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
 
-  void add_adjoint_dfddata(typename ElasticityPDE<I, T>::SolutionArray& psi,
+  void add_adjoint_dfddata(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                                      T>::SolutionArray& psi,
                            typename base::QuadDataArray& dfdx) {
     // Retrieve the element data
     auto conn = this->get_conn();
@@ -225,10 +250,10 @@ class NonlinElasticityElement3D
     typename base::QuadGradLayout pxi(this->get_quad_gradient_layout());
 
     VecElementScatter(conn, psi, pe);
-    Basis::template gradient<T, NUM_VARS>(pe, pxi);
+    BasisOps::template gradient<T, NUM_VARS>(pe, pxi);
 
     // Compute the product
-    Basis::template adjoint_product<T, NUM_VARS>(
+    BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                        A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0) -> void {
@@ -270,23 +295,28 @@ class NonlinElasticityElement3D
   }
 };
 
-template <typename I, typename T, class Basis>
+template <typename I, typename T, class BasisOps>
 class LinElasticityElement3D
-    : public ElementBasis<I, T, ElasticityPDE<I, T>, Basis> {
+    : public ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                          BasisOps> {
  public:
   // Finite-element basis class
   static const index_t NUM_VARS = 3;  // Number of variables per node
   static const index_t NUM_DATA = 2;  // Data points per quadrature point
 
   // Short cut for base class name
-  typedef ElementBasis<I, T, ElasticityPDE<I, T>, Basis> base;
+  typedef ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                       BasisOps>
+      base;
 
   LinElasticityElement3D(const index_t nelems)
-      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems) {}
+      : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                     BasisOps>(nelems) {}
 
   template <typename IdxType>
   LinElasticityElement3D(const index_t nelems, const IdxType conn_[])
-      : ElementBasis<I, T, ElasticityPDE<I, T>, Basis>(nelems, conn_) {}
+      : ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                     BasisOps>(nelems, conn_) {}
 
   T energy() {
     auto data = this->get_quad_data();
@@ -294,7 +324,7 @@ class LinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    T elem_energy = Basis::template integrate<T, NUM_VARS>(
+    T elem_energy = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3> Uxi0) -> T {
@@ -313,7 +343,8 @@ class LinElasticityElement3D
     return elem_energy;
   }
 
-  void add_residual(typename ElasticityPDE<I, T>::SolutionArray& res) {
+  void add_residual(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                               T>::SolutionArray& res) {
     // Allocate the element residual
     typename base::ElemResArray elem_res(this->get_elem_res_layout());
 
@@ -323,7 +354,7 @@ class LinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    Basis::template residuals<T, NUM_VARS>(
+    BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) -> void {
@@ -351,7 +382,8 @@ class LinElasticityElement3D
     VecElementGatherAdd(this->get_conn(), elem_res, res);
   }
 
-  void add_jacobian(typename ElasticityPDE<I, T>::SparseMat& J) {
+  void add_jacobian(
+      typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data
@@ -360,7 +392,7 @@ class LinElasticityElement3D
     auto Jinv = this->get_Jinv();
     auto Uxi = this->get_quad_gradient();
 
-    Basis::template jacobians<T, NUM_VARS>(
+    BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
         [&data](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                 A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib,
@@ -411,7 +443,8 @@ class LinElasticityElement3D
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
   }
 
-  void add_adjoint_dfddata(typename ElasticityPDE<I, T>::SolutionArray& psi,
+  void add_adjoint_dfddata(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                                      T>::SolutionArray& psi,
                            typename base::QuadDataArray& dfdx) {
     // Retrieve the element data
     auto conn = this->get_conn();
@@ -425,10 +458,10 @@ class LinElasticityElement3D
     typename base::QuadGradArray pxi(this->get_quad_gradient_layout());
 
     VecElementScatter(conn, psi, pe);
-    Basis::template gradient<T, NUM_VARS>(pe, pxi);
+    BasisOps::template gradient<T, NUM_VARS>(pe, pxi);
 
     // Compute the product
-    Basis::template adjoint_product<T, NUM_VARS>(
+    BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                        A2D::Mat<T, 3, 3>& Uxi0,
@@ -471,12 +504,15 @@ class LinElasticityElement3D
   }
 };
 
-template <typename I, typename T, class Basis>
-class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
+template <typename I, typename T, class BasisOps>
+class TopoIsoConstitutive
+    : public Constitutive<I, T,
+                          ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
-  static const index_t dvs_per_point = ElasticityPDE<I, T>::dvs_per_point;
-  static const index_t nodes_per_elem = Basis::NUM_NODES;
-  static const index_t quad_pts_per_elem = Basis::quadrature::NUM_QUAD_PTS;
+  static const index_t dvs_per_point =
+      ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
+  static const index_t nodes_per_elem = BasisOps::NUM_NODES;
+  static const index_t quad_pts_per_elem = BasisOps::quadrature::NUM_QUAD_PTS;
 
   typedef A2D::CLayout<nodes_per_elem, dvs_per_point> ElemDesignLayout;
   typedef A2D::CLayout<quad_pts_per_elem, dvs_per_point> QuadDesignLayout;
@@ -485,7 +521,9 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
   typedef A2D::MultiArray<T, QuadDesignLayout> QuadDesignArray;
 
   TopoIsoConstitutive(
-      std::shared_ptr<ElementBasis<I, T, ElasticityPDE<I, T>, Basis>> element,
+      std::shared_ptr<ElementBasis<
+          I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>, BasisOps>>
+          element,
       T q, T E, T nu, T density, T design_stress)
       : element(element),
         q(q),
@@ -519,12 +557,13 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
   /*
     Set the design variables values into the element object
   */
-  void set_design_vars(typename ElasticityPDE<I, T>::DesignArray& x) {
+  void set_design_vars(
+      typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::DesignArray& x) {
     // Set the design variable values
     // x -> xe -> xq
     auto conn = element->get_conn();
     VecElementScatter(conn, x, xe);
-    Basis::template interp<dvs_per_point>(xe, xq);
+    BasisOps::template interp<dvs_per_point>(xe, xq);
 
     auto data = element->get_quad_data();
     for (I i = 0; i < data.extent(0); i++) {
@@ -539,9 +578,12 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
   /*
     Compute the derivative of the adjoint-residual product data w.r.t. x
   */
-  void add_adjoint_dfdx(typename ElasticityPDE<I, T>::SolutionArray& psi,
-                        typename ElasticityPDE<I, T>::DesignArray& dfdx) {
-    typename ElementBasis<I, T, ElasticityPDE<I, T>, Basis>::QuadDataArray
+  void add_adjoint_dfdx(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                                   T>::SolutionArray& psi,
+                        typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                                   T>::DesignArray& dfdx) {
+    typename ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                          BasisOps>::QuadDataArray
         dfddata(element->get_quad_data_layout());
 
     // Compute the product of the adjoint with the derivatives of
@@ -561,13 +603,14 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
     }
 
     ElemDesignArray dfdxe(elem_design_layout);
-    Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
+    BasisOps::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();
     VecElementGatherAdd(conn, dfdxe, dfdx);
   }
 
-  std::shared_ptr<ElementBasis<I, T, ElasticityPDE<I, T>, Basis>>
+  std::shared_ptr<ElementBasis<
+      I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>, BasisOps>>
   get_element() {
     return element;
   }
@@ -578,7 +621,9 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
 
  private:
   // Reference to the element class
-  std::shared_ptr<ElementBasis<I, T, ElasticityPDE<I, T>, Basis>> element;
+  std::shared_ptr<ElementBasis<
+      I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>, BasisOps>>
+      element;
 
   // Design variable views
   ElemDesignLayout elem_design_layout;
@@ -593,13 +638,17 @@ class TopoIsoConstitutive : public Constitutive<I, T, ElasticityPDE<I, T>> {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename I, typename T, class Basis>
-class TopoVolume : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
+template <typename I, typename T, class BasisOps>
+class TopoVolume
+    : public ElementFunctional<I, T,
+                               ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
-  static const index_t vars_per_node = ElasticityPDE<I, T>::vars_per_node;
-  static const index_t dvs_per_point = ElasticityPDE<I, T>::dvs_per_point;
+  static const index_t vars_per_node =
+      ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::vars_per_node;
+  static const index_t dvs_per_point =
+      ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
 
-  TopoVolume(std::shared_ptr<TopoIsoConstitutive<I, T, Basis>> con)
+  TopoVolume(std::shared_ptr<TopoIsoConstitutive<I, T, BasisOps>> con)
       : con(con) {}
 
   T eval_functional() {
@@ -607,51 +656,56 @@ class TopoVolume : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
     auto detJ = element->get_detJ();
     auto xq = con->get_quad_design();
 
-    T integral = Basis::template integrate<T>(
+    T integral = BasisOps::template integrate<T>(
         detJ, [&xq](index_t i, index_t j, T wdetJ) -> T {
           return xq(i, j, 0) * wdetJ;
         });
 
     return integral;
   }
-  void add_dfdx(typename ElasticityPDE<I, T>::DesignArray& dfdx) {
+  void add_dfdx(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                           T>::DesignArray& dfdx) {
     auto element = con->get_element();
     auto detJ = element->get_detJ();
     auto xq = con->get_quad_design();
 
-    typename TopoIsoConstitutive<I, T, Basis>::QuadDesignArray dfdxq(
+    typename TopoIsoConstitutive<I, T, BasisOps>::QuadDesignArray dfdxq(
         con->get_quad_design_layout());
 
-    T integral = Basis::template integrate<T>(
+    T integral = BasisOps::template integrate<T>(
         detJ, [&xq, &dfdxq](index_t i, index_t j, T wdetJ) -> T {
           dfdxq(i, j, 0) = wdetJ;
           return xq(i, j, 0) * wdetJ;
         });
 
-    typename TopoIsoConstitutive<I, T, Basis>::ElemDesignArray dfdxe(
+    typename TopoIsoConstitutive<I, T, BasisOps>::ElemDesignArray dfdxe(
         con->get_elem_design_layout());
-    Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
+    BasisOps::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();
     VecElementGatherAdd(conn, dfdxe, dfdx);
   }
 
  private:
-  std::shared_ptr<TopoIsoConstitutive<I, T, Basis>> con;
+  std::shared_ptr<TopoIsoConstitutive<I, T, BasisOps>> con;
 };
 
 /*
   Evalute the KS functional of the stress, given the constitutive class
 */
-template <typename I, typename T, class Basis>
+template <typename I, typename T, class BasisOps>
 class TopoVonMisesAggregation
-    : public ElementFunctional<I, T, ElasticityPDE<I, T>> {
+    : public ElementFunctional<I, T,
+                               ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:
-  static const int vars_per_node = ElasticityPDE<I, T>::vars_per_node;
-  static const index_t dvs_per_point = ElasticityPDE<I, T>::dvs_per_point;
+  static const int vars_per_node =
+      ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::vars_per_node;
+  static const index_t dvs_per_point =
+      ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
 
-  TopoVonMisesAggregation(std::shared_ptr<TopoIsoConstitutive<I, T, Basis>> con,
-                          T weight = 100.0)
+  TopoVonMisesAggregation(
+      std::shared_ptr<TopoIsoConstitutive<I, T, BasisOps>> con,
+      T weight = 100.0)
       : con(con), weight(weight) {
     offset = 0.0;
     integral = 1.0;
@@ -677,7 +731,7 @@ class TopoVonMisesAggregation
     T qval = con->q;
 
     // Compute the maximum value over all quadrature points
-    offset = Basis::template maximum<T, vars_per_node>(
+    offset = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&xq, qval, mu, lambda, ys](index_t i, index_t j, T wdetJ,
                                     A2D::Mat<T, 3, 3>& Jinv0,
@@ -718,7 +772,7 @@ class TopoVonMisesAggregation
     T wgt = weight;
 
     // Compute the maximum value over all quadrature points
-    integral = Basis::template maximum<T, vars_per_node>(
+    integral = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&xq, qval, mu, lambda, ys, off, wgt](index_t i, index_t j, T wdetJ,
                                               A2D::Mat<T, 3, 3>& Jinv0,
@@ -745,9 +799,11 @@ class TopoVonMisesAggregation
     return offset + std::log(integral) / weight;
   }
 
-  void add_dfdu(typename ElasticityPDE<I, T>::SolutionArray& dfdu) {
+  void add_dfdu(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                           T>::SolutionArray& dfdu) {
     auto element = con->get_element();
-    typename ElementBasis<I, T, ElasticityPDE<I, T>, Basis>::ElemResArray
+    typename ElementBasis<I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
+                          BasisOps>::ElemResArray
         elem_dfdu(element->get_elem_res_layout());
 
     auto data = element->get_quad_data();
@@ -764,7 +820,7 @@ class TopoVonMisesAggregation
     T wgt = weight;
     T intgrl = integral;
 
-    Basis::template residuals<T, vars_per_node>(
+    BasisOps::template residuals<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&xq, qval, mu, lambda, ys, off, wgt, intgrl](
             index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
@@ -809,7 +865,8 @@ class TopoVonMisesAggregation
     VecElementGatherAdd(element->get_conn(), elem_dfdu, dfdu);
   }
 
-  void add_dfdx(typename ElasticityPDE<I, T>::DesignArray& dfdx) {
+  void add_dfdx(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
+                                           T>::DesignArray& dfdx) {
     auto element = con->get_element();
     auto data = element->get_quad_data();
     auto detJ = element->get_detJ();
@@ -825,10 +882,10 @@ class TopoVonMisesAggregation
     T wgt = weight;
     T intgrl = integral;
 
-    typename TopoIsoConstitutive<I, T, Basis>::QuadDesignArray dfdxq(
+    typename TopoIsoConstitutive<I, T, BasisOps>::QuadDesignArray dfdxq(
         con->get_quad_design_layout());
 
-    Basis::template maximum<T, vars_per_node>(
+    BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
         [&dfdxq, &xq, qval, mu, lambda, ys, off, wgt, intgrl](
             index_t i, index_t j, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
@@ -857,16 +914,16 @@ class TopoVonMisesAggregation
           return wdetJ * std::exp(wgt * (vm - off));
         });
 
-    typename TopoIsoConstitutive<I, T, Basis>::ElemDesignArray dfdxe(
+    typename TopoIsoConstitutive<I, T, BasisOps>::ElemDesignArray dfdxe(
         con->get_elem_design_layout());
-    Basis::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
+    BasisOps::template interpReverseAdd<dvs_per_point>(dfdxq, dfdxe);
 
     auto conn = element->get_conn();
     VecElementGatherAdd(conn, dfdxe, dfdx);
   }
 
  private:
-  std::shared_ptr<TopoIsoConstitutive<I, T, Basis>> con;
+  std::shared_ptr<TopoIsoConstitutive<I, T, BasisOps>> con;
   T offset;    // Offset value for computing the KS function value
   T integral;  // Integral: int_{Omega} e^{weight*(vm - offset)} dOmega
 };

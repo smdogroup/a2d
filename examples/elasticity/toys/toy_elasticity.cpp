@@ -15,8 +15,8 @@ int main(int argc, char* argv[]) {
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
-  typedef Basis<3, HexTriLinearBasis, Hex8ptQuadrature> Basis;
-  typedef ElasticityPDE<I, T> PDE;
+  typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
+  typedef ElasticityPDEInfo<3, I, T> PDE;
 
   const index_t nx = 32;
   const index_t ny = 32;

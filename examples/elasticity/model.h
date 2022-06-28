@@ -22,7 +22,7 @@ namespace A2D {
   model. It is used to compute the residual, Jacobian and derivatives
   needed for adjoint-based gradient evaluation
 */
-template <typename I, typename T, class PDE>
+template <typename I, typename T, class PDEInfo>
 class FEModel {
  public:
   FEModel(const index_t nnodes, const index_t nbcs)
@@ -35,7 +35,7 @@ class FEModel {
         bcs(bcs_layout),
         X(node_layout),
         U(solution_layout) {
-    B = std::make_shared<typename PDE::NullSpaceArray>(null_space_layout);
+    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
   }
   template <typename Ttype, typename IdxType>
   FEModel(const index_t nnodes, const Ttype X_[], const index_t nbcs,
@@ -49,7 +49,7 @@ class FEModel {
         bcs(bcs_layout),
         X(node_layout),
         U(solution_layout) {
-    B = std::make_shared<typename PDE::NullSpaceArray>(null_space_layout);
+    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
       for (I j = 0; j < 3; j++) {
@@ -72,14 +72,14 @@ class FEModel {
   /*
     Add an element object to the model
   */
-  void add_element(std::shared_ptr<Element<I, T, PDE>> element) {
+  void add_element(std::shared_ptr<ElementBase<I, T, PDEInfo>> element) {
     elements.push_back(element);
   }
 
   /*
     Add a constitutive object to the model
   */
-  void add_constitutive(std::shared_ptr<Constitutive<I, T, PDE>> con) {
+  void add_constitutive(std::shared_ptr<Constitutive<I, T, PDEInfo>> con) {
     constitutive.push_back(con);
   }
 
@@ -96,36 +96,36 @@ class FEModel {
   /*
     Create a new solution vector
   */
-  std::shared_ptr<typename PDE::SolutionArray> new_solution() {
-    return std::make_shared<typename PDE::SolutionArray>(solution_layout);
+  std::shared_ptr<typename PDEInfo::SolutionArray> new_solution() {
+    return std::make_shared<typename PDEInfo::SolutionArray>(solution_layout);
   }
 
   /*
     Create a new node vector
   */
-  std::shared_ptr<typename PDE::NodeArray> new_nodes() {
-    return std::make_shared<typename PDE::NodeArray>(solution_layout);
+  std::shared_ptr<typename PDEInfo::NodeArray> new_nodes() {
+    return std::make_shared<typename PDEInfo::NodeArray>(solution_layout);
   }
 
   /*
     Get the node locations
   */
-  typename PDE::NodeArray& get_nodes() { return X; }
+  typename PDEInfo::NodeArray& get_nodes() { return X; }
 
   /*
     Get the boundary conditions
   */
-  typename PDE::BCsArray& get_bcs() { return bcs; }
+  typename PDEInfo::BCsArray& get_bcs() { return bcs; }
 
   /*
     Get the solution
   */
-  typename PDE::SolutionArray& get_solution() { return U; }
+  typename PDEInfo::SolutionArray& get_solution() { return U; }
 
   /*
     Set new node locations for each of the elements
   */
-  void set_nodes(std::shared_ptr<typename PDE::NodeArray> Xnew) {
+  void set_nodes(std::shared_ptr<typename PDEInfo::NodeArray> Xnew) {
     X.copy(*Xnew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_nodes(X);
@@ -135,7 +135,7 @@ class FEModel {
   /*
     Set the solution into the vector
   */
-  void set_solution(std::shared_ptr<typename PDE::SolutionArray> Unew) {
+  void set_solution(std::shared_ptr<typename PDEInfo::SolutionArray> Unew) {
     U.copy(*Unew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_solution(U);
@@ -145,7 +145,7 @@ class FEModel {
   /*
     Zero the dirichlet boundary conditions in the vector
   */
-  void zero_bcs(std::shared_ptr<typename PDE::SolutionArray> U0) {
+  void zero_bcs(std::shared_ptr<typename PDEInfo::SolutionArray> U0) {
     A2D::VecZeroBCRows(bcs, *U0);
   }
 
@@ -164,7 +164,7 @@ class FEModel {
   /*
     Compute the residual
   */
-  void residual(std::shared_ptr<typename PDE::SolutionArray> res) {
+  void residual(std::shared_ptr<typename PDEInfo::SolutionArray> res) {
     res->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_residual(*res);
@@ -175,7 +175,7 @@ class FEModel {
   /*
     Compute the Jacobian matrix
   */
-  void jacobian(std::shared_ptr<typename PDE::SparseMat> jac) {
+  void jacobian(std::shared_ptr<typename PDEInfo::SparseMat> jac) {
     jac->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_jacobian(*jac);
@@ -186,7 +186,7 @@ class FEModel {
   /*
     Set the design variables
   */
-  void set_design_vars(std::shared_ptr<typename PDE::DesignArray> x) {
+  void set_design_vars(std::shared_ptr<typename PDEInfo::DesignArray> x) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
       (*it)->set_design_vars(*x);
     }
@@ -195,8 +195,8 @@ class FEModel {
   /*
     Add the derivative of the adjoint-residual product
   */
-  void add_adjoint_dfdx(std::shared_ptr<typename PDE::SolutionArray> psi,
-                        std::shared_ptr<typename PDE::DesignArray> dfdx) {
+  void add_adjoint_dfdx(std::shared_ptr<typename PDEInfo::SolutionArray> psi,
+                        std::shared_ptr<typename PDEInfo::DesignArray> dfdx) {
     for (auto it = constitutive.begin(); it != constitutive.end(); it++) {
       (*it)->add_adjoint_dfdx(*psi, *dfdx);
     }
@@ -205,40 +205,41 @@ class FEModel {
   /*
     Create a new matrix
   */
-  std::shared_ptr<typename PDE::SparseMat> new_matrix() {
+  std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
     std::set<std::pair<I, I>> node_set;
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
     }
-    return std::shared_ptr<typename PDE::SparseMat>(
-        A2D::BSRMatFromNodeSet<I, T, PDE::vars_per_node>(nnodes, node_set));
+    return std::shared_ptr<typename PDEInfo::SparseMat>(
+        A2D::BSRMatFromNodeSet<I, T, PDEInfo::vars_per_node>(nnodes, node_set));
   }
 
   // With a matrix, create a preconditioner. Note that the entries
   // in the matrix must be filled at this point, e.g. after a call to
   // add_jacobian
-  std::shared_ptr<typename PDE::SparseAmg> new_amg(
+  std::shared_ptr<typename PDEInfo::SparseAmg> new_amg(
       int num_levels, double omega,
-      std::shared_ptr<typename PDE::SparseMat> mat, bool print_info = false) {
-    PDE::compute_null_space(X, *B);
+      std::shared_ptr<typename PDEInfo::SparseMat> mat,
+      bool print_info = false) {
+    PDEInfo::compute_null_space(X, *B);
     A2D::VecZeroBCRows(bcs, *B);
-    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, mat, B,
-                                                     print_info);
+    return std::make_shared<typename PDEInfo::SparseAmg>(num_levels, omega, mat,
+                                                         B, print_info);
   }
 
  private:
-  std::list<std::shared_ptr<Element<I, T, PDE>>> elements;
-  std::list<std::shared_ptr<Constitutive<I, T, PDE>>> constitutive;
+  std::list<std::shared_ptr<ElementBase<I, T, PDEInfo>>> elements;
+  std::list<std::shared_ptr<Constitutive<I, T, PDEInfo>>> constitutive;
 
-  typename PDE::BCsLayout bcs_layout;
-  typename PDE::NodeLayout node_layout;
-  typename PDE::SolutionLayout solution_layout;
-  typename PDE::NullSpaceLayout null_space_layout;
+  typename PDEInfo::BCsLayout bcs_layout;
+  typename PDEInfo::NodeLayout node_layout;
+  typename PDEInfo::SolutionLayout solution_layout;
+  typename PDEInfo::NullSpaceLayout null_space_layout;
 
-  typename PDE::BCsArray bcs;
-  typename PDE::NodeArray X;
-  typename PDE::SolutionArray U;
-  std::shared_ptr<typename PDE::NullSpaceArray> B;
+  typename PDEInfo::BCsArray bcs;
+  typename PDEInfo::NodeArray X;
+  typename PDEInfo::SolutionArray U;
+  std::shared_ptr<typename PDEInfo::NullSpaceArray> B;
 };
 
 }  // namespace A2D

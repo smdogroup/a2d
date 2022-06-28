@@ -7,39 +7,51 @@
 
 namespace A2D {
 
-/*
-  Element base class.
-
-  This defines an element that is compatible with the given PDE. You can
-  set the node locations into the element, add the non-zero-pattern of the
-  Jacobian matrix via the add_node_set as well as adding the residual and
-  Jacobian contributions
-*/
-template <typename I, typename T, class PDE>
-class Element {
+/**
+ * @brief Element base class.
+ *
+ * This defines an element that is compatible with the given PDEInfo. You can
+ * set the node locations into the element, add the non-zero-pattern of the
+ * Jacobian matrix via the add_node_set as well as adding the residual and
+ * Jacobian contributions
+ *
+ * @tparam I index type
+ * @tparam T data type
+ * @tparam PDEInfo a class that stores type information for problem's PDE
+ */
+template <typename I, typename T, class PDEInfo>
+class ElementBase {
  public:
-  virtual ~Element() {}
-  virtual void set_nodes(typename PDE::NodeArray& X) = 0;
+  virtual ~ElementBase() {}
+  virtual void set_nodes(typename PDEInfo::NodeArray& X) = 0;
   virtual void add_node_set(std::set<std::pair<I, I>>& node_set) = 0;
-  virtual void set_solution(typename PDE::SolutionArray& U) = 0;
+  virtual void set_solution(typename PDEInfo::SolutionArray& U) = 0;
   virtual T energy() { return T(0.0); }
-  virtual void add_residual(typename PDE::SolutionArray& res) = 0;
-  virtual void add_jacobian(typename PDE::SparseMat& jac) = 0;
-  virtual void add_adjoint_dfdnodes(typename PDE::SolutionArray& psi,
-                                    typename PDE::NodeArray& dfdx) {}
+  virtual void add_residual(typename PDEInfo::SolutionArray& res) = 0;
+  virtual void add_jacobian(typename PDEInfo::SparseMat& jac) = 0;
+  virtual void add_adjoint_dfdnodes(typename PDEInfo::SolutionArray& psi,
+                                    typename PDEInfo::NodeArray& dfdx) {}
 };
 
-/*
-  A partial implementation of the element class with a prescribed basis function
-*/
-template <typename I, typename T, class PDE, class Basis>
-class ElementBasis : public Element<I, T, PDE> {
+/**
+ * @brief A partial implementation of the element class with a prescribed basis
+ *        function
+ *
+ * @tparam I index type
+ * @tparam T data type
+ * @tparam PDEInfo a PDEInfo class that stores type information
+ * @tparam BasisOps the collection of basis operations
+ */
+template <typename I, typename T, class PDEInfo, class BasisOps>
+class ElementBasis : public ElementBase<I, T, PDEInfo> {
  public:
-  static const index_t spatial_dim = PDE::spatial_dim;
-  static const index_t vars_per_node = PDE::vars_per_node;
-  static const index_t data_per_point = PDE::data_per_point;
-  static const index_t nodes_per_elem = Basis::NUM_NODES;
-  static const index_t quad_pts_per_elem = Basis::quadrature::NUM_QUAD_PTS;
+  static_assert(PDEInfo::SPATIAL_DIM == BasisOps::SPATIAL_DIM,
+                "Check consistency");
+  static const index_t spatial_dim = PDEInfo::SPATIAL_DIM;
+  static const index_t vars_per_node = PDEInfo::vars_per_node;
+  static const index_t data_per_point = PDEInfo::data_per_point;
+  static const index_t nodes_per_elem = BasisOps::NUM_NODES;
+  static const index_t quad_pts_per_elem = BasisOps::quadrature::NUM_QUAD_PTS;
 
   // Connectivity layout
   typedef A2D::CLayout<nodes_per_elem> ConnLayout;
@@ -160,24 +172,24 @@ class ElementBasis : public Element<I, T, PDE> {
   }
 
   // Set the nodes from the array
-  void set_nodes(typename PDE::NodeArray& X) {
+  void set_nodes(typename PDEInfo::NodeArray& X) {
     VecElementScatter(conn, X, Xe);
-    Basis::template interp<spatial_dim>(Xe, Xq);
-    Basis::template compute_jtrans<T>(Xe, detJ, Jinv);
+    BasisOps::template interp<spatial_dim>(Xe, Xq);
+    BasisOps::template compute_jtrans<T>(Xe, detJ, Jinv);
   }
 
   // Set the solution
-  void set_solution(typename PDE::SolutionArray& U) {
+  void set_solution(typename PDEInfo::SolutionArray& U) {
     VecElementScatter(conn, U, Ue);
-    Basis::template interp<vars_per_node>(Ue, Uq);
-    Basis::template gradient<T, vars_per_node>(Ue, Uxi);
+    BasisOps::template interp<vars_per_node>(Ue, Uq);
+    BasisOps::template gradient<T, vars_per_node>(Ue, Uxi);
   }
 
   // Pure virtual member functions that need an override
-  // virtual void add_residual(typename PDE::SolutionArray& res) = 0;
-  // virtual void add_jacobian(typename PDE::SparseMat& jac) = 0;
+  // virtual void add_residual(typename PDEInfo::SolutionArray& res) = 0;
+  // virtual void add_jacobian(typename PDEInfo::SparseMat& jac) = 0;
 
-  virtual void add_adjoint_dfddata(typename PDE::SolutionArray& psi,
+  virtual void add_adjoint_dfddata(typename PDEInfo::SolutionArray& psi,
                                    QuadDataArray& dfdx) {}
 
   // Expose the underlying element data

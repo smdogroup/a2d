@@ -1,5 +1,5 @@
-#ifndef BRICK_BASIS_3D_H
-#define BRICK_BASIS_3D_H
+#ifndef A2D_BASIS_H
+#define A2D_BASIS_H
 
 #include <cstddef>
 
@@ -11,8 +11,16 @@
 
 namespace A2D {
 
+/**
+ * @brief A collection of basis operations.
+ *
+ * @tparam spatial_dim 2 or 3
+ * @tparam BasisFunc basis function class that defines N and Nx evaluation
+ *                   given quadrature
+ * @tparam Quadrature quadrature class that defines the quadrature scheme
+ */
 template <index_t spatial_dim, class BasisFunc, class Quadrature>
-class Basis {
+class BasisOps {
  public:
   static_assert(spatial_dim == 3 or spatial_dim == 2,
                 "spatial_dim must be 2 or 3");
@@ -694,4 +702,4 @@ class Basis {
 
 }  // namespace A2D
 
-#endif  // BRICK_BASIS_3D_H
+#endif  // A2D_BASIS_H

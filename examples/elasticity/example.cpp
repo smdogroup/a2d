@@ -11,24 +11,32 @@ namespace py = pybind11;
 
 using namespace A2D;
 
+// Define spatial dim
+static const index_t SPATIAL_DIM = 3;
+
 // Define the types that we'll use
 typedef A2D::index_t Itype;
 typedef double Ttype;
 
-typedef Basis<3, HexTriLinearBasis, Hex8ptQuadrature> Basis_C3D8;
-typedef Basis<3, TetraQuadraticBasis, Tetra5ptQuadrature> Basis_C3D10;
+typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis_C3D8;
+typedef BasisOps<3, TetraQuadraticBasisFunc, Tetra5ptQuadrature> Basis_C3D10;
 
-typedef Element<Itype, Ttype, ElasticityPDE<Itype, Ttype>> Elasticity_Element;
+typedef ElementBase<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+    Elasticity_Element;
 typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D8> Elasticity_C3D8;
 typedef LinElasticityElement3D<Itype, Ttype, Basis_C3D10> Elasticity_C3D10;
 
-typedef FEModel<Itype, Ttype, ElasticityPDE<Itype, Ttype>> Elasticity_Model;
-typedef typename ElasticityPDE<Itype, Ttype>::SparseAmg Elasticity_Amg;
-typedef typename ElasticityPDE<Itype, Ttype>::SparseMat Elasticity_Mat;
+typedef FEModel<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+    Elasticity_Model;
+typedef typename ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseAmg
+    Elasticity_Amg;
+typedef typename ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseMat
+    Elasticity_Mat;
 
-typedef Functional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+typedef Functional<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Functional;
-typedef ElementFunctional<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+typedef ElementFunctional<Itype, Ttype,
+                          ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_ElementFunctional;
 
 typedef TopoVolume<Itype, Ttype, Basis_C3D8> TopoVolume_C3D8;
@@ -39,21 +47,25 @@ typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D8>
 typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D10>
     TopoVonMisesAggregation_C3D10;
 
-typedef Constitutive<Itype, Ttype, ElasticityPDE<Itype, Ttype>>
+typedef Constitutive<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Constitutive;
 typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D8> TopoIsoConstitutive_C3D8;
 typedef TopoIsoConstitutive<Itype, Ttype, Basis_C3D10>
     TopoIsoConstitutive_C3D10;
 
-typedef Element<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> Helmholtz_Element;
+typedef ElementBase<Itype, Ttype, HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+    Helmholtz_Element;
 typedef HelmholtzElement3D<Itype, Ttype, Basis_C3D8> Helmholtz_C3D8;
 typedef HelmholtzElement3D<Itype, Ttype, Basis_C3D10> Helmholtz_C3D10;
 
-typedef FEModel<Itype, Ttype, HelmholtzPDE<Itype, Ttype>> Helmholtz_Model;
-typedef typename HelmholtzPDE<Itype, Ttype>::SparseAmg Helmholtz_Amg;
-typedef typename HelmholtzPDE<Itype, Ttype>::SparseMat Helmholtz_Mat;
+typedef FEModel<Itype, Ttype, HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>>
+    Helmholtz_Model;
+typedef typename HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseAmg
+    Helmholtz_Amg;
+typedef typename HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>::SparseMat
+    Helmholtz_Mat;
 
-typedef Constitutive<Itype, Ttype, HelmholtzPDE<Itype, Ttype>>
+typedef Constitutive<Itype, Ttype, HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Helmholtz_Constitutive;
 typedef HelmholtzConstitutive<Itype, Ttype, Basis_C3D8>
     HelmholtzConstitutive_C3D8;
@@ -197,7 +209,8 @@ PYBIND11_MODULE(example, m) {
   // Elasticity ----------------------------------------------------------
 
   // Declare the array types
-  declare_array<typename ElasticityPDE<Itype, Ttype>::SolutionArray>(
+  declare_array<
+      typename ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>::SolutionArray>(
       m, "Elasticity_Model::SolutionArray");
 
   declare_3dmodel<Elasticity_Model>(m, "Elasticity_Model");
@@ -262,7 +275,8 @@ PYBIND11_MODULE(example, m) {
   // Helmholtz ----------------------------------------------------------
 
   // Declare the array types
-  declare_array<typename HelmholtzPDE<Itype, Ttype>::SolutionArray>(
+  declare_array<
+      typename HelmholtzPDEInfo<SPATIAL_DIM, Itype, Ttype>::SolutionArray>(
       m, "Helmholtz_Model::SolutionArray");
 
   declare_3dmodel<Helmholtz_Model>(m, "Helmholtz_Model");

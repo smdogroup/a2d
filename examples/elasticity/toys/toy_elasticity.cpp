@@ -5,8 +5,9 @@
 
 #include "a2dprofiler.h"
 #include "a2dtmp3d.h"
-#include "elasticity3d.h"
-#include "helmholtz3d.h"
+#include "a2dvtk.h"
+#include "elasticity.h"
+#include "helmholtz.h"
 #include "model.h"
 
 using namespace A2D;
@@ -125,7 +126,8 @@ int main(int argc, char* argv[]) {
   model->zero_bcs(solution);
 
   residual->zero();
-  BSRMatVecMult(*J, *solution, *residual);
+  // BSRMatVecMult(*J, *solution, *residual);
+  (*residual)(nx, 1) = -1e2;
   model->zero_bcs(residual);
 
   // Compute the solution
@@ -192,6 +194,14 @@ int main(int argc, char* argv[]) {
             << ans.real() << std::endl;
   std::cout << "Relative error:      " << std::setw(20) << std::setprecision(16)
             << (ans.real() - fd.real()) / ans.real() << std::endl;
+
+  ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(conn,
+                                                                         X);
+  vtk.write_mesh();
+  vtk.write_sol("ux", *solution, 0);
+  vtk.write_sol("uy", *solution, 1);
+  vtk.write_sol("adjoint_x", *adjoint, 0);
+  vtk.write_sol("adjoint_y", *adjoint, 1);
 
   return (0);
 }

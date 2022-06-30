@@ -1,5 +1,5 @@
-#ifndef A2D_ELASTICITY_3D_H
-#define A2D_ELASTICITY_3D_H
+#ifndef A2D_ELASTICITY_H
+#define A2D_ELASTICITY_H
 
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"
@@ -955,4 +955,4 @@ class TopoVonMisesAggregation
 
 }  // namespace A2D
 
-#endif  // A2D_ELASTICITY_3D_H
+#endif  // A2D_ELASTICITY_H

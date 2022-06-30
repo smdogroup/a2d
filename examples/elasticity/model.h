@@ -25,6 +25,7 @@ namespace A2D {
 template <typename I, typename T, class PDEInfo>
 class FEModel {
  public:
+  static const index_t SPATIAL_DIM = PDEInfo::SPATIAL_DIM;
   FEModel(const index_t nnodes, const index_t nbcs)
       : nnodes(nnodes),
         nbcs(nbcs),
@@ -52,8 +53,8 @@ class FEModel {
     B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
-      for (I j = 0; j < 3; j++) {
-        X(i, j) = X_[3 * i + j];
+      for (I j = 0; j < SPATIAL_DIM; j++) {
+        X(i, j) = X_[SPATIAL_DIM * i + j];
       }
     }
 

@@ -164,7 +164,8 @@ class Tensor {
   Basic 4-th order symmetric tensor.
 
   This class stores a symmetric tensor found by taking the second order
-  derivatives of a non-symmetric matrix
+  derivatives of a scalar function f with respect to a non-symmetric M-by-N
+  matrix:
 
   A(i, j, k, l) = d^2 f/dX(i, j) dX(k, l)
 

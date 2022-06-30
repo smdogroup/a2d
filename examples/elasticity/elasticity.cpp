@@ -1,3 +1,5 @@
+#include "elasticity.h"
+
 #include <complex>
 #include <cstdint>
 #include <iomanip>
@@ -5,8 +7,7 @@
 
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"
-#include "elasticity3d.h"
-#include "helmholtz3d.h"
+#include "helmholtz.h"
 #include "model.h"
 #include "mpi.h"
 

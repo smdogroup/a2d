@@ -43,6 +43,7 @@ find_package(pybind11 REQUIRED)
 
 # Build extension
 pybind11_add_module(example example.cpp)
+pybind11_add_module(example2d example2d.cpp)
 
 # Build unit tests
 if (BUILD_TESTS)

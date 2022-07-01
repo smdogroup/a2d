@@ -10,7 +10,7 @@ except:
 import os
 import sys
 
-sys.path.append("build")
+sys.path.append("../build")
 import example2d as example
 
 
@@ -30,6 +30,10 @@ class TopOpt(ParOpt.Problem):
         self.u = np.array(self.u_ref, copy=False)
         self.f_ref = self.model.new_solution()
         self.f = np.array(self.f_ref, copy=False)
+        self.res_ref = self.model.new_solution()
+        self.res = np.array(self.res_ref, copy=False)
+        self.p_ref = self.model.new_solution()
+        self.p = np.array(self.p_ref, copy=False)
 
         # Create the buffer objects for the solution
         self.x_ref = self.fltr.new_solution()
@@ -64,6 +68,39 @@ class TopOpt(ParOpt.Problem):
 
         return
 
+    def solve_nonlinear(self, rtol=1e-10, atol=1e-30, newton_maxit=1):
+        """Solve the nonlinear problem for u"""
+        # Initialize solution
+        self.u[:] = 0.0
+
+        for i in range(newton_maxit):
+            # set solution, update K and res
+            self.model.set_solution(self.u_ref)
+            self.model.jacobian(self.K)
+            self.model.residual(self.res_ref)
+            self.res[:] -= self.f[:]
+            self.res[:] *= -1.0
+
+            # Set up solver and solve: K(u) p = res
+            amg = self.model.new_amg(3, 1.333, self.K, True)
+            amg.cg(self.res_ref, self.p_ref, 5, 100)
+
+            # update the solution: u = u + p
+            self.u[:] += 1.0 * self.p
+
+            u_norm = np.linalg.norm(self.u)
+            p_norm = np.linalg.norm(self.p)
+            res_norm = np.linalg.norm(self.res)
+
+            print(f"|u|   = {u_norm:15.5e}")
+            print(f"|p|   = {p_norm:15.5e}")
+            print(f"|res| = {res_norm:15.5e}")
+
+            if res_norm < rtol * u_norm or res_norm < atol:
+                break
+
+        return
+
     def getVarsAndBounds(self, x, lb, ub):
         """Get the variable values and bounds"""
         lb[:] = 1e-3
@@ -92,12 +129,8 @@ class TopOpt(ParOpt.Problem):
         # Set the design variable values
         self.model.set_design_vars(self.rho_ref)
 
-        # Set up AMG for the structural problem
-        self.model.jacobian(self.K)
-        omega = 4.0 / 3.0
-        print_info = True
-        amg = self.model.new_amg(self.num_levels, omega, self.K, print_info)
-        amg.cg(self.f_ref, self.u_ref, monitor, max_iters)
+        # Solve the nonlinear structural problem
+        self.solve_nonlinear()
 
         # Set the new solution
         self.model.set_solution(self.u_ref)
@@ -211,9 +244,13 @@ def X_conn_bcs_forces_2d():
         bcs[index, 1] = bcs_val
         index += 1
 
+    num_loaded = 0
+    total_force = 10.0
     for j in range(ny + 1):
         if j < 0.2 * ny:
-            forces[nodes[-1, j], 1] = -1e3
+            forces[nodes[-1, j], 1] = -1.0
+            num_loaded += 1
+    forces[:] *= total_force / num_loaded
 
     return X, conn, bcs, forces, nnodes
 
@@ -328,7 +365,7 @@ if __name__ == "__main__":
 
     problem.checkGradients()
 
-    options = {"algorithm": "mma", "mma_max_iterations": 1000}
+    options = {"algorithm": "mma", "mma_max_iterations": 200}
 
     # Set up the optimizer
     opt = ParOpt.Optimizer(problem, options)

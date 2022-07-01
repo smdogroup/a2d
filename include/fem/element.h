@@ -2,8 +2,8 @@
 #define A2D_ELEMENT_H
 
 #include "multiarray.h"
-#include "sparse_amg.h"
-#include "sparse_matrix.h"
+#include "sparse/sparse_amg.h"
+#include "sparse/sparse_matrix.h"
 
 namespace A2D {
 

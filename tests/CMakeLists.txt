@@ -1,26 +1,14 @@
-# Add executables
-add_executable(
-  test_matcore
-  test_matcore.cpp
-)
-
-add_executable(
-  test_matcore2d
-  test_matcore2d.cpp
-)
-
-add_executable(
-  test_tmp3d
-  test_tmp3d.cpp
-)
-
-add_executable(
-  test_tmp2d
-  test_tmp2d.cpp
-)
+# Add tragets
+add_executable(test_matcore3d test_matcore3d.cpp)
+add_executable(test_matcore2d test_matcore2d.cpp)
+add_executable(test_tmp3d test_tmp3d.cpp)
+add_executable(test_tmp2d test_tmp2d.cpp)
 
 # Set include dirs for the test executables
-target_include_directories(test_matcore PRIVATE ${CMAKE_SOURCE_DIR})
-target_include_directories(test_matcore2d PRIVATE ${CMAKE_SOURCE_DIR})
-target_include_directories(test_tmp3d PRIVATE ${CMAKE_SOURCE_DIR})
-target_include_directories(test_tmp2d PRIVATE ${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Link to the default main from Google Test
+target_link_libraries(test_matcore3d gtest_main)
+target_link_libraries(test_matcore2d gtest_main)
+target_link_libraries(test_tmp3d gtest_main)
+target_link_libraries(test_tmp2d gtest_main)

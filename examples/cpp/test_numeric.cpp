@@ -4,7 +4,7 @@
 #include "a2dtmp3d.h"
 #include "a2dtypes.h"
 #include "block_numeric.h"
-#include "sparse_matrix.h"
+#include "sparse/sparse_matrix.h"
 
 template <typename T>
 void reisdual(T mu, T lambda, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,

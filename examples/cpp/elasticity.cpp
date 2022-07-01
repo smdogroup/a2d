@@ -1,4 +1,4 @@
-#include "elasticity.h"
+#include "fem/elasticity.h"
 
 #include <complex>
 #include <cstdint>
@@ -7,8 +7,8 @@
 
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"
-#include "helmholtz.h"
-#include "model.h"
+#include "fem/helmholtz.h"
+#include "fem/model.h"
 #include "mpi.h"
 
 using namespace A2D;

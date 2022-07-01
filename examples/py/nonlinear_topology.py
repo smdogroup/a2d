@@ -1,17 +1,10 @@
 import numpy as np
 from mpi4py import MPI
 from paropt import ParOpt
-
-try:
-    from utils import to_vtk
-except:
-    to_vtk = None
-
 import os
-import sys
 
-sys.path.append("../build")
-import example2d as example
+from a2d import to_vtk
+from a2d import pya2d_2d as pya2d
 
 
 class TopOpt(ParOpt.Problem):
@@ -324,36 +317,36 @@ if __name__ == "__main__":
     design_stress = 1e3
 
     # Get the model data
-    model = example.Elasticity_Model(X, bcs)
+    model = pya2d.Elasticity_Model(X, bcs)
 
     # Add the element to the model
-    elem = example.Elasticity_CPS4(conn)
+    elem = pya2d.Elasticity_CPS4(conn)
     model.add_element(elem)
 
     # Add the constitutive object to the model
-    con = example.TopoIsoConstitutive_CPS4(elem, q, E, nu, density, design_stress)
+    con = pya2d.TopoIsoConstitutive_CPS4(elem, q, E, nu, density, design_stress)
     model.add_constitutive(con)
 
     # Initialize the model
     model.init()
 
     # Set up the volume functional
-    volume = example.Elasticity_Functional()
-    volume.add_functional(example.TopoVolume_CPS4(con))
+    volume = pya2d.Elasticity_Functional()
+    volume.add_functional(pya2d.TopoVolume_CPS4(con))
 
     # Get the model data
-    fltr = example.Helmholtz_Model(X)
+    fltr = pya2d.Helmholtz_Model(X)
 
     # Set up the element
     length_scale = 0.05
     r0 = length_scale / (2.0 * np.sqrt(3.0))
-    helmholtz_elem = example.Helmholtz_CPS4(conn, r0)
+    helmholtz_elem = pya2d.Helmholtz_CPS4(conn, r0)
 
     # Add the model to the element
     fltr.add_element(helmholtz_elem)
 
     # Set the constitutive model
-    helmholtz_con = example.HelmholtzConstitutive_CPS4(helmholtz_elem)
+    helmholtz_con = pya2d.HelmholtzConstitutive_CPS4(helmholtz_elem)
     fltr.add_constitutive(helmholtz_con)
 
     # Initialize the model

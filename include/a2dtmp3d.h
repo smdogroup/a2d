@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include "a2dmatcore.h"
+#include "a2dmatcore3d.h"
 #include "a2dobjs.h"
 #include "a2dtypes.h"
 

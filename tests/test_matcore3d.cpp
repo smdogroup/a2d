@@ -2,7 +2,7 @@
   This is a set of unit tests for a2dmatcore.h using Google Test framework.
  */
 
-#include "a2dmatcore.h"
+#include "a2dmatcore3d.h"
 #include "a2dobjs.h"
 #include "test_commons.h"
 

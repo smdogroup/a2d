@@ -1,16 +1,9 @@
 import numpy as np
 from mpi4py import MPI
 import argparse
-import example
 from paropt import ParOpt
 import os
-
-try:
-    from utils import to_vtk
-    from parse_inp import InpParser
-except:
-    to_vtk = None
-    InpParser = None
+from a2d import pya2d, to_vtk, InpParser
 
 
 class TopOpt(ParOpt.Problem):
@@ -50,60 +43,60 @@ class TopOpt(ParOpt.Problem):
         super(TopOpt, self).__init__(MPI.COMM_SELF, nvars, ncon)
 
         # Create the model for solving the elasticity problem
-        self.model = example.Elasticity_Model(X, bcs)
+        self.model = pya2d.Elasticity_Model(X, bcs)
 
         # Set up the volume functional
-        self.vol = example.Elasticity_Functional()
+        self.vol = pya2d.Elasticity_Functional()
 
         # Add the element to the model
         if "C3D8" in conn:
-            element = example.Elasticity_C3D8(conn["C3D8"].astype(np.int32))
+            element = pya2d.Elasticity_C3D8(conn["C3D8"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D8(
+            con = pya2d.TopoIsoConstitutive_C3D8(
                 element, q, E, nu, density, design_stress
             )
             self.model.add_constitutive(con)
-            self.vol.add_functional(example.TopoVolume_C3D8(con))
+            self.vol.add_functional(pya2d.TopoVolume_C3D8(con))
         elif "C3D8R" in conn:
-            element = example.Elasticity_C3D8(conn["C3D8R"].astype(np.int32))
+            element = pya2d.Elasticity_C3D8(conn["C3D8R"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D8(
+            con = pya2d.TopoIsoConstitutive_C3D8(
                 element, q, E, nu, density, design_stress
             )
             self.model.add_constitutive(con)
-            self.vol.add_functional(example.TopoVolume_C3D8(con))
+            self.vol.add_functional(pya2d.TopoVolume_C3D8(con))
         elif "C3D10" in conn:
-            element = example.Elasticity_C3D10(conn["C3D10"].astype(np.int32))
+            element = pya2d.Elasticity_C3D10(conn["C3D10"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D10(
+            con = pya2d.TopoIsoConstitutive_C3D10(
                 element, q, E, nu, density, design_stress
             )
             self.model.add_constitutive(con)
-            self.vol.add_functional(example.TopoVolume_C3D10(con))
+            self.vol.add_functional(pya2d.TopoVolume_C3D10(con))
 
         # Initialize the model
         self.model.init()
 
         # Create the filter model
-        self.fltr = example.Helmholtz_Model(X)
+        self.fltr = pya2d.Helmholtz_Model(X)
 
         # Set up the element
         r0 = filter_length / (2.0 * np.sqrt(3.0))
 
         if "C3D8" in conn:
-            element = example.Helmholtz_C3D8(conn["C3D8"].astype(np.int32), r0)
+            element = pya2d.Helmholtz_C3D8(conn["C3D8"].astype(np.int32), r0)
             self.fltr.add_element(element)
-            con = example.HelmholtzConstitutive_C3D8(element)
+            con = pya2d.HelmholtzConstitutive_C3D8(element)
             self.fltr.add_constitutive(con)
         elif "C3D8R" in conn:
-            element = example.Helmholtz_C3D8(conn["C3D8R"].astype(np.int32), r0)
+            element = pya2d.Helmholtz_C3D8(conn["C3D8R"].astype(np.int32), r0)
             self.fltr.add_element(element)
-            con = example.HelmholtzConstitutive_C3D8(element)
+            con = pya2d.HelmholtzConstitutive_C3D8(element)
             self.fltr.add_constitutive(con)
         elif "C3D10" in conn:
-            element = example.Helmholtz_C3D10(conn["C3D10"].astype(np.int32), r0)
+            element = pya2d.Helmholtz_C3D10(conn["C3D10"].astype(np.int32), r0)
             self.fltr.add_element(element)
-            con = example.HelmholtzConstitutive_C310(element)
+            con = pya2d.HelmholtzConstitutive_C310(element)
             self.fltr.add_constitutive(con)
 
         # Initialize the model

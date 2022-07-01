@@ -6,8 +6,9 @@ project(A2D VERSION 0.1)
 
 # Set options
 option(BUILD_TESTS "Compile the unit test executables" OFF)
-option(BUILD_TOYS "Compile the toy executables" ON)
-option(DEBUG "a debug build" OFF)
+option(BUILD_EXAMPLES "Compile the toy executables" ON)
+option(BUILD_EXTENION "Compile the pybind11 extension" ON)
+option(DEBUG "a debug build without compiler optimization" OFF)
 
 # Specify c++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -30,25 +31,12 @@ include_directories(${MPI_INCLUDE_PATH})
 # Require OpenMP
 find_package(OpenMP REQUIRED)
 
-# Build executables
-add_executable(test_grad_hess test_grad_hess.cpp)
-target_link_libraries(test_grad_hess PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
-
-add_executable(test_numeric test_numeric.cpp)
-target_link_libraries(test_numeric PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
-
-add_executable(elasticity elasticity.cpp)
-target_link_libraries(elasticity PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
-
-# Require pybind11 to build the extension
-execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-find_package(pybind11 REQUIRED)
-
-# Build extension
-pybind11_add_module(example example.cpp)
-pybind11_add_module(example2d example2d.cpp)
-target_link_libraries(example PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
-target_link_libraries(example2d PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
+# Build pybind11 extension
+if (BUILD_EXTENION)
+  execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+  find_package(pybind11 REQUIRED)
+  add_subdirectory(pybind11)
+endif()
 
 # Build unit tests
 if (BUILD_TESTS)
@@ -63,29 +51,8 @@ if (BUILD_TESTS)
 
   # Declare tests
   add_subdirectory(tests)
-
-  # Link to the default main from Google Test
-  target_link_libraries(
-    test_matcore
-    gtest_main
-  )
-
-  target_link_libraries(
-    test_matcore2d
-    gtest_main
-  )
-
-  target_link_libraries(
-    test_tmp3d
-    gtest_main
-  )
-
-  target_link_libraries(
-    test_tmp2d
-    gtest_main
-  )
 endif()
 
-if (BUILD_TOYS)
-  add_subdirectory(toys)
+if (BUILD_EXAMPLES)
+  add_subdirectory(examples/cpp)
 endif()

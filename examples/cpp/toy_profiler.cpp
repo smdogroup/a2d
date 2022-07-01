@@ -1,7 +1,7 @@
 #include <chrono>
 #include <thread>
 
-#include "a2dprofiler.h"
+#include "utils/a2dprofiler.h"
 
 int main() {
   {

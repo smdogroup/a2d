@@ -1,10 +1,10 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include "elasticity.h"
-#include "functional.h"
-#include "helmholtz.h"
-#include "model.h"
+#include "fem/elasticity.h"
+#include "fem/functional.h"
+#include "fem/helmholtz.h"
+#include "fem/model.h"
 #include "multiarray.h"
 
 namespace py = pybind11;
@@ -207,7 +207,7 @@ void declare_amg(py::module& m, const char typestr[]) {
            py::arg("iters_per_reset") = 100);
 }
 
-PYBIND11_MODULE(example, m) {
+PYBIND11_MODULE(pya2d, m) {
   m.doc() = "Wrapping for the a2d model class";
 
   // Elasticity ----------------------------------------------------------

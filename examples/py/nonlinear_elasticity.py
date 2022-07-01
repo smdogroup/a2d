@@ -1,15 +1,8 @@
 import os
 import sys
 import numpy as np
-
-try:
-    from utils import to_vtk
-except:
-    to_vtk = None
-
-
-sys.path.append("../build")
-import example2d as example
+from a2d import to_vtk
+from a2d import pya2d_2d as pya2d
 
 
 class Problem:
@@ -26,10 +19,10 @@ class Problem:
         Set up finite element model
         """
         # Create model
-        model = example.Elasticity_Model(self.X, self.bcs)
+        model = pya2d.Elasticity_Model(self.X, self.bcs)
 
         # Create element and add to model
-        elem = example.Elasticity_CPS4(self.conn)
+        elem = pya2d.Elasticity_CPS4(self.conn)
         model.add_element(elem)
 
         # Create constitutive and add to model
@@ -38,7 +31,7 @@ class Problem:
         nu = 0.3
         density = 1.0
         design_stress = 1e3
-        con = example.TopoIsoConstitutive_CPS4(elem, q, E, nu, density, design_stress)
+        con = pya2d.TopoIsoConstitutive_CPS4(elem, q, E, nu, density, design_stress)
         model.add_constitutive(con)
 
         # Initialize model
@@ -51,15 +44,15 @@ class Problem:
         Set up finite element model
         """
         # Create model
-        fltr = example.Helmholtz_Model(self.X)
+        fltr = pya2d.Helmholtz_Model(self.X)
 
         # Create element and add to model
         r0 = 0.05
-        elem = example.Helmholtz_CPS4(self.conn, r0)
+        elem = pya2d.Helmholtz_CPS4(self.conn, r0)
         fltr.add_element(elem)
 
         # Create constitutive and add to model
-        con = example.HelmholtzConstitutive_CPS4(elem)
+        con = pya2d.HelmholtzConstitutive_CPS4(elem)
         fltr.add_constitutive(con)
 
         # Initialize model
@@ -87,7 +80,7 @@ class Problem:
         rhs_np[:] = forces[:]
 
         # Create the AMG solver
-        amg = model.new_amg(3, 1.333, K, True)
+        amg = model.new_amg(3, 1.333, 0.0, K, True)
 
         # Solve for u
         u_ad = model.new_solution()

@@ -8,10 +8,10 @@
 #include "constitutive.h"
 #include "element.h"
 #include "multiarray.h"
-#include "sparse_amg.h"
-#include "sparse_matrix.h"
-#include "sparse_numeric.h"
-#include "sparse_symbolic.h"
+#include "sparse/sparse_amg.h"
+#include "sparse/sparse_matrix.h"
+#include "sparse/sparse_numeric.h"
+#include "sparse/sparse_symbolic.h"
 
 namespace A2D {
 

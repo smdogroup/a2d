@@ -83,6 +83,7 @@ void test_adjoint_product(DesignArray& x,
   arrays
 */
 int main(int argc, char* argv[]) {
+  MPI_Init(&argc, &argv);
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
@@ -200,9 +201,10 @@ int main(int argc, char* argv[]) {
 
   double t2 = MPI_Wtime();
   int num_levels = 3;
-  double omega = 1.333;
+  double omega = 0.6667;
+  double epsilon = 0.0;
   bool print_info = true;
-  auto amg = model->new_amg(num_levels, omega, J, print_info);
+  auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
   t2 = MPI_Wtime() - t2;
   std::cout << "Set up time for AMG: " << t2 << std::endl;
 
@@ -295,6 +297,6 @@ int main(int argc, char* argv[]) {
   // test_adjoint_product(x, model);
 
   // amg->testGalerkin();
-
+  MPI_Finalize();
   return (0);
 }

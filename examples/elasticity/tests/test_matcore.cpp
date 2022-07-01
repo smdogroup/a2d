@@ -2,16 +2,10 @@
   This is a set of unit tests for a2dmatcore.h using Google Test framework.
  */
 
-#include <gtest/gtest.h>
-
-#include <iostream>
-
 #include "a2dmatcore.h"
 #include "a2dobjs.h"
+#include "test_commons.h"
 
-// Global typenames
-typedef double T;
-typedef int I;
 typedef A2D::Mat<T, 3, 3> Mat3x3;
 typedef A2D::Mat<T, 2, 3> Mat2x3;
 typedef A2D::Mat<T, 3, 2> Mat3x2;
@@ -21,15 +15,6 @@ typedef A2D::Mat<T, 2, 5> Mat2x5;
 
 class MatCoreTest : public ::testing::Test {
  protected:
-  template <I m, I n, class MatType>
-  void expect_mat_eq(const MatType mat, const T vals[], T abs_err = 1e-15) {
-    for (I i = 0; i < m; i++) {
-      for (I j = 0; j < n; j++) {
-        EXPECT_NEAR(mat(i, j), vals[n * i + j], abs_err);
-      }
-    }
-  }
-
   // Set up square matrices and results
   const T A3x3_data[9] = {0.54881350, 0.71518937, 0.60276338,
                           0.54488318, 0.42365480, 0.64589411,

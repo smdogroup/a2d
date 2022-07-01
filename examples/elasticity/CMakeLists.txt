@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
-set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-g -O3")
 
 # Require MPI
 find_package(MPI REQUIRED)
@@ -32,11 +32,12 @@ find_package(pybind11 REQUIRED)
 # Build extension
 pybind11_add_module(example example.cpp)
 
-# Download google test (commit id needs to be updated frequently)
+# Download google test (git tag needs to be updated frequently)
 include(FetchContent)
 FetchContent_Declare(
    googletest
-   URL https://github.com/google/googletest/archive/b1f84bf1763b1010597bff13c79b5388eebdf205.zip
+   GIT_REPOSITORY https://github.com/google/googletest.git
+   GIT_TAG        e2239ee6043f73722e7aa812a459f54a28552929 # release-1.10.0
 )
 FetchContent_MakeAvailable(googletest)
 
@@ -51,5 +52,15 @@ target_link_libraries(
 
 target_link_libraries(
   test_matcore2d
+  gtest_main
+)
+
+target_link_libraries(
+  test_tmp
+  gtest_main
+)
+
+target_link_libraries(
+  test_tmp2d
   gtest_main
 )

@@ -185,19 +185,58 @@ class A2DMat3x3MatMultExpr
       AMatType& Ah = AObj.hvalue(i);
       BMatType& Bh = BObj.hvalue(i);
       const CMatType& Ch = CObj.hvalue(i);
+      const CMatType& Cb = CObj.bvalue();
+      const AMatType& Ap = AObj.pvalue(i);
+      const BMatType& Bp = BObj.pvalue(i);
 
       if (AT && BT) {
         MatTrans3x3MatTransMultAddCore(B, Ch, Ah);
         MatTrans3x3MatTransMultAddCore(Ch, A, Bh);
+
+        for (int ii = 0; ii < 3; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++) {
+              Ah(jj, ii) += Cb(ii, kk) * Bp(kk, jj);
+              Bh(jj, ii) += Cb(kk, jj) * Ap(ii, kk);
+            }
+          }
+        }
       } else if (AT) {
         Mat3x3MatTransMultAddCore(B, Ch, Ah);
         Mat3x3MatMultAddCore(A, Ch, Bh);
+
+        for (int ii = 0; ii < 3; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++) {
+              Ah(jj, ii) += Cb(ii, kk) * Bp(jj, kk);
+              Bh(ii, jj) += Cb(kk, jj) * Ap(ii, kk);
+            }
+          }
+        }
       } else if (BT) {
         Mat3x3MatMultAddCore(Ch, B, Ah);
         MatTrans3x3MatMultAddCore(Ch, A, Bh);
+
+        for (int ii = 0; ii < 3; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++) {
+              Ah(ii, jj) += Cb(ii, kk) * Bp(kk, jj);
+              Bh(jj, ii) += Cb(kk, jj) * Ap(kk, ii);
+            }
+          }
+        }
       } else {
         Mat3x3MatTransMultAddCore(Ch, B, Ah);
         MatTrans3x3MatMultAddCore(A, Ch, Bh);
+
+        for (int ii = 0; ii < 3; ii++) {
+          for (int jj = 0; jj < 3; jj++) {
+            for (int kk = 0; kk < 3; kk++) {
+              Ah(ii, jj) += Cb(ii, kk) * Bp(jj, kk);
+              Bh(ii, jj) += Cb(kk, jj) * Ap(kk, ii);
+            }
+          }
+        }
       }
     }
   }
@@ -890,7 +929,7 @@ class ADSymm3x3TraceExpr
 
   void forward() {
     const SMatType& Sd = SObj.bvalue();
-    output.pvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
+    output.bvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
   }
 
   void reverse() {
@@ -990,7 +1029,7 @@ class ADSymm3x3SymmMultTraceExpr
     const SMatType& S = SObj.value();
     const SMatType& Sd = SObj.bvalue();
 
-    output.pvalue =
+    output.bvalue =
         S(0, 0) * Ed(0, 0) + S(1, 1) * Ed(1, 1) + S(2, 2) * Ed(2, 2) +
         2.0 * (S(0, 1) * Ed(0, 1) + S(0, 2) * Ed(0, 2) + S(1, 2) * Ed(1, 2)) +
         Sd(0, 0) * E(0, 0) + Sd(1, 1) * E(1, 1) + Sd(2, 2) * E(2, 2) +
@@ -1178,7 +1217,7 @@ class ADSymm3x3IsotropicConstitutiveExpr
 
   void forward() {
     const EMatType& Ed = EObj.bvalue();
-    SMatType& Sd = SObj.pvalue();
+    SMatType& Sd = SObj.bvalue();
 
     ScalarType tr = lambda * (Ed(0, 0) + Ed(1, 1) + Ed(2, 2));
     ScalarType mu2 = 2.0 * mu;
@@ -1640,6 +1679,17 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
 
       mu.hvalue[i] += trE * output.hvalue[i];
       lambda.hvalue[i] += 0.5 * tr * tr * output.hvalue[i];
+
+      // account for Hessian blocks w.r.t. E and mu or lambda
+      Eh(0, 0) += (2.0 * E(0, 0) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(1, 1) += (2.0 * E(1, 1) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(2, 2) += (2.0 * E(2, 2) * mu.pvalue[i] + tr * lambda.pvalue[i]) *
+                  output.bvalue;
+      Eh(0, 1) += 4.0 * E(0, 1) * mu.pvalue[i] * output.bvalue;
+      Eh(0, 2) += 4.0 * E(0, 2) * mu.pvalue[i] * output.bvalue;
+      Eh(1, 2) += 4.0 * E(1, 2) * mu.pvalue[i] * output.bvalue;
     }
   }
 

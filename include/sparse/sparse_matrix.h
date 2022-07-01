@@ -1,5 +1,5 @@
-#ifndef SPARSE_MATRIX_H
-#define SPARSE_MATRIX_H
+#ifndef A2D_SPARSE_MATRIX_H
+#define A2D_SPARSE_MATRIX_H
 
 #include "multiarray.h"
 
@@ -131,4 +131,4 @@ class BSRMat {
 
 }  // namespace A2D
 
-#endif  // SPARSE_MATRIX_H
+#endif  // A2D_SPARSE_MATRIX_H

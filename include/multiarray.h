@@ -1,5 +1,5 @@
-#ifndef MULTI_ARRAY_H
-#define MULTI_ARRAY_H
+#ifndef A2D_MULTI_ARRAY_H
+#define A2D_MULTI_ARRAY_H
 
 #include <cstddef>
 #include <cstdlib>
@@ -381,4 +381,4 @@ MultiArraySlice<T, ldims...> MakeSlice(
 
 }  // namespace A2D
 
-#endif  // MULTI_ARRAY_H
+#endif  // A2D_MULTI_ARRAY_H

@@ -1,5 +1,5 @@
-#ifndef SPARSE_NUMERIC_H
-#define SPARSE_NUMERIC_H
+#ifndef A2D_SPARSE_NUMERIC_H
+#define A2D_SPARSE_NUMERIC_H
 
 #include "block_numeric.h"
 #include "multiarray.h"
@@ -949,4 +949,4 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
 
 }  // namespace A2D
 
-#endif  // SPARSE_NUMERIC_H
+#endif  // A2D_SPARSE_NUMERIC_H

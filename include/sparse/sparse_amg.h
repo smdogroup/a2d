@@ -1,5 +1,5 @@
-#ifndef SPARSE_AMG_H
-#define SPARSE_AMG_H
+#ifndef A2D_SPARSE_AMG_H
+#define A2D_SPARSE_AMG_H
 
 #include <iomanip>
 #include <iostream>
@@ -847,4 +847,4 @@ class BSRMatAmg {
 
 }  // namespace A2D
 
-#endif  // SPARSE_AMG_H
+#endif  // A2D_SPARSE_AMG_H

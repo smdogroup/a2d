@@ -1,5 +1,5 @@
-#ifndef BLOCK_NUMERIC_H
-#define BLOCK_NUMERIC_H
+#ifndef A2D_BLOCK_NUMERIC_H
+#define A2D_BLOCK_NUMERIC_H
 
 #include <complex>
 
@@ -285,4 +285,4 @@ int blockInverse(AType& A, AinvType& Ainv, IType& ipiv) {
 
 }  // namespace A2D
 
-#endif  // BLOCK_NUMERIC_H
+#endif  // A2D_BLOCK_NUMERIC_H

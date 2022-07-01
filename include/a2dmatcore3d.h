@@ -1,5 +1,5 @@
-#ifndef A2D_MAT_CORE_H
-#define A2D_MAT_CORE_H
+#ifndef A2D_MAT_CORE_3D_H
+#define A2D_MAT_CORE_3D_H
 
 namespace A2D {
 
@@ -790,4 +790,4 @@ inline void MatTrans3x3MatTransMultAddScaleCore(T scale, const AMatType& A,
 
 }  // namespace A2D
 
-#endif  // A2D_MAT_CORE_H
+#endif  // A2D_MAT_CORE_3D_H

@@ -1,5 +1,5 @@
-#ifndef QUADRATURE_H
-#define QUADRATURE_H
+#ifndef A2D_QUADRATURE_H
+#define A2D_QUADRATURE_H
 
 #include <cstddef>
 

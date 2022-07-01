@@ -1,5 +1,5 @@
-#ifndef SPARSE_SYMBOLIC_H
-#define SPARSE_SYMBOLIC_H
+#ifndef A2D_SPARSE_SYMBOLIC_H
+#define A2D_SPARSE_SYMBOLIC_H
 
 #include <algorithm>
 #include <limits>
@@ -721,4 +721,4 @@ void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
 
 }  // namespace A2D
 
-#endif  // SPARSE_SYMBOLIC_H
+#endif  // A2D_SPARSE_SYMBOLIC_H

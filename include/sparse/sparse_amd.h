@@ -1,5 +1,5 @@
-#ifndef SPARSE_AMD_H
-#define SPARSE_AMD_H
+#ifndef A2D_SPARSE_AMD_H
+#define A2D_SPARSE_AMD_H
 
 #include <algorithm>
 #include <cstring>
@@ -897,4 +897,4 @@ variables, not element %d\n",
   }
 }
 
-#endif  // SPARSE_AMD_H
+#endif  // A2D_SPARSE_AMD_H

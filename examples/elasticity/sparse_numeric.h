@@ -686,8 +686,156 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 }
 
 /*
+  Apply a step of Symmetric SOR to the system A*x = b for non-zero x.
+*/
+template <typename I, typename T, index_t M>
+void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
+                  MultiArray<T, CLayout<M>> &b, MultiArray<T, CLayout<M>> &x) {
+  I nrows = A.nbrows;
+
+  if (A.perm) {
+    for (I color = 0, offset = 0; color < A.num_colors; color++) {
+      const index_t count = A.color_count[color];
+
+      A2D::parallel_for(count, [&](index_t irow) -> void {
+        I i = A.perm[irow + offset];
+
+        // Copy over the values
+        A2D::Vec<T, M> t;
+        for (I m = 0; m < M; m++) {
+          t(m) = b(i, m);
+        }
+
+        const int jp_end = A.rowp[i + 1];
+        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+          I j = A.cols[jp];
+
+          if (i != j) {
+            auto xb = MakeSlice(x, j);
+            auto Ab = MakeSlice(A.Avals, jp);
+
+            blockGemvSub<T, M, M>(Ab, xb, t);
+          }
+        }
+
+        // x = (1 - omega) * x + omega * D^{-1} * t
+        auto xb = MakeSlice(x, i);
+        for (I m = 0; m < M; m++) {
+          xb(m) = (1.0 - omega) * xb(m);
+        }
+
+        auto D = MakeSlice(Dinv.Avals, i);
+        blockGemvAddScale<T, M, M>(omega, D, t, xb);
+      });
+
+      offset += count;
+    }
+
+    I offset = A.nbrows - A.color_count[A.num_colors - 1];
+    for (I color = A.num_colors; color > 0; color--) {
+      const index_t count = A.color_count[color - 1];
+
+      A2D::parallel_for(count, [&](index_t irow) -> void {
+        I i = A.perm[irow + offset];
+
+        // Copy over the values
+        A2D::Vec<T, M> t;
+        for (I m = 0; m < M; m++) {
+          t(m) = b(i, m);
+        }
+
+        const int jp_end = A.rowp[i + 1];
+        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+          I j = A.cols[jp];
+
+          if (i != j) {
+            auto xb = MakeSlice(x, j);
+            auto Ab = MakeSlice(A.Avals, jp);
+
+            blockGemvSub<T, M, M>(Ab, xb, t);
+          }
+        }
+
+        // x = (1 - omega) * x + omega * D^{-1} * t
+        auto xb = MakeSlice(x, i);
+        for (I m = 0; m < M; m++) {
+          xb(m) = (1.0 - omega) * xb(m);
+        }
+
+        auto D = MakeSlice(Dinv.Avals, i);
+        blockGemvAddScale<T, M, M>(omega, D, t, xb);
+      });
+
+      if (color >= 2) {
+        offset -= A.color_count[color - 2];
+      }
+    }
+  } else {
+    A2D::Vec<T, M> t;
+
+    for (I i = 0; i < nrows; i++) {
+      // Copy over the values
+      for (I m = 0; m < M; m++) {
+        t(m) = b(i, m);
+      }
+
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+        I j = A.cols[jp];
+
+        if (i != j) {
+          auto xb = MakeSlice(x, j);
+          auto Ab = MakeSlice(A.Avals, jp);
+
+          blockGemvSub<T, M, M>(Ab, xb, t);
+        }
+      }
+
+      // x = (1 - omega) * x + omega * D^{-1} * t
+      auto xb = MakeSlice(x, i);
+      for (I m = 0; m < M; m++) {
+        xb(m) = (1.0 - omega) * xb(m);
+      }
+
+      auto D = MakeSlice(Dinv.Avals, i);
+      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+    }
+
+    for (I index = nrows; index > 0; index--) {
+      I i = index - 1;
+
+      // Copy over the values
+      for (I m = 0; m < M; m++) {
+        t(m) = b(i, m);
+      }
+
+      const int jp_end = A.rowp[i + 1];
+      for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+        I j = A.cols[jp];
+
+        if (i != j) {
+          auto xb = MakeSlice(x, j);
+          auto Ab = MakeSlice(A.Avals, jp);
+
+          blockGemvSub<T, M, M>(Ab, xb, t);
+        }
+      }
+
+      // x = (1 - omega) * x + omega * D^{-1} * t
+      auto xb = MakeSlice(x, i);
+      for (I m = 0; m < M; m++) {
+        xb(m) = (1.0 - omega) * xb(m);
+      }
+
+      auto D = MakeSlice(Dinv.Avals, i);
+      blockGemvAddScale<T, M, M>(omega, D, t, xb);
+    }
+  }
+}
+
+/*
   Estimate the spectral radius using Gerhsgorin's circle theorem
-  */
+*/
 template <typename I, typename T, index_t M>
 T BSRMatGershgorinSpectralEstimate(BSRMat<I, T, M, M> &A) {
   // Estimate the spectral radius using Gershgorin and estimate rho
@@ -715,6 +863,86 @@ T BSRMatGershgorinSpectralEstimate(BSRMat<I, T, M, M> &A) {
       }
     }
   }
+
+  return rho;
+}
+
+// Declare the LAPACK eigenvalue solver we're about to use
+extern "C" {
+extern void dgeev_(const char *JOBVL, const char *JOBVR, int *N, double *A,
+                   int *LDA, double *WR, double *WI, double *VL, int *LDVL,
+                   double *VR, int *LDVR, double *WORK, int *LWORK, int *INFO);
+}
+
+/*
+  Estimate the spectral radius
+*/
+template <typename I, typename T, index_t M>
+T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
+  double *H = new double[size * (size + 1)];
+  std::fill(H, H + size, 0.0);
+
+  // Allocate space for the vectors
+  MultiArray<T, CLayout<M>> **W;
+  W = new MultiArray<T, CLayout<M>> *[size + 1];
+
+  // Allocate the first vector
+  W[0] = new MultiArray<T, CLayout<M>>(CLayout<M>(A.nbrows));
+
+  // Create an initial random vector
+  W[0]->random();
+
+  for (I i = 0; i < size; i++) {
+    W[i + 1] = W[i]->duplicate();
+
+    // Multiply by the matrix to get the next vector
+    BSRMatVecMult(A, *W[i], *W[i + 1]);
+
+    // Orthogonalize against the existing subspace
+    for (I j = 0; j <= i; j++) {
+      I index = j + i * (size + 1);
+      H[index] = A2D::RealPart(W[i + 1]->dot(*W[j]));
+      W[i + 1]->axpy(-H[index], *W[j]);
+    }
+
+    // Add the term to the matrix
+    I index = i + 1 + i * (size + 1);
+    H[index] = A2D::RealPart(W[i + 1]->norm());
+    W[i + 1]->scale(1.0 / H[index]);
+  }
+
+  // Allocate space for the real/complex eigenvalue
+  double *eigreal = new double[size];
+  double *eigimag = new double[size];
+
+  // Compute the eigenspectrum of the Hessenberg matrix
+  int hsize = size;
+  int lwork = 4 * size;
+  double *work = new double[lwork];
+  int ldv = 1;
+  int ldh = size + 1;
+  int info = 0;
+  dgeev_("N", "N", &hsize, H, &ldh, eigreal, eigimag, NULL, &ldv, NULL, &ldv,
+         work, &lwork, &info);
+
+  // Find the maximum absolute eigenvalue
+  T rho = 0.0;
+  for (int i = 0; i < size; i++) {
+    double val = sqrt(eigreal[i] * eigreal[i] + eigimag[i] * eigimag[i]);
+    if (val > A2D::fabs(rho)) {
+      rho = val;
+    }
+  }
+
+  // Free the allocated memory
+  delete[] H;
+  for (I i = 0; i < size + 1; i++) {
+    delete W[i];
+  }
+  delete[] W;
+  delete[] eigreal;
+  delete[] eigimag;
+  delete[] work;
 
   return rho;
 }

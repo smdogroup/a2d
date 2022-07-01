@@ -1,13 +1,12 @@
 /*
-  This is a set of unit tests for a2dmatcore.h using Google Test framework.
+  This is a set of unit tests for a2dmatcore2d.h using Google Test framework.
  */
 
 #include <gtest/gtest.h>
 
-#include <iostream>
-
 #include "a2dmatcore2d.h"
 #include "a2dobjs.h"
+#include "test_commons.h"
 
 // Global typenames
 typedef double T;
@@ -63,8 +62,8 @@ TEST_F(MatCoreTest, Symm2x2SymmMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Symm2x2SymmMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -73,8 +72,8 @@ TEST_F(MatCoreTest, Symm2x2SymmMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2SymmMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -83,8 +82,8 @@ TEST_F(MatCoreTest, Symm2x2SymmMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2SymmMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -94,8 +93,8 @@ TEST_F(MatCoreTest, Symm2x2SymmMultAddScaleCore) {
   Mat2x2 C(Z2x2_data);
   T scale = 2.34;
   A2D::Symm2x2SymmMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -117,8 +116,8 @@ TEST_F(MatCoreTest, Symm2x2MatMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Symm2x2MatMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -127,8 +126,8 @@ TEST_F(MatCoreTest, Symm2x2MatMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2MatMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -137,8 +136,8 @@ TEST_F(MatCoreTest, Symm2x2MatMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2MatMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -148,8 +147,8 @@ TEST_F(MatCoreTest, Symm2x2MatMultAddScaleCore) {
   Mat2x2 C(Z2x2_data);
   T scale = 2.34;
   A2D::Symm2x2MatMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -171,8 +170,8 @@ TEST_F(MatCoreTest, Symm2x2MatTransMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Symm2x2MatTransMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -181,8 +180,8 @@ TEST_F(MatCoreTest, Symm2x2MatTransMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2MatTransMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -191,8 +190,8 @@ TEST_F(MatCoreTest, Symm2x2MatTransMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Symm2x2MatTransMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -203,8 +202,8 @@ TEST_F(MatCoreTest, Symm2x2MatTransMultAddScaleCore) {
   T scale = 2.34;
   A2D::Symm2x2MatTransMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B,
                                                                   C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -226,8 +225,8 @@ TEST_F(MatCoreTest, Mat2x2SymmMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Mat2x2SymmMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -236,8 +235,8 @@ TEST_F(MatCoreTest, Mat2x2SymmMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2SymmMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -246,8 +245,8 @@ TEST_F(MatCoreTest, Mat2x2SymmMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2SymmMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -257,8 +256,8 @@ TEST_F(MatCoreTest, Mat2x2SymmMultAddScaleCore) {
   Mat2x2 C(Z2x2_data);
   T scale = 2.34;
   A2D::Mat2x2SymmMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -280,8 +279,8 @@ TEST_F(MatCoreTest, MatTrans2x2SymmMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::MatTrans2x2SymmMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -290,8 +289,8 @@ TEST_F(MatCoreTest, MatTrans2x2SymmMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2SymmMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -300,8 +299,8 @@ TEST_F(MatCoreTest, MatTrans2x2SymmMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2SymmMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -312,8 +311,8 @@ TEST_F(MatCoreTest, MatTrans2x2SymmMultAddScaleCore) {
   T scale = 2.34;
   A2D::MatTrans2x2SymmMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B,
                                                                   C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -335,8 +334,8 @@ TEST_F(MatCoreTest, Mat2x2MatMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Mat2x2MatMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -345,8 +344,8 @@ TEST_F(MatCoreTest, Mat2x2MatMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2MatMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -355,8 +354,8 @@ TEST_F(MatCoreTest, Mat2x2MatMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2MatMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -366,8 +365,8 @@ TEST_F(MatCoreTest, Mat2x2MatMultAddScaleCore) {
   Mat2x2 C(Z2x2_data);
   T scale = 2.34;
   A2D::Mat2x2MatMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * AB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -389,8 +388,8 @@ TEST_F(MatCoreTest, Mat2x2MatTransMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::Mat2x2MatTransMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -399,8 +398,8 @@ TEST_F(MatCoreTest, Mat2x2MatTransMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2MatTransMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -409,8 +408,8 @@ TEST_F(MatCoreTest, Mat2x2MatTransMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::Mat2x2MatTransMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -421,8 +420,8 @@ TEST_F(MatCoreTest, Mat2x2MatTransMultAddScaleCore) {
   T scale = 2.34;
   A2D::Mat2x2MatTransMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B,
                                                                  C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * ABT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * ABT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -444,8 +443,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatMultScaleCore) {
   Mat2x2 AB;
   T scale = 2.34;
   A2D::MatTrans2x2MatMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B, AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -454,8 +453,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2MatMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -464,8 +463,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2MatMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -476,8 +475,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatMultAddScaleCore) {
   T scale = 2.34;
   A2D::MatTrans2x2MatMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B,
                                                                  C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * ATB_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * ATB_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -500,8 +499,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatTransMultScaleCore) {
   T scale = 2.34;
   A2D::MatTrans2x2MatTransMultScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A, B,
                                                                    AB);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = scale * ATBT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = scale * ATBT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(AB, res);
 }
 
@@ -510,8 +509,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatTransMultAddCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2MatTransMultAddCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + ATBT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + ATBT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -520,8 +519,8 @@ TEST_F(MatCoreTest, MatTrans2x2MatTransMultSubCore) {
   const Mat2x2 B(B2x2_data);
   Mat2x2 C(Z2x2_data);
   A2D::MatTrans2x2MatTransMultSubCore<Mat2x2, Mat2x2, Mat2x2>(A, B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] - ATBT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] - ATBT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }
 
@@ -532,7 +531,7 @@ TEST_F(MatCoreTest, MatTrans2x2MatTransMultAddScaleCore) {
   T scale = 2.34;
   A2D::MatTrans2x2MatTransMultAddScaleCore<T, Mat2x2, Mat2x2, Mat2x2>(scale, A,
                                                                       B, C);
-  T res[9];
-  for (I i = 0; i < 9; i++) res[i] = Z2x2_data[i] + scale * ATBT_data[i];
+  T res[4];
+  for (I i = 0; i < 4; i++) res[i] = Z2x2_data[i] + scale * ATBT_data[i];
   expect_mat_eq<2, 2, Mat2x2>(C, res);
 }

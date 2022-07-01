@@ -218,12 +218,12 @@ class FEModel {
   // in the matrix must be filled at this point, e.g. after a call to
   // add_jacobian
   std::shared_ptr<typename PDE::SparseAmg> new_amg(
-      int num_levels, double omega,
+      int num_levels, double omega, double epsilon,
       std::shared_ptr<typename PDE::SparseMat> mat, bool print_info = false) {
     PDE::compute_null_space(X, *B);
     A2D::VecZeroBCRows(bcs, *B);
-    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, mat, B,
-                                                     print_info);
+    return std::make_shared<typename PDE::SparseAmg>(num_levels, omega, epsilon,
+                                                     mat, B, print_info);
   }
 
  private:

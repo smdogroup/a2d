@@ -4,6 +4,7 @@ import argparse
 import example
 from paropt import ParOpt
 import os
+
 try:
     from utils import to_vtk
     from parse_inp import InpParser
@@ -11,10 +12,27 @@ except:
     to_vtk = None
     InpParser = None
 
+
 class TopOpt(ParOpt.Problem):
-    def __init__(self, X, conn, bcs, vol_target, filter_length,
-        q=5.0, E=70e3, nu=0.3, density=1.0, design_stress=0.27e3,
-        num_levels=3, max_iters=200, monitor=10, omega=2.0/3.0):
+    def __init__(
+        self,
+        X,
+        conn,
+        bcs,
+        vol_target,
+        filter_length,
+        q=5.0,
+        E=70e3,
+        nu=0.3,
+        density=1.0,
+        design_stress=0.27e3,
+        num_levels=3,
+        max_iters=200,
+        monitor=10,
+        omega=4.0 / 3.0,
+        epsilon=0.0,
+        vtk_prefix="",
+    ):
 
         self.X = X
         self.conn = conn
@@ -23,6 +41,8 @@ class TopOpt(ParOpt.Problem):
         self.monitor = monitor
         self.max_iters = max_iters
         self.omega = omega
+        self.epsilon = epsilon
+        self.vtk_prefix = vtk_prefix
 
         # Initialize the super class
         ncon = 1
@@ -36,22 +56,28 @@ class TopOpt(ParOpt.Problem):
         self.vol = example.Elasticity_Functional()
 
         # Add the element to the model
-        if 'C3D8' in conn:
-            element = example.Elasticity_C3D8(conn['C3D8'].astype(np.int32))
+        if "C3D8" in conn:
+            element = example.Elasticity_C3D8(conn["C3D8"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D8(element, q, E, nu, density, design_stress)
+            con = example.TopoIsoConstitutive_C3D8(
+                element, q, E, nu, density, design_stress
+            )
             self.model.add_constitutive(con)
             self.vol.add_functional(example.TopoVolume_C3D8(con))
-        elif 'C3D8R' in conn:
-            element = example.Elasticity_C3D8(conn['C3D8R'].astype(np.int32))
+        elif "C3D8R" in conn:
+            element = example.Elasticity_C3D8(conn["C3D8R"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D8(element, q, E, nu, density, design_stress)
+            con = example.TopoIsoConstitutive_C3D8(
+                element, q, E, nu, density, design_stress
+            )
             self.model.add_constitutive(con)
             self.vol.add_functional(example.TopoVolume_C3D8(con))
-        elif 'C3D10' in conn:
-            element = example.Elasticity_C3D10(conn['C3D10'].astype(np.int32))
+        elif "C3D10" in conn:
+            element = example.Elasticity_C3D10(conn["C3D10"].astype(np.int32))
             self.model.add_element(element)
-            con = example.TopoIsoConstitutive_C3D10(element, q, E, nu, density, design_stress)
+            con = example.TopoIsoConstitutive_C3D10(
+                element, q, E, nu, density, design_stress
+            )
             self.model.add_constitutive(con)
             self.vol.add_functional(example.TopoVolume_C3D10(con))
 
@@ -64,18 +90,18 @@ class TopOpt(ParOpt.Problem):
         # Set up the element
         r0 = filter_length / (2.0 * np.sqrt(3.0))
 
-        if 'C3D8' in conn:
-            element = example.Helmholtz_C3D8(conn['C3D8'].astype(np.int32), r0)
+        if "C3D8" in conn:
+            element = example.Helmholtz_C3D8(conn["C3D8"].astype(np.int32), r0)
             self.fltr.add_element(element)
             con = example.HelmholtzConstitutive_C3D8(element)
             self.fltr.add_constitutive(con)
-        elif 'C3D8R' in conn:
-            element = example.Helmholtz_C3D8(conn['C3D8R'].astype(np.int32), r0)
+        elif "C3D8R" in conn:
+            element = example.Helmholtz_C3D8(conn["C3D8R"].astype(np.int32), r0)
             self.fltr.add_element(element)
             con = example.HelmholtzConstitutive_C3D8(element)
             self.fltr.add_constitutive(con)
-        elif 'C3D10' in conn:
-            element = example.Helmholtz_C3D10(conn['C3D10'].astype(np.int32), r0)
+        elif "C3D10" in conn:
+            element = example.Helmholtz_C3D10(conn["C3D10"].astype(np.int32), r0)
             self.fltr.add_element(element)
             con = example.HelmholtzConstitutive_C310(element)
             self.fltr.add_constitutive(con)
@@ -111,7 +137,9 @@ class TopOpt(ParOpt.Problem):
 
         # Set up the AMG for the filter problem
         print_info = True
-        self.fltr_amg = self.fltr.new_amg(self.num_levels, self.omega, self.Kf, print_info)
+        self.fltr_amg = self.fltr.new_amg(
+            self.num_levels, self.omega, self.epsilon, self.Kf, print_info
+        )
 
         # Set the scaling for the compliance
         self.compliance_scale = None
@@ -150,7 +178,10 @@ class TopOpt(ParOpt.Problem):
         # Set up AMG for the structural problem
         self.model.jacobian(self.K)
         print_info = True
-        amg = self.model.new_amg(self.num_levels, self.omega, self.K, print_info)
+        amg = self.model.new_amg(
+            self.num_levels, self.omega, self.epsilon, self.K, print_info
+        )
+
         amg.cg(self.f_ref, self.u_ref, self.monitor, self.max_iters)
 
         # Set the new solution
@@ -164,24 +195,37 @@ class TopOpt(ParOpt.Problem):
 
         # Compute the volume
         volume = self.vol.eval_functional()
-        print('Volume = ', volume)
+        print("Volume = ", volume)
         con = np.array([1.0 - volume / self.vol_target])
 
         # Export to vtk every 10 iters
         if self.vtk_iter % 10 == 0 and to_vtk is not None:
             for key in self.conn:
+                # nodal_sol = {
+                #     "ux": self.u[:, 0],
+                #     "uy": self.u[:, 1],
+                #     "uz": self.u[:, 2],
+                #     "dv": self.x[:, 0],
+                #     "rho": self.rho[:, 0],
+                # }
+
+                soln = np.array(amg.get_vec(), copy=False)
                 nodal_sol = {
-                    'ux': self.u[:, 0],
-                    'uy': self.u[:, 1],
-                    'uz': self.u[:, 2],
-                    'dv': self.x[:, 0],
-                    'rho': self.rho[:, 0]
+                    "ux": soln[:, 0],
+                    "uy": soln[:, 1],
+                    "uz": soln[:, 2],
+                    "dv": self.x[:, 0],
+                    "rho": self.rho[:, 0],
                 }
 
-                to_vtk(self.conn[key], self.X, nodal_sol=nodal_sol,
-                    vtk_name=f"result_{key}_{self.vtk_iter}.vtk")
+                vtk_name = os.path.join(
+                    self.vtk_prefix, f"result_{key}_{self.vtk_iter}.vtk"
+                )
+                to_vtk(self.conn[key], self.X, nodal_sol=nodal_sol, vtk_name=vtk_name)
 
         self.vtk_iter += 1
+
+        exit(0)
 
         fail = 0
         return fail, obj, con
@@ -197,7 +241,9 @@ class TopOpt(ParOpt.Problem):
         self.model.add_adjoint_dfdx(self.u_ref, self.dfdrho_ref)
 
         # Filter adjoint
-        self.fltr_amg.cg(self.dfdrho_ref, self.fltr_res_ref, self.monitor, self.max_iters)
+        self.fltr_amg.cg(
+            self.dfdrho_ref, self.fltr_res_ref, self.monitor, self.max_iters
+        )
 
         self.dfdx[:] = 0.0
         self.fltr.add_adjoint_dfdx(self.fltr_res_ref, self.dfdx_ref)
@@ -208,7 +254,9 @@ class TopOpt(ParOpt.Problem):
         self.vol.eval_dfdx(self.dfdrho_ref)
 
         # Filter adjoint
-        self.fltr_amg.cg(self.dfdrho_ref, self.fltr_res_ref, self.monitor, self.max_iters)
+        self.fltr_amg.cg(
+            self.dfdrho_ref, self.fltr_res_ref, self.monitor, self.max_iters
+        )
 
         self.dfdx[:] = 0.0
         self.fltr.add_adjoint_dfdx(self.fltr_res_ref, self.dfdx_ref)
@@ -218,21 +266,25 @@ class TopOpt(ParOpt.Problem):
         return fail
 
 
-parser = argparse.ArgumentParser(description='Perform compliance minimization')
-parser.add_argument('--inp', type=str, default='', help='Input file')
-parser.add_argument('--opt', type=str, default='mma', help='Optimizer type')
-parser.add_argument('--vol_target', type=float, default=0.4, help='Volume target')
-parser.add_argument('--filter_length', type=float, default=0.025, help='Filter length')
-parser.add_argument('--num_levels', type=int, default=3, help='Number of multigrid levels')
+parser = argparse.ArgumentParser(description="Perform compliance minimization")
+parser.add_argument("--inp", type=str, default="", help="Input file")
+parser.add_argument("--opt", type=str, default="mma", help="Optimizer type")
+parser.add_argument("--vol_target", type=float, default=0.4, help="Volume target")
+parser.add_argument("--filter_length", type=float, default=0.025, help="Filter length")
+parser.add_argument(
+    "--num_levels", type=int, default=3, help="Number of multigrid levels"
+)
+parser.add_argument("--vtk_prefix", type=str, default="", help="File output prefix")
 args = parser.parse_args()
 
 filename = args.inp
 vol_target = args.vol_target
 filter_length = args.filter_length
 num_levels = args.num_levels
+vtk_prefix = args.vtk_prefix
 
 if os.path.isfile(filename):
-    ndof = 3 # Assumed to be a 3d problem with u, v, w unknowns
+    ndof = 3  # Assumed to be a 3d problem with u, v, w unknowns
     inp_parser = InpParser(filename)
     conn, X, groups, loads_list, bcs_list = inp_parser.parse()
 
@@ -259,10 +311,21 @@ if os.path.isfile(filename):
         for node in nset:
             bcs.append([node, bcs_val])
 
-
-    problem = TopOpt(X, conn, bcs, vol_target, filter_length, q=5.0, E=70e3,
-                     nu=0.3, density=1.0, design_stress=0.27e3,
-                     num_levels=num_levels)
+    problem = TopOpt(
+        X,
+        conn,
+        bcs,
+        vol_target,
+        filter_length,
+        q=5.0,
+        E=70e3,
+        nu=0.3,
+        density=1.0,
+        design_stress=0.27e3,
+        num_levels=num_levels,
+        vtk_prefix=vtk_prefix,
+        omega=4.0 / 3.0,
+    )
 
     # Set the forces
     for load in loads_list:
@@ -334,13 +397,24 @@ else:
             bcs[index, 1] = bcs_val
             index += 1
 
-    conn = {'C3D8': conn_c3d8}
+    conn = {"C3D8": conn_c3d8}
 
     vol_target = 0.4 * lx * ly * lz
     filter_length = 0.025 * ly
 
-    problem = TopOpt(X, conn, bcs, vol_target, filter_length, q=5.0, E=70e3,
-                     nu=0.3, density=1.0, design_stress=0.27e3)
+    problem = TopOpt(
+        X,
+        conn,
+        bcs,
+        vol_target,
+        filter_length,
+        q=5.0,
+        E=70e3,
+        nu=0.3,
+        density=1.0,
+        design_stress=0.27e3,
+        vtk_prefix=vtk_prefix,
+    )
 
     # Set the forces
     problem.f[nodes[-1, -1, 0], 2] = 1e3
@@ -348,7 +422,7 @@ else:
 
 problem.checkGradients()
 
-if args.opt == 'tr':
+if args.opt == "tr":
     options = {
         "algorithm": "tr",
         "tr_init_size": 0.05,
@@ -371,7 +445,7 @@ if args.opt == 'tr':
         "use_line_search": False,
     }
 else:
-    options = {"algorithm": "mma"}
+    options = {"algorithm": "mma", "mma_max_iterations": 5}
 
 # Set up the optimizer
 opt = ParOpt.Optimizer(problem, options)

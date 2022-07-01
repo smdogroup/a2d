@@ -23,7 +23,7 @@ typedef BasisOps<SPATIAL_DIM, QuadBiLinearBasisFunc, Quad4ptQuadrature>
 
 typedef ElementBase<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Element;
-typedef LinElasticityElement<Itype, Ttype, Basis_CPS4> Elasticity_CPS4;
+typedef NonlinElasticityElement<Itype, Ttype, Basis_CPS4> Elasticity_CPS4;
 
 typedef FEModel<Itype, Ttype, ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_Model;

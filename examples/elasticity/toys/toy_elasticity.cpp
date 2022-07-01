@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
   const index_t nbcs = (ny + 1);
 
   auto model = std::make_shared<FEModel<I, T, PDE>>(nnodes, nbcs);
-  auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
+  auto element = std::make_shared<NonlinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
   // Set the boundary conditions
@@ -186,7 +186,9 @@ int main(int argc, char* argv[]) {
   model->set_solution(solution);
 
   // Compute the complex-step result
-  T fd = functional->eval_functional().imag() / dh;
+  auto fun_val = functional->eval_functional();
+  std::cout << fun_val << std::endl;
+  T fd = fun_val.imag() / dh;
 
   std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
             << fd.real() << std::endl;

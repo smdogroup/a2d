@@ -1,6 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 from paropt import ParOpt
+
 try:
     from utils import to_vtk
 except:
@@ -8,8 +9,10 @@ except:
 
 import os
 import sys
-sys.path.append('build')
+
+sys.path.append("build")
 import example2d as example
+
 
 class TopOpt(ParOpt.Problem):
     def __init__(self, model, fltr, vol, vol_target, num_levels=3, nvars=1, ncon=1):
@@ -54,7 +57,7 @@ class TopOpt(ParOpt.Problem):
         self.compliance_scale = None
 
         # Set the iteration count
-        self.prefix = 'results'
+        self.prefix = "results"
         if not os.path.isdir(self.prefix):
             os.mkdir(self.prefix)
         self.vtk_iter = 0
@@ -107,20 +110,24 @@ class TopOpt(ParOpt.Problem):
 
         # Compute the volume
         volume = self.vol.eval_functional()
-        print('Volume = ', volume)
+        print("Volume = ", volume)
         con = np.array([1.0 - volume / self.vol_target])
 
         # Export to vtk every 10 iters
         if self.vtk_iter % 10 == 0 and to_vtk is not None:
             nodal_sol = {
-                'ux': self.u[:, 0],
-                'uy': self.u[:, 1],
-                'x': self.x[:, 0],
-                'rho': self.rho[:, 0]
+                "ux": self.u[:, 0],
+                "uy": self.u[:, 1],
+                "x": self.x[:, 0],
+                "rho": self.rho[:, 0],
             }
 
-            to_vtk(conn, X, nodal_sol=nodal_sol,
-                vtk_name=os.path.join(self.prefix, f"result_{self.vtk_iter}.vtk"))
+            to_vtk(
+                conn,
+                X,
+                nodal_sol=nodal_sol,
+                vtk_name=os.path.join(self.prefix, f"result_{self.vtk_iter}.vtk"),
+            )
 
         self.vtk_iter += 1
 
@@ -161,6 +168,7 @@ class TopOpt(ParOpt.Problem):
         fail = 0
         return fail
 
+
 def X_conn_bcs_forces_2d():
     nx = 96
     ny = 32
@@ -170,7 +178,7 @@ def X_conn_bcs_forces_2d():
 
     nnodes = (nx + 1) * (ny + 1)
     nelems = nx * ny
-    nbcs = (ny + 1)
+    nbcs = ny + 1
 
     conn = np.zeros((nelems, 4), dtype=np.int32)
     X = np.zeros((nnodes, 2), dtype=np.double)
@@ -208,6 +216,7 @@ def X_conn_bcs_forces_2d():
             forces[nodes[-1, j], 1] = -1e3
 
     return X, conn, bcs, forces, nnodes
+
 
 def X_conn_bcs_forces_3d():
     nx = 16
@@ -264,7 +273,7 @@ def X_conn_bcs_forces_3d():
     return X, conn, bcs, forces, nnodes
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     X, conn, bcs, forces, nnodes = X_conn_bcs_forces_2d()
 
     # Set the constitutive data
@@ -319,10 +328,7 @@ if __name__ == '__main__':
 
     problem.checkGradients()
 
-    options = {
-        "algorithm": "mma",
-        "mma_max_iterations": 1000
-    }
+    options = {"algorithm": "mma", "mma_max_iterations": 1000}
 
     # Set up the optimizer
     opt = ParOpt.Optimizer(problem, options)

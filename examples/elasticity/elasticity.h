@@ -232,7 +232,8 @@ class NonlinElasticityElement
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxih = Uxi.hvalue(k);
             for (int i = 0; i < SPATIAL_DIM; i++) {
               for (int j = 0; j < SPATIAL_DIM; j++) {
-                jac(i, j, k / SPATIAL_DIM, k % SPATIAL_DIM) = Uxih(i, j);
+                jac(i, j, k / (int)SPATIAL_DIM, k % (int)SPATIAL_DIM) =
+                    Uxih(i, j);
               }
             }
           }
@@ -254,7 +255,7 @@ class NonlinElasticityElement
 
     // Compute the element adjoint data
     typename base::ElemSolnArray pe(this->get_elem_solution_layout());
-    typename base::QuadGradLayout pxi(this->get_quad_gradient_layout());
+    typename base::QuadGradArray pxi(this->get_quad_gradient_layout());
 
     VecElementScatter(conn, psi, pe);
     BasisOps::template gradient<T, NUM_VARS>(pe, pxi);
@@ -264,8 +265,8 @@ class NonlinElasticityElement
         detJ, Jinv, Uxi, pxi,
         [&data, &dfdx](index_t i, index_t j, T wdetJ,
                        A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv0,
-                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxi0,
-                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Pxi0) -> void {
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Uxi0,
+                       A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Pxi0) -> void {
           A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxib, Ux0, Uxb;
           A2D::SymmMat<T, SPATIAL_DIM> E0, Eb;
 

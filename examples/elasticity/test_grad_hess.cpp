@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp.h"
+#include "a2dtmp3d.h"
 #include "a2dtypes.h"
 
 /*
@@ -77,10 +77,10 @@ int main(int argc, char* argv[]) {
     Up(k / 3, k % 3) = 1.0;
   }
 
-  auto jinv = A2D::Mat3x3Inverse(J, Jinv);
-  auto mult = A2D::Mat3x3MatMult(Uxi, Jinv, Ux);
-  auto strain = A2D::Mat3x3GreenStrain(Ux, E);
-  auto energy = A2D::Symm3x3IsotropicEnergy(mu, lambda, E, output);
+  auto jinv = A2D::MatInverse(J, Jinv);
+  auto mult = A2D::MatMatMult(Uxi, Jinv, Ux);
+  auto strain = A2D::MatGreenStrain(Ux, E);
+  auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
 
   output.bvalue = 1.0;
 

@@ -1,11 +1,13 @@
+#include "elasticity.h"
+
 #include <complex>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp.h"
-#include "elasticity3d.h"
-#include "helmholtz3d.h"
+#include "a2dtmp2d.h"
+#include "a2dtmp3d.h"
+#include "helmholtz.h"
 #include "model.h"
 #include "mpi.h"
 
@@ -85,8 +87,8 @@ int main(int argc, char* argv[]) {
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
-  typedef Basis3D<HexTriLinear, Hex8ptQuadrature> Basis;
-  typedef ElasticityPDE<I, T> PDE;
+  typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
+  typedef ElasticityPDEInfo<3, I, T> PDE;
 
   const index_t nx = 32;
   const index_t ny = 32;
@@ -96,7 +98,7 @@ int main(int argc, char* argv[]) {
   const index_t nbcs = (ny + 1) * (nz + 1);
 
   auto model = std::make_shared<FEModel<I, T, PDE>>(nnodes, nbcs);
-  auto element = std::make_shared<LinElasticityElement3D<I, T, Basis>>(nelems);
+  auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
   // Set the boundary conditions

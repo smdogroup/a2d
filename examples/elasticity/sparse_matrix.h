@@ -5,10 +5,27 @@
 
 namespace A2D {
 
-// Block CSR matrix of length
+/**
+ * @brief Block CSR matrix
+ *
+ * @tparam I index type
+ * @tparam T data type
+ * @tparam M number of rows for each block
+ * @tparam N number of columns for each block
+ */
 template <typename I, typename T, index_t M, index_t N>
 class BSRMat {
  public:
+  /**
+   * @brief Constructor
+   *
+   * @tparam VecType a vector type
+   * @param nbrows number of rows of blocks
+   * @param nbcols number of columns of blocks
+   * @param nnz number of non-zero blocks, note that nnz(mat) = nnz * M * N
+   * @param _rowp vector of row pointers
+   * @param _cols vector of column indices
+   */
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
          const VecType &_cols)
@@ -62,7 +79,13 @@ class BSRMat {
   // Zero the entries of the matrix
   void zero() { Avals.zero(); }
 
-  // Find the column index
+  /**
+   * @brief Find the address of the column index given block indices (row, col)
+   *
+   * @param row block row index
+   * @param col block column index
+   * @return I* address of the block column index
+   */
   I *find_column_index(I row, I col) {
     I jp_start = rowp[row];
     I jp_end = rowp[row + 1];
@@ -73,7 +96,7 @@ class BSRMat {
       }
     }
 
-    return NULL;
+    return nullptr;
   }
 
   // Number of block rows and block columns

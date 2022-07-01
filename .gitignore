@@ -1,0 +1,6 @@
+.DS_Store
+build/
+*.dSYM
+*.so
+.vscode
+Makefile.in

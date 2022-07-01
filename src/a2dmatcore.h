@@ -3,14 +3,16 @@
 
 namespace A2D {
 
-  inline TacsScalar Mat3x3DetCore( const TacsScalar A[] ){
+  template<typename T>
+  inline T Mat3x3DetCore( const T A[] ){
     return (A[8] * (A[0] * A[4] - A[3] * A[1]) -
             A[7] * (A[0] * A[5] - A[3] * A[2]) +
             A[6] * (A[1] * A[5] - A[2] * A[4]));
   }
 
-  inline TacsScalar Mat3x3DetDerivForwardCore( const TacsScalar A[],
-                                               TacsScalar Ad[] ){
+  template<typename T>
+  inline T Mat3x3DetDerivForwardCore( const T A[],
+                                      T Ad[] ){
     return (
             Ad[0] * (A[8] * A[4] - A[7] * A[5]) +
             Ad[1] * (A[6] * A[5] - A[8] * A[3]) +
@@ -23,9 +25,10 @@ namespace A2D {
             Ad[8] * (A[0] * A[4] - A[3] * A[1]));
   }
 
-  inline void Mat3x3DetDerivReverseCore( const TacsScalar detd,
-                                         const TacsScalar A[],
-                                         TacsScalar Ad[] ){
+  template<typename T>
+  inline void Mat3x3DetDerivReverseCore( const T detd,
+                                         const T A[],
+                                         T Ad[] ){
     Ad[0] += (A[8] * A[4] - A[7] * A[5]) * detd;
     Ad[1] += (A[6] * A[5] - A[8] * A[3]) * detd;
     Ad[2] += (A[7] * A[3] - A[6] * A[4]) * detd;
@@ -37,14 +40,16 @@ namespace A2D {
     Ad[8] += (A[0] * A[4] - A[3] * A[1]) * detd;
   }
 
-  inline TacsScalar Symm3x3DetCore( const TacsScalar S[] ){
+  template<typename T>
+  inline T Symm3x3DetCore( const T S[] ){
     return (S[5] * (S[0] * S[3] - S[1] * S[1]) -
             S[4] * (S[0] * S[4] - S[1] * S[2]) +
             S[2] * (S[1] * S[4] - S[2] * S[3]));
   }
 
-  inline TacsScalar Symm3x3DetDerivForwardCore( const TacsScalar S[],
-                                                const TacsScalar Sd[] ){
+  template<typename T>
+  inline T Symm3x3DetDerivForwardCore( const T S[],
+                                       const T Sd[] ){
     return (
             Sd[0] * (S[5] * S[3] - S[4] * S[4]) +
             2.0 * Sd[1] * (S[2] * S[4] - S[5] * S[1]) +
@@ -54,9 +59,10 @@ namespace A2D {
             Sd[5] * (S[0] * S[3] - S[1] * S[1]));
   }
 
-  inline void Symm3x3DetDerivReverseCore( const TacsScalar detd,
-                                          const TacsScalar S[],
-                                          TacsScalar Sd[] ){
+  template<typename T>
+  inline void Symm3x3DetDerivReverseCore( const T detd,
+                                          const T S[],
+                                          T Sd[] ){
     Sd[0] += (S[5] * S[3] - S[4] * S[4]) * detd;
     Sd[1] += 2.0 * (S[2] * S[4] - S[5] * S[1]) * detd;
     Sd[2] += 2.0 * (S[1] * S[4] - S[3] * S[2]) * detd;
@@ -65,7 +71,8 @@ namespace A2D {
     Sd[5] += (S[0] * S[3] - S[1] * S[1]) * detd;
   }
 
-  inline void Symm3x3SymmMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3SymmMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] = (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -77,7 +84,8 @@ namespace A2D {
     C[8] = (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
   }
 
-  inline void Symm3x3SymmMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3SymmMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] = scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -89,7 +97,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
   }
 
-  inline void Symm3x3SymmMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3SymmMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] += (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -101,7 +110,8 @@ namespace A2D {
     C[8] += (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
   }
 
-  inline void Symm3x3SymmMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3SymmMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] -= (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] -= (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -113,7 +123,8 @@ namespace A2D {
     C[8] -= (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
   }
 
-  inline void Symm3x3SymmMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3SymmMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] += scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -125,7 +136,8 @@ namespace A2D {
     C[8] += scale * (A[2] * B[2] + A[4] * B[4] + A[5] * B[5]);
   }
 
-  inline void Symm3x3MatMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] = (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -137,7 +149,8 @@ namespace A2D {
     C[8] = (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] = scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -149,7 +162,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] += (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -161,7 +175,8 @@ namespace A2D {
     C[8] += (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] -= (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] -= (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -173,7 +188,8 @@ namespace A2D {
     C[8] -= (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] += scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -185,7 +201,8 @@ namespace A2D {
     C[8] += scale * (A[2] * B[2] + A[4] * B[5] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatTransMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatTransMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] = (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -197,7 +214,8 @@ namespace A2D {
     C[8] = (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatTransMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatTransMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] = scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -209,7 +227,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatTransMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatTransMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] += (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -221,7 +240,8 @@ namespace A2D {
     C[8] += (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatTransMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatTransMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] -= (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] -= (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -233,7 +253,8 @@ namespace A2D {
     C[8] -= (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
   }
 
-  inline void Symm3x3MatTransMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Symm3x3MatTransMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] += scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -245,7 +266,8 @@ namespace A2D {
     C[8] += scale * (A[2] * B[6] + A[4] * B[7] + A[5] * B[8]);
   }
 
-  inline void Mat3x3SymmMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3SymmMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] = (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -257,7 +279,8 @@ namespace A2D {
     C[8] = (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
   }
 
-  inline void Mat3x3SymmMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3SymmMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] = scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -269,7 +292,8 @@ namespace A2D {
     C[8] = scale * (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
   }
 
-  inline void Mat3x3SymmMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3SymmMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] += (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -281,7 +305,8 @@ namespace A2D {
     C[8] += (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
   }
 
-  inline void Mat3x3SymmMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3SymmMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] -= (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] -= (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -293,7 +318,8 @@ namespace A2D {
     C[8] -= (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
   }
 
-  inline void Mat3x3SymmMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3SymmMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += scale * (A[0] * B[1] + A[1] * B[3] + A[2] * B[4]);
     C[2] += scale * (A[0] * B[2] + A[1] * B[4] + A[2] * B[5]);
@@ -305,7 +331,8 @@ namespace A2D {
     C[8] += scale * (A[6] * B[2] + A[7] * B[4] + A[8] * B[5]);
   }
 
-  inline void MatTrans3x3SymmMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3SymmMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] = (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
     C[2] = (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -317,7 +344,8 @@ namespace A2D {
     C[8] = (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
   }
 
-  inline void MatTrans3x3SymmMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3SymmMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] = scale * (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
     C[2] = scale * (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -329,7 +357,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
   }
 
-  inline void MatTrans3x3SymmMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3SymmMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] += (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
     C[2] += (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -341,7 +370,8 @@ namespace A2D {
     C[8] += (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
   }
 
-  inline void MatTrans3x3SymmMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3SymmMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] -= (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
     C[2] -= (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -353,7 +383,8 @@ namespace A2D {
     C[8] -= (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
   }
 
-  inline void MatTrans3x3SymmMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3SymmMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] += scale * (A[0] * B[1] + A[3] * B[3] + A[6] * B[4]);
     C[2] += scale * (A[0] * B[2] + A[3] * B[4] + A[6] * B[5]);
@@ -365,7 +396,8 @@ namespace A2D {
     C[8] += scale * (A[2] * B[2] + A[5] * B[4] + A[8] * B[5]);
   }
 
-  inline void Mat3x3MatMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] = (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -377,7 +409,8 @@ namespace A2D {
     C[8] = (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] = scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -389,7 +422,8 @@ namespace A2D {
     C[8] = scale * (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] += (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -401,7 +435,8 @@ namespace A2D {
     C[8] += (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] -= (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] -= (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -413,7 +448,8 @@ namespace A2D {
     C[8] -= (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += scale * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
     C[2] += scale * (A[0] * B[2] + A[1] * B[5] + A[2] * B[8]);
@@ -425,7 +461,8 @@ namespace A2D {
     C[8] += scale * (A[6] * B[2] + A[7] * B[5] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatTransMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatTransMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] = (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -437,7 +474,8 @@ namespace A2D {
     C[8] = (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatTransMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatTransMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] = scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] = scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -449,7 +487,8 @@ namespace A2D {
     C[8] = scale * (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatTransMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatTransMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] += (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -461,7 +500,8 @@ namespace A2D {
     C[8] += (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatTransMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatTransMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] -= (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] -= (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -473,7 +513,8 @@ namespace A2D {
     C[8] -= (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
   }
 
-  inline void Mat3x3MatTransMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void Mat3x3MatTransMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[1] * B[1] + A[2] * B[2]);
     C[1] += scale * (A[0] * B[3] + A[1] * B[4] + A[2] * B[5]);
     C[2] += scale * (A[0] * B[6] + A[1] * B[7] + A[2] * B[8]);
@@ -485,7 +526,8 @@ namespace A2D {
     C[8] += scale * (A[6] * B[6] + A[7] * B[7] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
     C[1] = (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
     C[2] = (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -497,7 +539,8 @@ namespace A2D {
     C[8] = (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
     C[1] = scale * (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
     C[2] = scale * (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -509,7 +552,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
     C[1] += (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
     C[2] += (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -521,7 +565,8 @@ namespace A2D {
     C[8] += (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
     C[1] -= (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
     C[2] -= (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -533,7 +578,8 @@ namespace A2D {
     C[8] -= (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[3] * B[3] + A[6] * B[6]);
     C[1] += scale * (A[0] * B[1] + A[3] * B[4] + A[6] * B[7]);
     C[2] += scale * (A[0] * B[2] + A[3] * B[5] + A[6] * B[8]);
@@ -545,7 +591,8 @@ namespace A2D {
     C[8] += scale * (A[2] * B[2] + A[5] * B[5] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatTransMultCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatTransMultCore( const T A[], const T B[], T C[] ){
     C[0] = (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] = (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
     C[2] = (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -557,7 +604,8 @@ namespace A2D {
     C[8] = (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatTransMultScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatTransMultScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] = scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] = scale * (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
     C[2] = scale * (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -569,7 +617,8 @@ namespace A2D {
     C[8] = scale * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatTransMultAddCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatTransMultAddCore( const T A[], const T B[], T C[] ){
     C[0] += (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] += (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
     C[2] += (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -581,7 +630,8 @@ namespace A2D {
     C[8] += (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatTransMultSubCore( const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatTransMultSubCore( const T A[], const T B[], T C[] ){
     C[0] -= (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] -= (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
     C[2] -= (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -593,7 +643,8 @@ namespace A2D {
     C[8] -= (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 
-  inline void MatTrans3x3MatTransMultAddScaleCore( TacsScalar scale, const TacsScalar A[], const TacsScalar B[], TacsScalar C[] ){
+  template<typename T>
+  inline void MatTrans3x3MatTransMultAddScaleCore( T scale, const T A[], const T B[], T C[] ){
     C[0] += scale * (A[0] * B[0] + A[3] * B[1] + A[6] * B[2]);
     C[1] += scale * (A[0] * B[3] + A[3] * B[4] + A[6] * B[5]);
     C[2] += scale * (A[0] * B[6] + A[3] * B[7] + A[6] * B[8]);
@@ -605,11 +656,12 @@ namespace A2D {
     C[8] += scale * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 
-  inline TacsScalar Mat3x3InverseCore( const TacsScalar A[], TacsScalar Ainv[] ){
-    TacsScalar det = (A[8] * (A[0] * A[4] - A[3] * A[1]) -
-                      A[7] * (A[0] * A[5] - A[3] * A[2]) +
-                      A[6] * (A[1] * A[5] - A[2] * A[4]));
-    TacsScalar detinv = 1.0/det;
+  template<typename T>
+  inline T Mat3x3InverseCore( const T A[], T Ainv[] ){
+    T det = (A[8] * (A[0] * A[4] - A[3] * A[1]) -
+             A[7] * (A[0] * A[5] - A[3] * A[2]) +
+             A[6] * (A[1] * A[5] - A[2] * A[4]));
+    T detinv = 1.0/det;
 
     Ainv[0] = (A[4] * A[8] - A[5] * A[7]) * detinv;
     Ainv[1] =-(A[1] * A[8] - A[2] * A[7]) * detinv;
@@ -626,32 +678,36 @@ namespace A2D {
     return det;
   }
 
-  inline void Mat3x3InverseDerivForwardCore( const TacsScalar Ainv[],
-                                             const TacsScalar Ad[],
-                                             TacsScalar Bd[] ){
-    TacsScalar t[9];
+  template<typename T>
+  inline void Mat3x3InverseDerivForwardCore( const T Ainv[],
+                                             const T Ad[],
+                                             T Bd[] ){
+    T t[9];
     Mat3x3MatMultCore(Ainv, Ad, t);
-    Mat3x3MatMultScaleCore(-1.0, t, Ainv, Bd);
+    Mat3x3MatMultScaleCore(T(-1.0), t, Ainv, Bd);
   }
 
-  inline void Mat3x3InverseDerivReverseCore( const TacsScalar Ainv[],
-                                             const TacsScalar Bd[],
-                                             TacsScalar Ad[] ){
-    TacsScalar t[9];
+  template<typename T>
+  inline void Mat3x3InverseDerivReverseCore( const T Ainv[],
+                                             const T Bd[],
+                                             T Ad[] ){
+    T t[9];
     MatTrans3x3MatMultCore(Ainv, Bd, t);
-    Mat3x3MatTransMultAddScaleCore(-1.0, t, Ainv, Ad);
+    Mat3x3MatTransMultAddScaleCore(T(-1.0), t, Ainv, Ad);
   }
 
-  inline TacsScalar Symm3x3MatMultTraceCore( const TacsScalar S[],
-                                             const TacsScalar T[] ){
+  template<typename T>
+  inline T Symm3x3MatMultTraceCore( const T S[],
+                                    const T R[] ){
     return (
-            (S[0] * T[0] + S[3] * T[3] + S[5] * T[5]) +
-            2.0 * (S[1] * T[1] + S[2] * T[2] + S[4] * T[4]));
+            (S[0] * R[0] + S[3] * R[3] + S[5] * R[5]) +
+            2.0 * (S[1] * R[1] + S[2] * R[2] + S[4] * R[4]));
   }
 
-  inline void Symm3x3MatMultTraceReverseCore( const TacsScalar scale,
-                                              const TacsScalar S[],
-                                              TacsScalar Td[] ){
+  template<typename T>
+  inline void Symm3x3MatMultTraceReverseCore( const T scale,
+                                              const T S[],
+                                              T Td[] ){
     Td[0] += scale * S[0];
     Td[3] += scale * S[3];
     Td[5] += scale * S[5];
@@ -660,8 +716,9 @@ namespace A2D {
     Td[4] += 2.0 * scale * S[4];
   }
 
-  inline void Mat3x3LinearGreenStrainCore( const TacsScalar Ux[],
-                                           TacsScalar E[] ){
+  template<typename T>
+  inline void Mat3x3LinearGreenStrainCore( const T Ux[],
+                                           T E[] ){
     // E = 0.5*(Ux + Ux^{T});
     E[0] = Ux[0];
     E[3] = Ux[4];
@@ -671,8 +728,9 @@ namespace A2D {
     E[4] = 0.5*(Ux[5] + Ux[7]);
   }
 
-  inline void Mat3x3LinearGreenStrainReverseCore( const TacsScalar Ed[],
-                                                  TacsScalar Uxd[] ){
+  template<typename T>
+  inline void Mat3x3LinearGreenStrainReverseCore( const T Ed[],
+                                                  T Uxd[] ){
     Uxd[0] += Ed[0];
     Uxd[1] += Ed[1];
     Uxd[2] += Ed[2];
@@ -684,8 +742,9 @@ namespace A2D {
     Uxd[8] += Ed[5];
   }
 
-  inline void Mat3x3GreenStrainCore( const TacsScalar Ux[],
-                                     TacsScalar E[] ){
+  template<typename T>
+  inline void Mat3x3GreenStrainCore( const T Ux[],
+                                     T E[] ){
     // E = 0.5*(Ux + Ux^{T} + Ux^{T} * Ux)
     E[0] = Ux[0] + 0.5*(Ux[0] * Ux[0] + Ux[3] * Ux[3] + Ux[6] * Ux[6]);
     E[3] = Ux[4] + 0.5*(Ux[1] * Ux[1] + Ux[4] * Ux[4] + Ux[7] * Ux[7]);
@@ -695,9 +754,10 @@ namespace A2D {
     E[4] = 0.5*(Ux[5] + Ux[7] + Ux[1] * Ux[2] + Ux[4] * Ux[5] + Ux[7] * Ux[8]);
   }
 
-  inline void Mat3x3GreenStrainForwardCore( const TacsScalar Ux[],
-                                            const TacsScalar Uxd[],
-                                            TacsScalar Ed[] ){
+  template<typename T>
+  inline void Mat3x3GreenStrainForwardCore( const T Ux[],
+                                            const T Uxd[],
+                                            T Ed[] ){
     Ed[0] = Uxd[0] + Ux[0] * Uxd[0] + Ux[3] * Uxd[3] + Ux[6] * Uxd[6];
     Ed[3] = Uxd[4] + Ux[1] * Uxd[1] + Ux[4] * Uxd[4] + Ux[7] * Uxd[7];
     Ed[5] = Uxd[8] + Ux[2] * Uxd[2] + Ux[5] * Uxd[5] + Ux[8] * Uxd[8];
@@ -713,15 +773,16 @@ namespace A2D {
                  Uxd[1] * Ux[2] + Uxd[4] * Ux[5] + Uxd[7] * Ux[8]);
   }
 
-  inline void Mat3x3GreenStrainReverseCore( const TacsScalar Ux[],
-                                            const TacsScalar Ed[],
-                                            TacsScalar Uxd[] ){
-    TacsScalar ux0 = Ux[0] + 1.0;
-    TacsScalar ux4 = Ux[4] + 1.0;
-    TacsScalar ux8 = Ux[8] + 1.0;
-    TacsScalar e1 = 0.5 * Ed[1];
-    TacsScalar e2 = 0.5 * Ed[2];
-    TacsScalar e4 = 0.5 * Ed[4];
+  template<typename T>
+  inline void Mat3x3GreenStrainReverseCore( const T Ux[],
+                                            const T Ed[],
+                                            T Uxd[] ){
+    T ux0 = Ux[0] + 1.0;
+    T ux4 = Ux[4] + 1.0;
+    T ux8 = Ux[8] + 1.0;
+    T e1 = 0.5 * Ed[1];
+    T e2 = 0.5 * Ed[2];
+    T e4 = 0.5 * Ed[4];
 
     // Uxd = (I + Ux) * E
     Uxd[0] += ux0 * Ed[0] + Ux[1] * e1 + Ux[2] * e2;
@@ -735,12 +796,13 @@ namespace A2D {
     Uxd[8] += Ux[6] * e2 + Ux[7] * e4 + ux8 * Ed[5];
   }
 
-  inline void Symm3x3IsotropicConstitutiveCore( const TacsScalar mu,
-                                                const TacsScalar lambda,
-                                                const TacsScalar E[],
-                                                TacsScalar S[] ){
-    TacsScalar tr = lambda * (E[0] + E[3] + E[5]);
-    TacsScalar mu2 = 2.0 * mu;
+  template<typename T>
+  inline void Symm3x3IsotropicConstitutiveCore( const T mu,
+                                                const T lambda,
+                                                const T E[],
+                                                T S[] ){
+    T tr = lambda * (E[0] + E[3] + E[5]);
+    T mu2 = 2.0 * mu;
     S[0] = mu2 * E[0] + tr;
     S[1] = mu2 * E[1];
     S[2] = mu2 * E[2];
@@ -749,12 +811,13 @@ namespace A2D {
     S[5] = mu2 * E[5] + tr;
   }
 
-  inline void Symm3x3IsotropicConstitutiveReverseCore( const TacsScalar mu,
-                                                       const TacsScalar lambda,
-                                                       const TacsScalar Sd[],
-                                                       TacsScalar Ed[] ){
-    TacsScalar tr = lambda * (Sd[0] + Sd[3] + Sd[5]);
-    TacsScalar mu2 = 2.0 * mu;
+  template<typename T>
+  inline void Symm3x3IsotropicConstitutiveReverseCore( const T mu,
+                                                       const T lambda,
+                                                       const T Sd[],
+                                                       T Ed[] ){
+    T tr = lambda * (Sd[0] + Sd[3] + Sd[5]);
+    T mu2 = 2.0 * mu;
     Ed[0] += mu2 * Sd[0] + tr;
     Ed[1] += mu2 * Sd[1];
     Ed[2] += mu2 * Sd[2];

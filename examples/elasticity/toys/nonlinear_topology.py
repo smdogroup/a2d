@@ -68,7 +68,7 @@ class TopOpt(ParOpt.Problem):
 
         return
 
-    def solve_nonlinear(self, rtol=1e-10, atol=1e-30, newton_maxit=1):
+    def solve_nonlinear(self, rtol=1e-10, atol=1e-30, newton_maxit=20):
         """Solve the nonlinear problem for u"""
         # Initialize solution
         self.u[:] = 0.0
@@ -245,7 +245,7 @@ def X_conn_bcs_forces_2d():
         index += 1
 
     num_loaded = 0
-    total_force = 10.0
+    total_force = 100.0
     for j in range(ny + 1):
         if j < 0.2 * ny:
             forces[nodes[-1, j], 1] = -1.0
@@ -363,7 +363,7 @@ if __name__ == "__main__":
 
     problem.f[:] = forces[:]
 
-    problem.checkGradients()
+    # problem.checkGradients()
 
     options = {"algorithm": "mma", "mma_max_iterations": 200}
 

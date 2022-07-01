@@ -179,7 +179,7 @@ void declare_2dmodel(py::module& m, const char typestr[]) {
       .def("add_adjoint_dfdx", &model::add_adjoint_dfdx)
       .def("new_matrix", &model::new_matrix)
       .def("new_amg", &model::new_amg, py::arg("num_levels"), py::arg("omega"),
-           py::arg("mat"), py::arg("print_info") = false);
+           py::arg("epsilon"), py::arg("mat"), py::arg("print_info") = false);
 }
 
 template <class amg>

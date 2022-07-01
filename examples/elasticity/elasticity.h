@@ -543,13 +543,16 @@ class TopoIsoConstitutive
       std::shared_ptr<ElementBasis<
           I, T, ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>, BasisOps>>
           element,
-      T q, T E, T nu, T density, T design_stress)
+      T q, T E, T nu, T density, T design_stress, T beta = 20.0,
+      T xoffset = 0.5)
       : element(element),
         q(q),
         E(E),
         nu(nu),
         density(density),
         design_stress(design_stress),
+        beta(beta),
+        xoffset(xoffset),
         elem_design_layout(element->nelems),
         quad_design_layout(element->nelems),
         xe(elem_design_layout),
@@ -560,6 +563,10 @@ class TopoIsoConstitutive
 
   // Penalization value
   const T q;
+
+  // Heaviside filter approximation
+  const T xoffset;
+  const T beta;
 
   // Constitutive data
   const T E;
@@ -587,7 +594,10 @@ class TopoIsoConstitutive
     auto data = element->get_quad_data();
     for (I i = 0; i < data.extent(0); i++) {
       for (I j = 0; j < data.extent(1); j++) {
-        T penalty = xq(i, j, 0) / (1.0 + q * (1.0 - xq(i, j, 0)));
+        T rho_exp = std::exp(-beta * (xq(i, j, 0) - xoffset));
+        T rho = 1.0 / (1.0 + rho_exp);
+        T penalty = rho / (1.0 + q * (1.0 - rho));
+
         data(i, j, 0) = mu * penalty;
         data(i, j, 1) = lambda * penalty;
       }
@@ -613,8 +623,11 @@ class TopoIsoConstitutive
     QuadDesignArray dfdxq(quad_design_layout);
     for (I i = 0; i < dfddata.extent(0); i++) {
       for (I j = 0; j < dfddata.extent(1); j++) {
-        T denom = (1.0 + q * (1.0 - xq(i, j, 0)));
+        T rho_exp = std::exp(-beta * (xq(i, j, 0) - xoffset));
+        T rho = 1.0 / (1.0 + rho_exp);
+        T denom = (1.0 + q * (1.0 - rho));
         T dpenalty = (q + 1.0) / (denom * denom);
+        dpenalty *= beta * rho_exp * rho * rho;
 
         dfdxq(i, j, 0) =
             dpenalty * (mu * dfddata(i, j, 0) + lambda * dfddata(i, j, 1));

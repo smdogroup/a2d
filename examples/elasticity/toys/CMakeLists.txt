@@ -8,13 +8,13 @@ add_executable(
   toy_elasticity
   toy_elasticity.cpp
 )
-target_link_libraries(toy_elasticity PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX)
+target_link_libraries(toy_elasticity PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 add_executable(
   toy_helmholtz
   toy_helmholtz.cpp
 )
-target_link_libraries(toy_helmholtz PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX)
+target_link_libraries(toy_helmholtz PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 add_executable(
   toy_multiarray

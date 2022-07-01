@@ -114,9 +114,10 @@ int main(int argc, char* argv[]) {
 
   t = new Timer("AMG Set up");
   int num_levels = 3;
-  double omega = 1.333;
+  double omega = 0.6667;
+  double epsilon = 0.0;
   bool print_info = true;
-  auto amg = model->new_amg(num_levels, omega, J, print_info);
+  auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
   delete t;
 
   // Set the residuals and apply the boundary conditions

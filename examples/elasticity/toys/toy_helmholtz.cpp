@@ -258,11 +258,13 @@ int main(int argc, char* argv[]) {
   model_helm->jacobian(Jh);
 
   int num_levels = 3;
-  double omega = 1.333;
+  double omega = 0.6667;
+  double epsilon = 0.0;
   bool print_info = true;
-  auto amg = model->new_amg(num_levels, omega, J, print_info);
+  auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
 
-  auto amg_helm = model_helm->new_amg(num_levels, omega, Jh, print_info);
+  auto amg_helm =
+      model_helm->new_amg(num_levels, omega, epsilon, Jh, print_info);
 
   // Set the residuals and apply the boundary conditions
   auto solution = model->new_solution();

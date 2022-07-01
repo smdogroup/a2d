@@ -54,8 +54,11 @@ class TopOpt(ParOpt.Problem):
 
         # Set up the AMG for the filter problem
         omega = 4.0 / 3.0
+        epsilon = 0.0
         print_info = True
-        self.fltr_amg = self.fltr.new_amg(self.num_levels, omega, self.Kf, print_info)
+        self.fltr_amg = self.fltr.new_amg(
+            self.num_levels, omega, epsilon, self.Kf, print_info
+        )
 
         # Set the scaling for the compliance
         self.compliance_scale = None
@@ -82,7 +85,7 @@ class TopOpt(ParOpt.Problem):
             self.res[:] *= -1.0
 
             # Set up solver and solve: K(u) p = res
-            amg = self.model.new_amg(3, 1.333, self.K, True)
+            amg = self.model.new_amg(3, 1.333, 0.0, self.K, True)
             amg.cg(self.res_ref, self.p_ref, 5, 100)
 
             # update the solution: u = u + p

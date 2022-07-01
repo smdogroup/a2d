@@ -147,7 +147,10 @@ class Problem:
             res_np[:] *= -1.0
 
             # Set up solver and solve: K(u) p = res
-            amg = model.new_amg(3, 1.333, J, True)
+            num_levels = 3
+            omega = 4.0 / 3.0
+            epsilon = 0.0
+            amg = model.new_amg(num_levels, omega, epsilon, J, True)
             amg.cg(res_ad, p_ad, 5, 100)
 
             # update the solution: u = u + p

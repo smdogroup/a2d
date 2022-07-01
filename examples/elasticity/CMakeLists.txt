@@ -20,6 +20,9 @@ else()
   set(CMAKE_CXX_FLAGS "-g -O3")
 endif()
 
+# Require Lapack
+find_package(LAPACK REQUIRED)
+
 # Require MPI
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
@@ -29,13 +32,13 @@ find_package(OpenMP REQUIRED)
 
 # Build executables
 add_executable(test_grad_hess test_grad_hess.cpp)
-target_link_libraries(test_grad_hess PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX)
+target_link_libraries(test_grad_hess PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 add_executable(test_numeric test_numeric.cpp)
-target_link_libraries(test_numeric PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX)
+target_link_libraries(test_numeric PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 add_executable(elasticity elasticity.cpp)
-target_link_libraries(elasticity PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX)
+target_link_libraries(elasticity PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 # Require pybind11 to build the extension
 execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -44,6 +47,8 @@ find_package(pybind11 REQUIRED)
 # Build extension
 pybind11_add_module(example example.cpp)
 pybind11_add_module(example2d example2d.cpp)
+target_link_libraries(example PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
+target_link_libraries(example2d PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 
 # Build unit tests
 if (BUILD_TESTS)

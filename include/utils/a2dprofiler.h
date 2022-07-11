@@ -81,14 +81,14 @@ class Timer {
             (std::string(TIMER_NUM_SPACE * timer_recursion_counter, ' ') +
              "exiting an anonymous scope")
                 .c_str(),
-            t_elapse);
+            (long long int)t_elapse);
       } else {
         std::fprintf(
             fp, "%-80s(%lld ms)\n",
             (std::string(TIMER_NUM_SPACE * timer_recursion_counter, ' ') +
              fun_name + " exits")
                 .c_str(),
-            t_elapse);
+            (long long int)t_elapse);
       }
       std::fclose(fp);
     }

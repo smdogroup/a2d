@@ -475,7 +475,6 @@ class BasisOps {
         T wdetJ = weight * detJ(i, j);
         jacfunc(i, j, wdetJ, U0, ja);
 
-        auto jaci = MakeSlice(jac, i);
         for (index_t ky = 0; ky < NUM_NODES; ky++) {
           for (index_t iy = 0; iy < vars_per_node; iy++) {
             for (index_t ix = 0; ix < vars_per_node; ix++) {

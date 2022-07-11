@@ -16,9 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
 if (DEBUG)
-  set(CMAKE_CXX_FLAGS "-g -Wall -Wno-unused-variable -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS "-g -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
 else()
-  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wno-unused-variable -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
 endif()
 
 # Require Lapack
@@ -53,6 +53,7 @@ if (BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
+# Build cpp examples
 if (BUILD_EXAMPLES)
   add_subdirectory(examples/cpp)
 endif()

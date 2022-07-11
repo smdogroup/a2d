@@ -34,7 +34,6 @@ int main(int argc, char* argv[]) {
   typedef std::complex<double> ScalarType;
   typedef A2D::Mat<ScalarType, 3, 3> Mat3x3;
   typedef A2D::SymmMat<ScalarType, 3> SymmMat3x3;
-  typedef A2D::SymmTensor<ScalarType, 3, 3> SymmTensor3x3;
 
   double dh = 1e-30;
 

@@ -16,9 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
 if (DEBUG)
-  set(CMAKE_CXX_FLAGS "-g -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "-g -Wall -Wno-unused-variable -Wno-unused-parameter")
 else()
-  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wextra")
+  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wno-unused-variable -Wno-unused-parameter")
 endif()
 
 # Require Lapack

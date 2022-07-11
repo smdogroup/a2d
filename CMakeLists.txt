@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.22)
 project(A2D VERSION 0.1)
 
 # Set options
-option(BUILD_TESTS "Compile the unit test executables" OFF)
+option(BUILD_TESTS "Compile the unit test executables" ON)
 option(BUILD_EXAMPLES "Compile the toy executables" ON)
 option(BUILD_EXTENION "Compile the pybind11 extension" ON)
 option(DEBUG "a debug build without compiler optimization" OFF)
@@ -16,9 +16,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
 if (DEBUG)
-  set(CMAKE_CXX_FLAGS "-g")
+  set(CMAKE_CXX_FLAGS "-g -Wall -Wextra")
 else()
-  set(CMAKE_CXX_FLAGS "-g -O3")
+  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wextra")
 endif()
 
 # Require Lapack

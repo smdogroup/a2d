@@ -5,8 +5,9 @@ cmake_minimum_required(VERSION 3.22)
 project(A2D VERSION 0.1)
 
 # Set options
-option(BUILD_TESTS "Compile the unit test executables" ON)
+option(BUILD_TESTS "Compile the unit test executables" OFF)
 option(BUILD_EXAMPLES "Compile the toy executables" ON)
+option(BUILD_AMGX_EXAMPLES "build amgx examples that requires AMGX and CUDA" ON)
 option(BUILD_EXTENION "Compile the pybind11 extension" ON)
 option(DEBUG "a debug build without compiler optimization" OFF)
 
@@ -21,6 +22,9 @@ else()
   set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
 endif()
 
+# Set A2D include directory
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 # Require Lapack
 find_package(LAPACK REQUIRED)
 
@@ -30,6 +34,20 @@ include_directories(${MPI_INCLUDE_PATH})
 
 # Require OpenMP
 find_package(OpenMP REQUIRED)
+
+# Check if AMGX is available
+set(AMGX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/include)
+set(AMGX_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/lib/)
+
+if (BUILD_AMGX_EXAMPLES)
+  if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
+    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
+  elseif(NOT EXISTS "${AMGX_LIB_DIR}")
+    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
+  else()
+    add_subdirectory(examples/amgx)
+  endif()
+endif()
 
 # Build pybind11 extension
 if (BUILD_EXTENION)

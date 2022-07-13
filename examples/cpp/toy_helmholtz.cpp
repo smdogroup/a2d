@@ -164,7 +164,7 @@ void set_force_3d(const int nx, const int ny, const int nz, Model model,
   residual->zero();
   for (int k = nz / 4; k < 3 * nz / 4; k++) {
     int node = nx + (nx + 1) * (0 + (ny + 1) * k);
-    residual(node, 1) = -1e2;
+    (*residual)(node, 1) = -1e2;
   }
   model->zero_bcs(residual);
 }

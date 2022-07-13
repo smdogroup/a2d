@@ -7,9 +7,6 @@ add_executable(toy_helmholtz toy_helmholtz.cpp)
 add_executable(toy_multiarray toy_multiarray.cpp)
 add_executable(toy_profiler toy_profiler.cpp)
 
-# Set include path
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
 # Link libraries
 target_link_libraries(elasticity     PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)
 target_link_libraries(test_grad_hess PUBLIC OpenMP::OpenMP_CXX MPI::MPI_CXX LAPACK::LAPACK)

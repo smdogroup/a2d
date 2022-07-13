@@ -9,6 +9,7 @@
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -520,6 +521,7 @@ class BSRMatAmg {
   bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30, I iters_per_reset = 100) {
+    Timer timer("BSRMatAmg::cg()");
     // R, Z and P and work are temporary vectors
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);

@@ -23,6 +23,7 @@
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_numeric.h"
 #include "sparse/sparse_symbolic.h"
+#include "utils/a2dmesh.h"
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 

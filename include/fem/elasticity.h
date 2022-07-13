@@ -8,6 +8,7 @@
 #include "element.h"
 #include "functional.h"
 #include "multiarray.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -181,6 +182,8 @@ class NonlinElasticityElement
 
   void add_jacobian(
       typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
+    // Time this function
+    Timer timer("NonlinElasticityElement::add_jacobian()");
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data
@@ -398,6 +401,7 @@ class LinElasticityElement
 
   void add_jacobian(
       typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
+    Timer timer("LinElasticityElement::add_jacobian()");
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data

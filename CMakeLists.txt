@@ -6,8 +6,8 @@ project(A2D VERSION 0.1)
 
 # Set options
 option(BUILD_TESTS "Compile the unit test executables" OFF)
-option(BUILD_EXAMPLES "Compile the toy executables" ON)
-option(BUILD_AMGX_EXAMPLES "build amgx examples that requires AMGX and CUDA" ON)
+option(BUILD_EXAMPLES_BASIC "Compile the toy executables" ON)
+option(BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
 option(BUILD_EXTENION "Compile the pybind11 extension" ON)
 option(DEBUG "a debug build without compiler optimization" OFF)
 
@@ -39,7 +39,7 @@ find_package(OpenMP REQUIRED)
 set(AMGX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/include)
 set(AMGX_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/lib/)
 
-if (BUILD_AMGX_EXAMPLES)
+if (BUILD_EXAMPLES_AMGX)
   if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
     message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
   elseif(NOT EXISTS "${AMGX_LIB_DIR}")
@@ -71,7 +71,7 @@ if (BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
-# Build cpp examples
-if (BUILD_EXAMPLES)
-  add_subdirectory(examples/cpp)
+# Build examples
+if (BUILD_EXAMPLES_BASIC)
+  add_subdirectory(examples/basic)
 endif()

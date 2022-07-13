@@ -28,10 +28,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # Require Lapack
 find_package(LAPACK REQUIRED)
 
-# Require MPI
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
-
 # Require OpenMP
 find_package(OpenMP REQUIRED)
 

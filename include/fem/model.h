@@ -180,6 +180,7 @@ class FEModel {
     Compute the Jacobian matrix
   */
   void jacobian(std::shared_ptr<typename PDEInfo::SparseMat> jac) {
+    Timer timer("FEModel::jacobian()");
     jac->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_jacobian(*jac);

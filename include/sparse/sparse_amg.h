@@ -474,6 +474,7 @@ class BSRMatAmg {
   bool mg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30) {
+    Timer timer("BSRMatAmg::mg()");
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);
 

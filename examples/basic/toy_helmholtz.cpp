@@ -131,10 +131,7 @@ int main(int argc, char* argv[]) {
 
   // Compute the adjoint variables
   auto adjoint = model->new_solution();
-  double t4 = MPI_Wtime();
   amg->mg(*dfdu, *adjoint, monitor, max_iters);
-  t4 = MPI_Wtime() - t4;
-  std::cout << "Adjoint solution time: " << t3 << std::endl;
 
   // Complete the adjoint derivative
   auto dfdx =
@@ -157,11 +154,8 @@ int main(int argc, char* argv[]) {
   model->jacobian(J);
   amg->update();
 
-  double t5 = MPI_Wtime();
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
-  t5 = MPI_Wtime() - t5;
-  std::cout << "Conjugate gradient solution time: " << t5 << std::endl;
 
   // Set the solution
   model->set_solution(solution);

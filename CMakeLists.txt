@@ -1,21 +1,29 @@
 # Specify cmake version needed
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
 # Set project name
 project(A2D VERSION 0.1)
 
 # Set options
+option(A2D_USE_CUDA "use CUDA" OFF)
 option(BUILD_TESTS "Compile the unit test executables" OFF)
 option(BUILD_EXAMPLES_BASIC "Compile the toy executables" ON)
 option(BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
 option(BUILD_EXTENION "Compile the pybind11 extension" ON)
 option(DEBUG "a debug build without compiler optimization" OFF)
 
+if (A2D_USE_CUDA)
+  enable_language(CUDA)
+  set(CMAKE_CUDA_STANDARD 11)
+  set(CMAKE_CUDA_STANDARD_REQUIRED True)
+endif()
+
 # Specify c++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set compiler flags
+# TODO: do we need these flags for CUDA/nvcc?
 if (DEBUG)
   set(CMAKE_CXX_FLAGS "-g -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
 else()
@@ -25,25 +33,16 @@ endif()
 # Set A2D include directory
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+if (A2D_USE_CUDA)
+  add_definitions(-DA2D_USE_CUDA)  # This defines the macro variable A2D_USE_CUDA in c++ source code
+  add_subdirectory(src/cuda)
+endif()
+
 # Require Lapack
 find_package(LAPACK REQUIRED)
 
 # Require OpenMP
 find_package(OpenMP REQUIRED)
-
-# Check if AMGX is available
-set(AMGX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/include)
-set(AMGX_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/lib/)
-
-if (BUILD_EXAMPLES_AMGX)
-  if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
-    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
-  elseif(NOT EXISTS "${AMGX_LIB_DIR}")
-    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
-  else()
-    add_subdirectory(examples/amgx)
-  endif()
-endif()
 
 # Build pybind11 extension
 if (BUILD_EXTENION)
@@ -62,12 +61,25 @@ if (BUILD_TESTS)
     GIT_TAG        e2239ee6043f73722e7aa812a459f54a28552929 # release-1.10.0
   )
   FetchContent_MakeAvailable(googletest)
-
-  # Declare tests
   add_subdirectory(tests)
 endif()
 
 # Build examples
 if (BUILD_EXAMPLES_BASIC)
   add_subdirectory(examples/basic)
+endif()
+
+# Build amgx examples
+if (BUILD_EXAMPLES_AMGX)
+  # If use AMGX, the following directories should be valid
+  set(AMGX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/include)
+  set(AMGX_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/lib/)
+
+  if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
+    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
+  elseif(NOT EXISTS "${AMGX_LIB_DIR}")
+    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
+  else()
+    add_subdirectory(examples/amgx)
+  endif()
 endif()

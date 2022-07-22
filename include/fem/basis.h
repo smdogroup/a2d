@@ -47,14 +47,15 @@ class BasisOps {
       BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      A2D::parallel_for(npts, [&, N, j](A2D::index_t i) -> void {
+      auto lam = [&, N, j](A2D::index_t i) -> void {
         for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
           output(i, j, ii) = 0.0;
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
             output(i, j, ii) += N[kk] * input(i, kk, ii);
           }
         }
-      });
+      };
+      A2D::parallel_for(npts, lam);
     }
   }
 

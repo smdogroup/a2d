@@ -21,7 +21,7 @@ namespace A2D {
 template <typename T>
 void a2d_malloc(T** ptr_addr, std::size_t n) {
 #ifdef A2D_USE_CUDA
-  std::printf("a2dmemory.h:calling cuda_malloc()\n");
+  // std::printf("a2dmemory.h:calling cuda_malloc()\n");
 
   // Allocate CUDA unified memory
   int fail = cuda_malloc((void**)(void*)ptr_addr, sizeof(T) * n);
@@ -32,7 +32,7 @@ void a2d_malloc(T** ptr_addr, std::size_t n) {
     throw std::runtime_error(msg);
   }
 #else
-  std::printf("a2dmemory.h:using operator new[]\n");
+  // std::printf("a2dmemory.h:using operator new[]\n");
 
   // Allocate CPU memory
   *ptr_addr = new T[n];
@@ -49,7 +49,7 @@ void a2d_malloc(T** ptr_addr, std::size_t n) {
 template <typename T>
 void a2d_free(T* ptr) {
 #ifdef A2D_USE_CUDA
-  std::printf("a2dmemory.h:calling cuda_free()\n");
+  // std::printf("a2dmemory.h:calling cuda_free()\n");
   int fail = cuda_free(ptr);
   if (fail) {
     char msg[256];
@@ -57,7 +57,7 @@ void a2d_free(T* ptr) {
     throw std::runtime_error(msg);
   }
 #else
-  std::printf("a2dmemory.h:using operator delete[]\n");
+  // std::printf("a2dmemory.h:using operator delete[]\n");
   delete[] ptr;
 #endif
   return;

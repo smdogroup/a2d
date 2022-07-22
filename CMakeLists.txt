@@ -1,58 +1,51 @@
 # Specify cmake version needed
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
-# Set project name
-project(A2D VERSION 0.1)
-
-# Set options
-option(A2D_USE_CUDA "use CUDA" OFF)
-option(BUILD_TESTS "Compile the unit test executables" OFF)
-option(BUILD_EXAMPLES_BASIC "Compile the toy executables" ON)
-option(BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
-option(BUILD_EXTENION "Compile the pybind11 extension" ON)
-option(DEBUG "a debug build without compiler optimization" OFF)
-
-if (A2D_USE_CUDA)
-  enable_language(CUDA)
-  set(CMAKE_CUDA_STANDARD 11)
-  set(CMAKE_CUDA_STANDARD_REQUIRED True)
+# Set build type to release with debug info by default
+if (NOT CMAKE_BUILD_TYPE)
+  set(DEFAULT_BUILD_TYPE "Debug")
+  message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING
+      "Choose the type of build, options are: Debug, Release"
+      FORCE)
 endif()
 
-# Specify c++ standard
+# Set project name, language and c++ std
+project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Set compiler flags
-# TODO: do we need these flags for CUDA/nvcc?
-if (DEBUG)
-  set(CMAKE_CXX_FLAGS "-g -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
-else()
-  set(CMAKE_CXX_FLAGS "-g -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare")
-endif()
+# Set options
+option(A2D_BUILD_TESTS "Compile the unit test executables" ON)
+option(A2D_BUILD_EXAMPLES_BASIC "Compile the toy executables" ON)
+option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
+option(A2D_BUILD_EXTENION "Compile the pybind11 extension" ON)
+option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" OFF)
 
-# Set A2D include directory
-include_directories(${CMAKE_SOURCE_DIR}/include)
+# Set global compiler flags for a2d
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/output.txt CONTENT "CONFIG is $<CONFIG>")
+add_compile_options(
+  -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
+  $<$<CONFIG:Debug>:-g>
+  )
 
-if (A2D_USE_CUDA)
-  add_definitions(-DA2D_USE_CUDA)  # This defines the macro variable A2D_USE_CUDA in c++ source code
-  add_subdirectory(src/cuda)
-endif()
+# Set A2D root directory
+set(A2D_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
-# Require Lapack
+# Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
-
-# Require OpenMP
 find_package(OpenMP REQUIRED)
 
 # Build pybind11 extension
-if (BUILD_EXTENION)
-  execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
+if (A2D_BUILD_EXTENION)
+  execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE
+  pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
   find_package(pybind11 REQUIRED)
   add_subdirectory(pybind11)
 endif()
 
 # Build unit tests
-if (BUILD_TESTS)
+if (A2D_BUILD_TESTS)
   # Download google test (git tag needs to be updated frequently)
   include(FetchContent)
   FetchContent_Declare(
@@ -64,16 +57,16 @@ if (BUILD_TESTS)
   add_subdirectory(tests)
 endif()
 
-# Build examples
-if (BUILD_EXAMPLES_BASIC)
+# Build pure a2d examples
+if (A2D_BUILD_EXAMPLES_BASIC)
   add_subdirectory(examples/basic)
 endif()
 
 # Build amgx examples
-if (BUILD_EXAMPLES_AMGX)
+if (A2D_BUILD_EXAMPLES_AMGX)
   # If use AMGX, the following directories should be valid
-  set(AMGX_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/include)
-  set(AMGX_LIB_DIR ${CMAKE_SOURCE_DIR}/extern/AMGX/lib/)
+  set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/AMGX/include)
+  set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/AMGX/lib/)
 
   if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
     message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")

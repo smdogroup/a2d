@@ -3,9 +3,11 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <iostream>
 #include <numeric>
 #include <type_traits>
 
+#include "a2dmemory.h"
 #include "a2dobjs.h"
 
 namespace A2D {
@@ -178,7 +180,7 @@ class MultiArray {
       data_owner = false;
     } else {
       data_owner = true;
-      data = new T[layout.get_size()];
+      a2d_malloc(&data, layout.get_size());
       zero();
     }
   }
@@ -188,7 +190,7 @@ class MultiArray {
   }
   ~MultiArray() {
     if (data_owner) {
-      delete[] data;
+      a2d_free(data);
     }
   }
 
@@ -260,6 +262,7 @@ class MultiArray {
   */
   MultiArray<T, Layout>* duplicate() {
     const index_t len = layout.get_size();
+    std::printf("multiarray.h:creating MultiArray with operator new..\n");
     MultiArray<T, Layout>* array = new MultiArray<T, Layout>(layout);
     std::copy(data, data + len, array->data);
     return array;

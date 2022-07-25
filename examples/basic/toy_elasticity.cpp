@@ -9,14 +9,12 @@ using namespace A2D;
 typedef index_t I;
 typedef double T;
 
-int main(int argc, char* argv[]) {
-  Timer main_timer("main");
-
+void main_body(int argc, char* argv[]) {
   // Define problem dimension
   static const int SPATIAL_DIM = 3;
-  const index_t nx = 64;
-  const index_t ny = 64;
-  const index_t nz = 64;
+  const index_t nx = 32;
+  const index_t ny = 32;
+  const index_t nz = 32;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -94,6 +92,10 @@ int main(int argc, char* argv[]) {
   vtk.write_sol("ux", *solution, 0);
   vtk.write_sol("uy", *solution, 1);
   vtk.write_sol("uz", *solution, 2);
+}
 
+int main(int argc, char* argv[]) {
+  Timer main_timer("main");
+  main_body(argc, argv);
   return (0);
 }

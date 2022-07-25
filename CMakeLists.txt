@@ -12,40 +12,63 @@ endif()
 
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Set options
-option(A2D_BUILD_TESTS "Compile the unit test executables" ON)
-option(A2D_BUILD_EXAMPLES_BASIC "Compile the toy executables" ON)
-option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
-option(A2D_BUILD_EXTENION "Compile the pybind11 extension" ON)
-option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" OFF)
+# Set A2D root directory
+set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Set global compiler flags for a2d
-file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/output.txt CONTENT "CONFIG is $<CONFIG>")
+# Set options
+option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" ON)
+option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
+option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
+option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
+option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" ON)
+option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
+
+# Set global compiler flags
 add_compile_options(
   -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   $<$<CONFIG:Debug>:-g>
   )
 
-# Set A2D root directory
-set(A2D_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-
 # Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
+
+# If use kokkos, we build kokkos in-place
+if (A2D_USE_KOKKOS)
+  set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
+  if (NOT EXISTS ${A2D_KOKKOS_DIR})
+    message(WARNING "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
+  else()
+    # Build Kokkos
+    add_compile_definitions(A2D_USE_KOKKOS)
+    add_subdirectory(${A2D_KOKKOS_DIR})
+    include_directories(${A2D_KOKKOS_DIR}/core/src)
+    include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
+    include_directories(${A2D_KOKKOS_DIR}/containers/src)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
+
+    # # Build our own cuda functions
+    # if (Kokkos_ENABLE_CUDA)
+    #   add_subdirectory(${A2D_ROOT_DIR}/src/cuda)
+    # endif()
+  endif()
+endif()
 
 # Build pybind11 extension
 if (A2D_BUILD_EXTENION)
   execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE
   pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
   find_package(pybind11 REQUIRED)
-  add_subdirectory(pybind11)
+  add_subdirectory(${A2D_ROOT_DIR}/pybind11)
 endif()
 
 # Build unit tests
-if (A2D_BUILD_TESTS)
+if (A2D_BUILD_UNIT_TESTS)
   # Download google test (git tag needs to be updated frequently)
   include(FetchContent)
   FetchContent_Declare(
@@ -54,12 +77,12 @@ if (A2D_BUILD_TESTS)
     GIT_TAG        e2239ee6043f73722e7aa812a459f54a28552929 # release-1.10.0
   )
   FetchContent_MakeAvailable(googletest)
-  add_subdirectory(tests)
+  add_subdirectory(${A2D_ROOT_DIR}/tests)
 endif()
 
 # Build pure a2d examples
 if (A2D_BUILD_EXAMPLES_BASIC)
-  add_subdirectory(examples/basic)
+  add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
 endif()
 
 # Build amgx examples
@@ -67,12 +90,20 @@ if (A2D_BUILD_EXAMPLES_AMGX)
   # If use AMGX, the following directories should be valid
   set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/AMGX/include)
   set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/AMGX/lib/)
-
-  if (NOT EXISTS "${AMGX_INCLUDE_DIR}")
+  if (NOT EXISTS ${AMGX_INCLUDE_DIR})
     message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
-  elseif(NOT EXISTS "${AMGX_LIB_DIR}")
+  elseif(NOT EXISTS ${AMGX_LIB_DIR})
     message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
   else()
-    add_subdirectory(examples/amgx)
+    add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
+  endif()
+endif()
+
+# Build kokkos examples
+if (A2D_BUILD_EXAMPLES_KOKKOS)
+  if (NOT A2D_USE_KOKKOS)
+    message(WARNING "Need to specify A2D_USE_KOKKOS=ON to build Kokkos examples")
+  else()
+    add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
   endif()
 endif()

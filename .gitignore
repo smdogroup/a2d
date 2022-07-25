@@ -5,6 +5,6 @@ build/
 .vscode
 Makefile.in
 *.pyc
-extern/
+extern/*
 *.vtk
 *.log

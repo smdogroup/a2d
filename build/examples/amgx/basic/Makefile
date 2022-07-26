@@ -116,44 +116,6 @@ depend:
 	cd /root/a2d/build && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-# Convenience name for target.
-examples/amgx/basic/CMakeFiles/toy_amgx.dir/rule:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 examples/amgx/basic/CMakeFiles/toy_amgx.dir/rule
-.PHONY : examples/amgx/basic/CMakeFiles/toy_amgx.dir/rule
-
-# Convenience name for target.
-toy_amgx: examples/amgx/basic/CMakeFiles/toy_amgx.dir/rule
-.PHONY : toy_amgx
-
-# fast build rule for target.
-toy_amgx/fast:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/basic/CMakeFiles/toy_amgx.dir/build.make examples/amgx/basic/CMakeFiles/toy_amgx.dir/build
-.PHONY : toy_amgx/fast
-
-toy_amgx.o: toy_amgx.cpp.o
-.PHONY : toy_amgx.o
-
-# target to build an object file
-toy_amgx.cpp.o:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/basic/CMakeFiles/toy_amgx.dir/build.make examples/amgx/basic/CMakeFiles/toy_amgx.dir/toy_amgx.cpp.o
-.PHONY : toy_amgx.cpp.o
-
-toy_amgx.i: toy_amgx.cpp.i
-.PHONY : toy_amgx.i
-
-# target to preprocess a source file
-toy_amgx.cpp.i:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/basic/CMakeFiles/toy_amgx.dir/build.make examples/amgx/basic/CMakeFiles/toy_amgx.dir/toy_amgx.cpp.i
-.PHONY : toy_amgx.cpp.i
-
-toy_amgx.s: toy_amgx.cpp.s
-.PHONY : toy_amgx.s
-
-# target to generate assembly for a file
-toy_amgx.cpp.s:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/basic/CMakeFiles/toy_amgx.dir/build.make examples/amgx/basic/CMakeFiles/toy_amgx.dir/toy_amgx.cpp.s
-.PHONY : toy_amgx.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,10 +124,6 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... toy_amgx"
-	@echo "... toy_amgx.o"
-	@echo "... toy_amgx.i"
-	@echo "... toy_amgx.s"
 .PHONY : help
 
 

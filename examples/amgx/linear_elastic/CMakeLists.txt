@@ -30,7 +30,7 @@
 #     CUDA::cublas
 #     CUDA::cusparse)
 
-add_executable(amgx_part amgx_part.cpp)
+add_executable(amgx amgx.cpp)
 target_link_libraries(amgx_part 
   PUBLIC 
     OpenMP::OpenMP_CXX

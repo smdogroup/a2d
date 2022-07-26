@@ -32,11 +32,19 @@ using namespace A2D;
 void errAndExit(const char* err) {
   printf("%s\n", err);
   fflush(stdout);
+  MPI_Abort(MPI_COMM_WORLD, 1);
   exit(1);
 }
 
 /* print callback (could be customized) */
-void print_callback(const char* msg, int length) { printf("%s", msg); }
+void print_callback(const char* msg, int length) {
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  if (rank == 0) {
+    printf("%s", msg);
+  }
+}
 
 /* print usage and exit */
 void printUsageAndExit() {
@@ -207,6 +215,12 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   // parameter parsing
   int pidx = 0;
   int pidy = 0;
+  // MPI (with CUDA GPUs)
+  int rank = 0;
+  int lrank = 0;
+  int nranks = 0;
+  int gpu_count = 0;
+  MPI_Comm amgx_mpi_comm = MPI_COMM_WORLD;
   // number of outer (non-linear) iterations
   int i = 0;
   int k = 0;
@@ -216,13 +230,12 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   char *ver, *date, *time;
   // input matrix and rhs/solution
   int n, nnz, block_dimx, block_dimy, block_size, num_neighbors, ncol;
-  int *row_ptrs = NULL, *neighbors = NULL;
+  int*row_ptrs = NULL, *neighbors = NULL;
   int* col_indices = NULL;
-  void *values = NULL, *diag = NULL, *dh_x = NULL, *dh_b = NULL;
-  int* h_row_ptrs = NULL;
-  int* h_col_indices = NULL;
-  void *h_values = NULL, *h_diag = NULL, *h_x = NULL, *h_b = NULL;
+  int *h_row_ptrs = NULL, *h_col_indices = NULL;
   int *d_row_ptrs = NULL, *d_col_indices = NULL;
+  void *values = NULL, *diag = NULL, *dh_x = NULL, *dh_b = NULL;
+  void *h_values = NULL, *h_diag = NULL, *h_x = NULL, *h_b = NULL;
   void *d_values = NULL, *d_diag = NULL, *d_x = NULL, *d_b = NULL;
   int sizeof_m_val;
   int sizeof_v_val;
@@ -239,14 +252,20 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   block_dimx = mat->Avals.extent(1);
   block_dimy = mat->Avals.extent(2);
   block_size = block_dimx * block_dimy;
-  // h_row_ptrs = reinterpret_cast<int*>(mat->rowp),
-  // h_row_ptrs = reinterpret_cast<int*>(mat->rowp);
   h_row_ptrs = reinterpret_cast<int*>(mat->rowp);
   h_col_indices = reinterpret_cast<int*>(mat->cols);
+  // h_row_ptrs = mat->rowp;
+  // h_col_indices = mat->cols;
+  // print out the row pointers
+  // for (int i = 0; i < n + 1; i++) {
+  //   printf("%d\n", ((double*)h_row_ptrs)[i]);
+  // }
+  
   h_diag = mat->diag;
   h_values = mat->Avals.data;
   h_b = rhs->data;
   h_x = sol->data;
+  __CHECK__
 
   for (int i = 0; i < block_size; i++) {
     if (((double*)h_x)[i] < 1e-6) {
@@ -278,6 +297,15 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   AMGX_solver_handle solver;
   // status handling
   AMGX_SOLVE_STATUS status;
+  /* MPI init (with CUDA GPUs) */
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(amgx_mpi_comm, &nranks);
+  MPI_Comm_rank(amgx_mpi_comm, &rank);
+  // CUDA GPUs
+  CUDA_SAFE_CALL(cudaGetDeviceCount(&gpu_count));
+  lrank = rank % gpu_count;
+  CUDA_SAFE_CALL(cudaSetDevice(lrank));
+  printf("Process %d selecting device %d\n", rank, lrank);
 
   /* check arguments */
   if (argc == 1) {
@@ -298,6 +326,7 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     printf("amgx build version: %s\nBuild date and time: %s %s\n", ver, date,
            time);
     AMGX_SAFE_CALL(AMGX_finalize());
+    MPI_Finalize();
     exit(0);
   }
 
@@ -378,7 +407,7 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
    * point) */
   AMGX_SAFE_CALL(AMGX_config_add_parameters(&cfg, "exception_handling=1"));
   /* create resources, matrix, vector and solver */
-  AMGX_resources_create_simple(&rsrc, cfg);
+  AMGX_resources_create(&rsrc, cfg, &amgx_mpi_comm, 1, &lrank);
   AMGX_matrix_create(&A, rsrc, mode);
   AMGX_vector_create(&x, rsrc, mode);
   AMGX_vector_create(&b, rsrc, mode);
@@ -431,7 +460,7 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     /* allocate memory and copy the data to the GPU */
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_x, n * block_dimx * sizeof_v_val));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_b, n * block_dimy * sizeof_v_val));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_col_indices, nnz * sizeof(int64_t)));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_col_indices, nnz * sizeof(int)));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_row_ptrs, (n + 1) * sizeof(int)));
     CUDA_SAFE_CALL(
         cudaMalloc((void**)&d_values, nnz * block_size * sizeof_m_val));
@@ -440,9 +469,9 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     CUDA_SAFE_CALL(
         cudaMemcpy(d_b, h_b, n * block_dimy * sizeof_v_val, cudaMemcpyDefault));
     CUDA_SAFE_CALL(cudaMemcpy(d_col_indices, h_col_indices,
-                              nnz * sizeof(int64_t), cudaMemcpyDefault));
-    CUDA_SAFE_CALL(cudaMemcpy(d_row_ptrs, h_row_ptrs, (n + 1) * sizeof(int),
-                              cudaMemcpyDefault));
+                              nnz * sizeof(int), cudaMemcpyDefault));
+    CUDA_SAFE_CALL(cudaMemcpy(d_row_ptrs, h_row_ptrs,
+                              (n + 1) * sizeof(int), cudaMemcpyDefault));
     CUDA_SAFE_CALL(cudaMemcpy(d_values, h_values,
                               nnz * block_size * sizeof_m_val,
                               cudaMemcpyDefault));
@@ -485,16 +514,15 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     printf("  h_diag = %p\n", h_diag);
     printf("\n");
 
-    // AMGX_SAFE_CALL(AMGX_pin_memory(h_x, n * block_dimx * sizeof_v_val));
-    // AMGX_SAFE_CALL(AMGX_pin_memory(h_b, n * block_dimx * sizeof_v_val));
-    // AMGX_SAFE_CALL(AMGX_pin_memory(h_col_indices, nnz * sizeof(int64_t)));
-    // AMGX_SAFE_CALL(AMGX_pin_memory(h_row_ptrs, (n + 1) * sizeof(int)));
-    // AMGX_SAFE_CALL(AMGX_pin_memory(h_values, nnz * block_size *
-    // sizeof_m_val));
+    AMGX_SAFE_CALL(AMGX_pin_memory(h_x, n * block_dimx * sizeof_v_val));
+    AMGX_SAFE_CALL(AMGX_pin_memory(h_b, n * block_dimx * sizeof_v_val));
+    AMGX_SAFE_CALL(AMGX_pin_memory(h_col_indices, nnz * sizeof(int)));
+    AMGX_SAFE_CALL(AMGX_pin_memory(h_row_ptrs, (n + 1) * sizeof(int)));
+    AMGX_SAFE_CALL(AMGX_pin_memory(h_values, nnz * block_size * sizeof_m_val));
 
-    // if (h_diag != NULL) {
-    //   AMGX_SAFE_CALL(AMGX_pin_memory(h_diag, n * block_size * sizeof_m_val));
-    // }
+    if (h_diag != NULL) {
+      AMGX_SAFE_CALL(AMGX_pin_memory(h_diag, n * block_size * sizeof_m_val));
+    }
 
     /* set pointers to point to CPU (host) memory */
     row_ptrs = h_row_ptrs;
@@ -515,31 +543,41 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     // blocks (see example above). It is sufficient (and faster/more scalable)
     // to calculate the partition offsets and pass those into the API call
     // instead of creating a full partition vector.
-    int64_t* partition_offsets = (int64_t*)malloc((2) * sizeof(int64_t));
+    int64_t* partition_offsets =
+        (int64_t*)malloc((nranks + 1) * sizeof(int64_t));
     // gather the number of rows on each rank, and perform an exclusive scan to
     // get the offsets.
     int64_t n64 = n;
     partition_offsets[0] = 0;  // rows of rank 0 always start at index 0
-    partition_offsets[1] = n64;
-    nglobal = partition_offsets[1];  // last element always has global
-                                     // number of rows
+    MPI_Allgather(&n64, 1, MPI_INT64_T, &partition_offsets[1], 1, MPI_INT64_T,
+                  amgx_mpi_comm);
+    for (int i = 2; i < nranks + 1; ++i) {
+      partition_offsets[i] += partition_offsets[i - 1];
+    }
+    nglobal = partition_offsets[nranks];  // last element always has global
+                                          // number of rows
 
     AMGX_distribution_handle dist;
     AMGX_distribution_create(&dist, cfg);
-
-    printf("\n");
-    printf("Partitioning:\n");
-    printf("  nglobal = %d\n", nglobal);
-    printf("  partition_offsets = [");
-    for (int i = 0; i < 2; ++i) {
-      printf("%d ", partition_offsets[i]);
+    if (rank == 0) {
+      printf("\n");
+      printf("Partitioning:\n");
+      printf("  nranks = %d\n", nranks);
+      printf("  nglobal = %d\n", nglobal);
+      printf("  partition_offsets = [");
+      for (int i = 0; i < nranks + 1; ++i) {
+        printf("%d ", partition_offsets[i]);
+      }
+      printf("]\n");
+      printf("\n");
+      printf("dist:\n");
+      for (int i = 0; i < nranks; ++i) {
+        printf("%d\n", dist[i]);
+      }
+      printf("\n");
+      __CHECK__
     }
-    printf("]\n");
-    printf("\n");
-    printf("dist:\n");
-    printf("%d\n", dist[i]);
-    printf("\n");
-    __CHECK__
+    
     AMGX_distribution_set_partition_data(dist, AMGX_DIST_PARTITION_OFFSETS,
                                          partition_offsets);
     __CHECK__
@@ -550,9 +588,12 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
     free(partition_offsets);
   } else {
     __CHECK__
+    // MPI_Allreduce(&n, &nglobal, 1, MPI_INT, MPI_SUM, amgx_mpi_comm);
+    nglobal = n * nranks;
+    __CHECK__
     // AMGX_matrix_upload_all_global(A, nglobal, n, nnz, block_dimx, block_dimy,
-    //                               row_ptrs, col_indices, values, diag,
-    //                               nrings, nrings, NULL);
+    //                               row_ptrs, col_indices, values, diag, nrings,
+    //                               nrings, NULL);
     AMGX_matrix_upload_all(A, n, nnz, block_dimx, block_dimy, row_ptrs,
                            col_indices, values, diag);
     __CHECK__
@@ -581,10 +622,17 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   /* start outer (non-linear) iterations */
   for (k = 0; k < max_it; k++) {
     /* solver setup */
+    // MPI barrier for stability (should be removed in practice to maximize
+    // performance)
+    // MPI_Barrier(amgx_mpi_comm);
     AMGX_solver_setup(solver, A);
     /* solver solve */
+    // MPI barrier for stability (should be removed in practice to maximize
+    // performance)
+    // MPI_Barrier(amgx_mpi_comm);
     AMGX_solver_solve(solver, b, x);
     /* check the status */
+    // MPI_Barrier(amgx_mpi_comm);
     AMGX_solver_get_status(solver, &status);
 
     /* while not the last iteration */
@@ -604,6 +652,7 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
         }
       }
 
+      // MPI_Barrier(amgx_mpi_comm);
       AMGX_matrix_replace_coefficients(A, n, nnz, values, diag);
       /* upload original vectors (and the connectivity information) */
       AMGX_vector_upload(x, n, block_dimx, dh_x);
@@ -642,32 +691,32 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   // AMGX_write_system_distributed(A, b, x, "output_system.mtx", nrings, nranks,
   // partition_sizes, partition_vector_size, partition_vector);
 
-  // if ((pidx = findParamIndex(argv, argc, "-gpu")) != -1) {
-  //   /* deallocate GPU (device) memory */
-  //   CUDA_SAFE_CALL(cudaFree(d_x));
-  //   CUDA_SAFE_CALL(cudaFree(d_b));
-  //   CUDA_SAFE_CALL(cudaFree(d_row_ptrs));
-  //   CUDA_SAFE_CALL(cudaFree(d_col_indices));
-  //   CUDA_SAFE_CALL(cudaFree(d_values));
+  if ((pidx = findParamIndex(argv, argc, "-gpu")) != -1) {
+    /* deallocate GPU (device) memory */
+    CUDA_SAFE_CALL(cudaFree(d_x));
+    CUDA_SAFE_CALL(cudaFree(d_b));
+    CUDA_SAFE_CALL(cudaFree(d_row_ptrs));
+    CUDA_SAFE_CALL(cudaFree(d_col_indices));
+    CUDA_SAFE_CALL(cudaFree(d_values));
 
-  //   if (d_diag != NULL) {
-  //     CUDA_SAFE_CALL(cudaFree(d_diag));
-  //   }
-  // } else {
-  //   /* unpin the memory
-  //      WARNING: Even though, internal error handling has been requested,
-  //               AMGX_SAFE_CALL needs to be used on this system call.
-  //               It is an exception to the general rule. */
-  //   AMGX_SAFE_CALL(AMGX_unpin_memory(h_x));
-  //   AMGX_SAFE_CALL(AMGX_unpin_memory(h_b));
-  //   AMGX_SAFE_CALL(AMGX_unpin_memory(h_values));
-  //   AMGX_SAFE_CALL(AMGX_unpin_memory(h_row_ptrs));
-  //   AMGX_SAFE_CALL(AMGX_unpin_memory(h_col_indices));
+    if (d_diag != NULL) {
+      CUDA_SAFE_CALL(cudaFree(d_diag));
+    }
+  } else {
+    /* unpin the memory
+       WARNING: Even though, internal error handling has been requested,
+                AMGX_SAFE_CALL needs to be used on this system call.
+                It is an exception to the general rule. */
+    AMGX_SAFE_CALL(AMGX_unpin_memory(h_x));
+    AMGX_SAFE_CALL(AMGX_unpin_memory(h_b));
+    AMGX_SAFE_CALL(AMGX_unpin_memory(h_values));
+    AMGX_SAFE_CALL(AMGX_unpin_memory(h_row_ptrs));
+    AMGX_SAFE_CALL(AMGX_unpin_memory(h_col_indices));
 
-  //   if (h_diag != NULL) {
-  //     AMGX_SAFE_CALL(AMGX_unpin_memory(h_diag));
-  //   }
-  // }
+    if (h_diag != NULL) {
+      AMGX_SAFE_CALL(AMGX_unpin_memory(h_diag));
+    }
+  }
 
   // Get solve status
   AMGX_solver_get_status(solver, &status);
@@ -680,14 +729,15 @@ int amgx_solve(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   AMGX_resources_destroy(rsrc);
   AMGX_SAFE_CALL(AMGX_config_destroy(cfg));
   AMGX_SAFE_CALL(AMGX_finalize());
+  MPI_Finalize();
   CUDA_SAFE_CALL(cudaDeviceReset());
   return status;
 }
 
 int main(int argc, char** argv) {
-  const index_t nx = 64;
+  const index_t nx = 32;
   const index_t ny = 32;
-  const index_t nz = 16;
+  const index_t nz = 32;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);

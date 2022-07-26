@@ -1,41 +1,41 @@
 Determining if the function sgemm_ exists failed with the following output:
 Change Dir: /root/a2d/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make -f Makefile cmTC_96079/fast && /usr/bin/make  -f CMakeFiles/cmTC_96079.dir/build.make CMakeFiles/cmTC_96079.dir/build
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_c2925/fast && /usr/bin/make  -f CMakeFiles/cmTC_c2925.dir/build.make CMakeFiles/cmTC_c2925.dir/build
 make[1]: Entering directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_96079.dir/CheckFunctionExists.cxx.o
-/usr/bin/g++   -DCHECK_FUNCTION_EXISTS=sgemm_ -std=gnu++17 -o CMakeFiles/cmTC_96079.dir/CheckFunctionExists.cxx.o -c /root/a2d/build/CMakeFiles/CheckFunctionExists/CheckFunctionExists.cxx
-Linking CXX executable cmTC_96079
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_96079.dir/link.txt --verbose=1
-/usr/bin/g++  -DCHECK_FUNCTION_EXISTS=sgemm_ CMakeFiles/cmTC_96079.dir/CheckFunctionExists.cxx.o -o cmTC_96079 
-/usr/bin/ld: CMakeFiles/cmTC_96079.dir/CheckFunctionExists.cxx.o: in function `main':
+Building CXX object CMakeFiles/cmTC_c2925.dir/CheckFunctionExists.cxx.o
+/usr/bin/c++   -DCHECK_FUNCTION_EXISTS=sgemm_ -std=gnu++17 -o CMakeFiles/cmTC_c2925.dir/CheckFunctionExists.cxx.o -c /root/a2d/build/CMakeFiles/CheckFunctionExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_c2925
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c2925.dir/link.txt --verbose=1
+/usr/bin/c++  -DCHECK_FUNCTION_EXISTS=sgemm_ CMakeFiles/cmTC_c2925.dir/CheckFunctionExists.cxx.o -o cmTC_c2925 
+/usr/bin/ld: CMakeFiles/cmTC_c2925.dir/CheckFunctionExists.cxx.o: in function `main':
 CheckFunctionExists.cxx:(.text+0x14): undefined reference to `sgemm_'
 collect2: error: ld returned 1 exit status
-make[1]: *** [CMakeFiles/cmTC_96079.dir/build.make:99: cmTC_96079] Error 1
+make[1]: *** [CMakeFiles/cmTC_c2925.dir/build.make:99: cmTC_c2925] Error 1
 make[1]: Leaving directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-make: *** [Makefile:127: cmTC_96079/fast] Error 2
+make: *** [Makefile:127: cmTC_c2925/fast] Error 2
 
 
 
 Performing C++ SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
 Change Dir: /root/a2d/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make -f Makefile cmTC_50aea/fast && /usr/bin/make  -f CMakeFiles/cmTC_50aea.dir/build.make CMakeFiles/cmTC_50aea.dir/build
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_82a29/fast && /usr/bin/make  -f CMakeFiles/cmTC_82a29.dir/build.make CMakeFiles/cmTC_82a29.dir/build
 make[1]: Entering directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_50aea.dir/src.cxx.o
-/usr/bin/g++ -DCMAKE_HAVE_LIBC_PTHREAD  -std=gnu++17 -o CMakeFiles/cmTC_50aea.dir/src.cxx.o -c /root/a2d/build/CMakeFiles/CMakeTmp/src.cxx
-Linking CXX executable cmTC_50aea
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_50aea.dir/link.txt --verbose=1
-/usr/bin/g++ CMakeFiles/cmTC_50aea.dir/src.cxx.o -o cmTC_50aea 
-/usr/bin/ld: CMakeFiles/cmTC_50aea.dir/src.cxx.o: in function `main':
+Building CXX object CMakeFiles/cmTC_82a29.dir/src.cxx.o
+/usr/bin/c++ -DCMAKE_HAVE_LIBC_PTHREAD  -std=gnu++17 -o CMakeFiles/cmTC_82a29.dir/src.cxx.o -c /root/a2d/build/CMakeFiles/CMakeTmp/src.cxx
+Linking CXX executable cmTC_82a29
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_82a29.dir/link.txt --verbose=1
+/usr/bin/c++ CMakeFiles/cmTC_82a29.dir/src.cxx.o -o cmTC_82a29 
+/usr/bin/ld: CMakeFiles/cmTC_82a29.dir/src.cxx.o: in function `main':
 src.cxx:(.text+0x46): undefined reference to `pthread_create'
 /usr/bin/ld: src.cxx:(.text+0x52): undefined reference to `pthread_detach'
 /usr/bin/ld: src.cxx:(.text+0x5e): undefined reference to `pthread_cancel'
 /usr/bin/ld: src.cxx:(.text+0x6f): undefined reference to `pthread_join'
 collect2: error: ld returned 1 exit status
-make[1]: *** [CMakeFiles/cmTC_50aea.dir/build.make:99: cmTC_50aea] Error 1
+make[1]: *** [CMakeFiles/cmTC_82a29.dir/build.make:99: cmTC_82a29] Error 1
 make[1]: Leaving directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-make: *** [Makefile:127: cmTC_50aea/fast] Error 2
+make: *** [Makefile:127: cmTC_82a29/fast] Error 2
 
 
 Source file was:
@@ -62,18 +62,18 @@ int main(void)
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /root/a2d/build/CMakeFiles/CMakeTmp
 
-Run Build Command(s):/usr/bin/make -f Makefile cmTC_3ded2/fast && /usr/bin/make  -f CMakeFiles/cmTC_3ded2.dir/build.make CMakeFiles/cmTC_3ded2.dir/build
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_4205e/fast && /usr/bin/make  -f CMakeFiles/cmTC_4205e.dir/build.make CMakeFiles/cmTC_4205e.dir/build
 make[1]: Entering directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-Building CXX object CMakeFiles/cmTC_3ded2.dir/CheckFunctionExists.cxx.o
-/usr/bin/g++   -DCHECK_FUNCTION_EXISTS=pthread_create -std=gnu++17 -o CMakeFiles/cmTC_3ded2.dir/CheckFunctionExists.cxx.o -c /root/a2d/build/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
-Linking CXX executable cmTC_3ded2
-/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3ded2.dir/link.txt --verbose=1
-/usr/bin/g++  -DCHECK_FUNCTION_EXISTS=pthread_create CMakeFiles/cmTC_3ded2.dir/CheckFunctionExists.cxx.o -o cmTC_3ded2  -lpthreads 
+Building CXX object CMakeFiles/cmTC_4205e.dir/CheckFunctionExists.cxx.o
+/usr/bin/c++   -DCHECK_FUNCTION_EXISTS=pthread_create -std=gnu++17 -o CMakeFiles/cmTC_4205e.dir/CheckFunctionExists.cxx.o -c /root/a2d/build/CMakeFiles/CheckLibraryExists/CheckFunctionExists.cxx
+Linking CXX executable cmTC_4205e
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4205e.dir/link.txt --verbose=1
+/usr/bin/c++  -DCHECK_FUNCTION_EXISTS=pthread_create CMakeFiles/cmTC_4205e.dir/CheckFunctionExists.cxx.o -o cmTC_4205e  -lpthreads 
 /usr/bin/ld: cannot find -lpthreads
 collect2: error: ld returned 1 exit status
-make[1]: *** [CMakeFiles/cmTC_3ded2.dir/build.make:99: cmTC_3ded2] Error 1
+make[1]: *** [CMakeFiles/cmTC_4205e.dir/build.make:99: cmTC_4205e] Error 1
 make[1]: Leaving directory '/root/a2d/build/CMakeFiles/CMakeTmp'
-make: *** [Makefile:127: cmTC_3ded2/fast] Error 2
+make: *** [Makefile:127: cmTC_4205e/fast] Error 2
 
 
 

@@ -73,15 +73,15 @@ examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o: examples/am
 examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o: ../examples/amgx/linear_elastic/amgx_mpi.cpp
 examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o: examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/root/a2d/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o"
-	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o -MF CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o.d -o CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o -c /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp
+	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o -MF CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o.d -o CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o -c /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp
 
 examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.i"
-	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp > CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.i
+	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp > CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.i
 
 examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.s"
-	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp -o CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.s
+	cd /root/a2d/build/examples/amgx/linear_elastic && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /root/a2d/examples/amgx/linear_elastic/amgx_mpi.cpp -o CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.s
 
 # Object files for target amgx_mpi
 amgx_mpi_OBJECTS = \

@@ -117,42 +117,42 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/rule:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/rule
-.PHONY : examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/rule
+examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/rule:
+	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/rule
+.PHONY : examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/rule
 
 # Convenience name for target.
-amgx_part: examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/rule
-.PHONY : amgx_part
+amgx_mpi: examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/rule
+.PHONY : amgx_mpi
 
 # fast build rule for target.
-amgx_part/fast:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build
-.PHONY : amgx_part/fast
+amgx_mpi/fast:
+	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build
+.PHONY : amgx_mpi/fast
 
-amgx_part.o: amgx_part.cpp.o
-.PHONY : amgx_part.o
+amgx_mpi.o: amgx_mpi.cpp.o
+.PHONY : amgx_mpi.o
 
 # target to build an object file
-amgx_part.cpp.o:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/amgx_part.cpp.o
-.PHONY : amgx_part.cpp.o
+amgx_mpi.cpp.o:
+	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.o
+.PHONY : amgx_mpi.cpp.o
 
-amgx_part.i: amgx_part.cpp.i
-.PHONY : amgx_part.i
+amgx_mpi.i: amgx_mpi.cpp.i
+.PHONY : amgx_mpi.i
 
 # target to preprocess a source file
-amgx_part.cpp.i:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/amgx_part.cpp.i
-.PHONY : amgx_part.cpp.i
+amgx_mpi.cpp.i:
+	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.i
+.PHONY : amgx_mpi.cpp.i
 
-amgx_part.s: amgx_part.cpp.s
-.PHONY : amgx_part.s
+amgx_mpi.s: amgx_mpi.cpp.s
+.PHONY : amgx_mpi.s
 
 # target to generate assembly for a file
-amgx_part.cpp.s:
-	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/amgx_part.cpp.s
-.PHONY : amgx_part.cpp.s
+amgx_mpi.cpp.s:
+	cd /root/a2d/build && $(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/amgx_mpi.cpp.s
+.PHONY : amgx_mpi.cpp.s
 
 # Help Target
 help:
@@ -162,10 +162,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... amgx_part"
-	@echo "... amgx_part.o"
-	@echo "... amgx_part.i"
-	@echo "... amgx_part.s"
+	@echo "... amgx_mpi"
+	@echo "... amgx_mpi.o"
+	@echo "... amgx_mpi.i"
+	@echo "... amgx_mpi.s"
 .PHONY : help
 
 

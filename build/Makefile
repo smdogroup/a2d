@@ -117,30 +117,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named toy_amgx
+# Target rules for targets named amgx_mpi
 
 # Build rule for target.
-toy_amgx: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 toy_amgx
-.PHONY : toy_amgx
+amgx_mpi: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 amgx_mpi
+.PHONY : amgx_mpi
 
 # fast build rule for target.
-toy_amgx/fast:
-	$(MAKE) $(MAKESILENT) -f examples/amgx/basic/CMakeFiles/toy_amgx.dir/build.make examples/amgx/basic/CMakeFiles/toy_amgx.dir/build
-.PHONY : toy_amgx/fast
-
-#=============================================================================
-# Target rules for targets named amgx_part
-
-# Build rule for target.
-amgx_part: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 amgx_part
-.PHONY : amgx_part
-
-# fast build rule for target.
-amgx_part/fast:
-	$(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir/build
-.PHONY : amgx_part/fast
+amgx_mpi/fast:
+	$(MAKE) $(MAKESILENT) -f examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build.make examples/amgx/linear_elastic/CMakeFiles/amgx_mpi.dir/build
+.PHONY : amgx_mpi/fast
 
 # Help Target
 help:
@@ -150,8 +137,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... amgx_part"
-	@echo "... toy_amgx"
+	@echo "... amgx_mpi"
 .PHONY : help
 
 

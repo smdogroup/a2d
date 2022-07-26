@@ -1,1 +1,0 @@
-/usr/bin/g++ -g CMakeFiles/toy_amgx.dir/toy_amgx.cpp.o -o toy_amgx   -L/root/a2d/extern/amgx/lib  -Wl,-rpath,/root/a2d/extern/amgx/lib ../../../../extern/amgx/lib//libamgxsh.so /usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so /usr/lib/x86_64-linux-gnu/libpthread.so -lpthread -lm -ldl /usr/lib/x86_64-linux-gnu/libopenblas.so 

@@ -9,6 +9,7 @@
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -424,14 +425,14 @@ class BSRMatAmg {
             std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
             bool print_info = false)
-      : omega(omega),
-        epsilon(epsilon),
-        rho(0.0),
-        level(-1),
+      : level(-1),
         A(A),
         B(B),
         P(NULL),
         PT(NULL),
+        omega(omega),
+        epsilon(epsilon),
+        rho(0.0),
         Dinv(NULL),
         Afact(NULL),
         x(NULL),
@@ -473,6 +474,7 @@ class BSRMatAmg {
   bool mg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30) {
+    Timer timer("BSRMatAmg::mg()");
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);
 
@@ -520,6 +522,7 @@ class BSRMatAmg {
   bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30, I iters_per_reset = 100) {
+    Timer timer("BSRMatAmg::cg()");
     // R, Z and P and work are temporary vectors
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);
@@ -694,14 +697,14 @@ class BSRMatAmg {
   // Private constructor for initializing the class
   BSRMatAmg(T omega, T epsilon, std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
-      : omega(omega),
-        epsilon(epsilon),
-        rho(0.0),
-        level(-1),
+      : level(-1),
         A(A),
         B(B),
         P(NULL),
         PT(NULL),
+        omega(omega),
+        epsilon(epsilon),
+        rho(0.0),
         Dinv(NULL),
         Afact(NULL),
         x(NULL),

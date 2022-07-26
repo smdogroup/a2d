@@ -1,0 +1,10 @@
+/root/a2d/build/CMakeFiles/edit_cache.dir
+/root/a2d/build/CMakeFiles/rebuild_cache.dir
+/root/a2d/build/examples/amgx/CMakeFiles/edit_cache.dir
+/root/a2d/build/examples/amgx/CMakeFiles/rebuild_cache.dir
+/root/a2d/build/examples/amgx/basic/CMakeFiles/toy_amgx.dir
+/root/a2d/build/examples/amgx/basic/CMakeFiles/edit_cache.dir
+/root/a2d/build/examples/amgx/basic/CMakeFiles/rebuild_cache.dir
+/root/a2d/build/examples/amgx/linear_elastic/CMakeFiles/amgx_part.dir
+/root/a2d/build/examples/amgx/linear_elastic/CMakeFiles/edit_cache.dir
+/root/a2d/build/examples/amgx/linear_elastic/CMakeFiles/rebuild_cache.dir

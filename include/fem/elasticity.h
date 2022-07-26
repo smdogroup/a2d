@@ -8,6 +8,7 @@
 #include "element.h"
 #include "functional.h"
 #include "multiarray.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -181,6 +182,8 @@ class NonlinElasticityElement
 
   void add_jacobian(
       typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
+    // Time this function
+    Timer timer("NonlinElasticityElement::add_jacobian()");
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data
@@ -398,6 +401,7 @@ class LinElasticityElement
 
   void add_jacobian(
       typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
+    Timer timer("LinElasticityElement::add_jacobian()");
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data
@@ -545,14 +549,14 @@ class TopoIsoConstitutive
           element,
       T q, T E, T nu, T density, T design_stress, T beta = 20.0,
       T xoffset = 0.5)
-      : element(element),
-        q(q),
+      : q(q),
+        xoffset(xoffset),
+        beta(beta),
         E(E),
         nu(nu),
         density(density),
         design_stress(design_stress),
-        beta(beta),
-        xoffset(xoffset),
+        element(element),
         elem_design_layout(element->nelems),
         quad_design_layout(element->nelems),
         xe(elem_design_layout),
@@ -740,7 +744,7 @@ class TopoVonMisesAggregation
   TopoVonMisesAggregation(
       std::shared_ptr<TopoIsoConstitutive<I, T, BasisOps>> con,
       T weight = 100.0)
-      : con(con), weight(weight) {
+      : weight(weight), con(con) {
     offset = 0.0;
     integral = 1.0;
   }

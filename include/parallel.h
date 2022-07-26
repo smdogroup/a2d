@@ -3,14 +3,24 @@
 
 #include <omp.h>
 
+#include <string>
+
+#ifdef A2D_USE_KOKKOS
+#include "a2dkokkos.h"
+#endif
+
 namespace A2D {
 
 template <class FunctorType>
 void parallel_for(const A2D::index_t N, const FunctorType& func) {
+#ifdef A2D_USE_KOKKOS
+  Kokkos::parallel_for(N, func);
+#else
 #pragma omp parallel for
   for (index_t i = 0; i < N; ++i) {
     func(i);
   }
+#endif
 }
 
 template <typename T, class FunctorType>

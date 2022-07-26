@@ -1,6 +1,8 @@
 #ifndef A2D_SPARSE_NUMERIC_H
 #define A2D_SPARSE_NUMERIC_H
 
+#include <stdexcept>
+
 #include "block_numeric.h"
 #include "multiarray.h"
 #include "sparse_matrix.h"
@@ -879,10 +881,11 @@ extern void dgeev_(const char *JOBVL, const char *JOBVR, int *N, double *A,
 */
 template <typename I, typename T, index_t M>
 T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
+  // Allocate the Upper Hessenberg matrix of shape (size + 1, size)
   double *H = new double[size * (size + 1)];
-  std::fill(H, H + size, 0.0);
+  std::fill(H, H + size * (size + 1), 0.0);
 
-  // Allocate space for the vectors
+  // Allocate space for the orthonormal basis vectors
   MultiArray<T, CLayout<M>> **W;
   W = new MultiArray<T, CLayout<M>> *[size + 1];
 
@@ -891,8 +894,11 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
 
   // Create an initial random vector
   W[0]->random();
+  auto norm = A2D::RealPart(W[0]->norm());
+  W[0]->scale(1.0 / norm);
 
   for (I i = 0; i < size; i++) {
+    // Allocate the next vector
     W[i + 1] = W[i]->duplicate();
 
     // Multiply by the matrix to get the next vector
@@ -900,13 +906,13 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
 
     // Orthogonalize against the existing subspace
     for (I j = 0; j <= i; j++) {
-      I index = j + i * (size + 1);
+      I index = j + i * size;  // row-major index for entry H(j, i)
       H[index] = A2D::RealPart(W[i + 1]->dot(*W[j]));
       W[i + 1]->axpy(-H[index], *W[j]);
     }
 
     // Add the term to the matrix
-    I index = i + 1 + i * (size + 1);
+    I index = i + 1 + i * size;  // row-major index for entry H(i + 1, i)
     H[index] = A2D::RealPart(W[i + 1]->norm());
     W[i + 1]->scale(1.0 / H[index]);
   }
@@ -915,15 +921,22 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   double *eigreal = new double[size];
   double *eigimag = new double[size];
 
-  // Compute the eigenspectrum of the Hessenberg matrix
+  // Compute the eigenspectrum of the reduced Hessenberg matrix
   int hsize = size;
   int lwork = 4 * size;
   double *work = new double[lwork];
   int ldv = 1;
-  int ldh = size + 1;
+  int ldh = size;
   int info = 0;
   dgeev_("N", "N", &hsize, H, &ldh, eigreal, eigimag, NULL, &ldv, NULL, &ldv,
          work, &lwork, &info);
+
+  // Throw runtime error if dgeev failed
+  if (info != 0) {
+    char msg[256];
+    std::sprintf(msg, "Eigensolver failed with exit code %d.", info);
+    throw std::runtime_error(msg);
+  }
 
   // Find the maximum absolute eigenvalue
   T rho = 0.0;

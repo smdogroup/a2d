@@ -6,6 +6,7 @@
 #include "constitutive.h"
 #include "element.h"
 #include "multiarray.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -148,6 +149,7 @@ class HelmholtzElement
   // Add the element Jacobian contribution
   void add_jacobian(
       typename HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
+    Timer timer("HelmholtzElement::add_jacobian()");
     typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
 
     // Retrieve the element data

@@ -275,7 +275,6 @@ class ADpMat2x2MatMultExpr
   }
 
   void forward() {
-    const Mat<ScalarType, 2, 2>& B = BObj.value();
     const Mat<ScalarType, 2, 2>& Bb = BObj.bvalue();
     Mat<ScalarType, 2, 2>& Cb = CObj.bvalue();
 
@@ -291,7 +290,6 @@ class ADpMat2x2MatMultExpr
   }
 
   void reverse() {
-    const Mat<ScalarType, 2, 2>& B = BObj.value();
     Mat<ScalarType, 2, 2>& Bb = BObj.bvalue();
     const Mat<ScalarType, 2, 2>& Cb = CObj.bvalue();
 
@@ -342,7 +340,6 @@ class ADMat2x2pMatMultExpr
   }
 
   void forward() {
-    const Mat<ScalarType, 2, 2>& A = AObj.value();
     const Mat<ScalarType, 2, 2>& Ab = AObj.bvalue();
     Mat<ScalarType, 2, 2>& Cb = CObj.bvalue();
 
@@ -633,7 +630,6 @@ class A2DMat2x2DetExpr : public ADExpression<A2DMat2x2DetExpr<N, ScalarType>> {
   void hreverse() {
     const ScalarType bdet = detObj.bvalue;
     const Mat<ScalarType, 2, 2>& A = AObj.value();
-    const Mat<ScalarType, 2, 2>& Ab = AObj.bvalue();
 
     for (int i = 0; i < N; i++) {
       const ScalarType hdet = detObj.hvalue[i];
@@ -775,7 +771,6 @@ class A2DMat2x2InverseExpr
     Mat<ScalarType, 2, 2> tmp, tmp2;
 
     const Mat<ScalarType, 2, 2>& Ainv = AinvObj.value();
-    const Mat<ScalarType, 2, 2>& Ainvb = AinvObj.bvalue();
     const Mat<ScalarType, 2, 2>& Ab = AObj.bvalue();
 
     for (int i = 0; i < N; i++) {
@@ -873,7 +868,6 @@ class A2DSymm2x2TraceExpr
 
   void hreverse() {
     for (int i = 0; i < N; i++) {
-      const SymmMat<ScalarType, 2>& Sp = SObj.pvalue(i);
       SymmMat<ScalarType, 2>& Sh = SObj.hvalue(i);
 
       Sh(0, 0) += output.hvalue[i];

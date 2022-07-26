@@ -1,0 +1,27 @@
+========================
+Tue Jul 26 15:16:13 2022
+========================
+FEModel::init() executed
+    BasisOps::interp() executed
+    BasisOps::interp() exits                                                    (14 ms)
+    BasisOps::compute_jtrans() executed
+    BasisOps::compute_jtrans() exits                                            (6 ms)
+FEModel::init() exits                                                           (21 ms)
+BasisOps::interp() executed
+BasisOps::interp() exits                                                        (16 ms)
+FEModel::new_matrix() executed
+FEModel::new_matrix() exits                                                     (229 ms)
+FEModel::jacobian() executed
+    LinElasticityElement::add_jacobian() executed
+        BasisOps::jacobians(2) executed
+        BasisOps::jacobians(2) exits                                            (77 ms)
+    LinElasticityElement::add_jacobian() exits                                  (164 ms)
+FEModel::jacobian() exits                                                       (167 ms)
+FEModel::new_solution() executed
+FEModel::new_solution() exits                                                   (0 ms)
+FEModel::new_solution() executed
+FEModel::new_solution() exits                                                   (0 ms)
+FEModel::new_amg() executed
+FEModel::new_amg() exits                                                        (206 ms)
+BSRMatAmg::cg() executed
+BSRMatAmg::cg() exits                                                           (629 ms)

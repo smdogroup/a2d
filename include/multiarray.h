@@ -3,9 +3,11 @@
 
 #include <cstddef>
 #include <cstdlib>
+#include <iostream>
 #include <numeric>
 #include <type_traits>
 
+#include "a2dmemory.h"
 #include "a2dobjs.h"
 
 namespace A2D {
@@ -178,17 +180,35 @@ class MultiArray {
       data_owner = false;
     } else {
       data_owner = true;
-      data = new T[layout.get_size()];
+      a2d_malloc(&data, layout.get_size());
       zero();
     }
   }
+
+  /**
+   * @brief Copy constructor: shallow copy is performed
+   */
   MultiArray(const MultiArray<T, Layout>& src)
       : layout(src.layout), data(src.data) {
     data_owner = false;
   }
+
+  /**
+   * @brief Assignment operator: shallow copy is performed
+   *
+   * TODO: Actually, this will be never invoked for now since there is no
+   * default constructor for MultiArray
+   */
+  MultiArray& operator=(const MultiArray<T, Layout>& src) {
+    layout = src.layout;
+    data = src.data;
+    data_owner = false;
+    return *this;
+  }
+
   ~MultiArray() {
     if (data_owner) {
-      delete[] data;
+      a2d_free(data);
     }
   }
 
@@ -196,18 +216,11 @@ class MultiArray {
   T* data;
 
   /*
-    Non-constant access to array elements
+    Constant access to array elements, note: defining member function as const
+    gives it better flexibility
   */
   template <class... IdxType>
-  T& operator()(IdxType... idx) {
-    return data[layout.compute_index(idx...)];
-  }
-
-  /*
-    Constant access to array elements
-  */
-  template <class... IdxType>
-  const T& operator()(IdxType... idx) const {
+  T& operator()(IdxType... idx) const {
     return data[layout.compute_index(idx...)];
   }
 
@@ -320,23 +333,17 @@ template <typename T, index_t... dims>
 class MultiArraySlice {
  public:
   template <class IdxType>
-  MultiArraySlice(MultiArray<T, CLayout<dims...>>& array, const IdxType idx) {
+  MultiArraySlice(const MultiArray<T, CLayout<dims...>>& array,
+                  const IdxType idx) {
     data = &array.data[array.layout.get_size(idx)];
   }
 
   /*
-    Non-constant access to array elements
+    Constant access to array elements, note: defining member function as const
+    gives it better flexibility
   */
   template <class... IdxType>
-  T& operator()(IdxType... idx) {
-    return data[__compute_index<0, IdxType...>(0, idx...)];
-  }
-
-  /*
-    Constant access to array elements
-  */
-  template <class... IdxType>
-  const T& operator()(IdxType... idx) const {
+  T& operator()(IdxType... idx) const {
     return data[__compute_index<0, IdxType...>(0, idx...)];
   }
 
@@ -368,16 +375,18 @@ class MultiArraySlice {
 };
 
 template <typename T, typename IdxType, index_t... ldims>
-MultiArraySlice<T, ldims...> MakeSlice(MultiArray<T, CLayout<ldims...>>& array,
-                                       IdxType idx) {
+MultiArraySlice<T, ldims...> MakeSlice(
+    const MultiArray<T, CLayout<ldims...>>& array, IdxType idx) {
   return MultiArraySlice<T, ldims...>(array, idx);
 }
 
-template <typename T, typename IdxType, index_t dim0, index_t... ldims>
-MultiArraySlice<T, ldims...> MakeSlice(
-    MultiArray<T, CLayout<dim0, ldims...>>& array, IdxType idx0, IdxType idx1) {
-  return MultiArraySlice<T, ldims...>(array, idx0, idx1);
-}
+// template <typename T, typename IdxType, index_t dim0, index_t... ldims>
+// MultiArraySlice<T, ldims...> MakeSlice(
+//     MultiArray<T, CLayout<dim0, ldims...>>& array, IdxType idx0, IdxType
+//     idx1) {
+//   std::printf("Calling MakeSlice(1)\n");
+//   return MultiArraySlice<T, ldims...>(array, idx0, idx1);
+// }
 
 }  // namespace A2D
 

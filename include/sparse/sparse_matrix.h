@@ -54,7 +54,17 @@ class BSRMat {
     color_count = NULL;
   }
   BSRMat(const BSRMat &src)
-      : nbrows(src.nbrows), nbcols(src.nbcols), nnz(src.nnz), Avals(src.Avals) {
+      : nbrows(src.nbrows),
+        nbcols(src.nbcols),
+        nnz(src.nnz),
+        rowp(src.rowp),
+        cols(src.cols),
+        diag(src.diag),
+        perm(src.perm),
+        iperm(src.iperm),
+        num_colors(src.num_colors),
+        color_count(src.color_count),
+        Avals(src.Avals) {
     data_owner = false;
   }
   ~BSRMat() {

@@ -88,7 +88,7 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
 template <typename I, typename T, index_t M, index_t N>
 void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
                    MultiArray<T, CLayout<M>> &y) {
-  A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
+  A2D::parallel_for(A.nbrows, [A, x, y](A2D::index_t i) -> void {
     auto yb = MakeSlice(y, i);
     yb.zero();
 
@@ -109,7 +109,7 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
 template <typename I, typename T, index_t M, index_t N>
 void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
                       MultiArray<T, CLayout<M>> &y) {
-  A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
+  A2D::parallel_for(A.nbrows, [A, x, y](A2D::index_t i) -> void {
     auto yb = MakeSlice(y, i);
 
     const I jp_end = A.rowp[i + 1];
@@ -129,7 +129,7 @@ void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
 template <typename I, typename T, index_t M, index_t N>
 void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
                       MultiArray<T, CLayout<M>> &y) {
-  A2D::parallel_for(A.nbrows, [&](A2D::index_t i) -> void {
+  A2D::parallel_for(A.nbrows, [A, x, y](A2D::index_t i) -> void {
     auto yb = MakeSlice(y, i);
 
     const I jp_end = A.rowp[i + 1];
@@ -154,7 +154,7 @@ void BSRMatMatMult(BSRMat<I, T, M, N> &A, BSRMat<I, T, N, P> &B,
   // C_{ik} = A_{ij} B_{jk}
   // for (I i = 0; i < C.nbrows; i++) {
   C.zero();
-  A2D::parallel_for(C.nbrows, [&](A2D::index_t i) -> void {
+  A2D::parallel_for(C.nbrows, [A, B, C](A2D::index_t i) -> void {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       I j = A.cols[jp];
       auto Ab = MakeSlice(A.Avals, jp);
@@ -191,7 +191,7 @@ template <typename I, typename T, index_t M, index_t N, index_t P>
 void BSRMatMatMultAddScale(T scale, BSRMat<I, T, M, N> &A,
                            BSRMat<I, T, N, P> &B, BSRMat<I, T, M, P> &C) {
   // C_{ik} = A_{ij} B_{jk}
-  A2D::parallel_for(C.nbrows, [&](A2D::index_t i) -> void {
+  A2D::parallel_for(C.nbrows, [scale, A, B, C](A2D::index_t i) -> void {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       I j = A.cols[jp];
       auto Ab = MakeSlice(A.Avals, jp);
@@ -621,36 +621,37 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
       const index_t count = A.color_count[color];
 
       // for (I irow = 0; irow < count; irow++) {
-      A2D::parallel_for(count, [&](index_t irow) -> void {
-        I i = A.perm[irow + offset];
+      A2D::parallel_for(count,
+                        [Dinv, A, omega, b, x, offset](index_t irow) -> void {
+                          I i = A.perm[irow + offset];
 
-        // Copy over the values
-        A2D::Vec<T, M> t;
-        for (I m = 0; m < M; m++) {
-          t(m) = b(i, m);
-        }
+                          // Copy over the values
+                          A2D::Vec<T, M> t;
+                          for (I m = 0; m < M; m++) {
+                            t(m) = b(i, m);
+                          }
 
-        const int jp_end = A.rowp[i + 1];
-        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-          I j = A.cols[jp];
+                          const int jp_end = A.rowp[i + 1];
+                          for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+                            I j = A.cols[jp];
 
-          if (i != j) {
-            auto xb = MakeSlice(x, j);
-            auto Ab = MakeSlice(A.Avals, jp);
+                            if (i != j) {
+                              auto xb = MakeSlice(x, j);
+                              auto Ab = MakeSlice(A.Avals, jp);
 
-            blockGemvSub<T, M, M>(Ab, xb, t);
-          }
-        }
+                              blockGemvSub<T, M, M>(Ab, xb, t);
+                            }
+                          }
 
-        // x = (1 - omega) * x + omega * D^{-1} * t
-        auto xb = MakeSlice(x, i);
-        for (I m = 0; m < M; m++) {
-          xb(m) = (1.0 - omega) * xb(m);
-        }
+                          // x = (1 - omega) * x + omega * D^{-1} * t
+                          auto xb = MakeSlice(x, i);
+                          for (I m = 0; m < M; m++) {
+                            xb(m) = (1.0 - omega) * xb(m);
+                          }
 
-        auto D = MakeSlice(Dinv.Avals, i);
-        blockGemvAddScale<T, M, M>(omega, D, t, xb);
-      });
+                          auto D = MakeSlice(Dinv.Avals, i);
+                          blockGemvAddScale<T, M, M>(omega, D, t, xb);
+                        });
 
       offset += count;
     }
@@ -699,36 +700,37 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
     for (I color = 0, offset = 0; color < A.num_colors; color++) {
       const index_t count = A.color_count[color];
 
-      A2D::parallel_for(count, [&](index_t irow) -> void {
-        I i = A.perm[irow + offset];
+      A2D::parallel_for(count,
+                        [Dinv, A, omega, b, x, offset](index_t irow) -> void {
+                          I i = A.perm[irow + offset];
 
-        // Copy over the values
-        A2D::Vec<T, M> t;
-        for (I m = 0; m < M; m++) {
-          t(m) = b(i, m);
-        }
+                          // Copy over the values
+                          A2D::Vec<T, M> t;
+                          for (I m = 0; m < M; m++) {
+                            t(m) = b(i, m);
+                          }
 
-        const int jp_end = A.rowp[i + 1];
-        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-          I j = A.cols[jp];
+                          const int jp_end = A.rowp[i + 1];
+                          for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+                            I j = A.cols[jp];
 
-          if (i != j) {
-            auto xb = MakeSlice(x, j);
-            auto Ab = MakeSlice(A.Avals, jp);
+                            if (i != j) {
+                              auto xb = MakeSlice(x, j);
+                              auto Ab = MakeSlice(A.Avals, jp);
 
-            blockGemvSub<T, M, M>(Ab, xb, t);
-          }
-        }
+                              blockGemvSub<T, M, M>(Ab, xb, t);
+                            }
+                          }
 
-        // x = (1 - omega) * x + omega * D^{-1} * t
-        auto xb = MakeSlice(x, i);
-        for (I m = 0; m < M; m++) {
-          xb(m) = (1.0 - omega) * xb(m);
-        }
+                          // x = (1 - omega) * x + omega * D^{-1} * t
+                          auto xb = MakeSlice(x, i);
+                          for (I m = 0; m < M; m++) {
+                            xb(m) = (1.0 - omega) * xb(m);
+                          }
 
-        auto D = MakeSlice(Dinv.Avals, i);
-        blockGemvAddScale<T, M, M>(omega, D, t, xb);
-      });
+                          auto D = MakeSlice(Dinv.Avals, i);
+                          blockGemvAddScale<T, M, M>(omega, D, t, xb);
+                        });
 
       offset += count;
     }
@@ -737,36 +739,37 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
     for (I color = A.num_colors; color > 0; color--) {
       const index_t count = A.color_count[color - 1];
 
-      A2D::parallel_for(count, [&](index_t irow) -> void {
-        I i = A.perm[irow + offset];
+      A2D::parallel_for(count,
+                        [Dinv, A, omega, b, x, offset](index_t irow) -> void {
+                          I i = A.perm[irow + offset];
 
-        // Copy over the values
-        A2D::Vec<T, M> t;
-        for (I m = 0; m < M; m++) {
-          t(m) = b(i, m);
-        }
+                          // Copy over the values
+                          A2D::Vec<T, M> t;
+                          for (I m = 0; m < M; m++) {
+                            t(m) = b(i, m);
+                          }
 
-        const int jp_end = A.rowp[i + 1];
-        for (I jp = A.rowp[i]; jp < jp_end; jp++) {
-          I j = A.cols[jp];
+                          const int jp_end = A.rowp[i + 1];
+                          for (I jp = A.rowp[i]; jp < jp_end; jp++) {
+                            I j = A.cols[jp];
 
-          if (i != j) {
-            auto xb = MakeSlice(x, j);
-            auto Ab = MakeSlice(A.Avals, jp);
+                            if (i != j) {
+                              auto xb = MakeSlice(x, j);
+                              auto Ab = MakeSlice(A.Avals, jp);
 
-            blockGemvSub<T, M, M>(Ab, xb, t);
-          }
-        }
+                              blockGemvSub<T, M, M>(Ab, xb, t);
+                            }
+                          }
 
-        // x = (1 - omega) * x + omega * D^{-1} * t
-        auto xb = MakeSlice(x, i);
-        for (I m = 0; m < M; m++) {
-          xb(m) = (1.0 - omega) * xb(m);
-        }
+                          // x = (1 - omega) * x + omega * D^{-1} * t
+                          auto xb = MakeSlice(x, i);
+                          for (I m = 0; m < M; m++) {
+                            xb(m) = (1.0 - omega) * xb(m);
+                          }
 
-        auto D = MakeSlice(Dinv.Avals, i);
-        blockGemvAddScale<T, M, M>(omega, D, t, xb);
-      });
+                          auto D = MakeSlice(Dinv.Avals, i);
+                          blockGemvAddScale<T, M, M>(omega, D, t, xb);
+                        });
 
       if (color >= 2) {
         offset -= A.color_count[color - 2];

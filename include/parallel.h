@@ -5,6 +5,8 @@
 
 #include <string>
 
+#include "a2dobjs.h"
+
 #ifdef A2D_USE_KOKKOS
 #include "a2dkokkos.h"
 #endif
@@ -12,7 +14,7 @@
 namespace A2D {
 
 template <class FunctorType>
-void parallel_for(const A2D::index_t N, const FunctorType& func) {
+void parallel_for(const index_t N, const FunctorType& func) {
 #ifdef A2D_USE_KOKKOS
   Kokkos::parallel_for(N, func);
 #else
@@ -24,7 +26,7 @@ void parallel_for(const A2D::index_t N, const FunctorType& func) {
 }
 
 template <typename T, class FunctorType>
-T parallel_reduce(const A2D::index_t N, const FunctorType& func) {
+T parallel_reduce(const index_t N, const FunctorType& func) {
   T sum = 0.0;
 
 #pragma omp parallel

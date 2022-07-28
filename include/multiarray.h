@@ -86,15 +86,15 @@ class FLayout {
     }
   }
   const index_t dim0;
-  static const index_t rank = sizeof...(dims) + 1;
-  static const index_t get_rank() { return rank; }
+  static constexpr index_t rank = sizeof...(dims) + 1;
+  static constexpr index_t get_rank() { return rank; }
 
   // Get the size of the array required given the first dimension
   static index_t get_size(index_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
-  const index_t get_extent(index_t index) const {
+  constexpr index_t get_extent(index_t index) const {
     if (index == 0) {
       return dim0;
     }
@@ -102,24 +102,24 @@ class FLayout {
   }
 
   template <class Idx, class... IdxType>
-  const index_t compute_index(Idx i1, IdxType... idx) const {
+  constexpr index_t compute_index(Idx i1, IdxType... idx) const {
     return i1 + dim0 * __compute_index<0>(idx...);
   }
 
-  const index_t get_size() { return size; }
+  constexpr index_t get_size() { return size; }
 
  private:
   index_t size;
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  static const index_t __compute_index(Idx i, IdxType... idx) {
+  static constexpr index_t __compute_index(Idx i, IdxType... idx) {
     return i +
            ___get_extent<r, dims...>::extent * __compute_index<r + 1>(idx...);
   }
 
   template <int r, class Idx>
-  static const index_t __compute_index(Idx i) {
+  static constexpr index_t __compute_index(Idx i) {
     return i;
   }
 };
@@ -161,7 +161,7 @@ class CLayout {
     return dim * __get_size<dims...>::size;
   }
 
-  const index_t get_extent(index_t index) const {
+  constexpr index_t get_extent(index_t index) const {
     if (index == 0) {
       return dim0;
     }
@@ -169,25 +169,25 @@ class CLayout {
   }
 
   template <class Idx, class... IdxType>
-  const index_t compute_index(Idx i1, IdxType... idx) const {
+  constexpr index_t compute_index(Idx i1, IdxType... idx) const {
     return __compute_index<0>(i1, idx...);
   }
 
-  const index_t get_size() { return size; }
+  constexpr index_t get_size() { return size; }
 
  private:
   index_t size;
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  static const index_t __compute_index(const index_t index, Idx i,
-                                       IdxType... idx) {
+  static constexpr index_t __compute_index(const index_t index, Idx i,
+                                           IdxType... idx) {
     return __compute_index<r + 1>(index * ___get_extent<r, dims...>::extent + i,
                                   idx...);
   }
 
   template <int r, class Idx>
-  static const index_t __compute_index(const index_t index, Idx i) {
+  static constexpr index_t __compute_index(const index_t index, Idx i) {
     return index * ___get_extent<r, dims...>::extent + i;
   }
 };
@@ -238,12 +238,14 @@ class MultiArray {
   /*
     Get the rank of the the multi-dimensional array
   */
-  const index_t get_rank() const { return layout.get_rank(); }
+  constexpr index_t get_rank() const { return layout.get_rank(); }
 
   /*
     Get the extent of one of the dimensions
   */
-  const index_t extent(index_t index) const { return layout.get_extent(index); }
+  constexpr index_t extent(index_t index) const {
+    return layout.get_extent(index);
+  }
 
   /*
     Zero all elements in the array
@@ -401,12 +403,14 @@ class MultiArray {
   /*
     Get the rank of the the multi-dimensional array
   */
-  const index_t get_rank() const { return layout.get_rank(); }
+  constexpr index_t get_rank() const { return layout.get_rank(); }
 
   /*
     Get the extent of one of the dimensions
   */
-  const index_t extent(index_t index) const { return layout.get_extent(index); }
+  constexpr index_t extent(index_t index) const {
+    return layout.get_extent(index);
+  }
 
   /*
     Zero all elements in the array
@@ -537,14 +541,14 @@ class MultiArraySlice {
   static const index_t size = __get_size<dims...>::size;
 
   template <int r, class Idx, class... IdxType>
-  static const index_t __compute_index(const index_t index, Idx i,
-                                       IdxType... idx) {
+  static constexpr index_t __compute_index(const index_t index, Idx i,
+                                           IdxType... idx) {
     return __compute_index<r + 1>(index * ___get_extent<r, dims...>::extent + i,
                                   idx...);
   }
 
   template <int r, class Idx>
-  static const index_t __compute_index(const index_t index, Idx i) {
+  static constexpr index_t __compute_index(const index_t index, Idx i) {
     return index * ___get_extent<r, dims...>::extent + i;
   }
 };

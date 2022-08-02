@@ -68,24 +68,6 @@ if (A2D_USE_KOKKOS)
   endif()
 endif()
 
-# If use kokkos, we build kokkos in-place
-if (A2D_USE_KOKKOS)
-  set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
-  if (NOT EXISTS ${A2D_KOKKOS_DIR})
-    message(WARNING "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
-  else()
-    # Build Kokkos
-    add_compile_definitions(A2D_USE_KOKKOS)
-    add_subdirectory(${A2D_KOKKOS_DIR})
-    include_directories(${A2D_KOKKOS_DIR}/core/src)
-    include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
-    include_directories(${A2D_KOKKOS_DIR}/containers/src)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
-  endif()
-endif()
-
 # Build pybind11 extension
 if (A2D_BUILD_EXTENION)
   execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE
@@ -110,20 +92,6 @@ endif()
 # Build pure a2d examples
 if (A2D_BUILD_EXAMPLES_BASIC)
   add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
-endif()
-
-# Build amgx examples
-if (A2D_BUILD_EXAMPLES_AMGX)
-  # If use AMGX, the following directories should be valid
-  set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/AMGX/include)
-  set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/AMGX/lib/)
-  if (NOT EXISTS ${AMGX_INCLUDE_DIR})
-    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
-  elseif(NOT EXISTS ${AMGX_LIB_DIR})
-    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
-  else()
-    add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
-  endif()
 endif()
 
 # Build kokkos examples

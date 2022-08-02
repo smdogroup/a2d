@@ -89,9 +89,9 @@ int amgxSolver(Matrix& mat, Vector& rhs, Vector& sol, int argc, char** argv) {
   block_dimx = mat->Avals.extent(1);
   block_dimy = mat->Avals.extent(2);
   block_size = block_dimx * block_dimy;
-  h_row_ptrs = (int*)(mat->rowp);
-  h_col_indices = (int*)(mat->cols);
-  h_diag = mat->diag;
+  h_row_ptrs = (int*)(mat->rowp.data);
+  h_col_indices = (int*)(mat->cols.data);
+  h_diag = mat->diag.data;
   h_values = mat->Avals.data;
   h_b = rhs->data;
   h_x = sol->data;

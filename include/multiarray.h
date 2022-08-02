@@ -608,13 +608,8 @@ template <typename T, index_t... dims>
 class MultiArraySlice {
  public:
   template <class IdxType>
-<<<<<<< HEAD
-  MultiArraySlice(const MultiArray<T, CLayout<dims...>>& array,
-                  const IdxType idx) {
-=======
   A2D_INLINE_FUNCTION MultiArraySlice(
       const MultiArray<T, CLayout<dims...>>& array, const IdxType idx) {
->>>>>>> develop
     data = &array.data[array.layout.get_size(idx)];
   }
 
@@ -623,11 +618,7 @@ class MultiArraySlice {
     gives it better flexibility
   */
   template <class... IdxType>
-<<<<<<< HEAD
-  T& operator()(IdxType... idx) const {
-=======
   A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
->>>>>>> develop
     return data[__compute_index<0, IdxType...>(0, idx...)];
   }
 
@@ -660,11 +651,7 @@ class MultiArraySlice {
 };
 
 template <typename T, typename IdxType, index_t... ldims>
-<<<<<<< HEAD
-MultiArraySlice<T, ldims...> MakeSlice(
-=======
 A2D_INLINE_FUNCTION MultiArraySlice<T, ldims...> MakeSlice(
->>>>>>> develop
     const MultiArray<T, CLayout<ldims...>>& array, IdxType idx) {
   return MultiArraySlice<T, ldims...>(array, idx);
 }

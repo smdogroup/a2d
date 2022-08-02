@@ -321,10 +321,9 @@ BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
   int* indep_ptr = NULL;
   int* indep_vars = NULL;
   int use_exact_degree = 0;
-  amd_order_interface(nrows, (int*)rowp.data.get(), (int*)cols.data.get(),
-                      (int*)perm_.data.get(), interface_nodes, ninterface_nodes,
-                      ndep_vars, dep_vars, indep_ptr, indep_vars,
-                      use_exact_degree);
+  amd_order_interface(nrows, (int*)rowp.data, (int*)cols.data, (int*)perm_.data,
+                      interface_nodes, ninterface_nodes, ndep_vars, dep_vars,
+                      indep_ptr, indep_vars, use_exact_degree);
 
   // Set up the factorization
   // perm[new var] = old_var
@@ -605,7 +604,7 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
 
       I* col_ptr = At->find_column_index(j, i);  // Find At(j, i)
       if (col_ptr) {
-        I kp = col_ptr - At->cols.data.get();
+        I kp = col_ptr - At->cols.data;
         auto At0 = MakeSlice(At->Avals, kp);
 
         for (I k1 = 0; k1 < M; k1++) {
@@ -708,9 +707,8 @@ void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
   IdxArray1D_t colors(IdxLayout1D_t(A.nbrows));
 
   // Use A->perm as a temporary variable to avoid double allocation
-  A.num_colors =
-      CSRMultiColorOrder(A.nbrows, A.rowp.data.get(), A.cols.data.get(),
-                         colors.data.get(), A.perm.data.get());
+  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp.data, A.cols.data,
+                                    colors.data, A.perm.data);
 
   // Count up the number of nodes with each color
   A.color_count = IdxArray1D_t(IdxLayout1D_t(A.num_colors));

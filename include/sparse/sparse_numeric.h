@@ -65,7 +65,7 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
         I *col_ptr = A.find_column_index(row, col);
 
         if (col_ptr) {
-          I jp = col_ptr - A.cols.data.get();
+          I jp = col_ptr - A.cols.data;
           auto Ab = MakeSlice(A.Avals, jp);
 
           for (I k1 = 0; k1 < M; k1++) {
@@ -249,7 +249,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
 
         I *col_ptr = dest.find_column_index(idest, jdest);
         if (col_ptr) {
-          I kp = col_ptr - dest.cols.data.get();
+          I kp = col_ptr - dest.cols.data;
 
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < N; k2++) {
@@ -578,7 +578,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
   for (I i = 0; i < nrows; i++) {
     I *col_ptr = A.find_column_index(i, i);
     if (col_ptr) {
-      I jp = col_ptr - A.cols.data.get();
+      I jp = col_ptr - A.cols.data;
       auto A0 = MakeSlice(A.Avals, jp);
       auto D0 = MakeSlice(D->Avals, D->nnz);
 

@@ -60,7 +60,7 @@ class BSRMat {
         color_count(src.color_count),
         Avals(src.Avals) {}
 
-  ~BSRMat() {}
+  A2D_INLINE_FUNCTION ~BSRMat() {}
 
   // Zero the entries of the matrix
   A2D_INLINE_FUNCTION void zero() { Avals.zero(); }

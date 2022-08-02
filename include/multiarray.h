@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <numeric>
 #include <type_traits>
 
@@ -20,25 +21,32 @@ struct ___get_extent;
 
 template <index_t dim0, index_t... dims>
 struct ___get_extent<0, dim0, dims...> {
-  static const index_t extent = dim0;
+  static constexpr index_t extent = dim0;
 };
 
 template <int r, index_t dim0, index_t... dims>
 struct ___get_extent<r, dim0, dims...> {
-  static const index_t extent = ___get_extent<r - 1, dims...>::extent;
+  static constexpr index_t extent = ___get_extent<r - 1, dims...>::extent;
 };
 
 template <index_t... dims>
 struct __get_size;
 
+template <>
+struct __get_size<> {
+  static constexpr index_t size =
+      1;  // This is the multiplier of the runtime dimension (dim0) - so it's 1
+          // rather than 0
+};
+
 template <index_t dim0, index_t... dims>
 struct __get_size<dim0, dims...> {
-  static const index_t size = dim0 * __get_size<dims...>::size;
+  static constexpr index_t size = dim0 * __get_size<dims...>::size;
 };
 
 template <index_t dim0>
 struct __get_size<dim0> {
-  static const index_t size = dim0;
+  static constexpr index_t size = dim0;
 };
 
 /**
@@ -78,7 +86,7 @@ class FLayout {
       size *= get_extent(i);
     }
   }
-  FLayout(const FLayout<dims...>& src)
+  A2D_INLINE_FUNCTION FLayout(const FLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
     size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
@@ -99,6 +107,11 @@ class FLayout {
       return dim0;
     }
     return static_extents[index - 1];
+  }
+
+  template <class Idx>
+  A2D_INLINE_FUNCTION constexpr index_t compute_index(Idx i1) const {
+    return i1;
   }
 
   template <class Idx, class... IdxType>
@@ -136,13 +149,25 @@ class CLayout {
   template <typename T>
   using KokkosTypeTemplate = typename ParsePack<T, dims...>::kokkos_type;
 
+  /**
+   * @brief Default constructor
+   */
+  CLayout() {}
+
+  /**
+   * @brief Regular constructor
+   */
   CLayout(const index_t dim0) : dim0(dim0), static_extents{dims...} {
     size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
       size *= get_extent(i);
     }
   }
-  CLayout(const CLayout<dims...>& src)
+
+  /**
+   * @brief Copy constructor (light-weight copy)
+   */
+  A2D_INLINE_FUNCTION CLayout(const CLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
     size = dim0;
     for (index_t i = 1; i < get_rank(); i++) {
@@ -150,44 +175,68 @@ class CLayout {
     }
   }
 
-  const index_t dim0;
+  /**
+   * @brief Destructor
+   */
+  A2D_INLINE_FUNCTION ~CLayout() {}
+
+  /**
+   * @brief Assignment operator
+   */
+  CLayout<dims...>& operator=(const CLayout<dims...>& src) {
+    dim0 = src.dim0;
+    size = src.size;
+    for (index_t i = 0; i != rank - 1; i++) {
+      static_extents[i] = src.static_extents[i];
+    }
+    return *this;
+  }
+
+  index_t dim0;
   static constexpr index_t rank = sizeof...(dims) + 1;  // total number of
                                                         // dimensions (fixed and
                                                         // variable)
-  static constexpr index_t get_rank() { return rank; }
+  A2D_INLINE_FUNCTION static constexpr index_t get_rank() { return rank; }
 
   // Get the size of the array required given the first dimension
-  static index_t get_size(index_t dim) {
+  A2D_INLINE_FUNCTION static index_t get_size(index_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
-  constexpr index_t get_extent(index_t index) const {
+  A2D_INLINE_FUNCTION constexpr index_t get_extent(index_t index) const {
     if (index == 0) {
       return dim0;
     }
     return static_extents[index - 1];
   }
 
+  template <class Idx>
+  A2D_INLINE_FUNCTION constexpr index_t compute_index(Idx i1) const {
+    return i1;
+  }
+
   template <class Idx, class... IdxType>
-  constexpr index_t compute_index(Idx i1, IdxType... idx) const {
+  A2D_INLINE_FUNCTION constexpr index_t compute_index(Idx i1,
+                                                      IdxType... idx) const {
     return __compute_index<0>(i1, idx...);
   }
 
-  constexpr index_t get_size() { return size; }
+  A2D_INLINE_FUNCTION constexpr index_t get_size() { return size; }
 
  private:
   index_t size;
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  static constexpr index_t __compute_index(const index_t index, Idx i,
-                                           IdxType... idx) {
+  A2D_INLINE_FUNCTION static constexpr index_t __compute_index(
+      const index_t index, Idx i, IdxType... idx) {
     return __compute_index<r + 1>(index * ___get_extent<r, dims...>::extent + i,
                                   idx...);
   }
 
   template <int r, class Idx>
-  static constexpr index_t __compute_index(const index_t index, Idx i) {
+  A2D_INLINE_FUNCTION static constexpr index_t __compute_index(
+      const index_t index, Idx i) {
     return index * ___get_extent<r, dims...>::extent + i;
   }
 };
@@ -203,9 +252,13 @@ template <typename T, class Layout>
 class MultiArray {
  public:
   using type = T;
-  using ViewType =
-      Kokkos::View<typename Layout::template KokkosTypeTemplate<T>>;
-
+#ifdef KOKKOS_ENABLE_CUDA
+  using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
+                                Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
+#else
+  using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
+                                Kokkos::LayoutRight, Kokkos::HostSpace>;
+#endif
   /**
    * @brief Construct a new Kokkos View wrapper
    *
@@ -218,63 +271,78 @@ class MultiArray {
     data = view.data();
   }
 
+  MultiArray() { data = nullptr; }
+
   /*
     Constant access to array elements, note: defining member function as const
     gives it better flexibility
   */
   template <class... IdxType>
-  T& operator()(IdxType... idx) const {
+  A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
+    return view(idx...);
+  }
+
+  template <class... IdxType>
+  A2D_INLINE_FUNCTION T& operator[](IdxType... idx) const {
     return view(idx...);
   }
 
   /**
    * @brief Copy constructor: shallow copy is performed
    */
-  MultiArray(const MultiArray<T, Layout>& src)
+  A2D_INLINE_FUNCTION MultiArray(const MultiArray<T, Layout>& src)
       : layout(src.layout), view(src.view), data(src.data) {}
 
-  ~MultiArray() {}
+  A2D_INLINE_FUNCTION ~MultiArray() {}
 
   /*
     Get the rank of the the multi-dimensional array
   */
-  constexpr index_t get_rank() const { return layout.get_rank(); }
+  A2D_INLINE_FUNCTION constexpr index_t get_rank() const {
+    return layout.get_rank();
+  }
 
   /*
     Get the extent of one of the dimensions
   */
-  constexpr index_t extent(index_t index) const {
+  A2D_INLINE_FUNCTION constexpr index_t extent(index_t index) const {
     return layout.get_extent(index);
   }
 
   /*
     Zero all elements in the array
   */
-  void zero() {
+  A2D_INLINE_FUNCTION void zero() {
     const index_t len = layout.get_size();
-    std::fill(data, data + len, T(0));
+    for (index_t i = 0; i != len; i++) {
+      data[i] = T(0);
+    }
   }
 
   /*
     Fill all the values in the array with the specified value
   */
-  void fill(T value) {
+  A2D_INLINE_FUNCTION void fill(T value) {
     const index_t len = layout.get_size();
-    std::fill(data, data + len, value);
+    for (index_t i = 0; i != len; i++) {
+      data[i] = value;
+    }
   }
 
   /*
     Copy elements from the source to this vector
   */
-  void copy(MultiArray<T, Layout>& src) {
+  A2D_INLINE_FUNCTION void copy(MultiArray<T, Layout>& src) {
     const index_t len = layout.get_size();
-    std::copy(src.data, src.data + len, data);
+    for (index_t i = 0; i != len; i++) {
+      data[i] = src.data[i];
+    }
   }
 
   /*
     Copy elements from the source to this vector
   */
-  void scale(T alpha) {
+  A2D_INLINE_FUNCTION void scale(T alpha) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] *= alpha;
@@ -297,31 +365,38 @@ class MultiArray {
   void random(T lower = -1.0, T upper = 1.0) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data[i] =
-          lower + ((upper - lower) * (1.0 * std::rand())) / (1.0 * RAND_MAX);
+      data[i] = lower + ((upper - lower) * (1.0 * rand())) / (1.0 * RAND_MAX);
     }
   }
 
   /*
     Take the dot product with the source vector data
   */
-  T dot(MultiArray<T, Layout>& src) {
+  A2D_INLINE_FUNCTION T dot(MultiArray<T, Layout>& src) {
     const index_t len = layout.get_size();
-    return std::inner_product(data, data + len, src.data, T(0));
+    T result = T(0);
+    for (index_t i = 0; i < len; i++) {
+      result += data[i] * src.data[i];
+    }
+    return result;
   }
 
   /*
     Norm of the array
   */
-  T norm() {
+  A2D_INLINE_FUNCTION T norm() {
     const index_t len = layout.get_size();
-    return std::sqrt(std::inner_product(data, data + len, data, T(0)));
+    T result = T(0);
+    for (index_t i = 0; i < len; i++) {
+      result += data[i] * data[i];
+    }
+    return sqrt(result);
   }
 
   /*
     Axpy: this = alpha * x + this
   */
-  void axpy(T alpha, MultiArray<T, Layout>& x) {
+  A2D_INLINE_FUNCTION void axpy(T alpha, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] += alpha * x.data[i];
@@ -331,7 +406,7 @@ class MultiArray {
   /*
     Axpby: this = alpha * x + beta * this
   */
-  void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
+  A2D_INLINE_FUNCTION void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] = alpha * x.data[i] + beta * data[i];
@@ -343,31 +418,55 @@ class MultiArray {
   T* data;
 };
 #else
-/*
-A multi-dimensional array
-*/
+
+/**
+ * @brief A multi-dimensional array that behaves like the shared_ptr
+ */
 template <typename T, class Layout>
 class MultiArray {
  public:
-  typedef T type;
+  using type = T;
+  using SharedPtrType = std::shared_ptr<T[]>;
+  Layout layout;
+  T* data;  // raw pointer
 
-  MultiArray(Layout layout, T* data_ = nullptr) : layout(layout), data(data_) {
-    if (data) {
-      data_owner = false;
-    } else {
-      data_owner = true;
-      a2d_malloc(&data, layout.get_size());
-      zero();
+  /**
+   * @brief Default constructor
+   *
+   * This create skeleton only, no memory allocation
+   */
+  MultiArray() { data = nullptr; }
+
+  /**
+   * @brief Constructor, allocate the array managed by shared_ptr
+   */
+  MultiArray(Layout layout) : layout(layout) {
+    data_sp = SharedPtrType(new T[layout.get_size()]);
+    data = data_sp.get();
+    zero();
+  }
+
+  /**
+   * @brief Constructor, allocate the array managed by shared_ptr and copy
+   * values
+   */
+  MultiArray(Layout layout, T* vals) : layout(layout) {
+    printf(
+        "[Warning] Creating multiarray from outside array via "
+        "copy-by-value.\n");
+    index_t N = layout.get_size();
+    data_sp = SharedPtrType(new T[N]);
+    for (int i = 0; i != N; i++) {
+      data_sp[i] = vals[i];
     }
+    data = data_sp.get();
   }
 
   /**
    * @brief Copy constructor: shallow copy is performed
    */
   MultiArray(const MultiArray<T, Layout>& src)
-      : layout(src.layout), data(src.data) {
-    data_owner = false;
-  }
+      : layout(src.layout), data(src.data), data_sp(src.data_sp) {}
 
   /**
    * @brief Assignment operator: shallow copy is performed
@@ -377,19 +476,17 @@ class MultiArray {
    */
   MultiArray& operator=(const MultiArray<T, Layout>& src) {
     layout = src.layout;
+    data_sp = src.data_sp;
     data = src.data;
-    data_owner = false;
     return *this;
   }
 
-  ~MultiArray() {
-    if (data_owner) {
-      a2d_free(data);
-    }
-  }
-
-  Layout layout;
-  T* data;
+  /**
+   * @brief Destructor - memory is managed by the smart pointer (shared_ptr),
+   * hence nothing needs to be done here
+   *
+   */
+  ~MultiArray() {}
 
   /*
     Constant access to array elements, note: defining member function as const
@@ -397,7 +494,12 @@ class MultiArray {
   */
   template <class... IdxType>
   T& operator()(IdxType... idx) const {
-    return data[layout.compute_index(idx...)];
+    return data_sp[layout.compute_index(idx...)];
+  }
+
+  template <class... IdxType>
+  T& operator[](IdxType... idx) const {
+    return data_sp[layout.compute_index(idx...)];
   }
 
   /*
@@ -442,7 +544,7 @@ class MultiArray {
   void scale(T alpha) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data[i] *= alpha;
+      data_sp[i] *= alpha;
     }
   }
 
@@ -462,7 +564,7 @@ class MultiArray {
   void random(T lower = -1.0, T upper = 1.0) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data[i] =
+      data_sp[i] =
           lower + ((upper - lower) * (1.0 * std::rand())) / (1.0 * RAND_MAX);
     }
   }
@@ -489,7 +591,7 @@ class MultiArray {
   void axpy(T alpha, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data[i] += alpha * x.data[i];
+      data_sp[i] += alpha * x.data_sp[i];
     }
   }
 
@@ -499,12 +601,12 @@ class MultiArray {
   void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data[i] = alpha * x.data[i] + beta * data[i];
+      data_sp[i] = alpha * x.data_sp[i] + beta * data_sp[i];
     }
   }
 
  private:
-  bool data_owner;
+  SharedPtrType data_sp;  // smart pointer
 };
 #endif
 
@@ -512,8 +614,8 @@ template <typename T, index_t... dims>
 class MultiArraySlice {
  public:
   template <class IdxType>
-  MultiArraySlice(const MultiArray<T, CLayout<dims...>>& array,
-                  const IdxType idx) {
+  A2D_INLINE_FUNCTION MultiArraySlice(
+      const MultiArray<T, CLayout<dims...>>& array, const IdxType idx) {
     data = &array.data[array.layout.get_size(idx)];
   }
 
@@ -522,14 +624,14 @@ class MultiArraySlice {
     gives it better flexibility
   */
   template <class... IdxType>
-  T& operator()(IdxType... idx) const {
+  A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
     return data[__compute_index<0, IdxType...>(0, idx...)];
   }
 
   /*
     Zero the entries of the slice
   */
-  void zero() {
+  A2D_INLINE_FUNCTION void zero() {
     for (index_t i = 0; i < size; i++) {
       data[i] = 0.0;
     }
@@ -554,7 +656,7 @@ class MultiArraySlice {
 };
 
 template <typename T, typename IdxType, index_t... ldims>
-MultiArraySlice<T, ldims...> MakeSlice(
+A2D_INLINE_FUNCTION MultiArraySlice<T, ldims...> MakeSlice(
     const MultiArray<T, CLayout<ldims...>>& array, IdxType idx) {
   return MultiArraySlice<T, ldims...>(array, idx);
 }

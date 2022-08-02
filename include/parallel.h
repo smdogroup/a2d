@@ -13,10 +13,13 @@
 
 namespace A2D {
 
-template <class FunctorType>
-void parallel_for(const index_t N, const FunctorType& func) {
+template <typename IdxType, class FunctorType>
+void parallel_for(const IdxType N, const FunctorType& func) {
 #ifdef A2D_USE_KOKKOS
   Kokkos::parallel_for(N, func);
+#ifdef KOKKOS_ENABLE_CUDA
+  Kokkos::fence();
+#endif
 #else
 #pragma omp parallel for
   for (index_t i = 0; i < N; ++i) {

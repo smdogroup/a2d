@@ -307,7 +307,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       I* col_ptr = A.find_column_index(i, i);
 
       if (col_ptr) {
-        I jp = col_ptr - A.cols.data.get();
+        I jp = col_ptr - A.cols.data;
 
         auto D = MakeSlice(A.Avals, jp);
         d[i] = 0.0;

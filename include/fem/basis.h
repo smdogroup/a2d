@@ -48,7 +48,7 @@ class BasisOps {
       BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      auto lam = [input, output, N, j](A2D::index_t i) -> void {
+      auto lam = A2D_LAMBDA(A2D::index_t i)->void {
         for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
           output(i, j, ii) = 0.0;
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
@@ -81,13 +81,14 @@ class BasisOps {
       BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      A2D::parallel_for(npts, [input, output, N, j](A2D::index_t i) -> void {
-        for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
-          for (index_t kk = 0; kk < NUM_NODES; kk++) {
-            output(i, kk, ii) += N[kk] * input(i, j, ii);
-          }
-        }
-      });
+      A2D::parallel_for(
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
+            for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
+              for (index_t kk = 0; kk < NUM_NODES; kk++) {
+                output(i, kk, ii) += N[kk] * input(i, j, ii);
+              }
+            }
+          });
     }
   }
 
@@ -116,32 +117,34 @@ class BasisOps {
       BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = X.extent(0);
-      A2D::parallel_for(npts, [j, detJ, X, Jinv, Nxyz](A2D::index_t i) -> void {
-        // Compute the Jacobian transformation
-        A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> J;
-        for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            J(ii, idim) = 0.0;
-          }
-          for (index_t kk = 0; kk < NUM_NODES; kk++) {
-            for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
-              J(ii, ll) += Nxyz[kk + ll * BasisFunc::NUM_NODES] * X(i, kk, ii);
+      A2D::parallel_for(
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
+            // Compute the Jacobian transformation
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> J;
+            for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                J(ii, idim) = 0.0;
+              }
+              for (index_t kk = 0; kk < NUM_NODES; kk++) {
+                for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
+                  J(ii, ll) +=
+                      Nxyz[kk + ll * BasisFunc::NUM_NODES] * X(i, kk, ii);
+                }
+              }
             }
-          }
-        }
 
-        // Compute the matrix inverse
-        A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> jinv;
-        MatInverse(J, jinv);
-        MatDet(J, detJ(i, j));
+            // Compute the matrix inverse
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> jinv;
+            MatInverse(J, jinv);
+            MatDet(J, detJ(i, j));
 
-        // Copy values of the inverse of the Jacobian
-        for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
-          for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
-            Jinv(i, j, ii, jj) = jinv(ii, jj);
-          }
-        }
-      });
+            // Copy values of the inverse of the Jacobian
+            for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
+              for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
+                Jinv(i, j, ii, jj) = jinv(ii, jj);
+              }
+            }
+          });
     }
   }
 
@@ -169,20 +172,21 @@ class BasisOps {
       BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = U.extent(0);
-      A2D::parallel_for(npts, [j, U, Uxi, Nxyz](A2D::index_t i) -> void {
-        for (index_t ii = 0; ii < vars_per_node; ii++) {
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            Uxi(i, j, ii, idim) = 0.0;
-          }
+      A2D::parallel_for(
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
+            for (index_t ii = 0; ii < vars_per_node; ii++) {
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                Uxi(i, j, ii, idim) = 0.0;
+              }
 
-          for (index_t kk = 0; kk < NUM_NODES; kk++) {
-            for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
-              Uxi(i, j, ii, ll) +=
-                  Nxyz[kk + ll * BasisFunc::NUM_NODES] * U(i, kk, ii);
+              for (index_t kk = 0; kk < NUM_NODES; kk++) {
+                for (index_t ll = 0; ll < SPATIAL_DIM; ll++) {
+                  Uxi(i, j, ii, ll) +=
+                      Nxyz[kk + ll * BasisFunc::NUM_NODES] * U(i, kk, ii);
+                }
+              }
             }
-          }
-        }
-      });
+          });
     }
   }
 
@@ -358,7 +362,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, [j, detJ, Uq, resfunc, res, weight, N](A2D::index_t i) -> void {
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Ub;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -414,9 +418,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts,
-          [Jinv, detJ, Uxi, resfunc, res, Nxyz, weight,
-           j](A2D::index_t i) -> void {
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
             A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Uxib;
 
@@ -482,7 +484,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, [N, Uq, detJ, jac, jacfunc, weight, j](A2D::index_t i) -> void {
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Ub;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -545,55 +547,55 @@ class BasisOps {
       BasisFunc::evalBasisDeriv(pt, Nxyz);
 
       const A2D::index_t npts = detJ.extent(0);
-      A2D::parallel_for(npts, [detJ, Jinv, Uxi, jacfunc, jac, Nxyz, weight,
-                               j](A2D::index_t i) {
-        A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
-        A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Uxib;
+      A2D::parallel_for(
+          npts, A2D_LAMBDA(A2D::index_t i) {
+            A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
+            A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Uxib;
 
-        // Extract Jinv
-        for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
-          for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
-            Jinv0(ii, jj) = Jinv(i, j, ii, jj);
-          }
-        }
-
-        // Extract Uxi0
-        for (index_t ii = 0; ii < vars_per_node; ii++) {
-          for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
-            Uxi0(ii, jj) = Uxi(i, j, ii, jj);
-          }
-        }
-
-        // The Jacobian of the energy
-        A2D::SymmTensor<T, vars_per_node, SPATIAL_DIM> ja;
-
-        T wdetJ = weight * detJ(i, j);
-        jacfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib, ja);
-
-        T nxyz[SPATIAL_DIM];
-
-        auto jaci = MakeSlice(jac, i);
-        for (index_t ky = 0; ky < NUM_NODES; ky++) {
-          for (index_t iy = 0; iy < vars_per_node; iy++) {
-            for (index_t ix = 0; ix < vars_per_node; ix++) {
-              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-                nxyz[idim] = 0.0;
-                for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
-                  nxyz[idim] += Nxyz[ky + jdim * BasisFunc::NUM_NODES] *
-                                ja(iy, jdim, ix, idim);
-                }
+            // Extract Jinv
+            for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
+              for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
+                Jinv0(ii, jj) = Jinv(i, j, ii, jj);
               }
+            }
 
-              for (index_t kx = 0; kx < NUM_NODES; kx++) {
-                for (index_t iidim = 0; iidim < SPATIAL_DIM; iidim++) {
-                  jaci(ky, kx, iy, ix) +=
-                      Nxyz[kx + iidim * BasisFunc::NUM_NODES] * nxyz[iidim];
+            // Extract Uxi0
+            for (index_t ii = 0; ii < vars_per_node; ii++) {
+              for (index_t jj = 0; jj < SPATIAL_DIM; jj++) {
+                Uxi0(ii, jj) = Uxi(i, j, ii, jj);
+              }
+            }
+
+            // The Jacobian of the energy
+            A2D::SymmTensor<T, vars_per_node, SPATIAL_DIM> ja;
+
+            T wdetJ = weight * detJ(i, j);
+            jacfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib, ja);
+
+            T nxyz[SPATIAL_DIM];
+
+            auto jaci = MakeSlice(jac, i);
+            for (index_t ky = 0; ky < NUM_NODES; ky++) {
+              for (index_t iy = 0; iy < vars_per_node; iy++) {
+                for (index_t ix = 0; ix < vars_per_node; ix++) {
+                  for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                    nxyz[idim] = 0.0;
+                    for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
+                      nxyz[idim] += Nxyz[ky + jdim * BasisFunc::NUM_NODES] *
+                                    ja(iy, jdim, ix, idim);
+                    }
+                  }
+
+                  for (index_t kx = 0; kx < NUM_NODES; kx++) {
+                    for (index_t iidim = 0; iidim < SPATIAL_DIM; iidim++) {
+                      jaci(ky, kx, iy, ix) +=
+                          Nxyz[kx + iidim * BasisFunc::NUM_NODES] * nxyz[iidim];
+                    }
+                  }
                 }
               }
             }
-          }
-        }
-      });
+          });
     }
   }
 
@@ -620,7 +622,7 @@ class BasisOps {
       double weight = Quadrature::getQuadWeight(j);
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, [j, detJ, Uq, Psiq, func, weight](A2D::index_t i) -> void {
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Psi0;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -668,8 +670,7 @@ class BasisOps {
       double weight = Quadrature::getQuadWeight(j);
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts,
-          [detJ, Jinv, Uxi, Psixi, func, weight, j](A2D::index_t i) -> void {
+          npts, A2D_LAMBDA(A2D::index_t i)->void {
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
             A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Psi0;
 

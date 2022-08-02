@@ -1,12 +1,14 @@
 #ifndef A2D_SPARSE_MATRIX_H
 #define A2D_SPARSE_MATRIX_H
 
+#include "a2dmemory.h"
+#include "a2dobjs.h"
 #include "multiarray.h"
 
 namespace A2D {
 
 /**
- * @brief Block CSR matrix
+ * @brief Block CSR matrix, object acts like shared_ptr
  *
  * @tparam I index type
  * @tparam T data type
@@ -30,9 +32,8 @@ class BSRMat {
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
          const VecType &_cols)
       : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals(CLayout<M, N>(nnz)) {
-    data_owner = true;
-    rowp = new I[nbrows + 1];
-    cols = new I[nnz];
+    rowp = IdxArray1D_t(IdxLayout1D_t(nbrows + 1));
+    cols = IdxArray1D_t(IdxLayout1D_t(nnz));
 
     for (I i = 0; i < nbrows + 1; i++) {
       rowp[i] = _rowp[i];
@@ -41,19 +42,12 @@ class BSRMat {
     for (I i = 0; i < nnz; i++) {
       cols[i] = _cols[i];
     }
-
-    // Set the diagonal to NULL until factorization
-    diag = NULL;
-
-    // Set the permutation array and its inverse to NULL
-    perm = NULL;
-    iperm = NULL;
-
-    // Set the color count to NULL
-    num_colors = 0;
-    color_count = NULL;
   }
-  BSRMat(const BSRMat &src)
+
+  /**
+   * @brief Copy constructor (shallow copy)
+   */
+  A2D_INLINE_FUNCTION BSRMat(const BSRMat &src)
       : nbrows(src.nbrows),
         nbcols(src.nbcols),
         nnz(src.nnz),
@@ -64,30 +58,12 @@ class BSRMat {
         iperm(src.iperm),
         num_colors(src.num_colors),
         color_count(src.color_count),
-        Avals(src.Avals) {
-    data_owner = false;
-  }
-  ~BSRMat() {
-    if (data_owner) {
-      delete[] rowp;
-      delete[] cols;
-      if (diag) {
-        delete[] diag;
-      }
-      if (perm) {
-        delete[] perm;
-      }
-      if (iperm) {
-        delete[] iperm;
-      }
-      if (color_count) {
-        delete[] color_count;
-      }
-    }
-  }
+        Avals(src.Avals) {}
+
+  ~BSRMat() {}
 
   // Zero the entries of the matrix
-  void zero() { Avals.zero(); }
+  A2D_INLINE_FUNCTION void zero() { Avals.zero(); }
 
   /**
    * @brief Find the address of the column index given block indices (row, col)
@@ -109,6 +85,10 @@ class BSRMat {
     return nullptr;
   }
 
+  // Layout and Array type
+  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
+
   // Number of block rows and block columns
   index_t nbrows, nbcols;
 
@@ -116,27 +96,27 @@ class BSRMat {
   index_t nnz;  // = rowp[nbrows];
 
   // rowp and cols array
-  I *rowp;  // length: nbrows + 1
-  I *cols;  // length: nnz = rowp[nbrows]
+  IdxArray1D_t rowp;  // length: nbrows + 1
+  IdxArray1D_t cols;  // length: nnz = rowp[nbrows]
 
-  // Pointer to the diagonal block
-  I *diag;  // length: nbrows
+  // Pointer to the diagonal block, this is not allocated until factorization
+  IdxArray1D_t diag;  // length: nbrows
 
   // permutation perm[new var] = old var
-  I *perm;
+  // This is not allocated by default
+  IdxArray1D_t perm;
 
   // Inverse permutation iperm[old var] = new var
-  I *iperm;
+  // This is not allocated by default
+  IdxArray1D_t iperm;
 
   // When coloring is used, its ordering is stored in the permutation array
-  I num_colors;    // Number of colors
-  I *color_count;  // Number of nodes with this color
+  I num_colors;  // Number of colors
+  IdxArray1D_t
+      color_count;  // Number of nodes with this color, not allocated by default
 
   // MultiArray data - length: nnz
   MultiArray<T, CLayout<M, N>> Avals;
-
- private:
-  bool data_owner;
 };
 
 }  // namespace A2D

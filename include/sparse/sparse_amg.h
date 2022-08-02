@@ -128,7 +128,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   I nnz = 0;
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
+    if (int(aggr[i]) >= 0 && aggr[i] < num_aggregates) {
       rowp[aggr[i] + 1]++;
       nnz++;
     }
@@ -140,7 +140,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   std::vector<I> cols(nnz);
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
+    if (int(aggr[i]) >= 0 && aggr[i] < num_aggregates) {
       cols[rowp[aggr[i]]] = i;
       rowp[aggr[i]]++;
     }
@@ -179,7 +179,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
         }
       }
       init_norm = std::sqrt(init_norm);
-      double theta = fabs(init_norm);
+      double theta = absfunc(init_norm);
 
       // Take the dot product between rows k and j
       for (I j = 0; j < k; j++) {
@@ -213,7 +213,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       // Compute the scalar factor for this row - zero rows
       // that are nearly linearly dependent
       T scale = 0.0;
-      if (fabs(norm) > toler * theta) {
+      if (absfunc(norm) > toler * theta) {
         scale = 1.0 / norm;
         R(i, k, k) = norm;
       } else {
@@ -290,7 +290,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
   // Frobenius norm squared for each diagonal entry
   std::vector<T> d(A.nbrows);
 
-  if (A.diag) {
+  if (A.diag.data) {
     for (I i = 0; i < A.nbrows; i++) {
       I jp = A.diag[i];
 
@@ -307,7 +307,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       I* col_ptr = A.find_column_index(i, i);
 
       if (col_ptr) {
-        I jp = col_ptr - A.cols;
+        I jp = col_ptr - A.cols.data.get();
 
         auto D = MakeSlice(A.Avals, jp);
         d[i] = 0.0;
@@ -366,7 +366,7 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
   std::vector<I> aggr(A.nbcols);
   std::vector<I> cpts(A.nbcols);
 
-  if (fabs(epsilon) != 0.0) {
+  if (absfunc(epsilon) != 0.0) {
     // Compute the strength of connection S - need to fix this
     std::vector<I> Srowp(A.nbrows + 1);
     std::vector<I> Scols(A.nnz);
@@ -500,7 +500,8 @@ class BSRMatAmg {
                   << "]: " << std::setw(15) << res_norm << std::endl;
       }
 
-      if (fabs(res_norm) < atol || fabs(res_norm) < rtol * fabs(init_norm)) {
+      if (absfunc(res_norm) < atol ||
+          absfunc(res_norm) < rtol * absfunc(init_norm)) {
         if (monitor && !((iter + 1) % monitor == 0)) {
           std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
                     << "]: " << std::setw(15) << res_norm << std::endl;
@@ -546,7 +547,7 @@ class BSRMatAmg {
                   << "]: " << std::setw(15) << init_norm << std::endl;
       }
 
-      if (fabs(init_norm) > atol) {
+      if (absfunc(init_norm) > atol) {
         // Apply the preconditioner Z = M^{-1} R
         applyFactor(R, Z);
 
@@ -569,8 +570,8 @@ class BSRMatAmg {
                       << "]: " << std::setw(15) << res_norm << std::endl;
           }
 
-          if (fabs(res_norm) < atol ||
-              fabs(res_norm) < rtol * fabs(init_norm)) {
+          if (absfunc(res_norm) < atol ||
+              absfunc(res_norm) < rtol * absfunc(init_norm)) {
             if (monitor && !((iter + 1) % monitor == 0)) {
               std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
                         << "]: " << std::setw(15) << res_norm << std::endl;

@@ -13,17 +13,17 @@ endif()
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set A2D root directory
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set options
-option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" ON)
+option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
-option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
-option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
-option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" ON)
+option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" OFF)
+option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
+option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" OFF)
 option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
 
 # Set global compiler flags
@@ -35,6 +35,20 @@ add_compile_options(
 # Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
+
+# Build amgx examples
+if (A2D_BUILD_EXAMPLES_AMGX)
+  # If use AMGX, the following directories should be valid
+  set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/amgx/include)
+  set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/amgx/lib/)
+  if (NOT EXISTS ${AMGX_INCLUDE_DIR})
+    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
+  elseif(NOT EXISTS ${AMGX_LIB_DIR})
+    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
+  else()
+    add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
+  endif()
+endif()
 
 # If use kokkos, we build kokkos in-place
 if (A2D_USE_KOKKOS)
@@ -78,20 +92,6 @@ endif()
 # Build pure a2d examples
 if (A2D_BUILD_EXAMPLES_BASIC)
   add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
-endif()
-
-# Build amgx examples
-if (A2D_BUILD_EXAMPLES_AMGX)
-  # If use AMGX, the following directories should be valid
-  set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/AMGX/include)
-  set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/AMGX/lib/)
-  if (NOT EXISTS ${AMGX_INCLUDE_DIR})
-    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
-  elseif(NOT EXISTS ${AMGX_LIB_DIR})
-    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
-  else()
-    add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
-  endif()
 endif()
 
 # Build kokkos examples

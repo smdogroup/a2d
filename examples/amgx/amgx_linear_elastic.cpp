@@ -1,9 +1,35 @@
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <cassert>
 
 #include "a2d.h"
-#include "amgx_c.h"
+#include "amgx_solver.h"
+#include "toolkit.h"
 
 using namespace A2D;
+
+void block_element_random_update(int block_dimx, int block_dimy, int i, void* v,
+                                 AMGX_Mode mode) {
+  int j1, j2, block_size;
+  block_size = block_dimy * block_dimx;
+
+  for (j1 = 0; j1 < block_dimy; j1++) {
+    for (j2 = 0; j2 < block_dimx; j2++) {
+      if ((AMGX_GET_MODE_VAL(AMGX_MatPrecision, mode) == AMGX_matFloat)) {
+        float* t = (float*)v;
+        t[i * block_size + j1 * block_dimx + j2] *=
+            (1.0f + (rand() % 10) * (1e-6f));
+      } else {
+        double* t = (double*)v;
+        t[i * block_size + j1 * block_dimx + j2] *=
+            (1.0 + (rand() % 10) * (1e-12));
+      }
+    }
+  }
+}
 
 typedef index_t I;
 typedef double T;
@@ -104,74 +130,10 @@ void set_force_3d(const int nx, const int ny, const int nz, Model model,
   model->zero_bcs(residual);
 }
 
-template <class Matrix, class Vector>
-int amgx_solve(Matrix& mat, Vector& rhs) {
-  // Init
-  AMGX_SAFE_CALL(AMGX_initialize());
-
-  AMGX_Mode mode = AMGX_mode_dDDI;
-  AMGX_config_handle cfg;
-  AMGX_resources_handle rsrc;
-  AMGX_matrix_handle A;
-  AMGX_vector_handle b, x;
-  AMGX_solver_handle solver;
-
-  // status handling
-  AMGX_SOLVE_STATUS status;
-
-  // Read configuration from file
-  const char cfg_file[] = "config.json";
-  AMGX_SAFE_CALL(AMGX_config_create_from_file(&cfg, cfg_file));
-
-  // switch on internal error handling (no need to use AMGX_SAFE_CALL after
-  // this point)
-  AMGX_SAFE_CALL(AMGX_config_add_parameters(&cfg, "exception_handling=1"));
-
-  // Create resources, matrix, vector and solver
-  AMGX_resources_create_simple(&rsrc, cfg);
-  AMGX_matrix_create(&A, rsrc, mode);
-  AMGX_vector_create(&x, rsrc, mode);
-  AMGX_vector_create(&b, rsrc, mode);
-  AMGX_solver_create(&solver, rsrc, mode, cfg);
-
-  // Set A, b and x
-  assert(mat->nbrows == mat->nbcols);                    // Required by AMGX
-  assert(mat->Avals.extent(1) == mat->Avals.extent(2));  // Required by AMGX
-  int n = mat->nbrows;
-  int nnz = mat->nnz;
-  int block_dimx = mat->Avals.extent(1);
-  int block_dimy = mat->Avals.extent(2);
-  // Warning: reinterpret_cast is never a good idea here, use with caution!!
-  AMGX_matrix_upload_all(
-      A, n, nnz, block_dimx, block_dimy, reinterpret_cast<int*>(mat->rowp),
-      reinterpret_cast<int*>(mat->cols), mat->Avals.data, mat->diag);
-
-  AMGX_vector_upload(b, n, block_dimx, rhs->data);
-  AMGX_vector_set_zero(x, n, block_dimx);
-
-  // Set up solver and solve
-  AMGX_solver_setup(solver, A);
-  AMGX_solver_solve(solver, b, x);
-
-  // Get solve status
-  AMGX_solver_get_status(solver, &status);
-
-  // Destroy resources, matrix, vectors and solver
-  AMGX_solver_destroy(solver);
-  AMGX_vector_destroy(x);
-  AMGX_vector_destroy(b);
-  AMGX_matrix_destroy(A);
-  AMGX_resources_destroy(rsrc);
-  AMGX_SAFE_CALL(AMGX_config_destroy(cfg));
-  AMGX_SAFE_CALL(AMGX_finalize());
-
-  return status;
-}
-
-int main(int argc, char* argv[]) {
-  const index_t nx = 64;
+int main(int argc, char** argv) {
+  const index_t nx = 16;
   const index_t ny = 64;
-  const index_t nz = 64;
+  const index_t nz = 128;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -209,8 +171,8 @@ int main(int argc, char* argv[]) {
   auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
 
   // Set the design variable values
-  set_dv_3d(nx, ny, nz, *x);
-
+  // set_dv_3d(nx, ny, nz, *x);
+  x->fill(1.0);
   model->set_design_vars(x);
 
   // Set up the stress functional
@@ -219,38 +181,71 @@ int main(int argc, char* argv[]) {
       std::make_shared<TopoVonMisesAggregation<I, T, Basis>>(constitutive);
   functional->add_functional(agg_functional);
 
+  // ================================================================
+  // Set up input parameters for the solver
   // Compute the Jacobian matrix
   auto J = model->new_matrix();
   model->jacobian(J);
+  // Set the residuals and apply the boundary conditions
+  auto residual = model->new_solution();
+  // set_force_3d(nx, ny, nz, model, residual);
+  // Initialize the solution vector
+  auto solution = model->new_solution();
+  solution->fill(1.0);
+  model->zero_bcs(solution);
+  residual->zero();
+  BSRMatVecMult(*J, *solution, *residual);
+  model->zero_bcs(residual);
+  solution->zero();
 
+
+  // ================================================================
+  // Apply the preconditioned conjugate gradient method.
   int num_levels = 3;
   double omega = 0.6667;
   double epsilon = 0.0;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
-
-  // Set the residuals and apply the boundary conditions
-  auto solution = model->new_solution();
-  auto residual = model->new_solution();
-
-  set_force_3d(nx, ny, nz, model, residual);
-
+  index_t monitor = 50;
+  index_t max_iters = 1000;
   // Compute the solution
-  index_t monitor = 10;
-  index_t max_iters = 80;
+  // TIMER("MG");
+  // amg->mg(*residual, *solution, monitor, max_iters);
+  // TIMER("MG");
+
+  // ================================================================
+  // Apply multigrid method.
   solution->zero();
+  TIMER("PCG");
+  monitor = 10;
+  max_iters = 100;
   amg->cg(*residual, *solution, monitor, max_iters);
+  TIMER("PCG");
 
+  // ================================================================
   // Compute the solution using AMGX
-  amgx_solve(J, residual);
+  solution->zero();
+  amgxSolver(J, residual, solution, argc, argv);
 
-  ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(conn,
-                                                                         X);
-  vtk.write_mesh();
-  vtk.write_sol("x", *x, 0);
-  vtk.write_sol("ux", *solution, 0);
-  vtk.write_sol("uy", *solution, 1);
-  vtk.write_sol("uz", *solution, 2);
+  // ================================================================
+  // print the solution
+  // for (int i = 0; i < 8; i++) {
+  //   if (((double*)solution->data)[i] < 1e-6) {
+  //     ((double*)solution->data)[i] = 0.0;
+  //   }
+  //   std::cout << " " << ((double*)solution->data)[i];
+  // }
+  // std::cout << std::endl;
+
+  // ================================================================
+  // ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())>
+  // vtk(conn,
+  //                                                                        X);
+  // vtk.write_mesh();
+  // vtk.write_sol("x", *x, 0);
+  // vtk.write_sol("ux", *solution, 0);
+  // vtk.write_sol("uy", *solution, 1);
+  // vtk.write_sol("uz", *solution, 2);
 
   return 0;
 }

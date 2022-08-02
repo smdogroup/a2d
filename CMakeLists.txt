@@ -12,7 +12,7 @@ endif()
 
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set A2D root directory

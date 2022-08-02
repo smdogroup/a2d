@@ -11,9 +11,9 @@ namespace A2D {
 
 // MatMatMult
 template <typename ScalarType, bool AT = false, bool BT = false>
-inline void MatMatMult(const Mat<ScalarType, 3, 3>& A,
-                       const Mat<ScalarType, 3, 3>& B,
-                       Mat<ScalarType, 3, 3>& C) {
+A2D_INLINE_FUNCTION void MatMatMult(const Mat<ScalarType, 3, 3>& A,
+                                    const Mat<ScalarType, 3, 3>& B,
+                                    Mat<ScalarType, 3, 3>& C) {
   if (AT && BT) {
     MatTrans3x3MatTransMultCore(A, B, C);
   } else if (AT) {
@@ -29,9 +29,9 @@ template <typename ScalarType, bool AT = false, bool BT = false>
 class ADMat3x3MatMultExpr
     : public ADExpression<ADMat3x3MatMultExpr<ScalarType, AT, BT>> {
  public:
-  ADMat3x3MatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                      ADMat<Mat<ScalarType, 3, 3>>& BObj,
-                      ADMat<Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION ADMat3x3MatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
+                                          ADMat<Mat<ScalarType, 3, 3>>& BObj,
+                                          ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -48,7 +48,7 @@ class ADMat3x3MatMultExpr
     }
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -70,7 +70,7 @@ class ADMat3x3MatMultExpr
     }
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -98,7 +98,7 @@ class ADMat3x3MatMultExpr
 };
 
 template <typename ScalarType, bool AT = false, bool BT = false>
-inline ADMat3x3MatMultExpr<ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION ADMat3x3MatMultExpr<ScalarType, AT, BT> MatMatMult(
     ADMat<Mat<ScalarType, 3, 3>>& AObj, ADMat<Mat<ScalarType, 3, 3>>& BObj,
     ADMat<Mat<ScalarType, 3, 3>>& CObj) {
   return ADMat3x3MatMultExpr<ScalarType, AT, BT>(AObj, BObj, CObj);
@@ -108,9 +108,10 @@ template <int N, typename ScalarType, bool AT = false, bool BT = false>
 class A2DMat3x3MatMultExpr
     : public A2DExpression<A2DMat3x3MatMultExpr<N, ScalarType, AT, BT>> {
  public:
-  A2DMat3x3MatMultExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
-                       A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
-                       A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION A2DMat3x3MatMultExpr(
+      A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
+      A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
+      A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -127,7 +128,7 @@ class A2DMat3x3MatMultExpr
     }
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -149,7 +150,7 @@ class A2DMat3x3MatMultExpr
     }
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
 
@@ -174,7 +175,7 @@ class A2DMat3x3MatMultExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
 
@@ -244,7 +245,7 @@ class A2DMat3x3MatMultExpr
 };
 
 template <int N, typename ScalarType, bool AT = false, bool BT = false>
-inline A2DMat3x3MatMultExpr<N, ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION A2DMat3x3MatMultExpr<N, ScalarType, AT, BT> MatMatMult(
     A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
     A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
     A2DMat<N, Mat<ScalarType, 3, 3>>& CObj) {
@@ -257,8 +258,9 @@ class ADpMat3x3MatMultExpr
  public:
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
-  ADpMat3x3MatMultExpr(Mat3x3& A, ADMat<Mat<ScalarType, 3, 3>>& BObj,
-                       ADMat<Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION ADpMat3x3MatMultExpr(Mat3x3& A,
+                                           ADMat<Mat<ScalarType, 3, 3>>& BObj,
+                                           ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : A(A), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& B = BObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -274,8 +276,7 @@ class ADpMat3x3MatMultExpr
     }
   }
 
-  void forward() {
-    const Mat<ScalarType, 3, 3>& B = BObj.value();
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& Bb = BObj.bvalue();
     Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -290,8 +291,7 @@ class ADpMat3x3MatMultExpr
     }
   }
 
-  void reverse() {
-    const Mat<ScalarType, 3, 3>& B = BObj.value();
+  A2D_INLINE_FUNCTION void reverse() {
     Mat<ScalarType, 3, 3>& Bb = BObj.bvalue();
     const Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -312,7 +312,7 @@ class ADpMat3x3MatMultExpr
 };
 
 template <class ScalarType, bool AT = false, bool BT = false>
-inline ADpMat3x3MatMultExpr<ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION ADpMat3x3MatMultExpr<ScalarType, AT, BT> MatMatMult(
     Mat<ScalarType, 3, 3>& A, ADMat<Mat<ScalarType, 3, 3>>& BObj,
     ADMat<Mat<ScalarType, 3, 3>>& CObj) {
   return ADpMat3x3MatMultExpr<ScalarType, AT, BT>(A, BObj, CObj);
@@ -324,8 +324,9 @@ class ADMat3x3pMatMultExpr
  public:
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
-  ADMat3x3pMatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj, Mat3x3& B,
-                       ADMat<Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION ADMat3x3pMatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
+                                           Mat3x3& B,
+                                           ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), B(B), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -341,8 +342,7 @@ class ADMat3x3pMatMultExpr
     }
   }
 
-  void forward() {
-    const Mat<ScalarType, 3, 3>& A = AObj.value();
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -357,7 +357,7 @@ class ADMat3x3pMatMultExpr
     }
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     const Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -378,7 +378,7 @@ class ADMat3x3pMatMultExpr
 };
 
 template <typename ScalarType, bool AT = false, bool BT = false>
-inline ADMat3x3pMatMultExpr<ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION ADMat3x3pMatMultExpr<ScalarType, AT, BT> MatMatMult(
     ADMat<Mat<ScalarType, 3, 3>>& AObj, Mat<ScalarType, 3, 3>& B,
     ADMat<Mat<ScalarType, 3, 3>>& CObj) {
   return ADMat3x3pMatMultExpr<ScalarType, AT, BT>(AObj, B, CObj);
@@ -390,8 +390,9 @@ class A2DpMat3x3MatMultExpr
  public:
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
-  A2DpMat3x3MatMultExpr(Mat3x3& A, A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
-                        A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION A2DpMat3x3MatMultExpr(
+      Mat3x3& A, A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
+      A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
       : A(A), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& B = BObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -407,7 +408,7 @@ class A2DpMat3x3MatMultExpr
     }
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     Mat<ScalarType, 3, 3>& Bb = BObj.bvalue();
     const Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -422,7 +423,7 @@ class A2DpMat3x3MatMultExpr
     }
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     for (int i = 0; i < N; i++) {
       const Mat<ScalarType, 3, 3>& Bp = BObj.pvalue(i);
       Mat<ScalarType, 3, 3>& Cp = CObj.pvalue(i);
@@ -439,7 +440,7 @@ class A2DpMat3x3MatMultExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     for (int i = 0; i < N; i++) {
       Mat<ScalarType, 3, 3>& Bh = BObj.hvalue(i);
       const Mat<ScalarType, 3, 3>& Ch = CObj.hvalue(i);
@@ -462,7 +463,7 @@ class A2DpMat3x3MatMultExpr
 };
 
 template <int N, class ScalarType, bool AT = false, bool BT = false>
-inline A2DpMat3x3MatMultExpr<N, ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION A2DpMat3x3MatMultExpr<N, ScalarType, AT, BT> MatMatMult(
     Mat<ScalarType, 3, 3>& A, A2DMat<N, Mat<ScalarType, 3, 3>>& BObj,
     A2DMat<N, Mat<ScalarType, 3, 3>>& CObj) {
   return A2DpMat3x3MatMultExpr<N, ScalarType, AT, BT>(A, BObj, CObj);
@@ -474,8 +475,9 @@ class A2DMat3x3pMatMultExpr
  public:
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
-  A2DMat3x3pMatMultExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& AObj, Mat3x3& B,
-                        A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
+  A2D_INLINE_FUNCTION A2DMat3x3pMatMultExpr(
+      A2DMat<N, Mat<ScalarType, 3, 3>>& AObj, Mat3x3& B,
+      A2DMat<N, Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), B(B), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -491,7 +493,7 @@ class A2DMat3x3pMatMultExpr
     }
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
     const Mat<ScalarType, 3, 3>& Cb = CObj.bvalue();
 
@@ -506,7 +508,7 @@ class A2DMat3x3pMatMultExpr
     }
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     for (int i = 0; i < N; i++) {
       const Mat<ScalarType, 3, 3>& Ap = AObj.pvalue(i);
       Mat<ScalarType, 3, 3>& Cp = CObj.pvalue(i);
@@ -523,7 +525,7 @@ class A2DMat3x3pMatMultExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     for (int i = 0; i < N; i++) {
       Mat<ScalarType, 3, 3>& Ah = AObj.hvalue(i);
       const Mat<ScalarType, 3, 3>& Ch = CObj.hvalue(i);
@@ -546,7 +548,7 @@ class A2DMat3x3pMatMultExpr
 };
 
 template <int N, typename ScalarType, bool AT = false, bool BT = false>
-inline A2DMat3x3pMatMultExpr<N, ScalarType, AT, BT> MatMatMult(
+A2D_INLINE_FUNCTION A2DMat3x3pMatMultExpr<N, ScalarType, AT, BT> MatMatMult(
     A2DMat<N, Mat<ScalarType, 3, 3>>& AObj, Mat<ScalarType, 3, 3>& B,
     A2DMat<N, Mat<ScalarType, 3, 3>>& CObj) {
   return A2DMat3x3pMatMultExpr<N, ScalarType, AT, BT>(AObj, B, CObj);
@@ -554,7 +556,8 @@ inline A2DMat3x3pMatMultExpr<N, ScalarType, AT, BT> MatMatMult(
 
 // Mat3x3Det
 template <typename ScalarType>
-inline void MatDet(const Mat<ScalarType, 3, 3>& A, ScalarType& det) {
+A2D_INLINE_FUNCTION void MatDet(const Mat<ScalarType, 3, 3>& A,
+                                ScalarType& det) {
   det = (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
          A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
          A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
@@ -563,8 +566,8 @@ inline void MatDet(const Mat<ScalarType, 3, 3>& A, ScalarType& det) {
 template <class ScalarType>
 class ADMat3x3DetExpr : public ADExpression<ADMat3x3DetExpr<ScalarType>> {
  public:
-  ADMat3x3DetExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                  ADScalar<ScalarType>& detObj)
+  A2D_INLINE_FUNCTION ADMat3x3DetExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
+                                      ADScalar<ScalarType>& detObj)
       : AObj(AObj), detObj(detObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
 
@@ -573,7 +576,7 @@ class ADMat3x3DetExpr : public ADExpression<ADMat3x3DetExpr<ScalarType>> {
                     A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& Ad = AObj.bvalue();
 
@@ -588,7 +591,7 @@ class ADMat3x3DetExpr : public ADExpression<ADMat3x3DetExpr<ScalarType>> {
                      Ad(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const ScalarType& bdet = detObj.bvalue;
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
@@ -609,16 +612,16 @@ class ADMat3x3DetExpr : public ADExpression<ADMat3x3DetExpr<ScalarType>> {
 };
 
 template <typename ScalarType>
-inline ADMat3x3DetExpr<ScalarType> MatDet(ADMat<Mat<ScalarType, 3, 3>>& A,
-                                          ADScalar<ScalarType>& det) {
+A2D_INLINE_FUNCTION ADMat3x3DetExpr<ScalarType> MatDet(
+    ADMat<Mat<ScalarType, 3, 3>>& A, ADScalar<ScalarType>& det) {
   return ADMat3x3DetExpr<ScalarType>(A, det);
 }
 
 template <int N, class ScalarType>
 class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<N, ScalarType>> {
  public:
-  A2DMat3x3DetExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
-                   A2DScalar<N, ScalarType>& detObj)
+  A2D_INLINE_FUNCTION A2DMat3x3DetExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
+                                       A2DScalar<N, ScalarType>& detObj)
       : AObj(AObj), detObj(detObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
 
@@ -627,7 +630,7 @@ class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<N, ScalarType>> {
                     A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const ScalarType& bdet = detObj.bvalue;
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
@@ -643,7 +646,7 @@ class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<N, ScalarType>> {
     Ab(2, 2) += (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) * bdet;
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
 
     for (int i = 0; i < N; i++) {
@@ -660,10 +663,9 @@ class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<N, ScalarType>> {
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const ScalarType bdet = detObj.bvalue;
     const Mat<ScalarType, 3, 3>& A = AObj.value();
-    const Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
 
     for (int i = 0; i < N; i++) {
       const ScalarType hdet = detObj.hvalue[i];
@@ -715,15 +717,15 @@ class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<N, ScalarType>> {
 };
 
 template <int N, typename ScalarType>
-inline A2DMat3x3DetExpr<N, ScalarType> MatDet(
+A2D_INLINE_FUNCTION A2DMat3x3DetExpr<N, ScalarType> MatDet(
     A2DMat<N, Mat<ScalarType, 3, 3>>& A, A2DScalar<N, ScalarType>& det) {
   return A2DMat3x3DetExpr<N, ScalarType>(A, det);
 }
 
 // Mat3x3Inverse
 template <typename ScalarType>
-inline void MatInverse(const Mat<ScalarType, 3, 3>& A,
-                       Mat<ScalarType, 3, 3>& Ainv) {
+A2D_INLINE_FUNCTION void MatInverse(const Mat<ScalarType, 3, 3>& A,
+                                    Mat<ScalarType, 3, 3>& Ainv) {
   ScalarType det = (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
                     A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
                     A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
@@ -746,8 +748,8 @@ template <typename ScalarType>
 class ADMat3x3InverseExpr
     : public ADExpression<ADMat3x3InverseExpr<ScalarType>> {
  public:
-  ADMat3x3InverseExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                      ADMat<Mat<ScalarType, 3, 3>>& AinvObj)
+  A2D_INLINE_FUNCTION ADMat3x3InverseExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
+                                          ADMat<Mat<ScalarType, 3, 3>>& AinvObj)
       : AObj(AObj), AinvObj(AinvObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
@@ -770,7 +772,7 @@ class ADMat3x3InverseExpr
     Ainv(2, 2) = (A(0, 0) * A(1, 1) - A(0, 1) * A(1, 0)) * detinv;
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
     const Mat<ScalarType, 3, 3>& Ad = AObj.bvalue();
     Mat<ScalarType, 3, 3>& Ainvd = AinvObj.bvalue();
@@ -780,7 +782,7 @@ class ADMat3x3InverseExpr
     Mat3x3MatMultScaleCore(ScalarType(-1.0), tmp, Ainv, Ainvd);
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
     const Mat<ScalarType, 3, 3>& Ainvb = AinvObj.bvalue();
     Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
@@ -795,7 +797,7 @@ class ADMat3x3InverseExpr
 };
 
 template <typename ScalarType>
-inline ADMat3x3InverseExpr<ScalarType> MatInverse(
+A2D_INLINE_FUNCTION ADMat3x3InverseExpr<ScalarType> MatInverse(
     ADMat<Mat<ScalarType, 3, 3>>& AObj, ADMat<Mat<ScalarType, 3, 3>>& AinvObj) {
   return ADMat3x3InverseExpr<ScalarType>(AObj, AinvObj);
 }
@@ -804,8 +806,9 @@ template <int N, typename ScalarType>
 class A2DMat3x3InverseExpr
     : public A2DExpression<A2DMat3x3InverseExpr<N, ScalarType>> {
  public:
-  A2DMat3x3InverseExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
-                       A2DMat<N, Mat<ScalarType, 3, 3>>& AinvObj)
+  A2D_INLINE_FUNCTION A2DMat3x3InverseExpr(
+      A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
+      A2DMat<N, Mat<ScalarType, 3, 3>>& AinvObj)
       : AObj(AObj), AinvObj(AinvObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
@@ -828,7 +831,7 @@ class A2DMat3x3InverseExpr
     Ainv(2, 2) = (A(0, 0) * A(1, 1) - A(0, 1) * A(1, 0)) * detinv;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
     const Mat<ScalarType, 3, 3>& Ainvd = AinvObj.bvalue();
     Mat<ScalarType, 3, 3>& Ad = AObj.bvalue();
@@ -838,7 +841,7 @@ class A2DMat3x3InverseExpr
     Mat3x3MatTransMultAddScaleCore(ScalarType(-1.0), tmp, Ainv, Ad);
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     Mat<ScalarType, 3, 3> tmp;
     const Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
 
@@ -855,12 +858,11 @@ class A2DMat3x3InverseExpr
   //      A^{-T} * Ainvb * A^{-T} * Ap^{T} * A^{-T} =
   //    = - (A^{-T} * Ap^{T} * Ab + Ab * Ap^{T} * A^{-T})
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     // Temporary matrix
     Mat<ScalarType, 3, 3> tmp, tmp2;
 
     const Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
-    const Mat<ScalarType, 3, 3>& Ainvb = AinvObj.bvalue();
     const Mat<ScalarType, 3, 3>& Ab = AObj.bvalue();
 
     for (int i = 0; i < N; i++) {
@@ -886,7 +888,7 @@ class A2DMat3x3InverseExpr
 };
 
 template <int N, typename ScalarType>
-inline A2DMat3x3InverseExpr<N, ScalarType> MatInverse(
+A2D_INLINE_FUNCTION A2DMat3x3InverseExpr<N, ScalarType> MatInverse(
     A2DMat<N, Mat<ScalarType, 3, 3>>& AObj,
     A2DMat<N, Mat<ScalarType, 3, 3>>& AinvObj) {
   return A2DMat3x3InverseExpr<N, ScalarType>(AObj, AinvObj);
@@ -894,26 +896,27 @@ inline A2DMat3x3InverseExpr<N, ScalarType> MatInverse(
 
 // SymmTrace
 template <typename ScalarType>
-inline void SymmTrace(const SymmMat<ScalarType, 3>& S, ScalarType& trace) {
+A2D_INLINE_FUNCTION void SymmTrace(const SymmMat<ScalarType, 3>& S,
+                                   ScalarType& trace) {
   trace = S(0, 0) + S(1, 1) + S(2, 2);
 }
 
 template <class ScalarType>
 class ADSymm3x3TraceExpr : public ADExpression<ADSymm3x3TraceExpr<ScalarType>> {
  public:
-  ADSymm3x3TraceExpr(ADMat<SymmMat<ScalarType, 3>>& SObj,
-                     ADScalar<ScalarType>& output)
+  A2D_INLINE_FUNCTION ADSymm3x3TraceExpr(ADMat<SymmMat<ScalarType, 3>>& SObj,
+                                         ADScalar<ScalarType>& output)
       : SObj(SObj), output(output) {
     const SymmMat<ScalarType, 3>& S = SObj.value();
     output.value = S(0, 0) + S(1, 1) + S(2, 2);
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const SymmMat<ScalarType, 3>& Sd = SObj.bvalue();
     output.bvalue = Sd(0, 0) + Sd(1, 1) + Sd(2, 2);
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     SymmMat<ScalarType, 3>& Sb = SObj.bvalue();
 
     Sb(0, 0) += output.bvalue;
@@ -926,7 +929,7 @@ class ADSymm3x3TraceExpr : public ADExpression<ADSymm3x3TraceExpr<ScalarType>> {
 };
 
 template <class ScalarType>
-inline ADSymm3x3TraceExpr<ScalarType> SymmTrace(
+A2D_INLINE_FUNCTION ADSymm3x3TraceExpr<ScalarType> SymmTrace(
     ADMat<SymmMat<ScalarType, 3>>& S, ADScalar<ScalarType>& trace) {
   return ADSymm3x3TraceExpr<ScalarType>(S, trace);
 }
@@ -935,14 +938,14 @@ template <int N, class ScalarType>
 class A2DSymm3x3TraceExpr
     : public A2DExpression<A2DSymm3x3TraceExpr<N, ScalarType>> {
  public:
-  A2DSymm3x3TraceExpr(A2DMat<N, SymmMat<ScalarType, 3>>& SObj,
-                      A2DScalar<N, ScalarType>& output)
+  A2D_INLINE_FUNCTION A2DSymm3x3TraceExpr(
+      A2DMat<N, SymmMat<ScalarType, 3>>& SObj, A2DScalar<N, ScalarType>& output)
       : SObj(SObj), output(output) {
     const SymmMat<ScalarType, 3>& S = SObj.value();
     output.value = S(0, 0) + S(1, 1) + S(2, 2);
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     SymmMat<ScalarType, 3>& Sb = SObj.bvalue();
 
     Sb(0, 0) += output.bvalue;
@@ -951,16 +954,15 @@ class A2DSymm3x3TraceExpr
   }
 
   // Compute E.pvalue() = J * Ux.pvalue()
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     for (int i = 0; i < N; i++) {
       const SymmMat<ScalarType, 3>& Sp = SObj.pvalue(i);
       output.pvalue[i] = Sp(0, 0) + Sp(1, 1) + Sp(2, 2);
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     for (int i = 0; i < N; i++) {
-      const SymmMat<ScalarType, 3>& Sp = SObj.pvalue(i);
       SymmMat<ScalarType, 3>& Sh = SObj.hvalue(i);
 
       Sh(0, 0) += output.hvalue[i];
@@ -974,16 +976,16 @@ class A2DSymm3x3TraceExpr
 };
 
 template <int N, class ScalarType>
-inline A2DSymm3x3TraceExpr<N, ScalarType> SymmTrace(
+A2D_INLINE_FUNCTION A2DSymm3x3TraceExpr<N, ScalarType> SymmTrace(
     A2DMat<N, SymmMat<ScalarType, 3>>& S, A2DScalar<N, ScalarType>& trace) {
   return A2DSymm3x3TraceExpr<N, ScalarType>(S, trace);
 }
 
 // Symm3x3SymmMultTrace
 template <typename ScalarType>
-inline void SymmSymmMultTrace(const SymmMat<ScalarType, 3>& S,
-                              const SymmMat<ScalarType, 3>& E,
-                              ScalarType& trace) {
+A2D_INLINE_FUNCTION void SymmSymmMultTrace(const SymmMat<ScalarType, 3>& S,
+                                           const SymmMat<ScalarType, 3>& E,
+                                           ScalarType& trace) {
   trace = (S(0, 0) * E(0, 0) + S(1, 1) * E(1, 1) + S(2, 2) * E(2, 2) +
            2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2)));
 }
@@ -992,9 +994,9 @@ template <class ScalarType>
 class ADSymm3x3SymmMultTraceExpr
     : public ADExpression<ADSymm3x3SymmMultTraceExpr<ScalarType>> {
  public:
-  ADSymm3x3SymmMultTraceExpr(ADMat<SymmMat<ScalarType, 3>>& SObj,
-                             ADMat<SymmMat<ScalarType, 3>>& EObj,
-                             ADScalar<ScalarType>& output)
+  A2D_INLINE_FUNCTION ADSymm3x3SymmMultTraceExpr(
+      ADMat<SymmMat<ScalarType, 3>>& SObj, ADMat<SymmMat<ScalarType, 3>>& EObj,
+      ADScalar<ScalarType>& output)
       : SObj(SObj), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& S = SObj.value();
     const SymmMat<ScalarType, 3>& E = EObj.value();
@@ -1004,7 +1006,7 @@ class ADSymm3x3SymmMultTraceExpr
         2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2));
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const SymmMat<ScalarType, 3>& Ed = EObj.bvalue();
     const SymmMat<ScalarType, 3>& S = SObj.value();
@@ -1017,7 +1019,7 @@ class ADSymm3x3SymmMultTraceExpr
         2.0 * (Sd(0, 1) * E(0, 1) + Sd(0, 2) * E(0, 2) + Sd(1, 2) * E(1, 2));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const SymmMat<ScalarType, 3>& S = SObj.value();
@@ -1044,7 +1046,7 @@ class ADSymm3x3SymmMultTraceExpr
 };
 
 template <class ScalarType>
-inline ADSymm3x3SymmMultTraceExpr<ScalarType> SymmSymmMultTrace(
+A2D_INLINE_FUNCTION ADSymm3x3SymmMultTraceExpr<ScalarType> SymmSymmMultTrace(
     ADMat<SymmMat<ScalarType, 3>>& S, ADMat<SymmMat<ScalarType, 3>>& E,
     ADScalar<ScalarType>& trace) {
   return ADSymm3x3SymmMultTraceExpr<ScalarType>(S, E, trace);
@@ -1054,9 +1056,9 @@ template <int N, class ScalarType>
 class A2DSymm3x3SymmMultTraceExpr
     : public A2DExpression<A2DSymm3x3SymmMultTraceExpr<N, ScalarType>> {
  public:
-  A2DSymm3x3SymmMultTraceExpr(A2DMat<N, SymmMat<ScalarType, 3>>& SObj,
-                              A2DMat<N, SymmMat<ScalarType, 3>>& EObj,
-                              A2DScalar<N, ScalarType>& output)
+  A2D_INLINE_FUNCTION A2DSymm3x3SymmMultTraceExpr(
+      A2DMat<N, SymmMat<ScalarType, 3>>& SObj,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj, A2DScalar<N, ScalarType>& output)
       : SObj(SObj), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& S = SObj.value();
     const SymmMat<ScalarType, 3>& E = EObj.value();
@@ -1066,7 +1068,7 @@ class A2DSymm3x3SymmMultTraceExpr
         2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const SymmMat<ScalarType, 3>& S = SObj.value();
@@ -1088,7 +1090,7 @@ class A2DSymm3x3SymmMultTraceExpr
   }
 
   // Compute E.pvalue() = J * Ux.pvalue()
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const SymmMat<ScalarType, 3>& S = SObj.value();
 
@@ -1104,7 +1106,7 @@ class A2DSymm3x3SymmMultTraceExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const SymmMat<ScalarType, 3>& S = SObj.value();
 
@@ -1150,17 +1152,17 @@ class A2DSymm3x3SymmMultTraceExpr
 };
 
 template <int N, class ScalarType>
-inline A2DSymm3x3SymmMultTraceExpr<N, ScalarType> SymmSymmMultTrace(
-    A2DMat<N, SymmMat<ScalarType, 3>>& S, A2DMat<N, SymmMat<ScalarType, 3>>& E,
-    A2DScalar<N, ScalarType>& trace) {
+A2D_INLINE_FUNCTION A2DSymm3x3SymmMultTraceExpr<N, ScalarType>
+SymmSymmMultTrace(A2DMat<N, SymmMat<ScalarType, 3>>& S,
+                  A2DMat<N, SymmMat<ScalarType, 3>>& E,
+                  A2DScalar<N, ScalarType>& trace) {
   return A2DSymm3x3SymmMultTraceExpr<N, ScalarType>(S, E, trace);
 }
 
 template <class ScalarType>
-inline void SymmIsotropicConstitutive(const ScalarType& mu,
-                                      const ScalarType& lambda,
-                                      const SymmMat<ScalarType, 3>& E,
-                                      SymmMat<ScalarType, 3>& S) {
+A2D_INLINE_FUNCTION void SymmIsotropicConstitutive(
+    const ScalarType& mu, const ScalarType& lambda,
+    const SymmMat<ScalarType, 3>& E, SymmMat<ScalarType, 3>& S) {
   ScalarType tr = lambda * (E(0, 0) + E(1, 1) + E(2, 2));
   ScalarType mu2 = 2.0 * mu;
   S(0, 0) = mu2 * E(0, 0) + tr;
@@ -1175,10 +1177,9 @@ template <class ScalarType>
 class ADSymm3x3IsotropicConstitutiveExpr
     : public ADExpression<ADSymm3x3IsotropicConstitutiveExpr<ScalarType>> {
  public:
-  ADSymm3x3IsotropicConstitutiveExpr(const ScalarType& mu,
-                                     const ScalarType& lambda,
-                                     ADMat<SymmMat<ScalarType, 3>>& EObj,
-                                     ADMat<SymmMat<ScalarType, 3>>& SObj)
+  A2D_INLINE_FUNCTION ADSymm3x3IsotropicConstitutiveExpr(
+      const ScalarType& mu, const ScalarType& lambda,
+      ADMat<SymmMat<ScalarType, 3>>& EObj, ADMat<SymmMat<ScalarType, 3>>& SObj)
       : mu(mu), lambda(lambda), EObj(EObj), SObj(SObj) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& S = SObj.value();
@@ -1192,7 +1193,7 @@ class ADSymm3x3IsotropicConstitutiveExpr
     S(2, 2) = mu2 * E(2, 2) + tr;
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const SymmMat<ScalarType, 3>& Ed = EObj.bvalue();
     SymmMat<ScalarType, 3>& Sd = SObj.bvalue();
 
@@ -1206,7 +1207,7 @@ class ADSymm3x3IsotropicConstitutiveExpr
     Sd(2, 2) = mu2 * Ed(2, 2) + tr;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& Sb = SObj.bvalue();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
 
@@ -1227,9 +1228,10 @@ class ADSymm3x3IsotropicConstitutiveExpr
 };
 
 template <class ScalarType>
-inline ADSymm3x3IsotropicConstitutiveExpr<ScalarType> SymmIsotropicConstitutive(
-    const ScalarType& mu, const ScalarType& lambda,
-    ADMat<SymmMat<ScalarType, 3>>& E, ADMat<SymmMat<ScalarType, 3>>& S) {
+A2D_INLINE_FUNCTION ADSymm3x3IsotropicConstitutiveExpr<ScalarType>
+SymmIsotropicConstitutive(const ScalarType& mu, const ScalarType& lambda,
+                          ADMat<SymmMat<ScalarType, 3>>& E,
+                          ADMat<SymmMat<ScalarType, 3>>& S) {
   return ADSymm3x3IsotropicConstitutiveExpr<ScalarType>(mu, lambda, E, S);
 }
 
@@ -1237,10 +1239,10 @@ template <int N, class ScalarType>
 class A2DSymm3x3IsotropicConstitutiveExpr
     : public A2DExpression<A2DSymm3x3IsotropicConstitutiveExpr<N, ScalarType>> {
  public:
-  A2DSymm3x3IsotropicConstitutiveExpr(const ScalarType& mu,
-                                      const ScalarType& lambda,
-                                      A2DMat<N, SymmMat<ScalarType, 3>>& EObj,
-                                      A2DMat<N, SymmMat<ScalarType, 3>>& SObj)
+  A2D_INLINE_FUNCTION A2DSymm3x3IsotropicConstitutiveExpr(
+      const ScalarType& mu, const ScalarType& lambda,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj,
+      A2DMat<N, SymmMat<ScalarType, 3>>& SObj)
       : mu(mu), lambda(lambda), EObj(EObj), SObj(SObj) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& S = SObj.value();
@@ -1254,7 +1256,7 @@ class A2DSymm3x3IsotropicConstitutiveExpr
     S(2, 2) = mu2 * E(2, 2) + tr;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& Sb = SObj.bvalue();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
 
@@ -1268,7 +1270,7 @@ class A2DSymm3x3IsotropicConstitutiveExpr
     Eb(2, 2) += mu2 * Sb(2, 2) + tr;
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     for (int i = 0; i < N; i++) {
       const SymmMat<ScalarType, 3>& Ep = EObj.pvalue(i);
       SymmMat<ScalarType, 3>& Sp = SObj.pvalue(i);
@@ -1284,7 +1286,7 @@ class A2DSymm3x3IsotropicConstitutiveExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     for (int i = 0; i < N; i++) {
       const SymmMat<ScalarType, 3>& Sh = SObj.hvalue(i);
       SymmMat<ScalarType, 3>& Eh = EObj.hvalue(i);
@@ -1307,7 +1309,7 @@ class A2DSymm3x3IsotropicConstitutiveExpr
 };
 
 template <int N, class ScalarType>
-inline A2DSymm3x3IsotropicConstitutiveExpr<N, ScalarType>
+A2D_INLINE_FUNCTION A2DSymm3x3IsotropicConstitutiveExpr<N, ScalarType>
 SymmIsotropicConstitutive(const ScalarType& mu, const ScalarType& lambda,
                           A2DMat<N, SymmMat<ScalarType, 3>>& E,
                           A2DMat<N, SymmMat<ScalarType, 3>>& S) {
@@ -1315,9 +1317,10 @@ SymmIsotropicConstitutive(const ScalarType& mu, const ScalarType& lambda,
 }
 
 template <class ScalarType>
-inline void SymmIsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
-                                const SymmMat<ScalarType, 3>& E,
-                                ScalarType& output) {
+A2D_INLINE_FUNCTION void SymmIsotropicEnergy(const ScalarType& mu,
+                                             const ScalarType& lambda,
+                                             const SymmMat<ScalarType, 3>& E,
+                                             ScalarType& output) {
   ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
   ScalarType trE =
       E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
@@ -1330,9 +1333,9 @@ template <class ScalarType>
 class ADSymm3x3IsotropicEnergyExpr
     : public ADExpression<ADSymm3x3IsotropicEnergyExpr<ScalarType>> {
  public:
-  ADSymm3x3IsotropicEnergyExpr(const ScalarType& mu, const ScalarType& lambda,
-                               ADMat<SymmMat<ScalarType, 3>>& EObj,
-                               ADScalar<ScalarType>& output)
+  A2D_INLINE_FUNCTION ADSymm3x3IsotropicEnergyExpr(
+      const ScalarType& mu, const ScalarType& lambda,
+      ADMat<SymmMat<ScalarType, 3>>& EObj, ADScalar<ScalarType>& output)
       : mu(mu), lambda(lambda), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1343,7 +1346,7 @@ class ADSymm3x3IsotropicEnergyExpr
     output.value = mu * trE + 0.5 * lambda * tr * tr;
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const SymmMat<ScalarType, 3>& Ed = EObj.bvalue();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1356,7 +1359,7 @@ class ADSymm3x3IsotropicEnergyExpr
     output.bvalue = mu * trEd + lambda * tr * trd;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const ScalarType mu2 = 2.0 * mu;
@@ -1378,9 +1381,10 @@ class ADSymm3x3IsotropicEnergyExpr
 };
 
 template <class ScalarType>
-inline ADSymm3x3IsotropicEnergyExpr<ScalarType> SymmIsotropicEnergy(
-    const ScalarType& mu, const ScalarType& lambda,
-    ADMat<SymmMat<ScalarType, 3>>& E, ADScalar<ScalarType>& output) {
+A2D_INLINE_FUNCTION ADSymm3x3IsotropicEnergyExpr<ScalarType>
+SymmIsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
+                    ADMat<SymmMat<ScalarType, 3>>& E,
+                    ADScalar<ScalarType>& output) {
   return ADSymm3x3IsotropicEnergyExpr<ScalarType>(mu, lambda, E, output);
 }
 
@@ -1388,10 +1392,9 @@ template <class ScalarType>
 class ADSymm3x3ADIsotropicEnergyExpr
     : public ADExpression<ADSymm3x3ADIsotropicEnergyExpr<ScalarType>> {
  public:
-  ADSymm3x3ADIsotropicEnergyExpr(ADScalar<ScalarType>& mu,
-                                 ADScalar<ScalarType>& lambda,
-                                 ADMat<SymmMat<ScalarType, 3>>& EObj,
-                                 ADScalar<ScalarType>& output)
+  A2D_INLINE_FUNCTION ADSymm3x3ADIsotropicEnergyExpr(
+      ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
+      ADMat<SymmMat<ScalarType, 3>>& EObj, ADScalar<ScalarType>& output)
       : mu(mu), lambda(lambda), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1402,7 +1405,7 @@ class ADSymm3x3ADIsotropicEnergyExpr
     output.value = mu.value * trE + 0.5 * lambda.value * tr * tr;
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const SymmMat<ScalarType, 3>& Ed = EObj.bvalue();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1419,7 +1422,7 @@ class ADSymm3x3ADIsotropicEnergyExpr
                     mu.bvalue * trE + 0.5 * lambda.bvalue * tr * tr;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const ScalarType mu2 = 2.0 * mu.value;
@@ -1448,9 +1451,10 @@ class ADSymm3x3ADIsotropicEnergyExpr
 };
 
 template <class ScalarType>
-inline ADSymm3x3ADIsotropicEnergyExpr<ScalarType> SymmIsotropicEnergy(
-    ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
-    ADMat<SymmMat<ScalarType, 3>>& E, ADScalar<ScalarType>& output) {
+A2D_INLINE_FUNCTION ADSymm3x3ADIsotropicEnergyExpr<ScalarType>
+SymmIsotropicEnergy(ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
+                    ADMat<SymmMat<ScalarType, 3>>& E,
+                    ADScalar<ScalarType>& output) {
   return ADSymm3x3ADIsotropicEnergyExpr<ScalarType>(mu, lambda, E, output);
 }
 
@@ -1458,9 +1462,9 @@ template <int N, class ScalarType>
 class A2DSymm3x3IsotropicEnergyExpr
     : public A2DExpression<A2DSymm3x3IsotropicEnergyExpr<N, ScalarType>> {
  public:
-  A2DSymm3x3IsotropicEnergyExpr(const ScalarType& mu, const ScalarType& lambda,
-                                A2DMat<N, SymmMat<ScalarType, 3>>& EObj,
-                                A2DScalar<N, ScalarType>& output)
+  A2D_INLINE_FUNCTION A2DSymm3x3IsotropicEnergyExpr(
+      const ScalarType& mu, const ScalarType& lambda,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj, A2DScalar<N, ScalarType>& output)
       : mu(mu), lambda(lambda), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1471,7 +1475,7 @@ class A2DSymm3x3IsotropicEnergyExpr
     output.value = mu * trE + 0.5 * lambda * tr * tr;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const ScalarType mu2 = 2.0 * mu;
@@ -1486,7 +1490,7 @@ class A2DSymm3x3IsotropicEnergyExpr
     Eb(1, 2) += 2.0 * mu2 * E(1, 2) * output.bvalue;
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
 
@@ -1502,7 +1506,7 @@ class A2DSymm3x3IsotropicEnergyExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const ScalarType mu2 = 2.0 * mu;
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1539,9 +1543,10 @@ class A2DSymm3x3IsotropicEnergyExpr
 };
 
 template <int N, class ScalarType>
-inline A2DSymm3x3IsotropicEnergyExpr<N, ScalarType> SymmIsotropicEnergy(
-    const ScalarType& mu, const ScalarType& lambda,
-    A2DMat<N, SymmMat<ScalarType, 3>>& E, A2DScalar<N, ScalarType>& output) {
+A2D_INLINE_FUNCTION A2DSymm3x3IsotropicEnergyExpr<N, ScalarType>
+SymmIsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
+                    A2DMat<N, SymmMat<ScalarType, 3>>& E,
+                    A2DScalar<N, ScalarType>& output) {
   return A2DSymm3x3IsotropicEnergyExpr<N, ScalarType>(mu, lambda, E, output);
 }
 
@@ -1549,10 +1554,9 @@ template <int N, class ScalarType>
 class A2DSymm3x3A2DIsotropicEnergyExpr
     : public A2DExpression<A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType>> {
  public:
-  A2DSymm3x3A2DIsotropicEnergyExpr(A2DScalar<N, ScalarType>& mu,
-                                   A2DScalar<N, ScalarType>& lambda,
-                                   A2DMat<N, SymmMat<ScalarType, 3>>& EObj,
-                                   A2DScalar<N, ScalarType>& output)
+  A2D_INLINE_FUNCTION A2DSymm3x3A2DIsotropicEnergyExpr(
+      A2DScalar<N, ScalarType>& mu, A2DScalar<N, ScalarType>& lambda,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj, A2DScalar<N, ScalarType>& output)
       : mu(mu), lambda(lambda), EObj(EObj), output(output) {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1563,7 +1567,7 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
     output.value = mu.value * trE + 0.5 * lambda.value * tr * tr;
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     const ScalarType mu2 = 2.0 * mu.value;
@@ -1585,7 +1589,7 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
     lambda.bvalue = 0.5 * tr * tr * output.bvalue;
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
     ScalarType trE =
@@ -1605,7 +1609,7 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const SymmMat<ScalarType, 3>& E = EObj.value();
     const ScalarType mu2 = 2.0 * mu.value;
     ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
@@ -1667,15 +1671,17 @@ class A2DSymm3x3A2DIsotropicEnergyExpr
 };
 
 template <int N, class ScalarType>
-inline A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType> SymmIsotropicEnergy(
-    A2DScalar<N, ScalarType>& mu, A2DScalar<N, ScalarType>& lambda,
-    A2DMat<N, SymmMat<ScalarType, 3>>& E, A2DScalar<N, ScalarType>& output) {
+A2D_INLINE_FUNCTION A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType>
+SymmIsotropicEnergy(A2DScalar<N, ScalarType>& mu,
+                    A2DScalar<N, ScalarType>& lambda,
+                    A2DMat<N, SymmMat<ScalarType, 3>>& E,
+                    A2DScalar<N, ScalarType>& output) {
   return A2DSymm3x3A2DIsotropicEnergyExpr<N, ScalarType>(mu, lambda, E, output);
 }
 
 template <class ScalarType>
-inline void MatGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
-                           SymmMat<ScalarType, 3>& E) {
+A2D_INLINE_FUNCTION void MatGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
+                                        SymmMat<ScalarType, 3>& E) {
   E(0, 0) = Ux(0, 0) + 0.5 * (Ux(0, 0) * Ux(0, 0) + Ux(1, 0) * Ux(1, 0) +
                               Ux(2, 0) * Ux(2, 0));
   E(1, 1) = Ux(1, 1) + 0.5 * (Ux(0, 1) * Ux(0, 1) + Ux(1, 1) * Ux(1, 1) +
@@ -1695,8 +1701,8 @@ template <typename ScalarType>
 class ADMat3x3GreenStrainExpr
     : public ADExpression<ADMat3x3GreenStrainExpr<ScalarType>> {
  public:
-  ADMat3x3GreenStrainExpr(ADMat<Mat<ScalarType, 3, 3>>& UxObj,
-                          ADMat<SymmMat<ScalarType, 3>>& EObj)
+  A2D_INLINE_FUNCTION ADMat3x3GreenStrainExpr(
+      ADMat<Mat<ScalarType, 3, 3>>& UxObj, ADMat<SymmMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymmMat<ScalarType, 3>& E = EObj.value();
@@ -1715,7 +1721,7 @@ class ADMat3x3GreenStrainExpr
                      Ux(1, 1) * Ux(1, 2) + Ux(2, 1) * Ux(2, 2));
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     const Mat<ScalarType, 3, 3>& Uxd = UxObj.bvalue();
     SymmMat<ScalarType, 3>& Ed = EObj.bvalue();
@@ -1741,7 +1747,7 @@ class ADMat3x3GreenStrainExpr
                       Uxd(2, 1) * Ux(2, 2));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     const SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     Mat<ScalarType, 3, 3>& Uxb = UxObj.bvalue();
@@ -1774,7 +1780,7 @@ class ADMat3x3GreenStrainExpr
 };
 
 template <typename ScalarType>
-inline ADMat3x3GreenStrainExpr<ScalarType> MatGreenStrain(
+A2D_INLINE_FUNCTION ADMat3x3GreenStrainExpr<ScalarType> MatGreenStrain(
     ADMat<Mat<ScalarType, 3, 3>>& Ux, ADMat<SymmMat<ScalarType, 3>>& E) {
   return ADMat3x3GreenStrainExpr<ScalarType>(Ux, E);
 }
@@ -1783,8 +1789,9 @@ template <int N, typename ScalarType>
 class A2DMat3x3GreenStrainExpr
     : public A2DExpression<A2DMat3x3GreenStrainExpr<N, ScalarType>> {
  public:
-  A2DMat3x3GreenStrainExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& UxObj,
-                           A2DMat<N, SymmMat<ScalarType, 3>>& EObj)
+  A2D_INLINE_FUNCTION A2DMat3x3GreenStrainExpr(
+      A2DMat<N, Mat<ScalarType, 3, 3>>& UxObj,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymmMat<ScalarType, 3>& E = EObj.value();
@@ -1803,7 +1810,7 @@ class A2DMat3x3GreenStrainExpr
                      Ux(1, 1) * Ux(1, 2) + Ux(2, 1) * Ux(2, 2));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     const SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     Mat<ScalarType, 3, 3>& Uxb = UxObj.bvalue();
@@ -1831,7 +1838,7 @@ class A2DMat3x3GreenStrainExpr
                  (Ux(2, 2) + 1.0) * Eb(2, 2);
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
 
     for (int i = 0; i < N; i++) {
@@ -1859,7 +1866,7 @@ class A2DMat3x3GreenStrainExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     const Mat<ScalarType, 3, 3>& Eb = EObj.bvalue();
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
 
@@ -1917,15 +1924,15 @@ class A2DMat3x3GreenStrainExpr
 };
 
 template <int N, typename ScalarType>
-inline A2DMat3x3GreenStrainExpr<N, ScalarType> MatGreenStrain(
+A2D_INLINE_FUNCTION A2DMat3x3GreenStrainExpr<N, ScalarType> MatGreenStrain(
     A2DMat<N, Mat<ScalarType, 3, 3>>& Ux,
     A2DMat<N, SymmMat<ScalarType, 3>>& E) {
   return A2DMat3x3GreenStrainExpr<N, ScalarType>(Ux, E);
 }
 
 template <class ScalarType>
-inline void MatLinearGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
-                                 SymmMat<ScalarType, 3>& E) {
+A2D_INLINE_FUNCTION void MatLinearGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
+                                              SymmMat<ScalarType, 3>& E) {
   E(0, 0) = Ux(0, 0);
   E(1, 1) = Ux(1, 1);
   E(2, 2) = Ux(2, 2);
@@ -1939,8 +1946,8 @@ template <typename ScalarType>
 class ADMat3x3LinearGreenStrainExpr
     : public ADExpression<ADMat3x3LinearGreenStrainExpr<ScalarType>> {
  public:
-  ADMat3x3LinearGreenStrainExpr(ADMat<Mat<ScalarType, 3, 3>>& UxObj,
-                                ADMat<SymmMat<ScalarType, 3>>& EObj)
+  A2D_INLINE_FUNCTION ADMat3x3LinearGreenStrainExpr(
+      ADMat<Mat<ScalarType, 3, 3>>& UxObj, ADMat<SymmMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymmMat<ScalarType, 3>& E = EObj.value();
@@ -1953,7 +1960,7 @@ class ADMat3x3LinearGreenStrainExpr
     E(1, 2) = 0.5 * (Ux(1, 2) + Ux(2, 1));
   }
 
-  void forward() {
+  A2D_INLINE_FUNCTION void forward() {
     const Mat<ScalarType, 3, 3>& Uxb = UxObj.bvalue();
     SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
 
@@ -1966,7 +1973,7 @@ class ADMat3x3LinearGreenStrainExpr
     Eb(1, 2) = 0.5 * (Uxb(1, 2) + Uxb(2, 1));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     Mat<ScalarType, 3, 3>& Uxb = UxObj.bvalue();
 
@@ -1989,8 +1996,9 @@ class ADMat3x3LinearGreenStrainExpr
 };
 
 template <typename ScalarType>
-inline ADMat3x3LinearGreenStrainExpr<ScalarType> MatLinearGreenStrain(
-    ADMat<Mat<ScalarType, 3, 3>>& Ux, ADMat<SymmMat<ScalarType, 3>>& E) {
+A2D_INLINE_FUNCTION ADMat3x3LinearGreenStrainExpr<ScalarType>
+MatLinearGreenStrain(ADMat<Mat<ScalarType, 3, 3>>& Ux,
+                     ADMat<SymmMat<ScalarType, 3>>& E) {
   return ADMat3x3LinearGreenStrainExpr<ScalarType>(Ux, E);
 }
 
@@ -1998,8 +2006,9 @@ template <int N, typename ScalarType>
 class A2DMat3x3LinearGreenStrainExpr
     : public A2DExpression<A2DMat3x3LinearGreenStrainExpr<N, ScalarType>> {
  public:
-  A2DMat3x3LinearGreenStrainExpr(A2DMat<N, Mat<ScalarType, 3, 3>>& UxObj,
-                                 A2DMat<N, SymmMat<ScalarType, 3>>& EObj)
+  A2D_INLINE_FUNCTION A2DMat3x3LinearGreenStrainExpr(
+      A2DMat<N, Mat<ScalarType, 3, 3>>& UxObj,
+      A2DMat<N, SymmMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymmMat<ScalarType, 3>& E = EObj.value();
@@ -2012,7 +2021,7 @@ class A2DMat3x3LinearGreenStrainExpr
     E(1, 2) = 0.5 * (Ux(1, 2) + Ux(2, 1));
   }
 
-  void reverse() {
+  A2D_INLINE_FUNCTION void reverse() {
     const SymmMat<ScalarType, 3>& Eb = EObj.bvalue();
     Mat<ScalarType, 3, 3>& Uxb = UxObj.bvalue();
 
@@ -2030,7 +2039,7 @@ class A2DMat3x3LinearGreenStrainExpr
     Uxb(2, 2) += Eb(2, 2);
   }
 
-  void hforward() {
+  A2D_INLINE_FUNCTION void hforward() {
     for (int i = 0; i < N; i++) {
       const Mat<ScalarType, 3, 3>& Uxp = UxObj.pvalue(i);
       SymmMat<ScalarType, 3>& Ep = EObj.pvalue(i);
@@ -2045,7 +2054,7 @@ class A2DMat3x3LinearGreenStrainExpr
     }
   }
 
-  void hreverse() {
+  A2D_INLINE_FUNCTION void hreverse() {
     for (int i = 0; i < N; i++) {
       const SymmMat<ScalarType, 3>& Eh = EObj.hvalue(i);
       Mat<ScalarType, 3, 3>& Uxh = UxObj.hvalue(i);
@@ -2069,9 +2078,9 @@ class A2DMat3x3LinearGreenStrainExpr
 };
 
 template <int N, typename ScalarType>
-inline A2DMat3x3LinearGreenStrainExpr<N, ScalarType> MatLinearGreenStrain(
-    A2DMat<N, Mat<ScalarType, 3, 3>>& Ux,
-    A2DMat<N, SymmMat<ScalarType, 3>>& E) {
+A2D_INLINE_FUNCTION A2DMat3x3LinearGreenStrainExpr<N, ScalarType>
+MatLinearGreenStrain(A2DMat<N, Mat<ScalarType, 3, 3>>& Ux,
+                     A2DMat<N, SymmMat<ScalarType, 3>>& E) {
   return A2DMat3x3LinearGreenStrainExpr<N, ScalarType>(Ux, E);
 }
 

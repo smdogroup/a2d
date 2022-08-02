@@ -5,11 +5,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp2d.h"
-#include "a2dtmp3d.h"
-#include "fem/helmholtz.h"
-#include "fem/model.h"
-#include "mpi.h"
+#include "a2d.h"
 
 using namespace A2D;
 
@@ -83,7 +79,7 @@ void test_adjoint_product(DesignArray& x,
   arrays
 */
 int main(int argc, char* argv[]) {
-  MPI_Init(&argc, &argv);
+  Timer timer("main()");
   typedef index_t I;
   typedef std::complex<double> T;
   // typedef std::complex<double> T;
@@ -189,24 +185,15 @@ int main(int argc, char* argv[]) {
   functional->add_functional(agg_functional);
 
   // Compute the Jacobian matrix
-  double t0 = MPI_Wtime();
   auto J = model->new_matrix();
-  t0 = MPI_Wtime() - t0;
-  std::cout << "Jacobian initialization time: " << t0 << std::endl;
 
-  double t1 = MPI_Wtime();
   model->jacobian(J);
-  t1 = MPI_Wtime() - t1;
-  std::cout << "Jacobian computational time: " << t1 << std::endl;
 
-  double t2 = MPI_Wtime();
   int num_levels = 3;
   double omega = 0.6667;
   double epsilon = 0.0;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
-  t2 = MPI_Wtime() - t2;
-  std::cout << "Set up time for AMG: " << t2 << std::endl;
 
   // Set the residuals and apply the boundary conditions
   auto solution = model->new_solution();
@@ -221,11 +208,8 @@ int main(int argc, char* argv[]) {
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 80;
-  double t3 = MPI_Wtime();
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
-  t3 = MPI_Wtime() - t3;
-  std::cout << "Conjugate gradient solution time: " << t3 << std::endl;
 
   // Set the solution
   model->set_solution(solution);
@@ -241,10 +225,7 @@ int main(int argc, char* argv[]) {
 
   // Compute the adjoint variables
   auto adjoint = model->new_solution();
-  double t4 = MPI_Wtime();
   amg->mg(*dfdu, *adjoint, monitor, max_iters);
-  t4 = MPI_Wtime() - t4;
-  std::cout << "Adjoint solution time: " << t3 << std::endl;
 
   // Complete the adjoint derivative
   auto dfdx =
@@ -267,11 +248,8 @@ int main(int argc, char* argv[]) {
   model->jacobian(J);
   amg->update();
 
-  double t5 = MPI_Wtime();
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
-  t5 = MPI_Wtime() - t5;
-  std::cout << "Conjugate gradient solution time: " << t5 << std::endl;
 
   // Set the solution
   model->set_solution(solution);
@@ -297,6 +275,5 @@ int main(int argc, char* argv[]) {
   // test_adjoint_product(x, model);
 
   // amg->testGalerkin();
-  MPI_Finalize();
   return (0);
 }

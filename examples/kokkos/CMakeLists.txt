@@ -1,3 +1,5 @@
 include_directories(${A2D_ROOT_DIR}/include)
 add_subdirectory(hello_kokkos)
 add_subdirectory(view)
+add_subdirectory(cuda_kernel)
+add_subdirectory(scratchpad)

@@ -543,7 +543,7 @@ class LinElasticityElement
 };
 
 template <typename I, typename T, class BasisOps>
-class TopoIsoConstitutive
+class TopoIsoConstitutive final
     : public ConstitutiveBase<I, T,
                               ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I, T>> {
  public:

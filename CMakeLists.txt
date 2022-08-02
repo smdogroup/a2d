@@ -12,7 +12,7 @@ endif()
 
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Set A2D root directory
@@ -51,11 +51,6 @@ if (A2D_USE_KOKKOS)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
-
-    # # Build our own cuda functions
-    # if (Kokkos_ENABLE_CUDA)
-    #   add_subdirectory(${A2D_ROOT_DIR}/src/cuda)
-    # endif()
   endif()
 endif()
 

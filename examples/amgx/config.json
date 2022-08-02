@@ -12,7 +12,7 @@
         "convergence": "RELATIVE_INI_CORE", 
         "scope": "main", 
         "max_iters": 10000,
-        "tolerance": 1e-08, 
+        "tolerance": 1e-8, 
         "norm": "L2"
     }
 }

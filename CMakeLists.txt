@@ -16,7 +16,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_ARCHITECTURES 86)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
-# set(CMAKE_CXX_FLAGS "-fopenmp")
 
 # Set A2D root directory
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -39,9 +38,6 @@ add_compile_options(
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(CUDAToolkit REQUIRED)
-# Require MPI
-find_package(MPI REQUIRED)
-include_directories(${MPI_INCLUDE_PATH})
 
 # Build amgx examples
 if (A2D_BUILD_EXAMPLES_AMGX)
@@ -54,12 +50,6 @@ if (A2D_BUILD_EXAMPLES_AMGX)
     message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
   else()
     add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
-  # use cuda_runtime_path to specify the cuda runtime library path
-  # this is necessary for the amgx examples to work
-  # if you don't have cuda, you can comment out the following line
-  set(CMAKE_CUDA_RUNTIME_LIBRARY_DIR ${CUDAToolkit_CUDA_LIBRARY_DIR})
-
-
   endif()
 endif()
 
@@ -78,11 +68,6 @@ if (A2D_USE_KOKKOS)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
     include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
-
-    # # Build our own cuda functions
-    # if (Kokkos_ENABLE_CUDA)
-    #   add_subdirectory(${A2D_ROOT_DIR}/src/cuda)
-    # endif()
   endif()
 endif()
 

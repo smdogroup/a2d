@@ -509,7 +509,7 @@ class BSRMatAmg {
         break;
       }
     }
-
+    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 
@@ -594,7 +594,7 @@ class BSRMatAmg {
         break;
       }
     }
-
+    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 

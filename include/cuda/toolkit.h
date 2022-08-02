@@ -22,22 +22,7 @@
 #define __CHECK__ printf("Line: %i => pass\n", __LINE__);
 
 // using for timing
-#define TIMER(key)                                                             \
-  {                                                                            \
-    static void timing(std::string const &key) {                               \
-      static std::map<std::string, std::chrono::steady_clock::time_point>      \
-          saves;                                                               \
-      auto it = saves.find(key);                                               \
-      if (it == saves.end()) {                                                 \
-        saves.emplace(key, std::chrono::steady_clock::now());                  \
-      } else {                                                                 \
-        double dt = std::chrono::duration_cast<std::chrono::duration<double>>( \
-                        std::chrono::steady_clock::now() - it->second)         \
-                        .count();                                              \
-        std::cout << key << ": " << dt << " s" << std::endl;                   \
-      }                                                                        \
-    }                                                                          \
-  }
+#define TIMER(key) timing(key)
 
 // using for generating random numbers
 #define RAND_NUM                                         \
@@ -50,12 +35,10 @@
   }
 
 // // using for checking the GPU error
-#define CHECK(ans) \
-  { gpuErrorCheck((ans), __FILE__, __LINE__); }
+#define CHECK(ans) gpuErrorCheck((ans), __FILE__, __LINE__)
 
 /* CUDA error macro */
-#define CUDA_SAFE_CALL(call) \
-  { cuda_call_sell(call); }
+#define CUDA_SAFE_CHECK(call) cuda_call_sell(call)
 
 template <class T>
 std::string type_name() {
@@ -94,6 +77,58 @@ void cuda_call_sell(cudaError_t err) {
   }
   while (0)
     ;
+}
+
+static void timing(std::string const &key) {
+  static std::map<std::string, std::chrono::steady_clock::time_point> saves;
+  auto it = saves.find(key);
+  if (it == saves.end()) {
+    saves.emplace(key, std::chrono::steady_clock::now());
+  } else {
+    double dt = std::chrono::duration_cast<std::chrono::duration<double>>(
+                    std::chrono::steady_clock::now() - it->second)
+                    .count();
+    std::cout << key << " Time: " << dt << " s \n" << std::endl;
+  }
+}
+
+// define the ticktock function for timing
+#define TICK(msg) startTimer(msg);
+#define TOCK(msg) reportTimer(msg);
+
+typedef std::chrono::high_resolution_clock Clock;
+typedef std::chrono::time_point<Clock> TimePoint;
+typedef std::chrono::duration<double> Duration;
+typename Clock::time_point startTime;
+typename Clock::time_point endTime;
+
+void startTimer(const char *msg) {
+  std::cout << msg << ": start" << std::endl;
+  startTime = Clock::now();
+}
+
+void stopTimer() { endTime = Clock::now(); }
+
+double getElapsedTime() {
+  stopTimer();
+  Duration d = endTime - startTime;
+  return d.count();
+}
+
+void reportTimer(const char *msg) {
+  double elapsed = getElapsedTime();
+  if (elapsed < 1e-6)
+    std::cout << msg << " Total Time: " << elapsed * 1e6 << " us"
+              << "\n"
+              << std::endl;
+  else if (elapsed < 1e-3)
+    std::cout << msg << " Total Time: " << elapsed * 1e3 << " ms"
+              << "\n"
+              << std::endl;
+  else
+    std::cout << msg << " Total Time: " << elapsed << " s"
+              << "\n"
+              << std::endl;
 }
 
 #endif  // TOOLKIT_H

@@ -15,7 +15,7 @@ link_libraries(${AMGX_LIB_DIR}/libamgxsh.so)
 configure_file(${CMAKE_SOURCE_DIR}/examples/amgx/config.json config.json COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/examples/amgx/matrix.mtx matrix.mtx COPYONLY)
 
-add_executable(amgx amgx.cpp)
+add_executable(amgx amgx_linear_elastic.cpp)
 target_link_libraries(amgx 
   PUBLIC 
     OpenMP::OpenMP_CXX

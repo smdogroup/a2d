@@ -11,11 +11,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set project name, language and c++ std
-project(A2D LANGUAGES CXX CUDA)
+project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_ARCHITECTURES 86)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
 
 # Set A2D root directory
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -37,7 +35,6 @@ add_compile_options(
 # Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(CUDAToolkit REQUIRED)
 
 # Build amgx examples
 if (A2D_BUILD_EXAMPLES_AMGX)
@@ -50,6 +47,24 @@ if (A2D_BUILD_EXAMPLES_AMGX)
     message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
   else()
     add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
+  endif()
+endif()
+
+# If use kokkos, we build kokkos in-place
+if (A2D_USE_KOKKOS)
+  set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
+  if (NOT EXISTS ${A2D_KOKKOS_DIR})
+    message(WARNING "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
+  else()
+    # Build Kokkos
+    add_compile_definitions(A2D_USE_KOKKOS)
+    add_subdirectory(${A2D_KOKKOS_DIR})
+    include_directories(${A2D_KOKKOS_DIR}/core/src)
+    include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
+    include_directories(${A2D_KOKKOS_DIR}/containers/src)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
+    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
   endif()
 endif()
 
@@ -95,6 +110,20 @@ endif()
 # Build pure a2d examples
 if (A2D_BUILD_EXAMPLES_BASIC)
   add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
+endif()
+
+# Build amgx examples
+if (A2D_BUILD_EXAMPLES_AMGX)
+  # If use AMGX, the following directories should be valid
+  set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/AMGX/include)
+  set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/AMGX/lib/)
+  if (NOT EXISTS ${AMGX_INCLUDE_DIR})
+    message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
+  elseif(NOT EXISTS ${AMGX_LIB_DIR})
+    message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
+  else()
+    add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
+  endif()
 endif()
 
 # Build kokkos examples

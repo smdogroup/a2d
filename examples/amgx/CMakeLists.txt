@@ -1,3 +1,8 @@
+enable_language(CUDA)
+find_package(CUDAToolkit REQUIRED)
+set(CMAKE_CUDA_ARCHITECTURES 86)
+set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+
 # Include A2D and AMGX headers
 include_directories(${AMGX_INCLUDE_DIR})
 include_directories(${A2D_ROOT_DIR}/include)

@@ -300,15 +300,18 @@ I CSRFactorSymbolic(const I nrows, const VecType Arowp, const VecType Acols,
 template <typename I, typename T, index_t M>
 BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
                                             double fill_factor = 5.0) {
+  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
+
   // Copy over the non-zero structure of the matrix
   int nrows = A.nbrows;
-  int* rowp = new int[A.nbrows + 1];
-  int* cols = new int[A.nnz];
-  int* perm_ = new int[A.nbrows];
+  IdxArray1D_t rowp(IdxLayout1D_t(A.nbrows + 1));
+  IdxArray1D_t cols(IdxLayout1D_t(A.nnz));
+  IdxArray1D_t perm_(IdxLayout1D_t(A.nbrows));
 
   // Copy the values to rowp and cols
-  std::copy(A.rowp, A.rowp + (A.nbrows + 1), rowp);
-  std::copy(A.cols, A.cols + A.nnz, cols);
+  rowp.copy(A.rowp);
+  cols.copy(A.cols);
 
   // Compute the re-ordering
   int* interface_nodes = NULL;
@@ -318,28 +321,22 @@ BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
   int* indep_ptr = NULL;
   int* indep_vars = NULL;
   int use_exact_degree = 0;
-  amd_order_interface(nrows, rowp, cols, perm_, interface_nodes,
-                      ninterface_nodes, ndep_vars, dep_vars, indep_ptr,
-                      indep_vars, use_exact_degree);
-
-  // Free up the old space
-  delete[] rowp;
-  delete[] cols;
+  amd_order_interface(nrows, (int*)rowp.data, (int*)cols.data, (int*)perm_.data,
+                      interface_nodes, ninterface_nodes, ndep_vars, dep_vars,
+                      indep_ptr, indep_vars, use_exact_degree);
 
   // Set up the factorization
   // perm[new var] = old_var
   // iperm[old var] = new var
 
   // Set the permutation array
-  I* perm = new I[A.nbrows];
-  I* iperm = new I[A.nbrows];
-  std::copy(perm_, perm_ + A.nbrows, perm);
+  IdxArray1D_t perm(IdxLayout1D_t(A.nbrows));
+  IdxArray1D_t iperm(IdxLayout1D_t(A.nbrows));
+  perm.copy(perm_);
 
   for (I i = 0; i < A.nbrows; i++) {
     iperm[perm[i]] = i;
   }
-
-  delete[] perm_;
 
   // Allocate the new arrays for re-ordering the vector
   std::vector<I> Arowp(A.nbrows + 1);
@@ -489,7 +486,7 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
   for (I i = 0; i < A.nbrows; i++) {
-    int head = first_entry;
+    int head = int(first_entry);
     I num_cols = 0;  // The size of the temporary cols array
 
     // Merge the two arrays into cols
@@ -607,7 +604,7 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
 
       I* col_ptr = At->find_column_index(j, i);  // Find At(j, i)
       if (col_ptr) {
-        I kp = col_ptr - At->cols;
+        I kp = col_ptr - At->cols.data;
         auto At0 = MakeSlice(At->Avals, kp);
 
         for (I k1 = 0; k1 < M; k1++) {
@@ -702,21 +699,23 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 
 template <typename I, typename T, index_t M>
 void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
-  A.perm = new I[A.nbrows];
-  I* colors = new I[A.nbrows];
+  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
+
+  A.perm = IdxArray1D_t(IdxLayout1D_t(A.nbrows));
+
+  IdxArray1D_t colors(IdxLayout1D_t(A.nbrows));
 
   // Use A->perm as a temporary variable to avoid double allocation
-  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp, A.cols, colors, A.perm);
+  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp.data, A.cols.data,
+                                    colors.data, A.perm.data);
 
   // Count up the number of nodes with each color
-  A.color_count = new I[A.num_colors];
-  std::fill(A.color_count, A.color_count + A.num_colors, 0);
+  A.color_count = IdxArray1D_t(IdxLayout1D_t(A.num_colors));
 
   for (I i = 0; i < A.nbrows; i++) {
     A.color_count[colors[i]]++;
   }
-
-  delete[] colors;
 }
 
 }  // namespace A2D

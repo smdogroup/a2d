@@ -102,45 +102,45 @@ class HelmholtzElement
 
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Uq,
-        [&data](index_t i, index_t j, T wdetJ, A2D::Vec<T, 1>& U0,
-                A2D::Vec<T, 1>& Ub) -> void {
-          Ub(0) = wdetJ * (U0(0) - data(i, j, 0));
-        },
+        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+                   A2D::Vec<T, 1> & Ub)
+            ->void { Ub(0) = wdetJ * (U0(0) - data(i, j, 0)); },
         elem_res);
 
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        [r2](index_t i, index_t j, T wdetJ,
-             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv,
-             A2D::Mat<T, 1, SPATIAL_DIM>& Uxi,
-             A2D::Mat<T, 1, SPATIAL_DIM>& Uxib) -> void {
-          A2D::Vec<T, SPATIAL_DIM> Ux;
-          // Ux = Uxi * Jinv
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            Ux(idim) = 0.0;
-            for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
-              Ux(idim) += Uxi(0u, jdim) * Jinv(jdim, idim);
-            }
-          }
+        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+                   A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv,
+                   A2D::Mat<T, 1, SPATIAL_DIM> & Uxi,
+                   A2D::Mat<T, 1, SPATIAL_DIM> & Uxib)
+            ->void {
+              A2D::Vec<T, SPATIAL_DIM> Ux;
+              // Ux = Uxi * Jinv
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                Ux(idim) = 0.0;
+                for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
+                  Ux(idim) += Uxi(0u, jdim) * Jinv(jdim, idim);
+                }
+              }
 
-          A2D::Vec<T, SPATIAL_DIM> Uxb;
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            Uxb(idim) = wdetJ * r2 * Ux(idim);
-          }
+              A2D::Vec<T, SPATIAL_DIM> Uxb;
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                Uxb(idim) = wdetJ * r2 * Ux(idim);
+              }
 
-          // Ux = Uxi * Jinv
-          // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv
-          //                 = Jinv * Uxb^{T} * dot{Uxi}
-          // => Uxib^{T} = Jinv * Uxb^{T}
-          // => Uxib = Uxb * Jinv^{T}
+              // Ux = Uxi * Jinv
+              // Uxb^{T} dot{Ux} = Uxb^{T} * dot{Uxi} * Jinv
+              //                 = Jinv * Uxb^{T} * dot{Uxi}
+              // => Uxib^{T} = Jinv * Uxb^{T}
+              // => Uxib = Uxb * Jinv^{T}
 
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            Uxib(0u, idim) = 0.0;
-            for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
-              Uxib(0u, idim) += Uxb(jdim) * Jinv(idim, jdim);
-            }
-          }
-        },
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                Uxib(0u, idim) = 0.0;
+                for (index_t jdim = 0; jdim < SPATIAL_DIM; jdim++) {
+                  Uxib(0u, idim) += Uxb(jdim) * Jinv(idim, jdim);
+                }
+              }
+            },
         elem_res);
 
     VecElementGatherAdd(this->get_conn(), elem_res, res);
@@ -162,33 +162,36 @@ class HelmholtzElement
 
     BasisOps::template jacobians<T, vars_per_node>(
         detJ, Uq,
-        [](index_t i, index_t j, T wdetJ, A2D::Vec<T, 1>& U0,
-           A2D::SymmMat<T, 1>& jac) -> void { jac(0, 0) = wdetJ; },
+        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+                   A2D::SymmMat<T, 1> & jac)
+            ->void { jac(0, 0) = wdetJ; },
         elem_jac);
 
     BasisOps::template jacobians<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        [r2](index_t i, index_t j, T wdetJ,
-             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM>& Jinv,
-             A2D::Mat<T, 1, SPATIAL_DIM>& Uxi,
-             A2D::Mat<T, 1, SPATIAL_DIM>& Uxib,
-             A2D::SymmTensor<T, 1, SPATIAL_DIM>& jac) -> void {
-          T wr2 = r2 * wdetJ;
+        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+                   A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv,
+                   A2D::Mat<T, 1, SPATIAL_DIM> & Uxi,
+                   A2D::Mat<T, 1, SPATIAL_DIM> & Uxib,
+                   A2D::SymmTensor<T, 1, SPATIAL_DIM> & jac)
+            ->void {
+              T wr2 = r2 * wdetJ;
 
-          // Uxib = Uxb * Jinv^{T}
-          // Uxb = r0 * r0 * Uxb = r0 * r0 * Uxi * Jinv
-          // Uxib = r0 * r0 * Jinv * Jinv^{T}
+              // Uxib = Uxb * Jinv^{T}
+              // Uxb = r0 * r0 * Uxb = r0 * r0 * Uxi * Jinv
+              // Uxib = r0 * r0 * Jinv * Jinv^{T}
 
-          for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
-            for (index_t jdim = idim; jdim < SPATIAL_DIM; jdim++) {
-              jac(0u, idim, 0u, jdim) = 0.0;
-              for (index_t kdim = 0; kdim < SPATIAL_DIM; kdim++) {
-                jac(0u, idim, 0u, jdim) += Jinv(idim, kdim) * Jinv(jdim, kdim);
+              for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
+                for (index_t jdim = idim; jdim < SPATIAL_DIM; jdim++) {
+                  jac(0u, idim, 0u, jdim) = 0.0;
+                  for (index_t kdim = 0; kdim < SPATIAL_DIM; kdim++) {
+                    jac(0u, idim, 0u, jdim) +=
+                        Jinv(idim, kdim) * Jinv(jdim, kdim);
+                  }
+                  jac(0u, idim, 0u, jdim) *= wr2;
+                }
               }
-              jac(0u, idim, 0u, jdim) *= wr2;
-            }
-          }
-        },
+            },
         elem_jac);
 
     A2D::BSRMatAddElementMatrices(this->get_conn(), elem_jac, J);
@@ -212,8 +215,8 @@ class HelmholtzElement
     // Compute the product
     BasisOps::template adjoint_product<T, vars_per_node>(
         detJ, Uq, psiq,
-        [&dfdx](index_t i, index_t j, T wdetJ, A2D::Vec<T, 1>& U0,
-                A2D::Vec<T, 1>& Psi) { dfdx(i, j, 0) -= wdetJ * Psi(0); });
+        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+                   A2D::Vec<T, 1> & Psi) { dfdx(i, j, 0) -= wdetJ * Psi(0); });
   }
 };
 

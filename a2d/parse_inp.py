@@ -2,7 +2,7 @@ import os
 import numpy as np
 import argparse
 import re
-import utils
+from a2d import to_vtk
 
 
 class InpParser:
@@ -27,6 +27,11 @@ class InpParser:
                 "nnode": 8,
                 "vtk_type": 12,
                 "note": "general purpose linear brick element",
+            },
+            "C3D4": {
+                "nnode": 4,
+                "vtk_type": 10,
+                "note": "Four-node tetrahedral element",
             },
             "C3D10": {
                 "nnode": 10,
@@ -59,8 +64,12 @@ class InpParser:
             and c["type"] in self.SUPPORTED_ELEMENT
         ]
         chunks_nset = [c for c in data_chunks if c["data_chunk_type"].lower() == "nset"]
-        chunks_loads = [c for c in data_chunks if c["data_chunk_type"].lower() == "cload"]
-        chunks_bcs = [c for c in data_chunks if c["data_chunk_type"].lower() == "boundary"]
+        chunks_loads = [
+            c for c in data_chunks if c["data_chunk_type"].lower() == "cload"
+        ]
+        chunks_bcs = [
+            c for c in data_chunks if c["data_chunk_type"].lower() == "boundary"
+        ]
 
         # Parse nodal location
         if len(chunks_node) > 1:
@@ -121,7 +130,7 @@ class InpParser:
 
         if vtk_name is None:
             vtk_name = "{:s}.vtk".format(os.path.splitext(self.inp_name)[0])
-        utils.to_vtk(self.conn, self.X, nodal_sol, vtk_name)
+        to_vtk(self.conn, self.X, nodal_sol, vtk_name)
         return
 
     def _sort_B_by_A(self, A, B):

@@ -12,6 +12,7 @@
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_numeric.h"
 #include "sparse/sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -89,6 +90,7 @@ class FEModel {
     been set into the model class
   */
   void init() {
+    Timer timer("FEModel::init()");
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_nodes(X);
     }
@@ -98,6 +100,7 @@ class FEModel {
     Create a new solution vector
   */
   std::shared_ptr<typename PDEInfo::SolutionArray> new_solution() {
+    Timer timer("FEModel::new_solution()");
     return std::make_shared<typename PDEInfo::SolutionArray>(solution_layout);
   }
 
@@ -177,6 +180,7 @@ class FEModel {
     Compute the Jacobian matrix
   */
   void jacobian(std::shared_ptr<typename PDEInfo::SparseMat> jac) {
+    Timer timer("FEModel::jacobian()");
     jac->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_jacobian(*jac);
@@ -207,6 +211,7 @@ class FEModel {
     Create a new matrix
   */
   std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
+    Timer timer("FEModel::new_matrix()");
     std::set<std::pair<I, I>> node_set;
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
@@ -222,6 +227,7 @@ class FEModel {
       int num_levels, double omega, double epsilon,
       std::shared_ptr<typename PDEInfo::SparseMat> mat,
       bool print_info = false) {
+    Timer timer("FEModel::new_amg()");
     PDEInfo::compute_null_space(X, *B);
     A2D::VecZeroBCRows(bcs, *B);
     return std::make_shared<typename PDEInfo::SparseAmg>(

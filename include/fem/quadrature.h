@@ -146,6 +146,53 @@ class HexTriLinearBasisFunc {
   }
 };
 
+class Tetra4ptQuadrature {
+ public:
+  static const index_t NUM_QUAD_PTS = 1;
+
+  static void getQuadPoint(const index_t index, double pt[]) {
+    pt[0] = 0.25;  // L1
+    pt[1] = 0.25;  // L2
+    pt[2] = 0.25;  // L3
+  }
+
+  static double getQuadWeight(const index_t index) {
+    return -1.0 / 3.0;
+  }  // TODO: why negative sign here??
+};
+
+class TetraLinearBasisFunc {
+ public:
+  static const index_t NUM_NODES = 4;
+
+  static void evalBasis(const double pt[], double N[]) {
+    N[0] = pt[0];
+    N[1] = pt[1];
+    N[2] = pt[2];
+    N[3] = 1.0 - pt[0] - pt[1] - pt[2];
+  }
+
+  static void evalBasisDeriv(const double pt[], double Nxyz[]) {
+    // dN/dL1
+    Nxyz[0] = 1.0;
+    Nxyz[1] = 0.0;
+    Nxyz[2] = 0.0;
+    Nxyz[3] = -1.0;
+
+    // dN/dL2
+    Nxyz[4] = 0.0;
+    Nxyz[5] = 1.0;
+    Nxyz[6] = 0.0;
+    Nxyz[7] = -1.0;
+
+    // dN/dL3
+    Nxyz[8] = 0.0;
+    Nxyz[9] = 0.0;
+    Nxyz[10] = 1.0;
+    Nxyz[11] = -1.0;
+  }
+};
+
 const double TetrahedronWts5[] = {-4.0 / 5.0, 9.0 / 20.0};
 const double TetrahedronPts5[] = {
     0.25,      0.25,      0.25, 1.0 / 6.0, 1.0 / 6.0, 1.0 / 6.0, 0.5, 1.0 / 6.0,

@@ -9,6 +9,11 @@
 #ifndef A2D_MESH_H
 #define A2D_MESH_H
 
+#include <string>
+#include <vector>
+
+#include "a2dvtk.h"
+
 namespace A2D {
 
 /**
@@ -235,6 +240,87 @@ class MesherBrick3D {
     }
     model->zero_bcs(residual);
   }
+};
+
+/**
+ * @brief Load the mesh (connectivity and X only for now) from vtk.
+ *
+ * @tparam nnodes_per_elem second dimension of the connectivity array
+ * @tparam T X entry data type
+ * @tparam I connectivity entry data type
+ */
+template <int nnodes_per_elem, typename T, typename I>
+class MesherFromVTK3D {
+ public:
+  MesherFromVTK3D(const std::string& vtk_name) {
+    vtk_reader = VTK_t(vtk_name);
+    nnodes = vtk_reader.nnodes;
+    nelems = vtk_reader.nelems;
+
+    // Loop over X to find bc and loaded nodes
+    // We set those nodes with minimum x-coordinates to be bc nodes
+    nbcs = 0;
+    nforces = 0;
+    T tol = 1e-6;
+    for (I i = 0; i != nnodes; i++) {
+      if (vtk_reader.X(i, 0) - vtk_reader.domain_lower[0] < tol) {
+        bc_nodes.push_back(i);
+        nbcs++;
+      }
+      if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol &&
+          vtk_reader.X(i, 2) - vtk_reader.domain_lower[2] < tol) {
+        force_nodes.push_back(i);
+        nforces++;
+      }
+    }
+  }
+
+  I get_nnodes() { return nnodes; }
+  I get_nelems() { return nelems; }
+  I get_nbcs() { return nbcs; }
+
+  template <class ConnArray, class XArray>
+  void set_X_conn(XArray& X, ConnArray& conn) {
+    vtk_reader.set_X(X);
+    vtk_reader.set_conn(conn);
+  }
+
+  template <class BcsArray>
+  void set_bcs(BcsArray& bcs) {
+    I index = 0;
+    for (auto it = bc_nodes.begin(); it != bc_nodes.end(); it++) {
+      bcs(index, 0) = *it;
+      for (int ii = 0; ii < 3; ii++) {
+        bcs(index, 1) |= 1U << ii;
+      }
+      index++;
+    }
+  }
+
+  template <class DvArray>
+  void set_dv(DvArray& x) {
+    for (I i = 0; i != nnodes; i++) {
+      x(i, 0) = 1.0;
+    }
+  }
+
+  template <class Type, class Model, class RhsArray>
+  void set_force(Model& model, RhsArray& residual, const Type force) {
+    residual->zero();
+    for (auto it = force_nodes.begin(); it != force_nodes.end(); it++) {
+      (*residual)(*it, 2) = -force / T(nforces);
+    }
+    model->zero_bcs(residual);
+  }
+
+ private:
+  using VTK_t = ReadVTK<nnodes_per_elem, 3, T, I>;
+
+  VTK_t vtk_reader;
+  I nnodes, nelems, nbcs, nforces;
+
+  std::vector<I> bc_nodes;
+  std::vector<I> force_nodes;
 };
 
 }  // namespace A2D

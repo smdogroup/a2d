@@ -28,6 +28,11 @@ class InpParser:
                 "vtk_type": 12,
                 "note": "general purpose linear brick element",
             },
+            "C3D4": {
+                "nnode": 4,
+                "vtk_type": 10,
+                "note": "Four-node tetrahedral element",
+            },
             "C3D10": {
                 "nnode": 10,
                 "vtk_type": 24,

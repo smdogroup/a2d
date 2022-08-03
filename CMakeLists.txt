@@ -21,8 +21,8 @@ set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 # Set options
 option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
-option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" OFF)
-option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" ON)
+option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
+option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
 option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" OFF)
 option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
 

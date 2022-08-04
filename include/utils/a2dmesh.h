@@ -260,17 +260,27 @@ class MesherFromVTK3D {
     // Loop over X to find bc and loaded nodes
     // We set those nodes with minimum x-coordinates to be bc nodes
     nbcs = 0;
-    nforces = 0;
+    nforces_x = 0;
+    nforces_y = 0;
+    nforces_z = 0;
     T tol = 1e-6;
     for (I i = 0; i != nnodes; i++) {
-      if (vtk_reader.X(i, 0) - vtk_reader.domain_lower[0] < tol) {
+      // Fix zmax
+      if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
         bc_nodes.push_back(i);
         nbcs++;
       }
-      if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol &&
-          vtk_reader.X(i, 2) - vtk_reader.domain_lower[2] < tol) {
-        force_nodes.push_back(i);
-        nforces++;
+
+      // Apply force to xmax
+      if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol) {
+        force_nodes_y.push_back(i);
+        nforces_y++;
+      }
+
+      // Apply force to ymax
+      if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
+        force_nodes_z.push_back(i);
+        nforces_z++;
       }
     }
   }
@@ -307,9 +317,15 @@ class MesherFromVTK3D {
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
     residual->zero();
-    for (auto it = force_nodes.begin(); it != force_nodes.end(); it++) {
-      (*residual)(*it, 2) = -force / T(nforces);
+
+    for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
+      (*residual)(*it, 1) = -force / T(nforces_y);
     }
+
+    for (auto it = force_nodes_z.begin(); it != force_nodes_z.end(); it++) {
+      (*residual)(*it, 2) = -force / T(nforces_z);
+    }
+
     model->zero_bcs(residual);
   }
 
@@ -317,10 +333,11 @@ class MesherFromVTK3D {
   using VTK_t = ReadVTK<nnodes_per_elem, 3, T, I>;
 
   VTK_t vtk_reader;
-  I nnodes, nelems, nbcs, nforces;
+  I nnodes, nelems, nbcs;
+  I nforces_x, nforces_y, nforces_z;
 
   std::vector<I> bc_nodes;
-  std::vector<I> force_nodes;
+  std::vector<I> force_nodes_x, force_nodes_y, force_nodes_z;
 };
 
 }  // namespace A2D

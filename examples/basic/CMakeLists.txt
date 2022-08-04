@@ -4,6 +4,8 @@ include_directories(${A2D_ROOT_DIR}/include)
 # Copy over file
 configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d.vtk.in tetra_3d.vtk COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d_refine.vtk.in tetra_3d_refine.vtk COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/examples/basic/lbracket_unstruct.vtk.in lbracket_unstruct.vtk COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/examples/basic/lbracket.vtk.in lbracket.vtk COPYONLY)
 
 # Add targets
 add_executable(elasticity elasticity.cpp)

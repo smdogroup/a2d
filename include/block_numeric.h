@@ -210,6 +210,40 @@ A2D_INLINE_FUNCTION void blockGemmAddScale(T scale, const AType& A,
   }
 }
 
+extern "C" {
+extern void dgelss_(int* m, int* n, int* nrhs, double* a, int* lda, double* b,
+                    int* ldb, double* s, double* rcond, int* rank, double* work,
+                    int* lwork, int* info);
+}
+
+/*
+  Compute the pseudo-inverse when A is singular: Ainv = A^{-1}
+*/
+template <typename T, int N, class AType, class AinvType>
+int blockPseudoInverse(AType& A, AinvType& Ainv) {
+  // Populate the diaginal matrix
+  for (int ii = 0; ii < N; ii++) {
+    Ainv(ii, ii) = 1.0;
+  }
+
+  int m = N;
+  int n = N;
+  int nrhs = N;
+  double* a = A.get_pointer();
+  int lda = N;
+  double* b = Ainv.A;
+  int ldb = N;
+  double s[N];
+  double rcond = 1e-12;
+  int rank;
+  int lwork = 5 * N;
+  double work[5 * N];
+  int fail;
+  dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
+          &fail);
+  return fail;
+}
+
 /*
   Compute: Ainv = A^{-1} with pivoting
 */

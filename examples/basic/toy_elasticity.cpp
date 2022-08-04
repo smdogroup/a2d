@@ -12,9 +12,9 @@ typedef double T;
 void main_body(int argc, char* argv[]) {
   // Define problem dimension
   static const int SPATIAL_DIM = 3;
-  const index_t nx = 32;
-  const index_t ny = 32;
-  const index_t nz = 32;
+  const index_t nx = 160;
+  const index_t ny = 16;
+  const index_t nz = 16;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -36,7 +36,7 @@ void main_body(int argc, char* argv[]) {
 
   // Set the node locations
   auto X = model->get_nodes();
-  Mesher::set_X_conn(X, conn);
+  Mesher::set_X_conn(X, conn, 10.0, 1.0, 1.0);
 
   // Set the node locations - Note: This must be done after setting the
   // connectivity!
@@ -69,7 +69,7 @@ void main_body(int argc, char* argv[]) {
 
   int num_levels = 3;
   double omega = 0.6667;
-  double epsilon = 0.0;
+  double epsilon = 0.01;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
 
@@ -81,7 +81,7 @@ void main_body(int argc, char* argv[]) {
 
   // Compute the solution
   index_t monitor = 10;
-  index_t max_iters = 80;
+  index_t max_iters = 3000;
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
 

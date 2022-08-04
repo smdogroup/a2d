@@ -631,6 +631,11 @@ class MultiArraySlice {
     }
   }
 
+  /**
+   * Get the underlying data pointer
+   */
+  A2D_INLINE_FUNCTION T* get_pointer() { return data; }
+
  private:
   T* data;
 

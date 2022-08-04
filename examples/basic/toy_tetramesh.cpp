@@ -17,7 +17,8 @@ void main_body(int argc, char* argv[]) {
   using Basis = BasisOps<SPATIAL_DIM, TetraLinearBasisFunc, Tetra4ptQuadrature>;
   using ElasticityPDE = ElasticityPDEInfo<SPATIAL_DIM, I, T>;
 
-  MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
+  // MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
+  MesherFromVTK3D<nnodes_per_elem, T, I> mesher("lbracket_unstruct.vtk");
 
   I nnodes = mesher.get_nnodes();
   I nelems = mesher.get_nelems();
@@ -82,9 +83,10 @@ void main_body(int argc, char* argv[]) {
 
   // Compute the solution
   index_t monitor = 10;
-  index_t max_iters = 80;
+  index_t max_iters = 1000;
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
+  // amg->mg(*residual, *solution, monitor, max_iters);
 
   int vtk_type_id = 10;  // 3D tetrahedral element
   ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(

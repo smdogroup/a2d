@@ -1,6 +1,8 @@
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "a2d.h"
 
@@ -9,34 +11,101 @@ using namespace A2D;
 typedef index_t I;
 typedef double T;
 
+struct ArgParser {
+  ArgParser(int argc, char* argv[], const char exe_name[]) {
+    // save args
+    std::vector<std::string> args(argv + 1, argv + argc);
+
+    // Loop over args
+    for (auto it = args.begin(); it != args.end(); it++) {
+      if ((*it).find("-h") != std::string::npos ||
+          (*it).find("-help") != std::string::npos) {
+        std::printf(
+            "Usage: ./%s [-nx nx] [-ny ny] [-nz nz] [-lx lx] [-ly ly] "
+            "[-lz "
+            "lz]\n",
+            exe_name);
+        std::printf("       -nx (int)    number of elements in x direction\n");
+        std::printf("       -ny (int)    number of elements in y direction\n");
+        std::printf("       -nz (int)    number of elements in z direction\n");
+        std::printf("       -lx (double) domain length in x direction\n");
+        std::printf("       -ly (double) domain length in y direction\n");
+        std::printf("       -lz (double) domain length in z direction\n");
+        exit(0);
+      } else if ((*it).find("-nx") != std::string::npos) {
+        it++;
+        nx = std::stoi(*it);
+      } else if ((*it).find("-ny") != std::string::npos) {
+        it++;
+        ny = std::stoi(*it);
+      } else if ((*it).find("-nz") != std::string::npos) {
+        it++;
+        nz = std::stoi(*it);
+      } else if ((*it).find("-lx") != std::string::npos) {
+        it++;
+        lx = std::stod(*it);
+      } else if ((*it).find("-ly") != std::string::npos) {
+        it++;
+        ly = std::stod(*it);
+      } else if ((*it).find("-lz") != std::string::npos) {
+        it++;
+        lz = std::stod(*it);
+      } else {
+        std::printf("Unknown argument: %s\n", (*it).c_str());
+        exit(-1);
+      }
+    }
+
+    // Print summary
+    printf(
+        "execution configuration\nnx = %d, ny = %d, nz = %d, lx = %.1f, ly = "
+        "%.1f, lz = %.1f\n",
+        nx, ny, nz, lx, ly, lz);
+  }
+
+  index_t nx = 64;
+  index_t ny = 64;
+  index_t nz = 64;
+  double lx = 1.0;
+  double ly = 1.0;
+  double lz = 1.0;
+};
+
 void main_body(int argc, char* argv[]) {
+  ArgParser p(argc, argv, "toy_elasticity");
+
   // Define problem dimension
   static const int SPATIAL_DIM = 3;
-  const index_t nx = 160;
-  const index_t ny = 16;
-  const index_t nz = 16;
-  const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
-  const index_t nelems = nx * ny * nz;
-  const index_t nbcs = (ny + 1) * (nz + 1);
-  typedef MesherBrick3D<nx, ny, nz> Mesher;
   typedef BasisOps<SPATIAL_DIM, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
   typedef ElasticityPDEInfo<SPATIAL_DIM, I, T> ElasticityPDE;
 
+  // Set mesher
+  index_t nx = p.nx;
+  index_t ny = p.ny;
+  index_t nz = p.nz;
+  double lx = p.lx;
+  double ly = p.ly;
+  double lz = p.lz;
+  MesherBrick3D mesher(nx, ny, nz, lx, ly, lz);
+
   // Set PDE model and element
+  const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
+  const index_t nelems = nx * ny * nz;
+  const index_t nbcs = (ny + 1) * (nz + 1);
   auto model = std::make_shared<FEModel<I, T, ElasticityPDE>>(nnodes, nbcs);
   auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
   // Set the boundary conditions
   auto bcs = model->get_bcs();
-  Mesher::set_bcs(bcs);
+  mesher.set_bcs(bcs);
 
   // Set the connectivity
   auto conn = element->get_conn();
 
   // Set the node locations
   auto X = model->get_nodes();
-  Mesher::set_X_conn(X, conn, 10.0, 1.0, 1.0);
+  mesher.set_X_conn(X, conn);
 
   // Set the node locations - Note: This must be done after setting the
   // connectivity!
@@ -54,7 +123,7 @@ void main_body(int argc, char* argv[]) {
   auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
 
   // Set the design variable values
-  Mesher::set_dv(*x);
+  mesher.set_dv(*x);
   model->set_design_vars(x);
 
   // Set up the stress functional
@@ -77,7 +146,7 @@ void main_body(int argc, char* argv[]) {
   auto solution = model->new_solution();
   auto residual = model->new_solution();
 
-  Mesher::set_force(model, residual);
+  mesher.set_force(model, residual);
 
   // Compute the solution
   index_t monitor = 10;

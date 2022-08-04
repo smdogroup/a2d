@@ -17,8 +17,8 @@ void main_body(int argc, char* argv[]) {
   using Basis = BasisOps<SPATIAL_DIM, TetraLinearBasisFunc, Tetra4ptQuadrature>;
   using ElasticityPDE = ElasticityPDEInfo<SPATIAL_DIM, I, T>;
 
-  // MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
-  MesherFromVTK3D<nnodes_per_elem, T, I> mesher("lbracket_unstruct.vtk");
+  MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
+  // MesherFromVTK3D<nnodes_per_elem, T, I> mesher("lbracket_unstruct.vtk");
 
   I nnodes = mesher.get_nnodes();
   I nelems = mesher.get_nelems();
@@ -71,7 +71,7 @@ void main_body(int argc, char* argv[]) {
 
   int num_levels = 3;
   double omega = 0.6667;
-  double epsilon = 0.0;
+  double epsilon = 0.01;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
 

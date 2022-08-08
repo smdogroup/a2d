@@ -92,7 +92,8 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
       for (I jp = rowp[i]; jp < jp_end; jp++) {
         const I j = cols[jp];
 
-        if (aggr[j] == 0) {  // unmarked neighbors
+        // if (aggr[j] == 0) {  // unmarked neighbors
+        if (aggr[j] == not_aggregated) {  // unmarked neighbors
           aggr[j] = num_aggregates;
         }
       }
@@ -289,6 +290,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
                                 std::vector<I>& rowp, std::vector<I>& cols) {
   // Frobenius norm squared for each diagonal entry
   std::vector<T> d(A.nbrows);
+  T epsilon4 = epsilon * epsilon * epsilon * epsilon;
 
   if (A.diag.data) {
     for (I i = 0; i < A.nbrows; i++) {
@@ -339,8 +341,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
           }
         }
 
-        if (A2D::RealPart(af * af) >=
-            A2D::RealPart(epsilon * epsilon * d[i] * d[j])) {
+        if (A2D::RealPart(af * af) >= A2D::RealPart(epsilon4 * d[i] * d[j])) {
           cols[nnz] = j;
           nnz++;
         }
@@ -367,7 +368,7 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
   std::vector<I> cpts(A.nbcols);
 
   if (absfunc(epsilon) != 0.0) {
-    // Compute the strength of connection S - need to fix this
+    // Compute the strength of connection S
     std::vector<I> Srowp(A.nbrows + 1);
     std::vector<I> Scols(A.nnz);
     BSRMatStrengthOfConnection(epsilon, A, Srowp, Scols);

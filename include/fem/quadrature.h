@@ -157,7 +157,7 @@ class Tetra4ptQuadrature {
   }
 
   static double getQuadWeight(const index_t index) {
-    return -1.0 / 3.0;
+    return 1.0 / 6.0;
   }  // TODO: why negative sign here??
 };
 

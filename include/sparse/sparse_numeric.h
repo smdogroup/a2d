@@ -301,6 +301,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
 */
 template <typename I, typename T, index_t M, class BCArray>
 void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
+  Timer t("BSRMatZeroBCRows()");
   for (I i = 0; i < bcs.extent(0); i++) {
     I index = bcs(i, 0);
     for (I j = 0; j < M; j++) {
@@ -590,7 +591,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       }
 
       if (inverse) {
-        int fail = blockInverse<T, M>(D0, Dinv, ipiv);
+        int fail = blockPseudoInverse<T, M>(D0, Dinv);
         if (fail) {
           std::cerr << "BSRMatExtractBlockDiagonal: Failure in factorization "
                        "of block row "

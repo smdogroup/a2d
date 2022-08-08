@@ -47,6 +47,7 @@ void BSRMatAddConnectivity(ConnArray& conn,
 template <typename I, typename T, index_t M>
 BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
                                       std::set<std::pair<I, I>>& node_set) {
+  Timer t("BSRMatFromNodeSet()");
   // Find the number of nodes referenced by other nodes
   std::vector<I> rowp(nnodes + 1);
 

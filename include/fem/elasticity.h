@@ -572,11 +572,12 @@ class TopoIsoConstitutive final
         nu(nu),
         density(density),
         design_stress(design_stress),
-        element(element),
-        elem_design_layout(element->nelems),
-        quad_design_layout(element->nelems),
-        xe(elem_design_layout),
-        xq(quad_design_layout) {
+        element(element) {
+    Timer t("TopoIsoConstitutive::TopoIsoConstitutive");
+    elem_design_layout = ElemDesignLayout(element->nelems);
+    quad_design_layout = ElemDesignLayout(element->nelems);
+    xe = ElemDesignArray(elem_design_layout);
+    xq = QuadDesignArray(quad_design_layout);
     mu = 0.5 * E / (1.0 + nu);
     lambda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
   }

@@ -13,6 +13,7 @@ typedef double T;
 
 struct ArgParser {
   ArgParser(int argc, char* argv[], const char exe_name[]) {
+    Timer t("ArgParser::ArgParser()");
     // save args
     std::vector<std::string> args(argv + 1, argv + argc);
 
@@ -57,12 +58,17 @@ struct ArgParser {
     }
 
     // Print summary
+    index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
+    index_t nelems = nx * ny * nz;
     printf(
         "execution configuration\nnx = %d, ny = %d, nz = %d, lx = %.1f, ly = "
         "%.1f, lz = %.1f\n",
         nx, ny, nz, lx, ly, lz);
+    printf("nnodes: %d\n", nnodes);
+    printf("nelems: %d\n", nelems);
   }
 
+  // Default values
   index_t nx = 64;
   index_t ny = 64;
   index_t nz = 64;
@@ -76,8 +82,8 @@ void main_body(int argc, char* argv[]) {
 
   // Define problem dimension
   static const int SPATIAL_DIM = 3;
-  typedef BasisOps<SPATIAL_DIM, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
-  typedef ElasticityPDEInfo<SPATIAL_DIM, I, T> ElasticityPDE;
+  using Basis = BasisOps<SPATIAL_DIM, HexTriLinearBasisFunc, Hex8ptQuadrature>;
+  using ElasticityPDE = ElasticityPDEInfo<SPATIAL_DIM, I, T>;
 
   // Set mesher
   index_t nx = p.nx;
@@ -150,17 +156,20 @@ void main_body(int argc, char* argv[]) {
 
   // Compute the solution
   index_t monitor = 10;
-  index_t max_iters = 3000;
+  index_t max_iters = 100;
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
 
-  ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(conn,
-                                                                         X);
-  vtk.write_mesh();
-  vtk.write_sol("x", *x, 0);
-  vtk.write_sol("ux", *solution, 0);
-  vtk.write_sol("uy", *solution, 1);
-  vtk.write_sol("uz", *solution, 2);
+  Timer t_vtk("Generate vtk");
+  {
+    ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(conn,
+                                                                           X);
+    vtk.write_mesh();
+    vtk.write_sol("x", *x, 0);
+    vtk.write_sol("ux", *solution, 0);
+    vtk.write_sol("uy", *solution, 1);
+    vtk.write_sol("uz", *solution, 2);
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -169,7 +178,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   Timer main_timer("main");
-  main_body(argc, argv);
+  { main_body(argc, argv); }
 
 #ifdef A2D_USE_KOKKOS
   Kokkos::finalize();

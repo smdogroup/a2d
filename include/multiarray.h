@@ -269,6 +269,11 @@ class MultiArray {
     data = view.data();
   }
 
+  /**
+   * @brief Default constructor
+   *
+   * This creates skeleton only, no memory allocation
+   */
   MultiArray() { data = nullptr; }
 
   /*
@@ -429,7 +434,7 @@ class MultiArray {
   /**
    * @brief Default constructor
    *
-   * This create skeleton only, no memory allocation
+   * This creates skeleton only, no memory allocation
    */
   MultiArray() { data = nullptr; }
 
@@ -449,7 +454,7 @@ class MultiArray {
   MultiArray(Layout layout, T* vals) : layout(layout) {
     printf(
         "[Warning] Creating multiarray from outside array via "
-        "copy-by-value.\n");
+        "(potentially costly) copy-by-value.\n");
     index_t N = layout.get_size();
     data_sp = SharedPtrType(new T[N]);
     for (int i = 0; i != N; i++) {
@@ -461,8 +466,11 @@ class MultiArray {
   /**
    * @brief Copy constructor: shallow copy is performed
    */
-  MultiArray(const MultiArray<T, Layout>& src)
-      : layout(src.layout), data(src.data), data_sp(src.data_sp) {}
+  MultiArray(const MultiArray<T, Layout>& src) {
+    layout = src.layout;
+    data = src.data;
+    data_sp = src.data_sp;
+  }
 
   /**
    * @brief Assignment operator: shallow copy is performed

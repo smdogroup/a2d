@@ -234,7 +234,7 @@ void test_uninit_multiarray() {
   using Array_2dim_t = MultiArray<T, C_2dim_t>;
   using Array_3dim_t = MultiArray<T, C_3dim_t>;
 
-  int N = 10;
+  int N = 1000;
 
   C_1dim_t layout1;  // shape: (N)
   C_2dim_t layout2;  // shape: (N, 3)
@@ -254,8 +254,16 @@ void test_uninit_multiarray() {
 }
 
 int main(int argc, char* argv[]) {
-  //   test_clayout();
-  //   test_flayout();
-  test_uninit_multiarray();
+#ifdef A2D_USE_KOKKOS
+  Kokkos::initialize();
+#endif
+  {
+    test_clayout();
+    test_flayout();
+    test_uninit_multiarray();
+  }
+#ifdef A2D_USE_KOKKOS
+  Kokkos::finalize();
+#endif
   return 0;
 }

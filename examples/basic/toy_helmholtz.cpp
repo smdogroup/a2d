@@ -23,7 +23,8 @@ int main(int argc, char* argv[]) {
   const index_t nelems = nx * ny;
   const index_t nbcs = (ny + 1);
 
-  typedef MesherRect2D<nx, ny> Mesher;
+  double lx = 1.0, ly = 1.0;
+  MesherRect2D mesher(nx, ny, lx, ly);
 
   auto model = std::make_shared<FEModel<I, T, ElasticityPDE>>(nnodes, nbcs);
   auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
 
   // Set the boundary conditions
   auto bcs = model->get_bcs();
-  Mesher::set_bcs(bcs);
+  mesher.set_bcs(bcs);
 
   // Set the connectivity
   auto conn = element->get_conn();
@@ -47,8 +48,8 @@ int main(int argc, char* argv[]) {
   auto X = model->get_nodes();
   auto X_helm = model_helm->get_nodes();
 
-  Mesher::set_X_conn(X, conn);
-  Mesher::set_X_conn(X_helm, conn_helm);
+  mesher.set_X_conn(X, conn);
+  mesher.set_X_conn(X_helm, conn_helm);
 
   // Set the node locations - Note: This must be done after setting the
   // connectivity!
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
   auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
 
   // Set the design variable values
-  Mesher::set_dv(*x);
+  mesher.set_dv(*x);
 
   model->set_design_vars(x);
   model_helm->set_design_vars(x);
@@ -102,7 +103,7 @@ int main(int argc, char* argv[]) {
   auto solution = model->new_solution();
   auto residual = model->new_solution();
 
-  Mesher::set_force(model, residual);
+  mesher.set_force(model, residual);
 
   // Compute the solution
   index_t monitor = 10;

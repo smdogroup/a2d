@@ -301,6 +301,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
 */
 template <typename I, typename T, index_t M, class BCArray>
 void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
+  Timer t("BSRMatZeroBCRows()");
   for (I i = 0; i < bcs.extent(0); i++) {
     I index = bcs(i, 0);
     for (I j = 0; j < M; j++) {

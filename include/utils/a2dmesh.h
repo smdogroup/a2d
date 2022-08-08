@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "a2dprofiler.h"
 #include "a2dvtk.h"
 
 namespace A2D {
@@ -153,6 +154,7 @@ class MesherBrick3D {
    */
   template <class ConnArray, class XArray>
   void set_X_conn(XArray& X, ConnArray& conn) {
+    Timer t("MesherBrick3D::set_X_conn()");
     // Set X
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
@@ -204,6 +206,7 @@ class MesherBrick3D {
    */
   template <class BcsArray>
   void set_bcs(BcsArray& bcs) {
+    Timer t("MesherBrick3D::set_bcs()");
     index_t index = 0;
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
@@ -227,6 +230,7 @@ class MesherBrick3D {
    */
   template <class DvArray>
   void set_dv(DvArray& x) {
+    Timer t("MesherBrick3D::set_dv()");
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
         for (int i = 0; i < nx + 1; i++) {
@@ -245,6 +249,7 @@ class MesherBrick3D {
    */
   template <class Model, class RhsArray>
   void set_force(Model model, RhsArray& residual) {
+    Timer t("MesherBrick3D::set_force()");
     residual->zero();
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);

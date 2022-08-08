@@ -575,7 +575,7 @@ class TopoIsoConstitutive final
         element(element) {
     Timer t("TopoIsoConstitutive::TopoIsoConstitutive");
     elem_design_layout = ElemDesignLayout(element->nelems);
-    quad_design_layout = ElemDesignLayout(element->nelems);
+    quad_design_layout = QuadDesignLayout(element->nelems);
     xe = ElemDesignArray(elem_design_layout);
     xq = QuadDesignArray(quad_design_layout);
     mu = 0.5 * E / (1.0 + nu);

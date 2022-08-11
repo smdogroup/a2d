@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 
+#include "a2dlayout.h"
 #include "block_numeric.h"
 #include "multiarray.h"
 #include "sparse_matrix.h"
@@ -86,8 +87,8 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
   Compute the matrix-vector product: y = A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
-                   MultiArray<T, CLayout<M>> &y) {
+void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
+                   MultiArray<T, A2D_Layout<M>> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
         auto yb = MakeSlice(y, i);
@@ -108,8 +109,8 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
   Compute the matrix-vector product: y += A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
-                      MultiArray<T, CLayout<M>> &y) {
+void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
+                      MultiArray<T, A2D_Layout<M>> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
         auto yb = MakeSlice(y, i);
@@ -129,8 +130,8 @@ void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
   Compute the matrix-vector product: y -= A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArray<T, CLayout<N>> &x,
-                      MultiArray<T, CLayout<M>> &y) {
+void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
+                      MultiArray<T, A2D_Layout<M>> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
         auto yb = MakeSlice(y, i);
@@ -325,7 +326,7 @@ void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
   Apply boundary conditions on a matrix
 */
 template <typename T, index_t M, class BCArray>
-void VecZeroBCRows(BCArray &bcs, MultiArray<T, CLayout<M>> &x) {
+void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M>> &x) {
   for (index_t i = 0; i < bcs.extent(0); i++) {
     index_t index = bcs(i, 0);
     for (index_t j = 0; j < M; j++) {
@@ -337,7 +338,7 @@ void VecZeroBCRows(BCArray &bcs, MultiArray<T, CLayout<M>> &x) {
 }
 
 template <typename T, index_t M, index_t N, class BCArray>
-void VecZeroBCRows(BCArray &bcs, MultiArray<T, CLayout<M, N>> &x) {
+void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M, N>> &x) {
   for (index_t i = 0; i < bcs.extent(0); i++) {
     index_t index = bcs(i, 0);
     for (index_t j = 0; j < M; j++) {
@@ -355,7 +356,7 @@ void VecZeroBCRows(BCArray &bcs, MultiArray<T, CLayout<M, N>> &x) {
 */
 template <typename I, typename T, index_t M>
 void BSRMatFactor(BSRMat<I, T, M, M> &A) {
-  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxLayout1D_t = A2D::A2D_Layout<>;
   using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
 
   A2D::Vec<I, M> ipiv;
@@ -445,7 +446,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
   Apply the lower factorization y = L^{-1} y
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
+void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
   if (A.perm.data && A.iperm.data) {
     for (I i = 0; i < A.nbrows; i++) {
       auto yi = MakeSlice(y, A.perm[i]);
@@ -481,7 +482,7 @@ void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
   Apply the upper factorization y = U^{-1} y
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
+void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
   A2D::Vec<T, M> ty;
 
   if (A.perm.data && A.iperm.data) {
@@ -535,8 +536,8 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &y) {
   Apply the factorization y = U^{-1} L^{-1} x
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyFactor(BSRMat<I, T, M, M> &A, MultiArray<T, CLayout<M>> &x,
-                       MultiArray<T, CLayout<M>> &y) {
+void BSRMatApplyFactor(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &x,
+                       MultiArray<T, A2D_Layout<M>> &y) {
   for (I i = 0; i < A.nbrows; i++) {
     for (I j = 0; j < M; j++) {
       y(i, j) = x(i, j);
@@ -622,7 +623,8 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
 */
 template <typename I, typename T, index_t M>
 void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
-                 MultiArray<T, CLayout<M>> &b, MultiArray<T, CLayout<M>> &x) {
+                 MultiArray<T, A2D_Layout<M>> &b,
+                 MultiArray<T, A2D_Layout<M>> &x) {
   I nrows = A.nbrows;
 
   if (A.perm) {
@@ -702,7 +704,8 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 */
 template <typename I, typename T, index_t M>
 void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
-                  MultiArray<T, CLayout<M>> &b, MultiArray<T, CLayout<M>> &x) {
+                  MultiArray<T, A2D_Layout<M>> &b,
+                  MultiArray<T, A2D_Layout<M>> &x) {
   I nrows = A.nbrows;
 
   if (A.perm.data) {
@@ -898,11 +901,11 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   std::fill(H, H + size * (size + 1), 0.0);
 
   // Allocate space for the orthonormal basis vectors
-  MultiArray<T, CLayout<M>> **W;
-  W = new MultiArray<T, CLayout<M>> *[size + 1];
+  MultiArray<T, A2D_Layout<M>> **W;
+  W = new MultiArray<T, A2D_Layout<M>> *[size + 1];
 
   // Allocate the first vector
-  W[0] = new MultiArray<T, CLayout<M>>(CLayout<M>(A.nbrows));
+  W[0] = new MultiArray<T, A2D_Layout<M>>(A2D_Layout<M>(A.nbrows));
 
   // Create an initial random vector
   W[0]->random();

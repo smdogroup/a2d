@@ -1,6 +1,7 @@
 #ifndef A2D_HELMHOLTZ_H
 #define A2D_HELMHOLTZ_H
 
+#include "a2dlayout.h"
 #include "a2dtmp3d.h"
 #include "basis.h"
 #include "constitutive.h"
@@ -25,23 +26,23 @@ class HelmholtzPDEInfo {
   static const index_t dvs_per_point = 1;   // Same as the solution space
 
   // Layout for the boundary conditions
-  typedef A2D::CLayout<2> BCsLayout;
+  typedef A2D_Layout<2> BCsLayout;
   typedef A2D::MultiArray<I, BCsLayout> BCsArray;
 
   // Layout for the nodes
-  typedef A2D::CLayout<SPATIAL_DIM> NodeLayout;
+  typedef A2D_Layout<SPATIAL_DIM> NodeLayout;
   typedef A2D::MultiArray<T, NodeLayout> NodeArray;
 
   // Layout for the solution
-  typedef A2D::CLayout<vars_per_node> SolutionLayout;
+  typedef A2D_Layout<vars_per_node> SolutionLayout;
   typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
 
   // Layout for the design variables
-  typedef A2D::CLayout<dvs_per_point> DesignLayout;
+  typedef A2D_Layout<dvs_per_point> DesignLayout;
   typedef A2D::MultiArray<T, DesignLayout> DesignArray;
 
   // Near null space layout - for the AMG preconditioner
-  typedef A2D::CLayout<vars_per_node, null_space_dim> NullSpaceLayout;
+  typedef A2D_Layout<vars_per_node, null_space_dim> NullSpaceLayout;
   typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
 
   // Jacobian matrix
@@ -229,7 +230,7 @@ class HelmholtzConstitutive
       HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
   static const index_t nodes_per_elem = BasisOps::NUM_NODES;
 
-  typedef A2D::CLayout<nodes_per_elem, dvs_per_point> ElemDesignLayout;
+  typedef A2D_Layout<nodes_per_elem, dvs_per_point> ElemDesignLayout;
   typedef A2D::MultiArray<T, ElemDesignLayout> ElemDesignArray;
 
   HelmholtzConstitutive(

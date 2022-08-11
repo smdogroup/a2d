@@ -6,6 +6,7 @@
 #include <set>
 #include <vector>
 
+#include "a2dlayout.h"
 #include "sparse_amd.h"
 #include "sparse_matrix.h"
 
@@ -301,7 +302,7 @@ I CSRFactorSymbolic(const I nrows, const VecType Arowp, const VecType Acols,
 template <typename I, typename T, index_t M>
 BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
                                             double fill_factor = 5.0) {
-  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxLayout1D_t = A2D_Layout<>;
   using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
 
   // Copy over the non-zero structure of the matrix
@@ -700,7 +701,7 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 
 template <typename I, typename T, index_t M>
 void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
-  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxLayout1D_t = A2D_Layout<>;
   using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
 
   A.perm = IdxArray1D_t(IdxLayout1D_t(A.nbrows));

@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "a2dlayout.h"
 #include "a2dobjs.h"
 #include "multiarray.h"
 
@@ -168,8 +169,8 @@ template <int nnodes_per_elem, int spatial_dim, typename T, typename I>
 class ReadVTK {
  public:
   static_assert(spatial_dim == 2 or spatial_dim == 3);
-  using ConnArrayLayout_t = CLayout<nnodes_per_elem>;
-  using NodeArrayLayout_t = CLayout<spatial_dim>;
+  using ConnArrayLayout_t = A2D_Layout<nnodes_per_elem>;
+  using NodeArrayLayout_t = A2D_Layout<spatial_dim>;
   using ConnArray_t = MultiArray<I, ConnArrayLayout_t>;
   using NodeArray_t = MultiArray<T, NodeArrayLayout_t>;
 

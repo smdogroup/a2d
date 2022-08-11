@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 
+#include "a2dlayout.h"
 #include "block_numeric.h"
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"
@@ -122,8 +123,8 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
 template <typename I, typename T, index_t M, index_t N>
 BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
     const I nrows, const I num_aggregates, const std::vector<I>& aggr,
-    const MultiArray<T, CLayout<M, N>>& B, MultiArray<T, CLayout<N, N>>& R,
-    double toler = 1e-10) {
+    const MultiArray<T, A2D_Layout<M, N>>& B,
+    MultiArray<T, A2D_Layout<N, N>>& R, double toler = 1e-10) {
   // Form the non-zero pattern for PT
   std::vector<I> rowp(num_aggregates + 1, 0);
 
@@ -359,10 +360,10 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
 */
 template <typename I, typename T, index_t M, index_t N>
 void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
-                            MultiArray<T, CLayout<M, N>>& B,
+                            MultiArray<T, A2D_Layout<M, N>>& B,
                             BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
                             BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
-                            MultiArray<T, CLayout<N, N>>** Br, T* rho_) {
+                            MultiArray<T, A2D_Layout<N, N>>** Br, T* rho_) {
   I num_aggregates = 0;
   std::vector<I> aggr(A.nbcols);
   std::vector<I> cpts(A.nbcols);
@@ -382,9 +383,9 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
   }
 
   // Based on the aggregates, form a tentative prolongation operator
-  CLayout<N, N> Br_layout(num_aggregates);
-  MultiArray<T, CLayout<N, N>>* Br_ =
-      new MultiArray<T, CLayout<N, N>>(Br_layout);
+  A2D_Layout<N, N> Br_layout(num_aggregates);
+  MultiArray<T, A2D_Layout<N, N>>* Br_ =
+      new MultiArray<T, A2D_Layout<N, N>>(Br_layout);
 
   BSRMat<I, T, M, N>* P0 =
       BSRMatMakeTentativeProlongation(A.nbrows, num_aggregates, aggr, B, *Br_);
@@ -424,7 +425,7 @@ class BSRMatAmg {
  public:
   BSRMatAmg(int num_levels, T omega, T epsilon,
             std::shared_ptr<BSRMat<I, T, M, M>> A,
-            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
+            std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B,
             bool print_info = false)
       : level(-1),
         A(A),
@@ -472,12 +473,12 @@ class BSRMatAmg {
   /*
     Apply multigrid repeatedly until convergence
   */
-  bool mg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
+  bool mg(MultiArray<T, A2D_Layout<M>>& b0, MultiArray<T, A2D_Layout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30) {
     Timer timer("BSRMatAmg::mg()");
     // R == the residual
-    MultiArray<T, CLayout<M>> R(b0.layout);
+    MultiArray<T, A2D_Layout<M>> R(b0.layout);
 
     bool solve_flag = false;
     xk.zero();
@@ -521,16 +522,16 @@ class BSRMatAmg {
     This uses the variant of PCG from the paper "Inexact Preconditioned
     Conjugate Gradient Method with Inner-Outer Iteration" by Golub and Ye.
   */
-  bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
+  bool cg(MultiArray<T, A2D_Layout<M>>& b0, MultiArray<T, A2D_Layout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30, I iters_per_reset = 100) {
     Timer timer("BSRMatAmg::cg()");
     // R, Z and P and work are temporary vectors
     // R == the residual
-    MultiArray<T, CLayout<M>> R(b0.layout);
-    MultiArray<T, CLayout<M>> Z(b0.layout);
-    MultiArray<T, CLayout<M>> P(b0.layout);
-    MultiArray<T, CLayout<M>> work(b0.layout);
+    MultiArray<T, A2D_Layout<M>> R(b0.layout);
+    MultiArray<T, A2D_Layout<M>> Z(b0.layout);
+    MultiArray<T, A2D_Layout<M>> P(b0.layout);
+    MultiArray<T, A2D_Layout<M>> work(b0.layout);
 
     bool solve_flag = false;
     xk.zero();
@@ -604,10 +605,11 @@ class BSRMatAmg {
     Apply one cycle of multigrid with the right-hand-side b and the non-zero
     solution x.
   */
-  void applyMg(MultiArray<T, CLayout<M>>& b_, MultiArray<T, CLayout<M>>& x_) {
+  void applyMg(MultiArray<T, A2D_Layout<M>>& b_,
+               MultiArray<T, A2D_Layout<M>>& x_) {
     // Set temporary variables
-    MultiArray<T, CLayout<M>>* bt = b;
-    MultiArray<T, CLayout<M>>* xt = x;
+    MultiArray<T, A2D_Layout<M>>* bt = b;
+    MultiArray<T, A2D_Layout<M>>* xt = x;
     b = &b_;
     x = &x_;
     bool zero_solution = false;
@@ -620,11 +622,11 @@ class BSRMatAmg {
     Apply the multigrid cycle as a preconditioner. This will overwrite
     whatever entries are in x.
   */
-  void applyFactor(MultiArray<T, CLayout<M>>& b_,
-                   MultiArray<T, CLayout<M>>& x_) {
+  void applyFactor(MultiArray<T, A2D_Layout<M>>& b_,
+                   MultiArray<T, A2D_Layout<M>>& x_) {
     // Set temporary variables
-    MultiArray<T, CLayout<M>>* bt = b;
-    MultiArray<T, CLayout<M>>* xt = x;
+    MultiArray<T, A2D_Layout<M>>* bt = b;
+    MultiArray<T, A2D_Layout<M>>* xt = x;
     b = &b_;
     x = &x_;
     bool zero_solution = true;
@@ -698,7 +700,7 @@ class BSRMatAmg {
  private:
   // Private constructor for initializing the class
   BSRMatAmg(T omega, T epsilon, std::shared_ptr<BSRMat<I, T, M, M>> A,
-            std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
+            std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B)
       : level(-1),
         A(A),
         B(B),
@@ -725,9 +727,9 @@ class BSRMatAmg {
     level = _level;
 
     if (level == num_levels - 1) {
-      CLayout<M> layout(A->nbrows);
-      x = new MultiArray<T, CLayout<M>>(layout);
-      b = new MultiArray<T, CLayout<M>>(layout);
+      A2D_Layout<M> layout(A->nbrows);
+      x = new MultiArray<T, A2D_Layout<M>>(layout);
+      b = new MultiArray<T, A2D_Layout<M>>(layout);
 
       // Form the sparse factorization - if the matrix is large and sparse, use
       // AMD, otherwise don't bother re-ordering.
@@ -749,12 +751,12 @@ class BSRMatAmg {
                   << std::setw(15) << Afact->nnz << std::endl;
       }
     } else {
-      CLayout<M> layout(A->nbrows);
-      r = new MultiArray<T, CLayout<M>>(layout);
+      A2D_Layout<M> layout(A->nbrows);
+      r = new MultiArray<T, A2D_Layout<M>>(layout);
       if (level > 0) {
-        r = new MultiArray<T, CLayout<M>>(layout);
-        x = new MultiArray<T, CLayout<M>>(layout);
-        b = new MultiArray<T, CLayout<M>>(layout);
+        r = new MultiArray<T, A2D_Layout<M>>(layout);
+        x = new MultiArray<T, A2D_Layout<M>>(layout);
+        b = new MultiArray<T, A2D_Layout<M>>(layout);
       }
 
       // Multicolor order this level
@@ -762,7 +764,7 @@ class BSRMatAmg {
 
       // Multi-color the matrix
       BSRMat<I, T, N, N>* Ar;
-      MultiArray<T, CLayout<N, N>>* Br;
+      MultiArray<T, A2D_Layout<N, N>>* Br;
 
       // Find the new level
       BSRMatSmoothedAmgLevel<I, T, M, N>(omega, epsilon, *A, *B, &Dinv, &P, &PT,
@@ -770,7 +772,7 @@ class BSRMatAmg {
 
       // Allocate the next level
       auto Anext = std::shared_ptr<BSRMat<I, T, N, N>>(Ar);
-      auto Bnext = std::shared_ptr<MultiArray<T, CLayout<N, N>>>(Br);
+      auto Bnext = std::shared_ptr<MultiArray<T, A2D_Layout<N, N>>>(Br);
       next = new BSRMatAmg<I, T, N, N>(omega, epsilon, Anext, Bnext);
 
       if (print_info) {
@@ -827,7 +829,7 @@ class BSRMatAmg {
   std::shared_ptr<BSRMat<I, T, M, M>> A;
 
   // The near null-space candidates
-  std::shared_ptr<MultiArray<T, CLayout<M, N>>> B;
+  std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B;
 
   // Data for the prolongation and restriction
   BSRMat<I, T, M, N>* P;
@@ -843,9 +845,9 @@ class BSRMatAmg {
   BSRMat<I, T, M, M>* Afact;
 
   // Data for the solution
-  MultiArray<T, CLayout<M>>* x;
-  MultiArray<T, CLayout<M>>* b;
-  MultiArray<T, CLayout<M>>* r;
+  MultiArray<T, A2D_Layout<M>>* x;
+  MultiArray<T, A2D_Layout<M>>* b;
+  MultiArray<T, A2D_Layout<M>>* r;
 
   BSRMatAmg<I, T, N, N>* next;
 };

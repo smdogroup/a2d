@@ -1,6 +1,7 @@
 #ifndef A2D_ELEMENT_H
 #define A2D_ELEMENT_H
 
+#include "a2dlayout.h"
 #include "multiarray.h"
 #include "sparse/sparse_amg.h"
 #include "sparse/sparse_matrix.h"
@@ -53,27 +54,29 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   static const index_t nodes_per_elem = BasisOps::NUM_NODES;
   static const index_t quad_pts_per_elem = BasisOps::quadrature::NUM_QUAD_PTS;
 
+  // Set layout
+
   // Connectivity layout
-  typedef A2D::CLayout<nodes_per_elem> ConnLayout;
+  typedef A2D_Layout<nodes_per_elem> ConnLayout;
 
   // Element-node layouts
-  typedef A2D::CLayout<nodes_per_elem, spatial_dim> ElemNodeLayout;
-  typedef A2D::CLayout<nodes_per_elem, vars_per_node> ElemSolnLayout;
+  typedef A2D_Layout<nodes_per_elem, spatial_dim> ElemNodeLayout;
+  typedef A2D_Layout<nodes_per_elem, vars_per_node> ElemSolnLayout;
 
   // Element-quadrature layouts
-  typedef A2D::CLayout<quad_pts_per_elem, spatial_dim> QuadNodeLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, vars_per_node> QuadSolnLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, vars_per_node, spatial_dim>
+  typedef A2D_Layout<quad_pts_per_elem, spatial_dim> QuadNodeLayout;
+  typedef A2D_Layout<quad_pts_per_elem, vars_per_node> QuadSolnLayout;
+  typedef A2D_Layout<quad_pts_per_elem, vars_per_node, spatial_dim>
       QuadGradLayout;
-  typedef A2D::CLayout<quad_pts_per_elem> QuadDetLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, spatial_dim, spatial_dim>
+  typedef A2D_Layout<quad_pts_per_elem> QuadDetLayout;
+  typedef A2D_Layout<quad_pts_per_elem, spatial_dim, spatial_dim>
       QuadJtransLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, data_per_point> QuadDataLayout;
+  typedef A2D_Layout<quad_pts_per_elem, data_per_point> QuadDataLayout;
 
   // Residual/Jacobian layouts
-  typedef A2D::CLayout<nodes_per_elem, vars_per_node> ElemResLayout;
-  typedef A2D::CLayout<nodes_per_elem, nodes_per_elem, vars_per_node,
-                       vars_per_node>
+  typedef A2D_Layout<nodes_per_elem, vars_per_node> ElemResLayout;
+  typedef A2D_Layout<nodes_per_elem, nodes_per_elem, vars_per_node,
+                     vars_per_node>
       ElemJacLayout;
 
   // Connectivity array

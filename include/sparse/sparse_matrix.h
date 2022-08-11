@@ -1,6 +1,7 @@
 #ifndef A2D_SPARSE_MATRIX_H
 #define A2D_SPARSE_MATRIX_H
 
+#include "a2dlayout.h"
 #include "a2dmemory.h"
 #include "a2dobjs.h"
 #include "multiarray.h"
@@ -31,7 +32,7 @@ class BSRMat {
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
          const VecType &_cols)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals(CLayout<M, N>(nnz)) {
+      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals(A2D_Layout<M, N>(nnz)) {
     rowp = IdxArray1D_t(IdxLayout1D_t(nbrows + 1));
     cols = IdxArray1D_t(IdxLayout1D_t(nnz));
 
@@ -86,7 +87,7 @@ class BSRMat {
   }
 
   // Layout and Array type
-  using IdxLayout1D_t = A2D::CLayout<>;
+  using IdxLayout1D_t = A2D::A2D_Layout<>;
   using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
 
   // Number of block rows and block columns
@@ -116,7 +117,7 @@ class BSRMat {
       color_count;  // Number of nodes with this color, not allocated by default
 
   // MultiArray data - length: nnz
-  MultiArray<T, CLayout<M, N>> Avals;
+  MultiArray<T, A2D_Layout<M, N>> Avals;
 };
 
 }  // namespace A2D

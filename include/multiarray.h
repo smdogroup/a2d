@@ -517,6 +517,7 @@ class MultiArray {
  public:
   using type = T;
   using SharedPtrType = std::shared_ptr<T[]>;
+
   Layout layout;
   T* data;  // raw pointer
 
@@ -644,7 +645,7 @@ class MultiArray {
   */
   MultiArray<T, Layout>* duplicate() {
     const index_t len = layout.get_size();
-    MultiArray<T, Layout>* array = new MultiArray<T, Layout>(layout);
+    MultiArray<T, Layout> array = MultiArray<T, Layout>(layout);
     std::copy(data, data + len, array->data);
     return array;
   }
@@ -714,6 +715,8 @@ class MultiArraySlice;
 template <typename T, index_t... dims>
 class MultiArraySlice<T, FLayout<dims...>> {
  public:
+  using Layout = FLayout<dims...>;
+
   template <class IdxType>
   A2D_INLINE_FUNCTION MultiArraySlice(
       const MultiArray<T, FLayout<dims...>>& array, const IdxType idx)
@@ -755,6 +758,8 @@ class MultiArraySlice<T, FLayout<dims...>> {
 template <typename T, index_t... dims>
 class MultiArraySlice<T, CLayout<dims...>> {
  public:
+  using Layout = CLayout<dims...>;
+
   template <class IdxType>
   A2D_INLINE_FUNCTION MultiArraySlice(
       const MultiArray<T, CLayout<dims...>>& array, const IdxType idx)
@@ -789,21 +794,6 @@ class MultiArraySlice<T, CLayout<dims...>> {
   T* data;
   index_t dim0;
 };
-
-/**
- * Check if a Layout is CLayout or FLayout
- *
- * Usage:
- *   if Layout is CLayout<...>, then
- *     is_instance<Layout, CLayout>::value == true
- *   if Layout is FLayout<...>, then
- *     is_instance<Layout, FLayout>::value == true
- */
-template <class, template <index_t...> class>
-struct is_instance : public std::false_type {};
-
-template <index_t... dims, template <index_t...> class U>
-struct is_instance<U<dims...>, U> : public std::true_type {};
 
 /**
  * @brief Create a MultiArraySlice

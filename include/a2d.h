@@ -1,6 +1,7 @@
 #ifndef A2D_H
 #define A2D_H
 
+#include "a2dlayout.h"
 #include "a2dmatcore2d.h"
 #include "a2dmatcore3d.h"
 #include "a2dmemory.h"

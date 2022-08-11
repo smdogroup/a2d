@@ -3,6 +3,7 @@
 
 #include <complex>
 
+#include "a2dlayout.h"
 #include "a2dobjs.h"
 
 namespace A2D {
@@ -225,20 +226,33 @@ extern void zgetri_(int* n, void* a, int* lda, int* ipiv, void* work,
                     int* lwork, int* info);
 }
 
-/*
-  Compute the pseudo-inverse when A is singular: Ainv = A^{-1}
-*/
-template <typename T, int N, class AType, class AinvType>
-int blockPseudoInverse(AType& A, AinvType& Ainv) {
+/**
+ * @brief Compute the pseudo-inverse when A is singular: Ainv = A^{-1}
+ *
+ * Note1: different routines get invoked depending on the input type T.
+ *
+ * If T is complex<double>, then call ZGETRF and ZGETRI to compute real inverse;
+ * If T is real, then call DGELSS to compute pseudo-inverse. (ZGELSS doesn't
+ * converge to the precision required by the small complex step, e.g. h = 1e-30)
+ *
+ * Note2: LAPACK routines require input matrices to store in continuous memory
+ * chunk. If FLayout is used, need to prepare the matrix first.
+ */
+template <typename T, int N, class AType>
+int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
   // Populate the diaginal matrix
   for (int ii = 0; ii < N; ii++) {
     Ainv(ii, ii) = 1.0;
   }
 
+  // Decide which branch to go
+  const bool is_complex = std::is_same<T, std::complex<double>>::value;
+  const bool is_flayout = is_layout<typename AType::Layout, FLayout>::value;
+
+  // Set parameters
   int m = N;
   int n = N;
   int nrhs = N;
-  T* a = A.get_data();
   int lda = N;
   T* b = Ainv.get_data();
   int ldb = N;
@@ -248,11 +262,22 @@ int blockPseudoInverse(AType& A, AinvType& Ainv) {
   T work[5 * N];
   int fail = -1;
 
-  if constexpr (std::is_same<T, std::complex<double>>::value) {
+  // Prepare A
+  T* a;
+  if constexpr (is_flayout) {
+    a = new T[N * N];
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        a[i * N + j] = A(i, j);
+      }
+    }
+  } else {
+    a = A.get_data();
+  }
+
+  if constexpr (is_complex) {
     double rwork[5 * N];
     int ipiv[N];
-    // zgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
-    //         rwork, &fail);
     zgetrf_(&m, &n, a, &lda, ipiv, &fail);
     zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);
     for (int ii = 0; ii != N * N; ii++) {
@@ -263,6 +288,11 @@ int blockPseudoInverse(AType& A, AinvType& Ainv) {
     dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
             &fail);
   }
+
+  if constexpr (is_flayout) {
+    delete[] a;
+  }
+
   return fail;
 }
 

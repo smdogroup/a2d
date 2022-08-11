@@ -592,7 +592,9 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       }
 
       if (inverse) {
-        int fail = blockPseudoInverse<T, M>(D0, Dinv);
+        // int fail = blockInverse<T, M>(D0, Dinv, ipiv);
+        int fail = blockPseudoInverse(D0, Dinv);
+
         if (fail) {
           std::cerr << "BSRMatExtractBlockDiagonal: Failure in factorization "
                        "of block row "
@@ -897,49 +899,49 @@ extern void dgeev_(const char *JOBVL, const char *JOBVR, int *N, double *A,
 template <typename I, typename T, index_t M>
 T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   // Allocate the Upper Hessenberg matrix of shape (size + 1, size)
-  double *H = new double[size * (size + 1)];
+  double H[size * (size + 1)];
   std::fill(H, H + size * (size + 1), 0.0);
 
   // Allocate space for the orthonormal basis vectors
-  MultiArray<T, A2D_Layout<M>> **W;
-  W = new MultiArray<T, A2D_Layout<M>> *[size + 1];
+  A2D_Layout<M> W_layout(A.nbrows);
+  MultiArray<T, A2D_Layout<M>> W[size + 1];
 
   // Allocate the first vector
-  W[0] = new MultiArray<T, A2D_Layout<M>>(A2D_Layout<M>(A.nbrows));
+  W[0] = MultiArray<T, A2D_Layout<M>>(W_layout);
 
   // Create an initial random vector
-  W[0]->random();
-  auto norm = A2D::RealPart(W[0]->norm());
-  W[0]->scale(1.0 / norm);
+  W[0].random();
+  auto norm = A2D::RealPart(W[0].norm());
+  W[0].scale(1.0 / norm);
 
   for (I i = 0; i < size; i++) {
     // Allocate the next vector
-    W[i + 1] = W[i]->duplicate();
+    W[i + 1] = MultiArray<T, A2D_Layout<M>>(W_layout);
 
     // Multiply by the matrix to get the next vector
-    BSRMatVecMult(A, *W[i], *W[i + 1]);
+    BSRMatVecMult(A, W[i], W[i + 1]);
 
     // Orthogonalize against the existing subspace
     for (I j = 0; j <= i; j++) {
       I index = j + i * size;  // row-major index for entry H(j, i)
-      H[index] = A2D::RealPart(W[i + 1]->dot(*W[j]));
-      W[i + 1]->axpy(-H[index], *W[j]);
+      H[index] = A2D::RealPart(W[i + 1].dot(W[j]));
+      W[i + 1].axpy(-H[index], W[j]);
     }
 
     // Add the term to the matrix
     I index = i + 1 + i * size;  // row-major index for entry H(i + 1, i)
-    H[index] = A2D::RealPart(W[i + 1]->norm());
-    W[i + 1]->scale(1.0 / H[index]);
+    H[index] = A2D::RealPart(W[i + 1].norm());
+    W[i + 1].scale(1.0 / H[index]);
   }
 
   // Allocate space for the real/complex eigenvalue
-  double *eigreal = new double[size];
-  double *eigimag = new double[size];
+  double eigreal[size];
+  double eigimag[size];
 
   // Compute the eigenspectrum of the reduced Hessenberg matrix
   int hsize = size;
   int lwork = 4 * size;
-  double *work = new double[lwork];
+  double work[lwork];
   int ldv = 1;
   int ldh = size;
   int info = 0;
@@ -961,16 +963,6 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
       rho = val;
     }
   }
-
-  // Free the allocated memory
-  delete[] H;
-  for (I i = 0; i < size + 1; i++) {
-    delete W[i];
-  }
-  delete[] W;
-  delete[] eigreal;
-  delete[] eigimag;
-  delete[] work;
 
   return rho;
 }

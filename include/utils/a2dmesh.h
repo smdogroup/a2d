@@ -286,11 +286,17 @@ class MesherFromVTK3D {
     nforces_z = 0;
     T tol = 1e-6;
     for (I i = 0; i != nnodes; i++) {
-      // Fix zmax
-      if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
+      // Fix xmin
+      if (vtk_reader.X(i, 0) - vtk_reader.domain_lower[0] < tol) {
         bc_nodes.push_back(i);
         nbcs++;
       }
+
+      // // Fix zmax
+      // if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
+      //   bc_nodes.push_back(i);
+      //   nbcs++;
+      // }
 
       // Apply force to xmax
       if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol) {
@@ -298,11 +304,11 @@ class MesherFromVTK3D {
         nforces_y++;
       }
 
-      // Apply force to ymax
-      if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
-        force_nodes_z.push_back(i);
-        nforces_z++;
-      }
+      // // Apply force to ymax
+      // if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
+      //   force_nodes_z.push_back(i);
+      //   nforces_z++;
+      // }
     }
   }
 

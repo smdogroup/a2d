@@ -125,8 +125,8 @@ void main_body(int argc, char* argv[]) {
   model->add_constitutive(constitutive);
 
   // Create the design vector
-  A2D::CLayout<1> design_layout(model->nnodes);
-  auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
+  A2D_Layout<1> design_layout(model->nnodes);
+  auto x = std::make_shared<A2D::MultiArray<T, A2D_Layout<1>>>(design_layout);
 
   // Set the design variable values
   mesher.set_dv(*x);

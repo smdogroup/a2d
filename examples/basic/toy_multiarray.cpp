@@ -253,14 +253,52 @@ void test_uninit_multiarray() {
   array3 = Array_3dim_t(layout3);
 }
 
+void test_slice() {
+  using T = double;
+  const int N0 = 3, N1 = 4, N2 = 5;
+  auto c_array = MultiArray<T, CLayout<N1, N2>>(N0);
+  auto f_array = MultiArray<T, FLayout<N1, N2>>(N0);
+
+  c_array.fill(2.34);
+  f_array.fill(5.67);
+
+  auto c_slice = MakeSlice(c_array, 1);
+  auto f_slice = MakeSlice(f_array, 2);
+
+  c_slice.zero();
+  f_slice.zero();
+
+  // c_slice(1, 2) = 0.0;
+  // f_slice(1, 3) = 0.0;
+
+  printf("CLayout array:\n");
+  for (int i = 0; i < N0; i++) {
+    for (int j = 0; j < N1; j++) {
+      for (int k = 0; k < N2; k++) {
+        printf("c_array(%d, %d, %d) = %.2f\n", i, j, k, c_array(i, j, k));
+      }
+    }
+  }
+
+  printf("FLayout array:\n");
+  for (int i = 0; i < N0; i++) {
+    for (int j = 0; j < N1; j++) {
+      for (int k = 0; k < N2; k++) {
+        printf("f_array(%d, %d, %d) = %.2f\n", i, j, k, f_array(i, j, k));
+      }
+    }
+  }
+}
+
 int main(int argc, char* argv[]) {
 #ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
 #endif
   {
-    test_clayout();
-    test_flayout();
-    test_uninit_multiarray();
+    // test_clayout();
+    // test_flayout();
+    // test_uninit_multiarray();
+    test_slice();
   }
 #ifdef A2D_USE_KOKKOS
   Kokkos::finalize();

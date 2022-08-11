@@ -742,7 +742,7 @@ class MultiArraySlice<T, FLayout<dims...>> {
   /**
    * Get the underlying data pointer
    */
-  A2D_INLINE_FUNCTION T* get_pointer() { return data; }
+  A2D_INLINE_FUNCTION T* get_data() { return data; }
 
  private:
   T* data;
@@ -783,7 +783,7 @@ class MultiArraySlice<T, CLayout<dims...>> {
   /**
    * Get the underlying data pointer
    */
-  A2D_INLINE_FUNCTION T* get_pointer() { return data; }
+  A2D_INLINE_FUNCTION T* get_data() { return data; }
 
  private:
   T* data;

@@ -214,6 +214,15 @@ extern "C" {
 extern void dgelss_(int* m, int* n, int* nrhs, double* a, int* lda, double* b,
                     int* ldb, double* s, double* rcond, int* rank, double* work,
                     int* lwork, int* info);
+extern void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
+extern void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work,
+                    int* lwork, int* info);
+extern void zgelss_(int* m, int* n, int* nrhs, void* a, int* lda, void* b,
+                    int* ldb, double* s, double* rcond, int* rank, void* work,
+                    int* lwork, double* rwork, int* info);
+extern void zgetrf_(int* m, int* n, void* a, int* lda, int* ipiv, int* info);
+extern void zgetri_(int* n, void* a, int* lda, int* ipiv, void* work,
+                    int* lwork, int* info);
 }
 
 /*
@@ -229,18 +238,31 @@ int blockPseudoInverse(AType& A, AinvType& Ainv) {
   int m = N;
   int n = N;
   int nrhs = N;
-  double* a = A.get_pointer();
+  T* a = A.get_data();
   int lda = N;
-  double* b = Ainv.A;
+  T* b = Ainv.get_data();
   int ldb = N;
-  double s[N];
-  double rcond = 1e-12;
+  double rcond = -1;
   int rank;
   int lwork = 5 * N;
-  double work[5 * N];
-  int fail;
-  dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
-          &fail);
+  T work[5 * N];
+  int fail = -1;
+
+  if constexpr (std::is_same<T, std::complex<double>>::value) {
+    double rwork[5 * N];
+    int ipiv[N];
+    // zgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
+    //         rwork, &fail);
+    zgetrf_(&m, &n, a, &lda, ipiv, &fail);
+    zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);
+    for (int ii = 0; ii != N * N; ii++) {
+      b[ii] = a[ii];
+    }
+  } else {
+    double s[N];
+    dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
+            &fail);
+  }
   return fail;
 }
 

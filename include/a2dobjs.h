@@ -58,6 +58,8 @@ class Vec {
     return x[i];
   }
 
+  T* get_data() { return x; }
+
   T x[N];
 };
 
@@ -98,6 +100,8 @@ class Mat {
                                           const IdxType j) const {
     return A[N * i + j];
   }
+
+  T* get_data() { return A; }
 
   T A[M * N];
 };
@@ -141,6 +145,8 @@ class SymmMat {
     }
   }
 
+  T* get_data() { return A; }
+
   T A[MAT_SIZE];
 };
 
@@ -173,6 +179,8 @@ class Tensor {
                                           const IdxType l) const {
     return A[l + Q * (k + P * (j + N * i))];
   }
+
+  T* get_data() { return A; }
 
   T A[TENSOR_SIZE];
 };
@@ -225,6 +233,8 @@ class SymmTensor {
       return A[ii + jj * (jj + 1) / 2];
     }
   }
+
+  T* get_data() { return A; }
 
   T A[TENSOR_SIZE];
 };

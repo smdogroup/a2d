@@ -186,13 +186,13 @@ class FLayout {
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  static index_t __compute_index(Idx i, IdxType... idx) {
+  A2D_INLINE_FUNCTION static index_t __compute_index(Idx i, IdxType... idx) {
     return i +
            ___get_extent<r, dims...>::extent * __compute_index<r + 1>(idx...);
   }
 
   template <int r, class Idx>
-  static index_t __compute_index(Idx i) {
+  A2D_INLINE_FUNCTION static index_t __compute_index(Idx i) {
     return i;
   }
 };
@@ -341,7 +341,7 @@ class MultiArray {
   using type = T;
 #ifdef KOKKOS_ENABLE_CUDA
   using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
-                                Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
+                                Kokkos::LayoutLeft, Kokkos::CudaUVMSpace>;
 #else
   using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
                                 Kokkos::LayoutRight, Kokkos::HostSpace>;

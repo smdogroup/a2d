@@ -276,7 +276,6 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
   }
 
   if constexpr (is_complex) {
-    double rwork[5 * N];
     int ipiv[N];
     zgetrf_(&m, &n, a, &lda, ipiv, &fail);
     zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);

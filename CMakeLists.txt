@@ -26,6 +26,13 @@ add_compile_options(
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
 
+# Use boost
+set(A2D_BOOST_DIR ${A2D_ROOT_DIR}/extern/boost)
+if (NOT EXISTS ${A2D_BOOST_DIR})
+  message(FATAL_ERROR "Can't find boost library: ${A2D_BOOST_DIR}")
+endif()
+include_directories(${A2D_BOOST_DIR})
+
 # Build amgx examples
 if (A2D_BUILD_EXAMPLES_AMGX)
   # If use AMGX, the following directories should be valid

@@ -341,7 +341,7 @@ class MultiArray {
   using type = T;
 #ifdef KOKKOS_ENABLE_CUDA
   using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
-                                Kokkos::LayoutLeft, Kokkos::CudaUVMSpace>;
+                                Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
 #else
   using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
                                 Kokkos::LayoutRight, Kokkos::HostSpace>;

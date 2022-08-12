@@ -4,13 +4,26 @@
 #include <algorithm>
 #include <limits>
 #include <set>
+#include <unordered_set>
 #include <vector>
 
 #include "a2dlayout.h"
+#include "boost/functional/hash.hpp"
 #include "sparse_amd.h"
 #include "sparse_matrix.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
+
+template <typename I>
+struct pair_hash_fun {
+  inline size_t operator()(const std::pair<I, I>& x) const {
+    size_t seed = 0;
+    boost::hash_combine(seed, x.first);
+    boost::hash_combine(seed, x.second);
+    return seed;
+  }
+};
 
 /*
   Given the CSR data, sort each row
@@ -31,11 +44,16 @@ void SortCSRData(I nrows, std::vector<I>& rowp, std::vector<I>& cols) {
   Add the connectivity from a connectivity list
 */
 template <typename I, class ConnArray>
-void BSRMatAddConnectivity(ConnArray& conn,
-                           std::set<std::pair<I, I>>& node_set) {
-  for (I i = 0; i < conn.extent(0); i++) {
-    for (I j1 = 0; j1 < conn.extent(1); j1++) {
-      for (I j2 = 0; j2 < conn.extent(1); j2++) {
+void BSRMatAddConnectivity(
+    ConnArray& conn,
+    std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) {
+  Timer t("BSRMatAddConnectivity()");
+  I nelems = conn.extent(0);
+  I nnodes = conn.extent(1);
+  node_set.reserve(nelems * nnodes * nnodes);
+  for (I i = 0; i < nelems; i++) {
+    for (I j1 = 0; j1 < nnodes; j1++) {
+      for (I j2 = j1; j2 < nnodes; j2++) {
         node_set.insert(std::pair<I, I>(conn(i, j1), conn(i, j2)));
       }
     }
@@ -46,13 +64,14 @@ void BSRMatAddConnectivity(ConnArray& conn,
   Create a BSRMat from the set of node pairs
 */
 template <typename I, typename T, index_t M>
-BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
-                                      std::set<std::pair<I, I>>& node_set) {
+BSRMat<I, T, M, M>* BSRMatFromNodeSet(
+    index_t nnodes,
+    std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) {
   Timer t("BSRMatFromNodeSet()");
   // Find the number of nodes referenced by other nodes
   std::vector<I> rowp(nnodes + 1);
 
-  typename std::set<std::pair<I, I>>::iterator it;
+  typename std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>::iterator it;
   for (it = node_set.begin(); it != node_set.end(); it++) {
     rowp[it->first + 1] += 1;
   }

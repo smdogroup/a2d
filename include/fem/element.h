@@ -25,7 +25,8 @@ class ElementBase {
  public:
   virtual ~ElementBase() {}
   virtual void set_nodes(typename PDEInfo::NodeArray& X) = 0;
-  virtual void add_node_set(std::set<std::pair<I, I>>& node_set) = 0;
+  virtual void add_node_set(
+      std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) = 0;
   virtual void set_solution(typename PDEInfo::SolutionArray& U) = 0;
   virtual T energy() { return T(0.0); }
   virtual void add_residual(typename PDEInfo::SolutionArray& res) = 0;
@@ -174,7 +175,8 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   ElemJacLayout& get_elem_jac_layout() { return elem_jac_layout; }
 
   // Add the node set to the connectivity
-  void add_node_set(std::set<std::pair<I, I>>& node_set) {
+  void add_node_set(
+      std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) {
     BSRMatAddConnectivity(conn, node_set);
   }
 

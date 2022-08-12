@@ -8,6 +8,7 @@
 #include "multiarray.h"
 #include "sparse_matrix.h"
 #include "sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -57,6 +58,7 @@ void VecElementGatherAdd(ConnArray &conn, ElementArray &Xe, NodeArray &X) {
 template <typename I, typename T, index_t M, class ConnArray, class JacArray>
 void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
                               BSRMat<I, T, M, M> &A) {
+  Timer t("BSRMatAddElementMatrices()");
   for (I i = 0; i < conn.extent(0); i++) {
     for (I j1 = 0; j1 < conn.extent(1); j1++) {
       I row = conn(i, j1);

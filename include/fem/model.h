@@ -213,8 +213,8 @@ class FEModel {
     Create a new matrix
   */
   std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
-    Timer timer("FEModel::new_matrix()");
-    std::set<std::pair<I, I>> node_set;
+    Timer t1("FEModel::new_matrix()");
+    std::unordered_set<std::pair<I, I>, pair_hash_fun<I>> node_set;
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
     }

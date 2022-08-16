@@ -18,6 +18,8 @@ void main_body(int argc, char* argv[]) {
   using ElasticityPDE = ElasticityPDEInfo<SPATIAL_DIM, I, T>;
 
   MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
+  // MesherFromVTK3D<nnodes_per_elem, T, I> mesher("lbracket_unstruct.vtk");
+  exit();
 
   I nnodes = mesher.get_nnodes();
   I nelems = mesher.get_nelems();
@@ -70,7 +72,7 @@ void main_body(int argc, char* argv[]) {
 
   int num_levels = 3;
   double omega = 0.6667;
-  double epsilon = 0.0;
+  double epsilon = 0.01;
   bool print_info = true;
   auto amg = model->new_amg(num_levels, omega, epsilon, J, print_info);
 
@@ -82,9 +84,10 @@ void main_body(int argc, char* argv[]) {
 
   // Compute the solution
   index_t monitor = 10;
-  index_t max_iters = 80;
+  index_t max_iters = 1000;
   solution->zero();
   amg->cg(*residual, *solution, monitor, max_iters);
+  // amg->mg(*residual, *solution, monitor, max_iters);
 
   int vtk_type_id = 10;  // 3D tetrahedral element
   ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(

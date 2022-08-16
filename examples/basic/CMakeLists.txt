@@ -48,5 +48,6 @@ if (A2D_USE_KOKKOS)
   #   target_link_libraries(toy_multiarray a2dcuda)
   #   target_link_libraries(toy_profiler   a2dcuda)
   # endif()
-
 endif()
+
+add_subdirectory(rigid_body)

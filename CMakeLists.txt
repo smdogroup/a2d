@@ -1,15 +1,6 @@
 # Specify cmake version needed
 cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 
-# Set build type to release with debug info by default
-if (NOT CMAKE_BUILD_TYPE)
-  set(DEFAULT_BUILD_TYPE "Debug")
-  message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING
-      "Choose the type of build, options are: Debug, Release"
-      FORCE)
-endif()
-
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -28,8 +19,7 @@ option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
 
 # Set global compiler flags
 add_compile_options(
-  -O3 -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
-  $<$<CONFIG:Debug>:-g>
+  -O3 -g -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   )
 
 # Require Lapack and OpenMP

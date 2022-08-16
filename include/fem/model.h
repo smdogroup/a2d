@@ -37,6 +37,7 @@ class FEModel {
         bcs(bcs_layout),
         X(node_layout),
         U(solution_layout) {
+    Timer t("FEModel::FEModel(1)");
     B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
   }
   template <typename Ttype, typename IdxType>
@@ -51,6 +52,7 @@ class FEModel {
         bcs(bcs_layout),
         X(node_layout),
         U(solution_layout) {
+    Timer t("FEModel::FEModel(2)");
     B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {

@@ -12,19 +12,27 @@
 #include <string>
 #include <vector>
 
+#include "a2dprofiler.h"
 #include "a2dvtk.h"
 
 namespace A2D {
 
 /**
  * @brief A structured mesh generator for 2-dimensional rectangular domain.
- *
- * @tparam nx number of elements along x direction
- * @tparam ny number of elements along y direction
  */
-template <int nx, int ny>
 class MesherRect2D {
  public:
+  /**
+   * @brief Constructor.
+   *
+   * @param nx number of elements along x direction
+   * @param ny number of elements along y direction
+   * @param lx length along x direction
+   * @param ly length along y direction
+   */
+  MesherRect2D(int nx, int ny, double lx, double ly)
+      : nx(nx), ny(ny), lx(lx), ly(ly) {}
+
   /**
    * @brief populate X and conn
    *
@@ -34,8 +42,7 @@ class MesherRect2D {
    * @param ly length along y direction
    */
   template <class ConnArray, class XArray>
-  static void set_X_conn(XArray& X, ConnArray& conn, const double lx = 1.0,
-                         const double ly = 1.0) {
+  void set_X_conn(XArray& X, ConnArray& conn) {
     // Set X
     for (int j = 0; j < ny + 1; j++) {
       for (int i = 0; i < nx + 1; i++) {
@@ -73,7 +80,7 @@ class MesherRect2D {
    * @param bcs boundary condition multiarray
    */
   template <class BcsArray>
-  static void set_bcs(BcsArray& bcs) {
+  void set_bcs(BcsArray& bcs) {
     index_t index = 0;
     for (int j = 0; j < ny + 1; j++) {
       int i = 0;
@@ -91,12 +98,10 @@ class MesherRect2D {
   /**
    * @brief uniformly filled design variables to 1.0
    *
-   * @param nx number of elements along x direction
-   * @param ny number of elements along y direction
    * @param x design variable multiarray
    */
   template <class DvArray>
-  static void set_dv(DvArray& x) {
+  void set_dv(DvArray& x) {
     for (int j = 0; j < ny + 1; j++) {
       for (int i = 0; i < nx + 1; i++) {
         int node = i + (nx + 1) * j;
@@ -112,35 +117,44 @@ class MesherRect2D {
    * @param residual the residual multiarray
    */
   template <class Model, class RhsArray>
-  static void set_force(Model& model, RhsArray& residual) {
+  void set_force(Model& model, RhsArray& residual) {
     residual->zero();
     (*residual)(nx, 1) = -1e2;
     model->zero_bcs(residual);
   }
+
+ private:
+  int nx, ny;
+  double lx, ly;
 };
 
 /**
  * @brief A structured mesh generator for 3-dimensional brick domain.
- *
- * @tparam nx number of elements along x direction
- * @tparam ny number of elements along y direction
- * @tparam nz number of elements along z direction
  */
-template <int nx, int ny, int nz>
 class MesherBrick3D {
  public:
+  /**
+   * @brief Constructor.
+   *
+   * @param nx number of elements along x direction
+   * @param ny number of elements along y direction
+   * @param nz number of elements along z direction
+   * @param lx length along x direction
+   * @param ly length along y direction
+   * @param lz length along z direction
+   */
+  MesherBrick3D(int _nx, int _ny, int _nz, double _lx, double _ly, double _lz)
+      : nx(_nx), ny(_ny), nz(_nz), lx(_lx), ly(_ly), lz(_lz) {}
+
   /**
    * @brief populate X and conn
    *
    * @param X nodal location multiarray
    * @param conn connectivity multiarray
-   * @param lx length along x direction
-   * @param ly length along y direction
-   * @param lz length along z direction
    */
   template <class ConnArray, class XArray>
-  static void set_X_conn(XArray& X, ConnArray& conn, const double lx = 1.0,
-                         const double ly = 1.0, const double lz = 1.0) {
+  void set_X_conn(XArray& X, ConnArray& conn) {
+    Timer t("MesherBrick3D::set_X_conn()");
     // Set X
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
@@ -191,7 +205,8 @@ class MesherBrick3D {
    * @param bcs boundary condition multiarray
    */
   template <class BcsArray>
-  static void set_bcs(BcsArray& bcs) {
+  void set_bcs(BcsArray& bcs) {
+    Timer t("MesherBrick3D::set_bcs()");
     index_t index = 0;
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
@@ -214,7 +229,8 @@ class MesherBrick3D {
    * @param x design variable multiarray
    */
   template <class DvArray>
-  static void set_dv(DvArray& x) {
+  void set_dv(DvArray& x) {
+    Timer t("MesherBrick3D::set_dv()");
     for (int k = 0; k < nz + 1; k++) {
       for (int j = 0; j < ny + 1; j++) {
         for (int i = 0; i < nx + 1; i++) {
@@ -232,7 +248,8 @@ class MesherBrick3D {
    * @param residual the residual multiarray
    */
   template <class Model, class RhsArray>
-  static void set_force(Model model, RhsArray& residual) {
+  void set_force(Model model, RhsArray& residual) {
+    Timer t("MesherBrick3D::set_force()");
     residual->zero();
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);
@@ -240,6 +257,10 @@ class MesherBrick3D {
     }
     model->zero_bcs(residual);
   }
+
+ private:
+  int nx, ny, nz;
+  double lx, ly, lz;
 };
 
 /**
@@ -260,17 +281,27 @@ class MesherFromVTK3D {
     // Loop over X to find bc and loaded nodes
     // We set those nodes with minimum x-coordinates to be bc nodes
     nbcs = 0;
-    nforces = 0;
+    nforces_x = 0;
+    nforces_y = 0;
+    nforces_z = 0;
     T tol = 1e-6;
     for (I i = 0; i != nnodes; i++) {
-      if (vtk_reader.X(i, 0) - vtk_reader.domain_lower[0] < tol) {
+      // Fix zmax
+      if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
         bc_nodes.push_back(i);
         nbcs++;
       }
-      if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol &&
-          vtk_reader.X(i, 2) - vtk_reader.domain_lower[2] < tol) {
-        force_nodes.push_back(i);
-        nforces++;
+
+      // Apply force to xmax
+      if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol) {
+        force_nodes_y.push_back(i);
+        nforces_y++;
+      }
+
+      // Apply force to ymax
+      if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
+        force_nodes_z.push_back(i);
+        nforces_z++;
       }
     }
   }
@@ -307,9 +338,15 @@ class MesherFromVTK3D {
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
     residual->zero();
-    for (auto it = force_nodes.begin(); it != force_nodes.end(); it++) {
-      (*residual)(*it, 2) = -force / T(nforces);
+
+    for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
+      (*residual)(*it, 1) = -force / T(nforces_y);
     }
+
+    for (auto it = force_nodes_z.begin(); it != force_nodes_z.end(); it++) {
+      (*residual)(*it, 2) = -force / T(nforces_z);
+    }
+
     model->zero_bcs(residual);
   }
 
@@ -317,10 +354,11 @@ class MesherFromVTK3D {
   using VTK_t = ReadVTK<nnodes_per_elem, 3, T, I>;
 
   VTK_t vtk_reader;
-  I nnodes, nelems, nbcs, nforces;
+  I nnodes, nelems, nbcs;
+  I nforces_x, nforces_y, nforces_z;
 
   std::vector<I> bc_nodes;
-  std::vector<I> force_nodes;
+  std::vector<I> force_nodes_x, force_nodes_y, force_nodes_z;
 };
 
 }  // namespace A2D

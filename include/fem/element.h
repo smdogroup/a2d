@@ -28,8 +28,7 @@ class ElementBase {
   virtual void set_nodes(typename PDEInfo::NodeArray& X) = 0;
   virtual void add_node_set(
       std::unordered_set<COO<I>, COOHash<I>>& node_set) = 0;
-// #ifdef A2D_USE_KOKKOS
-#if 0
+#ifdef A2D_USE_KOKKOS
   virtual void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
 #endif
   virtual void set_solution(typename PDEInfo::SolutionArray& U) = 0;
@@ -184,8 +183,7 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
     BSRMatAddConnectivity(conn, node_set);
   }
 
-// #ifdef A2D_USE_KOKKOS
-#if 0
+#ifdef A2D_USE_KOKKOS
   // Add the node set to the connectivity, use Kokkos unordered set
   void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) {
     BSRMatAddConnectivity(conn, node_set);

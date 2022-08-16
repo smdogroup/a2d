@@ -78,8 +78,7 @@ void BSRMatAddConnectivity(ConnArray& conn,
 /*
   Add the connectivity from a connectivity list, use Kokkos unordered set
 */
-// #ifdef A2D_USE_KOKKOS
-#if 0
+#ifdef A2D_USE_KOKKOS
 template <typename I, class ConnArray>
 void BSRMatAddConnectivity(ConnArray& conn,
                            Kokkos::UnorderedMap<COO<I>, void>& node_set) {
@@ -90,8 +89,7 @@ void BSRMatAddConnectivity(ConnArray& conn,
   node_set.rehash(nelems * nnodes * nnodes);
   Kokkos::parallel_reduce(
       nelems,
-      KOKKOS_LAMBDA(I i) {
-        int error = 0;
+      KOKKOS_LAMBDA(const I i, int& error) {
         for (I j1 = 0; j1 < nnodes; j1++) {
           for (I j2 = 0; j2 < nnodes; j2++) {
             auto result = node_set.insert(COO<I>{conn(i, j1), conn(i, j2)});
@@ -150,6 +148,20 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
 
+  printf("rowp:");
+  for (int i = 0; i < 20; i++) {
+    printf("%d ", (int)rowp[i]);
+  }
+  printf("\n");
+
+  printf("cols:");
+  for (int i = 0; i < 20; i++) {
+    printf("%d ", (int)cols[i]);
+  }
+  printf("\n");
+
+  exit(0);
+
   BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
 
@@ -170,11 +182,12 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   // Find the number of nodes referenced by other nodes
   VecType rowp = VecType(VecLayoutType(nnodes + 1));
 
+  // Loop over COO entries and count number of entries in each row
   Kokkos::parallel_for(
       node_set.capacity(), KOKKOS_LAMBDA(I i) {
         if (node_set.valid_at(i)) {
           auto key = node_set.key_at(i);
-          rowp[key.row_idx + 1] += 1;
+          Kokkos::atomic_increment(&rowp[key.row_idx + 1]);
         }
       });
   Kokkos::fence();
@@ -188,15 +201,32 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   I nnz = rowp[nnodes];
   VecType cols = VecType(VecLayoutType(nnz));
 
+#if 0
+  // The wrong way to populate cols - race condition even with atomic!
   Kokkos::parallel_for(
       node_set.capacity(), KOKKOS_LAMBDA(I i) {
         if (node_set.valid_at(i)) {
           auto key = node_set.key_at(i);
-          cols[rowp[key.row_idx]] = key.col_idx;
-          rowp[key.row_idx]++;
+          I rowp_row_idx = Kokkos::atomic_load(&rowp[key.row_idx]);
+          Kokkos::atomic_store(&cols[rowp_row_idx], key.col_idx);
+          Kokkos::atomic_increment(&rowp[key.row_idx]);
         }
       });
   Kokkos::fence();
+#endif
+
+  // Get a densified index for each node in the node_set
+
+  // Maintain a hash map to track number of appreances of an entry in each row
+  Kokkos::UnorderedMap<I, I> row_tracker(nnodes);
+
+  // Loop over the nodes and populate cols
+  Kokkos::parallel_for(
+      node_set.capacity(), KOKKOS_LAMBDA(I i) {
+        if (node_set.valid_at(i){
+
+            })
+      });
 
   // Reset the pointer into the nodes
   for (I i = nnodes; i > 0; i--) {
@@ -206,6 +236,20 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
 
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
+
+  printf("rowp:");
+  for (int i = 0; i < 20; i++) {
+    printf("%d ", (int)rowp[i]);
+  }
+  printf("\n");
+
+  printf("cols:");
+  for (int i = 0; i < 20; i++) {
+    printf("%d ", (int)cols[i]);
+  }
+  printf("\n");
+
+  exit(0);
 
   BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);

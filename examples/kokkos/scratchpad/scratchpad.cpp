@@ -206,23 +206,44 @@ struct COO {
 void test_unordered_set() {
   Kokkos::initialize();
   {
+    using MemSpace = Kokkos::HostSpace;
+    using ExecSpace = Kokkos::Cuda;
+    using RangePolicy = Kokkos::RangePolicy<ExecSpace>;
+
     int repeat = 20;
     int set_capacity = 1;
     int rand_max = 10;
-    COO<int> coo;
-    Kokkos::UnorderedMap<COO<int>, void, Kokkos::HostSpace::execution_space>
-        node_set;
+    Kokkos::UnorderedMap<COO<int>, void, ExecSpace> node_set;
     node_set.rehash(set_capacity);
-    for (int i = 0; i < repeat; i++) {
-      int x = rand() % rand_max;
-      int y = rand() % rand_max;
-      coo.x = x;
-      coo.y = y;
-      auto result = node_set.insert(coo);
-      printf("[%d] val: (%d, %d), success? %d, existing? %d, failed? %d\n", i,
-             coo.x, coo.y, result.success(), result.existing(),
-             result.failed());
-    }
+
+    // Add value in parallel
+    int fail = 0;
+    Kokkos::parallel_reduce(
+        RangePolicy(0, repeat),
+        KOKKOS_LAMBDA(int i, int& error) {
+          int x = i % rand_max;
+          int y = i % rand_max;
+          auto result = node_set.insert(COO<int>{x, y});
+          error += result.failed();
+        },
+        fail);
+
+    printf("total fail: %d\n", fail);
+
+    // Print value in parallel
+    int total = 0;
+    Kokkos::parallel_reduce(
+        RangePolicy(0, node_set.capacity()),
+        KOKKOS_LAMBDA(I i, int& _total) {
+          _total += 1;
+          if (node_set.valid_at(i)) {
+            auto key = node_set.key_at(i);
+            printf("[%2d] (%d, %d)\n", (int)i, key.x, key.y);
+          }
+        },
+        total);
+
+    printf("total number of threads: %d\n", total);
   }
   Kokkos::finalize();
 }

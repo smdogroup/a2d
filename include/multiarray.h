@@ -8,6 +8,7 @@
 #include <numeric>
 #include <type_traits>
 
+#include "a2dlayout.h"
 #include "a2dmemory.h"
 #include "a2dobjs.h"
 

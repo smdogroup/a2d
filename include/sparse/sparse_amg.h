@@ -363,7 +363,7 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
                             MultiArray<T, A2D_Layout<M, N>>& B,
                             BSRMat<I, T, M, M>** Dinv, BSRMat<I, T, M, N>** P,
                             BSRMat<I, T, N, M>** PT, BSRMat<I, T, N, N>** Ar,
-                            MultiArray<T, A2D_Layout<N, N>>** Br, T* rho_) {
+                            MultiArray<T, A2D_Layout<N, N>>& Br, T* rho_) {
   I num_aggregates = 0;
   std::vector<I> aggr(A.nbcols);
   std::vector<I> cpts(A.nbcols);
@@ -384,11 +384,11 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
 
   // Based on the aggregates, form a tentative prolongation operator
   A2D_Layout<N, N> Br_layout(num_aggregates);
-  MultiArray<T, A2D_Layout<N, N>>* Br_ =
-      new MultiArray<T, A2D_Layout<N, N>>(Br_layout);
+  MultiArray<T, A2D_Layout<N, N>> Br_ =
+      MultiArray<T, A2D_Layout<N, N>>(Br_layout);
 
   BSRMat<I, T, M, N>* P0 =
-      BSRMatMakeTentativeProlongation(A.nbrows, num_aggregates, aggr, B, *Br_);
+      BSRMatMakeTentativeProlongation(A.nbrows, num_aggregates, aggr, B, Br_);
 
   // Get the diagonal block D^{-1}
   bool inverse = true;
@@ -414,7 +414,7 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
   *P = P_;
   *PT = PT_;
   *Ar = Ar_;
-  *Br = Br_;
+  Br = Br_;
 
   delete P0;
   delete AP;
@@ -425,8 +425,7 @@ class BSRMatAmg {
  public:
   BSRMatAmg(int num_levels, T omega, T epsilon,
             std::shared_ptr<BSRMat<I, T, M, M>> A,
-            std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B,
-            bool print_info = false)
+            MultiArray<T, A2D_Layout<M, N>> B, bool print_info = false)
       : level(-1),
         A(A),
         B(B),
@@ -700,7 +699,7 @@ class BSRMatAmg {
  private:
   // Private constructor for initializing the class
   BSRMatAmg(T omega, T epsilon, std::shared_ptr<BSRMat<I, T, M, M>> A,
-            std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B)
+            MultiArray<T, A2D_Layout<M, N>> B)
       : level(-1),
         A(A),
         B(B),
@@ -764,15 +763,15 @@ class BSRMatAmg {
 
       // Multi-color the matrix
       BSRMat<I, T, N, N>* Ar;
-      MultiArray<T, A2D_Layout<N, N>>* Br;
+      MultiArray<T, A2D_Layout<N, N>> Br;
 
       // Find the new level
-      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, epsilon, *A, *B, &Dinv, &P, &PT,
-                                         &Ar, &Br, &rho);
+      BSRMatSmoothedAmgLevel<I, T, M, N>(omega, epsilon, *A, B, &Dinv, &P, &PT,
+                                         &Ar, Br, &rho);
 
       // Allocate the next level
       auto Anext = std::shared_ptr<BSRMat<I, T, N, N>>(Ar);
-      auto Bnext = std::shared_ptr<MultiArray<T, A2D_Layout<N, N>>>(Br);
+      auto Bnext = MultiArray<T, A2D_Layout<N, N>>(Br);
       next = new BSRMatAmg<I, T, N, N>(omega, epsilon, Anext, Bnext);
 
       if (print_info) {
@@ -829,7 +828,7 @@ class BSRMatAmg {
   std::shared_ptr<BSRMat<I, T, M, M>> A;
 
   // The near null-space candidates
-  std::shared_ptr<MultiArray<T, A2D_Layout<M, N>>> B;
+  MultiArray<T, A2D_Layout<M, N>> B;
 
   // Data for the prolongation and restriction
   BSRMat<I, T, M, N>* P;

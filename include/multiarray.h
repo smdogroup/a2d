@@ -77,8 +77,12 @@ struct ParsePack<T, dim, dims...> {
 template <index_t... dims>
 class FLayout {
  public:
+#ifdef A2D_USE_KOKKOS
   template <typename T>
   using KokkosTypeTemplate = typename ParsePack<T, dims...>::kokkos_type;
+  using KokkosLayout = Kokkos::LayoutLeft;
+#endif
+
   index_t dim0;  // the leading dimension (set at runtime)
   static const index_t static_size =
       __get_size<dims...>::size;  // total number of entries in the compile-time
@@ -90,16 +94,13 @@ class FLayout {
   /**
    * @brief Default constructor
    */
-  FLayout() {}
+  A2D_INLINE_FUNCTION FLayout() {}
 
   /**
    * @brief Regular constructor
    */
   FLayout(const index_t dim0) : dim0(dim0), static_extents{dims...} {
-    size = dim0;
-    for (index_t i = 1; i < get_rank(); i++) {
-      size *= get_extent(i);
-    }
+    size = dim0 * static_size;
   }
 
   /**
@@ -107,10 +108,7 @@ class FLayout {
    */
   A2D_INLINE_FUNCTION FLayout(const FLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
-    size = dim0;
-    for (index_t i = 1; i < get_rank(); i++) {
-      size *= get_extent(i);
-    }
+    size = dim0 * static_size;
   }
 
   /**
@@ -121,7 +119,7 @@ class FLayout {
   /**
    * @brief Assignment operator
    */
-  FLayout<dims...>& operator=(const FLayout<dims...>& src) {
+  A2D_INLINE_FUNCTION FLayout<dims...>& operator=(const FLayout<dims...>& src) {
     dim0 = src.dim0;
     size = src.size;
     for (index_t i = 0; i != rank - 1; i++) {
@@ -207,8 +205,12 @@ class FLayout {
 template <index_t... dims>
 class CLayout {
  public:
+#ifdef A2D_USE_KOKKOS
   template <typename T>
   using KokkosTypeTemplate = typename ParsePack<T, dims...>::kokkos_type;
+  using KokkosLayout = Kokkos::LayoutRight;
+#endif
+
   index_t dim0;  // the leading dimension (set at runtime)
   static const index_t static_size =
       __get_size<dims...>::size;  // total number of entries in the compile-time
@@ -220,16 +222,13 @@ class CLayout {
   /**
    * @brief Default constructor
    */
-  CLayout() {}
+  A2D_INLINE_FUNCTION CLayout() {}
 
   /**
    * @brief Regular constructor
    */
   CLayout(const index_t dim0) : dim0(dim0), static_extents{dims...} {
-    size = dim0;
-    for (index_t i = 1; i < get_rank(); i++) {
-      size *= get_extent(i);
-    }
+    size = dim0 * static_size;
   }
 
   /**
@@ -237,10 +236,7 @@ class CLayout {
    */
   A2D_INLINE_FUNCTION CLayout(const CLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
-    size = dim0;
-    for (index_t i = 1; i < get_rank(); i++) {
-      size *= get_extent(i);
-    }
+    size = dim0 * static_size;
   }
 
   /**
@@ -251,7 +247,7 @@ class CLayout {
   /**
    * @brief Assignment operator
    */
-  CLayout<dims...>& operator=(const CLayout<dims...>& src) {
+  A2D_INLINE_FUNCTION CLayout<dims...>& operator=(const CLayout<dims...>& src) {
     dim0 = src.dim0;
     size = src.size;
     for (index_t i = 0; i != rank - 1; i++) {
@@ -335,19 +331,22 @@ class CLayout {
  * @tparam T data type
  * @tparam Layout CLayout or FLayout
  */
-template <typename T, class Layout>
+template <typename T, class Layout, class MemSpace = Kokkos::CudaUVMSpace>
 class MultiArray {
  public:
   using type = T;
-#ifdef KOKKOS_ENABLE_CUDA
   using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
-                                Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
-#else
-  using ViewType = Kokkos::View<typename Layout::template KokkosTypeTemplate<T>,
-                                Kokkos::LayoutRight, Kokkos::HostSpace>;
-#endif
+                                typename Layout::KokkosLayout, MemSpace>;
+
   /**
-   * @brief Construct a new Kokkos View wrapper
+   * @brief Default constructor
+   *
+   * This creates skeleton only, no memory allocation
+   */
+  MultiArray() { data = nullptr; }
+
+  /**
+   * @brief Constructor, allocate the array managed by kokkos
    *
    * @param layout CLayout or FLayout instance
    * @param data_ pointer to raw data
@@ -359,11 +358,29 @@ class MultiArray {
   }
 
   /**
-   * @brief Default constructor
-   *
-   * This creates skeleton only, no memory allocation
+   * @brief Copy constructor: shallow copy is performed
    */
-  MultiArray() { data = nullptr; }
+  A2D_INLINE_FUNCTION MultiArray(const MultiArray<T, Layout>& src) {
+    layout = src.layout;
+    view = src.view;
+    data = src.data;
+  }
+
+  /**
+   * @brief Assignment operator: shallow copy is performed
+   */
+  A2D_INLINE_FUNCTION MultiArray& operator=(const MultiArray<T, Layout>& src) {
+    layout = src.layout;
+    view = src.view;
+    data = src.data;
+    return *this;
+  }
+
+  /**
+   * @brief Destructor - memory is managed by Kokkos, hence no explicit
+   * delete/free is needed
+   */
+  A2D_INLINE_FUNCTION ~MultiArray() {}
 
   /*
     Constant access to array elements, note: defining member function as const
@@ -380,12 +397,14 @@ class MultiArray {
   }
 
   /**
-   * @brief Copy constructor: shallow copy is performed
+   * @brief Iterator: begin
    */
-  A2D_INLINE_FUNCTION MultiArray(const MultiArray<T, Layout>& src)
-      : layout(src.layout), view(src.view), data(src.data) {}
+  T* begin() const { return data; }
 
-  A2D_INLINE_FUNCTION ~MultiArray() {}
+  /**
+   * @brief Iterator: end
+   */
+  T* end() const { return data + layout.get_size(); }
 
   /*
     Get the rank of the the multi-dimensional array
@@ -538,19 +557,15 @@ class MultiArray {
   }
 
   /**
-   * @brief Constructor, allocate the array managed by shared_ptr and copy
+   * @brief Constructor, create a MultiArray with unmanaged data
    * values
    */
   MultiArray(Layout layout, T* vals) : layout(layout) {
     printf(
-        "[Warning] Creating multiarray from outside array via "
-        "(potentially costly) copy-by-value.\n");
-    index_t N = layout.get_size();
-    data_sp = SharedPtrType(new T[N]);
-    for (int i = 0; i != N; i++) {
-      data_sp[i] = vals[i];
-    }
-    data = data_sp.get();
+        "[MultiArray] creating multiarray with external memory (not managed by "
+        "smart pointer)\n");
+    data = vals;
+    data_sp = nullptr;
   }
 
   /**
@@ -564,9 +579,6 @@ class MultiArray {
 
   /**
    * @brief Assignment operator: shallow copy is performed
-   *
-   * TODO: Actually, this will be never invoked for now since there is no
-   * default constructor for MultiArray
    */
   MultiArray& operator=(const MultiArray<T, Layout>& src) {
     layout = src.layout;
@@ -577,8 +589,7 @@ class MultiArray {
 
   /**
    * @brief Destructor - memory is managed by the smart pointer (shared_ptr),
-   * hence nothing needs to be done here
-   *
+   * hence no explicit delete/free is needed
    */
   ~MultiArray() {}
 
@@ -588,13 +599,23 @@ class MultiArray {
   */
   template <class... IdxType>
   T& operator()(IdxType... idx) const {
-    return data_sp[layout.compute_index(idx...)];
+    return data[layout.compute_index(idx...)];
   }
 
   template <class... IdxType>
   T& operator[](IdxType... idx) const {
-    return data_sp[layout.compute_index(idx...)];
+    return data[layout.compute_index(idx...)];
   }
+
+  /**
+   * @brief Iterator: begin
+   */
+  T* begin() const { return data; }
+
+  /**
+   * @brief Iterator: end
+   */
+  T* end() const { return data + layout.get_size(); }
 
   /*
     Get the rank of the the multi-dimensional array
@@ -636,7 +657,7 @@ class MultiArray {
   void scale(T alpha) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data_sp[i] *= alpha;
+      data[i] *= alpha;
     }
   }
 
@@ -656,7 +677,7 @@ class MultiArray {
   void random(T lower = -1.0, T upper = 1.0) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data_sp[i] =
+      data[i] =
           lower + ((upper - lower) * (1.0 * std::rand())) / (1.0 * RAND_MAX);
     }
   }
@@ -683,7 +704,7 @@ class MultiArray {
   void axpy(T alpha, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data_sp[i] += alpha * x.data_sp[i];
+      data[i] += alpha * x.data[i];
     }
   }
 
@@ -693,7 +714,7 @@ class MultiArray {
   void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
-      data_sp[i] = alpha * x.data_sp[i] + beta * data_sp[i];
+      data[i] = alpha * x.data[i] + beta * data[i];
     }
   }
 

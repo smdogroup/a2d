@@ -4,6 +4,9 @@
 #ifdef A2D_USE_KOKKOS
 #include "Kokkos_Core.hpp"
 #endif
+#include <typeinfo>
+
+#include "a2dlayout.h"
 #include "multiarray.h"
 #include "parallel.h"
 
@@ -290,6 +293,38 @@ void test_slice() {
   }
 }
 
+void test_create() {
+  using I = index_t;
+  I nnodes = 20;
+  MultiArray<I, A2D_Layout<>> array1;
+  array1 = MultiArray<I, A2D_Layout<>>(A2D_Layout<>(nnodes));
+  cout << "array1: " << typeid(array1).name() << endl;
+
+  MultiArray<I, A2D_Layout<>> array2(A2D_Layout<>(nnodes));
+  cout << "array2: " << typeid(array2).name() << endl;
+
+  MultiArray<I, A2D_Layout<>> array3(A2D_Layout<>(nnodes + 1));
+  cout << "array3: " << typeid(array3).name() << endl;
+
+  A2D_Layout<> layout4(nnodes);
+  MultiArray<I, A2D_Layout<>> array4(layout4);
+  cout << "array4: " << typeid(array4).name() << endl;
+}
+
+void test_layout_size() {
+  CLayout<2, 3, 4> clayout(5);
+  printf("clayout.get_size() = %d, expect 120.\n", clayout.get_size());
+
+  CLayout<> clayout2(42);
+  printf("clayout2.get_size() = %d, expect 42.\n", clayout2.get_size());
+
+  FLayout<2, 3, 4> flayout(5);
+  printf("flayout.get_size() = %d, expect 120.\n", flayout.get_size());
+
+  FLayout<> flayout2(42);
+  printf("flayout2.get_size() = %d, expect 42.\n", flayout2.get_size());
+}
+
 int main(int argc, char* argv[]) {
 #ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
@@ -298,7 +333,9 @@ int main(int argc, char* argv[]) {
     // test_clayout();
     // test_flayout();
     // test_uninit_multiarray();
-    test_slice();
+    // test_slice();
+    // test_create();
+    test_layout_size();
   }
 #ifdef A2D_USE_KOKKOS
   Kokkos::finalize();

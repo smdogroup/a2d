@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 
 using namespace std;
 using T = double;
@@ -196,7 +197,38 @@ void test_matvec(int argc, char* argv[]) {
   Kokkos::finalize();
 }
 
+template <typename T>
+struct COO {
+  T x;
+  T y;
+};
+
+void test_unordered_set() {
+  Kokkos::initialize();
+  {
+    int repeat = 20;
+    int set_capacity = 1;
+    int rand_max = 10;
+    COO<int> coo;
+    Kokkos::UnorderedMap<COO<int>, void, Kokkos::HostSpace::execution_space>
+        node_set;
+    node_set.rehash(set_capacity);
+    for (int i = 0; i < repeat; i++) {
+      int x = rand() % rand_max;
+      int y = rand() % rand_max;
+      coo.x = x;
+      coo.y = y;
+      auto result = node_set.insert(coo);
+      printf("[%d] val: (%d, %d), success? %d, existing? %d, failed? %d\n", i,
+             coo.x, coo.y, result.success(), result.existing(),
+             result.failed());
+    }
+  }
+  Kokkos::finalize();
+}
+
 int main(int argc, char* argv[]) {
   // test_axpy(argc, argv);
-  test_matvec(argc, argv);
+  // test_matvec(argc, argv);
+  test_unordered_set();
 }

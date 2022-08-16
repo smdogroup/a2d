@@ -1,4 +1,5 @@
 #include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
 #include "a2dobjs.h"
 
 namespace A2D {

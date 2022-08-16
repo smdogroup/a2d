@@ -19,7 +19,7 @@ option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
 
 # Set global compiler flags
 add_compile_options(
-  -O3 -g -Wall -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
+  -O3 -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   )
 
 # Require Lapack and OpenMP

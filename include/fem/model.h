@@ -33,12 +33,12 @@ class FEModel {
         bcs_layout(nbcs),
         node_layout(nnodes),
         solution_layout(nnodes),
-        null_space_layout(nnodes),
-        bcs(bcs_layout),
-        X(node_layout),
-        U(solution_layout) {
+        null_space_layout(nnodes) {
     Timer t("FEModel::FEModel(1)");
-    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
+    bcs = typename PDEInfo::BCsArray(bcs_layout);
+    X = typename PDEInfo::NodeArray(node_layout);
+    U = typename PDEInfo::SolutionArray(solution_layout);
+    B = typename PDEInfo::NullSpaceArray(null_space_layout);
   }
   template <typename Ttype, typename IdxType>
   FEModel(const index_t nnodes, const Ttype X_[], const index_t nbcs,
@@ -48,12 +48,12 @@ class FEModel {
         bcs_layout(nbcs),
         node_layout(nnodes),
         solution_layout(nnodes),
-        null_space_layout(nnodes),
-        bcs(bcs_layout),
-        X(node_layout),
-        U(solution_layout) {
+        null_space_layout(nnodes) {
     Timer t("FEModel::FEModel(2)");
-    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
+    bcs = typename PDEInfo::BCsArray(bcs_layout);
+    X = typename PDEInfo::NodeArray(node_layout);
+    U = typename PDEInfo::SolutionArray(solution_layout);
+    B = typename PDEInfo::NullSpaceArray(null_space_layout);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
       for (I j = 0; j < SPATIAL_DIM; j++) {
@@ -214,7 +214,13 @@ class FEModel {
   */
   std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
     Timer t1("FEModel::new_matrix()");
-    std::unordered_set<std::pair<I, I>, pair_hash_fun<I>> node_set;
+// #ifdef A2D_USE_KOKKOS
+#if 0
+    Kokkos::UnorderedMap<COO<I>, void> node_set;
+#else
+    std::unordered_set<COO<I>, COOHash<I>> node_set;
+#endif
+
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
     }
@@ -230,8 +236,8 @@ class FEModel {
       std::shared_ptr<typename PDEInfo::SparseMat> mat,
       bool print_info = false) {
     Timer timer("FEModel::new_amg()");
-    PDEInfo::compute_null_space(X, *B);
-    A2D::VecZeroBCRows(bcs, *B);
+    PDEInfo::compute_null_space(X, B);
+    A2D::VecZeroBCRows(bcs, B);
     return std::make_shared<typename PDEInfo::SparseAmg>(
         num_levels, omega, epsilon, mat, B, print_info);
   }
@@ -248,7 +254,7 @@ class FEModel {
   typename PDEInfo::BCsArray bcs;
   typename PDEInfo::NodeArray X;
   typename PDEInfo::SolutionArray U;
-  std::shared_ptr<typename PDEInfo::NullSpaceArray> B;
+  typename PDEInfo::NullSpaceArray B;
 };
 
 }  // namespace A2D

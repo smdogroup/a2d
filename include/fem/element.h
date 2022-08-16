@@ -2,6 +2,7 @@
 #define A2D_ELEMENT_H
 
 #include "a2dlayout.h"
+#include "a2dobjs.h"
 #include "multiarray.h"
 #include "sparse/sparse_amg.h"
 #include "sparse/sparse_matrix.h"
@@ -26,7 +27,11 @@ class ElementBase {
   virtual ~ElementBase() {}
   virtual void set_nodes(typename PDEInfo::NodeArray& X) = 0;
   virtual void add_node_set(
-      std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) = 0;
+      std::unordered_set<COO<I>, COOHash<I>>& node_set) = 0;
+// #ifdef A2D_USE_KOKKOS
+#if 0
+  virtual void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
+#endif
   virtual void set_solution(typename PDEInfo::SolutionArray& U) = 0;
   virtual T energy() { return T(0.0); }
   virtual void add_residual(typename PDEInfo::SolutionArray& res) = 0;
@@ -175,10 +180,17 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   ElemJacLayout& get_elem_jac_layout() { return elem_jac_layout; }
 
   // Add the node set to the connectivity
-  void add_node_set(
-      std::unordered_set<std::pair<I, I>, pair_hash_fun<I>>& node_set) {
+  void add_node_set(std::unordered_set<COO<I>, COOHash<I>>& node_set) {
     BSRMatAddConnectivity(conn, node_set);
   }
+
+// #ifdef A2D_USE_KOKKOS
+#if 0
+  // Add the node set to the connectivity, use Kokkos unordered set
+  void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) {
+    BSRMatAddConnectivity(conn, node_set);
+  }
+#endif
 
   // Set the nodes from the array
   void set_nodes(typename PDEInfo::NodeArray& X) {

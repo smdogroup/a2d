@@ -201,55 +201,46 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   I nnz = rowp[nnodes];
   VecType cols = VecType(VecLayoutType(nnz));
 
-#if 0
-  // The wrong way to populate cols - race condition even with atomic!
+  // Maintain a hash map to track the offset from rowp for each row:
+  // offset_tracker[row_idx] = current_offset
+  Kokkos::UnorderedMap<I, I> offset_tracker(nnodes);
+
+  // Set current_offet to 0 for all rows
+  int fail = 0;
+  Kokkos::parallel_reduce(
+      nnodes,
+      KOKKOS_LAMBDA(const I i, int& error) {
+        auto result = offset_tracker.insert(i, I(0));
+        error += result.failed();
+      },
+      fail);
+  if (fail) {
+    char msg[256];
+    std::sprintf(
+        msg, "Populating offset_tracker failed with %d failing inserts.", fail);
+    throw std::runtime_error(msg);
+  }
+
+  // Loop over the nodes to increment the tracker and populate cols
   Kokkos::parallel_for(
       node_set.capacity(), KOKKOS_LAMBDA(I i) {
         if (node_set.valid_at(i)) {
-          auto key = node_set.key_at(i);
-          I rowp_row_idx = Kokkos::atomic_load(&rowp[key.row_idx]);
-          Kokkos::atomic_store(&cols[rowp_row_idx], key.col_idx);
-          Kokkos::atomic_increment(&rowp[key.row_idx]);
+          // Get row index
+          COO<I> node = node_set.key_at(i);
+          I row_idx = node.row_idx;
+          I col_idx = node.col_idx;
+
+          // If row index already in the hash map, increment its count,
+          // otherwise insert the row index to hash map
+          I offset =
+              Kokkos::atomic_fetch_add(&offset_tracker.value_at(row_idx), 1);
+          cols[rowp[row_idx] + offset] = col_idx;
         }
       });
   Kokkos::fence();
-#endif
-
-  // Get a densified index for each node in the node_set
-
-  // Maintain a hash map to track number of appreances of an entry in each row
-  Kokkos::UnorderedMap<I, I> row_tracker(nnodes);
-
-  // Loop over the nodes and populate cols
-  Kokkos::parallel_for(
-      node_set.capacity(), KOKKOS_LAMBDA(I i) {
-        if (node_set.valid_at(i){
-
-            })
-      });
-
-  // Reset the pointer into the nodes
-  for (I i = nnodes; i > 0; i--) {
-    rowp[i] = rowp[i - 1];
-  }
-  rowp[0] = 0;
 
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
-
-  printf("rowp:");
-  for (int i = 0; i < 20; i++) {
-    printf("%d ", (int)rowp[i]);
-  }
-  printf("\n");
-
-  printf("cols:");
-  for (int i = 0; i < 20; i++) {
-    printf("%d ", (int)cols[i]);
-  }
-  printf("\n");
-
-  exit(0);
 
   BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);

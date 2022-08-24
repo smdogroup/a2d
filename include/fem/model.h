@@ -215,7 +215,6 @@ class FEModel {
   std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
     Timer t1("FEModel::new_matrix()");
 #ifdef A2D_USE_KOKKOS
-    // #if 0
     Kokkos::UnorderedMap<COO<I>, void> node_set;
 #else
     std::unordered_set<COO<I>, COOHash<I>> node_set;

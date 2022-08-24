@@ -148,20 +148,6 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
 
-  printf("rowp:");
-  for (int i = 0; i < 20; i++) {
-    printf("%d ", (int)rowp[i]);
-  }
-  printf("\n");
-
-  printf("cols:");
-  for (int i = 0; i < 20; i++) {
-    printf("%d ", (int)cols[i]);
-  }
-  printf("\n");
-
-  exit(0);
-
   BSRMat<I, T, M, M>* A =
       new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
 

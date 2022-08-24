@@ -319,12 +319,10 @@ BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
   int ninterface_nodes = 0;
   int ndep_vars = 0;
   int* dep_vars = NULL;
-  int* indep_ptr = NULL;
-  int* indep_vars = NULL;
   int use_exact_degree = 0;
   amd_order_interface(nrows, (int*)rowp.data, (int*)cols.data, (int*)perm_.data,
                       interface_nodes, ninterface_nodes, ndep_vars, dep_vars,
-                      indep_ptr, indep_vars, use_exact_degree);
+                      use_exact_degree);
 
   // Set up the factorization
   // perm[new var] = old_var

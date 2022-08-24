@@ -86,9 +86,9 @@ int main(int argc, char* argv[]) {
   typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
   typedef ElasticityPDEInfo<3, I, T> PDE;
 
-  const index_t nx = 32;
-  const index_t ny = 32;
-  const index_t nz = 32;
+  const index_t nx = 64;
+  const index_t ny = 64;
+  const index_t nz = 64;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
 
   model->jacobian(J);
 
-  int num_levels = 3;
+  int num_levels = 4;
   double omega = 0.6667;
   double epsilon = 0.0;
   bool print_info = true;

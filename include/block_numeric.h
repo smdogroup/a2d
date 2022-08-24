@@ -4,6 +4,7 @@
 #include <complex>
 
 #include "a2dobjs.h"
+#include "multiarray.h"
 
 namespace A2D {
 
@@ -214,17 +215,25 @@ extern "C" {
 extern void dgelss_(int* m, int* n, int* nrhs, double* a, int* lda, double* b,
                     int* ldb, double* s, double* rcond, int* rank, double* work,
                     int* lwork, int* info);
+
+extern void zgelss_(int* m, int* n, int* nrhs, std::complex<double>* a,
+                    int* lda, std::complex<double>* b, int* ldb, double* s,
+                    double* rcond, int* rank, std::complex<double>* work,
+                    int* lwork, double* rwork, int* info);
 }
 
 /*
   Compute the pseudo-inverse when A is singular: Ainv = A^{-1}
 */
-template <typename T, int N, class AType, class AinvType>
-int blockPseudoInverse(AType& A, AinvType& Ainv) {
+template <index_t N>
+int blockPseudoInverse(A2D::MultiArraySlice<double, N, N>& A,
+                       A2D::Mat<double, N, N>& Ainv) {
   // Populate the diaginal matrix
   for (int ii = 0; ii < N; ii++) {
     Ainv(ii, ii) = 1.0;
   }
+
+  int fail = 1;
 
   int m = N;
   int n = N;
@@ -238,9 +247,38 @@ int blockPseudoInverse(AType& A, AinvType& Ainv) {
   int rank;
   int lwork = 5 * N;
   double work[5 * N];
-  int fail;
   dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
           &fail);
+
+  return fail;
+}
+
+template <index_t N>
+int blockPseudoInverse(A2D::MultiArraySlice<std::complex<double>, N, N>& A,
+                       A2D::Mat<std::complex<double>, N, N>& Ainv) {
+  // Populate the diaginal matrix
+  for (int ii = 0; ii < N; ii++) {
+    Ainv(ii, ii) = 1.0;
+  }
+
+  int fail = 1;
+
+  int m = N;
+  int n = N;
+  int nrhs = N;
+  std::complex<double>* a = A.get_pointer();
+  int lda = N;
+  std::complex<double>* b = Ainv.A;
+  int ldb = N;
+  double s[N];
+  double rcond = 1e-12;
+  int rank;
+  int lwork = 5 * N;
+  std::complex<double> work[5 * N];
+  double rwork[5 * N];
+  zgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
+          rwork, &fail);
+
   return fail;
 }
 

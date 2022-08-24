@@ -1,5 +1,5 @@
 # Copy over the mesh
-configure_file(${CMAKE_SOURCE_DIR}/extern/mesh/rigid_body.vtk rigid_body.vtk COPYONLY)
+# configure_file(${CMAKE_SOURCE_DIR}/extern/mesh/rigid_body.vtk rigid_body.vtk COPYONLY)
 
 # Add target
 add_executable(rigid_body rigid_body.cpp)

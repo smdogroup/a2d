@@ -591,7 +591,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       }
 
       if (inverse) {
-        int fail = blockPseudoInverse<T, M>(D0, Dinv);
+        int fail = blockPseudoInverse<M>(D0, Dinv);
         if (fail) {
           std::cerr << "BSRMatExtractBlockDiagonal: Failure in factorization "
                        "of block row "

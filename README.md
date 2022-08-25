@@ -52,3 +52,7 @@ To see a full list of CMake options and their values for the current build, exec
 ccmake .
 ```
 in ```build``` folder.
+
+## Coding style
+```clangFormat``` is used as the auto-formatter, with style ```Google```. If you would
+like to contribute to the project, please make sure you set up the auto-formatter accordingly.

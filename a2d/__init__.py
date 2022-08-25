@@ -1,2 +1,2 @@
-from utils import to_vtk
-from parse_inp import InpParser
+from a2d.utils import to_vtk
+from a2d.parse_inp import InpParser

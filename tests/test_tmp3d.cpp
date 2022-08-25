@@ -108,22 +108,22 @@ class MatxMat : public ADExpressionTest {
 };
 
 TEST_F(MatxMat, AB) {
-  MatMatMult<T, false, false>(A, B, AB);
+  A2D::MatMatMult<T, false, false>(A, B, AB);
   expect_mat_eq<3, 3, Mat>(AB, AB_data);
 }
 
 TEST_F(MatxMat, ATB) {
-  MatMatMult<T, true, false>(A, B, ATB);
+  A2D::MatMatMult<T, true, false>(A, B, ATB);
   expect_mat_eq<3, 3, Mat>(ATB, ATB_data);
 }
 
 TEST_F(MatxMat, ABT) {
-  MatMatMult<T, false, true>(A, B, ABT);
+  A2D::MatMatMult<T, false, true>(A, B, ABT);
   expect_mat_eq<3, 3, Mat>(ABT, ABT_data);
 }
 
 TEST_F(MatxMat, ATBT) {
-  MatMatMult<T, true, true>(A, B, ATBT);
+  A2D::MatMatMult<T, true, true>(A, B, ATBT);
   expect_mat_eq<3, 3, Mat>(ATBT, ATBT_data);
 }
 
@@ -196,7 +196,7 @@ TEST_F(ADMatxADMat, AB) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, false>(A_, B_, C_);
+  auto expr = A2D::MatMatMult<T, false, false>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -222,7 +222,7 @@ TEST_F(ADMatxADMat, ATB) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, false>(A_, B_, C_);
+  auto expr = A2D::MatMatMult<T, true, false>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -248,7 +248,7 @@ TEST_F(ADMatxADMat, ABT) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, true>(A_, B_, C_);
+  auto expr = A2D::MatMatMult<T, false, true>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -274,7 +274,7 @@ TEST_F(ADMatxADMat, ATBT) {
   Mat dA(dA_data), dB(dB_data), dC;
   ADMat A_(A, dA), B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, true>(A_, B_, C_);
+  auto expr = A2D::MatMatMult<T, true, true>(A_, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);
@@ -408,7 +408,7 @@ TEST_F(A2DMatxA2DMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, false>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, false, false>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -464,7 +464,7 @@ TEST_F(A2DMatxA2DMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, false>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, true, false>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -520,7 +520,7 @@ TEST_F(A2DMatxA2DMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, true>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, false, true>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -576,7 +576,7 @@ TEST_F(A2DMatxA2DMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, true>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, true, true>(A__, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);
@@ -659,7 +659,7 @@ TEST_F(ADMatxMat, AB) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, false>(A_, B, C_);
+  auto expr = A2D::MatMatMult<T, false, false>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -682,7 +682,7 @@ TEST_F(ADMatxMat, ATB) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, false>(A_, B, C_);
+  auto expr = A2D::MatMatMult<T, true, false>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -705,7 +705,7 @@ TEST_F(ADMatxMat, ABT) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, true>(A_, B, C_);
+  auto expr = A2D::MatMatMult<T, false, true>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -728,7 +728,7 @@ TEST_F(ADMatxMat, ATBT) {
   Mat dA(dA_data), dC;
   ADMat A_(A, dA), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, true>(A_, B, C_);
+  auto expr = A2D::MatMatMult<T, true, true>(A_, B, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);
@@ -795,7 +795,7 @@ TEST_F(MatxADMat, AB) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, false>(A, B_, C_);
+  auto expr = A2D::MatMatMult<T, false, false>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -818,7 +818,7 @@ TEST_F(MatxADMat, ATB) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, false>(A, B_, C_);
+  auto expr = A2D::MatMatMult<T, true, false>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -841,7 +841,7 @@ TEST_F(MatxADMat, ABT) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, false, true>(A, B_, C_);
+  auto expr = A2D::MatMatMult<T, false, true>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -864,7 +864,7 @@ TEST_F(MatxADMat, ATBT) {
   Mat dB(dB_data), dC;
   ADMat B_(B, dB), C_(C, dC);
 
-  auto expr = MatMatMult<T, true, true>(A, B_, C_);
+  auto expr = A2D::MatMatMult<T, true, true>(A, B_, C_);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);
@@ -960,7 +960,7 @@ TEST_F(A2DMatxMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, false>(A__, B, C__);
+  auto expr = A2D::MatMatMult<1, T, false, false>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -1009,7 +1009,7 @@ TEST_F(A2DMatxMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, false>(A__, B, C__);
+  auto expr = A2D::MatMatMult<1, T, true, false>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -1058,7 +1058,7 @@ TEST_F(A2DMatxMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, true>(A__, B, C__);
+  auto expr = A2D::MatMatMult<1, T, false, true>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -1107,7 +1107,7 @@ TEST_F(A2DMatxMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, true>(A__, B, C__);
+  auto expr = A2D::MatMatMult<1, T, true, true>(A__, B, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);
@@ -1216,7 +1216,7 @@ TEST_F(MatxA2DMat, AB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, false>(A, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, false, false>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, AB_data);
@@ -1265,7 +1265,7 @@ TEST_F(MatxA2DMat, ATB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, false>(A, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, true, false>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATB_data);
@@ -1314,7 +1314,7 @@ TEST_F(MatxA2DMat, ABT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, false, true>(A, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, false, true>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ABT_data);
@@ -1363,7 +1363,7 @@ TEST_F(MatxA2DMat, ATBT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = MatMatMult<1, T, true, true>(A, B__, C__);
+  auto expr = A2D::MatMatMult<1, T, true, true>(A, B__, C__);
 
   // Check expression result
   expect_mat_eq<3, 3, Mat>(C, ATBT_data);

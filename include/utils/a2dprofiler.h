@@ -70,18 +70,18 @@ class Timer {
     fp = std::fopen(TIMER_OUTPUT_FILE.c_str(), "a+");
     if (fun_name.empty()) {
       std::fprintf(
-          fp, "%-80s(%lld ms)\n",
+          fp, "%-80s(%d ms)\n",
           (std::string(NUM_SPACE_EACH_RECUR * TIMER_RECURSION_COUNTER, ' ') +
            "exiting an anonymous scope")
               .c_str(),
-          t_elapse);
+          (int)t_elapse);
     } else {
       std::fprintf(
-          fp, "%-80s(%lld ms)\n",
+          fp, "%-80s(%d ms)\n",
           (std::string(NUM_SPACE_EACH_RECUR * TIMER_RECURSION_COUNTER, ' ') +
            fun_name + " exits")
               .c_str(),
-          t_elapse);
+          (int)t_elapse);
     }
     std::fclose(fp);
   }

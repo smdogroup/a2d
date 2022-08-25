@@ -24,13 +24,13 @@ automatically downloaded when building tests with
 
 It is recommended to build the binaries with
 [CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html).
-To build all examples, python binding and tests, execute the following commands in
+To build all examples and python binding, execute the following commands in
 this directory:
 
 ```
 mkdir build
 cd build
-cmake .. -DBUILD_EXTENSION=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON
+cmake .. -DBUILD_EXTENSION=ON -DBUILD_EXAMPLES=ON
 make -j <nproc>
 ````
 
@@ -46,3 +46,9 @@ To access python extension as well as python utilities, add root directory to
 ```
 export PYTHONPATH=${PYTHONPATH}:~/git/a2d
 ```
+
+To see a full list of CMake options and their values for the current build, execute
+```
+ccmake .
+```
+in ```build``` folder.

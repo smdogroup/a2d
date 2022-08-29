@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-#include "a2dlayout.h"
+#include "array.h"
 #include "block_numeric.h"
 #include "multiarray.h"
 #include "sparse_matrix.h"
@@ -68,12 +68,12 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
         I *col_ptr = A.find_column_index(row, col);
 
         if (col_ptr) {
-          I jp = col_ptr - A.cols.data;
-          auto Ab = MakeSlice(A.Avals, jp);
+          I jp = col_ptr - A.cols.data();
+          // auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < M; k2++) {
-              Ab(k1, k2) += jac(i, j1, j2, k1, k2);
+              A.Avals(jp, k1, k2) += jac(i, j1, j2, k1, k2);
             }
           }
         } else {
@@ -89,18 +89,18 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
   Compute the matrix-vector product: y = A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
-                   MultiArray<T, A2D_Layout<M>> &y) {
+void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
+                   MultiArrayNew<T *[M]> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
-        auto yb = MakeSlice(y, i);
-        yb.zero();
+        auto yb = Kokkos::subview(y, i, Kokkos::ALL);
+        A2D::BLAS::zero(yb);
 
         const I jp_end = A.rowp[i + 1];
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvAdd<T, M, N>(Ab, xb, yb);
         }
@@ -111,17 +111,17 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
   Compute the matrix-vector product: y += A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
-                      MultiArray<T, A2D_Layout<M>> &y) {
+void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
+                      MultiArrayNew<T *[M]> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
-        auto yb = MakeSlice(y, i);
+        auto yb = Kokkos::subview(y, i, Kokkos::ALL);
 
         const I jp_end = A.rowp[i + 1];
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvAdd<T, M, N>(Ab, xb, yb);
         }
@@ -132,17 +132,17 @@ void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
   Compute the matrix-vector product: y -= A * x
 */
 template <typename I, typename T, index_t M, index_t N>
-void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArray<T, A2D_Layout<N>> &x,
-                      MultiArray<T, A2D_Layout<M>> &y) {
+void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
+                      MultiArrayNew<T *[M]> &y) {
   A2D::parallel_for(
       A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
-        auto yb = MakeSlice(y, i);
+        auto yb = Kokkos::subview(y, i, Kokkos::ALL);
 
         const I jp_end = A.rowp[i + 1];
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvSub<T, M, N>(Ab, xb, yb);
         }
@@ -164,7 +164,7 @@ void BSRMatMatMult(BSRMat<I, T, M, N> &A, BSRMat<I, T, N, P> &B,
       C.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
         for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           I j = A.cols[jp];
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           I kp = B.rowp[j];
           I kp_end = B.rowp[j + 1];
@@ -180,8 +180,8 @@ void BSRMatMatMult(BSRMat<I, T, M, N> &A, BSRMat<I, T, N, P> &B,
               break;
             }
             if (B.cols[kp] == C.cols[cp]) {
-              auto Bb = MakeSlice(B.Avals, kp);
-              auto Cb = MakeSlice(C.Avals, cp);
+              auto Bb = Kokkos::subview(B.Avals, kp, Kokkos::ALL, Kokkos::ALL);
+              auto Cb = Kokkos::subview(C.Avals, cp, Kokkos::ALL, Kokkos::ALL);
               blockGemmAdd<T, M, N, P>(Ab, Bb, Cb);
             }
           }
@@ -202,7 +202,7 @@ void BSRMatMatMultAddScale(T scale, BSRMat<I, T, M, N> &A,
       C.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
         for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           I j = A.cols[jp];
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           I kp = B.rowp[j];
           I kp_end = B.rowp[j + 1];
@@ -218,8 +218,8 @@ void BSRMatMatMultAddScale(T scale, BSRMat<I, T, M, N> &A,
               break;
             }
             if (B.cols[kp] == C.cols[cp]) {
-              auto Bb = MakeSlice(B.Avals, kp);
-              auto Cb = MakeSlice(C.Avals, cp);
+              auto Bb = Kokkos::subview(B.Avals, kp, Kokkos::ALL, Kokkos::ALL);
+              auto Cb = Kokkos::subview(C.Avals, cp, Kokkos::ALL, Kokkos::ALL);
               blockGemmAddScale<T, M, N, P>(scale, Ab, Bb, Cb);
             }
           }
@@ -240,7 +240,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
     return;
   }
 
-  if (dest.perm.data && dest.iperm.data) {
+  if (dest.perm.is_allocated() && dest.iperm.is_allocated()) {
     for (I i = 0; i < src.nbrows; i++) {
       I idest = dest.iperm[i];
 
@@ -252,7 +252,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
 
         I *col_ptr = dest.find_column_index(idest, jdest);
         if (col_ptr) {
-          I kp = col_ptr - dest.cols.data;
+          I kp = col_ptr - dest.cols.data();
 
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < N; k2++) {
@@ -328,7 +328,7 @@ void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
   Apply boundary conditions on a matrix
 */
 template <typename T, index_t M, class BCArray>
-void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M>> &x) {
+void VecZeroBCRows(BCArray &bcs, MultiArrayNew<T *[M]> &x) {
   for (index_t i = 0; i < bcs.extent(0); i++) {
     index_t index = bcs(i, 0);
     for (index_t j = 0; j < M; j++) {
@@ -340,7 +340,7 @@ void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M>> &x) {
 }
 
 template <typename T, index_t M, index_t N, class BCArray>
-void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M, N>> &x) {
+void VecZeroBCRows(BCArray &bcs, MultiArrayNew<T *[M][N]> &x) {
   for (index_t i = 0; i < bcs.extent(0); i++) {
     index_t index = bcs(i, 0);
     for (index_t j = 0; j < M; j++) {
@@ -358,18 +358,17 @@ void VecZeroBCRows(BCArray &bcs, MultiArray<T, A2D_Layout<M, N>> &x) {
 */
 template <typename I, typename T, index_t M>
 void BSRMatFactor(BSRMat<I, T, M, M> &A) {
-  using IdxLayout1D_t = A2D::A2D_Layout<>;
-  using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
+  using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 
   A2D::Vec<I, M> ipiv;
   A2D::Mat<T, M, M> D;
 
   // Store the diagonal entries
   IdxArray1D_t diag;
-  if (A.diag.data) {
+  if (A.diag.is_allocated()) {
     diag = A.diag;
   } else {
-    diag = IdxArray1D_t(IdxLayout1D_t(A.nbrows));
+    diag = IdxArray1D_t("diag", A.nbrows);
   }
 
   for (I i = 0; i < A.nbrows; i++) {
@@ -380,8 +379,8 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
     I jp = A.rowp[i];
     for (; A.cols[jp] < i; jp++) {
       I j = A.cols[jp];
-      auto Ajp = MakeSlice(A.Avals, jp);
-      auto Adiag = MakeSlice(A.Avals, diag[j]);
+      auto Ajp = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
+      auto Adiag = Kokkos::subview(A.Avals, diag[j], Kokkos::ALL, Kokkos::ALL);
 
       // D = A[jp] * A[diag[j]]
       blockGemm<T, M, M, M>(Ajp, Adiag, D);
@@ -402,15 +401,14 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
 
         // A[kp] = A[kp] - D * A[p]
         if (kp < row_end && A.cols[kp] == A.cols[pp]) {
-          auto Akp = MakeSlice(A.Avals, kp);
-          auto App = MakeSlice(A.Avals, pp);
+          auto Akp = Kokkos::subview(A.Avals, kp, Kokkos::ALL, Kokkos::ALL);
+          auto App = Kokkos::subview(A.Avals, pp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemmSub<T, M, M, M>(D, App, Akp);
         }
       }
 
       // Copy the temporary matrix back
-      // auto Ajp = MakeSlice(A.Avals, jp);
       for (I n = 0; n < M; n++) {
         for (I m = 0; m < M; m++) {
           Ajp(n, m) = D(n, m);
@@ -423,7 +421,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
                 << " - No diagonal" << std::endl;
     }
     diag[i] = jp;
-    auto Ab = MakeSlice(A.Avals, jp);
+    auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
     // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
     int fail = blockInverse<T, M>(Ab, D, ipiv);
@@ -448,31 +446,31 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
   Apply the lower factorization y = L^{-1} y
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
-  if (A.perm.data && A.iperm.data) {
+void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
+  if (A.perm.is_allocated() && A.iperm.is_allocated()) {
     for (I i = 0; i < A.nbrows; i++) {
-      auto yi = MakeSlice(y, A.perm[i]);
+      auto yi = Kokkos::subview(y, A.perm[i], Kokkos::ALL);
 
       I end = A.diag[i];
       I jp = A.rowp[i];
       for (; jp < end; jp++) {
         I j = A.cols[jp];
-        auto yj = MakeSlice(y, A.perm[j]);
-        auto Ab = MakeSlice(A.Avals, jp);
+        auto yj = Kokkos::subview(y, A.perm[j], Kokkos::ALL);
+        auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
         blockGemvSub<T, M, M>(Ab, yj, yi);
       }
     }
   } else {
     for (I i = 0; i < A.nbrows; i++) {
-      auto yi = MakeSlice(y, i);
+      auto yi = Kokkos::subview(y, i, Kokkos::ALL);
 
       I end = A.diag[i];
       I jp = A.rowp[i];
       for (; jp < end; jp++) {
         I j = A.cols[jp];
-        auto yj = MakeSlice(y, j);
-        auto Ab = MakeSlice(A.Avals, jp);
+        auto yj = Kokkos::subview(y, j, Kokkos::ALL);
+        auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
         blockGemvSub<T, M, M>(Ab, yj, yi);
       }
@@ -484,12 +482,12 @@ void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
   Apply the upper factorization y = U^{-1} y
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
+void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
   A2D::Vec<T, M> ty;
 
-  if (A.perm.data && A.iperm.data) {
+  if (A.perm.is_allocated() && A.iperm.is_allocated()) {
     for (I i = A.nbrows; i > 0; i--) {
-      auto yi = MakeSlice(y, A.perm[i - 1]);
+      auto yi = Kokkos::subview(y, A.perm[i - 1], Kokkos::ALL);
       for (I j = 0; j < M; j++) {
         ty(j) = yi(j);
       }
@@ -500,18 +498,18 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
 
       for (; jp < end; jp++) {
         I j = A.cols[jp];
-        auto yj = MakeSlice(y, A.perm[j]);
-        auto Ab = MakeSlice(A.Avals, jp);
+        auto yj = Kokkos::subview(y, A.perm[j], Kokkos::ALL);
+        auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
         blockGemvSub<T, M, M>(Ab, yj, ty);
       }
 
-      auto D = MakeSlice(A.Avals, diag);
+      auto D = Kokkos::subview(A.Avals, diag, Kokkos::ALL, Kokkos::ALL);
       blockGemv<T, M, M>(D, ty, yi);
     }
   } else {
     for (I i = A.nbrows; i > 0; i--) {
-      auto yi = MakeSlice(y, i - 1);
+      auto yi = Kokkos::subview(y, i - 1, Kokkos::ALL);
       for (I j = 0; j < M; j++) {
         ty(j) = yi(j);
       }
@@ -522,13 +520,13 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
 
       for (; jp < end; jp++) {
         I j = A.cols[jp];
-        auto yj = MakeSlice(y, j);
-        auto Ab = MakeSlice(A.Avals, jp);
+        auto yj = Kokkos::subview(y, j, Kokkos::ALL);
+        auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
         blockGemvSub<T, M, M>(Ab, yj, ty);
       }
 
-      auto D = MakeSlice(A.Avals, diag);
+      auto D = Kokkos::subview(A.Avals, diag, Kokkos::ALL, Kokkos::ALL);
       blockGemv<T, M, M>(D, ty, yi);
     }
   }
@@ -538,8 +536,8 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &y) {
   Apply the factorization y = U^{-1} L^{-1} x
 */
 template <typename I, typename T, index_t M>
-void BSRMatApplyFactor(BSRMat<I, T, M, M> &A, MultiArray<T, A2D_Layout<M>> &x,
-                       MultiArray<T, A2D_Layout<M>> &y) {
+void BSRMatApplyFactor(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &x,
+                       MultiArrayNew<T *[M]> &y) {
   for (I i = 0; i < A.nbrows; i++) {
     for (I j = 0; j < M; j++) {
       y(i, j) = x(i, j);
@@ -582,9 +580,9 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
   for (I i = 0; i < nrows; i++) {
     I *col_ptr = A.find_column_index(i, i);
     if (col_ptr) {
-      I jp = col_ptr - A.cols.data;
-      auto A0 = MakeSlice(A.Avals, jp);
-      auto D0 = MakeSlice(D->Avals, D->nnz);
+      I jp = col_ptr - A.cols.data();
+      auto A0 = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
+      auto D0 = Kokkos::subview(D->Avals, D->nnz, Kokkos::ALL, Kokkos::ALL);
 
       // Copy the values
       for (I k1 = 0; k1 < M; k1++) {
@@ -627,8 +625,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
 */
 template <typename I, typename T, index_t M>
 void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
-                 MultiArray<T, A2D_Layout<M>> &b,
-                 MultiArray<T, A2D_Layout<M>> &x) {
+                 MultiArrayNew<T *[M]> &b, MultiArrayNew<T *[M]> &x) {
   I nrows = A.nbrows;
 
   if (A.perm) {
@@ -651,20 +648,21 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                auto xb = MakeSlice(x, j);
-                auto Ab = MakeSlice(A.Avals, jp);
+                auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+                auto Ab =
+                    Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
                 blockGemvSub<T, M, M>(Ab, xb, t);
               }
             }
 
             // x = (1 - omega) * x + omega * D^{-1} * t
-            auto xb = MakeSlice(x, i);
+            auto xb = Kokkos::subview(x, i, Kokkos::ALL);
             for (I m = 0; m < M; m++) {
               xb(m) = (1.0 - omega) * xb(m);
             }
 
-            auto D = MakeSlice(Dinv.Avals, i);
+            auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
             blockGemvAddScale<T, M, M>(omega, D, t, xb);
           });
 
@@ -684,20 +682,20 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvSub<T, M, M>(Ab, xb, t);
         }
       }
 
       // x = (1 - omega) * x + omega * D^{-1} * t
-      auto xb = MakeSlice(x, i);
+      auto xb = Kokkos::subview(x, i, Kokkos::ALL);
       for (I m = 0; m < M; m++) {
         xb(m) = (1.0 - omega) * xb(m);
       }
 
-      auto D = MakeSlice(Dinv.Avals, i);
+      auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
       blockGemvAddScale<T, M, M>(omega, D, t, xb);
     }
   }
@@ -708,11 +706,10 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
 */
 template <typename I, typename T, index_t M>
 void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
-                  MultiArray<T, A2D_Layout<M>> &b,
-                  MultiArray<T, A2D_Layout<M>> &x) {
+                  MultiArrayNew<T *[M]> &b, MultiArrayNew<T *[M]> &x) {
   I nrows = A.nbrows;
 
-  if (A.perm.data) {
+  if (A.perm.is_allocated()) {
     for (I color = 0, offset = 0; color < A.num_colors; color++) {
       const index_t count = A.color_count[color];
 
@@ -731,20 +728,21 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                auto xb = MakeSlice(x, j);
-                auto Ab = MakeSlice(A.Avals, jp);
+                auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+                auto Ab =
+                    Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
                 blockGemvSub<T, M, M>(Ab, xb, t);
               }
             }
 
             // x = (1 - omega) * x + omega * D^{-1} * t
-            auto xb = MakeSlice(x, i);
+            auto xb = Kokkos::subview(x, i, Kokkos::ALL);
             for (I m = 0; m < M; m++) {
               xb(m) = (1.0 - omega) * xb(m);
             }
 
-            auto D = MakeSlice(Dinv.Avals, i);
+            auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
             blockGemvAddScale<T, M, M>(omega, D, t, xb);
           });
 
@@ -770,20 +768,21 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                auto xb = MakeSlice(x, j);
-                auto Ab = MakeSlice(A.Avals, jp);
+                auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+                auto Ab =
+                    Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
                 blockGemvSub<T, M, M>(Ab, xb, t);
               }
             }
 
             // x = (1 - omega) * x + omega * D^{-1} * t
-            auto xb = MakeSlice(x, i);
+            auto xb = Kokkos::subview(x, i, Kokkos::ALL);
             for (I m = 0; m < M; m++) {
               xb(m) = (1.0 - omega) * xb(m);
             }
 
-            auto D = MakeSlice(Dinv.Avals, i);
+            auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
             blockGemvAddScale<T, M, M>(omega, D, t, xb);
           });
 
@@ -805,20 +804,20 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvSub<T, M, M>(Ab, xb, t);
         }
       }
 
       // x = (1 - omega) * x + omega * D^{-1} * t
-      auto xb = MakeSlice(x, i);
+      auto xb = Kokkos::subview(x, i, Kokkos::ALL);
       for (I m = 0; m < M; m++) {
         xb(m) = (1.0 - omega) * xb(m);
       }
 
-      auto D = MakeSlice(Dinv.Avals, i);
+      auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
       blockGemvAddScale<T, M, M>(omega, D, t, xb);
     }
 
@@ -835,20 +834,20 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          auto xb = MakeSlice(x, j);
-          auto Ab = MakeSlice(A.Avals, jp);
+          auto xb = Kokkos::subview(x, j, Kokkos::ALL);
+          auto Ab = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
 
           blockGemvSub<T, M, M>(Ab, xb, t);
         }
       }
 
       // x = (1 - omega) * x + omega * D^{-1} * t
-      auto xb = MakeSlice(x, i);
+      auto xb = Kokkos::subview(x, i, Kokkos::ALL);
       for (I m = 0; m < M; m++) {
         xb(m) = (1.0 - omega) * xb(m);
       }
 
-      auto D = MakeSlice(Dinv.Avals, i);
+      auto D = Kokkos::subview(Dinv.Avals, i, Kokkos::ALL, Kokkos::ALL);
       blockGemvAddScale<T, M, M>(omega, D, t, xb);
     }
   }
@@ -905,20 +904,21 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   std::fill(H, H + size * (size + 1), 0.0);
 
   // Allocate space for the orthonormal basis vectors
-  A2D_Layout<M> W_layout(A.nbrows);
-  MultiArray<T, A2D_Layout<M>> W[size + 1];
+  MultiArrayNew<T *[M]> W[size + 1];
 
   // Allocate the first vector
-  W[0] = MultiArray<T, A2D_Layout<M>>(W_layout);
+  W[0] = MultiArrayNew<T *[M]>("W[0]", A.nbrows);
 
   // Create an initial random vector
-  W[0].random();
-  auto norm = A2D::RealPart(W[0].norm());
-  W[0].scale(1.0 / norm);
+  A2D::BLAS::random(W[0]);
+  auto norm = A2D::RealPart(A2D::BLAS::norm(W[0]));
+  A2D::BLAS::scale(W[0], 1.0 / norm);
 
   for (I i = 0; i < size; i++) {
     // Allocate the next vector
-    W[i + 1] = MultiArray<T, A2D_Layout<M>>(W_layout);
+    char label[256];
+    sprintf(label, "W[%d]", i + 1);
+    W[i + 1] = MultiArrayNew<T *[M]>(label, A.nbrows);
 
     // Multiply by the matrix to get the next vector
     BSRMatVecMult(A, W[i], W[i + 1]);
@@ -926,14 +926,14 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
     // Orthogonalize against the existing subspace
     for (I j = 0; j <= i; j++) {
       I index = j + i * size;  // row-major index for entry H(j, i)
-      H[index] = A2D::RealPart(W[i + 1].dot(W[j]));
-      W[i + 1].axpy(-H[index], W[j]);
+      H[index] = A2D::RealPart(A2D::BLAS::dot(W[i + 1], W[j]));
+      A2D::BLAS::axpy(W[j], W[i + 1], -H[index]);
     }
 
     // Add the term to the matrix
     I index = i + 1 + i * size;  // row-major index for entry H(i + 1, i)
-    H[index] = A2D::RealPart(W[i + 1].norm());
-    W[i + 1].scale(1.0 / H[index]);
+    H[index] = A2D::RealPart(A2D::BLAS::norm(W[i + 1]));
+    A2D::BLAS::scale(W[i + 1], 1.0 / H[index]);
   }
 
   // Allocate space for the real/complex eigenvalue

@@ -1,3 +1,12 @@
+/**
+ * Current a2d way to create the layout and multiarray of shape (n, N1, N2)
+ * is:
+ * Layout<N1, N2> layout(n); MultiArray<T, Layout<N1, N2>> array(layout);
+ *
+ * Kokkos' way to create the array with same layout is:
+ *
+ * View<T*[N1][N2], LayoutType, MemoryType> view("label", n);
+ */
 #ifndef A2D_MULTI_ARRAY_H
 #define A2D_MULTI_ARRAY_H
 
@@ -332,7 +341,7 @@ class CLayout {
  * @tparam T data type
  * @tparam Layout CLayout or FLayout
  */
-template <typename T, class Layout, class MemSpace = Kokkos::CudaUVMSpace>
+template <typename T, class Layout, class MemSpace = Kokkos::HostSpace>
 class MultiArray {
  public:
   using type = T;

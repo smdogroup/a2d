@@ -3,8 +3,8 @@
 
 #include <complex>
 
-#include "a2dlayout.h"
 #include "a2dobjs.h"
+#include "array.h"
 
 namespace A2D {
 
@@ -247,14 +247,15 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
 
   // Decide which branch to go
   const bool is_complex = std::is_same<T, std::complex<double>>::value;
-  const bool is_flayout = is_layout<typename AType::Layout, FLayout>::value;
+  const bool is_flayout =
+      std::is_same<typename AType::array_layout, Kokkos::LayoutLeft>::value;
 
   // Set parameters
   int m = N;
   int n = N;
   int nrhs = N;
   int lda = N;
-  T* b = Ainv.get_data();
+  T* b = Ainv.data();
   int ldb = N;
   double rcond = -1;
   int rank;
@@ -272,7 +273,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
       }
     }
   } else {
-    a = A.get_data();
+    a = A.data();
   }
 
   if constexpr (is_complex) {

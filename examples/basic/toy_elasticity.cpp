@@ -126,7 +126,7 @@ void main_body(int argc, char* argv[]) {
 
   // Create the design vector
   A2D_Layout<1> design_layout(model->nnodes);
-  auto x = std::make_shared<A2D::MultiArray<T, A2D_Layout<1>>>(design_layout);
+  auto x = std::make_shared<A2D::MultiArrayNew<T* [1]>>("x", model->nnodes);
 
   // Set the design variable values
   mesher.set_dv(*x);
@@ -157,7 +157,7 @@ void main_body(int argc, char* argv[]) {
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 100;
-  solution->zero();
+  A2D::BLAS::zero(*solution);
   amg->cg(*residual, *solution, monitor, max_iters);
 
   Timer t_vtk("Generate vtk");

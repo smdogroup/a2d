@@ -9,6 +9,7 @@
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"
 #include "a2dtypes.h"
+#include "array.h"
 #include "block_numeric.h"
 #include "fem/basis.h"
 #include "fem/constitutive.h"

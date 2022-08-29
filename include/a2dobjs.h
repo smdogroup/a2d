@@ -58,7 +58,7 @@ class Vec {
     return x[i];
   }
 
-  T* get_data() { return x; }
+  T* data() { return x; }
 
   T x[N];
 };
@@ -101,7 +101,7 @@ class Mat {
     return A[N * i + j];
   }
 
-  T* get_data() { return A; }
+  T* data() { return A; }
 
   T A[M * N];
 };
@@ -145,7 +145,7 @@ class SymmMat {
     }
   }
 
-  T* get_data() { return A; }
+  T* data() { return A; }
 
   T A[MAT_SIZE];
 };
@@ -180,7 +180,7 @@ class Tensor {
     return A[l + Q * (k + P * (j + N * i))];
   }
 
-  T* get_data() { return A; }
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };
@@ -234,7 +234,7 @@ class SymmTensor {
     }
   }
 
-  T* get_data() { return A; }
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };

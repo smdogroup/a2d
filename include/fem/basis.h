@@ -371,7 +371,7 @@ class BasisOps {
             T wdetJ = weight * detJ(i, j);
             resfunc(i, j, wdetJ, U0, Ub);
 
-            auto resi = MakeSlice(res, i);
+            auto resi = Kokkos::subview(res, i, Kokkos::ALL, Kokkos::ALL);
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               for (index_t k = 0; k < NUM_NODES; k++) {
                 resi(k, ii) += N[k] * Ub(ii);
@@ -439,7 +439,7 @@ class BasisOps {
             T wdetJ = weight * detJ(i, j);
             resfunc(i, j, wdetJ, Jinv0, Uxi0, Uxib);
 
-            auto resi = MakeSlice(res, i);
+            auto resi = Kokkos::subview(res, i, Kokkos::ALL, Kokkos::ALL);
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               for (index_t k = 0; k < NUM_NODES; k++) {
                 for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
@@ -574,7 +574,8 @@ class BasisOps {
 
             T nxyz[SPATIAL_DIM];
 
-            auto jaci = MakeSlice(jac, i);
+            auto jaci = Kokkos::subview(jac, i, Kokkos::ALL, Kokkos::ALL,
+                                        Kokkos::ALL, Kokkos::ALL);
             for (index_t ky = 0; ky < NUM_NODES; ky++) {
               for (index_t iy = 0; iy < vars_per_node; iy++) {
                 for (index_t ix = 0; ix < vars_per_node; ix++) {

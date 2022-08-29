@@ -14,6 +14,7 @@
 
 #include "a2dprofiler.h"
 #include "a2dvtk.h"
+#include "array.h"
 
 namespace A2D {
 
@@ -118,7 +119,7 @@ class MesherRect2D {
    */
   template <class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual) {
-    residual->zero();
+    A2D::BLAS::zero(*residual);
     (*residual)(nx, 1) = -1e2;
     model->zero_bcs(residual);
   }
@@ -250,7 +251,7 @@ class MesherBrick3D {
   template <class Model, class RhsArray>
   void set_force(Model model, RhsArray& residual) {
     Timer t("MesherBrick3D::set_force()");
-    residual->zero();
+    A2D::BLAS::zero(*residual);
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);
       (*residual)(node, 1) = -1e2;
@@ -343,7 +344,7 @@ class MesherFromVTK3D {
 
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
-    residual->zero();
+    A2D::BLAS::zero(residual);
 
     for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
       (*residual)(*it, 1) = -force / T(nforces_y);

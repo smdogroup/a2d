@@ -1,12 +1,15 @@
 #include <iostream>
 
 #include "Kokkos_Core.hpp"
+#include "Kokkos_Sort.hpp"
+#include "Kokkos_StdAlgorithms.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 
 using namespace std;
 using T = double;
 using I = long int;
 
+#if 0
 void test_axpy(int argc, char* argv[]) {
   using ViewDevice_t = Kokkos::View<T*, Kokkos::LayoutRight, Kokkos::CudaSpace>;
   Kokkos::initialize(argc, argv);
@@ -247,9 +250,90 @@ void test_unordered_set() {
   }
   Kokkos::finalize();
 }
+#endif
+
+#define N1 3
+#define N2 4
+using SomeViewType = Kokkos::View<double* [N1][N2]>;
+
+SomeViewType create_view(int n) {
+  SomeViewType view("view", n);
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < 3; j++) {
+      for (int k = 0; k < 4; k++) {
+        view(i, j, k) = (i + 1) * (j + 1) * (k + 1);
+      }
+    }
+  }
+  return view;
+}
+
+void test_subview() {
+  Kokkos::initialize();
+  {
+    int n = 4;
+    SomeViewType array = create_view(n);
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < N1; j++) {
+        for (int k = 0; k < N2; k++) {
+          printf("array(%d, %d, %d) = %.2f\n", i, j, k, array(i, j, k));
+        }
+      }
+    }
+
+    printf("rank = %d\n", decltype(array)::rank);
+    auto slice = Kokkos::subview(array, 2, Kokkos::ALL, Kokkos::ALL);
+    printf("is layout of slice LayoutRight? %d\n",
+           std::is_same<decltype(slice)::array_layout,
+                        Kokkos::LayoutRight>::value);
+    printf(
+        "is layout of slice LayoutLeft? %d\n",
+        std::is_same<decltype(slice)::array_layout, Kokkos::LayoutLeft>::value);
+
+    for (int j = 0; j < N1; j++) {
+      for (int k = 0; k < N2; k++) {
+        printf("slice(%d, %d) = %.2f\n", j, k, slice(j, k));
+      }
+    }
+  }
+  Kokkos::finalize();
+}
+
+void test_sort() {
+  Kokkos::initialize();
+  {
+    int n = 10;
+    Kokkos::View<double*> array;
+    printf("bool(array.data()): %d\n", bool(array.data()));
+    printf("array.is_allocated(): %d\n", array.is_allocated());
+
+    array = Kokkos::View<double*>("array", n);
+    printf("bool(array.data()): %d\n", bool(array.data()));
+    printf("array.is_allocated(): %d\n", array.is_allocated());
+    for (int i = 0; i != n; i++) {
+      array(i) = (double)std::rand() / (double)RAND_MAX;
+    }
+
+    for (int i = 0; i != n; i++) {
+      printf("array(%d) = %.5f\n", i, array(i));
+    }
+
+    // std::sort(array.data(), array.data() + n);
+    Kokkos::sort(array, 0, 5);
+
+    printf("sorted:\n");
+    for (int i = 0; i != n; i++) {
+      printf("array(%d) = %.5f\n", i, array(i));
+    }
+  }
+  Kokkos::finalize();
+}
 
 int main(int argc, char* argv[]) {
   // test_axpy(argc, argv);
   // test_matvec(argc, argv);
-  test_unordered_set();
+  // test_unordered_set();
+  // test_subview();
+  test_sort();
 }

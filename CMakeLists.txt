@@ -7,7 +7,7 @@ project(A2D VERSION 0.1)
 # Set options
 option(BUILD_TESTS "Compile the unit test executables" OFF)
 option(BUILD_EXAMPLES "Compile the toy executables" ON)
-option(BUILD_EXTENION "Compile the pybind11 extension" ON)
+option(BUILD_EXTENSION "Compile the pybind11 extension" ON)
 option(DEBUG "a debug build without compiler optimization" OFF)
 
 # Specify c++ standard
@@ -32,7 +32,7 @@ include_directories(${MPI_INCLUDE_PATH})
 find_package(OpenMP REQUIRED)
 
 # Build pybind11 extension
-if (BUILD_EXTENION)
+if (BUILD_EXTENSION)
   execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
   find_package(pybind11 REQUIRED)
   add_subdirectory(pybind11)

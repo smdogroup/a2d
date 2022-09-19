@@ -2,7 +2,7 @@ import os
 import numpy as np
 import argparse
 import re
-import utils
+from a2d import to_vtk
 
 
 class InpParser:
@@ -121,7 +121,7 @@ class InpParser:
 
         if vtk_name is None:
             vtk_name = "{:s}.vtk".format(os.path.splitext(self.inp_name)[0])
-        utils.to_vtk(self.conn, self.X, nodal_sol, vtk_name)
+        to_vtk(self.conn, self.X, nodal_sol, vtk_name)
         return
 
     def _sort_B_by_A(self, A, B):

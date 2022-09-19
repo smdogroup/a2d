@@ -107,16 +107,19 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
         quad_jtrans_layout(nelems),
         quad_data_layout(nelems),
         elem_res_layout(nelems),
-        elem_jac_layout(nelems),
-        conn(conn_layout),
-        Xe(elem_node_layout),
-        Ue(elem_soln_layout),
-        Xq(quad_node_layout),
-        Uq(quad_soln_layout),
-        Uxi(quad_grad_layout),
-        detJ(quad_detJ_layout),
-        Jinv(quad_jtrans_layout),
-        data(quad_data_layout) {}
+        elem_jac_layout(nelems) {
+    Timer t("ElementBasis::ElementBasis(1)");
+    conn = ConnArray(conn_layout);
+    Xe = ElemNodeArray(elem_node_layout);
+    Ue = ElemSolnArray(elem_soln_layout);
+    Xq = QuadNodeArray(quad_node_layout);
+    Uq = QuadSolnArray(quad_soln_layout);
+    Uxi = QuadGradArray(quad_grad_layout);
+    detJ = QuadDetArray(quad_detJ_layout);
+    Jinv = QuadJtransArray(quad_jtrans_layout);
+    data = QuadDataArray(quad_data_layout);
+  }
+
   template <typename IdxType>
   ElementBasis(const index_t nelems, const IdxType conn_[])
       : nelems(nelems),
@@ -130,16 +133,17 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
         quad_jtrans_layout(nelems),
         quad_data_layout(nelems),
         elem_res_layout(nelems),
-        elem_jac_layout(nelems),
-        conn(conn_layout),
-        Xe(elem_node_layout),
-        Ue(elem_soln_layout),
-        Xq(quad_node_layout),
-        Uq(quad_soln_layout),
-        Uxi(quad_grad_layout),
-        detJ(quad_detJ_layout),
-        Jinv(quad_jtrans_layout),
-        data(quad_data_layout) {
+        elem_jac_layout(nelems) {
+    Timer t("ElementBasis::ElementBasis(2)");
+    conn = ConnArray(conn_layout);
+    Xe = ElemNodeArray(elem_node_layout);
+    Ue = ElemSolnArray(elem_soln_layout);
+    Xq = QuadNodeArray(quad_node_layout);
+    Uq = QuadSolnArray(quad_soln_layout);
+    Uxi = QuadGradArray(quad_grad_layout);
+    detJ = QuadDetArray(quad_detJ_layout);
+    Jinv = QuadJtransArray(quad_jtrans_layout);
+    data = QuadDataArray(quad_data_layout);
     // Set the connectivity
     for (I i = 0; i < nelems; i++) {
       for (I j = 0; j < nodes_per_elem; j++) {

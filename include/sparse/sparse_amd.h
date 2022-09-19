@@ -310,7 +310,6 @@ void amd_remove_variable(int var, int *elen, int *alen, int *rowp, int *cols,
 void amd_order_interface(int nvars, int *rowp, int *cols, int *perm,
                          int *interface_nodes, int ninterface_nodes,
                          int ndep_vars, const int *dep_vars,
-                         const int *indep_ptr, const int *indep_vars,
                          int use_exact_degree) {
   int *alen = new int[nvars];  // Number of entries in a row
   int *elen = new int[nvars];  // Number of elements in a row
@@ -334,15 +333,19 @@ void amd_order_interface(int nvars, int *rowp, int *cols, int *perm,
     // referenced by each dependent variable
     dep_count = new int[nvars];
     memset(dep_count, 0, nvars * sizeof(int));
-    for (int i = 0; i < ndep_vars; i++) {
-      dep_count[dep_vars[i]] += indep_ptr[i + 1] - indep_ptr[i];
-    }
 
     // Set up the data for the independent to dependent counter
     vars_to_dep_ptr = new int[nvars + 1];
     memset(vars_to_dep_ptr, 0, (nvars + 1) * sizeof(int));
-    for (int i = 0; i < indep_ptr[ndep_vars]; i++) {
-      vars_to_dep_ptr[indep_vars[i] + 1]++;
+    for (int i = 0; i < ndep_vars; i++) {
+      int row = dep_vars[i];
+      for (int jp = rowp[row]; jp < rowp[row + 1]; jp++) {
+        int col = cols[jp];
+        if (col != row) {
+          dep_count[dep_vars[i]]++;
+          vars_to_dep_ptr[col + 1]++;
+        }
+      }
     }
 
     // Set up the pointer so that it offsets to the dep_pointer
@@ -350,15 +353,17 @@ void amd_order_interface(int nvars, int *rowp, int *cols, int *perm,
       vars_to_dep_ptr[i] += vars_to_dep_ptr[i - 1];
     }
 
-    // Allocate the variable array
+    // Count up the data for the independent to dependent pointer
     vars_to_dep = new int[vars_to_dep_ptr[nvars]];
     for (int i = 0; i < ndep_vars; i++) {
-      for (int j = indep_ptr[i]; j < indep_ptr[i + 1]; j++) {
-        int index = indep_vars[j];
-
-        // Set the dependent variable
-        vars_to_dep[vars_to_dep_ptr[index]] = dep_vars[i];
-        vars_to_dep_ptr[index]++;
+      int row = dep_vars[i];
+      for (int jp = rowp[row]; jp < rowp[row + 1]; jp++) {
+        int col = cols[jp];
+        if (col != row) {
+          // Set the dependent variable
+          vars_to_dep[vars_to_dep_ptr[col]] = row;
+          vars_to_dep_ptr[col]++;
+        }
       }
     }
 

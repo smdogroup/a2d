@@ -28,6 +28,11 @@ class InpParser:
                 "vtk_type": 12,
                 "note": "general purpose linear brick element",
             },
+            "C3D4": {
+                "nnode": 4,
+                "vtk_type": 10,
+                "note": "Four-node tetrahedral element",
+            },
             "C3D10": {
                 "nnode": 10,
                 "vtk_type": 24,
@@ -59,8 +64,12 @@ class InpParser:
             and c["type"] in self.SUPPORTED_ELEMENT
         ]
         chunks_nset = [c for c in data_chunks if c["data_chunk_type"].lower() == "nset"]
-        chunks_loads = [c for c in data_chunks if c["data_chunk_type"].lower() == "cload"]
-        chunks_bcs = [c for c in data_chunks if c["data_chunk_type"].lower() == "boundary"]
+        chunks_loads = [
+            c for c in data_chunks if c["data_chunk_type"].lower() == "cload"
+        ]
+        chunks_bcs = [
+            c for c in data_chunks if c["data_chunk_type"].lower() == "boundary"
+        ]
 
         # Parse nodal location
         if len(chunks_node) > 1:

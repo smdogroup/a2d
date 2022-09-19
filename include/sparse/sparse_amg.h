@@ -9,6 +9,7 @@
 #include "sparse_matrix.h"
 #include "sparse_numeric.h"
 #include "sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -91,7 +92,8 @@ I BSRMatStandardAggregation(const I nrows, const IdxArrayType& rowp,
       for (I jp = rowp[i]; jp < jp_end; jp++) {
         const I j = cols[jp];
 
-        if (aggr[j] == 0) {  // unmarked neighbors
+        // if (aggr[j] == 0) {  // unmarked neighbors
+        if (aggr[j] == not_aggregated) {  // unmarked neighbors
           aggr[j] = num_aggregates;
         }
       }
@@ -127,7 +129,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   I nnz = 0;
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
+    if (int(aggr[i]) >= 0 && aggr[i] < num_aggregates) {
       rowp[aggr[i] + 1]++;
       nnz++;
     }
@@ -139,7 +141,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
 
   std::vector<I> cols(nnz);
   for (I i = 0; i < nrows; i++) {
-    if (aggr[i] >= 0 && aggr[i] < num_aggregates) {
+    if (int(aggr[i]) >= 0 && aggr[i] < num_aggregates) {
       cols[rowp[aggr[i]]] = i;
       rowp[aggr[i]]++;
     }
@@ -178,7 +180,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
         }
       }
       init_norm = std::sqrt(init_norm);
-      double theta = fabs(init_norm);
+      double theta = absfunc(init_norm);
 
       // Take the dot product between rows k and j
       for (I j = 0; j < k; j++) {
@@ -212,7 +214,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       // Compute the scalar factor for this row - zero rows
       // that are nearly linearly dependent
       T scale = 0.0;
-      if (fabs(norm) > toler * theta) {
+      if (absfunc(norm) > toler * theta) {
         scale = 1.0 / norm;
         R(i, k, k) = norm;
       } else {
@@ -288,8 +290,9 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
                                 std::vector<I>& rowp, std::vector<I>& cols) {
   // Frobenius norm squared for each diagonal entry
   std::vector<T> d(A.nbrows);
+  T epsilon4 = epsilon * epsilon * epsilon * epsilon;
 
-  if (A.diag) {
+  if (A.diag.data) {
     for (I i = 0; i < A.nbrows; i++) {
       I jp = A.diag[i];
 
@@ -306,7 +309,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       I* col_ptr = A.find_column_index(i, i);
 
       if (col_ptr) {
-        I jp = col_ptr - A.cols;
+        I jp = col_ptr - A.cols.data;
 
         auto D = MakeSlice(A.Avals, jp);
         d[i] = 0.0;
@@ -338,8 +341,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
           }
         }
 
-        if (A2D::RealPart(af * af) >=
-            A2D::RealPart(epsilon * epsilon * d[i] * d[j])) {
+        if (A2D::RealPart(af * af) >= A2D::RealPart(epsilon4 * d[i] * d[j])) {
           cols[nnz] = j;
           nnz++;
         }
@@ -365,8 +367,8 @@ void BSRMatSmoothedAmgLevel(T omega, T epsilon, BSRMat<I, T, M, M>& A,
   std::vector<I> aggr(A.nbcols);
   std::vector<I> cpts(A.nbcols);
 
-  if (fabs(epsilon) != 0.0) {
-    // Compute the strength of connection S - need to fix this
+  if (absfunc(epsilon) != 0.0) {
+    // Compute the strength of connection S
     std::vector<I> Srowp(A.nbrows + 1);
     std::vector<I> Scols(A.nnz);
     BSRMatStrengthOfConnection(epsilon, A, Srowp, Scols);
@@ -424,14 +426,14 @@ class BSRMatAmg {
             std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B,
             bool print_info = false)
-      : omega(omega),
-        epsilon(epsilon),
-        rho(0.0),
-        level(-1),
+      : level(-1),
         A(A),
         B(B),
         P(NULL),
         PT(NULL),
+        omega(omega),
+        epsilon(epsilon),
+        rho(0.0),
         Dinv(NULL),
         Afact(NULL),
         x(NULL),
@@ -473,6 +475,7 @@ class BSRMatAmg {
   bool mg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30) {
+    Timer timer("BSRMatAmg::mg()");
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);
 
@@ -498,7 +501,8 @@ class BSRMatAmg {
                   << "]: " << std::setw(15) << res_norm << std::endl;
       }
 
-      if (fabs(res_norm) < atol || fabs(res_norm) < rtol * fabs(init_norm)) {
+      if (absfunc(res_norm) < atol ||
+          absfunc(res_norm) < rtol * absfunc(init_norm)) {
         if (monitor && !((iter + 1) % monitor == 0)) {
           std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
                     << "]: " << std::setw(15) << res_norm << std::endl;
@@ -507,7 +511,7 @@ class BSRMatAmg {
         break;
       }
     }
-
+    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 
@@ -520,6 +524,7 @@ class BSRMatAmg {
   bool cg(MultiArray<T, CLayout<M>>& b0, MultiArray<T, CLayout<M>>& xk,
           I monitor = 0, I max_iters = 500, double rtol = 1e-8,
           double atol = 1e-30, I iters_per_reset = 100) {
+    Timer timer("BSRMatAmg::cg()");
     // R, Z and P and work are temporary vectors
     // R == the residual
     MultiArray<T, CLayout<M>> R(b0.layout);
@@ -543,7 +548,7 @@ class BSRMatAmg {
                   << "]: " << std::setw(15) << init_norm << std::endl;
       }
 
-      if (fabs(init_norm) > atol) {
+      if (absfunc(init_norm) > atol) {
         // Apply the preconditioner Z = M^{-1} R
         applyFactor(R, Z);
 
@@ -566,8 +571,8 @@ class BSRMatAmg {
                       << "]: " << std::setw(15) << res_norm << std::endl;
           }
 
-          if (fabs(res_norm) < atol ||
-              fabs(res_norm) < rtol * fabs(init_norm)) {
+          if (absfunc(res_norm) < atol ||
+              absfunc(res_norm) < rtol * absfunc(init_norm)) {
             if (monitor && !((iter + 1) % monitor == 0)) {
               std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
                         << "]: " << std::setw(15) << res_norm << std::endl;
@@ -591,7 +596,7 @@ class BSRMatAmg {
         break;
       }
     }
-
+    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 
@@ -694,14 +699,14 @@ class BSRMatAmg {
   // Private constructor for initializing the class
   BSRMatAmg(T omega, T epsilon, std::shared_ptr<BSRMat<I, T, M, M>> A,
             std::shared_ptr<MultiArray<T, CLayout<M, N>>> B)
-      : omega(omega),
-        epsilon(epsilon),
-        rho(0.0),
-        level(-1),
+      : level(-1),
         A(A),
         B(B),
         P(NULL),
         PT(NULL),
+        omega(omega),
+        epsilon(epsilon),
+        rho(0.0),
         Dinv(NULL),
         Afact(NULL),
         x(NULL),

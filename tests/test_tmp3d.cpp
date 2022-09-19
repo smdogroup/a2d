@@ -1416,7 +1416,7 @@ class DetA : public ADExpressionTest {
 TEST_F(DetA, A) {
   Mat A(A_data);
   T det;
-  MatDet(A, det);
+  A2D::MatDet(A, det);
   expect_val_eq(det, detA_data);
 }
 
@@ -1430,7 +1430,7 @@ TEST_F(DetA, AD) {
   auto Ab_out = AD_Ab_out;
   ADScalar det;
 
-  auto expr = MatDet(A_, det);
+  auto expr = A2D::MatDet(A_, det);
 
   // Check expression result
   expect_val_eq(det.value, detA_data);
@@ -1465,7 +1465,7 @@ TEST_F(DetA, A2D) {
   A2DMat A__(A, Ab);
   A2DScalar s__(0.0, sb);
 
-  auto expr = MatDet(A__, s__);
+  auto expr = A2D::MatDet(A__, s__);
 
   // Check expression result
   expect_val_eq(s__.value, detA_data);
@@ -1519,7 +1519,7 @@ class InvA : public ADExpressionTest {
 
 TEST_F(InvA, A) {
   Mat A(A_data), invA;
-  MatInverse(A, invA);
+  A2D::MatInverse(A, invA);
   expect_mat_eq<3, 3, Mat>(invA, invA_data, 1e-14);
 }
 
@@ -1538,7 +1538,7 @@ TEST_F(InvA, AD) {
   ADMat A_(A, Ab), invA_(invA, invAb);
 
   // Check expression result
-  auto expr = MatInverse(A_, invA_);
+  auto expr = A2D::MatInverse(A_, invA_);
   expect_mat_eq<3, 3, Mat>(invA, invA_data, 1e-14);
 
   // Check forward
@@ -1571,7 +1571,7 @@ TEST_F(InvA, A2D) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = MatInverse(A__, C__);
+  auto expr = A2D::MatInverse(A__, C__);
 
   // Check exprssion
   expect_mat_eq<3, 3, Mat>(C, invA_data, 1e-14);
@@ -1633,7 +1633,7 @@ TEST_F(SymmTraceSuite, A) {
   T trace;
 
   // Compute
-  SymmTrace(S, trace);
+  A2D::SymmTrace(S, trace);
   expect_val_eq(trace, tr_out);
 }
 
@@ -1651,7 +1651,7 @@ TEST_F(SymmTraceSuite, AD) {
   ADSMat S_(S, Sb);
   ADScalar trace_;
 
-  auto expr = SymmTrace(S_, trace_);
+  auto expr = A2D::SymmTrace(S_, trace_);
 
   // Check expression result
   expect_val_eq(trace_.value, tr_out);
@@ -1689,7 +1689,7 @@ TEST_F(SymmTraceSuite, A2D) {
   A2DSMat S__(S, Sb);
   A2DScalar trace__(0.0, trb);
 
-  auto expr = SymmTrace(S__, trace__);
+  auto expr = A2D::SymmTrace(S__, trace__);
 
   // Check expression
   expect_val_eq(trace__.value, tr_out);
@@ -1757,7 +1757,7 @@ TEST_F(SymmMultTrace, A) {
   T trace;
 
   // Compute
-  SymmSymmMultTrace(S, E, trace);
+  A2D::SymmSymmMultTrace(S, E, trace);
   expect_val_eq(trace, trSE);
 }
 
@@ -1778,7 +1778,7 @@ TEST_F(SymmMultTrace, AD) {
   ADSMat S_(S, Sb), E_(E, Eb);
   ADScalar trace_;
 
-  auto expr = SymmSymmMultTrace(S_, E_, trace_);
+  auto expr = A2D::SymmSymmMultTrace(S_, E_, trace_);
 
   // Check expression result
   expect_val_eq(trace_.value, trSE);
@@ -1823,7 +1823,7 @@ TEST_F(SymmMultTrace, A2D) {
   A2DSMat E__(E, Eb);
   A2DScalar trace__(0.0, sb);
 
-  auto expr = SymmSymmMultTrace(S__, E__, trace__);
+  auto expr = A2D::SymmSymmMultTrace(S__, E__, trace__);
 
   // Check expression
   expect_val_eq(trace__.value, trSE);
@@ -1892,7 +1892,7 @@ TEST_F(SymmIsoConstitutive, A) {
   SMat S;
 
   // Compute
-  SymmIsotropicConstitutive(mu, lam, E, S);
+  A2D::SymmIsotropicConstitutive(mu, lam, E, S);
   expect_mat_eq<3, 3, SMat>(S, S_out);
 }
 
@@ -1911,7 +1911,7 @@ TEST_F(SymmIsoConstitutive, AD) {
   // AD datatypes
   ADSMat E_(E, Eb), S_(S, Sb);
 
-  auto expr = SymmIsotropicConstitutive(mu, lam, E_, S_);
+  auto expr = A2D::SymmIsotropicConstitutive(mu, lam, E_, S_);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(S, S_out);
@@ -1944,7 +1944,7 @@ TEST_F(SymmIsoConstitutive, A2D) {
   // A2D types
   A2DSMat E__(E, Eb), S__(S, Sb);
 
-  auto expr = SymmIsotropicConstitutive(mu, lam, E__, S__);
+  auto expr = A2D::SymmIsotropicConstitutive(mu, lam, E__, S__);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(S, S_out);
@@ -2031,7 +2031,7 @@ TEST_F(SymmIsoEnergy, A) {
   T w;
 
   // Compute
-  SymmIsotropicEnergy(mu, lam, E, w);
+  A2D::SymmIsotropicEnergy(mu, lam, E, w);
   expect_val_eq(w, w_out);
 }
 
@@ -2050,7 +2050,7 @@ TEST_F(SymmIsoEnergy, AD_E_only) {
   ADScalar w_;
 
   // Compute
-  auto expr = SymmIsotropicEnergy(mu, lam, E_, w_);
+  auto expr = A2D::SymmIsotropicEnergy(mu, lam, E_, w_);
 
   // Check expression
   expect_val_eq(w_.value, w_out);
@@ -2084,7 +2084,7 @@ TEST_F(SymmIsoEnergy, AD_E_mu_lam) {
   ADScalar w_;
 
   // Compute
-  auto expr = SymmIsotropicEnergy(mu_, lam_, E_, w_);
+  auto expr = A2D::SymmIsotropicEnergy(mu_, lam_, E_, w_);
 
   // Check expression
   expect_val_eq(w_.value, w_out);
@@ -2120,7 +2120,7 @@ TEST_F(SymmIsoEnergy, A2D_E_only) {
   A2DScalar w__(0.0, wb);
 
   // Compute
-  auto expr = SymmIsotropicEnergy(mu, lam, E__, w__);
+  auto expr = A2D::SymmIsotropicEnergy(mu, lam, E__, w__);
 
   // Check expression
   expect_val_eq(w__.value, w_out);
@@ -2174,7 +2174,7 @@ TEST_F(SymmIsoEnergy, A2D_E_mu_lam) {
   A2DScalar w__(0.0, wb_in);
 
   // Compute
-  auto expr = SymmIsotropicEnergy(mu__, lam__, E__, w__);
+  auto expr = A2D::SymmIsotropicEnergy(mu__, lam__, E__, w__);
 
   // Check expression
   expect_val_eq(w__.value, w_out);
@@ -2245,7 +2245,7 @@ TEST_F(GreenStrain, A) {
   SMat E;
 
   // Compute
-  MatGreenStrain(Ux, E);
+  A2D::MatGreenStrain(Ux, E);
   expect_mat_eq<3, 3, SMat>(E, E_out);
 }
 
@@ -2265,7 +2265,7 @@ TEST_F(GreenStrain, AD) {
   ADSMat E_(E, Eb);
 
   // Compute
-  auto expr = MatGreenStrain(Ux_, E_);
+  auto expr = A2D::MatGreenStrain(Ux_, E_);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(E, E_out);
@@ -2302,7 +2302,7 @@ TEST_F(GreenStrain, A2D) {
   A2DSMat E__(E, Eb);
 
   // Compute
-  auto expr = MatGreenStrain(Ux__, E__);
+  auto expr = A2D::MatGreenStrain(Ux__, E__);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(E, E_out);
@@ -2371,7 +2371,7 @@ TEST_F(LinearGreenStrain, A) {
   SMat E;
 
   // Compute
-  MatLinearGreenStrain(Ux, E);
+  A2D::MatLinearGreenStrain(Ux, E);
   expect_mat_eq<3, 3, SMat>(E, E_out);
 }
 
@@ -2391,7 +2391,7 @@ TEST_F(LinearGreenStrain, AD) {
   ADSMat E_(E, Eb);
 
   // Compute
-  auto expr = MatLinearGreenStrain(Ux_, E_);
+  auto expr = A2D::MatLinearGreenStrain(Ux_, E_);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(E, E_out);
@@ -2428,7 +2428,7 @@ TEST_F(LinearGreenStrain, A2D) {
   A2DSMat E__(E, Eb);
 
   // Compute
-  auto expr = MatLinearGreenStrain(Ux__, E__);
+  auto expr = A2D::MatLinearGreenStrain(Ux__, E__);
 
   // Check expression result
   expect_mat_eq<3, 3, SMat>(E, E_out);

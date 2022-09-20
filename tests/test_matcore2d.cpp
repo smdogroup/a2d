@@ -15,15 +15,6 @@ typedef A2D::Mat<T, 2, 2> Mat2x2;
 
 class MatCoreTest : public ::testing::Test {
  protected:
-  template <I m, I n, class MatType>
-  void expect_mat_eq(const MatType mat, const T vals[], T abs_err = 1e-15) {
-    for (I i = 0; i < m; i++) {
-      for (I j = 0; j < n; j++) {
-        EXPECT_NEAR(mat(i, j), vals[n * i + j], abs_err);
-      }
-    }
-  }
-
   // Set up square matrices and results
   const T A2x2_data[4] = {0.96155402, 0.02855176, 0.95787560, 0.45439794};
 

@@ -29,6 +29,13 @@ void expect_mat_eq(const MatType& mat, const T vals[], T abs_err = 1e-15) {
   }
 }
 
+template <I m, class VecType>
+void expect_vec_eq(const VecType& vec, const T vals[], T abs_err = 1e-15) {
+  for (I i = 0; i < m; i++) {
+    EXPECT_NEAR(vec(i), vals[i], abs_err);
+  }
+}
+
 template <typename ScalarType>
 void expect_val_eq(const ScalarType& val1, const T val2, T abs_err = 1e-15) {
   EXPECT_NEAR(val1, val2, abs_err);

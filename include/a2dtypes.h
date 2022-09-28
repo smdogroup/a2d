@@ -49,6 +49,21 @@ class ADMat {
   MatType& Ab;  // Reverse mode derivative value
 };
 
+template <class VecType>
+class ADVec {
+ public:
+  ADVec(VecType& V, VecType& Vb) : V(V), Vb(Vb) {}
+
+  VecType& value() { return V; }
+  const VecType& value() const { return V; }
+
+  VecType& bvalue() { return Vb; }
+  const VecType& bvalue() const { return Vb; }
+
+  VecType& V;   // Vector
+  VecType& Vb;  // Reverse mode derivative value
+};
+
 template <int N, class ScalarType>
 class A2DScalar {
  public:

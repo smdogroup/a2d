@@ -147,9 +147,8 @@ void axpy(const View& x, const View& y,
   Axpby: y = alpha * x + beta * y
 */
 template <class View>
-void axpby(const View& x, const View& y,
-                                typename View::const_value_type& alpha,
-                                typename View::const_value_type& beta) {
+void axpby(const View& x, const View& y, typename View::const_value_type& alpha,
+           typename View::const_value_type& beta) {
   using T = typename View::value_type;
   T* x_data = x.data();
   T* y_data = y.data();

@@ -249,12 +249,9 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   // Compute DinvA <- Dinv * A
   BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
-    auto D =
-        Kokkos::subview(Dinv.Avals, Dinv.rowp[i], Kokkos::ALL, Kokkos::ALL);
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
-      auto A0 = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
-      auto DinvA0 = Kokkos::subview(DinvA->Avals, jp, Kokkos::ALL, Kokkos::ALL);
-      blockGemm<T, M, M, M>(D, A0, DinvA0);
+      blockGemmSlice<T, M, M, M>(Dinv.Avals, Dinv.rowp[i], A.Avals, jp,
+                                 DinvA->Avals, jp);
     }
   }
 
@@ -298,11 +295,10 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
     for (I i = 0; i < A.nbrows; i++) {
       I jp = A.diag[i];
 
-      auto D = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
       d[i] = 0.0;
       for (I ii = 0; ii < M; ii++) {
         for (I jj = 0; jj < M; jj++) {
-          d[i] += D(ii, jj) * D(ii, jj);
+          d[i] += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
         }
       }
     }
@@ -313,11 +309,10 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       if (col_ptr) {
         I jp = col_ptr - A.cols.data();
 
-        auto D = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
         d[i] = 0.0;
         for (I ii = 0; ii < M; ii++) {
           for (I jj = 0; jj < M; jj++) {
-            d[i] += D(ii, jj) * D(ii, jj);
+            d[i] += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
           }
         }
       }
@@ -336,10 +331,9 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       } else {
         // Compute the Frobenius norm of the entry
         T af = 0.0;
-        auto Aij = Kokkos::subview(A.Avals, jp, Kokkos::ALL, Kokkos::ALL);
         for (I ii = 0; ii < M; ii++) {
           for (I jj = 0; jj < M; jj++) {
-            af += Aij(ii, jj) * Aij(ii, jj);
+            af += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
           }
         }
 

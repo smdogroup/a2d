@@ -4,9 +4,9 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   # Remove push when finally merging.
   push:
-    branches: [ github-action ]
+    branches: [ main ]
   pull_request:
-    branches: [ github-action ]
+    branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:

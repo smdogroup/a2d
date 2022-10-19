@@ -125,7 +125,6 @@ void main_body(int argc, char* argv[]) {
   model->add_constitutive(constitutive);
 
   // Create the design vector
-  A2D_Layout<1> design_layout(model->nnodes);
   auto x = std::make_shared<A2D::MultiArrayNew<T* [1]>>("x", model->nnodes);
 
   // Set the design variable values

@@ -161,12 +161,9 @@ template <typename I, typename T, index_t M>
 BSRMat<I, T, M, M>* BSRMatFromNodeSet(
     index_t nnodes, Kokkos::UnorderedMap<COO<I>, void>& node_set) {
   Timer t("BSRMatFromNodeSet(2)");
-  // using VecLayoutType = A2D_Layout<>;
-  // using VecType = MultiArray<I, VecLayoutType>;
   using VecType = MultiArrayNew<I*>;
 
   // Find the number of nodes referenced by other nodes
-  // VecType rowp = VecType(VecLayoutType(nnodes + 1));
   VecType rowp("rowp", (nnodes + 1));
 
   // Loop over COO entries and count number of entries in each row
@@ -186,7 +183,6 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
   }
 
   I nnz = rowp[nnodes];
-  // VecType cols = VecType(VecLayoutType(nnz));
   VecType cols("cols", nnz);
 
   // Maintain a hash map to track the offset from rowp for each row:

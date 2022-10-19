@@ -1,12 +1,10 @@
 #ifndef A2D_HELMHOLTZ_H
 #define A2D_HELMHOLTZ_H
 
-#include "a2dlayout.h"
 #include "a2dtmp3d.h"
 #include "basis.h"
 #include "constitutive.h"
 #include "element.h"
-#include "multiarray.h"
 #include "utils/a2dprofiler.h"
 
 namespace A2D {
@@ -25,25 +23,12 @@ class HelmholtzPDEInfo {
   static const index_t data_per_point = 1;  // Right-hand-side data
   static const index_t dvs_per_point = 1;   // Same as the solution space
 
-  // Layout for the boundary conditions
-  typedef A2D_Layout<2> BCsLayout;
-  typedef A2D::MultiArray<I, BCsLayout> BCsArray;
-
-  // Layout for the nodes
-  typedef A2D_Layout<SPATIAL_DIM> NodeLayout;
-  typedef A2D::MultiArray<T, NodeLayout> NodeArray;
-
-  // Layout for the solution
-  typedef A2D_Layout<vars_per_node> SolutionLayout;
-  typedef A2D::MultiArray<T, SolutionLayout> SolutionArray;
-
-  // Layout for the design variables
-  typedef A2D_Layout<dvs_per_point> DesignLayout;
-  typedef A2D::MultiArray<T, DesignLayout> DesignArray;
-
-  // Near null space layout - for the AMG preconditioner
-  typedef A2D_Layout<vars_per_node, null_space_dim> NullSpaceLayout;
-  typedef A2D::MultiArray<T, NullSpaceLayout> NullSpaceArray;
+  // Array types
+  using BCsArray = A2D::MultiArrayNew<I* [2]>;
+  using NodeArray = A2D::MultiArrayNew<T* [SPATIAL_DIM]>;
+  using SolutionArray = A2D::MultiArrayNew<T* [vars_per_node]>;
+  using DesignArray = A2D::MultiArrayNew<T* [dvs_per_point]>;
+  using NullSpaceArray = A2D::MultiArrayNew<T* [vars_per_node][null_space_dim]>;
 
   // Jacobian matrix
   typedef A2D::BSRMat<I, T, vars_per_node, vars_per_node> SparseMat;
@@ -52,7 +37,7 @@ class HelmholtzPDEInfo {
   typedef A2D::BSRMatAmg<I, T, vars_per_node, null_space_dim> SparseAmg;
 
   static void compute_null_space(NodeArray& X, NullSpaceArray& B) {
-    B.fill(1.0);
+    A2D::BLAS::fill(B, 1.0);
   }
 };
 
@@ -90,7 +75,7 @@ class HelmholtzElement
   void add_residual(typename HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I,
                                               T>::SolutionArray& res) {
     // Allocate the element residual
-    typename base::ElemResArray elem_res(this->get_elem_res_layout());
+    typename base::ElemResArray elem_res("elem_res", this->nelems);
 
     // Retrieve the element data
     auto detJ = this->get_detJ();
@@ -151,7 +136,7 @@ class HelmholtzElement
   void add_jacobian(
       typename HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>::SparseMat& J) {
     Timer timer("HelmholtzElement::add_jacobian()");
-    typename base::ElemJacArray elem_jac(this->get_elem_jac_layout());
+    typename base::ElemJacArray elem_jac("elem_jac", this->nelems);
 
     // Retrieve the element data
     auto detJ = this->get_detJ();
@@ -207,8 +192,8 @@ class HelmholtzElement
     auto Uq = this->get_quad_solution();
 
     // Compute the element adjoint data
-    typename base::ElemSolnArray pe(this->get_elem_solution_layout());
-    typename base::QuadSolnArray psiq(this->get_quad_solution_layout());
+    typename base::ElemSolnArray pe("pe", this->nelems);
+    typename base::QuadSolnArray psiq("psiq", this->nelems);
 
     VecElementScatter(conn, psi, pe);
     BasisOps::template interp<vars_per_node>(pe, psiq);
@@ -230,16 +215,16 @@ class HelmholtzConstitutive
       HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>::dvs_per_point;
   static const index_t nodes_per_elem = BasisOps::NUM_NODES;
 
-  typedef A2D_Layout<nodes_per_elem, dvs_per_point> ElemDesignLayout;
-  typedef A2D::MultiArray<T, ElemDesignLayout> ElemDesignArray;
+  using ElemDesignArray =
+      A2D::MultiArrayNew<T* [nodes_per_elem][dvs_per_point]>;
 
   HelmholtzConstitutive(
       std::shared_ptr<ElementBasis<
           I, T, HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>, BasisOps>>
           element)
-      : element(element),
-        elem_design_layout(element->nelems),
-        xe(elem_design_layout) {}
+      : element(element) {
+    xe = ElemDesignArray("xe", element->nelems);
+  }
 
   /*
     Set the design variables values into the element object
@@ -262,14 +247,14 @@ class HelmholtzConstitutive
                         typename HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I,
                                                   T>::DesignArray& dfdx) {
     typename ElementBasis<I, T, HelmholtzPDEInfo<BasisOps::SPATIAL_DIM, I, T>,
-                          BasisOps>::QuadDataArray
-        dfddata(element->get_quad_data_layout());
+                          BasisOps>::QuadDataArray dfddata("dfddata",
+                                                           element->nelems);
 
     // Compute the product of the adjoint with the derivatives of
     // the residuals w.r.t. the element data
     element->add_adjoint_dfddata(psi, dfddata);
 
-    ElemDesignArray dfdxe(elem_design_layout);
+    ElemDesignArray dfdxe("dfdxe", element->nelems);
     BasisOps::template interpReverseAdd<dvs_per_point>(dfddata, dfdxe);
 
     auto conn = element->get_conn();
@@ -283,7 +268,6 @@ class HelmholtzConstitutive
       element;
 
   // Design variable views
-  ElemDesignLayout elem_design_layout;
   ElemDesignArray xe;
 };
 

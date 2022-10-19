@@ -112,6 +112,25 @@ class MesherRect2D {
   }
 
   /**
+   * @brief For testing helmholtz solver - set lower 1/4 rectangle to be 1.
+   *
+   * @param x design variable multiarray
+   */
+  template <class DvArray>
+  void set_helm_dv(DvArray& x) {
+    for (int j = 0; j < ny + 1; j++) {
+      for (int i = 0; i < nx + 1; i++) {
+        int node = i + (nx + 1) * j;
+        if (i < nx / 2 and j < ny / 2) {
+          x(node, 0) = 0.1;
+        } else {
+          x(node, 0) = 1.0;
+        }
+      }
+    }
+  }
+
+  /**
    * @brief Set the system residual given a PDE model with boundary conditions
    *
    * @param model the PDE model

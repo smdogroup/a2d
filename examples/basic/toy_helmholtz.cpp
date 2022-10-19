@@ -7,7 +7,7 @@
 
 using namespace A2D;
 
-int main(int argc, char* argv[]) {
+void main_body(int argc, char* argv[]) {
   static const int SPATIAL_DIM = 2;
   typedef index_t I;
   typedef double T;
@@ -68,11 +68,10 @@ int main(int argc, char* argv[]) {
   model_helm->add_constitutive(constitutive_helm);
 
   // Create the design vector
-  A2D::CLayout<1> design_layout(model->nnodes);
-  auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
+  auto x = std::make_shared<A2D::MultiArrayNew<T* [1]>>("x", model->nnodes);
 
   // Set the design variable values
-  mesher.set_dv(*x);
+  mesher.set_helm_dv(*x);
 
   model->set_design_vars(x);
   model_helm->set_design_vars(x);
@@ -108,13 +107,13 @@ int main(int argc, char* argv[]) {
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 80;
-  solution->zero();
+  A2D::BLAS::zero(*solution);
   amg->cg(*residual, *solution, monitor, max_iters);
 
   auto rho = model_helm->new_solution();
   auto residual_helm = model_helm->new_solution();
   model_helm->residual(residual_helm);
-  rho->zero();
+  A2D::BLAS::zero(*rho);
   amg_helm->cg(*residual_helm, *rho, monitor, max_iters);
 
   // Set the solution
@@ -136,14 +135,14 @@ int main(int argc, char* argv[]) {
 
   // Complete the adjoint derivative
   auto dfdx =
-      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
+      std::shared_ptr<A2D::MultiArrayNew<T*[1]>>("dfdx", model->nelems);
   dfdx->zero();
   functional->eval_dfdx(dfdx);
   model->add_adjoint_dfdx(adjoint, dfdx);
 
   // Compute a projected derivative and test against complex step
   auto px =
-      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
+      std::shared_ptr<A2D::MultiArrayNew<T*[1]>>("px", model->nelems);
   px->random();
   T ans = dfdx->dot(*px);
 
@@ -179,6 +178,18 @@ int main(int argc, char* argv[]) {
   vtk.write_sol("rho", *rho, 0);
   vtk.write_sol("ux", *solution, 0);
   vtk.write_sol("uy", *solution, 1);
+}
 
+int main(int argc, char* argv[]) {
+#ifdef A2D_USE_KOKKOS
+  Kokkos::initialize();
+#endif
+
+  Timer main_timer("main");
+  { main_body(argc, argv); }
+
+#ifdef A2D_USE_KOKKOS
+  Kokkos::finalize();
+#endif
   return (0);
 }

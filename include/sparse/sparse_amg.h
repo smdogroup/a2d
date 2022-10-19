@@ -717,7 +717,6 @@ class BSRMatAmg {
     level = _level;
 
     if (level == num_levels - 1) {
-      A2D_Layout<M> layout(A->nbrows);
       x = new MultiArrayNew<T* [M]>("x", A->nbrows);
       b = new MultiArrayNew<T* [M]>("b", A->nbrows);
 
@@ -741,7 +740,6 @@ class BSRMatAmg {
                   << std::setw(15) << Afact->nnz << std::endl;
       }
     } else {
-      A2D_Layout<M> layout(A->nbrows);
       r = new MultiArrayNew<T* [M]>("r", A->nbrows);
       if (level > 0) {
         r = new MultiArrayNew<T* [M]>("r", A->nbrows);

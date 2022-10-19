@@ -8,7 +8,6 @@
 #include "array.h"
 #include "constitutive.h"
 #include "element.h"
-#include "multiarray.h"
 #include "sparse/sparse_amg.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_numeric.h"
@@ -163,7 +162,7 @@ class FEModel {
     Compute the residual
   */
   void residual(std::shared_ptr<typename PDEInfo::SolutionArray> res) {
-    res->zero();
+    A2D::BLAS::zero(*res);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_residual(*res);
     }

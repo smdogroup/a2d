@@ -4,7 +4,6 @@
 #include "a2dmemory.h"
 #include "a2dobjs.h"
 #include "array.h"
-#include "multiarray.h"
 
 namespace A2D {
 

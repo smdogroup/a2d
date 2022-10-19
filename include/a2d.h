@@ -1,7 +1,6 @@
 #ifndef A2D_H
 #define A2D_H
 
-#include "a2dlayout.h"
 #include "a2dmatcore2d.h"
 #include "a2dmatcore3d.h"
 #include "a2dmemory.h"
@@ -19,7 +18,6 @@
 #include "fem/helmholtz.h"
 #include "fem/model.h"
 #include "fem/quadrature.h"
-#include "multiarray.h"
 #include "parallel.h"
 #include "sparse/sparse_amd.h"
 #include "sparse/sparse_amg.h"

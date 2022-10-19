@@ -11,9 +11,8 @@
 #include <stdexcept>
 #include <string>
 
-#include "a2dlayout.h"
 #include "a2dobjs.h"
-#include "multiarray.h"
+#include "array.h"
 
 namespace A2D {
 
@@ -169,17 +168,13 @@ template <int nnodes_per_elem, int spatial_dim, typename T, typename I>
 class ReadVTK {
  public:
   static_assert(spatial_dim == 2 or spatial_dim == 3);
-  using ConnArrayLayout_t = A2D_Layout<nnodes_per_elem>;
-  using NodeArrayLayout_t = A2D_Layout<spatial_dim>;
-  using ConnArray_t = MultiArray<I, ConnArrayLayout_t>;
-  using NodeArray_t = MultiArray<T, NodeArrayLayout_t>;
+  using ConnArray_t = A2D::MultiArrayNew<I* [nnodes_per_elem]>;
+  using NodeArray_t = A2D::MultiArrayNew<T* [spatial_dim]>;
 
   ReadVTK() {}
 
   ReadVTK(const ReadVTK& src)
-      : conn_layout(src.conn_layout),
-        node_layout(src.node_layout),
-        conn(src.conn),
+      : conn(src.conn),
         conn_(src.conn_),
         X(src.X),
         nnodes(src.nnodes),
@@ -221,8 +216,7 @@ class ReadVTK {
     }
 
     // Allocate nodal location array
-    node_layout = NodeArrayLayout_t(nnodes);
-    X = NodeArray_t(node_layout);
+    X = NodeArray_t("X", nnodes);
 
     // Populate nodal location array
     int count = 0;
@@ -262,8 +256,7 @@ class ReadVTK {
     }
 
     // Allocate connectivity array
-    conn_layout = ConnArrayLayout_t(nelems_all);
-    conn_ = ConnArray_t(conn_layout);
+    conn_ = ConnArray_t("conn_", nelems_all);
 
     // Populate connectivity array
     int _nnodes = -1;
@@ -285,9 +278,9 @@ class ReadVTK {
     }
 
     // Trim connectivity
-    conn_layout = ConnArrayLayout_t(nelems);
-    conn = ConnArray_t(conn_layout);
-    conn.copy(conn_);
+    conn = ConnArray_t("conn", nelems);
+    BLAS::copy(conn, Kokkos::subview(conn_, Kokkos::make_pair(0, nelems),
+                                     Kokkos::ALL));
 
     // printf("X[%d]\n", nnodes);
     // printf("lower: %.2f %.2f %.2f\n", domain_lower[1], domain_lower[1],
@@ -324,9 +317,6 @@ class ReadVTK {
       }
     }
   }
-
-  ConnArrayLayout_t conn_layout;
-  NodeArrayLayout_t node_layout;
 
   ConnArray_t conn_, conn;
   NodeArray_t X;

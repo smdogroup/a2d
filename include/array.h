@@ -5,6 +5,8 @@
 #ifndef A2D_ARRAY_H
 #define A2D_ARRAY_H
 
+#include <numeric>
+
 #include "Kokkos_Core.hpp"
 
 namespace A2D {
@@ -73,8 +75,8 @@ void fill(const View& x, typename View::const_value_type& value) {
 /*
   Copy elements from the source to this vector
 */
-template <class View>
-void copy(const View& dest, const View& src) {
+template <class DestView, class SrcView>
+void copy(const DestView& dest, const SrcView& src) {
   Kokkos::deep_copy(dest, src);
 }
 

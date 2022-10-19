@@ -1,8 +1,6 @@
 #ifndef A2D_ELASTICITY_H
 #define A2D_ELASTICITY_H
 
-#include "a2dtmp2d.h"
-#include "a2dtmp3d.h"
 #include "array.h"
 #include "basis.h"
 #include "constitutive.h"

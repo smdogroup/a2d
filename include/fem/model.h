@@ -4,7 +4,6 @@
 #include <list>
 #include <memory>
 
-#include "a2dtmp3d.h"
 #include "array.h"
 #include "constitutive.h"
 #include "element.h"

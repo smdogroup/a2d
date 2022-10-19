@@ -1,6 +1,5 @@
 """
-This script generate results given random inputs for expressions in a2dtmp.h and
-a2dtmp2d.h
+This script generate results given random inputs for matops expressions
 """
 
 import numpy as np

@@ -153,8 +153,6 @@ void main_body(int argc, char* argv[]) {
 
   mesher.set_force(model, residual);
 
-  return;
-
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 100;

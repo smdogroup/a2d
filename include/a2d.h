@@ -3,9 +3,9 @@
 
 #include "a2dmatcore2d.h"
 #include "a2dmatcore3d.h"
+#include "a2dmatops2d.h"
+#include "a2dmatops3d.h"
 #include "a2dobjs.h"
-#include "a2dtmp2d.h"
-#include "a2dtmp3d.h"
 #include "a2dtypes.h"
 #include "array.h"
 #include "block_numeric.h"

@@ -1,11 +1,8 @@
 #include <iostream>
 #include <memory>
-
-#ifdef A2D_USE_KOKKOS
-#include "Kokkos_Core.hpp"
-#endif
 #include <typeinfo>
 
+#include "Kokkos_Core.hpp"
 #include "a2dlayout.h"
 #include "multiarray.h"
 #include "parallel.h"
@@ -326,9 +323,7 @@ void test_layout_size() {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
-#endif
   {
     // test_clayout();
     // test_flayout();
@@ -337,8 +332,6 @@ int main(int argc, char* argv[]) {
     // test_create();
     test_layout_size();
   }
-#ifdef A2D_USE_KOKKOS
   Kokkos::finalize();
-#endif
   return 0;
 }

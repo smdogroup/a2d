@@ -99,15 +99,11 @@ void main_body(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
-#endif
 
   Timer main_timer("main");
   main_body(argc, argv);
 
-#ifdef A2D_USE_KOKKOS
   Kokkos::finalize();
-#endif
   return (0);
 }

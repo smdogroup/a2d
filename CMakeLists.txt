@@ -10,12 +10,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set options
-option(A2D_USE_KOKKOS "Use kokkos to execute parallel code" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
 option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
 option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
 option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" OFF)
-option(A2D_BUILD_EXTENION "Compile the pybind11 extension" OFF)
+option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
 
 # Set global compiler flags
 add_compile_options(
@@ -25,13 +24,6 @@ add_compile_options(
 # Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
-
-# Use boost
-set(A2D_BOOST_DIR ${A2D_ROOT_DIR}/extern/boost)
-if (NOT EXISTS ${A2D_BOOST_DIR})
-  message(FATAL_ERROR "Can't find boost library: ${A2D_BOOST_DIR}")
-endif()
-include_directories(${A2D_BOOST_DIR})
 
 # Build amgx examples
 if (A2D_BUILD_EXAMPLES_AMGX)
@@ -48,25 +40,22 @@ if (A2D_BUILD_EXAMPLES_AMGX)
 endif()
 
 # If use kokkos, we build kokkos in-place
-if (A2D_USE_KOKKOS)
-  set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
-  if (NOT EXISTS ${A2D_KOKKOS_DIR})
-    message(WARNING "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
-  else()
-    # Build Kokkos
-    add_compile_definitions(A2D_USE_KOKKOS)
-    add_subdirectory(${A2D_KOKKOS_DIR})
-    include_directories(${A2D_KOKKOS_DIR}/core/src)
-    include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
-    include_directories(${A2D_KOKKOS_DIR}/containers/src)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
-    include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
-  endif()
+set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
+if (NOT EXISTS ${A2D_KOKKOS_DIR})
+  message(FATAL_ERROR "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
+else()
+  # Build Kokkos
+  add_subdirectory(${A2D_KOKKOS_DIR})
+  include_directories(${A2D_KOKKOS_DIR}/core/src)
+  include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
+  include_directories(${A2D_KOKKOS_DIR}/containers/src)
+  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
+  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
+  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
 endif()
 
 # Build pybind11 extension
-if (A2D_BUILD_EXTENION)
+if (A2D_BUILD_EXTENSION)
   execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE
   pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
   find_package(pybind11 REQUIRED)
@@ -93,9 +82,5 @@ endif()
 
 # Build kokkos examples
 if (A2D_BUILD_EXAMPLES_KOKKOS)
-  if (NOT A2D_USE_KOKKOS)
-    message(WARNING "Need to specify A2D_USE_KOKKOS=ON to build Kokkos examples")
-  else()
-    add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
-  endif()
+  add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
 endif()

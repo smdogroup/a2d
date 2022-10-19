@@ -28,8 +28,4 @@
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 
-#ifdef A2D_USE_KOKKOS
-#include "a2dkokkos.h"
-#endif
-
 #endif  // A2D_H

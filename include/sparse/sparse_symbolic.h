@@ -4,10 +4,8 @@
 #include <algorithm>
 #include <limits>
 #include <set>
-#include <unordered_set>
 #include <vector>
 
-#include "boost/functional/hash.hpp"
 #include "sparse_amd.h"
 #include "sparse_matrix.h"
 #include "utils/a2dprofiler.h"
@@ -24,19 +22,6 @@ struct COO {
 
   inline bool operator==(const COO<I>& src) const {
     return (row_idx == src.row_idx && col_idx == src.col_idx);
-  }
-};
-
-/**
- * @brief Functor to compute the hash of a COO entry
- */
-template <typename I>
-struct COOHash {
-  inline size_t operator()(const COO<I>& x) const {
-    size_t seed = 0;
-    boost::hash_combine(seed, x.row_idx);
-    boost::hash_combine(seed, x.col_idx);
-    return seed;
   }
 };
 
@@ -57,32 +42,12 @@ void SortCSRData(I nrows, MultiArrayNew<I*>& rowp, MultiArrayNew<I*>& cols) {
 }
 
 /*
-  Add the connectivity from a connectivity list
-*/
-template <typename I, class ConnArray>
-void BSRMatAddConnectivity(ConnArray& conn,
-                           std::unordered_set<COO<I>, COOHash<I>>& node_set) {
-  Timer t("BSRMatAddConnectivity(1)");
-  I nelems = conn.extent(0);
-  I nnodes = conn.extent(1);
-  node_set.reserve(nelems * nnodes * nnodes);
-  for (I i = 0; i < nelems; i++) {
-    for (I j1 = 0; j1 < nnodes; j1++) {
-      for (I j2 = 0; j2 < nnodes; j2++) {
-        node_set.insert(COO<I>{conn(i, j1), conn(i, j2)});
-      }
-    }
-  }
-}
-
-/*
   Add the connectivity from a connectivity list, use Kokkos unordered set
 */
-#ifdef A2D_USE_KOKKOS
 template <typename I, class ConnArray>
 void BSRMatAddConnectivity(ConnArray& conn,
                            Kokkos::UnorderedMap<COO<I>, void>& node_set) {
-  Timer t("BSRMatAddConnectivity(2)");
+  Timer t("BSRMatAddConnectivity()");
   int fail = 0;
   I nelems = conn.extent(0);
   I nnodes = conn.extent(1);
@@ -105,55 +70,7 @@ void BSRMatAddConnectivity(ConnArray& conn,
     throw std::runtime_error(msg);
   }
 }
-#endif
 
-/*
-  Create a BSRMat from the set of node pairs
-*/
-template <typename I, typename T, index_t M>
-BSRMat<I, T, M, M>* BSRMatFromNodeSet(
-    index_t nnodes, std::unordered_set<COO<I>, COOHash<I>>& node_set) {
-  Timer t("BSRMatFromNodeSet(1)");
-  using VecType = MultiArrayNew<I*>;
-
-  // Find the number of nodes referenced by other nodes
-  VecType rowp("rowp", nnodes + 1);
-
-  typename std::unordered_set<COO<I>, COOHash<I>>::iterator it;
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    rowp[it->row_idx + 1] += 1;
-  }
-
-  // Set the pointer into the rows
-  rowp[0] = 0;
-  for (I i = 0; i < nnodes; i++) {
-    rowp[i + 1] += rowp[i];
-  }
-
-  I nnz = rowp[nnodes];
-  VecType cols("cols", nnz);
-
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    cols[rowp[it->row_idx]] = it->col_idx;
-    rowp[it->row_idx]++;
-  }
-
-  // Reset the pointer into the nodes
-  for (I i = nnodes; i > 0; i--) {
-    rowp[i] = rowp[i - 1];
-  }
-  rowp[0] = 0;
-
-  // Sort the cols array
-  SortCSRData(nnodes, rowp, cols);
-
-  BSRMat<I, T, M, M>* A =
-      new BSRMat<I, T, M, M>(nnodes, nnodes, nnz, rowp, cols);
-
-  return A;
-}
-
-#ifdef A2D_USE_KOKKOS
 /*
   Create a BSRMat from the set of node pairs, use Kokkos unordered set
 */
@@ -231,7 +148,6 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
 
   return A;
 }
-#endif
 
 #if 0
 /*

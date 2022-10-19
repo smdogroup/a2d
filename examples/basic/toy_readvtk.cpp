@@ -9,9 +9,7 @@ using namespace A2D;
 using namespace std;
 
 int main() {
-#ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
-#endif
   Timer t("main()");
   {
     // Read vtk
@@ -39,8 +37,6 @@ int main() {
     vtk_writer.write_mesh();
   }
 
-#ifdef A2D_USE_KOKKOS
   Kokkos::finalize();
-#endif
   return 0;
 }

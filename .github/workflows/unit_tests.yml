@@ -1,0 +1,52 @@
+name: build_and_unittests
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  # Remove push when finally merging.
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  # job name
+  build_and_unit_test:
+
+    # Run on Ubuntu
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    name: Build and run unit tests
+
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - uses: actions/checkout@v2
+      # - uses: actions/setup-python@v2
+      #   with:
+      #     python-version: 3.8
+
+      - name: build tests
+        run: |
+          git clone https://github.com/kokkos/kokkos.git extern/kokkos;
+          cd extern/kokkos;
+          git checkout tags/3.6.01;
+          mkdir ../../build;
+          cd ../../build;
+          cmake .. -DA2D_BUILD_UNIT_TESTS=ON;
+          cd tests;
+          make -j 16;
+      - name: run tests
+        run: |
+          cd build/tests;
+          ./test_matcore2d;
+          ./test_matcore3d;
+          ./test_tmp2d;
+          ./test_tmp3d;
+          ./test_vecops3d;
+          ./test_vecops3d_jg;

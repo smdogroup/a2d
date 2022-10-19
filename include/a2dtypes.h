@@ -1,33 +1,39 @@
 #ifndef A2D_TYPES_H
 #define A2D_TYPES_H
 
+#include "a2dobjs.h"
+
 namespace A2D {
 
 template <class A>
 class ADExpression {
  public:
-  A& cast() { return static_cast<A&>(*this); }
-  const A& cast() const { return static_cast<const A&>(*this); }
+  A2D_INLINE_FUNCTION A& cast() { return static_cast<A&>(*this); }
+  A2D_INLINE_FUNCTION const A& cast() const {
+    return static_cast<const A&>(*this);
+  }
 
-  void forward() { cast().forward(); }
-  void reverse() { cast().reverse(); }
+  A2D_INLINE_FUNCTION void forward() { cast().forward(); }
+  A2D_INLINE_FUNCTION void reverse() { cast().reverse(); }
 };
 
 template <class A>
 class A2DExpression {
  public:
-  A& cast() { return static_cast<A&>(*this); }
-  const A& cast() const { return static_cast<const A&>(*this); }
+  A2D_INLINE_FUNCTION A& cast() { return static_cast<A&>(*this); }
+  A2D_INLINE_FUNCTION const A& cast() const {
+    return static_cast<const A&>(*this);
+  }
 
-  void reverse() { cast().reverse(); }
-  void hforward() { cast().hforward(); }
-  void hreverse() { cast().hreverse(); }
+  A2D_INLINE_FUNCTION void reverse() { cast().reverse(); }
+  A2D_INLINE_FUNCTION void hforward() { cast().hforward(); }
+  A2D_INLINE_FUNCTION void hreverse() { cast().hreverse(); }
 };
 
 template <class ScalarType>
 class ADScalar {
  public:
-  ADScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
+  A2D_INLINE_FUNCTION ADScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
       : value(value), bvalue(bvalue) {}
 
   ScalarType value;
@@ -37,13 +43,13 @@ class ADScalar {
 template <class MatType>
 class ADMat {
  public:
-  ADMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
+  A2D_INLINE_FUNCTION ADMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
 
-  MatType& value() { return A; }
-  const MatType& value() const { return A; }
+  A2D_INLINE_FUNCTION MatType& value() { return A; }
+  A2D_INLINE_FUNCTION const MatType& value() const { return A; }
 
-  MatType& bvalue() { return Ab; }
-  const MatType& bvalue() const { return Ab; }
+  A2D_INLINE_FUNCTION MatType& bvalue() { return Ab; }
+  A2D_INLINE_FUNCTION const MatType& bvalue() const { return Ab; }
 
   MatType& A;   // Matrix
   MatType& Ab;  // Reverse mode derivative value
@@ -67,7 +73,7 @@ class ADVec {
 template <int N, class ScalarType>
 class A2DScalar {
  public:
-  A2DScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
+  A2D_INLINE_FUNCTION A2DScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
       : value(value), bvalue(bvalue) {
     for (int i = 0; i < N; i++) {
       pvalue[i] = 0.0;
@@ -84,19 +90,19 @@ class A2DScalar {
 template <int N, class MatType>
 class A2DMat {
  public:
-  A2DMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
+  A2D_INLINE_FUNCTION A2DMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
 
-  MatType& value() { return A; }
-  const MatType& value() const { return A; }
+  A2D_INLINE_FUNCTION MatType& value() { return A; }
+  A2D_INLINE_FUNCTION const MatType& value() const { return A; }
 
-  MatType& bvalue() { return Ab; }
-  const MatType& bvalue() const { return Ab; }
+  A2D_INLINE_FUNCTION MatType& bvalue() { return Ab; }
+  A2D_INLINE_FUNCTION const MatType& bvalue() const { return Ab; }
 
-  MatType& pvalue(const int i) { return Ap[i]; }
-  const MatType& pvalue(const int i) const { return Ap[i]; }
+  A2D_INLINE_FUNCTION MatType& pvalue(const int i) { return Ap[i]; }
+  A2D_INLINE_FUNCTION const MatType& pvalue(const int i) const { return Ap[i]; }
 
-  MatType& hvalue(const int i) { return Ah[i]; }
-  const MatType& hvalue(const int i) const { return Ah[i]; }
+  A2D_INLINE_FUNCTION MatType& hvalue(const int i) { return Ah[i]; }
+  A2D_INLINE_FUNCTION const MatType& hvalue(const int i) const { return Ah[i]; }
 
   MatType& A;     // Matrix
   MatType& Ab;    // Reverse mode derivative value

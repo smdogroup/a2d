@@ -5,13 +5,14 @@
 #include <memory>
 
 #include "a2dtmp3d.h"
+#include "array.h"
 #include "constitutive.h"
 #include "element.h"
-#include "multiarray.h"
 #include "sparse/sparse_amg.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_numeric.h"
 #include "sparse/sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -27,30 +28,22 @@ class FEModel {
  public:
   static const index_t SPATIAL_DIM = PDEInfo::SPATIAL_DIM;
   FEModel(const index_t nnodes, const index_t nbcs)
-      : nnodes(nnodes),
-        nbcs(nbcs),
-        bcs_layout(nbcs),
-        node_layout(nnodes),
-        solution_layout(nnodes),
-        null_space_layout(nnodes),
-        bcs(bcs_layout),
-        X(node_layout),
-        U(solution_layout) {
-    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
+      : nnodes(nnodes), nbcs(nbcs) {
+    Timer t("FEModel::FEModel(1)");
+    bcs = typename PDEInfo::BCsArray("bcs", nbcs);
+    X = typename PDEInfo::NodeArray("X", nnodes);
+    U = typename PDEInfo::SolutionArray("U", nnodes);
+    B = typename PDEInfo::NullSpaceArray("B", nnodes);
   }
   template <typename Ttype, typename IdxType>
   FEModel(const index_t nnodes, const Ttype X_[], const index_t nbcs,
           const IdxType bcs_[])
-      : nnodes(nnodes),
-        nbcs(nbcs),
-        bcs_layout(nbcs),
-        node_layout(nnodes),
-        solution_layout(nnodes),
-        null_space_layout(nnodes),
-        bcs(bcs_layout),
-        X(node_layout),
-        U(solution_layout) {
-    B = std::make_shared<typename PDEInfo::NullSpaceArray>(null_space_layout);
+      : nnodes(nnodes), nbcs(nbcs) {
+    Timer t("FEModel::FEModel(2)");
+    bcs = typename PDEInfo::BCsArray("bcs", nbcs);
+    X = typename PDEInfo::NodeArray("X", nnodes);
+    U = typename PDEInfo::SolutionArray("U", nnodes);
+    B = typename PDEInfo::NullSpaceArray("B", nnodes);
     // Copy the x values
     for (I i = 0; i < nnodes; i++) {
       for (I j = 0; j < SPATIAL_DIM; j++) {
@@ -89,6 +82,7 @@ class FEModel {
     been set into the model class
   */
   void init() {
+    Timer timer("FEModel::init()");
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_nodes(X);
     }
@@ -98,14 +92,16 @@ class FEModel {
     Create a new solution vector
   */
   std::shared_ptr<typename PDEInfo::SolutionArray> new_solution() {
-    return std::make_shared<typename PDEInfo::SolutionArray>(solution_layout);
+    Timer timer("FEModel::new_solution()");
+    return std::make_shared<typename PDEInfo::SolutionArray>("new_solution",
+                                                             nnodes);
   }
 
   /*
     Create a new node vector
   */
   std::shared_ptr<typename PDEInfo::NodeArray> new_nodes() {
-    return std::make_shared<typename PDEInfo::NodeArray>(solution_layout);
+    return std::make_shared<typename PDEInfo::NodeArray>("new_nodes", nnodes);
   }
 
   /*
@@ -127,7 +123,7 @@ class FEModel {
     Set new node locations for each of the elements
   */
   void set_nodes(std::shared_ptr<typename PDEInfo::NodeArray> Xnew) {
-    X.copy(*Xnew);
+    A2D::BLAS::copy(X, *Xnew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_nodes(X);
     }
@@ -137,7 +133,7 @@ class FEModel {
     Set the solution into the vector
   */
   void set_solution(std::shared_ptr<typename PDEInfo::SolutionArray> Unew) {
-    U.copy(*Unew);
+    A2D::BLAS::copy(U, *Unew);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->set_solution(U);
     }
@@ -166,7 +162,7 @@ class FEModel {
     Compute the residual
   */
   void residual(std::shared_ptr<typename PDEInfo::SolutionArray> res) {
-    res->zero();
+    A2D::BLAS::zero(*res);
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_residual(*res);
     }
@@ -177,6 +173,7 @@ class FEModel {
     Compute the Jacobian matrix
   */
   void jacobian(std::shared_ptr<typename PDEInfo::SparseMat> jac) {
+    Timer timer("FEModel::jacobian()");
     jac->zero();
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_jacobian(*jac);
@@ -207,7 +204,9 @@ class FEModel {
     Create a new matrix
   */
   std::shared_ptr<typename PDEInfo::SparseMat> new_matrix() {
-    std::set<std::pair<I, I>> node_set;
+    Timer t1("FEModel::new_matrix()");
+    Kokkos::UnorderedMap<COO<I>, void> node_set;
+
     for (auto it = elements.begin(); it != elements.end(); it++) {
       (*it)->add_node_set(node_set);
     }
@@ -222,8 +221,9 @@ class FEModel {
       int num_levels, double omega, double epsilon,
       std::shared_ptr<typename PDEInfo::SparseMat> mat,
       bool print_info = false) {
-    PDEInfo::compute_null_space(X, *B);
-    A2D::VecZeroBCRows(bcs, *B);
+    Timer timer("FEModel::new_amg()");
+    PDEInfo::compute_null_space(X, B);
+    A2D::VecZeroBCRows(bcs, B);
     return std::make_shared<typename PDEInfo::SparseAmg>(
         num_levels, omega, epsilon, mat, B, print_info);
   }
@@ -232,15 +232,10 @@ class FEModel {
   std::list<std::shared_ptr<ElementBase<I, T, PDEInfo>>> elements;
   std::list<std::shared_ptr<ConstitutiveBase<I, T, PDEInfo>>> constitutive;
 
-  typename PDEInfo::BCsLayout bcs_layout;
-  typename PDEInfo::NodeLayout node_layout;
-  typename PDEInfo::SolutionLayout solution_layout;
-  typename PDEInfo::NullSpaceLayout null_space_layout;
-
   typename PDEInfo::BCsArray bcs;
   typename PDEInfo::NodeArray X;
   typename PDEInfo::SolutionArray U;
-  std::shared_ptr<typename PDEInfo::NullSpaceArray> B;
+  typename PDEInfo::NullSpaceArray B;
 };
 
 }  // namespace A2D

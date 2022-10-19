@@ -27,6 +27,11 @@ def to_vtk(conn, X, nodal_sol={}, vtk_name="problem.vtk"):
             "vtk_type": 5,
             "note": "Three-node plane stress element",
         },
+        "C3D4": {
+            "nnode": 4,
+            "vtk_type": 10,
+            "note": "Four-node tetrahedral element",
+        },
         "C3D8R": {
             "nnode": 8,
             "vtk_type": 12,

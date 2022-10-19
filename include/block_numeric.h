@@ -3,9 +3,12 @@
 
 #include <complex>
 
+#include "a2dobjs.h"
+#include "array.h"
+
 namespace A2D {
 
-double fabs(std::complex<double> a) {
+double absfunc(std::complex<double> a) {
   if (a.real() >= 0.0) {
     return a.real();
   } else {
@@ -13,7 +16,7 @@ double fabs(std::complex<double> a) {
   }
 }
 
-double fabs(double a) {
+double absfunc(double a) {
   if (a >= 0.0) {
     return a;
   } else {
@@ -29,7 +32,7 @@ double RealPart(std::complex<double> a) { return a.real(); }
   Compute y = A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-inline void blockGemv(const AType& A, const xType& x, yType& y) {
+A2D_INLINE_FUNCTION void blockGemv(const AType& A, const xType& x, yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -43,7 +46,8 @@ inline void blockGemv(const AType& A, const xType& x, yType& y) {
   Compute y += A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-inline void blockGemvAdd(const AType& A, const xType& x, yType& y) {
+A2D_INLINE_FUNCTION void blockGemvAdd(const AType& A, const xType& x,
+                                      yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -57,7 +61,8 @@ inline void blockGemvAdd(const AType& A, const xType& x, yType& y) {
   Compute y -= A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-inline void blockGemvSub(const AType& A, const xType& x, yType& y) {
+A2D_INLINE_FUNCTION void blockGemvSub(const AType& A, const xType& x,
+                                      yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -71,7 +76,8 @@ inline void blockGemvSub(const AType& A, const xType& x, yType& y) {
   Compute y = scale * A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-inline void blockGemvScale(T scale, const AType& A, const xType& x, yType& y) {
+A2D_INLINE_FUNCTION void blockGemvScale(T scale, const AType& A, const xType& x,
+                                        yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -85,8 +91,8 @@ inline void blockGemvScale(T scale, const AType& A, const xType& x, yType& y) {
   Compute y += scale * A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-inline void blockGemvAddScale(T scale, const AType& A, const xType& x,
-                              yType& y) {
+A2D_INLINE_FUNCTION void blockGemvAddScale(T scale, const AType& A,
+                                           const xType& x, yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -105,7 +111,7 @@ inline void blockGemvAddScale(T scale, const AType& A, const xType& x,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-inline void blockGemm(const AType& A, const BType& B, CType& C) {
+A2D_INLINE_FUNCTION void blockGemm(const AType& A, const BType& B, CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -126,7 +132,8 @@ inline void blockGemm(const AType& A, const BType& B, CType& C) {
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-inline void blockGemmAdd(const AType& A, const BType& B, CType& C) {
+A2D_INLINE_FUNCTION void blockGemmAdd(const AType& A, const BType& B,
+                                      CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -147,7 +154,8 @@ inline void blockGemmAdd(const AType& A, const BType& B, CType& C) {
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-inline void blockGemmSub(const AType& A, const BType& B, CType& C) {
+A2D_INLINE_FUNCTION void blockGemmSub(const AType& A, const BType& B,
+                                      CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -168,7 +176,8 @@ inline void blockGemmSub(const AType& A, const BType& B, CType& C) {
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-inline void blockGemmScale(T scale, const AType& A, const BType& B, CType& C) {
+A2D_INLINE_FUNCTION void blockGemmScale(T scale, const AType& A, const BType& B,
+                                        CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -189,8 +198,8 @@ inline void blockGemmScale(T scale, const AType& A, const BType& B, CType& C) {
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-inline void blockGemmAddScale(T scale, const AType& A, const BType& B,
-                              CType& C) {
+A2D_INLINE_FUNCTION void blockGemmAddScale(T scale, const AType& A,
+                                           const BType& B, CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -200,6 +209,91 @@ inline void blockGemmAddScale(T scale, const AType& A, const BType& B,
       C(i, j) += scale * prod;
     }
   }
+}
+
+extern "C" {
+extern void dgelss_(int* m, int* n, int* nrhs, double* a, int* lda, double* b,
+                    int* ldb, double* s, double* rcond, int* rank, double* work,
+                    int* lwork, int* info);
+extern void dgetrf_(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
+extern void dgetri_(int* n, double* a, int* lda, int* ipiv, double* work,
+                    int* lwork, int* info);
+extern void zgelss_(int* m, int* n, int* nrhs, void* a, int* lda, void* b,
+                    int* ldb, double* s, double* rcond, int* rank, void* work,
+                    int* lwork, double* rwork, int* info);
+extern void zgetrf_(int* m, int* n, void* a, int* lda, int* ipiv, int* info);
+extern void zgetri_(int* n, void* a, int* lda, int* ipiv, void* work,
+                    int* lwork, int* info);
+}
+
+/**
+ * @brief Compute the pseudo-inverse when A is singular: Ainv = A^{-1}
+ *
+ * Note1: different routines get invoked depending on the input type T.
+ *
+ * If T is complex<double>, then call ZGETRF and ZGETRI to compute real inverse;
+ * If T is real, then call DGELSS to compute pseudo-inverse. (ZGELSS doesn't
+ * converge to the precision required by the small complex step, e.g. h = 1e-30)
+ *
+ * Note2: LAPACK routines require input matrices to store in continuous memory
+ * chunk. If FLayout is used, need to prepare the matrix first.
+ */
+template <typename T, int N, class AType>
+int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
+  // Populate the diaginal matrix
+  for (int ii = 0; ii < N; ii++) {
+    Ainv(ii, ii) = 1.0;
+  }
+
+  // Decide which branch to go
+  const bool is_complex = std::is_same<T, std::complex<double>>::value;
+  const bool is_layout_right =
+      std::is_same<typename AType::array_layout, Kokkos::LayoutRight>::value;
+
+  // Set parameters
+  int m = N;
+  int n = N;
+  int nrhs = N;
+  int lda = N;
+  T* b = Ainv.data();
+  int ldb = N;
+  double rcond = -1;
+  int rank;
+  int lwork = 5 * N;
+  T work[5 * N];
+  int fail = -1;
+
+  // Prepare A
+  T* a;
+  if constexpr (!is_layout_right) {
+    a = new T[N * N];
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        a[i * N + j] = A(i, j);
+      }
+    }
+  } else {
+    a = A.data();
+  }
+
+  if constexpr (is_complex) {
+    int ipiv[N];
+    zgetrf_(&m, &n, a, &lda, ipiv, &fail);
+    zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);
+    for (int ii = 0; ii != N * N; ii++) {
+      b[ii] = a[ii];
+    }
+  } else {
+    double s[N];
+    dgelss_(&m, &n, &nrhs, a, &lda, b, &ldb, s, &rcond, &rank, work, &lwork,
+            &fail);
+  }
+
+  if constexpr (!is_layout_right) {
+    delete[] a;
+  }
+
+  return fail;
 }
 
 /*
@@ -215,7 +309,7 @@ int blockInverse(AType& A, AinvType& Ainv, IType& ipiv) {
     T maxv = A(k, k);
     for (int j = k + 1; j < N; j++) {
       T t = A(j, k);
-      if (fabs(t) > fabs(maxv)) {
+      if (absfunc(t) > absfunc(maxv)) {
         maxv = t;
         r = j;
       }
@@ -232,7 +326,7 @@ int blockInverse(AType& A, AinvType& Ainv, IType& ipiv) {
       }
     }
 
-    if (fabs(A(k, k)) == 0.0) {
+    if (absfunc(A(k, k)) == 0.0) {
       fail = k + 1;
       return fail;
     }

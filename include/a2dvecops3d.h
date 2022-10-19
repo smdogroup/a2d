@@ -860,7 +860,7 @@ inline ADVec3ADScaleSymmetricOuterProductExpr<T> Vec3ScaleSymmetricOuterProduct(
 template <int N, typename T>
 class A2DVec3NormExpr {
  public:
-  A2DVec3NormExpr(A2DVec <N, Vec<T, 3>>& xObj,
+  A2DVec3NormExpr(A2DVec<N, Vec<T, 3>>& xObj,
                   A2DScalar<N, T>& normObj)
       : xObj(xObj), normObj(normObj) {
     const Vec<T, 3>& x = xObj.value();
@@ -950,7 +950,7 @@ class A2DVec3NormExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   A2DScalar<N, T>& normObj;
 
  private:
@@ -958,7 +958,7 @@ class A2DVec3NormExpr {
 };
 
 template <int N, typename T>
-inline A2DVec3NormExpr<N, T> Vec3Norm(A2DVec <N, Vec<T, 3>>& x,
+inline A2DVec3NormExpr<N, T> Vec3Norm(A2DVec<N, Vec<T, 3>>& x,
                                       A2DScalar<N, T>& norm) {
   return A2DVec3NormExpr<N, T>(x, norm);
 }
@@ -971,9 +971,9 @@ inline A2DVec3NormExpr<N, T> Vec3Norm(A2DVec <N, Vec<T, 3>>& x,
 template <int N, typename T>
 class A2DVec3ScaleExpr {
  public:
-  A2DVec3ScaleExpr(A2DVec <N, Vec<T, 3>>& xObj,
+  A2DVec3ScaleExpr(A2DVec<N, Vec<T, 3>>& xObj,
                    const T& a,
-                   A2DVec <N, Vec<T, 3>>& vObj)
+                   A2DVec<N, Vec<T, 3>>& vObj)
       : xObj(xObj), a(a), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     Vec<T, 3>& v = vObj.value();
@@ -1014,15 +1014,15 @@ class A2DVec3ScaleExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
   const T& a;
 };
 
 template <int N, typename T>
-inline A2DVec3ScaleExpr<N, T> Vec3Scale(A2DVec <N, Vec<T, 3>>& x,
+inline A2DVec3ScaleExpr<N, T> Vec3Scale(A2DVec<N, Vec<T, 3>>& x,
                                         const T& a,
-                                        A2DVec <N, Vec<T, 3>>& v) {
+                                        A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3ScaleExpr<N, T>(x, a, v);
 }
 
@@ -1031,7 +1031,7 @@ class Vec3A2DScaleExpr {
  public:
   Vec3A2DScaleExpr(const Vec<T, 3>& x,
                    A2DScalar<N, T>& aObj,
-                   A2DVec <N, Vec<T, 3>>& vObj)
+                   A2DVec<N, Vec<T, 3>>& vObj)
       : x(x), aObj(aObj), vObj(vObj) {
     const T& a = aObj.value;
     Vec<T, 3>& v = vObj.value();
@@ -1070,23 +1070,23 @@ class Vec3A2DScaleExpr {
   };
 
   const Vec<T, 3>& x;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
 inline Vec3A2DScaleExpr<N, T> Vec3Scale(const Vec<T, 3>& x,
                                         A2DScalar<N, T>& a,
-                                        A2DVec <N, Vec<T, 3>>& v) {
+                                        A2DVec<N, Vec<T, 3>>& v) {
   return Vec3A2DScaleExpr<N, T>(x, a, v);
 }
 
 template <int N, typename T>
 class A2DVec3A2DScaleExpr {
  public:
-  A2DVec3A2DScaleExpr(A2DVec <N, Vec<T, 3>>& xObj,
+  A2DVec3A2DScaleExpr(A2DVec<N, Vec<T, 3>>& xObj,
                       A2DScalar<N, T>& aObj,
-                      A2DVec <N, Vec<T, 3>>& vObj)
+                      A2DVec<N, Vec<T, 3>>& vObj)
       : xObj(xObj), aObj(aObj), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     const T& a = aObj.value;
@@ -1141,15 +1141,15 @@ class A2DVec3A2DScaleExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
-inline A2DVec3A2DScaleExpr<N, T> Vec3Scale(A2DVec <N, Vec<T, 3>>& x,
+inline A2DVec3A2DScaleExpr<N, T> Vec3Scale(A2DVec<N, Vec<T, 3>>& x,
                                            A2DScalar<N, T>& a,
-                                           A2DVec <N, Vec<T, 3>>& v) {
+                                           A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3A2DScaleExpr<N, T>(x, a, v);
 }
 
@@ -1165,7 +1165,7 @@ class Vec3VecA2DScalarAxpyExpr {
   Vec3VecA2DScalarAxpyExpr(A2DScalar<N, T>& aObj,
                            const Vec<T, 3>& x,
                            const Vec<T, 3>& y,
-                           A2DVec <N, Vec<T, 3>>& vObj)
+                           A2DVec<N, Vec<T, 3>>& vObj)
       : aObj(aObj), x(x), y(y), vObj(vObj) {
     const T& a = aObj.value;
     Vec<T, 3>& v = vObj.value();
@@ -1204,14 +1204,14 @@ class Vec3VecA2DScalarAxpyExpr {
   A2DScalar<N, T>& aObj;
   const Vec<T, 3>& x;
   const Vec<T, 3>& y;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline Vec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(A2DScalar<N, T>& a,
                                                const Vec<T, 3>& x,
                                                const Vec<T, 3>& y,
-                                               A2DVec <N, Vec<T, 3>>& v) {
+                                               A2DVec<N, Vec<T, 3>>& v) {
   return Vec3VecA2DScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1219,9 +1219,9 @@ template <int N, typename T>
 class A2DVec3VecScalarAxpyExpr {
  public:
   A2DVec3VecScalarAxpyExpr(const T& a,
-                           A2DVec <N, Vec<T, 3>>& xObj,
+                           A2DVec<N, Vec<T, 3>>& xObj,
                            const Vec<T, 3>& y,
-                           A2DVec <N, Vec<T, 3>>& vObj)
+                           A2DVec<N, Vec<T, 3>>& vObj)
       : a(a), xObj(xObj), y(y), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     Vec<T, 3>& v = vObj.value();
@@ -1262,16 +1262,16 @@ class A2DVec3VecScalarAxpyExpr {
   };
 
   const T& a;
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   const Vec<T, 3>& y;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline A2DVec3VecScalarAxpyExpr<N, T> Vec3Axpy(const T& a,
-                                               A2DVec <N, Vec<T, 3>>& x,
+                                               A2DVec<N, Vec<T, 3>>& x,
                                                const Vec<T, 3>& y,
-                                               A2DVec <N, Vec<T, 3>>& v) {
+                                               A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3VecScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1280,8 +1280,8 @@ class Vec3A2DVecScalarAxpyExpr {
  public:
   Vec3A2DVecScalarAxpyExpr(const T& a,
                            const Vec<T, 3>& x,
-                           A2DVec <N, Vec<T, 3>>& yObj,
-                           A2DVec <N, Vec<T, 3>>& vObj)
+                           A2DVec<N, Vec<T, 3>>& yObj,
+                           A2DVec<N, Vec<T, 3>>& vObj)
       : a(a), x(x), yObj(yObj), vObj(vObj) {
     const Vec<T, 3>& y = yObj.value();
     Vec<T, 3>& v = vObj.value();
@@ -1329,15 +1329,15 @@ class Vec3A2DVecScalarAxpyExpr {
 
   const T& a;
   const Vec<T, 3>& x;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline Vec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(const T& a,
                                                const Vec<T, 3>& x,
-                                               A2DVec <N, Vec<T, 3>>& y,
-                                               A2DVec <N, Vec<T, 3>>& v) {
+                                               A2DVec<N, Vec<T, 3>>& y,
+                                               A2DVec<N, Vec<T, 3>>& v) {
   return Vec3A2DVecScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1345,9 +1345,9 @@ template <int N, typename T>
 class A2DVec3VecA2DScalarAxpyExpr {
  public:
   A2DVec3VecA2DScalarAxpyExpr(A2DScalar<N, T>& aObj,
-                              A2DVec <N, Vec<T, 3>>& xObj,
+                              A2DVec<N, Vec<T, 3>>& xObj,
                               const Vec<T, 3>& y,
-                              A2DVec <N, Vec<T, 3>>& vObj)
+                              A2DVec<N, Vec<T, 3>>& vObj)
       : aObj(aObj), xObj(xObj), y(y), vObj(vObj) {
     const T& a = aObj.value;
     const Vec<T, 3>& x = xObj.value();
@@ -1403,16 +1403,16 @@ class A2DVec3VecA2DScalarAxpyExpr {
   };
 
   A2DScalar<N, T>& aObj;
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   const Vec<T, 3>& y;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline A2DVec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(A2DScalar<N, T>& a,
-                                                  A2DVec <N, Vec<T, 3>>& x,
+                                                  A2DVec<N, Vec<T, 3>>& x,
                                                   const Vec<T, 3>& y,
-                                                  A2DVec <N, Vec<T, 3>>& v) {
+                                                  A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3VecA2DScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1421,8 +1421,8 @@ class Vec3A2DVecA2DScalarAxpyExpr {
  public:
   Vec3A2DVecA2DScalarAxpyExpr(A2DScalar<N, T>& aObj,
                               const Vec<T, 3>& x,
-                              A2DVec <N, Vec<T, 3>>& yObj,
-                              A2DVec <N, Vec<T, 3>>& vObj)
+                              A2DVec<N, Vec<T, 3>>& yObj,
+                              A2DVec<N, Vec<T, 3>>& vObj)
       : aObj(aObj), x(x), yObj(yObj), vObj(vObj) {
     const T& a = aObj.value;
     const Vec<T, 3>& y = yObj.value();
@@ -1473,15 +1473,15 @@ class Vec3A2DVecA2DScalarAxpyExpr {
 
   A2DScalar<N, T>& aObj;
   const Vec<T, 3>& x;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline Vec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(A2DScalar<N, T>& a,
                                                   const Vec<T, 3>& x,
-                                                  A2DVec <N, Vec<T, 3>>& y,
-                                                  A2DVec <N, Vec<T, 3>>& v) {
+                                                  A2DVec<N, Vec<T, 3>>& y,
+                                                  A2DVec<N, Vec<T, 3>>& v) {
   return Vec3A2DVecA2DScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1489,9 +1489,9 @@ template <int N, typename T>
 class A2DVec3A2DVecScalarAxpyExpr {
  public:
   A2DVec3A2DVecScalarAxpyExpr(const T& a,
-                              A2DVec <N, Vec<T, 3>>& xObj,
-                              A2DVec <N, Vec<T, 3>>& yObj,
-                              A2DVec <N, Vec<T, 3>>& vObj)
+                              A2DVec<N, Vec<T, 3>>& xObj,
+                              A2DVec<N, Vec<T, 3>>& yObj,
+                              A2DVec<N, Vec<T, 3>>& vObj)
       : a(a), xObj(xObj), yObj(yObj), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     const Vec<T, 3>& y = yObj.value();
@@ -1545,16 +1545,16 @@ class A2DVec3A2DVecScalarAxpyExpr {
   };
 
   const T& a;
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline A2DVec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(const T& a,
-                                                  A2DVec <N, Vec<T, 3>>& x,
-                                                  A2DVec <N, Vec<T, 3>>& y,
-                                                  A2DVec <N, Vec<T, 3>>& v) {
+                                                  A2DVec<N, Vec<T, 3>>& x,
+                                                  A2DVec<N, Vec<T, 3>>& y,
+                                                  A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3A2DVecScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1562,9 +1562,9 @@ template <int N, typename T>
 class A2DVec3A2DVecA2DScalarAxpyExpr {
  public:
   A2DVec3A2DVecA2DScalarAxpyExpr(A2DScalar<N, T>& aObj,
-                                 A2DVec <N, Vec<T, 3>>& xObj,
-                                 A2DVec <N, Vec<T, 3>>& yObj,
-                                 A2DVec <N, Vec<T, 3>>& vObj)
+                                 A2DVec<N, Vec<T, 3>>& xObj,
+                                 A2DVec<N, Vec<T, 3>>& yObj,
+                                 A2DVec<N, Vec<T, 3>>& vObj)
       : aObj(aObj), xObj(xObj), yObj(yObj), vObj(vObj) {
     const T& a = aObj.value;
     const Vec<T, 3>& x = xObj.value();
@@ -1632,16 +1632,16 @@ class A2DVec3A2DVecA2DScalarAxpyExpr {
   };
 
   A2DScalar<N, T>& aObj;
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline A2DVec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(A2DScalar<N, T>& a,
-                                                     A2DVec <N, Vec<T, 3>>& x,
-                                                     A2DVec <N, Vec<T, 3>>& y,
-                                                     A2DVec <N, Vec<T, 3>>& v) {
+                                                     A2DVec<N, Vec<T, 3>>& x,
+                                                     A2DVec<N, Vec<T, 3>>& y,
+                                                     A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3A2DVecA2DScalarAxpyExpr<N, T>(a, x, y, v);
 }
 
@@ -1655,7 +1655,7 @@ inline A2DVec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(A2DScalar<N, T>& a,
 template <int N, typename T>
 class A2DVec3DotVecExpr {
  public:
-  A2DVec3DotVecExpr(A2DVec <N, Vec<T, 3>>& xObj,
+  A2DVec3DotVecExpr(A2DVec<N, Vec<T, 3>>& xObj,
                     const Vec<T, 3>& y,
                     A2DScalar<N, T>& aObj)
       : xObj(xObj), y(y), aObj(aObj) {
@@ -1694,13 +1694,13 @@ class A2DVec3DotVecExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   const Vec<T, 3>& y;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
-inline A2DVec3DotVecExpr<N, T> Vec3Dot(A2DVec <N, Vec<T, 3>>& x,
+inline A2DVec3DotVecExpr<N, T> Vec3Dot(A2DVec<N, Vec<T, 3>>& x,
                                        const Vec<T, 3>& y,
                                        A2DScalar<N, T>& a) {
   return A2DVec3DotVecExpr<N, T>(x, y, a);
@@ -1710,7 +1710,7 @@ template <int N, typename T>
 class Vec3DotA2DVecExpr {
  public:
   Vec3DotA2DVecExpr(const Vec<T, 3>& x,
-                    A2DVec <N, Vec<T, 3>>& yObj,
+                    A2DVec<N, Vec<T, 3>>& yObj,
                     A2DScalar<N, T>& aObj)
       : x(x), yObj(yObj), aObj(aObj) {
     const Vec<T, 3>& y = yObj.value();
@@ -1749,13 +1749,13 @@ class Vec3DotA2DVecExpr {
   };
 
   const Vec<T, 3>& x;
-  A2DVec <N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
 inline Vec3DotA2DVecExpr<N, T> Vec3Dot(const Vec<T, 3>& x,
-                                       A2DVec <N, Vec<T, 3>>& y,
+                                       A2DVec<N, Vec<T, 3>>& y,
                                        A2DScalar<N, T>& a) {
   return Vec3DotA2DVecExpr<N, T>(x, y, a);
 }
@@ -1763,8 +1763,8 @@ inline Vec3DotA2DVecExpr<N, T> Vec3Dot(const Vec<T, 3>& x,
 template <int N, typename T>
 class A2DVec3DotA2DVecExpr {
  public:
-  A2DVec3DotA2DVecExpr(A2DVec <N, Vec<T, 3>>& xObj,
-                       A2DVec <N, Vec<T, 3>>& yObj,
+  A2DVec3DotA2DVecExpr(A2DVec<N, Vec<T, 3>>& xObj,
+                       A2DVec<N, Vec<T, 3>>& yObj,
                        A2DScalar<N, T>& aObj)
       : xObj(xObj), yObj(yObj), aObj(aObj) {
     const Vec<T, 3>& x = xObj.value();
@@ -1820,14 +1820,14 @@ class A2DVec3DotA2DVecExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
-inline A2DVec3DotA2DVecExpr<N, T> Vec3Dot(A2DVec <N, Vec<T, 3>>& x,
-                                          A2DVec <N, Vec<T, 3>>& y,
+inline A2DVec3DotA2DVecExpr<N, T> Vec3Dot(A2DVec<N, Vec<T, 3>>& x,
+                                          A2DVec<N, Vec<T, 3>>& y,
                                           A2DScalar<N, T>& a) {
   return A2DVec3DotA2DVecExpr<N, T>(x, y, a);
 }
@@ -1839,9 +1839,9 @@ inline A2DVec3DotA2DVecExpr<N, T> Vec3Dot(A2DVec <N, Vec<T, 3>>& x,
 template <int N, typename T>
 class A2DVec3CrossVecExpr {
  public:
-  A2DVec3CrossVecExpr(A2DVec <N, Vec<T, 3>>& xObj,
+  A2DVec3CrossVecExpr(A2DVec<N, Vec<T, 3>>& xObj,
                       const Vec<T, 3>& y,
-                      A2DVec <N, Vec<T, 3>>& vObj)
+                      A2DVec<N, Vec<T, 3>>& vObj)
       : xObj(xObj), y(y), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     Vec<T, 3>& v = vObj.value();
@@ -1881,15 +1881,15 @@ class A2DVec3CrossVecExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   const Vec<T, 3>& y;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
-inline A2DVec3CrossVecExpr<N, T> Vec3Cross(A2DVec <N, Vec<T, 3>>& x,
+inline A2DVec3CrossVecExpr<N, T> Vec3Cross(A2DVec<N, Vec<T, 3>>& x,
                                            const Vec<T, 3>& y,
-                                           A2DVec <N, Vec<T, 3>>& v) {
+                                           A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3CrossVecExpr<N, T>(x, y, v);
 }
 
@@ -1897,8 +1897,8 @@ template <int N, typename T>
 class Vec3CrossA2DVecExpr {
  public:
   Vec3CrossA2DVecExpr(const Vec<T, 3>& x,
-                      A2DVec <N, Vec<T, 3>>& yObj,
-                      A2DVec <N, Vec<T, 3>>& vObj)
+                      A2DVec<N, Vec<T, 3>>& yObj,
+                      A2DVec<N, Vec<T, 3>>& vObj)
       : x(x), yObj(yObj), vObj(vObj) {
     const Vec<T, 3>& y = yObj.value();
     Vec<T, 3>& v = vObj.value();
@@ -1939,23 +1939,23 @@ class Vec3CrossA2DVecExpr {
   };
 
   const Vec<T, 3>& x;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
 inline Vec3CrossA2DVecExpr<N, T> Vec3Cross(const Vec<T, 3>& x,
-                                           A2DVec <N, Vec<T, 3>>& y,
-                                           A2DVec <N, Vec<T, 3>>& v) {
+                                           A2DVec<N, Vec<T, 3>>& y,
+                                           A2DVec<N, Vec<T, 3>>& v) {
   return Vec3CrossA2DVecExpr<N, T>(x, y, v);
 }
 
 template <int N, typename T>
 class A2DVec3CrossA2DVecExpr {
  public:
-  A2DVec3CrossA2DVecExpr(A2DVec <N, Vec<T, 3>>& xObj,
-                         A2DVec <N, Vec<T, 3>>& yObj,
-                         A2DVec <N, Vec<T, 3>>& vObj)
+  A2DVec3CrossA2DVecExpr(A2DVec<N, Vec<T, 3>>& xObj,
+                         A2DVec<N, Vec<T, 3>>& yObj,
+                         A2DVec<N, Vec<T, 3>>& vObj)
       : xObj(xObj), yObj(yObj), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     const Vec<T, 3>& y = yObj.value();
@@ -2015,15 +2015,15 @@ class A2DVec3CrossA2DVecExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& yObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& yObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
-inline A2DVec3CrossA2DVecExpr<N, T> Vec3Cross(A2DVec <N, Vec<T, 3>>& x,
-                                              A2DVec <N, Vec<T, 3>>& y,
-                                              A2DVec <N, Vec<T, 3>>& v) {
+inline A2DVec3CrossA2DVecExpr<N, T> Vec3Cross(A2DVec<N, Vec<T, 3>>& x,
+                                              A2DVec<N, Vec<T, 3>>& y,
+                                              A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3CrossA2DVecExpr<N, T>(x, y, v);
 }
 
@@ -2035,13 +2035,12 @@ inline A2DVec3CrossA2DVecExpr<N, T> Vec3Cross(A2DVec <N, Vec<T, 3>>& x,
 template <int N, typename T>
 class A2DVec3NormalizeExpr {
  public:
-  A2DVec3NormalizeExpr(A2DVec <N, Vec<T, 3>>& xObj,
-                       A2DVec <N, Vec<T, 3>>& vObj)
+  A2DVec3NormalizeExpr(A2DVec<N, Vec<T, 3>>& xObj,
+                       A2DVec<N, Vec<T, 3>>& vObj)
       : xObj(xObj), vObj(vObj) {
     const Vec<T, 3>& x = xObj.value();
     Vec<T, 3>& v = vObj.value();
-    squaredNormInv = 1 / Vec3DotCore<T>(x, x);
-    normInv = sqrt(squaredNormInv);
+    normInv = sqrt(1 / Vec3DotCore<T>(x, x));
     Vec3ScaleCore(normInv, x, v);
   };
 
@@ -2053,7 +2052,7 @@ class A2DVec3NormalizeExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3AXPBYCore(normInv, vb, -squaredNormInv * Vec3DotCore<T>(vb, x), v, xb);
+    Vec3AXPBYCore(normInv, vb, -normInv * normInv * Vec3DotCore<T>(vb, x), v, xb);
   };
 
   void hforward() {
@@ -2094,16 +2093,16 @@ class A2DVec3NormalizeExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
-  A2DVec <N, Vec<T, 3>>& vObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 
  private:
   T normInv;
 };
 
 template <int N, typename T>
-inline A2DVec3NormalizeExpr<N, T> Vec3Normalize(A2DVec <N, Vec<T, 3>>& x,
-                                                A2DVec <N, Vec<T, 3>>& v) {
+inline A2DVec3NormalizeExpr<N, T> Vec3Normalize(A2DVec<N, Vec<T, 3>>& x,
+                                                A2DVec<N, Vec<T, 3>>& v) {
   return A2DVec3NormalizeExpr<N, T>(x, v);
 }
 
@@ -2116,7 +2115,7 @@ template <int N, typename T>
 class A2DVec3ScaleSymmetricOuterProductExpr {
  public:
   A2DVec3ScaleSymmetricOuterProductExpr(const T& a,
-                                        A2DVec <N, Vec<T, 3>>& xObj,
+                                        A2DVec<N, Vec<T, 3>>& xObj,
                                         A2DMat<N, Mat<T, 3, 3>>& sObj)
       : a(a), xObj(xObj), sObj(sObj) {
     const Vec<T, 3>& x = xObj.value();
@@ -2172,14 +2171,14 @@ class A2DVec3ScaleSymmetricOuterProductExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   A2DMat<N, Mat<T, 3, 3>>& sObj;
   const T& a;
 };
 
 template <int N, typename T>
 inline A2DVec3ScaleSymmetricOuterProductExpr<N, T> Vec3ScaleSymmetricOuterProduct(const T& a,
-                                                                                  A2DVec <N, Vec<T, 3>>& x,
+                                                                                  A2DVec<N, Vec<T, 3>>& x,
                                                                                   A2DMat<N, Mat<T, 3, 3>>& S) {
   return A2DVec3ScaleSymmetricOuterProductExpr<N, T>(a, x, S);
 }
@@ -2241,7 +2240,7 @@ template <int N, typename T>
 class A2DVec3A2DScaleSymmetricOuterProductExpr {
  public:
   A2DVec3A2DScaleSymmetricOuterProductExpr(A2DScalar<N, T>& aObj,
-                                           A2DVec <N, Vec<T, 3>>& xObj,
+                                           A2DVec<N, Vec<T, 3>>& xObj,
                                            A2DMat<N, Mat<T, 3, 3>>& sObj)
       : aObj(aObj), xObj(xObj), sObj(sObj) {
     const Vec<T, 3>& x = xObj.value();
@@ -2309,14 +2308,14 @@ class A2DVec3A2DScaleSymmetricOuterProductExpr {
     }
   };
 
-  A2DVec <N, Vec<T, 3>>& xObj;
+  A2DVec<N, Vec<T, 3>>& xObj;
   A2DMat<N, Mat<T, 3, 3>>& sObj;
   A2DScalar<N, T>& aObj;
 };
 
 template <int N, typename T>
 inline A2DVec3A2DScaleSymmetricOuterProductExpr<N, T> Vec3ScaleSymmetricOuterProduct(A2DScalar<N, T>& a,
-                                                                                     A2DVec <N, Vec<T, 3>>& x,
+                                                                                     A2DVec<N, Vec<T, 3>>& x,
                                                                                      A2DMat<N, Mat<T, 3, 3>>& S) {
   return A2DVec3A2DScaleSymmetricOuterProductExpr<N, T>(a, x, S);
 }

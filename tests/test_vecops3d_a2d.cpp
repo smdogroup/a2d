@@ -1,15 +1,13 @@
 /*
     This is a set of automatically generated unit tests for
-    a2d_vecops3d.h A2D classes using Google Test framework.
+    a2dvecops3d.h A2D classes using Google Test framework.
     These tests were written on 2022-10-19 using the
     A2DTestConstructor package.
 */
 
 #include <gtest/gtest.h>
 
-#include "a2dobjs.h"
-#include "a2dtypes.h"
-#include "a2d_vecops3d.h"
+#include "a2dvecops3d.h"
 #include "test_commons.h"
 
 using T = double;  /*UNQ_TC_TD_01*/
@@ -92,98 +90,98 @@ class Vec3Norm_A2DVec : public Vec3Norm {
 
 TEST_F(Vec3Norm_A2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-Vec_t xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Norm_A2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
-T ab(ab_data);  /*UNQ_T2F_TFR_01*/
-Vec_t xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Norm_A2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
-T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Norm_A2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
-T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
+  T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-}
+  a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Norm(x_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Scale : public vecops3d_a2dTest {
@@ -208,95 +206,96 @@ class Vec3Scale_A2DVecScalar : public Vec3Scale {
 
 TEST_F(Vec3Scale_A2DVecScalar, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_A2DVecScalar, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Scale_A2DVecScalar, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Scale_A2DVecScalar, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Scale(x_a2d, a, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Scale_VecA2DScalar : public Vec3Scale {
@@ -316,97 +315,97 @@ class Vec3Scale_VecA2DScalar : public Vec3Scale {
 
 TEST_F(Vec3Scale_VecA2DScalar, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_VecA2DScalar, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v;  /*UNQ_T2F_TFR_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Scale_VecA2DScalar, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
 // Evaluations:
-auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Scale_VecA2DScalar, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Scale(x, a_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Scale_A2DVecA2DScalar : public Vec3Scale {
@@ -431,114 +430,115 @@ class Vec3Scale_A2DVecA2DScalar : public Vec3Scale {
 
 TEST_F(Vec3Scale_A2DVecA2DScalar, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_A2DVecA2DScalar, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Scale_A2DVecA2DScalar, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Scale_A2DVecA2DScalar, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Scale(x_a2d, a_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy : public vecops3d_a2dTest {
@@ -568,114 +568,116 @@ class Vec3Axpy_A2DScalarA2DVecVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_ScalarVecA2DVec : public Vec3Axpy {
@@ -695,95 +697,97 @@ class Vec3Axpy_ScalarVecA2DVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_ScalarVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_ScalarVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_ScalarVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_ScalarVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_ScalarA2DVecA2DVec : public Vec3Axpy {
@@ -808,110 +812,113 @@ class Vec3Axpy_ScalarA2DVecA2DVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_ScalarA2DVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data),
+      vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_A2DScalarVecVec : public Vec3Axpy {
@@ -931,97 +938,98 @@ class Vec3Axpy_A2DScalarVecVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_A2DScalarVecVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v;  /*UNQ_T2F_TFR_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data),
+      vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_A2DScalarVecA2DVec : public Vec3Axpy {
@@ -1046,114 +1054,116 @@ class Vec3Axpy_A2DScalarVecA2DVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_A2DScalarVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_ScalarA2DVecVec : public Vec3Axpy {
@@ -1173,95 +1183,97 @@ class Vec3Axpy_ScalarA2DVecVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_ScalarA2DVecVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_ScalarA2DVecVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a, x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Axpy_A2DScalarA2DVecA2DVec : public Vec3Axpy {
@@ -1291,129 +1303,132 @@ class Vec3Axpy_A2DScalarA2DVecA2DVec : public Vec3Axpy {
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Axpy_A2DScalarA2DVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data),
+      vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Axpy(a_a2d, x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Dot : public vecops3d_a2dTest {
@@ -1438,98 +1453,98 @@ class Vec3Dot_A2DVecVec : public Vec3Dot {
 
 TEST_F(Vec3Dot_A2DVecVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Dot_A2DVecVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
-T ab(ab_data);  /*UNQ_T2F_TFR_01*/
-Vec_t xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Dot_A2DVecVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
-T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Dot_A2DVecVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
-T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
+  T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-}
+  a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Dot(x_a2d, y, a_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Dot_VecA2DVec : public Vec3Dot {
@@ -1549,98 +1564,98 @@ class Vec3Dot_VecA2DVec : public Vec3Dot {
 
 TEST_F(Vec3Dot_VecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Dot_VecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
-T ab(ab_data);  /*UNQ_T2F_TFR_01*/
-Vec_t yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Dot_VecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data);  /*UNQ_T2F_TFHF_01*/
-T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data);  /*UNQ_T2F_TFHF_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Dot_VecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data);  /*UNQ_T2F_TFHR_01*/
-T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data);  /*UNQ_T2F_TFHR_01*/
+  T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t y_a2d(y, yb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-}
+  a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Dot(x, y_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Dot_A2DVecA2DVec : public Vec3Dot {
@@ -1665,113 +1680,115 @@ class Vec3Dot_A2DVecA2DVec : public Vec3Dot {
 
 TEST_F(Vec3Dot_A2DVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t xb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t xb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(0, 0);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Dot_A2DVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
-T ab(ab_data);  /*UNQ_T2F_TFR_01*/
-Vec_t xb, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFR_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t xb, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Dot_A2DVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data);  /*UNQ_T2F_TFHF_01*/
-T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t xb, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data);  /*UNQ_T2F_TFHF_01*/
+  T ab(ab_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t xb, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Dot_A2DVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data);  /*UNQ_T2F_TFHR_01*/
-T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t xb, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data);  /*UNQ_T2F_TFHR_01*/
+  T ab(ab_data), ah0(ah0_data), ah1(ah1_data), ah2(ah2_data), ah3(ah3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t xb, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(0, ab);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
-a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-}
+  a_a2d.hvalue[0] = ah0;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[1] = ah1;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[2] = ah2;  /*UNQ_T2F_TFHR_05*/
+  a_a2d.hvalue[3] = ah3;  /*UNQ_T2F_TFHR_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Dot(x_a2d, y_a2d, a_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.value, a_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_val_eq(a_a2d.pvalue[0], ap0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[1], ap1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[2], ap2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.pvalue[3], ap3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Cross : public vecops3d_a2dTest {
@@ -1796,91 +1813,93 @@ class Vec3Cross_A2DVecVec : public Vec3Cross {
 
 TEST_F(Vec3Cross_A2DVecVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Cross_A2DVecVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Cross_A2DVecVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Cross_A2DVecVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Cross(x_a2d, y, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Cross_VecA2DVec : public Vec3Cross {
@@ -1900,91 +1919,93 @@ class Vec3Cross_VecA2DVec : public Vec3Cross {
 
 TEST_F(Vec3Cross_VecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Cross_VecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Cross_VecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data),
+      vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Cross_VecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), yp0(yp0_data), yp1(yp1_data), yp2(yp2_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Cross(x, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Cross_A2DVecA2DVec : public Vec3Cross {
@@ -2009,106 +2030,109 @@ class Vec3Cross_A2DVecA2DVec : public Vec3Cross {
 
 TEST_F(Vec3Cross_A2DVecA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data), y(y_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb, yb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Cross_A2DVecA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), y(y_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Cross_A2DVecA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Cross_A2DVecA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data), xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), y(y_data), xp0(xp0_data), yp0(yp0_data), xp1(xp1_data), yp1(yp1_data), xp2(xp2_data), yp2(yp2_data),
+      xp3(xp3_data), yp3(yp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data),
+      vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb, yb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), y_a2d(y, yb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(0)(ii_0) = yp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(1)(ii_0) = yp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(2)(ii_0) = yp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    y_a2d.pvalue(3)(ii_0) = yp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Cross(x_a2d, y_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(y_a2d.bvalue(), yb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(0), yh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(1), yh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(2), yh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(y_a2d.hvalue(3), yh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3Normalize : public vecops3d_a2dTest {
@@ -2133,91 +2157,92 @@ class Vec3Normalize_A2DVec : public Vec3Normalize {
 
 TEST_F(Vec3Normalize_A2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t v, vb, xb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3Normalize_A2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data), vb(vb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3Normalize_A2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3Normalize_A2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data), vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data), vb(vb_data), vh0(vh0_data),
+      vh1(vh1_data), vh2(vh2_data), vh3(vh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t v, xb;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb), v_a2d(v, vb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
-v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    v_a2d.hvalue(0)(ii_0) = vh0(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(1)(ii_0) = vh1(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(2)(ii_0) = vh2(ii_0);  /*UNQ_T2F_TFHR_05*/
+    v_a2d.hvalue(3)(ii_0) = vh3(ii_0);  /*UNQ_T2F_TFHR_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3Normalize(x_a2d, v_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(v_a2d.value(), v_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(v_a2d.pvalue(0), vp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(1), vp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(2), vp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(v_a2d.pvalue(3), vp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3ScaleSymmetricOuterProduct : public vecops3d_a2dTest {
@@ -2252,102 +2277,102 @@ class Vec3ScaleSymmetricOuterProduct_A2DScalarVec : public Vec3ScaleSymmetricOut
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
-Mat_t S;  /*UNQ_T2F_TFR_02*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
+  Mat_t S;  /*UNQ_T2F_TFR_02*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
-Mat_t S;  /*UNQ_T2F_TFHF_02*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
+  Mat_t S;  /*UNQ_T2F_TFHF_02*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
-Mat_t S;  /*UNQ_T2F_TFHR_02*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
+  Mat_t S;  /*UNQ_T2F_TFHR_02*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
-S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-}
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
+      S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+    }
+  }
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x, S_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3ScaleSymmetricOuterProduct_ScalarA2DVec : public Vec3ScaleSymmetricOuterProduct {
@@ -2377,108 +2402,108 @@ class Vec3ScaleSymmetricOuterProduct_ScalarA2DVec : public Vec3ScaleSymmetricOut
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t xb;  /*UNQ_T2F_TFP_02*/
-Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t xb;  /*UNQ_T2F_TFP_02*/
+  Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t xb;  /*UNQ_T2F_TFR_02*/
-Mat_t S;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFR_02*/
+  Mat_t S;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data);  /*UNQ_T2F_TFHF_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t xb;  /*UNQ_T2F_TFHF_02*/
-Mat_t S;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data);  /*UNQ_T2F_TFHF_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHF_02*/
+  Mat_t S;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data);  /*UNQ_T2F_TFHR_01*/
-Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t xb;  /*UNQ_T2F_TFHR_02*/
-Mat_t S;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data);  /*UNQ_T2F_TFHR_01*/
+  Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHR_02*/
+  Mat_t S;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
-S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-}
-}
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
+      S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+    }
+  }
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a, x_a2d, S_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }
 
 class Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec : public Vec3ScaleSymmetricOuterProduct {
@@ -2513,125 +2538,125 @@ class Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec : public Vec3ScaleSymmetric
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec, passive) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
-T a(a_data);  /*UNQ_T2F_TFP_01*/
-Vec_t xb;  /*UNQ_T2F_TFP_02*/
-Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFP_01*/
+  T a(a_data);  /*UNQ_T2F_TFP_01*/
+  Vec_t xb;  /*UNQ_T2F_TFP_02*/
+  Mat_t S, Sb;  /*UNQ_T2F_TFP_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFP_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFP_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFP_03*/
 // Set Derivative Values:
 /*None for "passive" tests*/
 // Evaluations:
-A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFP_04*/
+  A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFP_04*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec, reverse) {
 // Declarations and Initializations:
-Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
-T a(a_data);  /*UNQ_T2F_TFR_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
-Vec_t xb;  /*UNQ_T2F_TFR_02*/
-Mat_t S;  /*UNQ_T2F_TFR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
+  Vec_t x(x_data);  /*UNQ_T2F_TFR_01*/
+  T a(a_data);  /*UNQ_T2F_TFR_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFR_02*/
+  Mat_t S;  /*UNQ_T2F_TFR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFR_03*/
 // Set Derivative Values:
 /*None for "reverse" tests*/
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFR_04*/
-expr.reverse();  /*UNQ_T2F_TFR_05*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFR_04*/
+  expr.reverse();  /*UNQ_T2F_TFR_05*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFR_06*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFR_07*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFR_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec, hforward) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
-Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
-Vec_t xb;  /*UNQ_T2F_TFHF_02*/
-Mat_t S;  /*UNQ_T2F_TFHF_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHF_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHF_01*/
+  Mat_t Sb(Sb_data);  /*UNQ_T2F_TFHF_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHF_02*/
+  Mat_t S;  /*UNQ_T2F_TFHF_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHF_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHF_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHF_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHF_05*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHF_05*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHF_05*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHF_05*/
+  }
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFHF_06*/
-expr.reverse();  /*UNQ_T2F_TFHF_07*/
-expr.hforward();  /*UNQ_T2F_TFHF_08*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFHF_06*/
+  expr.reverse();  /*UNQ_T2F_TFHF_07*/
+  expr.hforward();  /*UNQ_T2F_TFHF_08*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHF_09*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHF_10*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHF_10*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHF_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHF_11*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_A2DScalarA2DVec, hreverse) {
 // Declarations and Initializations:
-Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
-T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
-Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
-Vec_t xb;  /*UNQ_T2F_TFHR_02*/
-Mat_t S;  /*UNQ_T2F_TFHR_02*/
-A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
-A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
-A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
+  Vec_t x(x_data), xp0(xp0_data), xp1(xp1_data), xp2(xp2_data), xp3(xp3_data);  /*UNQ_T2F_TFHR_01*/
+  T a(a_data), ap0(ap0_data), ap1(ap1_data), ap2(ap2_data), ap3(ap3_data);  /*UNQ_T2F_TFHR_01*/
+  Mat_t Sb(Sb_data), Sh0(Sh0_data), Sh1(Sh1_data), Sh2(Sh2_data), Sh3(Sh3_data);  /*UNQ_T2F_TFHR_01*/
+  Vec_t xb;  /*UNQ_T2F_TFHR_02*/
+  Mat_t S;  /*UNQ_T2F_TFHR_02*/
+  A2DVec_t x_a2d(x, xb);  /*UNQ_T2F_TFHR_03*/
+  A2DScalar_t a_a2d(a, 0);  /*UNQ_T2F_TFHR_03*/
+  A2DMat_t S_a2d(S, Sb);  /*UNQ_T2F_TFHR_03*/
 // Set Derivative Values:
 /*UNQ_T2F_CDL_01*/
-a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
-a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
-for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
-x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
-x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
-for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
-S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
-}
-}
+  a_a2d.pvalue[0] = ap0;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[1] = ap1;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[2] = ap2;  /*UNQ_T2F_TFHR_04*/
+  a_a2d.pvalue[3] = ap3;  /*UNQ_T2F_TFHR_04*/
+  for (int ii_0 = 0; ii_0 < 3; ii_0++) {  /*UNQ_T2F_CDL_02*/
+    x_a2d.pvalue(0)(ii_0) = xp0(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(1)(ii_0) = xp1(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(2)(ii_0) = xp2(ii_0);  /*UNQ_T2F_TFHR_04*/
+    x_a2d.pvalue(3)(ii_0) = xp3(ii_0);  /*UNQ_T2F_TFHR_04*/
+    for (int ii_1 = 0; ii_1 < 3; ii_1++) {  /*UNQ_T2F_CDL_02*/
+      S_a2d.hvalue(0)(ii_0, ii_1) = Sh0(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(1)(ii_0, ii_1) = Sh1(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(2)(ii_0, ii_1) = Sh2(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+      S_a2d.hvalue(3)(ii_0, ii_1) = Sh3(ii_0, ii_1);  /*UNQ_T2F_TFHR_05*/
+    }
+  }
 // Evaluations:
-auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFHR_06*/
-expr.reverse();  /*UNQ_T2F_TFHR_07*/
-expr.hforward();  /*UNQ_T2F_TFHR_08*/
-expr.hreverse();  /*UNQ_T2F_TFHR_09*/
+  auto expr = A2D::Vec3ScaleSymmetricOuterProduct(a_a2d, x_a2d, S_a2d);  /*UNQ_T2F_TFHR_06*/
+  expr.reverse();  /*UNQ_T2F_TFHR_07*/
+  expr.hforward();  /*UNQ_T2F_TFHR_08*/
+  expr.hreverse();  /*UNQ_T2F_TFHR_09*/
 // Comparisons:
-expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
-expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
-expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
-expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
-expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
-expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_mat_eq<3, 3>(S_a2d.value(), S_out);  /*UNQ_T2F_TFHR_10*/
+  expect_val_eq(a_a2d.bvalue, ab_out);  /*UNQ_T2F_TFHR_11*/
+  expect_vec_eq<3>(x_a2d.bvalue(), xb_out);  /*UNQ_T2F_TFHR_11*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(0), Sp0_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(1), Sp1_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(2), Sp2_out);  /*UNQ_T2F_TFHR_12*/
+  expect_mat_eq<3, 3>(S_a2d.pvalue(3), Sp3_out);  /*UNQ_T2F_TFHR_12*/
+  expect_val_eq(a_a2d.hvalue[0], ah0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[1], ah1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[2], ah2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_val_eq(a_a2d.hvalue[3], ah3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(0), xh0_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(1), xh1_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(2), xh2_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
+  expect_vec_eq<3>(x_a2d.hvalue(3), xh3_out, 1e-8);  /*UNQ_T2F_TFHR_13*/
 }

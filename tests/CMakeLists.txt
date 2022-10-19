@@ -19,6 +19,7 @@ target_link_libraries(test_matops2d gtest_main)
 target_link_libraries(test_vecops3d gtest_main)
 target_link_libraries(test_vecops3d_jg gtest_main)
 
+# Make tests auto-testable with CMake ctest
 include(GoogleTest)
 gtest_discover_tests(test_matcore3d)
 gtest_discover_tests(test_matcore2d)

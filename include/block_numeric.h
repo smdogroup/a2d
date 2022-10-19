@@ -247,8 +247,8 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
 
   // Decide which branch to go
   const bool is_complex = std::is_same<T, std::complex<double>>::value;
-  const bool is_flayout =
-      std::is_same<typename AType::array_layout, Kokkos::LayoutLeft>::value;
+  const bool is_layout_right =
+      std::is_same<typename AType::array_layout, Kokkos::LayoutRight>::value;
 
   // Set parameters
   int m = N;
@@ -265,7 +265,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
 
   // Prepare A
   T* a;
-  if constexpr (is_flayout) {
+  if constexpr (!is_layout_right) {
     a = new T[N * N];
     for (int i = 0; i < N; i++) {
       for (int j = 0; j < N; j++) {
@@ -289,7 +289,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
             &fail);
   }
 
-  if constexpr (is_flayout) {
+  if constexpr (!is_layout_right) {
     delete[] a;
   }
 

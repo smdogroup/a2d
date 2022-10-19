@@ -28,7 +28,7 @@ using DefaultLayout = Kokkos::LayoutRight;
  *   Kokkos::CudaSpace device space
  *   Kokkos::CudaUVMSpace (CPU and device) unified memory space
  */
-#if A2D_USE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 using DefaultMemSpace = Kokkos::CudaUVMSpace;
 #else
 using DefaultMemSpace = Kokkos::HostSpace;
@@ -56,7 +56,7 @@ namespace BLAS {
   Zero all elements in the array
 */
 template <class View>
-void zero(const View& x) {
+A2D_INLINE_FUNCTION void zero(const View& x) {
   using T = typename View::value_type;
   T* data = x.data();
   std::fill(data, data + x.size(), T(0));

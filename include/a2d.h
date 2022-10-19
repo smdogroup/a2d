@@ -3,7 +3,6 @@
 
 #include "a2dmatcore2d.h"
 #include "a2dmatcore3d.h"
-#include "a2dmemory.h"
 #include "a2dobjs.h"
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"

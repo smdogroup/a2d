@@ -1,7 +1,6 @@
 #ifndef A2D_SPARSE_MATRIX_H
 #define A2D_SPARSE_MATRIX_H
 
-#include "a2dmemory.h"
 #include "a2dobjs.h"
 #include "array.h"
 

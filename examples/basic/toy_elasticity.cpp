@@ -153,6 +153,8 @@ void main_body(int argc, char* argv[]) {
 
   mesher.set_force(model, residual);
 
+  return;
+
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 100;
@@ -169,6 +171,7 @@ void main_body(int argc, char* argv[]) {
     vtk.write_sol("uy", *solution, 1);
     vtk.write_sol("uz", *solution, 2);
   }
+  return;
 }
 
 int main(int argc, char* argv[]) {

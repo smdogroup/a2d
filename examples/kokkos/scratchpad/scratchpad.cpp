@@ -330,10 +330,24 @@ void test_sort() {
   Kokkos::finalize();
 }
 
+void test_is_same_layout() {
+  Kokkos::initialize();
+  {
+    using Array_t = Kokkos::View<T* [5], Kokkos::LayoutLeft>;
+    Array_t array = Array_t("arr", 20);
+    auto sub = Kokkos::subview(array, 0, Kokkos::ALL);
+    bool is_flayout =
+        std::is_same<decltype(sub)::array_layout, Kokkos::LayoutStride>::value;
+    printf("is_flayout: %d\n", is_flayout);
+  }
+  Kokkos::finalize();
+}
+
 int main(int argc, char* argv[]) {
   // test_axpy(argc, argv);
   // test_matvec(argc, argv);
   // test_unordered_set();
   // test_subview();
-  test_sort();
+  // test_sort();
+  test_is_same_layout();
 }

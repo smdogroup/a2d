@@ -556,6 +556,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       if (inverse) {
         auto D0 = Kokkos::subview(D->Avals, D->nnz, Kokkos::ALL, Kokkos::ALL);
         int fail = blockPseudoInverse(D0, Dinv);
+        // int fail = blockInverse<T, M>(D0, Dinv, ipiv);
 
         if (fail) {
           std::cerr << "BSRMatExtractBlockDiagonal: Failure in factorization "

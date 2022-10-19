@@ -4,9 +4,9 @@ on:
   # Triggers the workflow on push or pull request events but only for the main branch
   # Remove push when finally merging.
   push:
-    branches: [ main ]
+    branches: [ github-action ]
   pull_request:
-    branches: [ main ]
+    branches: [ github-action ]
 
   # Allows you to run this workflow manually from the Actions tab.
   workflow_dispatch:
@@ -44,9 +44,4 @@ jobs:
       - name: run tests
         run: |
           cd build/tests;
-          ./test_matcore2d;
-          ./test_matcore3d;
-          ./test_tmp2d;
-          ./test_tmp3d;
-          ./test_vecops3d;
-          ./test_vecops3d_jg;
+          ctest;

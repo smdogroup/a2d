@@ -1,7 +1,7 @@
 #ifndef A2D_ELEMENT_H
 #define A2D_ELEMENT_H
 
-#include "multiarray.h"
+#include "a2dobjs.h"
 #include "sparse/sparse_amg.h"
 #include "sparse/sparse_matrix.h"
 
@@ -24,7 +24,7 @@ class ElementBase {
  public:
   virtual ~ElementBase() {}
   virtual void set_nodes(typename PDEInfo::NodeArray& X) = 0;
-  virtual void add_node_set(std::set<std::pair<I, I>>& node_set) = 0;
+  virtual void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
   virtual void set_solution(typename PDEInfo::SolutionArray& U) = 0;
   virtual T energy() { return T(0.0); }
   virtual void add_residual(typename PDEInfo::SolutionArray& res) = 0;
@@ -53,97 +53,55 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   static const index_t nodes_per_elem = BasisOps::NUM_NODES;
   static const index_t quad_pts_per_elem = BasisOps::quadrature::NUM_QUAD_PTS;
 
-  // Connectivity layout
-  typedef A2D::CLayout<nodes_per_elem> ConnLayout;
-
-  // Element-node layouts
-  typedef A2D::CLayout<nodes_per_elem, spatial_dim> ElemNodeLayout;
-  typedef A2D::CLayout<nodes_per_elem, vars_per_node> ElemSolnLayout;
-
-  // Element-quadrature layouts
-  typedef A2D::CLayout<quad_pts_per_elem, spatial_dim> QuadNodeLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, vars_per_node> QuadSolnLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, vars_per_node, spatial_dim>
-      QuadGradLayout;
-  typedef A2D::CLayout<quad_pts_per_elem> QuadDetLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, spatial_dim, spatial_dim>
-      QuadJtransLayout;
-  typedef A2D::CLayout<quad_pts_per_elem, data_per_point> QuadDataLayout;
-
-  // Residual/Jacobian layouts
-  typedef A2D::CLayout<nodes_per_elem, vars_per_node> ElemResLayout;
-  typedef A2D::CLayout<nodes_per_elem, nodes_per_elem, vars_per_node,
-                       vars_per_node>
-      ElemJacLayout;
-
   // Connectivity array
-  typedef A2D::MultiArray<I, ConnLayout> ConnArray;
+  using ConnArray = A2D::MultiArrayNew<I* [nodes_per_elem]>;
 
   // Element-node arrays
-  typedef A2D::MultiArray<T, ElemNodeLayout> ElemNodeArray;
-  typedef A2D::MultiArray<T, ElemSolnLayout> ElemSolnArray;
+  using ElemNodeArray = A2D::MultiArrayNew<T* [nodes_per_elem][spatial_dim]>;
+  using ElemSolnArray = A2D::MultiArrayNew<T* [nodes_per_elem][vars_per_node]>;
 
   // Element-quadrature arrays
-  typedef A2D::MultiArray<T, QuadNodeLayout> QuadNodeArray;
-  typedef A2D::MultiArray<T, QuadSolnLayout> QuadSolnArray;
-  typedef A2D::MultiArray<T, QuadGradLayout> QuadGradArray;
-  typedef A2D::MultiArray<T, QuadDetLayout> QuadDetArray;
-  typedef A2D::MultiArray<T, QuadJtransLayout> QuadJtransArray;
-  typedef A2D::MultiArray<T, QuadDataLayout> QuadDataArray;
+  using QuadNodeArray = A2D::MultiArrayNew<T* [quad_pts_per_elem][spatial_dim]>;
+  using QuadSolnArray =
+      A2D::MultiArrayNew<T* [quad_pts_per_elem][vars_per_node]>;
+  using QuadGradArray =
+      A2D::MultiArrayNew<T* [quad_pts_per_elem][vars_per_node][spatial_dim]>;
+  using QuadDetArray = A2D::MultiArrayNew<T* [quad_pts_per_elem]>;
+  using QuadJtransArray =
+      A2D::MultiArrayNew<T* [quad_pts_per_elem][spatial_dim][spatial_dim]>;
+  using QuadDataArray =
+      A2D::MultiArrayNew<T* [quad_pts_per_elem][data_per_point]>;
 
   // Residual data
-  typedef A2D::MultiArray<T, ElemResLayout> ElemResArray;
-  typedef A2D::MultiArray<T, ElemJacLayout> ElemJacArray;
+  using ElemResArray = A2D::MultiArrayNew<T* [nodes_per_elem][vars_per_node]>;
+  using ElemJacArray = A2D::MultiArrayNew<
+      T* [nodes_per_elem][nodes_per_elem][vars_per_node][vars_per_node]>;
 
-  ElementBasis(const index_t nelems)
-      : nelems(nelems),
-        conn_layout(nelems),
-        elem_node_layout(nelems),
-        elem_soln_layout(nelems),
-        quad_node_layout(nelems),
-        quad_soln_layout(nelems),
-        quad_grad_layout(nelems),
-        quad_detJ_layout(nelems),
-        quad_jtrans_layout(nelems),
-        quad_data_layout(nelems),
-        elem_res_layout(nelems),
-        elem_jac_layout(nelems) {
+  ElementBasis(const index_t nelems) : nelems(nelems) {
     Timer t("ElementBasis::ElementBasis(1)");
-    conn = ConnArray(conn_layout);
-    Xe = ElemNodeArray(elem_node_layout);
-    Ue = ElemSolnArray(elem_soln_layout);
-    Xq = QuadNodeArray(quad_node_layout);
-    Uq = QuadSolnArray(quad_soln_layout);
-    Uxi = QuadGradArray(quad_grad_layout);
-    detJ = QuadDetArray(quad_detJ_layout);
-    Jinv = QuadJtransArray(quad_jtrans_layout);
-    data = QuadDataArray(quad_data_layout);
+    conn = ConnArray("conn", nelems);
+    Xe = ElemNodeArray("Xe", nelems);
+    Ue = ElemSolnArray("Ue", nelems);
+    Xq = QuadNodeArray("Xq", nelems);
+    Uq = QuadSolnArray("Uq", nelems);
+    Uxi = QuadGradArray("Uxi", nelems);
+    detJ = QuadDetArray("detJ", nelems);
+    Jinv = QuadJtransArray("Jinv", nelems);
+    data = QuadDataArray("data", nelems);
   }
 
   template <typename IdxType>
-  ElementBasis(const index_t nelems, const IdxType conn_[])
-      : nelems(nelems),
-        conn_layout(nelems),
-        elem_node_layout(nelems),
-        elem_soln_layout(nelems),
-        quad_node_layout(nelems),
-        quad_soln_layout(nelems),
-        quad_grad_layout(nelems),
-        quad_detJ_layout(nelems),
-        quad_jtrans_layout(nelems),
-        quad_data_layout(nelems),
-        elem_res_layout(nelems),
-        elem_jac_layout(nelems) {
+  ElementBasis(const index_t nelems, const IdxType conn_[]) : nelems(nelems) {
     Timer t("ElementBasis::ElementBasis(2)");
-    conn = ConnArray(conn_layout);
-    Xe = ElemNodeArray(elem_node_layout);
-    Ue = ElemSolnArray(elem_soln_layout);
-    Xq = QuadNodeArray(quad_node_layout);
-    Uq = QuadSolnArray(quad_soln_layout);
-    Uxi = QuadGradArray(quad_grad_layout);
-    detJ = QuadDetArray(quad_detJ_layout);
-    Jinv = QuadJtransArray(quad_jtrans_layout);
-    data = QuadDataArray(quad_data_layout);
+    conn = ConnArray("conn", nelems);
+    Xe = ElemNodeArray("Xe", nelems);
+    Ue = ElemSolnArray("Ue", nelems);
+    Xq = QuadNodeArray("Xq", nelems);
+    Uq = QuadSolnArray("Uq", nelems);
+    Uxi = QuadGradArray("Uxi", nelems);
+    detJ = QuadDetArray("detJ", nelems);
+    Jinv = QuadJtransArray("Jinv", nelems);
+    data = QuadDataArray("data", nelems);
     // Set the connectivity
     for (I i = 0; i < nelems; i++) {
       for (I j = 0; j < nodes_per_elem; j++) {
@@ -161,17 +119,8 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   // Get the data associated with the quadrature points
   QuadDataArray& get_quad_data() { return data; }
 
-  // Get the layout associated with the quadrature point data
-  QuadDataLayout& get_quad_data_layout() { return quad_data_layout; }
-
-  // Get the layout associated with the element residuals
-  ElemResLayout& get_elem_res_layout() { return elem_res_layout; }
-
-  // Get the layout associated with the element jacobians
-  ElemJacLayout& get_elem_jac_layout() { return elem_jac_layout; }
-
-  // Add the node set to the connectivity
-  void add_node_set(std::set<std::pair<I, I>>& node_set) {
+  // Add the node set to the connectivity, use Kokkos unordered set
+  void add_node_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) {
     BSRMatAddConnectivity(conn, node_set);
   }
 
@@ -205,35 +154,7 @@ class ElementBasis : public ElementBase<I, T, PDEInfo> {
   QuadSolnArray& get_quad_solution() { return Uq; }
   QuadGradArray& get_quad_gradient() { return Uxi; }
 
-  // Get the layouts
-  ElemNodeLayout& get_elem_node_layout() { return elem_node_layout; }
-  QuadNodeLayout& get_quad_node_layout() { return quad_node_layout; }
-  QuadDetLayout& get_detJ_layout() { return quad_detJ_layout; }
-  QuadJtransLayout& get_jinv_layout() { return quad_jtrans_layout; }
-  ElemSolnLayout& get_elem_solution_layout() { return elem_soln_layout; }
-  QuadSolnLayout& get_quad_solution_layout() { return quad_soln_layout; }
-  QuadGradLayout& get_quad_gradient_layout() { return quad_grad_layout; }
-
  private:
-  // Connectivity layout
-  ConnLayout conn_layout;
-
-  // Element-node layouts
-  ElemNodeLayout elem_node_layout;
-  ElemSolnLayout elem_soln_layout;
-
-  // Element-quadrature layouts
-  QuadNodeLayout quad_node_layout;
-  QuadSolnLayout quad_soln_layout;
-  QuadGradLayout quad_grad_layout;
-  QuadDetLayout quad_detJ_layout;
-  QuadJtransLayout quad_jtrans_layout;
-  QuadDataLayout quad_data_layout;
-
-  // Layout instances for the residuals/jacobians
-  ElemResLayout elem_res_layout;
-  ElemJacLayout elem_jac_layout;
-
   // Instances of the multi-dimensional arrays
   ConnArray conn;
 

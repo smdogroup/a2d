@@ -3,7 +3,7 @@
 
 #include "a2dmemory.h"
 #include "a2dobjs.h"
-#include "multiarray.h"
+#include "array.h"
 
 namespace A2D {
 
@@ -31,9 +31,9 @@ class BSRMat {
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
          const VecType &_cols)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals(CLayout<M, N>(nnz)) {
-    rowp = IdxArray1D_t(IdxLayout1D_t(nbrows + 1));
-    cols = IdxArray1D_t(IdxLayout1D_t(nnz));
+      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals("Avals", nnz) {
+    rowp = IdxArray1D_t("rowp", nbrows + 1);
+    cols = IdxArray1D_t("cols", nnz);
 
     for (I i = 0; i < nbrows + 1; i++) {
       rowp[i] = _rowp[i];
@@ -63,7 +63,7 @@ class BSRMat {
   A2D_INLINE_FUNCTION ~BSRMat() {}
 
   // Zero the entries of the matrix
-  A2D_INLINE_FUNCTION void zero() { Avals.zero(); }
+  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(Avals); }
 
   /**
    * @brief Find the address of the column index given block indices (row, col)
@@ -85,9 +85,8 @@ class BSRMat {
     return nullptr;
   }
 
-  // Layout and Array type
-  using IdxLayout1D_t = A2D::CLayout<>;
-  using IdxArray1D_t = A2D::MultiArray<I, IdxLayout1D_t>;
+  // Array type
+  using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 
   // Number of block rows and block columns
   index_t nbrows, nbcols;
@@ -116,7 +115,7 @@ class BSRMat {
       color_count;  // Number of nodes with this color, not allocated by default
 
   // MultiArray data - length: nnz
-  MultiArray<T, CLayout<M, N>> Avals;
+  MultiArrayNew<T *[M][N]> Avals;
 };
 
 }  // namespace A2D

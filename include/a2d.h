@@ -8,6 +8,7 @@
 #include "a2dtmp2d.h"
 #include "a2dtmp3d.h"
 #include "a2dtypes.h"
+#include "array.h"
 #include "block_numeric.h"
 #include "fem/basis.h"
 #include "fem/constitutive.h"
@@ -17,7 +18,6 @@
 #include "fem/helmholtz.h"
 #include "fem/model.h"
 #include "fem/quadrature.h"
-#include "multiarray.h"
 #include "parallel.h"
 #include "sparse/sparse_amd.h"
 #include "sparse/sparse_amg.h"
@@ -27,9 +27,5 @@
 #include "utils/a2dmesh.h"
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
-
-#ifdef A2D_USE_KOKKOS
-#include "a2dkokkos.h"
-#endif
 
 #endif  // A2D_H

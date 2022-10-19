@@ -1,9 +1,9 @@
 #include <iostream>
 #include <memory>
+#include <typeinfo>
 
-#ifdef A2D_USE_KOKKOS
 #include "Kokkos_Core.hpp"
-#endif
+#include "a2dlayout.h"
 #include "multiarray.h"
 #include "parallel.h"
 
@@ -253,17 +253,85 @@ void test_uninit_multiarray() {
   array3 = Array_3dim_t(layout3);
 }
 
-int main(int argc, char* argv[]) {
-#ifdef A2D_USE_KOKKOS
-  Kokkos::initialize();
-#endif
-  {
-    test_clayout();
-    test_flayout();
-    test_uninit_multiarray();
+void test_slice() {
+  using T = double;
+  const int N0 = 3, N1 = 4, N2 = 5;
+  auto c_array = MultiArray<T, CLayout<N1, N2>>(N0);
+  auto f_array = MultiArray<T, FLayout<N1, N2>>(N0);
+
+  c_array.fill(2.34);
+  f_array.fill(5.67);
+
+  auto c_slice = MakeSlice(c_array, 1);
+  auto f_slice = MakeSlice(f_array, 2);
+
+  c_slice.zero();
+  f_slice.zero();
+
+  // c_slice(1, 2) = 0.0;
+  // f_slice(1, 3) = 0.0;
+
+  printf("CLayout array:\n");
+  for (int i = 0; i < N0; i++) {
+    for (int j = 0; j < N1; j++) {
+      for (int k = 0; k < N2; k++) {
+        printf("c_array(%d, %d, %d) = %.2f\n", i, j, k, c_array(i, j, k));
+      }
+    }
   }
-#ifdef A2D_USE_KOKKOS
+
+  printf("FLayout array:\n");
+  for (int i = 0; i < N0; i++) {
+    for (int j = 0; j < N1; j++) {
+      for (int k = 0; k < N2; k++) {
+        printf("f_array(%d, %d, %d) = %.2f\n", i, j, k, f_array(i, j, k));
+      }
+    }
+  }
+}
+
+void test_create() {
+  using I = index_t;
+  I nnodes = 20;
+  MultiArray<I, A2D_Layout<>> array1;
+  array1 = MultiArray<I, A2D_Layout<>>(A2D_Layout<>(nnodes));
+  cout << "array1: " << typeid(array1).name() << endl;
+
+  MultiArray<I, A2D_Layout<>> array2(A2D_Layout<>(nnodes));
+  cout << "array2: " << typeid(array2).name() << endl;
+
+  MultiArray<I, A2D_Layout<>> array3(A2D_Layout<>(nnodes + 1));
+  cout << "array3: " << typeid(array3).name() << endl;
+
+  A2D_Layout<> layout4(nnodes);
+  MultiArray<I, A2D_Layout<>> array4(layout4);
+  cout << "array4: " << typeid(array4).name() << endl;
+}
+
+void test_layout_size() {
+  CLayout<2, 3, 4> clayout(5);
+  printf("clayout.get_size() = %d, expect 120.\n", clayout.get_size());
+
+  CLayout<> clayout2(42);
+  printf("clayout2.get_size() = %d, expect 42.\n", clayout2.get_size());
+
+  FLayout<2, 3, 4> flayout(5);
+  printf("flayout.get_size() = %d, expect 120.\n", flayout.get_size());
+
+  FLayout<> flayout2(42);
+  printf("flayout2.get_size() = %d, expect 42.\n", flayout2.get_size());
+}
+
+int main(int argc, char* argv[]) {
+  Kokkos::initialize();
+  {
+    // test_clayout();
+    // test_flayout();
+    // test_uninit_multiarray();
+    // test_slice();
+    // test_create();
+    test_layout_size();
+  }
   Kokkos::finalize();
-#endif
   return 0;
 }

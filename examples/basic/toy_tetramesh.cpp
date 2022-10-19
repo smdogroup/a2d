@@ -19,7 +19,6 @@ void main_body(int argc, char* argv[]) {
 
   MesherFromVTK3D<nnodes_per_elem, T, I> mesher("tetra_3d_refine.vtk");
   // MesherFromVTK3D<nnodes_per_elem, T, I> mesher("lbracket_unstruct.vtk");
-  exit();
 
   I nnodes = mesher.get_nnodes();
   I nelems = mesher.get_nelems();
@@ -100,15 +99,11 @@ void main_body(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef A2D_USE_KOKKOS
   Kokkos::initialize();
-#endif
 
   Timer main_timer("main");
   main_body(argc, argv);
 
-#ifdef A2D_USE_KOKKOS
   Kokkos::finalize();
-#endif
   return (0);
 }

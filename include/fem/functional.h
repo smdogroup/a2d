@@ -56,7 +56,7 @@ class Functional {
     Compute the derivative of the functional w.r.t. state variables
   */
   void eval_dfdu(std::shared_ptr<typename PDE::SolutionArray> dfdu) {
-    dfdu->zero();
+    A2D::BLAS::zero(*dfdu);
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
       (*it)->add_dfdu(*dfdu);
     }
@@ -66,7 +66,7 @@ class Functional {
     Compute the derivative of the functional w.r.t. design variables
   */
   void eval_dfdx(std::shared_ptr<typename PDE::DesignArray> dfdx) {
-    dfdx->zero();
+    A2D::BLAS::zero(*dfdx);
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
       (*it)->add_dfdx(*dfdx);
     }
@@ -76,7 +76,7 @@ class Functional {
     Compute the derivative of the functional w.r.t. nodes
   */
   void eval_dfdnodes(std::shared_ptr<typename PDE::NodeArray> dfdx) {
-    dfdx->zero();
+    A2D::BLAS::zero(*dfdx);
     for (auto it = functionals.begin(); it != functionals.end(); it++) {
       (*it)->add_dfdnodes(*dfdx);
     }

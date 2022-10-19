@@ -14,6 +14,7 @@
 
 #include "a2dprofiler.h"
 #include "a2dvtk.h"
+#include "array.h"
 
 namespace A2D {
 
@@ -111,6 +112,25 @@ class MesherRect2D {
   }
 
   /**
+   * @brief For testing helmholtz solver - set lower 1/4 rectangle to be 1.
+   *
+   * @param x design variable multiarray
+   */
+  template <class DvArray>
+  void set_helm_dv(DvArray& x) {
+    for (int j = 0; j < ny + 1; j++) {
+      for (int i = 0; i < nx + 1; i++) {
+        int node = i + (nx + 1) * j;
+        if (i < nx / 2 and j < ny / 2) {
+          x(node, 0) = 0.1;
+        } else {
+          x(node, 0) = 1.0;
+        }
+      }
+    }
+  }
+
+  /**
    * @brief Set the system residual given a PDE model with boundary conditions
    *
    * @param model the PDE model
@@ -118,7 +138,7 @@ class MesherRect2D {
    */
   template <class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual) {
-    residual->zero();
+    A2D::BLAS::zero(*residual);
     (*residual)(nx, 1) = -1e2;
     model->zero_bcs(residual);
   }
@@ -250,7 +270,7 @@ class MesherBrick3D {
   template <class Model, class RhsArray>
   void set_force(Model model, RhsArray& residual) {
     Timer t("MesherBrick3D::set_force()");
-    residual->zero();
+    A2D::BLAS::zero(*residual);
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);
       (*residual)(node, 1) = -1e2;
@@ -286,11 +306,17 @@ class MesherFromVTK3D {
     nforces_z = 0;
     T tol = 1e-6;
     for (I i = 0; i != nnodes; i++) {
-      // Fix zmax
-      if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
+      // Fix xmin
+      if (vtk_reader.X(i, 0) - vtk_reader.domain_lower[0] < tol) {
         bc_nodes.push_back(i);
         nbcs++;
       }
+
+      // // Fix zmax
+      // if (vtk_reader.domain_upper[2] - vtk_reader.X(i, 2) < tol) {
+      //   bc_nodes.push_back(i);
+      //   nbcs++;
+      // }
 
       // Apply force to xmax
       if (vtk_reader.domain_upper[0] - vtk_reader.X(i, 0) < tol) {
@@ -298,11 +324,11 @@ class MesherFromVTK3D {
         nforces_y++;
       }
 
-      // Apply force to ymax
-      if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
-        force_nodes_z.push_back(i);
-        nforces_z++;
-      }
+      // // Apply force to ymax
+      // if (vtk_reader.domain_upper[1] - vtk_reader.X(i, 1) < tol) {
+      //   force_nodes_z.push_back(i);
+      //   nforces_z++;
+      // }
     }
   }
 
@@ -337,7 +363,7 @@ class MesherFromVTK3D {
 
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
-    residual->zero();
+    A2D::BLAS::zero(residual);
 
     for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
       (*residual)(*it, 1) = -force / T(nforces_y);

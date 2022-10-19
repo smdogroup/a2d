@@ -5,19 +5,11 @@
 #include <complex>
 #include <cstdint>
 
-#ifdef A2D_USE_KOKKOS
-#include "a2dkokkos.h"
+#include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
+
 #define A2D_LAMBDA KOKKOS_LAMBDA
 #define A2D_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
-#endif
-
-#ifndef A2D_LAMBDA
-#define A2D_LAMBDA [=]
-#endif
-
-#ifndef A2D_INLINE_FUNCTION
-#define A2D_INLINE_FUNCTION inline
-#endif
 
 namespace A2D {
 
@@ -57,6 +49,8 @@ class Vec {
   A2D_INLINE_FUNCTION const T& operator()(const IdxType i) const {
     return x[i];
   }
+
+  T* data() { return x; }
 
   T x[N];
 };
@@ -98,6 +92,8 @@ class Mat {
                                           const IdxType j) const {
     return A[N * i + j];
   }
+
+  T* data() { return A; }
 
   T A[M * N];
 };
@@ -141,6 +137,8 @@ class SymmMat {
     }
   }
 
+  T* data() { return A; }
+
   T A[MAT_SIZE];
 };
 
@@ -173,6 +171,8 @@ class Tensor {
                                           const IdxType l) const {
     return A[l + Q * (k + P * (j + N * i))];
   }
+
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };
@@ -225,6 +225,8 @@ class SymmTensor {
       return A[ii + jj * (jj + 1) / 2];
     }
   }
+
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };

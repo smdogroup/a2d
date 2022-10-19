@@ -19,6 +19,20 @@ inline void Vec3AddCore(const VecType& x,
 }
 
 /**
+ * @brief vector addition in place:  v += x
+ * @param x    :  3-Vector to add
+ * @param y    :  3-Vector to add
+ * @param v    :  3-Vector destination
+ */
+template <class VecType>
+inline void Vec3AddInPlaceCore(const VecType& x,
+                               VecType& v) {
+  v(0) += x(0);
+  v(1) += x(1);
+  v(2) += x(2);
+}
+
+/**
  * @brief scalar-vector multiply and add:  v = a * x + b * y
  * @param alpha:  Scalar to multiply x
  * @param x    :  3-Vector

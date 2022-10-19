@@ -1,7 +1,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp3d.h"
+#include "a2dmatops3d.h"
 #include "a2dtypes.h"
 #include "block_numeric.h"
 #include "sparse/sparse_matrix.h"

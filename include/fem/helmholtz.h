@@ -1,7 +1,6 @@
 #ifndef A2D_HELMHOLTZ_H
 #define A2D_HELMHOLTZ_H
 
-#include "a2dtmp3d.h"
 #include "basis.h"
 #include "constitutive.h"
 #include "element.h"

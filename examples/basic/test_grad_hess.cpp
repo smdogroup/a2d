@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include "a2dtmp3d.h"
+#include "a2dmatops3d.h"
 #include "a2dtypes.h"
 
 /*

@@ -14,23 +14,16 @@ To use A2D in your c++ application, the following libraries need to be linked:
 - OpenMP
 - LAPACK
 
-## Testing
-Unit tests are implemented using [Google
-Test](https://google.github.io/googletest/primer.html) framework, which is
-automatically downloaded when building tests with
-[CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html).
-
 ## Build examples, python bindings and tests
 
-It is recommended to build the binaries with
-[CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html).
+Build system [CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html) is used.
 To build all examples and python binding, execute the following commands in
 this directory:
 
 ```
 mkdir build
 cd build
-cmake .. -DBUILD_EXTENSION=ON -DBUILD_EXAMPLES=ON
+cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXAMPLES_KOKKOS=ON -DA2D_BUILD_EXTENSION=ON
 make -j <nproc>
 ````
 
@@ -52,6 +45,15 @@ To see a full list of CMake options and their values for the current build, exec
 ccmake .
 ```
 in ```build``` folder.
+
+
+## Testing
+Unit tests are implemented using [Google
+Test](https://google.github.io/googletest/primer.html) framework, which is
+automatically downloaded when building tests.
+
+To run unit tests, need to `cmake` with `-DA2D_BUILD_UNIT_TESTS=ON`. After build, execute
+```cd build/tests && ctest```.
 
 ## Coding style
 ```clangFormat``` is used as the auto-formatter, with style ```Google```. If you would

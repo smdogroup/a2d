@@ -1,7 +1,7 @@
 /*
-  This is a set of unit tests for a2dtmp2d.h using Google Test framework.
+  This is a set of unit tests for a2dmatops2d.h using Google Test framework.
  */
-#include "a2dtmp2d.h"
+#include "a2dmatops2d.h"
 #include "test_commons.h"
 
 // Global typenames

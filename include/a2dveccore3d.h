@@ -74,7 +74,7 @@ inline T Vec3DotCore(const VecType& x, const VecType& y) {
 
 template <typename T, class VecType>
 inline T Vec3NormCore(const VecType& x) {
-  return sqrt(Vec3DotCore(x, x));
+  return sqrt(Vec3DotCore<T>(x, x));
 }
 
 template <typename T, class VecType>

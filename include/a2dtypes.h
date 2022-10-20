@@ -110,6 +110,29 @@ class A2DMat {
   MatType Ah[N];  // Reverse mode second derivative
 };
 
+template <int N, class VecType>
+class A2DVec {
+ public:
+  A2DVec(VecType& x, VecType& xb) : x(x), xb(xb) {}
+
+  VecType& value() { return x; }
+  const VecType& value() const { return x;}
+
+  VecType& bvalue() { return xb; }
+  const VecType& bvalue() const { return xb;}
+
+  VecType& pvalue(const int i) { return xp[i]; }
+  const VecType& pvalue(const int i) const { return xp[i];}
+
+  VecType& hvalue(const int i) { return xh[i]; }
+  const VecType& hvalue(const int i) const { return xh[i];}
+
+  VecType& x;
+  VecType& xb;
+  VecType xp[N];
+  VecType xh[N];
+};
+
 }  // namespace A2D
 
 #endif  // A2D_TYPES_H

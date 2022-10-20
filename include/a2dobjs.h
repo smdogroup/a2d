@@ -5,6 +5,12 @@
 #include <complex>
 #include <cstdint>
 
+#include "Kokkos_Core.hpp"
+#include "Kokkos_UnorderedMap.hpp"
+
+#define A2D_LAMBDA KOKKOS_LAMBDA
+#define A2D_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
+
 namespace A2D {
 
 typedef uint32_t index_t;
@@ -14,35 +20,37 @@ class Vec {
  public:
   typedef T type;
 
-  Vec() {
+  A2D_INLINE_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {
       x[i] = 0.0;
     }
   }
-  Vec(const T* vals) {
+  A2D_INLINE_FUNCTION Vec(const T* vals) {
     for (int i = 0; i < N; i++) {
       x[i] = vals[i];
     }
   }
   template <class VecType>
-  Vec(const VecType& vec) {
+  A2D_INLINE_FUNCTION Vec(const VecType& vec) {
     for (int i = 0; i < N; i++) {
       x[i] = vec(i);
     }
   }
-  void zero() {
+  A2D_INLINE_FUNCTION void zero() {
     for (int i = 0; i < N; i++) {
       x[i] = 0.0;
     }
   }
   template <class IdxType>
-  T& operator()(const IdxType i) {
+  A2D_INLINE_FUNCTION T& operator()(const IdxType i) {
     return x[i];
   }
   template <class IdxType>
-  const T& operator()(const IdxType i) const {
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType i) const {
     return x[i];
   }
+
+  T* data() { return x; }
 
   T x[N];
 };
@@ -52,37 +60,40 @@ class Mat {
  public:
   typedef T type;
 
-  Mat() {
+  A2D_INLINE_FUNCTION Mat() {
     for (int i = 0; i < M * N; i++) {
       A[i] = 0.0;
     }
   }
-  Mat(const T* vals) {
+  A2D_INLINE_FUNCTION Mat(const T* vals) {
     for (int i = 0; i < M * N; i++) {
       A[i] = vals[i];
     }
   }
   template <class MatType>
-  Mat(const MatType& mat) {
+  A2D_INLINE_FUNCTION Mat(const MatType& mat) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         A[N * i + j] = mat(i, j);
       }
     }
   }
-  void zero() {
+  A2D_INLINE_FUNCTION void zero() {
     for (int i = 0; i < M * N; i++) {
       A[i] = 0.0;
     }
   }
   template <class IdxType1, class IdxType2>
-  T& operator()(const IdxType1 i, const IdxType2 j) {
+  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     return A[N * i + j];
   }
   template <class IdxType1, class IdxType2>
-  const T& operator()(const IdxType1 i, const IdxType2 j) const {
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+                                          const IdxType2 j) const {
     return A[N * i + j];
   }
+
+  T* data() { return A; }
 
   T A[M * N];
 };
@@ -93,23 +104,23 @@ class SymmMat {
   typedef T type;
   static const int MAT_SIZE = (N * (N + 1)) / 2;
 
-  SymmMat() {
+  A2D_INLINE_FUNCTION SymmMat() {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = 0.0;
     }
   }
-  SymmMat(const T* vals) {
+  A2D_INLINE_FUNCTION SymmMat(const T* vals) {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = vals[i];
     }
   }
-  void zero() {
+  A2D_INLINE_FUNCTION void zero() {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = 0.0;
     }
   }
   template <class IdxType1, class IdxType2>
-  T& operator()(const IdxType1 i, const IdxType2 j) {
+  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
@@ -117,13 +128,16 @@ class SymmMat {
     }
   }
   template <class IdxType1, class IdxType2>
-  const T& operator()(const IdxType1 i, const IdxType2 j) const {
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+                                          const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
       return A[i + j * (j + 1) / 2];
     }
   }
+
+  T* data() { return A; }
 
   T A[MAT_SIZE];
 };
@@ -141,21 +155,24 @@ class Tensor {
  public:
   typedef T type;
   static const int TENSOR_SIZE = M * N * P * Q;
-  Tensor() {
+  A2D_INLINE_FUNCTION Tensor() {
     for (int i = 0; i < TENSOR_SIZE; i++) {
       A[i] = 0.0;
     }
   }
   template <class IdxType>
-  T& operator()(const IdxType i, const IdxType j, const IdxType k,
-                const IdxType l) {
+  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j,
+                                    const IdxType k, const IdxType l) {
     return A[l + Q * (k + P * (j + N * i))];
   }
   template <class IdxType>
-  const T& operator()(const IdxType i, const IdxType j, const IdxType k,
-                      const IdxType l) const {
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType i, const IdxType j,
+                                          const IdxType k,
+                                          const IdxType l) const {
     return A[l + Q * (k + P * (j + N * i))];
   }
+
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };
@@ -178,14 +195,14 @@ class SymmTensor {
  public:
   typedef T type;
   static const int TENSOR_SIZE = (M * N * (M * N + 1)) / 2;
-  SymmTensor() {
+  A2D_INLINE_FUNCTION SymmTensor() {
     for (int i = 0; i < TENSOR_SIZE; i++) {
       A[i] = 0.0;
     }
   }
   template <class IdxType>
-  T& operator()(const IdxType i, const IdxType j, const IdxType k,
-                const IdxType l) {
+  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j,
+                                    const IdxType k, const IdxType l) {
     const int ii = N * i + j;
     const int jj = N * k + l;
 
@@ -196,8 +213,9 @@ class SymmTensor {
     }
   }
   template <class IdxType>
-  const T& operator()(const IdxType i, const IdxType j, const IdxType k,
-                      const IdxType l) const {
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType i, const IdxType j,
+                                          const IdxType k,
+                                          const IdxType l) const {
     const int ii = N * i + j;
     const int jj = N * k + l;
 
@@ -207,6 +225,8 @@ class SymmTensor {
       return A[ii + jj * (jj + 1) / 2];
     }
   }
+
+  T* data() { return A; }
 
   T A[TENSOR_SIZE];
 };

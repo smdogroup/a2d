@@ -8,52 +8,90 @@
 
 #include "sparse_amd.h"
 #include "sparse_matrix.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
+
+/**
+ * @brief A POD datatype for sparse matrix coordinates
+ */
+template <typename I>
+struct COO {
+  I row_idx;
+  I col_idx;
+
+  inline bool operator==(const COO<I>& src) const {
+    return (row_idx == src.row_idx && col_idx == src.col_idx);
+  }
+};
 
 /*
   Given the CSR data, sort each row
 */
 template <typename I>
-void SortCSRData(I nrows, std::vector<I>& rowp, std::vector<I>& cols) {
+void SortCSRData(I nrows, MultiArrayNew<I*>& rowp, MultiArrayNew<I*>& cols) {
+  Timer t("SortCSRData()");
   // Sort the cols array
-  typename std::vector<I>::iterator it1;
-  typename std::vector<I>::iterator it2 = cols.begin();
+  I* it1;
+  I* it2 = cols.data();
   for (I i = 0; i < nrows; i++) {
     it1 = it2;
     it2 += rowp[i + 1] - rowp[i];
-    std::sort(it1, it2);
+    std::sort(it1, it2);  // Note: Kokkos::sort is slow!
   }
 }
 
 /*
-  Add the connectivity from a connectivity list
+  Add the connectivity from a connectivity list, use Kokkos unordered set
 */
 template <typename I, class ConnArray>
 void BSRMatAddConnectivity(ConnArray& conn,
-                           std::set<std::pair<I, I>>& node_set) {
-  for (I i = 0; i < conn.extent(0); i++) {
-    for (I j1 = 0; j1 < conn.extent(1); j1++) {
-      for (I j2 = 0; j2 < conn.extent(1); j2++) {
-        node_set.insert(std::pair<I, I>(conn(i, j1), conn(i, j2)));
-      }
-    }
+                           Kokkos::UnorderedMap<COO<I>, void>& node_set) {
+  Timer t("BSRMatAddConnectivity()");
+  int fail = 0;
+  I nelems = conn.extent(0);
+  I nnodes = conn.extent(1);
+  node_set.rehash(nelems * nnodes * nnodes);
+  Kokkos::parallel_reduce(
+      nelems,
+      KOKKOS_LAMBDA(const I i, int& error) {
+        for (I j1 = 0; j1 < nnodes; j1++) {
+          for (I j2 = 0; j2 < nnodes; j2++) {
+            auto result = node_set.insert(COO<I>{conn(i, j1), conn(i, j2)});
+            error += result.failed();
+          }
+        }
+      },
+      fail);
+  if (fail) {
+    char msg[256];
+    std::sprintf(msg, "BSRMatAddConnectivity failed with %d failing inserts.",
+                 fail);
+    throw std::runtime_error(msg);
   }
 }
 
 /*
-  Create a BSRMat from the set of node pairs
+  Create a BSRMat from the set of node pairs, use Kokkos unordered set
 */
 template <typename I, typename T, index_t M>
-BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
-                                      std::set<std::pair<I, I>>& node_set) {
-  // Find the number of nodes referenced by other nodes
-  std::vector<I> rowp(nnodes + 1);
+BSRMat<I, T, M, M>* BSRMatFromNodeSet(
+    index_t nnodes, Kokkos::UnorderedMap<COO<I>, void>& node_set) {
+  Timer t("BSRMatFromNodeSet(2)");
+  using VecType = MultiArrayNew<I*>;
 
-  typename std::set<std::pair<I, I>>::iterator it;
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    rowp[it->first + 1] += 1;
-  }
+  // Find the number of nodes referenced by other nodes
+  VecType rowp("rowp", (nnodes + 1));
+
+  // Loop over COO entries and count number of entries in each row
+  Kokkos::parallel_for(
+      node_set.capacity(), KOKKOS_LAMBDA(I i) {
+        if (node_set.valid_at(i)) {
+          auto key = node_set.key_at(i);
+          Kokkos::atomic_increment(&rowp[key.row_idx + 1]);
+        }
+      });
+  Kokkos::fence();
 
   // Set the pointer into the rows
   rowp[0] = 0;
@@ -62,18 +100,45 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
   }
 
   I nnz = rowp[nnodes];
-  std::vector<I> cols(nnz);
+  VecType cols("cols", nnz);
 
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    cols[rowp[it->first]] = it->second;
-    rowp[it->first]++;
+  // Maintain a hash map to track the offset from rowp for each row:
+  // offset_tracker[row_idx] = current_offset
+  Kokkos::UnorderedMap<I, I> offset_tracker(nnodes);
+
+  // Set current_offet to 0 for all rows
+  int fail = 0;
+  Kokkos::parallel_reduce(
+      nnodes,
+      KOKKOS_LAMBDA(const I i, int& error) {
+        auto result = offset_tracker.insert(i, I(0));
+        error += result.failed();
+      },
+      fail);
+  if (fail) {
+    char msg[256];
+    std::sprintf(
+        msg, "Populating offset_tracker failed with %d failing inserts.", fail);
+    throw std::runtime_error(msg);
   }
 
-  // Reset the pointer into the nodes
-  for (I i = nnodes; i > 0; i--) {
-    rowp[i] = rowp[i - 1];
-  }
-  rowp[0] = 0;
+  // Loop over the nodes to increment the tracker and populate cols
+  Kokkos::parallel_for(
+      node_set.capacity(), KOKKOS_LAMBDA(I i) {
+        if (node_set.valid_at(i)) {
+          // Get row index
+          COO<I> node = node_set.key_at(i);
+          I row_idx = node.row_idx;
+          I col_idx = node.col_idx;
+
+          // If row index already in the hash map, increment its count,
+          // otherwise insert the row index to hash map
+          I offset =
+              Kokkos::atomic_fetch_add(&offset_tracker.value_at(row_idx), 1);
+          cols[rowp[row_idx] + offset] = col_idx;
+        }
+      });
+  Kokkos::fence();
 
   // Sort the cols array
   SortCSRData(nnodes, rowp, cols);
@@ -84,6 +149,7 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(index_t nnodes,
   return A;
 }
 
+#if 0
 /*
   Compute the non-zero pattern of the matrix based on the connectivity pattern
 */
@@ -149,7 +215,9 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivity(ConnArray& conn) {
 
   return A;
 }
+#endif
 
+#if 0
 template <typename I, typename T, index_t M, class ConnArray>
 BSRMat<I, T, M, M>* BSRMatFromConnectivityDeprecated(ConnArray& conn) {
   // Set the number of elements
@@ -227,6 +295,7 @@ BSRMat<I, T, M, M>* BSRMatFromConnectivityDeprecated(ConnArray& conn) {
 
   return A;
 }
+#endif
 
 template <typename I, class VecType>
 I CSRFactorSymbolic(const I nrows, const VecType Arowp, const VecType Acols,
@@ -300,15 +369,17 @@ I CSRFactorSymbolic(const I nrows, const VecType Arowp, const VecType Acols,
 template <typename I, typename T, index_t M>
 BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
                                             double fill_factor = 5.0) {
+  using IdxArray1D_t = A2D::MultiArrayNew<I*>;
+
   // Copy over the non-zero structure of the matrix
   int nrows = A.nbrows;
-  int* rowp = new int[A.nbrows + 1];
-  int* cols = new int[A.nnz];
-  int* perm_ = new int[A.nbrows];
+  IdxArray1D_t rowp("rowp", A.nbrows + 1);
+  IdxArray1D_t cols("cols", A.nnz);
+  IdxArray1D_t perm_("perm_", A.nbrows);
 
   // Copy the values to rowp and cols
-  std::copy(A.rowp, A.rowp + (A.nbrows + 1), rowp);
-  std::copy(A.cols, A.cols + A.nnz, cols);
+  A2D::BLAS::copy(rowp, A.rowp);
+  A2D::BLAS::copy(cols, A.cols);
 
   // Compute the re-ordering
   int* interface_nodes = NULL;
@@ -318,32 +389,27 @@ BSRMat<I, T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<I, T, M, M>& A,
   int* indep_ptr = NULL;
   int* indep_vars = NULL;
   int use_exact_degree = 0;
-  amd_order_interface(nrows, rowp, cols, perm_, interface_nodes,
-                      ninterface_nodes, ndep_vars, dep_vars, indep_ptr,
-                      indep_vars, use_exact_degree);
-
-  // Free up the old space
-  delete[] rowp;
-  delete[] cols;
+  amd_order_interface(nrows, (int*)rowp.data(), (int*)cols.data(),
+                      (int*)perm_.data(), interface_nodes, ninterface_nodes,
+                      ndep_vars, dep_vars, indep_ptr, indep_vars,
+                      use_exact_degree);
 
   // Set up the factorization
   // perm[new var] = old_var
   // iperm[old var] = new var
 
   // Set the permutation array
-  I* perm = new I[A.nbrows];
-  I* iperm = new I[A.nbrows];
-  std::copy(perm_, perm_ + A.nbrows, perm);
+  IdxArray1D_t perm("perm", A.nbrows);
+  IdxArray1D_t iperm("iperm", A.nbrows);
+  A2D::BLAS::copy(perm, perm_);
 
   for (I i = 0; i < A.nbrows; i++) {
     iperm[perm[i]] = i;
   }
 
-  delete[] perm_;
-
   // Allocate the new arrays for re-ordering the vector
-  std::vector<I> Arowp(A.nbrows + 1);
-  std::vector<I> Acols(A.nnz);
+  IdxArray1D_t Arowp("Arowp", A.nbrows + 1);
+  IdxArray1D_t Acols("Acols", A.nnz);
 
   // Re-order the matrix
   Arowp[0] = 0;
@@ -413,8 +479,9 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
   std::vector<I> next(ncols, empty);
 
   // Row, column and diagonal index data for the new factored matrix
-  std::vector<I> rowp(nrows + 1);
-  std::vector<I> cols(index_t(fill_factor * A.nnz));
+  using VecType = MultiArrayNew<I*>;
+  VecType rowp("rowp", nrows + 1);
+  VecType cols("cols", index_t(fill_factor * A.nnz));
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
@@ -441,7 +508,7 @@ BSRMat<I, T, M, P>* BSRMatMatMultSymbolic(BSRMat<I, T, M, N>& A,
     }
 
     if (nnz + num_cols > cols.size()) {
-      cols.resize(nnz + num_cols + A.nnz);
+      Kokkos::resize(cols, nnz + num_cols + A.nnz);
     }
 
     // Reverse through the list
@@ -483,13 +550,14 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
   std::vector<I> next(ncols, empty);
 
   // Row, column and diagonal index data for the new factored matrix
-  std::vector<I> rowp(nrows + 1);
-  std::vector<I> cols(index_t(fill_factor * A.nnz));
+  using VecType = MultiArrayNew<I*>;
+  VecType rowp("rowp", nrows + 1);
+  VecType cols("cols", index_t(fill_factor * A.nnz));
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
   for (I i = 0; i < A.nbrows; i++) {
-    int head = first_entry;
+    int head = int(first_entry);
     I num_cols = 0;  // The size of the temporary cols array
 
     // Merge the two arrays into cols
@@ -521,7 +589,7 @@ BSRMat<I, T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<I, T, M, P>& S,
     }
 
     if (nnz + num_cols > cols.size()) {
-      cols.resize(nnz + num_cols + A.nnz);
+      Kokkos::resize(cols, nnz + num_cols + A.nnz);
     }
 
     // Reverse through the list
@@ -603,16 +671,14 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
   for (I i = 0; i < A.nbrows; i++) {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       I j = A.cols[jp];
-      auto A0 = MakeSlice(A.Avals, jp);  // Set A0 = A(i, j)
 
       I* col_ptr = At->find_column_index(j, i);  // Find At(j, i)
       if (col_ptr) {
-        I kp = col_ptr - At->cols;
-        auto At0 = MakeSlice(At->Avals, kp);
+        I kp = col_ptr - At->cols.data();
 
         for (I k1 = 0; k1 < M; k1++) {
           for (I k2 = 0; k2 < N; k2++) {
-            At0(k2, k1) = A0(k1, k2);
+            At->Avals(kp, k2, k1) = A.Avals(jp, k1, k2);
           }
         }
       } else {
@@ -702,21 +768,22 @@ I CSRMultiColorOrder(const I nvars, const I rowp[], const I cols[],
 
 template <typename I, typename T, index_t M>
 void BSRMatMultiColorOrder(BSRMat<I, T, M, M>& A) {
-  A.perm = new I[A.nbrows];
-  I* colors = new I[A.nbrows];
+  using IdxArray1D_t = A2D::MultiArrayNew<I*>;
+
+  A.perm = IdxArray1D_t("A.perm", A.nbrows);
+
+  IdxArray1D_t colors("colors", A.nbrows);
 
   // Use A->perm as a temporary variable to avoid double allocation
-  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp, A.cols, colors, A.perm);
+  A.num_colors = CSRMultiColorOrder(A.nbrows, A.rowp.data(), A.cols.data(),
+                                    colors.data(), A.perm.data());
 
   // Count up the number of nodes with each color
-  A.color_count = new I[A.num_colors];
-  std::fill(A.color_count, A.color_count + A.num_colors, 0);
+  A.color_count = IdxArray1D_t("A.color_count", A.num_colors);
 
   for (I i = 0; i < A.nbrows; i++) {
     A.color_count[colors[i]]++;
   }
-
-  delete[] colors;
 }
 
 }  // namespace A2D

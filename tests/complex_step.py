@@ -1,6 +1,5 @@
 """
-This script generate results given random inputs for expressions in a2dtmp.h and
-a2dtmp2d.h
+This script generate results given random inputs for matops expressions
 """
 
 import numpy as np
@@ -941,9 +940,108 @@ def run_2d_cases():
     generate_reference_values(ndim, A, B, Ab, Bb, Cb, Ch, S, E, Sb, Eb, Sh, sb,
                               sh, mu, lam, mub, lamb, AugE, AugEb)
 
+
+def forward_axpy(a, x, y, ab=None, xb=None, yb=None, scale=None):
+    vb = np.zeros(x.shape)
+
+    if not scale:
+        scale = 1.0
+
+    if ab is not None:
+        vb += scale * ab * x
+
+    if xb is not None:
+        vb += scale * a * xb
+
+    if yb is not None:
+        vb += yb
+
+    return vb
+
+def reverse_axpy(a, x, y, vb, scale=None):
+    if not scale:
+        scale = 1.0
+
+    ab = scale * vb.dot(x)
+    xb = scale * a * vb
+    yb = vb
+    return ab, xb, yb
+
+
+def run_vec_axpy():
+    a = 0.33622324
+    x = np.array([0.96155402, 0.02855176, 0.95787560])
+    y = np.array([0.80766462, 0.60212270, 0.86418474])
+    scale = 0.45061325
+
+    # Forward
+    ab = 0.73157930
+    xb = np.array([0.16665530, 0.09586054, 0.29580571])
+    yb = np.array([0.28147380, 0.47227010, 0.39857781])
+
+    # Reverse
+    vb = np.array([0.14503781, 0.66755052, 0.83809867])
+
+
+    print("forwrad")
+    print_flatten_16(forward_axpy(a, x, y, ab=ab))
+    print_flatten_16(forward_axpy(a, x, y, ab=ab, scale=scale))
+    print_flatten_16(forward_axpy(a, x, y, ab=ab, xb=xb))
+    print_flatten_16(forward_axpy(a, x, y, ab=ab, xb=xb, scale=scale))
+    print_flatten_16(forward_axpy(a, x, y, xb=xb, yb=yb))
+    print_flatten_16(forward_axpy(a, x, y, xb=xb, yb=yb, scale=scale))
+    print_flatten_16(forward_axpy(a, x, y, ab=ab, xb=xb, yb=yb))
+    print_flatten_16(forward_axpy(a, x, y, ab=ab, xb=xb, yb=yb, scale=scale))
+
+    print("reverse")
+    ab, xb, yb = reverse_axpy(a, x, y, vb=vb)
+    print_flatten_16(ab)
+    print_flatten_16(xb)
+    print_flatten_16(yb)
+    ab, xb, yb = reverse_axpy(a, x, y, vb=vb, scale=scale)
+    print_flatten_16(ab)
+    print_flatten_16(xb)
+    print_flatten_16(yb)
+
+    return
+
+
+
+def run_vec_cross():
+    vecA = np.array([0.96155402, 0.02855176, 0.95787560])
+    vecB = np.array([0.80766462, 0.60212270, 0.86418474])
+    alpha = 0.33622324
+    scale = 0.45061325
+
+    Ab = np.array([0.69626791, 0.53987667, 0.65374594])
+    Bb = np.array([0.14453098, 0.50253050, 0.44495442])
+    Cb = np.array([0.95793759, 0.25352624, 0.24823463])
+
+    axpy = alpha * vecA + vecB
+    saxpy = scale * alpha * vecA + vecB
+    xy_cross = np.cross(vecA, vecB)
+
+    print_flatten_16(axpy)
+    print_flatten_16(saxpy)
+    print_flatten_16(xy_cross)
+
+    # Cross product
+    cross = lambda x, y: np.cross(x[:, 0], y[:, 0]).reshape(3, 1)
+    _Ab, _Bb = MatMat_reverse(cross, vecA.reshape(3, 1), vecB.reshape(3, 1),
+                              Cb.reshape(3, 1))
+    print_flatten_16(_Ab)
+    print_flatten_16(_Bb)
+
+    _Cb = MatMat_forward(cross, vecA.reshape(3, 1), vecB.reshape(3, 1), Ab.reshape(3, 1),
+                         Bb.reshape(3, 1))
+    print_flatten_16(_Cb)
+
 if __name__ == '__main__':
+    pass
     # run_3d_cases()
-    run_2d_cases()
+    # run_2d_cases()
+    # run_vec_cross()
+    run_vec_axpy()
 
 
 

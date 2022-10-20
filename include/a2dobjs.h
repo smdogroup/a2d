@@ -83,13 +83,13 @@ class Mat {
       A[i] = 0.0;
     }
   }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j) {
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     return A[N * i + j];
   }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType i,
-                                          const IdxType j) const {
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+                                          const IdxType2 j) const {
     return A[N * i + j];
   }
 
@@ -119,17 +119,17 @@ class SymmMat {
       A[i] = 0.0;
     }
   }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j) {
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
       return A[i + j * (j + 1) / 2];
     }
   }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType i,
-                                          const IdxType j) const {
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+                                          const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {

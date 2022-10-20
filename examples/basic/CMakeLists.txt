@@ -6,6 +6,7 @@ configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d.vtk.in tetra_3d.vtk C
 configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d_refine.vtk.in tetra_3d_refine.vtk COPYONLY)
 
 # Add targets
+add_executable(multiphysics multiphysics.cpp)
 add_executable(elasticity elasticity.cpp)
 add_executable(test_grad_hess test_grad_hess.cpp)
 add_executable(test_numeric test_numeric.cpp)
@@ -18,6 +19,7 @@ add_executable(toy_tetramesh toy_tetramesh.cpp)
 
 # Link to kokkos, note that linking to kokkos must happen before
 # liking to OpenMP::OpenMP, otherwise it might cause compile error
+target_link_libraries(multiphysics   kokkos)
 target_link_libraries(elasticity     kokkos)
 target_link_libraries(test_grad_hess kokkos)
 target_link_libraries(test_numeric   kokkos)
@@ -29,6 +31,7 @@ target_link_libraries(toy_readvtk    kokkos)
 target_link_libraries(toy_tetramesh  kokkos)
 
 # Link libraries
+target_link_libraries(multiphysics   OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(elasticity     OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(test_grad_hess OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(test_numeric   OpenMP::OpenMP_CXX LAPACK::LAPACK)

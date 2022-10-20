@@ -9,7 +9,7 @@ namespace A2D {
  * @param y    :  3-Vector to add
  * @param v    :  3-Vector destination
  */
-template <typename T, class VecType>
+template <class VecType>
 inline void Vec3AddCore(const VecType& x,
                         const VecType& y,
                         VecType& v) {

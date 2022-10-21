@@ -306,7 +306,7 @@ class FiniteElement {
   }
 
   void add_jacobian() {
-    const A2D::index_t ndof = PDE::FiniteElementSpace::ndof;
+    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = mesh.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -329,8 +329,8 @@ class FiniteElement {
         typename PDE::FiniteElementSpace sref;
         sol.template interp<Quadrature>(i, j, sref);
 
-        typename PDE::FiniteElementSpace cref[ndof];
-        for (A2D::index_t k = 0; k < ndof; k++) {
+        typename PDE::FiniteElementSpace cref[ncomp];
+        for (A2D::index_t k = 0; k < ncomp; k++) {
           typename PDE::FiniteElementSpace pref;
           pref.set_seed(k);
 

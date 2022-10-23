@@ -1423,7 +1423,7 @@ TEST_F({test_variant_name}, {test_type}) {{
                           for rank in range(1, max(inp.rank for inp in non_constant_input_types) + 1)]
         derivative_loops_list = [
             [  # p value assignments
-                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
+                (f"if (ii_{rank - 1} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_pvalue.format(i)}{{rank{rank}}} = {var_name}p{i}{{rank{rank}}}"
                 f";  /*UNQ_T2F_TFHF_05*/" + (' }}' if rank else '')
                 for i in range(self.N)
@@ -1543,7 +1543,7 @@ TEST_F({test_variant_name}, {test_type}) {{
         ]
         derivative_loops_list = [
             [  # p value assignments
-                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
+                (f"if (ii_{rank - 1} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_pvalue.format(i)}{{rank{rank}}} = {var_name}p{i}{{rank{rank}}}"
                 f";  /*UNQ_T2F_TFHR_04*/" + (' }}' if rank else '')
                 for i in range(self.N)
@@ -1552,7 +1552,7 @@ TEST_F({test_variant_name}, {test_type}) {{
                     var_type.rank == rank)
             ] +
             [  # h value assignments
-                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
+                (f"if (ii_{rank - 1} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_hvalue.format(i)}{{rank{rank}}} = {var_name}h{i}{{rank{rank}}}"
                 f";  /*UNQ_T2F_TFHR_05*/" + (' }}' if rank else '')
                 for i in range(self.N)

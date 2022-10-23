@@ -31,8 +31,9 @@ of the type.  This should usually have the form "const <alias> {var_name} = {0};
 "const <type> {var_name}[N] = {{{0}, {1}, {2}, ..., {N}}};" for iterable types, where <type> represents the base type \
 and N is the iterable length.
 
-rank: the integer rank of the object.  The rank is equal to the number of indices used to exactly specify a single \
-element of the object.  For example, scalars are rank 0, vectors are rank 1, matrices are rank 2, etc...
+dimensions: an iterable of integer dimensions for the object.  The dimensions define how many indices are required to \
+exactly specify a single element of the object and how many values each index can take.  For example a three vector \
+has dimensions [3,], a scalar has dimensions [], a three by two matrix has dimensions [3, 2], etc...
 
 generator: a zero-argument function returning a numpy array of values.  The function must return a numpy array \
 in order to be compatible with the complex step method implementations.  The values returned by the "generator" \
@@ -48,7 +49,7 @@ self.initialize_format.format(*self.generator(), **kwargs)
     definition: str
     test: str
     initialize_assignment_format: str
-    rank: int
+    dimensions: Tuple[int, ...]
     generator: var_generator_type
 
     def __init__(self,
@@ -57,7 +58,7 @@ self.initialize_format.format(*self.generator(), **kwargs)
                  definition: str,
                  test: str,
                  initialize_assignment_format: str,
-                 rank: int,
+                 dimensions: Union[List[int], Tuple[int, ...]],
                  generator: var_generator_type,
                  ):
         self.alias = alias
@@ -65,7 +66,7 @@ self.initialize_format.format(*self.generator(), **kwargs)
         self.definition = definition
         self.test = test
         self.initialize_assignment_format = initialize_assignment_format
-        self.rank = rank
+        self.dimensions = tuple(dimensions)
         self.generator = generator
 
         self.alias_pattern = re.compile(fr'(\A|[., <>()\[\]]){self.alias}([., <>()\[\]]|\Z)')
@@ -77,7 +78,7 @@ self.initialize_format.format(*self.generator(), **kwargs)
                 definition: str,
                 test: str,
                 initialize_assignment_format: str,
-                rank: int,
+                dimensions: Union[List[int], Tuple[int, ...]],
                 generator: var_generator_type,
                 ):
         if alias in cls.__instances_by_alias__:
@@ -126,6 +127,10 @@ self.initialize_format.format(*self.generator(), **kwargs)
     @classmethod
     def __comparison_keys__(cls):
         return set(cls.__init__.__annotations__.keys()).difference(['generator'])
+
+    @property
+    def rank(self):
+        return len(self.dimensions)
 
     pass
 
@@ -230,6 +235,10 @@ to the constructor by reference.
     @property
     def rank(self):
         return self.parent.rank
+
+    @property
+    def dimensions(self):
+        return self.parent.dimensions
 
     def __eq__(self, other):
         if isinstance(other, ADVarType):
@@ -397,6 +406,7 @@ variants_input_type = Union[List[non_constant_inputs_input_type],
                             variants_type]
 input_data_type = Dict[str, Tuple[generator_return_type, ADVarType]]  # {<var_name>: (<value>, <var_type>), ...}
 operation_type = Callable[..., Tuple[numpy.ndarray, ...]]
+derivative_loops_list_type = List[List[str]]  # [[<format_string>, ...], ...]
 
 
 class TestADFunction:
@@ -1117,7 +1127,8 @@ inputs are assumed to be constants.  If left undefined, then the power set of va
         return results
 
     @staticmethod
-    def _construct_derivative_loop_(derivative_loops_list: List[List[str]]) -> str:
+    def _construct_derivative_loop_(derivative_loops_list: derivative_loops_list_type, max_dimensions: List[int]
+                                    ) -> str:
         indent_string = '    '
         max_rank = len(derivative_loops_list) - 1
         index_list = []
@@ -1131,7 +1142,8 @@ inputs are assumed to be constants.  If left undefined, then the power set of va
                     for derivative_assignment in derivative_assignments
                 )
             derivative_loop_string += (separator_string +
-                                       f'for (int ii_{rank} = 0; ii_{rank} < 3; ii_{rank}++) {{  /*UNQ_T2F_CDL_02*/')
+                                       f'for (int ii_{rank} = 0; ii_{rank} < {max_dimensions[rank]}'
+                                       f'; ii_{rank}++) {{  /*UNQ_T2F_CDL_02*/')
             index_list.append(f'ii_{rank}')
         separator_string = '\n' + (indent_string * max_rank)
         derivative_loop_string += separator_string
@@ -1165,9 +1177,6 @@ inputs are assumed to be constants.  If left undefined, then the power set of va
                  evaluations_list: List[str], comparisons_list: List[str]) -> str:
         separator_string = '\n    '
         declarations = separator_string.join(declarations_list)
-        # derivative_loops = separator_string.join(
-        #     [derivative_loop.replace('\n', separator_string) for derivative_loop in derivative_loops_list]
-        # )
         derivative_loop = derivative_loop.replace('\n', separator_string)
         evaluations = separator_string.join(evaluations_list)
         comparisons = separator_string.join(comparisons_list)
@@ -1408,10 +1417,15 @@ TEST_F({test_variant_name}, {test_type}) {{
                 ]
         )
 
+        max_dimensions = [max(inp.dimensions[rank - 1]
+                              for inp in non_constant_input_types
+                              if inp.rank >= rank)
+                          for rank in range(1, max(inp.rank for inp in non_constant_input_types) + 1)]
         derivative_loops_list = [
             [  # p value assignments
+                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_pvalue.format(i)}{{rank{rank}}} = {var_name}p{i}{{rank{rank}}}"
-                f";  /*UNQ_T2F_TFHF_05*/"
+                f";  /*UNQ_T2F_TFHF_05*/" + (' }}' if rank else '')
                 for i in range(self.N)
                 for var_name, var_type in self.inputs
                 if (var_name in non_constant_inputs and
@@ -1421,7 +1435,7 @@ TEST_F({test_variant_name}, {test_type}) {{
             ]
             for rank in range(max(inp.rank for inp in non_constant_input_types) + 1)
         ]
-        derivative_loop = self._construct_derivative_loop_(derivative_loops_list)
+        derivative_loop = self._construct_derivative_loop_(derivative_loops_list, max_dimensions)
 
         evaluations_list = [
             f'auto expr = A2D::{self.operation_name}({self._evaluation_signature_(non_constant_inputs)})'
@@ -1521,25 +1535,33 @@ TEST_F({test_variant_name}, {test_type}) {{
                 ]
         )
 
+        max_dimensions = [
+            max(inp.dimensions[rank - 1]
+                for inp in non_constant_input_types.union(self.output_types)
+                if inp.rank >= rank)
+            for rank in range(1, max(inp.rank for inp in non_constant_input_types.union(self.output_types)) + 1)
+        ]
         derivative_loops_list = [
             [  # p value assignments
+                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_pvalue.format(i)}{{rank{rank}}} = {var_name}p{i}{{rank{rank}}}"
-                f";  /*UNQ_T2F_TFHR_04*/"
+                f";  /*UNQ_T2F_TFHR_04*/" + (' }}' if rank else '')
                 for i in range(self.N)
                 for var_name, var_type in self.inputs
                 if (var_name in non_constant_inputs and
                     var_type.rank == rank)
             ] +
             [  # h value assignments
+                (f"if ({{rank{rank}}} < {var_type.dimensions[rank - 1]}) {{{{" if rank else '') +
                 f"{var_name}_a2d{var_type.get_hvalue.format(i)}{{rank{rank}}} = {var_name}h{i}{{rank{rank}}}"
-                f";  /*UNQ_T2F_TFHR_05*/"
+                f";  /*UNQ_T2F_TFHR_05*/" + (' }}' if rank else '')
                 for i in range(self.N)
                 for var_name, var_type in self.outputs
                 if var_type.rank == rank
             ]
             for rank in range(max(inp.rank for inp in non_constant_input_types.union(self.output_types)) + 1)
         ]
-        derivative_loop = self._construct_derivative_loop_(derivative_loops_list)
+        derivative_loop = self._construct_derivative_loop_(derivative_loops_list, max_dimensions)
 
         evaluations_list = [
             f'auto expr = A2D::{self.operation_name}({self._evaluation_signature_(non_constant_inputs)})'
@@ -1959,29 +1981,29 @@ if __name__ == '__main__':
                   definition='int',
                   test='expect_val_eq',
                   initialize_assignment_format='const T {var_name} = {0};',
-                  rank=0,
+                  dimensions=[],
                   generator=lambda: numpy.random.randint(-256, 256, 1))
     t_t = VarType(alias='T',
                   shortname='Scalar',
                   definition='double',
                   test='expect_val_eq',
                   initialize_assignment_format='const T {var_name} = {0};',
-                  rank=0,
+                  dimensions=[],
                   generator=lambda: numpy.random.random(1))
     vec_t = VarType(alias='Vec_t',
                     shortname='Vec',
                     definition='A2D::Vec<T, 3>',
                     test='expect_vec_eq<3>',
                     initialize_assignment_format='const T {var_name}[3] = {{{0}, {1}, {2}}};',
-                    rank=1,
+                    dimensions=[3],
                     generator=lambda: numpy.random.random(3))
     mat_t = VarType(alias='Mat_t',
                     shortname='Mat',
                     definition='A2D::Mat<T, 3, 3>',
                     test='expect_mat_eq<3, 3>',
-                    initialize_assignment_format=
-                    'const T {var_name}[9] = {{{0}, {1}, {2}, \n{3}, {4}, {5}, \n{6}, {7}, {8}}};',
-                    rank=2,
+                    initialize_assignment_format='const T {var_name}[9] = {{{0}, {1}, {2}, \n'
+                                                 '{3}, {4}, {5}, \n{6}, {7}, {8}}};',
+                    dimensions=[3, 3],
                     generator=symmat)
     advec_t = ADVarType(alias='ADVec_t',
                         shortname='ADVec',
@@ -2058,22 +2080,22 @@ if __name__ == '__main__':
                   definition='double',
                   test='expect_val_eq',
                   initialize_assignment_format='const T {var_name} = {0};',
-                  rank=0,
+                  dimensions=[],
                   generator=lambda: numpy.random.random(1))
     vec_t = VarType(alias='Vec_t',
                     shortname='Vec',
                     definition='A2D::Vec<T, 3>',
                     test='expect_vec_eq<3>',
                     initialize_assignment_format='const T {var_name}[3] = {{{0}, {1}, {2}}};',
-                    rank=1,
+                    dimensions=[3],
                     generator=lambda: numpy.random.random(3))
     mat_t = VarType(alias='Mat_t',
                     shortname='Mat',
                     definition='A2D::Mat<T, 3, 3>',
                     test='expect_mat_eq<3, 3>',
-                    initialize_assignment_format=
-                    'const T {var_name}[9] = {{{0}, {1}, {2}, \n{3}, {4}, {5}, \n{6}, {7}, {8}}};',
-                    rank=2,
+                    initialize_assignment_format='const T {var_name}[9] = {{{0}, {1}, {2}, \n'
+                                                 '{3}, {4}, {5}, \n{6}, {7}, {8}}};',
+                    dimensions=[3, 3],
                     generator=symmat)
     a2dvec_t = A2DVarType(alias='A2DVec_t',
                           shortname='A2DVec',

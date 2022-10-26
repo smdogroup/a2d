@@ -9,3 +9,5 @@ Makefile.in
 *.log
 extern/*
 !extern/.gitkeep
+installs/*
+!installs/.gitkeep

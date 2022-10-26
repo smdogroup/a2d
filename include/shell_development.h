@@ -210,7 +210,7 @@ class ShellElementMITC4 {
      * */
     g_alpha(const int alpha,
             const int n_alpha_quad,
-            const T t,
+            const T& t,
             const ShellElementMITC4<N, T>& element,
             A2DVec<N, Vec<T, 3>>& result) {
 
@@ -359,6 +359,213 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
+  class u_alpha {
+    /**
+     * @brief Computes the du/d&alpha vector for the given situation and element.
+     *
+     *
+     * @param alpha:        denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr vector
+     *                      while a value of 1 corresponds to the du/ds vector.
+     * @param n_alpha_quad: denotes which quad value to use (0 for quad_0 or 1 for quad_1).  This corresponds to the
+     *                      quadrature value of the index <u>not</u> represented by the alpha parameter.  For example,
+     *                      alpha=0, n_alpha_quad=0 corresponds to evaluating du/dr(s,t) with s=quad_0.
+     * @param t:            the value of the t parametric coordinate.
+     * @param element:      the MITC4 element object for which the du/d&alpha vector is being computed.
+     * @param result:       An A2DVec where the resulting du/d&alpha vector should be stored.
+     * */
+    u_alpha(const int alpha,
+            const int n_alpha_quad,
+            const T& t,
+            const ShellElementMITC4<N, T>& element,
+            A2DVec<N, Vec<T, 3>>& result) {
+
+      /* Calculations for first node. */
+      node1_phi_expression = Vec3Cross(element.node1.rotation,
+                                       element.node1.shell_director,
+                                       node1_phi);
+      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
+                                                    t * 0.5,
+                                                    node1_scaled_thickness);
+      node1_addition_expression = Vec3Axpy(node1_scaled_thickness,
+                                           node1_phi,
+                                           element.node1.displacement,
+                                           node1_contribution_unscaled);
+      node1_scale_expression = Vec3Scale(node1_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 0, n_alpha_quad),
+                                         node1_contribution);
+
+      /* Calculations for second node. */
+      node2_phi_expression = Vec3Cross(element.node2.rotation,
+                                       element.node2.shell_director,
+                                       node2_phi);
+      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
+                                                    t * 0.5,
+                                                    node2_scaled_thickness);
+      node2_addition_expression = Vec3Axpy(node2_scaled_thickness,
+                                           node2_phi,
+                                           element.node2.displacement,
+                                           node2_contribution_unscaled);
+      node2_scale_expression = Vec3Scale(node2_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 1, n_alpha_quad),
+                                         node2_contribution);
+
+      /* Calculations for third node. */
+      node3_phi_expression = Vec3Cross(element.node3.rotation,
+                                       element.node3.shell_director,
+                                       node3_phi);
+      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
+                                                    t * 0.5,
+                                                    node3_scaled_thickness);
+      node3_addition_expression = Vec3Axpy(node3_scaled_thickness,
+                                           node3_phi,
+                                           element.node3.displacement,
+                                           node3_contribution_unscaled);
+      node3_scale_expression = Vec3Scale(node3_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 2, n_alpha_quad),
+                                         node3_contribution);
+
+      /* Calculations for fourth node. */
+      node4_phi_expression = Vec3Cross(element.node4.rotation,
+                                       element.node4.shell_director,
+                                       node4_phi);
+      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
+                                                    t * 0.5,
+                                                    node4_scaled_thickness);
+      node4_addition_expression = Vec3Axpy(node4_scaled_thickness,
+                                           node4_phi,
+                                           element.node4.displacement,
+                                           node4_contribution_unscaled);
+      node4_scale_expression = Vec3Scale(node4_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 3, n_alpha_quad),
+                                         node4_contribution);
+
+      /* Sum together the components. */
+      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
+      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
+      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
+    }
+
+    void reverse() {
+      /* Sum component calls: */
+      sum_1234_expression.reverse();
+      sum_123_expression.reverse();
+      sum_12_expression.reverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.reverse();
+      node4_addition_expression.reverse();
+      node4_thickness_scale_expression.reverse();
+      node4_phi_expression.reverse();
+      node3_scale_expression.reverse();
+      node3_addition_expression.reverse();
+      node3_thickness_scale_expression.reverse();
+      node3_phi_expression.reverse();
+      node2_scale_expression.reverse();
+      node2_addition_expression.reverse();
+      node2_thickness_scale_expression.reverse();
+      node2_phi_expression.reverse();
+      node1_scale_expression.reverse();
+      node1_addition_expression.reverse();
+      node1_thickness_scale_expression.reverse();
+      node1_phi_expression.reverse();
+    };
+
+    void hforward() {
+      /* Node expression calls: */
+      node1_phi_expression.hforward();
+      node1_thickness_scale_expression.hforward();
+      node1_addition_expression.hforward();
+      node1_scale_expression.hforward();
+      node2_phi_expression.hforward();
+      node2_thickness_scale_expression.hforward();
+      node2_addition_expression.hforward();
+      node2_scale_expression.hforward();
+      node3_phi_expression.hforward();
+      node3_thickness_scale_expression.hforward();
+      node3_addition_expression.hforward();
+      node3_scale_expression.hforward();
+      node4_phi_expression.hforward();
+      node4_thickness_scale_expression.hforward();
+      node4_addition_expression.hforward();
+      node4_scale_expression.hforward();
+
+      /* Sum component calls: */
+      sum_12_expression.hforward();
+      sum_123_expression.hforward();
+      sum_1234_expression.hforward();
+    };
+
+    void hreverse() {
+      /* Sum component calls: */
+      sum_1234_expression.hreverse();
+      sum_123_expression.hreverse();
+      sum_12_expression.hreverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.hhreverse();
+      node4_addition_expression.hreverse();
+      node4_thickness_scale_expression.hreverse();
+      node4_phi_expression.hreverse();
+      node3_scale_expression.hreverse();
+      node3_addition_expression.hreverse();
+      node3_thickness_scale_expression.hreverse();
+      node3_phi_expression.hreverse();
+      node2_scale_expression.hreverse();
+      node2_addition_expression.hreverse();
+      node2_thickness_scale_expression.hreverse();
+      node2_phi_expression.hreverse();
+      node1_scale_expression.hreverse();
+      node1_addition_expression.hreverse();
+      node1_thickness_scale_expression.hreverse();
+      node1_phi_expression.hreverse();
+    };
+
+   private:
+    A2DVec<N, Vec<T, 3>>
+        node1_phi,
+        node2_phi,
+        node3_phi,
+        node4_phi;
+    A2DVec<N, Vec<T, 3>>
+        node1_contribution, node1_contribution_unscaled,
+        node2_contribution, node2_contribution_unscaled,
+        node3_contribution, node3_contribution_unscaled,
+        node4_contribution, node4_contribution_unscaled;
+    A2DScalar<N, T>
+        node1_scaled_thickness,
+        node2_scaled_thickness,
+        node3_scaled_thickness,
+        node4_scaled_thickness;
+    A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
+
+    /* Expressions: */
+
+    A2DVec3CrossVecExpr<N, T>
+        node1_phi_expression,
+        node2_phi_expression,
+        node3_phi_expression,
+        node4_phi_expression;
+    Vec3VecA2DScalarAxpyExpr<N, T>
+        node1_addition_expression,
+        node2_addition_expression,
+        node3_addition_expression,
+        node4_addition_expression;
+    A2DVec3ScaleExpr<N, T>
+        node1_scale_expression,
+        node2_scale_expression,
+        node3_scale_expression,
+        node4_scale_expression;
+    A2DScalarScalarMultExpr<N, T>
+        node1_thickness_scale_expression,
+        node2_thickness_scale_expression,
+        node3_thickness_scale_expression,
+        node4_thickness_scale_expression;
+    A2DVec3A2DVecScalarAxpyExpr<N, T>
+        sum_12_expression,
+        sum_123_expression,
+        sum_1234_expression;
+  };
+
   void generate_energy() {
     /* Generate the internal energy of the shell element, that will then be used to calculate the global stiffness
      * matrix
@@ -372,9 +579,9 @@ class ShellElementMITC4 {
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
     gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
     /** derivatives of u with respect to r evaluated at the various quadrature points */
-    ur_r0s0t0, ur_r0s0t1, ur_r0s1t0, ur_r0s1t1, ur_r1s0t0, ur_r1s0t1, ur_r1s1t0, ur_r1s1t1,
+    ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
     /** derivatives of u with respect to s evaluated at the various quadrature points */
-    us_r0s0t0, us_r0s0t1, us_r0s1t0, us_r0s1t1, us_r1s0t0, us_r1s0t1, us_r1s1t0, us_r1s1t1,
+    us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
     /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
     ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0;
 
@@ -416,17 +623,16 @@ class ShellElementMITC4 {
     /* Evaluate at r = quad_val_1; */
     auto expression_f_4 = ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
 
-    /* write test code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) */
-    double r(-1 / sqrt(3)), s(-1 / sqrt(3)), t(-1 / sqrt(3));
-    gr_rAs0t0;
-    gs_r0sAt0;
-    ur_r0s0t0;
-    us_r0s0t0;
-    A2DVec3DotA2DVecExpr<N, T> expression5 = Vec3Dot(gr_rAs0t0, ur_r0s0t0, e_rr_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> expression6 = Vec3Dot(gs_r0sAt0, us_r0s0t0, e_ss_r0s0t0);
+    /* write test code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0*/
+    g_alpha gr_rAs0t0_expression(0, 0, quad_0, this, gr_rAs0t0);
+    g_alpha gs_r0sAt0_expression(1, 0, quad_0, this, gs_r0sAt0);
+    u_alpha ur_rAs0t0_expression(0, 0, quad_0, this, ur_rAs0t0);
+    u_alpha us_r0sAt0_expression(1, 0, quad_0, this, us_r0sAt0);
+    A2DVec3DotA2DVecExpr<N, T> expression5 = Vec3Dot(gr_rAs0t0, ur_rAs0t0, e_rr_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression6 = Vec3Dot(gs_r0sAt0, us_r0sAt0, e_ss_r0s0t0);
     A2DScalar<N, T> gr_us_r0s0t0, gs_ur_r0s0t0;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr<N, T> expression7 = Vec3Dot(gr_rAs0t0, us_r0s0t0, gr_us_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> expression8 = Vec3Dot(gs_r0sAt0, ur_r0s0t0, gs_ur_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression7 = Vec3Dot(gr_rAs0t0, us_r0sAt0, gr_us_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression8 = Vec3Dot(gs_r0sAt0, ur_rAs0t0, gs_ur_r0s0t0);
     auto expression9 = ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);  // TODO: make this operation
   };
 
@@ -509,23 +715,23 @@ class ShellElementMITC4 {
   /** shape function derivative with respect to r and s, evaluated at various quadrature points */
   constexpr static const T dNi_d_alpha_alpha_k_data[16]{
       /** shape function derivative with respect to r, evaluated at various quadrature points */
-      -0.25 * (1 - quad_0), /**< dN1dr evaluated at s=quad_0 */
-      -0.25 * (1 - quad_1), /**< dN1dr evaluated at s=quad_1 */
-      0.25 * (1 - quad_0),  /**< dN2dr evaluated at s=quad_0 */
-      0.25 * (1 - quad_1),  /**< dN2dr evaluated at s=quad_1 */
-      0.25 * (1 + quad_0),  /**< dN3dr evaluated at s=quad_0 */
-      0.25 * (1 + quad_1),  /**< dN3dr evaluated at s=quad_1 */
-      -0.25 * (1 + quad_0), /**< dN4dr evaluated at s=quad_0 */
-      -0.25 * (1 + quad_1), /**< dN4dr evaluated at s=quad_1 */
+      -0.25 * (1 - quad_0), /**< dN1/dr evaluated at s=quad_0 */
+      -0.25 * (1 - quad_1), /**< dN1/dr evaluated at s=quad_1 */
+      0.25 * (1 - quad_0),  /**< dN2/dr evaluated at s=quad_0 */
+      0.25 * (1 - quad_1),  /**< dN2/dr evaluated at s=quad_1 */
+      0.25 * (1 + quad_0),  /**< dN3/dr evaluated at s=quad_0 */
+      0.25 * (1 + quad_1),  /**< dN3/dr evaluated at s=quad_1 */
+      -0.25 * (1 + quad_0), /**< dN4/dr evaluated at s=quad_0 */
+      -0.25 * (1 + quad_1), /**< dN4/dr evaluated at s=quad_1 */
       /** shape function derivative with respect to s, evaluated at various quadrature points */
-      -0.25 * (1 - quad_0), /**< dN1ds evaluated at r=quad_0 */
-      -0.25 * (1 - quad_1), /**< dN1ds evaluated at r=quad_1 */
-      -0.25 * (1 + quad_0), /**< dN2ds evaluated at r=quad_0 */
-      -0.25 * (1 + quad_1), /**< dN2ds evaluated at r=quad_1 */
-      0.25 * (1 + quad_0),  /**< dN3ds evaluated at r=quad_0 */
-      0.25 * (1 + quad_1),  /**< dN3ds evaluated at r=quad_1 */
-      0.25 * (1 - quad_0),  /**< dN4ds evaluated at r=quad_0 */
-      0.25 * (1 - quad_1)   /**< dN4ds evaluated at r=quad_1 */
+      -0.25 * (1 - quad_0), /**< dN1/ds evaluated at r=quad_0 */
+      -0.25 * (1 - quad_1), /**< dN1/ds evaluated at r=quad_1 */
+      -0.25 * (1 + quad_0), /**< dN2/ds evaluated at r=quad_0 */
+      -0.25 * (1 + quad_1), /**< dN2/ds evaluated at r=quad_1 */
+      0.25 * (1 + quad_0),  /**< dN3/ds evaluated at r=quad_0 */
+      0.25 * (1 + quad_1),  /**< dN3/ds evaluated at r=quad_1 */
+      0.25 * (1 - quad_0),  /**< dN4/ds evaluated at r=quad_0 */
+      0.25 * (1 - quad_1)   /**< dN4/ds evaluated at r=quad_1 */
   };
   /** getter for shape function derivatives evaluated at the various quadrature points*/  // TODO: doc
   constexpr static T dNi_d_alpha_alpha_k(const int alpha, const int i, const int k) {

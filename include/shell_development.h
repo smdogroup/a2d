@@ -193,22 +193,22 @@ class ShellElementMITC4 {
 
   InternalEnergy internal_energy();*/
 
+  /**
+   * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
+   *
+   *
+   * @param alpha:            denotes the variant of the g<sub>&alpha</sub> vector, a value of 0 corresponds to the
+   *                          g<sub>r</sub> vector while a value of 1 corresponds to the g<sub>s</sub> vector.
+   * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
+   *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
+   *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
+   *                          corresponds to evaluating g<sub>r</sub>(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
+   *                          corresponds to evaluating g<sub>s</sub>(r,t) with r=quad_1.
+   * @param t:                the value of the t parametric coordinate.
+   * @param element:          the MITC4 element object for which the g<sub>&alpha</sub> vector is being computed.
+   * @param result:           An A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
+   * */
   class g_alpha {
-    /**
-     * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
-     *
-     *
-     * @param alpha:            denotes the variant of the g<sub>&alpha</sub> vector, a value of 0 corresponds to the
-     *                          g<sub>r</sub> vector while a value of 1 corresponds to the g<sub>s</sub> vector.
-     * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
-     *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
-     *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
-     *                          corresponds to evaluating g<sub>r</sub>(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
-     *                          corresponds to evaluating g<sub>s</sub>(r,t) with r=quad_1.
-     * @param t:                the value of the t parametric coordinate.
-     * @param element:          the MITC4 element object for which the g<sub>&alpha</sub> vector is being computed.
-     * @param result:           An A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
-     * */
     g_alpha(const int alpha,
             const int n_alpha_var_ind,
             const T& t,
@@ -360,22 +360,22 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
+  /**
+   * @brief Computes the du/d&alpha vector for the given situation and element.
+   *
+   *
+   * @param alpha:            denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr
+   *                          vector while a value of 1 corresponds to the du/ds vector.
+   * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
+   *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
+   *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
+   *                          corresponds to evaluating du/dr(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
+   *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
+   * @param t:                the value of the t parametric coordinate.
+   * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
+   * @param result:           An A2DVec where the resulting du/d&alpha vector should be stored.
+   * */
   class u_alpha {
-    /**
-     * @brief Computes the du/d&alpha vector for the given situation and element.
-     *
-     *
-     * @param alpha:            denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr
-     *                          vector while a value of 1 corresponds to the du/ds vector.
-     * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
-     *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
-     *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
-     *                          corresponds to evaluating du/dr(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
-     *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
-     * @param t:                the value of the t parametric coordinate.
-     * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
-     * @param result:           An A2DVec where the resulting du/d&alpha vector should be stored.
-     * */
     u_alpha(const int alpha,
             const int n_alpha_var_ind,
             const T& t,
@@ -583,17 +583,25 @@ class ShellElementMITC4 {
 
     A2DVec<N, Vec<T, 3>>
     /** gr vector evaluated at the various quadrature points */
-    gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
+        gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
     /** gs vector evaluated at the various quadrature points */
-    gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
+        gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
+        gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
+    /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
+        gr_r0_sp1_t0, gr_r0_sn1_t0,
+    /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
+        gs_rp1_s0_t0, gs_rn1_s0_t0,
     /** derivatives of u with respect to r evaluated at the various quadrature points */
-    ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
+        ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
     /** derivatives of u with respect to s evaluated at the various quadrature points */
-    us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
+        us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
     /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0;
+        ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,
+    /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
+        ur_r0_sp1_t0, ur_r0_sn1_t0,
+    /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
+        us_rp1_s0_t0, us_rn1_s0_t0;
 
     /** Cartesian local basis: */
     A2DVec<N, Vec<T, 3>>
@@ -623,41 +631,41 @@ class ShellElementMITC4 {
     // TODO: write code for tying points
     // TODO: remove non-dependencies *********
     /* e_rt_A calculations: */
-    /*auto gr_r0_sp1_t0_expression = ;
+    g_alpha gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
     auto gt_r0_sp1_t0_expression = ;
-    auto ur_r0_sp1_t0_expression = ;
+    u_alpha ur_r0_sp1_t0_expression(0, 3, 0, this, ur_r0_sp1_t0);
     auto ut_r0_sp1_t0_expression = ;
     A2DScalar<N, T> gr_ut_A, gt_ur_A;  // TODO: move declaration
     auto gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
     auto gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
-    auto e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);*/
+    auto e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
     /* e_rt_B calculations: */
-    /*auto gr_r0_sn1_t0_expression = ;
+    g_alpha gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
     auto gt_r0_sn1_t0_expression = ;
-    auto ur_r0_sn1_t0_expression = ;
+    u_alpha ur_r0_sn1_t0_expression(0, 0, 0, this, ur_r0_sn1_t0);
     auto ut_r0_sn1_t0_expression = ;
     A2DScalar<N, T> gr_ut_B, gt_ur_B;  // TODO: move declaration
     auto gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
     auto gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
-    auto e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);*/
+    auto e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
     /* e_st_C calculations: */
-    /*auto gs_rp1_s0_t0_expression = ;
+    g_alpha gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
     auto gt_rp1_s0_t0_expression = ;
-    auto us_rp1_s0_t0_expression = ;
+    u_alpha us_rp1_s0_t0_expression(1, 3, 0, this, us_rp1_s0_t0);
     auto ut_rp1_s0_t0_expression = ;
     A2DScalar<N, T> gs_ut_C, gt_us_C;  // TODO: move declaration
     auto gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
     auto gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
-    auto e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);*/
+    auto e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
     /* e_st_D calculations: */
-    /*auto gs_rn1_s0_t0_expression = ;
+    g_alpha gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
     auto gt_rn1_s0_t0_expression = ;
-    auto us_rn1_s0_t0_expression = ;
+    u_alpha us_rn1_s0_t0_expression(1, 0, 0, this, us_rn1_s0_t0);
     auto ut_rn1_s0_t0_expression = ;
     A2DScalar<N, T> gs_ut_D, gt_us_D;  // TODO: move declaration
     auto gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
     auto gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
-    auto e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);*/
+    auto e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);
 
 
     /* Write code for e_rt_r... and e_st_r... values */

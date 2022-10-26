@@ -193,11 +193,23 @@ class ShellElementMITC4 {
 
   InternalEnergy internal_energy();*/
 
-  class g_alpha {  // TODO: doc
-    g_alpha(const int alpha,  /* alpha can be 0 (corresponding to r) or 1 (corresponding to s) */
-            const int n_alpha_quad,  /* n_alpha_quad can be 0 for n_alpha_quad or 1 for quad_1;
- * this corresponds to the quadrature value of the index <u>not</u> represented by alpha.
- * So alpha=0, n_alpha_quad=0 means we're evaluating gr(s,t) with s=quad_0.*/
+  class g_alpha {
+    /**
+     * @brief Computes the g_alpha vector for the given situation and element.
+     *
+     * TODO: use sub scripts in this documentation
+     *
+     * @param alpha:        denotes the variant of the g_alpha vector, a value of 0 corresponds to the gr vector while
+     *                      a value of 1 corresponds to the gs vector.
+     * @param n_alpha_quad: denotes which quad value to use (0 for quad_0 or 1 for quad_1).  This corresponds to the
+     *                      quadrature value of the index <u>not</u> represented by the alpha parameter.  For example,
+     *                      alpha=0, n_alpha_quad=0 corresponds to evaluating gr(s,t) with s=quad_0.
+     * @param t:            the value of the t parametric coordinate.
+     * @param element:      the MITC4 element object for which the g_alpha vector is being computed.
+     * @param result:       An A2DVec where the resulting g_alpha vector should be stored.
+     * */
+    g_alpha(const int alpha,
+            const int n_alpha_quad,
             const T t,
             const ShellElementMITC4<N, T>& element,
             A2DVec<N, Vec<T, 3>>& result) {

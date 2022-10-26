@@ -210,9 +210,9 @@ class ShellElementMITC4 {
 
     A2DVec<N, Vec<T, 3>>
     /** gr vector evaluated at the various quadrature points */
-    gr_r0s0t0, gr_r0s0t1, gr_r0s1t0, gr_r0s1t1, gr_r1s0t0, gr_r1s0t1, gr_r1s1t0, gr_r1s1t1,
+    gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
     /** gs vector evaluated at the various quadrature points */
-    gs_r0s0t0, gs_r0s0t1, gs_r0s1t0, gs_r0s1t1, gs_r1s0t0, gs_r1s0t1, gs_r1s1t0, gs_r1s1t1,
+    gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
     gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
     /** derivatives of u with respect to r evaluated at the various quadrature points */

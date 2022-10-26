@@ -11,6 +11,16 @@
 
 namespace A2D {
 
+// TODO: OPERATOR CLASSES:
+
+template <int N, typename T>  // TODO: make the ScalarMult operation (z = a * b)
+class A2DScalarScalarMultExpr {
+
+};
+
+
+// END TODO: OPERATOR CLASSES
+
 template <typename T>
 class LinearIsotropicMaterial {
  private:
@@ -183,24 +193,158 @@ class ShellElementMITC4 {
 
   InternalEnergy internal_energy();*/
 
-  class g_alpha {
+  class g_alpha {  // TODO: doc
     g_alpha(const int alpha,  /* alpha can be 0 (corresponding to r) or 1 (corresponding to s) */
+            const int n_alpha_quad,  /* n_alpha_quad can be 0 for n_alpha_quad or 1 for quad_1;
+ * this corresponds to the quadrature value of the index <u>not</u> represented by alpha.
+ * So alpha=0, n_alpha_quad=0 means we're evaluating gr(s,t) with s=quad_0.*/
             const T t,
             const ShellElementMITC4<N, T>& element,
             A2DVec<N, Vec<T, 3>>& result) {
-      A2DVec<N, Vec<T, 3>>
-          node1_contribution, node1_contribution_unscaled,
-          node2_contribution, node2_contribution_unscaled,
-          node3_contribution, node3_contribution_unscaled,
-          node4_contribution, node4_contribution_unscaled;
 
       /* Calculations for first node. */
+      node1_thickness_scale_expression = ScalarMult(element.node1.thickness, t * 0.5, node1_scaled_thickness);
+      node1_addition_expression = Vec3Axpy(node1_scaled_thickness,
+                                           element.node1.shell_director,
+                                           element.node1.position,
+                                           node1_contribution_unscaled);
+      node1_scale_expression = Vec3Scale(node1_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 0, n_alpha_quad),
+                                         node1_contribution);
 
+      /* Calculations for second node. */
+      node2_thickness_scale_expression = ScalarMult(element.node2.thickness, t * 0.5, node2_scaled_thickness);
+      node2_addition_expression = Vec3Axpy(node2_scaled_thickness,
+                                           element.node2.shell_director,
+                                           element.node2.position,
+                                           node2_contribution_unscaled);
+      node2_scale_expression = Vec3Scale(node2_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 1, n_alpha_quad),
+                                         node2_contribution);
+
+      /* Calculations for third node. */
+      node3_thickness_scale_expression = ScalarMult(element.node3.thickness, t * 0.5, node3_scaled_thickness);
+      node3_addition_expression = Vec3Axpy(node3_scaled_thickness,
+                                           element.node3.shell_director,
+                                           element.node3.position,
+                                           node3_contribution_unscaled);
+      node3_scale_expression = Vec3Scale(node3_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 2, n_alpha_quad),
+                                         node3_contribution);
+
+      /* Calculations for fourth node. */
+      node4_thickness_scale_expression = ScalarMult(element.node4.thickness, t * 0.5, node4_scaled_thickness);
+      node4_addition_expression = Vec3Axpy(node4_scaled_thickness,
+                                           element.node4.shell_director,
+                                           element.node4.position,
+                                           node4_contribution_unscaled);
+      node4_scale_expression = Vec3Scale(node4_contribution_unscaled,
+                                         dNi_d_alpha_alpha_k(alpha, 3, n_alpha_quad),
+                                         node4_contribution);
+
+      /* Sum together the components. */
+      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
+      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
+      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
     }
 
-    void reverse();
-    void hforward();
-    void hreverse();
+    void reverse() {
+      /* Sum component calls: */
+      sum_1234_expression.reverse();
+      sum_123_expression.reverse();
+      sum_12_expression.reverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.reverse();
+      node4_addition_expression.reverse();
+      node4_thickness_scale_expression.reverse();
+      node3_scale_expression.reverse();
+      node3_addition_expression.reverse();
+      node3_thickness_scale_expression.reverse();
+      node2_scale_expression.reverse();
+      node2_addition_expression.reverse();
+      node2_thickness_scale_expression.reverse();
+      node1_scale_expression.reverse();
+      node1_addition_expression.reverse();
+      node1_thickness_scale_expression.reverse();
+    };
+
+    void hforward() {
+      /* Node expression calls: */
+      node1_thickness_scale_expression.hforward();
+      node1_addition_expression.hforward();
+      node1_scale_expression.hforward();
+      node2_thickness_scale_expression.hforward();
+      node2_addition_expression.hforward();
+      node2_scale_expression.hforward();
+      node3_thickness_scale_expression.hforward();
+      node3_addition_expression.hforward();
+      node3_scale_expression.hforward();
+      node4_thickness_scale_expression.hforward();
+      node4_addition_expression.hforward();
+      node4_scale_expression.hforward();
+
+      /* Sum component calls: */
+      sum_12_expression.hforward();
+      sum_123_expression.hforward();
+      sum_1234_expression.hforward();
+    };
+
+    void hreverse() {
+      /* Sum component calls: */
+      sum_1234_expression.hreverse();
+      sum_123_expression.hreverse();
+      sum_12_expression.hreverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.hhreverse();
+      node4_addition_expression.hreverse();
+      node4_thickness_scale_expression.hreverse();
+      node3_scale_expression.hreverse();
+      node3_addition_expression.hreverse();
+      node3_thickness_scale_expression.hreverse();
+      node2_scale_expression.hreverse();
+      node2_addition_expression.hreverse();
+      node2_thickness_scale_expression.hreverse();
+      node1_scale_expression.hreverse();
+      node1_addition_expression.hreverse();
+      node1_thickness_scale_expression.hreverse();
+    };
+
+   private:
+    A2DVec<N, Vec<T, 3>>
+        node1_contribution, node1_contribution_unscaled,
+        node2_contribution, node2_contribution_unscaled,
+        node3_contribution, node3_contribution_unscaled,
+        node4_contribution, node4_contribution_unscaled;
+    A2DScalar<N, T>
+        node1_scaled_thickness,
+        node2_scaled_thickness,
+        node3_scaled_thickness,
+        node4_scaled_thickness;
+    A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
+
+    /* Expressions: */
+
+    Vec3VecA2DScalarAxpyExpr<N, T>
+        node1_addition_expression,
+        node2_addition_expression,
+        node3_addition_expression,
+        node4_addition_expression;
+    A2DVec3ScaleExpr<N, T>
+        node1_scale_expression,
+        node2_scale_expression,
+        node3_scale_expression,
+        node4_scale_expression;
+    A2DScalarScalarMultExpr<N, T>
+        node1_thickness_scale_expression,
+        node2_thickness_scale_expression,
+        node3_thickness_scale_expression,
+        node4_thickness_scale_expression;
+    A2DVec3A2DVecScalarAxpyExpr<N, T>
+        sum_12_expression,
+        sum_123_expression,
+        sum_1234_expression;
   };
 
   void generate_energy() {
@@ -245,7 +389,7 @@ class ShellElementMITC4 {
     e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
         e_rs_r0s0t0, e_rs_r0s0t1, e_rs_r0s1t0, e_rs_r0s1t1, e_rs_r1s0t0, e_rs_r1s0t1, e_rs_r1s1t0, e_rs_r1s1t1,
         e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;
-    /*TODO: move all these to private attributes, and just reset their values whenever this method is called.*/
+    /*TODO: move all these to private members, and just reset their values whenever this method is called.*/
 
     // TODO: write code for tying points
 
@@ -262,15 +406,15 @@ class ShellElementMITC4 {
 
     /* write test code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) */
     double r(-1 / sqrt(3)), s(-1 / sqrt(3)), t(-1 / sqrt(3));
-    gr_r0s0t0;
-    gs_r0s0t0;
+    gr_rAs0t0;
+    gs_r0sAt0;
     ur_r0s0t0;
     us_r0s0t0;
-    A2DVec3DotA2DVecExpr<N, T> expression5 = Vec3Dot(gr_r0s0t0, ur_r0s0t0, e_rr_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> expression6 = Vec3Dot(gs_r0s0t0, us_r0s0t0, e_ss_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression5 = Vec3Dot(gr_rAs0t0, ur_r0s0t0, e_rr_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression6 = Vec3Dot(gs_r0sAt0, us_r0s0t0, e_ss_r0s0t0);
     A2DScalar<N, T> gr_us_r0s0t0, gs_ur_r0s0t0;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr<N, T> expression7 = Vec3Dot(gr_r0s0t0, us_r0s0t0, gr_us_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> expression8 = Vec3Dot(gs_r0s0t0, ur_r0s0t0, gs_ur_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression7 = Vec3Dot(gr_rAs0t0, us_r0s0t0, gr_us_r0s0t0);
+    A2DVec3DotA2DVecExpr<N, T> expression8 = Vec3Dot(gs_r0sAt0, ur_r0s0t0, gs_ur_r0s0t0);
     auto expression9 = ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);  // TODO: make this operation
   };
 

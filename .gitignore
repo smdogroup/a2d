@@ -7,7 +7,11 @@ Makefile.in
 *.pyc
 *.vtk
 *.log
+
 extern/*
 !extern/.gitkeep
-installs/*
-!installs/.gitkeep
+
+installs/kokkos/*
+installs/kokkos-kernels/*
+!installs/kokkos/.gitkeep
+!installs/kokkos-kernels/.gitkeep

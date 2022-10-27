@@ -16,9 +16,10 @@ int main(int argc, char* argv[]) {
   typedef double T;
   typedef MixedPoisson2D<T> PDE;
   typedef TriQuadrature3 Quadrature;
-  typedef FiniteElement<T, Quadrature, PDE, LagrangeTri1<T, 2>, LagrangeTri0<T>,
-                        RT2DTri1<T>>
-      PoissonFE;
+  typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
+  typedef FEBasis<T, LagrangeTri0<T>, RT2DTri1<T>> Basis;
+
+  typedef FiniteElement<T, Quadrature, PDE, GeoBasis, Basis> PoissonFE;
 
   // Set the node locations
   index_t nx = 10, ny = 10;
@@ -59,10 +60,10 @@ int main(int argc, char* argv[]) {
   // Create the mesh for the geometry
   SpaceType geo_space[] = {H1};
   index_t dims[] = {2};
-  ElementMesh<LagrangeTri1<T, 2>> geomesh(connect, geo_space, dims);
+  ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
 
   SpaceType sol_space[] = {L2, EDGE};
-  ElementMesh<LagrangeTri0<T>, RT2DTri1<T>> mesh(connect, sol_space);
+  ElementMesh<Basis> mesh(connect, sol_space);
 
   // Get the total number of degrees of freedom
   index_t ndof = mesh.get_num_dof();

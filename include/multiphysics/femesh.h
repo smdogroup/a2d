@@ -201,7 +201,7 @@ class ElementConnectivity {
 */
 enum SpaceType { L2, H1, EDGE };
 
-template <class... Basis>
+template <class Basis>
 class ElementMesh {
  public:
   ElementMesh(A2D::ElementConnectivity& conn, SpaceType spaces_[],
@@ -219,10 +219,23 @@ class ElementMesh {
         dim[i] = 1;
       }
     }
-    init_<0, Basis...>();
+
+    offset[0] = 0;
+
+    for (A2D::index_t index = 0; index < nspaces; index++) {
+      if (spaces[index] == L2) {
+        counts[index] = dim[index] * conn.get_num_elements();
+      } else if (spaces[index] == H1) {
+        counts[index] = dim[index] * conn.get_num_nodes();
+      } else if (spaces[index] == EDGE) {
+        counts[index] = dim[index] * conn.get_num_edges();
+      }
+
+      offset[index + 1] = offset[index] + counts[index];
+    }
   }
 
-  static const A2D::index_t nspaces = sizeof...(Basis);
+  static const A2D::index_t nspaces = Basis::nbasis;
 
   A2D::index_t get_num_elements() { return conn.get_num_elements(); }
   A2D::index_t get_num_dof() { return offset[nspaces]; }
@@ -256,28 +269,6 @@ class ElementMesh {
   }
 
  private:
-  template <A2D::index_t index>
-  void init_() {}
-
-  template <A2D::index_t index, class First, class... Remain>
-  void init_() {
-    if (index == 0) {
-      offset[index] = 0;
-    }
-
-    if (spaces[index] == L2) {
-      counts[index] = dim[index] * conn.get_num_elements();
-    } else if (spaces[index] == H1) {
-      counts[index] = dim[index] * conn.get_num_nodes();
-    } else if (spaces[index] == EDGE) {
-      counts[index] = dim[index] * conn.get_num_edges();
-    }
-
-    offset[index + 1] = offset[index] + counts[index];
-
-    init_<index + 1, Remain...>();
-  }
-
   A2D::ElementConnectivity conn;
   A2D::index_t counts[nspaces];
   A2D::index_t offset[nspaces + 1];

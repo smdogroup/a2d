@@ -10,71 +10,93 @@ namespace A2D {
 /*
   In-place element vector implementation
 */
-template <typename T, class FiniteElementSpace, class... Basis>
+template <typename T, class FiniteElementSpace, class Basis>
 class ElementVector_InPlace {
  public:
-  ElementVector_InPlace(A2D::ElementMesh<Basis...>& mesh,
+  ElementVector_InPlace(A2D::ElementMesh<Basis>& mesh,
                         A2D::SolutionVector<T>& vec)
       : mesh(mesh), vec(vec) {}
+
+  // Required DOF container object (different for each implementation)
+  class FEDof {
+   public:
+    FEDof() {}
+
+    // Variables for all the basis functions
+    T dof[Basis::ndof];
+
+    // Zero the values
+    void zero() { std::fill(dof, dof + Basis::ndof, T(0.0)); }
+
+    // Get the dof values
+    template <A2D::index_t index>
+    T* get() {
+      return &dof[Basis::template get_dof_offset<index>()];
+    }
+    template <A2D::index_t index>
+    const T* get() const {
+      return &dof[Basis::template get_dof_offset<index>()];
+    }
+  };
+
+  // Get values for this element from the vector
+  void get_element_values(A2D::index_t elem, FEDof& dof) {
+    get_element_values_<Basis::nbasis - 1>(elem, dof);
+  }
+
+  // Add values for this element to the vector
+  void add_element_values(A2D::index_t elem, const FEDof& dof) {
+    add_element_values_<Basis::nbasis - 1>(elem, dof);
+  }
 
   A2D::SolutionVector<T>& get_vector() { return vec; }
   void set_solution() {}
   void get_residual() {}
 
-  template <class Quadrature>
-  void interp(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
-    interp_<Quadrature, 0, Basis...>(elem, pt, s);
-  }
-
-  template <class Quadrature>
-  void add(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s) {
-    add_<Quadrature, 0, Basis...>(elem, pt, s);
-  }
-
  private:
-  template <class Quadrature, A2D::index_t index, class First, class... Remain>
-  void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
-    // Un-pack to a local array
-    T values[First::ndof];
-    for (A2D::index_t i = 0; i < First::ndof; i++) {
-      const int sign = mesh.get_global_dof_sign(elem, index, i);
-      const A2D::index_t dof = mesh.get_global_dof(elem, index, i);
-      values[i] = sign * vec[dof];
+  template <A2D::index_t basis>
+  void get_element_values_(A2D::index_t elem, FEDof& dof) {
+    T* values = dof.template get<basis>();
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, basis, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      values[i] = sign * vec[dof_index];
     }
-
-    // Interpolate
-    First::template interp<Quadrature>(pt, values, s.template get<index>());
-
-    // Do the next solution space, if any...
-    interp_<Quadrature, index + 1, Remain...>(elem, pt, s);
+    get_element_values_<basis - 1>(elem, dof);
   }
 
-  template <class Quadrature, A2D::index_t index>
-  void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {}
-
-  template <class Quadrature, A2D::index_t index, class First, class... Remain>
-  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s) {
-    // Un-pack to a local array
-    T values[First::ndof];
-    std::fill(values, values + First::ndof, T(0.0));
-
-    // Add the interpolation
-    First::template add<Quadrature>(pt, s.template get<index>(), values);
-
-    for (A2D::index_t i = 0; i < First::ndof; i++) {
-      const int sign = mesh.get_global_dof_sign(elem, index, i);
-      const A2D::index_t dof = mesh.get_global_dof(elem, index, i);
-      vec[dof] += sign * values[i];
+  template <>
+  void get_element_values_<0>(A2D::index_t elem, FEDof& dof) {
+    T* values = dof.template get<0>();
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<0>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, 0, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, 0, i);
+      values[i] = sign * vec[dof_index];
     }
-
-    // Do the next solution space, if any...
-    add_<Quadrature, index + 1, Remain...>(elem, pt, s);
   }
 
-  template <class Quadrature, A2D::index_t index>
-  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s) {}
+  template <A2D::index_t basis>
+  void add_element_values_(A2D::index_t elem, const FEDof& dof) {
+    const T* values = dof.template get<basis>();
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, basis, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      vec[dof_index] += sign * values[i];
+    }
+    add_element_values_<basis - 1>(elem, dof);
+  }
 
-  A2D::ElementMesh<Basis...>& mesh;
+  template <>
+  void add_element_values_<0>(A2D::index_t elem, const FEDof& dof) {
+    const T* values = dof.template get<0>();
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<0>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, 0, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, 0, i);
+      vec[dof_index] += sign * values[i];
+    }
+  }
+
+  A2D::ElementMesh<Basis>& mesh;
   A2D::SolutionVector<T>& vec;
 };
 
@@ -121,9 +143,9 @@ class ElementVector_Kokkos {
   template <class Quadrature, A2D::index_t index>
   void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {}
 
-  template <class Quadrature, A2D::index_t index, class First, class... Remain>
-  void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
-    const values = subview(element_dof, elem, Kokkos::ALL);
+  template <class Quadrature, A2D::index_t index, class First, class...
+Remain> void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace&
+s) { const values = subview(element_dof, elem, Kokkos::ALL);
 
     // Interpolate
     First::template interp<Quadrature>(pt, values, s.template get<index>());
@@ -133,11 +155,12 @@ class ElementVector_Kokkos {
   }
 
   template <class Quadrature, A2D::index_t index>
-  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s) {}
+  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s)
+{}
 
-  template <class Quadrature, A2D::index_t index, class First, class... Remain>
-  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s) {
-    values = subview(element_dof, elem, Kokkos::ALL);
+  template <class Quadrature, A2D::index_t index, class First, class...
+Remain> void add_(A2D::index_t elem, A2D::index_t pt, const
+FiniteElementSpace& s) { values = subview(element_dof, elem, Kokkos::ALL);
 
     // Add the interpolation
     First::template add<Quadrature>(pt, s.template get<index>(), values);
@@ -164,8 +187,9 @@ class ElementMatrix_A2D {
   }
 
  private:
-  template <class Quadrature, A2D::index_t index, class First, class... Remain>
-  void outer_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
+  template <class Quadrature, A2D::index_t index, class First, class...
+Remain> void outer_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s)
+{
     // Un-pack to a local array
     T values[First::ndof];
     for (A2D::index_t i = 0; i < First::ndof; i++) {
@@ -189,12 +213,17 @@ class ElementMatrix_A2D {
 };
 */
 
-template <typename T, class Quadrature, class PDE, class GeoBasis,
-          class... Basis>
+template <typename T, class Quadrature, class PDE, class GeoBasis, class Basis>
 class FiniteElement {
  public:
+  typedef A2D::ElementVector_InPlace<T, typename PDE::FiniteElementGeometry,
+                                     GeoBasis>
+      GeoElemVec;
+  typedef A2D::ElementVector_InPlace<T, typename PDE::FiniteElementSpace, Basis>
+      ElemVec;
+
   FiniteElement(A2D::ElementMesh<GeoBasis>& geomesh,
-                A2D::SolutionVector<T>& nodes, A2D::ElementMesh<Basis...>& mesh,
+                A2D::SolutionVector<T>& nodes, A2D::ElementMesh<Basis>& mesh,
                 A2D::SolutionVector<T>& solvec, A2D::SolutionVector<T>& resvec)
       : mesh(mesh),
         geomesh(geomesh),
@@ -212,10 +241,22 @@ class FiniteElement {
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Get the geometry values
+      typename GeoElemVec::FEDof geo_dof;
+      geo.get_element_values(i, geo_dof);
+
+      // Get the degrees of freedom for the element
+      typename ElemVec::FEDof dof;
+      sol.get_element_values(i, dof);
+
+      // Set up values for the residual
+      typename ElemVec::FEDof element_res;
+      element_res.zero();
+
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
         typename PDE::FiniteElementGeometry gk;
-        geo.template interp<Quadrature>(i, j, gk);
+        GeoBasis::template interp<Quadrature>(j, geo_dof, gk);
         A2D::Mat<T, PDE::dim, PDE::dim>& J = (gk.template get<0>()).get_grad();
 
         // Compute the inverse of the transformation
@@ -228,7 +269,7 @@ class FiniteElement {
 
         // Interpolate the solution vector using the basis
         typename PDE::FiniteElementSpace sref;
-        sol.template interp<Quadrature>(i, j, sref);
+        Basis::template interp<Quadrature>(j, dof, sref);
 
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace s;
@@ -244,8 +285,10 @@ class FiniteElement {
         coef.rtransform(detJ, J, Jinv, cref);
 
         // Add the contributions back to the residual
-        res.template add<Quadrature>(i, j, cref);
+        Basis::template add<Quadrature>(j, cref, element_res);
       }
+
+      res.add_element_values(i, element_res);
     }
   }
 
@@ -254,19 +297,30 @@ class FiniteElement {
   */
   void add_jacobian_vector_product(SolutionVector<T>& xvec,
                                    SolutionVector<T>& yvec) {
-    A2D::ElementVector_InPlace<T, typename PDE::FiniteElementSpace, Basis...> x(
-        mesh, xvec);
-    A2D::ElementVector_InPlace<T, typename PDE::FiniteElementSpace, Basis...> y(
-        mesh, yvec);
+    ElemVec x(mesh, xvec);
+    ElemVec y(mesh, yvec);
 
     const A2D::index_t num_elements = mesh.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Get the geometry values
+      typename GeoElemVec::FEDof geo_dof;
+      geo.get_element_values(i, geo_dof);
+
+      // Get the degrees of freedom for the element
+      typename ElemVec::FEDof dof, xdof;
+      sol.get_element_values(i, dof);
+      x.get_element_values(i, xdof);
+
+      // Set up values for the residual
+      typename ElemVec::FEDof ydof;
+      ydof.zero();
+
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
         typename PDE::FiniteElementGeometry gk;
-        geo.template interp<Quadrature>(i, j, gk);
+        GeoBasis::template interp<Quadrature>(j, geo_dof, gk);
         A2D::Mat<T, PDE::dim, PDE::dim>& J = (gk.template get<0>()).get_grad();
 
         // Compute the inverse of the transformation
@@ -279,11 +333,11 @@ class FiniteElement {
 
         // Interpolate the solution vector using the basis
         typename PDE::FiniteElementSpace sref;
-        sol.template interp<Quadrature>(i, j, sref);
+        Basis::template interp<Quadrature>(j, dof, sref);
 
         // Interpolate the solution vector using the basis
         typename PDE::FiniteElementSpace xref;
-        x.template interp<Quadrature>(i, j, xref);
+        Basis::template interp<Quadrature>(i, xdof, xref);
 
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace s, p;
@@ -300,8 +354,10 @@ class FiniteElement {
         coef.rtransform(detJ, J, Jinv, cref);
 
         // Add the contributions back to the residual
-        y.template add<Quadrature>(i, j, cref);
+        Basis::template add<Quadrature>(j, cref, ydof);
       }
+
+      y.add_element_values(i, ydof);
     }
   }
 
@@ -311,10 +367,18 @@ class FiniteElement {
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Get the geometry values
+      typename GeoElemVec::FEDof geo_dof;
+      geo.get_element_values(i, geo_dof);
+
+      // Get the degrees of freedom for the element
+      typename ElemVec::FEDof dof;
+      sol.get_element_values(i, dof);
+
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
         typename PDE::FiniteElementGeometry gk;
-        geo.template interp<Quadrature>(i, j, gk);
+        GeoBasis::template interp<Quadrature>(j, geo_dof, gk);
         A2D::Mat<T, PDE::dim, PDE::dim>& J = (gk.template get<0>()).get_grad();
 
         // Compute the inverse of the transformation
@@ -327,7 +391,7 @@ class FiniteElement {
 
         // Interpolate the solution vector using the basis
         typename PDE::FiniteElementSpace sref;
-        sol.template interp<Quadrature>(i, j, sref);
+        Basis::template interp<Quadrature>(j, dof, sref);
 
         typename PDE::FiniteElementSpace cref[ncomp];
         for (A2D::index_t k = 0; k < ncomp; k++) {
@@ -353,14 +417,12 @@ class FiniteElement {
 
  private:
   // The element mesh
-  A2D::ElementMesh<Basis...>& mesh;
+  A2D::ElementMesh<Basis> mesh;
   A2D::ElementMesh<GeoBasis>& geomesh;
 
   // Element-wise views of the solution and residual vector
-  A2D::ElementVector_InPlace<T, typename PDE::FiniteElementGeometry, GeoBasis>
-      geo;
-  A2D::ElementVector_InPlace<T, typename PDE::FiniteElementSpace, Basis...> sol;
-  A2D::ElementVector_InPlace<T, typename PDE::FiniteElementSpace, Basis...> res;
+  GeoElemVec geo;
+  ElemVec sol, res;
 };
 
 }  // namespace A2D

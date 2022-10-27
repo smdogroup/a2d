@@ -48,25 +48,6 @@ namespace A2D {
 
   6. s.rtransform(detJ, J, Jinv, sref): Transform the derivatives from the
   physical element back to the reference element.
-
-  FESpace:
-
-  To form a full finite-element space, we use a variadic template class FESpace,
-  FESpace takes the scalar type, the physical dimension of the problem 2D, 3D
-  etc. and a list of the solution space objects. For instance, this class might
-  look like this when declared:
-
-  FESpace<double, 3, H1Space, L2Space, Hdiv3DSpace>
-
-  FESpace implements a static member ncomp as well as set_seed(comp),
-  get_value(comp) in an analogous manner to the solution spaces. However, the
-  implementation in FESpace treats these as a concatenated list across all
-  solution spaces.
-
-  FESpace implements a get<index>() function that returns a reference to the
-  index-th type in the FESpace. When writing to or reading from FESpace, you can
-  either use the set_seed(comp) get_value(comp) functions or the get<index>()
-  that returns the solution space directly. Both can be useful.
 */
 
 template <typename T, A2D::index_t D>
@@ -92,13 +73,13 @@ class L1ScalarSpace {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) {
+                 const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) {
+                  const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
@@ -145,14 +126,14 @@ class H1ScalarSpace {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) {
+                 const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) {
+                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
@@ -175,19 +156,19 @@ class H1Space {
 
   // Set the input seed based on the component index
   void set_seed(const A2D::index_t seed) {
-    if (seed < C) {
-      u(seed) = 1.0;
+    if (seed % (D + 1) == 0) {
+      u(seed / (D + 1)) = 1.0;
     } else {
-      grad((seed - C) / D, (seed - C) % D) = 1.0;
+      grad(seed / (D + 1), (seed % (D + 1)) - 1) = 1.0;
     }
   }
 
   // Get the value of the specified component
   T get_value(const A2D::index_t seed) {
-    if (seed < C) {
-      return u(seed);
+    if (seed % (D + 1) == 0) {
+      return u(seed / (D + 1));
     } else {
-      return grad((seed - C) / D, (seed - C) % D);
+      return grad(seed / (D + 1), (seed % (D + 1)) - 1);
     }
   }
 
@@ -201,14 +182,14 @@ class H1Space {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) {
+                 const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) {
+                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
@@ -257,14 +238,14 @@ class Hdiv2DSpace {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                 const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) {
+                 const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) const {
     s.u = u;
     s.div = div;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                  const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) {
+                  const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) const {
     s.u = u;
     s.div = div;
   }
@@ -313,14 +294,14 @@ class Hcurl2DSpace {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                 const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) {
+                 const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
     s.u = u;
     s.curl = curl;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                  const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) {
+                  const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
     s.u = u;
     s.curl = curl;
   }
@@ -345,8 +326,30 @@ struct __count_space_components<First, Remain...> {
 };
 
 /*
-  A collection of spaces used in the finite-element problem
+  FESpace:
+
+  To form a full finite-element space, we use a variadic template class FESpace,
+  FESpace takes the scalar type, the physical dimension of the problem 2D, 3D
+  etc. and a list of the solution space objects. For instance, this class might
+  look like this when declared:
+
+  FESpace<double, 3, H1Space, L2Space, Hdiv3DSpace>
+
+  FESpace implements a static member ncomp as well as set_seed(comp),
+  get_value(comp) in an analogous manner to the solution spaces. However, the
+  implementation in FESpace treats these as a concatenated list across all
+  solution spaces.
+
+  FESpace implements a get<index>() function that returns a reference to the
+  index-th type in the FESpace. When writing to or reading from FESpace, you can
+  either use the set_seed(comp) get_value(comp) functions or the get<index>()
+  that returns the solution space directly. Both can be useful.
+
+  T The typename
+  D The dimension of the problem
+  Spaces The varidic template list of finite element space types
 */
+
 template <typename T, A2D::index_t D, class... Spaces>
 class FESpace {
  public:
@@ -390,7 +393,8 @@ class FESpace {
     element
   */
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                 const A2D::Mat<T, D, D>& Jinv,
+                 FESpace<T, D, Spaces...>& s) const {
     transform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
@@ -399,7 +403,8 @@ class FESpace {
     physical element to the reference element
   */
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                  const A2D::Mat<T, D, D>& Jinv,
+                  FESpace<T, D, Spaces...>& s) const {
     rtransform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
@@ -409,23 +414,26 @@ class FESpace {
 
   template <A2D::index_t index>
   void transform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {}
+                  const A2D::Mat<T, D, D>& Jinv,
+                  FESpace<T, D, Spaces...>& s) const {}
 
   template <A2D::index_t index, class First, class... Remain>
   void transform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                  const A2D::Mat<T, D, D>& Jinv,
+                  FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).transform(detJ, J, Jinv, std::get<index>(s.u));
     transform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }
 
   template <A2D::index_t index>
   void rtransform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                   const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
-  }
+                   const A2D::Mat<T, D, D>& Jinv,
+                   FESpace<T, D, Spaces...>& s) const {}
 
   template <A2D::index_t index, class First, class... Remain>
   void rtransform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                   const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                   const A2D::Mat<T, D, D>& Jinv,
+                   FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).rtransform(detJ, J, Jinv, std::get<index>(s.u));
     rtransform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }

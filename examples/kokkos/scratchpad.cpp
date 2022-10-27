@@ -4,6 +4,7 @@
 #include "Kokkos_Sort.hpp"
 #include "Kokkos_StdAlgorithms.hpp"
 #include "Kokkos_UnorderedMap.hpp"
+#include "a2dobjs.h"
 
 using namespace std;
 using T = double;
@@ -343,11 +344,42 @@ void test_is_same_layout() {
   Kokkos::finalize();
 }
 
+void test_complex() {
+  using cT = A2D_complex_t<double>;
+  cT x = cT(2.3, 4.5);
+  cT s = A2D::sqrt(x);
+  cT e = A2D::exp(x);
+  cT l = A2D::log(x);
+  std::printf("x      : %.5f + %.5fj\n", x.real(), x.imag());
+  std::printf("sqrt(x): %.5f + %.5fj\n", s.real(), s.imag());
+  std::printf("exp(x):  %.5f + %.5fj\n", e.real(), e.imag());
+  std::printf("log(x):  %.5f + %.5fj\n", l.real(), l.imag());
+}
+
+template <class T>
+struct is_complex : public std::false_type {};
+template <class T>
+struct is_complex<std::complex<T>> : public std::true_type {};
+
+void test_is_complex() {
+  using T1 = std::complex<double>;
+  using T2 = std::complex<int>;
+  using T3 = double;
+  using T4 = std::complex<std::complex<float>>;
+
+  std::cout << is_complex<T1>::value << std::endl;  // should be 1
+  std::cout << is_complex<T2>::value << std::endl;  // should be 1
+  std::cout << is_complex<T3>::value << std::endl;  // should be 0
+  std::cout << is_complex<T4>::value << std::endl;  // should be 1
+}
+
 int main(int argc, char* argv[]) {
   // test_axpy(argc, argv);
   // test_matvec(argc, argv);
   // test_unordered_set();
   // test_subview();
   // test_sort();
-  test_is_same_layout();
+  // test_is_same_layout();
+  test_complex();
+  // test_is_complex();
 }

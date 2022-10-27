@@ -7,8 +7,8 @@
 using namespace A2D;
 using namespace std;
 
-typedef index_t I;
-typedef double T;
+using I = index_t;
+using T = double;
 
 void main_body(int argc, char* argv[]) {
   // Define problem dimension
@@ -52,8 +52,7 @@ void main_body(int argc, char* argv[]) {
   model->add_constitutive(constitutive);
 
   // Create the design vector
-  A2D::CLayout<1> design_layout(model->nnodes);
-  auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
+  auto x = std::make_shared<A2D::MultiArrayNew<T* [1]>>("x", model->nnodes);
 
   // Set the design variable values
   mesher.set_dv(*x);
@@ -84,7 +83,7 @@ void main_body(int argc, char* argv[]) {
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 1000;
-  solution->zero();
+  BLAS::zero(*solution);
   amg->cg(*residual, *solution, monitor, max_iters);
   // amg->mg(*residual, *solution, monitor, max_iters);
 

@@ -125,7 +125,7 @@ class ToVTK {
       char msg[256];
       std::sprintf(msg,
                    "First dimension of sol_vec (%d) does not match nnodes (%d)",
-                   sol_vec.extent(0), nnodes);
+                   (int)sol_vec.extent(0), nnodes);
       throw std::runtime_error(msg);
     }
 
@@ -173,6 +173,9 @@ class ReadVTK {
 
   ReadVTK() {}
 
+  /**
+   * @brief Copy constructor
+   */
   ReadVTK(const ReadVTK& src)
       : conn(src.conn),
         conn_(src.conn_),
@@ -183,6 +186,24 @@ class ReadVTK {
         domain_lower(src.domain_lower),
         domain_upper(src.domain_upper),
         domain_sizes(src.domain_sizes) {}
+
+  /**
+   * @brief Assignment operator
+   */
+  ReadVTK& operator=(const ReadVTK& src) {
+    conn = src.conn;
+    conn_ = src.conn_;
+    X = src.X;
+    nnodes = src.nnodes;
+    nelems = src.nelems;
+    nelems_all = src.nelems_all;
+    for (int i = 0; i < spatial_dim; i++) {
+      domain_lower[i] = src.domain_lower[i];
+      domain_upper[i] = src.domain_upper[i];
+      domain_sizes[i] = src.domain_sizes[i];
+    }
+    return *this;
+  }
 
   ReadVTK(const std::string& vtk_name) {
     // If file doesn't exist, exit
@@ -279,7 +300,7 @@ class ReadVTK {
 
     // Trim connectivity
     conn = ConnArray_t("conn", nelems);
-    BLAS::copy(conn, Kokkos::subview(conn_, Kokkos::make_pair(0, nelems),
+    BLAS::copy(conn, Kokkos::subview(conn_, Kokkos::make_pair(0, (int)nelems),
                                      Kokkos::ALL));
 
     // printf("X[%d]\n", nnodes);

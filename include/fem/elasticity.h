@@ -597,7 +597,7 @@ class TopoIsoConstitutive final
     auto data = element->get_quad_data();
     for (I i = 0; i < data.extent(0); i++) {
       for (I j = 0; j < data.extent(1); j++) {
-        T rho_exp = std::exp(-beta * (xq(i, j, 0) - xoffset));
+        T rho_exp = A2D::exp(-beta * (xq(i, j, 0) - xoffset));
         T rho = 1.0 / (1.0 + rho_exp);
         T penalty = rho / (1.0 + q * (1.0 - rho));
 
@@ -626,7 +626,7 @@ class TopoIsoConstitutive final
     QuadDesignArray dfdxq("dfdxq", element->nelems);
     for (I i = 0; i < dfddata.extent(0); i++) {
       for (I j = 0; j < dfddata.extent(1); j++) {
-        T rho_exp = std::exp(-beta * (xq(i, j, 0) - xoffset));
+        T rho_exp = A2D::exp(-beta * (xq(i, j, 0) - xoffset));
         T rho = 1.0 / (1.0 + rho_exp);
         T denom = (1.0 + q * (1.0 - rho));
         T dpenalty = (q + 1.0) / (denom * denom);
@@ -831,10 +831,10 @@ class TopoVonMisesAggregation
               // von Mises = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
               vm = penalty * (1.5 * trSS - 0.5 * trS * trS) / ys;
 
-              return wdetJ * std::exp(wgt * (vm - off));
+              return wdetJ * A2D::exp(wgt * (vm - off));
             });
 
-    return offset + std::log(integral) / weight;
+    return offset + A2D::log(integral) / weight;
   }
 
   void add_dfdu(typename ElasticityPDEInfo<BasisOps::SPATIAL_DIM, I,
@@ -890,7 +890,7 @@ class TopoVonMisesAggregation
                      (1.5 * trSS.value - 0.5 * trS.value * trS.value) / ys;
 
               T scale =
-                  wdetJ * penalty * std::exp(wgt * (vm - off)) / (ys * intgrl);
+                  wdetJ * penalty * A2D::exp(wgt * (vm - off)) / (ys * intgrl);
 
               trSS.bvalue = 1.5 * scale;
               trS.bvalue = -trS.value * scale;
@@ -949,11 +949,11 @@ class TopoVonMisesAggregation
               // von Mises = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
               T vm = (1.5 * trSS - 0.5 * trS * trS) / ys;
 
-              T scale = wdetJ * vm * std::exp(wgt * (vm - off)) / intgrl;
+              T scale = wdetJ * vm * A2D::exp(wgt * (vm - off)) / intgrl;
 
               dfdxq(i, j, 0) += scale * dpenalty;
 
-              return wdetJ * std::exp(wgt * (vm - off));
+              return wdetJ * A2D::exp(wgt * (vm - off));
             });
 
     typename TopoIsoConstitutive<I, T, BasisOps>::ElemDesignArray dfdxe(

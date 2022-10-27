@@ -6,15 +6,17 @@ project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Set A2D root directory
+# Set paths
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(KOKKOS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos)
+set(KOKKOS_KERNELS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos-kernels)
+set(Kokkos_ROOT ${KOKKOS_INSTALL_DIR})  # for a2d cmake to find kokkos cmake
 
 # Set options
-option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
 option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
 option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
-option(A2D_BUILD_EXAMPLES_KOKKOS "build kokkos examples" OFF)
 option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
+option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
 
 # Set global compiler flags
 add_compile_options(
@@ -24,6 +26,7 @@ add_compile_options(
 # Require Lapack and OpenMP
 find_package(LAPACK REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(Kokkos REQUIRED)
 
 # Build amgx examples
 if (A2D_BUILD_EXAMPLES_AMGX)
@@ -37,21 +40,6 @@ if (A2D_BUILD_EXAMPLES_AMGX)
   else()
     add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
   endif()
-endif()
-
-# If use kokkos, we build kokkos in-place
-set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/extern/kokkos)
-if (NOT EXISTS ${A2D_KOKKOS_DIR})
-  message(FATAL_ERROR "${A2D_KOKKOS_DIR} does not exist, can't use Kokkos")
-else()
-  # Build Kokkos
-  add_subdirectory(${A2D_KOKKOS_DIR})
-  include_directories(${A2D_KOKKOS_DIR}/core/src)
-  include_directories(${A2D_KOKKOS_DIR}/algorithms/src)
-  include_directories(${A2D_KOKKOS_DIR}/containers/src)
-  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos)
-  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/algorithms/src)
-  include_directories(${CMAKE_BINARY_DIR}/extern/kokkos/containers/src)
 endif()
 
 # Build pybind11 extension
@@ -75,12 +63,8 @@ if (A2D_BUILD_UNIT_TESTS)
   add_subdirectory(${A2D_ROOT_DIR}/tests)
 endif()
 
-# Build pure a2d examples
+# Build a2d examples
 if (A2D_BUILD_EXAMPLES_BASIC)
   add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
-endif()
-
-# Build kokkos examples
-if (A2D_BUILD_EXAMPLES_KOKKOS)
   add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
 endif()

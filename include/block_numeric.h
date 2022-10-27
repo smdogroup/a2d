@@ -1,14 +1,12 @@
 #ifndef A2D_BLOCK_NUMERIC_H
 #define A2D_BLOCK_NUMERIC_H
 
-#include <complex>
-
 #include "a2dobjs.h"
 #include "array.h"
 
 namespace A2D {
 
-double absfunc(std::complex<double> a) {
+double absfunc(A2D_complex_t<double> a) {
   if (a.real() >= 0.0) {
     return a.real();
   } else {
@@ -26,7 +24,7 @@ double absfunc(double a) {
 
 double RealPart(double a) { return a; }
 
-double RealPart(std::complex<double> a) { return a.real(); }
+double RealPart(A2D_complex_t<double> a) { return a.real(); }
 
 /*
   Compute y = A * x
@@ -246,7 +244,6 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
   }
 
   // Decide which branch to go
-  const bool is_complex = std::is_same<T, std::complex<double>>::value;
   const bool is_layout_right =
       std::is_same<typename AType::array_layout, Kokkos::LayoutRight>::value;
 
@@ -276,7 +273,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
     a = A.data();
   }
 
-  if constexpr (is_complex) {
+  if constexpr (A2D::is_complex<T>::value) {
     int ipiv[N];
     zgetrf_(&m, &n, a, &lda, ipiv, &fail);
     zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);

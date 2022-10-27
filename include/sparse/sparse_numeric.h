@@ -853,7 +853,7 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
     for (I j = 0; j <= i; j++) {
       I index = j + i * size;  // row-major index for entry H(j, i)
       H[index] = A2D::RealPart(A2D::BLAS::dot(W[i + 1], W[j]));
-      A2D::BLAS::axpy(W[j], W[i + 1], -H[index]);
+      A2D::BLAS::axpy(W[i + 1], -H[index], W[j]);
     }
 
     // Add the term to the matrix

@@ -363,7 +363,7 @@ class MesherFromVTK3D {
 
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
-    A2D::BLAS::zero(residual);
+    A2D::BLAS::zero(*residual);
 
     for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
       (*residual)(*it, 1) = -force / T(nforces_y);

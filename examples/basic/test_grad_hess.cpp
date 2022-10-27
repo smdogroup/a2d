@@ -1,4 +1,3 @@
-#include <complex>
 #include <iomanip>
 #include <iostream>
 
@@ -31,7 +30,7 @@
 */
 int main(int argc, char* argv[]) {
   // typedef int32_t IndexType;
-  typedef std::complex<double> ScalarType;
+  typedef A2D_complex_t<double> ScalarType;
   typedef A2D::Mat<ScalarType, 3, 3> Mat3x3;
   typedef A2D::SymmMat<ScalarType, 3> SymmMat3x3;
 
@@ -105,8 +104,8 @@ int main(int argc, char* argv[]) {
     }
   }
   double error = (res - fd) / fd;
-  std::cout << " result: " << std::setw(20) << res << " fd: " << std::setw(20)
-            << fd << " error: " << std::setw(20) << error << std::endl;
+  printf("       result: %15.8e,  res: %15.8e,  error: %15.8e\n", res, fd,
+         error);
 
   // Compute the product of the Hessian with P
   for (int k = 0; k < N; k++) {
@@ -125,9 +124,8 @@ int main(int argc, char* argv[]) {
       double fd = Uxib(i, j).imag() / dh;
       double error = (res - fd) / fd;
 
-      std::cout << i << ", " << j << " result: " << std::setw(20) << res
-                << " fd: " << std::setw(20) << fd << " error: " << std::setw(20)
-                << error << std::endl;
+      printf("(%d, %d) result: %15.8e,  res: %15.8e,  error: %15.8e\n", i, j,
+             res, fd, error);
     }
   }
 

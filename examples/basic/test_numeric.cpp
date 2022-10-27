@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "a2dmatops3d.h"
+#include "a2dobjs.h"
 #include "a2dtypes.h"
 #include "block_numeric.h"
 #include "sparse/sparse_matrix.h"
@@ -69,7 +70,7 @@ void adjoint_product(T mu0, T lambda0, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
 }
 
 int main(int argc, char* argv[]) {
-  typedef std::complex<double> T;
+  using T = A2D_complex_t<double>;
   const int N = 10;
 
   A2D::Vec<A2D::index_t, N> ipiv;
@@ -89,7 +90,8 @@ int main(int argc, char* argv[]) {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
-      std::cout << "(" << i << ", " << j << "): " << A(i, j) << std::endl;
+      std::printf("A(%d, %d) = %15.8e + %15.8ej\n", i, j, A(i, j).real(),
+                  A(i, j).imag());
     }
   }
 
@@ -121,7 +123,9 @@ int main(int argc, char* argv[]) {
   }
   fd = fd.imag() / dh;
 
-  std::cout << "dmu: " << dmu.real() << " fd: " << fd.real() << std::endl;
+  printf("dmu:    %20.10e\t", dmu.real());
+  printf("fd:     %20.10e\t", fd.real());
+  printf("relerr: %20.10e\n", (dmu.real() - fd.real()) / fd.real());
 
   Uxib.zero();
   reisdual(mu, lambda + T(0.0, dh), wdetJ, Jinv, Uxi, Uxib);
@@ -133,8 +137,9 @@ int main(int argc, char* argv[]) {
   }
   fd = fd.imag() / dh;
 
-  std::cout << "dlambda: " << dlambda.real() << " fd: " << fd.real()
-            << std::endl;
+  printf("dlambda:%20.10e\t", dlambda.real());
+  printf("fd:     %20.10e\t", fd.real());
+  printf("relerr: %20.10e\n", (dlambda.real() - fd.real()) / fd.real());
 
   return (0);
 }

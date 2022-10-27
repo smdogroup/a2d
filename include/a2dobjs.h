@@ -2,7 +2,6 @@
 #define A2D_OBJS_H
 
 #include <cmath>
-#include <complex>
 #include <cstdint>
 
 #include "Kokkos_Core.hpp"
@@ -11,9 +10,85 @@
 #define A2D_LAMBDA KOKKOS_LAMBDA
 #define A2D_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
 
-namespace A2D {
+#ifdef KOKKOS_ENABLE_CUDA
+#include "cuda/std/complex"
+#include "thrust/fill.h"
+template <typename T>
+using A2D_complex_t = cuda::std::complex<T>;
+#else
+#include <algorithm>
+#include <complex>
+template <typename T>
+using A2D_complex_t = std::complex<T>;
+#endif
 
+namespace A2D {
 typedef uint32_t index_t;
+
+/**
+ * @brief Check if a type is complex.
+ *
+ * Usage:
+ *   given an arbitrary type T, if T is a complex type, then
+ *     is_complex<T>::value == true, otherwise
+ *     is_complex<T>::value == false
+ */
+template <typename T>
+struct is_complex : public std::false_type {};
+
+template <typename T>
+struct is_complex<A2D_complex_t<T>> : public std::true_type {};
+
+/*
+ Convert scalar value to printf-able format
+*/
+template <typename T>
+A2D_INLINE_FUNCTION double fmt(A2D_complex_t<T> val) {
+  return val.real();
+}
+
+A2D_INLINE_FUNCTION double fmt(double val) { return val; }
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <typename T>
+A2D_INLINE_FUNCTION T sqrt(T val) {
+  return cuda::std::sqrt(val);
+}
+
+template <typename T>
+A2D_INLINE_FUNCTION T exp(T val) {
+  return cuda::std::exp(val);
+}
+
+template <typename T>
+A2D_INLINE_FUNCTION T log(T val) {
+  return cuda::std::log(val);
+}
+
+template <class ForwardIt, class T>
+A2D_INLINE_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
+  thrust::fill(first, last, value);
+}
+#else
+template <typename T>
+A2D_INLINE_FUNCTION T sqrt(T val) {
+  return std::sqrt(val);
+}
+
+template <typename T>
+A2D_INLINE_FUNCTION T exp(T val) {
+  return std::exp(val);
+}
+
+template <typename T>
+A2D_INLINE_FUNCTION T log(T val) {
+  return std::log(val);
+}
+template <class ForwardIt, class T>
+void fill(ForwardIt first, ForwardIt last, const T& value) {
+  std::fill(first, last, value);
+}
+#endif
 
 template <typename T, int N>
 class Vec {

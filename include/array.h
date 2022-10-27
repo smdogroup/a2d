@@ -8,6 +8,7 @@
 #include <numeric>
 
 #include "Kokkos_Core.hpp"
+#include "a2dobjs.h"
 
 namespace A2D {
 
@@ -58,18 +59,21 @@ namespace BLAS {
 template <class View>
 A2D_INLINE_FUNCTION void zero(const View& x) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
   T* data = x.data();
-  std::fill(data, data + x.size(), T(0));
+  A2D::fill(data, data + x.size(), T(0));
 }
 
 /*
   Fill all the values in the array with the specified value
 */
 template <class View>
-void fill(const View& x, typename View::const_value_type& value) {
+A2D_INLINE_FUNCTION void fill(const View& x,
+                              typename View::const_value_type& value) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
   T* data = x.data();
-  std::fill(data, data + x.size(), value);
+  A2D::fill(data, data + x.size(), value);
 }
 
 /*
@@ -84,8 +88,10 @@ void copy(const DestView& dest, const SrcView& src) {
   Scale the array
 */
 template <class View>
-void scale(const View& x, typename View::const_value_type& alpha) {
+A2D_INLINE_FUNCTION void scale(const View& x,
+                               typename View::const_value_type& alpha) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
   T* data = x.data();
   size_t len = x.size();
   for (size_t i = 0; i < len; i++) {
@@ -100,6 +106,7 @@ template <class View>
 void random(const View& x, typename View::const_value_type& lower = -1.0,
             typename View::const_value_type& upper = 1.0) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
   T* data = x.data();
   size_t len = x.size();
   for (size_t i = 0; i < len; i++) {
@@ -114,6 +121,7 @@ void random(const View& x, typename View::const_value_type& lower = -1.0,
 template <class View>
 typename View::value_type dot(const View& x, const View& y) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
   T* data = x.data();
   size_t len = x.size();
   return std::inner_product(data, data + len, y.data(), T(0));
@@ -127,15 +135,16 @@ typename View::value_type norm(const View& x) {
   using T = typename View::value_type;
   T* data = x.data();
   size_t len = x.size();
-  return std::sqrt(std::inner_product(data, data + len, data, T(0)));
+  return A2D::sqrt(std::inner_product(data, data + len, data, T(0)));
 }
 
 /*
   Axpy: y += alpha * x
 */
 template <class View>
-void axpy(const View& x, const View& y,
-          typename View::const_value_type& alpha) {
+void axpy(View& y, typename View::const_value_type& alpha, const View& x) {
+  assert(x.span_is_contiguous());
+  assert(y.span_is_contiguous());
   using T = typename View::value_type;
   T* x_data = x.data();
   T* y_data = y.data();
@@ -149,9 +158,11 @@ void axpy(const View& x, const View& y,
   Axpby: y = alpha * x + beta * y
 */
 template <class View>
-void axpby(const View& x, const View& y, typename View::const_value_type& alpha,
-           typename View::const_value_type& beta) {
+void axpby(View& y, typename View::const_value_type& alpha,
+           typename View::const_value_type& beta, const View& x) {
   using T = typename View::value_type;
+  assert(x.span_is_contiguous());
+  assert(y.span_is_contiguous());
   T* x_data = x.data();
   T* y_data = y.data();
   size_t len = x.size();

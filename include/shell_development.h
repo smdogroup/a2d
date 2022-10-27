@@ -18,6 +18,11 @@ class A2DScalarScalarMultExpr {
 
 };
 
+template <int N, typename T>  // TODO: make the Vec3ScaleDiv operation (v = (1/a) * x)
+class A2DVec3A2DScaleDivExpr {
+
+};
+
 
 // END TODO: OPERATOR CLASSES
 
@@ -36,8 +41,7 @@ class LinearIsotropicMaterial {
                temp2, temp1, 0, 0, 0,
                0, 0, temp3, 0, 0,
                0, 0, 0, temp3, 0,
-               0, 0, 0, 0, temp3}, D(D_init) {
-  };
+               0, 0, 0, 0, temp3}, D(D_init) {};
 
   const Mat<T, 5, 5> D;
 };
@@ -192,6 +196,9 @@ class ShellElementMITC4 {
   };
 
   InternalEnergy internal_energy();*/
+
+  // TODO: move documentation inside class (as doc to constructor) after instances are converted to members in this
+  //  class.
 
   /**
    * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
@@ -880,6 +887,145 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
+  /**
+   * @brief Constructs the contravariant basis vectors (g<sup>r</sup>, g<sup>s</sup>, and g<sup>t</sup>) from the
+   * covariant basis vectors (g<sub>r</sub>, g<sub>s</sub>, and g<sub>t</sub>).
+   *
+   * @note The covariant basis vectors must be evaluated at the desired point of interest.
+   *
+   * @param gr: the g<sub>r</sub> covariant basis vector
+   * @param gs: the g<sub>s</sub> covariant basis vector
+   * @param gt: the g<sub>t</sub> covariant basis vector
+   * @param Gr: the g<sup>r</sup> contravariant basis vector (output)
+   * @param Gs: the g<sup>s</sup> contravariant basis vector (output)
+   * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
+   * */
+  class contravariant_basis {
+    contravariant_basis(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
+                        A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt) {
+      gs_cross_gt_expression = Vec3Cross(gs, gt, gs_cross_gt);
+      gt_cross_gr_expression = Vec3Cross(gt, gr, gt_cross_gr);
+      gr_cross_gs_expression = Vec3Cross(gr, gs, gr_cross_gs);
+
+      gr_dot_gs_cross_gt_expression = Vec3Dot(gr, gs_cross_gt, gr_dot_gs_cross_gt);
+
+      Gr_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gs_cross_gt, Gr);
+      Gs_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gt_cross_gr, Gs);
+      Gt_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gr_cross_gs, Gt);
+    };
+
+    void reverse() {
+      Gt_expression.reverse();
+      Gs_expression.reverse();
+      Gr_expression.reverse();
+
+      gr_dot_gs_cross_gt_expression.reverse();
+
+      gr_cross_gs_expression.reverse();
+      gt_cross_gr_expression.reverse();
+      gs_cross_gt_expression.reverse();
+    };
+
+    void hforward() {
+      gs_cross_gt_expression.reverse();
+      gt_cross_gr_expression.reverse();
+      gr_cross_gs_expression.reverse();
+
+      gr_dot_gs_cross_gt_expression.reverse();
+
+      Gr_expression.reverse();
+      Gs_expression.reverse();
+      Gt_expression.reverse();
+    };
+
+    void hreverse() {
+      Gt_expression.hreverse();
+      Gs_expression.hreverse();
+      Gr_expression.hreverse();
+
+      gr_dot_gs_cross_gt_expression.hreverse();
+
+      gr_cross_gs_expression.hreverse();
+      gt_cross_gr_expression.hreverse();
+      gs_cross_gt_expression.hreverse();
+    };
+
+   private:
+    A2DScalar<N, T>
+        gr_dot_gs_cross_gt;
+    A2DVec<N, Vec<T, 3>>
+        gs_cross_gt,
+        gt_cross_gr,
+        gr_cross_gs;
+
+    /* Expressions: */
+    A2DVec3CrossA2DVecExpr<N, T>
+        gs_cross_gt_expression,
+        gt_cross_gr_expression,
+        gr_cross_gs_expression;
+    A2DVec3DotA2DVecExpr<N, T>
+        gr_dot_gs_cross_gt_expression;
+    A2DVec3A2DScaleDivExpr<N, T>
+        Gr_expression,
+        Gs_expression,
+        Gt_expression;
+  };
+
+  /**
+   * @brief Constructs the cartesian local basis vectors (e<sub>1</sub>, e<sub>2</sub>, and e<sub>3</sub>) from two of
+   * the covariant basis vectors (g<sub>s</sub> and g<sub>t</sub>).
+   *
+   * @note The covariant basis vectors, g<sub>s</sub> and g<sub>t</sub>, must be evaluated at the desired point of
+   * interest.
+   *
+   * @param gs: the g<sub>s</sub> covariant basis vector
+   * @param gt: the g<sub>t</sub> covariant basis vector
+   * @param e1: the e<sub>1</sub> cartesian local basis vector (output)
+   * @param e2: the e<sub>2</sub> cartesian local basis vector (output)
+   * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
+   * */
+  class cartesian_local_basis {
+    cartesian_local_basis(A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
+                          A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3) {
+      e3_expression = Vec3Normalize(gt, e3);
+      gs_cross_e3_expression = Vec3Cross(gs, e3, gs_cross_e3);
+      e1_expression = Vec3Normalize(gs_cross_e3, e1);
+      e2_expression = Vec3Cross(e3, e1, e2);
+    };
+
+    void reverse() {
+      e2_expression.reverse();
+      e1_expression.reverse();
+      gs_cross_e3_expression.reverse();
+      e3_expression.reverse();
+    };
+
+    void hforward() {
+      e3_expression.hforward();
+      gs_cross_e3_expression.hforward();
+      e1_expression.hforward();
+      e2_expression.hforward();
+    };
+
+    void hreverse() {
+      e2_expression.hreverse();
+      e1_expression.hreverse();
+      gs_cross_e3_expression.hreverse();
+      e3_expression.hreverse();
+    };
+
+   private:
+    A2DVec<N, Vec<T, 3>> gs_cross_e3;
+
+    /* Expressions: */
+    A2DVec3CrossA2DVecExpr<N, T>
+        gs_cross_e3_expression,
+        e2_expression;
+    A2DVec3NormalizeExpr<N, T>
+        e3_expression,
+        e1_expression;
+  };
+
   class epsilon_ri_sj_tk {
     // TODO:?
     epsilon_ri_sj_tk(const int i, const int j, const int k) {
@@ -1004,6 +1150,15 @@ class ShellElementMITC4 {
     A2DVec3DotA2DVecExpr<N, T> gs_ur_r0s0t0_expression = Vec3Dot(gs_r0sAt0, ur_rAs0t0, gs_ur_r0s0t0);
     auto e_rs_r0s0t0_expression = ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);
     // TODO: make the ScalarAxpay operation (z = a * (x + y))
+    // TODO: add code for other quadrature points
+
+
+    /* Contravariant basis: */
+    contravariant_basis contravariant_basis_r0s0t0_expression(); // TODO
+
+    /* Cartesian local basis: */
+
+
 
     /*A2DVec<N, Vec<T, 5>> epsilon_r0s0t0;  // TODO: move declaration
     epsilon_ri_sj_tk epsilon_r0s0t0_expression();*/

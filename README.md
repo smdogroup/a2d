@@ -9,10 +9,36 @@ AD".
 A2D is a header only c++ templated library with python binding created with
 [pybind11](https://pybind11.readthedocs.io/en/stable/).
 
-## Dependency
-To use A2D in your c++ application, the following libraries need to be linked:
+## Dependencies
+A2D requires following dependencies
 - OpenMP
 - LAPACK
+- [Kokkos](https://github.com/kokkos/kokkos)
+- [Kokkos-kernels](https://github.com/kokkos/kokkos-kernels)
+
+### Install Kokkos
+To build Kokkos with OpenMP and CUDA backend, use:
+```
+cd extern/kokkos
+mkdir build
+cd build
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -G Ninja
+ninja install
+```
+For a complete instruction on installing Kokkos, see [Kokkos
+documentation](https://kokkos.github.io/kokkos-core-wiki/ProgrammingGuide/Compiling.html).
+
+### Install Kokkos-kernels
+To build Kokkos-kernels with Kokkos installation, use:
+```
+cd extern/kokkos-kernels
+mkdir build
+cd build
+cmake .. -DKokkos_ROOT=../../../installs/kokkos -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos-kernels -G Ninja
+ninja install
+```
+For a complete instruction on installing Kokkos-kernels, see [Kokkos-kernels
+documentation](https://github.com/kokkos/kokkos-kernels/wiki/Building).
 
 ## Build examples, python bindings and tests
 
@@ -23,7 +49,7 @@ this directory:
 ```
 mkdir build
 cd build
-cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXAMPLES_KOKKOS=ON -DA2D_BUILD_EXTENSION=ON
+cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
 make -j <nproc>
 ````
 

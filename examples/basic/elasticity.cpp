@@ -1,6 +1,5 @@
 #include "fem/elasticity.h"
 
-#include <complex>
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -35,10 +34,8 @@ void test_data_adjoint_product(typename PDE::SolutionArray& u,
   element.add_residual(*res);
   T fd = (adj->dot(*res)).imag() / dh;
 
-  std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
-            << fd.real() << std::endl;
-  std::cout << "Adjoint-data result: " << std::setw(20) << std::setprecision(16)
-            << result.real() << std::endl;
+  std::printf("Complex-step result: %20.20e\t", fd.real());
+  std::printf("Adjoint-data result: %20.20e\n", result.real());
 }
 
 template <typename I, typename T, class PDE, class DesignArray>
@@ -68,23 +65,20 @@ void test_adjoint_product(DesignArray& x,
   model->residual(res);
   T fd = (adj->dot(*res)).imag() / dh;
 
-  std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
-            << fd.real() << std::endl;
-  std::cout << "Adjoint-data result: " << std::setw(20) << std::setprecision(16)
-            << result.real() << std::endl;
+  std::printf("Complex-step result: %20.20e\t", fd.real());
+  std::printf("Adjoint-data result: %20.20e\n", result.real());
 }
 
 /*
   Finite-element computations using templating/auto-diff and multi-dimensional
   arrays
 */
-int main(int argc, char* argv[]) {
+void main_body() {
   Timer timer("main()");
-  typedef index_t I;
-  typedef std::complex<double> T;
-  // typedef std::complex<double> T;
-  typedef BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature> Basis;
-  typedef ElasticityPDEInfo<3, I, T> PDE;
+  using I = index_t;
+  using T = A2D_complex_t<double>;
+  using Basis = BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature>;
+  using PDE = ElasticityPDEInfo<3, I, T>;
 
   const index_t nx = 32;
   const index_t ny = 32;
@@ -171,11 +165,10 @@ int main(int argc, char* argv[]) {
   model->add_constitutive(constitutive);
 
   // Create the design vector
-  A2D::CLayout<1> design_layout(model->nnodes);
-  auto x = std::make_shared<A2D::MultiArray<T, A2D::CLayout<1>>>(design_layout);
+  auto x = std::make_shared<A2D::MultiArrayNew<T* [1]>>("x", model->nnodes);
 
   // Set the design variable values
-  x->fill(1.0);
+  BLAS::fill(*x, 1.0);
   model->set_design_vars(x);
 
   // Set up the stress functional
@@ -198,17 +191,17 @@ int main(int argc, char* argv[]) {
   // Set the residuals and apply the boundary conditions
   auto solution = model->new_solution();
   auto residual = model->new_solution();
-  solution->fill(1.0);
+  BLAS::fill(*solution, 1.0);
   model->zero_bcs(solution);
 
-  residual->zero();
+  BLAS::zero(*residual);
   BSRMatVecMult(*J, *solution, *residual);
   model->zero_bcs(residual);
 
   // Compute the solution
   index_t monitor = 10;
   index_t max_iters = 80;
-  solution->zero();
+  BLAS::zero(*solution);
   amg->cg(*residual, *solution, monitor, max_iters);
 
   // Set the solution
@@ -220,7 +213,7 @@ int main(int argc, char* argv[]) {
   // Compute the adjoint right-hand-side
   auto dfdu = model->new_solution();
   functional->eval_dfdu(dfdu);
-  dfdu->scale(-1.0);
+  BLAS::scale(*dfdu, -1.0);
   model->zero_bcs(dfdu);
 
   // Compute the adjoint variables
@@ -229,26 +222,25 @@ int main(int argc, char* argv[]) {
 
   // Complete the adjoint derivative
   auto dfdx =
-      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
-  dfdx->zero();
+      std::make_shared<A2D::MultiArrayNew<T* [1]>>("dfdx", model->nnodes);
+  BLAS::zero(*dfdx);
   functional->eval_dfdx(dfdx);
   model->add_adjoint_dfdx(adjoint, dfdx);
 
   // Compute a projected derivative and test against complex step
-  auto px =
-      std::shared_ptr<A2D::MultiArray<T, A2D::CLayout<1>>>(x->duplicate());
-  px->random();
-  T ans = dfdx->dot(*px);
+  auto px = std::make_shared<A2D::MultiArrayNew<T* [1]>>("px", model->nnodes);
+  BLAS::random(*px);
+  T ans = BLAS::dot(*dfdx, *px);
 
   // Set the new desigh variable values
   double dh = 1e-30;
-  x->fill(1.0);
-  x->axpy(T(0.0, dh), *px);
+  BLAS::fill(*x, 1.0);
+  BLAS::axpy(*x, T(0.0, dh), *px);
   model->set_design_vars(x);
   model->jacobian(J);
   amg->update();
 
-  solution->zero();
+  BLAS::zero(*solution);
   amg->cg(*residual, *solution, monitor, max_iters);
 
   // Set the solution
@@ -257,12 +249,10 @@ int main(int argc, char* argv[]) {
   // Compute the complex-step result
   T fd = functional->eval_functional().imag() / dh;
 
-  std::cout << "Complex-step result: " << std::setw(20) << std::setprecision(16)
-            << fd.real() << std::endl;
-  std::cout << "Adjoint-data result: " << std::setw(20) << std::setprecision(16)
-            << ans.real() << std::endl;
-  std::cout << "Relative error:      " << std::setw(20) << std::setprecision(16)
-            << (ans.real() - fd.real()) / ans.real() << std::endl;
+  std::printf("Complex-step result: %20.10e\n", fd.real());
+  std::printf("Adjoint-data result: %20.10e\n", ans.real());
+  std::printf("Relative error:      %20.10e\n",
+              (ans.real() - fd.real()) / ans.real());
 
   // // Set the design variable values
   // x->fill(1.0);
@@ -275,5 +265,12 @@ int main(int argc, char* argv[]) {
   // test_adjoint_product(x, model);
 
   // amg->testGalerkin();
-  return (0);
+  return;
+}
+
+int main(int argc, char* argv[]) {
+  Kokkos::initialize(argc, argv);
+  { main_body(); }
+  Kokkos::finalize();
+  return 0;
 }

@@ -1055,10 +1055,9 @@ template <class ScalarType>
 class ADSymm2x2IsotropicConstitutiveExpr
     : public ADExpression<ADSymm2x2IsotropicConstitutiveExpr<ScalarType>> {
  public:
-  ADSymm2x2IsotropicConstitutiveExpr(const ScalarType& mu,
-                                     const ScalarType& lambda,
-                                     ADMat<SymmMat<ScalarType, 2>>& EObj,
-                                     ADMat<SymmMat<ScalarType, 2>>& SObj)
+  A2D_INLINE_FUNCTION ADSymm2x2IsotropicConstitutiveExpr(
+      const ScalarType& mu, const ScalarType& lambda,
+      ADMat<SymmMat<ScalarType, 2>>& EObj, ADMat<SymmMat<ScalarType, 2>>& SObj)
       : mu(mu), lambda(lambda), EObj(EObj), SObj(SObj) {
     const SymmMat<ScalarType, 2>& E = EObj.value();
     SymmMat<ScalarType, 2>& S = SObj.value();

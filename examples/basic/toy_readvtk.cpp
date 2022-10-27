@@ -20,9 +20,6 @@ int main() {
 
     ReadVTK<node_per_elem, spatial_dim, T, I> vtk_reader("tetra_3d.vtk");
 
-    I nnodes = vtk_reader.nnodes;
-    I nelems = vtk_reader.nelems;
-
     // Write a new vtk
     using ConnArray = A2D::MultiArrayNew<I* [node_per_elem]>;
     using NodeArray = A2D::MultiArrayNew<T* [spatial_dim]>;

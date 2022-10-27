@@ -2,8 +2,8 @@
 
 using namespace A2D;
 
-typedef index_t I;
-typedef double T;
+using I = index_t;
+using T = double;
 
 template <class XArray>
 void get_bc_nodes(XArray& X, std::vector<I>& nodes_left_cylinder,
@@ -14,7 +14,7 @@ void get_bc_nodes(XArray& X, std::vector<I>& nodes_left_cylinder,
   double x1 = 5.4, y1 = 0.5;
 
   // Loop over nodes
-  I nnodes = X.layout.get_extent(0);
+  I nnodes = X.extent(0);
   for (I i = 0; i != nnodes; i++) {
     d2 = (X(i, 0) - x0) * (X(i, 0) - x0) + (X(i, 1) - y0) * (X(i, 1) - y0);
     if (absfunc(d2 - r2) < tol) {
@@ -27,7 +27,7 @@ void get_bc_nodes(XArray& X, std::vector<I>& nodes_left_cylinder,
   }
 }
 
-int main(int argc, char* argv[]) {
+void main_body() {
   // Define the problem
   static const int SPATIAL_DIM = 3;
   static const int nnodes_per_elem = 4;
@@ -62,8 +62,8 @@ int main(int argc, char* argv[]) {
   get_bc_nodes(X, nodes_left, nodes_right);
 
   // Check
-  auto left = MultiArray<T, CLayout<1>>(nnodes);
-  auto right = MultiArray<T, CLayout<1>>(nnodes);
+  auto left = MultiArrayNew<T* [1]>("left", nnodes);
+  auto right = MultiArrayNew<T* [1]>("right", nnodes);
   for (auto it = nodes_left.begin(); it != nodes_left.end(); it++) {
     left(*it, 0) = 1.0;
   }
@@ -73,10 +73,15 @@ int main(int argc, char* argv[]) {
 
   // Write to vtk
   ToVTK<decltype(element->get_conn()), decltype(model->get_nodes())> vtk(
-      conn, X, vtk_type_id);
+      conn, X, vtk_type_id, "rigid_body_out.vtk");
   vtk.write_mesh();
   vtk.write_sol("left", left, 0);
   vtk.write_sol("right", right, 0);
+  return;
+}
 
-  return 0;
+int main(int argc, char* argv[]) {
+  Kokkos::initialize(argc, argv);
+  { main_body(); }
+  Kokkos::finalize();
 }

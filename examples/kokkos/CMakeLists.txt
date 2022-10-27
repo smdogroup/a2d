@@ -1,5 +1,8 @@
+# Include A2D headers
 include_directories(${A2D_ROOT_DIR}/include)
-add_subdirectory(hello_kokkos)
-add_subdirectory(view)
-add_subdirectory(cuda_kernel)
-add_subdirectory(scratchpad)
+
+# Which .cpp to compile
+add_executable(scratchpad scratchpad.cpp)
+
+# Link libs
+target_link_libraries(scratchpad Kokkos::kokkos)

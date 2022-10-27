@@ -180,7 +180,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
           init_norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
         }
       }
-      init_norm = std::sqrt(init_norm);
+      init_norm = A2D::sqrt(init_norm);
       double theta = absfunc(init_norm);
 
       // Take the dot product between rows k and j
@@ -210,7 +210,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
           norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
         }
       }
-      norm = std::sqrt(norm);
+      norm = A2D::sqrt(norm);
 
       // Compute the scalar factor for this row - zero rows
       // that are nearly linearly dependent
@@ -474,11 +474,10 @@ class BSRMatAmg {
     bool solve_flag = false;
     A2D::BLAS::zero(xk);
     A2D::BLAS::copy(R, b0);
-    T init_norm = A2D::BLAS::norm(R, R);
+    T init_norm = A2D::BLAS::norm(R);
 
     if (monitor) {
-      std::cout << "MG |A * x - b|[" << std::setw(3) << 0
-                << "]: " << std::setw(15) << init_norm << std::endl;
+      std::printf("MG |A * x - b|[  0]: %20.10e\n", A2D::fmt(init_norm));
     }
 
     for (I iter = 0; iter < max_iters; iter++) {
@@ -486,24 +485,23 @@ class BSRMatAmg {
 
       A2D::BLAS::copy(R, b0);
       BSRMatVecMultSub(*A, xk, R);
-      T res_norm = A2D::BLAS::norm(R, R);
+      T res_norm = A2D::BLAS::norm(R);
 
       if ((iter + 1) % monitor == 0) {
-        std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
-                  << "]: " << std::setw(15) << res_norm << std::endl;
+        std::printf("MG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                    A2D::fmt(res_norm));
       }
 
       if (absfunc(res_norm) < atol ||
           absfunc(res_norm) < rtol * absfunc(init_norm)) {
         if (monitor && !((iter + 1) % monitor == 0)) {
-          std::cout << "MG |A * x - b|[" << std::setw(3) << iter + 1
-                    << "]: " << std::setw(15) << res_norm << std::endl;
+          std::printf("MG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                      A2D::fmt(res_norm));
         }
         solve_flag = true;
         break;
       }
     }
-    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 
@@ -537,8 +535,8 @@ class BSRMatAmg {
       }
 
       if (monitor && reset == 0) {
-        std::cout << "PCG |A * x - b|[" << std::setw(3) << iter
-                  << "]: " << std::setw(15) << init_norm << std::endl;
+        std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter,
+                    A2D::fmt(init_norm));
       }
 
       if (absfunc(init_norm) > atol) {
@@ -554,21 +552,21 @@ class BSRMatAmg {
         for (I i = 0; i < iters_per_reset && iter < max_iters; i++, iter++) {
           BSRMatVecMult(*A, P, work);              // work = A * P
           T alpha = rz / A2D::BLAS::dot(work, P);  // alpha = (R, Z)/(A * P, P)
-          A2D::BLAS::axpy(P, xk, alpha);           // x = x + alpha * P
-          A2D::BLAS::axpy(work, R, -alpha);        // R' = R - alpha * A * P
+          A2D::BLAS::axpy(xk, alpha, P);           // x = x + alpha * P
+          A2D::BLAS::axpy(R, -alpha, work);        // R' = R - alpha * A * P
 
           T res_norm = A2D::BLAS::norm(R);
 
           if ((iter + 1) % monitor == 0) {
-            std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
-                      << "]: " << std::setw(15) << res_norm << std::endl;
+            std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                        A2D::fmt(res_norm));
           }
 
           if (absfunc(res_norm) < atol ||
               absfunc(res_norm) < rtol * absfunc(init_norm)) {
             if (monitor && !((iter + 1) % monitor == 0)) {
-              std::cout << "PCG |A * x - b|[" << std::setw(3) << iter + 1
-                        << "]: " << std::setw(15) << res_norm << std::endl;
+              std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                          A2D::fmt(res_norm));
             }
 
             solve_flag = true;
@@ -579,7 +577,7 @@ class BSRMatAmg {
           T rz_new = A2D::BLAS::dot(R, work);    // rz_new = (R', Z')
           T rz_old = A2D::BLAS::dot(R, Z);       // rz_old = (R', Z)
           T beta = (rz_new - rz_old) / rz;       // beta = (R', Z' - Z)/(R, Z)
-          A2D::BLAS::axpby(work, P, 1.0, beta);  // P' = Z' + beta * P
+          A2D::BLAS::axpby(P, 1.0, beta, work);  // P' = Z' + beta * P
           A2D::BLAS::copy(Z, work);              // Z <- Z'
           rz = rz_new;                           // rz <- (R', Z')
         }
@@ -589,7 +587,6 @@ class BSRMatAmg {
         break;
       }
     }
-    printf(solve_flag ? "Solver converged\n" : "Solver did not converge\n");
     return solve_flag;
   }
 
@@ -603,7 +600,6 @@ class BSRMatAmg {
     MultiArrayNew<T* [M]>* xt = x;
     b = &b_;
     x = &x_;
-    bool zero_solution = false;
     applyMg();
     b = bt;
     x = xt;
@@ -673,12 +669,13 @@ class BSRMatAmg {
     BSRMatVecMult(*next->A, *xr, *yr2);
 
     // compute the error
-    A2D::BLAS::axpy(*yr2, *yr1, -1.0);
+    A2D::BLAS::axpy(*yr1, -1.0, *yr2);
     T error = A2D::BLAS::norm(*yr1, *yr1);
     T rel_err = A2D::BLAS::norm(*yr1, *yr1) / A2D::BLAS::norm(*yr2, *yr2);
-    std::cout << "Galerkin operator check " << std::endl
-              << "||Ar * xr - P^{T} * A * P * xr||: " << error
-              << " rel. error: " << rel_err << std::endl;
+    std::printf("Galerkin operator check\n");
+    std::printf(
+        "||Ar * xr - P^{T} * A * P * xr||: %20.10e,  rel. err: %20.10e\n",
+        fmt(error), fmt(rel_err));
 
     delete x0;
     delete y0;
@@ -736,8 +733,7 @@ class BSRMatAmg {
       BSRMatFactor(*Afact);
 
       if (print_info) {
-        std::cout << std::setw(10) << level << std::setw(15) << A->nbrows
-                  << std::setw(15) << Afact->nnz << std::endl;
+        printf("%10d%15d%15d\n", level, A->nbrows, Afact->nnz);
       }
     } else {
       r = new MultiArrayNew<T* [M]>("r", A->nbrows);
@@ -765,13 +761,11 @@ class BSRMatAmg {
 
       if (print_info) {
         if (level == 0) {
-          std::cout << std::setw(10) << "Level" << std::setw(15) << "n(A)"
-                    << std::setw(15) << "nnz(A)" << std::setw(15) << "nnz(P)"
-                    << std::setw(15) << "rho" << std::endl;
+          printf("%10s%15s%15s%15s%15s\n", "Level", "n(A)", "nnz(A)", "nnz(P)",
+                 "rho");
         }
-        std::cout << std::setw(10) << level << std::setw(15) << A->nbrows
-                  << std::setw(15) << A->nnz << std::setw(15) << P->nnz
-                  << std::setw(15) << rho << std::endl;
+        printf("%10d%15d%15d%15d%15.5f\n", level, A->nbrows, A->nnz, P->nnz,
+               A2D::fmt(rho));
       }
 
       next->makeAmgLevels(level + 1, num_levels, print_info);

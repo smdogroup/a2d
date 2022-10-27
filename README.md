@@ -16,7 +16,7 @@ A2D requires following dependencies
 - [Kokkos](https://github.com/kokkos/kokkos)
 - [Kokkos-kernels](https://github.com/kokkos/kokkos-kernels)
 
-### Installing Kokkos
+### Install Kokkos
 To build Kokkos with OpenMP and CUDA backend, use:
 ```
 cd extern/kokkos
@@ -28,8 +28,8 @@ ninja install
 For a complete instruction on installing Kokkos, see [Kokkos
 documentation](https://kokkos.github.io/kokkos-core-wiki/ProgrammingGuide/Compiling.html).
 
-### Installing Kokkos-kernels
-To build Kokkos-kenels with Kokkos installation, use:
+### Install Kokkos-kernels
+To build Kokkos-kernels with Kokkos installation, use:
 ```
 cd extern/kokkos-kernels
 mkdir build
@@ -37,7 +37,7 @@ cd build
 cmake .. -DKokkos_ROOT=../../../installs/kokkos -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos-kernels -G Ninja
 ninja install
 ```
-For a complete instruction on installing Kokkos-kenels, see [Kokkos-kernels
+For a complete instruction on installing Kokkos-kernels, see [Kokkos-kernels
 documentation](https://github.com/kokkos/kokkos-kernels/wiki/Building).
 
 ## Build examples, python bindings and tests

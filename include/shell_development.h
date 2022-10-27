@@ -206,7 +206,7 @@ class ShellElementMITC4 {
    *                          corresponds to evaluating g<sub>s</sub>(r,t) with r=quad_1.
    * @param t:                the value of the t parametric coordinate.
    * @param element:          the MITC4 element object for which the g<sub>&alpha</sub> vector is being computed.
-   * @param result:           An A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
+   * @param result:           an A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
    * */
   class g_alpha {
     g_alpha(const int alpha,
@@ -216,7 +216,9 @@ class ShellElementMITC4 {
             A2DVec<N, Vec<T, 3>>& result) {
 
       /* Calculations for first node. */
-      node1_thickness_scale_expression = ScalarMult(element.node1.thickness, t * 0.5, node1_scaled_thickness);
+      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
+                                                    t * 0.5,
+                                                    node1_scaled_thickness);
       node1_addition_expression = Vec3Axpy(node1_scaled_thickness,
                                            element.node1.shell_director,
                                            element.node1.position,
@@ -226,7 +228,9 @@ class ShellElementMITC4 {
                                          node1_contribution);
 
       /* Calculations for second node. */
-      node2_thickness_scale_expression = ScalarMult(element.node2.thickness, t * 0.5, node2_scaled_thickness);
+      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
+                                                    t * 0.5,
+                                                    node2_scaled_thickness);
       node2_addition_expression = Vec3Axpy(node2_scaled_thickness,
                                            element.node2.shell_director,
                                            element.node2.position,
@@ -236,7 +240,9 @@ class ShellElementMITC4 {
                                          node2_contribution);
 
       /* Calculations for third node. */
-      node3_thickness_scale_expression = ScalarMult(element.node3.thickness, t * 0.5, node3_scaled_thickness);
+      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
+                                                    t * 0.5,
+                                                    node3_scaled_thickness);
       node3_addition_expression = Vec3Axpy(node3_scaled_thickness,
                                            element.node3.shell_director,
                                            element.node3.position,
@@ -246,7 +252,9 @@ class ShellElementMITC4 {
                                          node3_contribution);
 
       /* Calculations for fourth node. */
-      node4_thickness_scale_expression = ScalarMult(element.node4.thickness, t * 0.5, node4_scaled_thickness);
+      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
+                                                    t * 0.5,
+                                                    node4_scaled_thickness);
       node4_addition_expression = Vec3Axpy(node4_scaled_thickness,
                                            element.node4.shell_director,
                                            element.node4.position,
@@ -373,7 +381,7 @@ class ShellElementMITC4 {
    *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
    * @param t:                the value of the t parametric coordinate.
    * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
-   * @param result:           An A2DVec where the resulting du/d&alpha vector should be stored.
+   * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
    * */
   class u_alpha {
     u_alpha(const int alpha,
@@ -569,8 +577,311 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
+  /**
+   * @brief Computes the g<sub>t</sub> vector for the given situation and element.
+   *
+   *
+   * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
+   *                    for r=1)
+   * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
+   *                    for s=1)
+   * @param element:    the MITC4 element object for which the g<sub>t</sub> vector is being computed.
+   * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
+   * */
+  class g_t {
+    g_t(const int r_ind,
+        const int s_ind,
+        const ShellElementMITC4<N, T>& element,
+        A2DVec<N, Vec<T, 3>>& result) {
+      /* Calculations for first node contribution */
+      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
+                                                    Ni_rj_sk(0, r_ind, s_ind) * 0.5,
+                                                    node1_scaled_thickness);
+      node1_scale_expression = Vec3Scale(element.node1.shell_director,
+                                         node1_scaled_thickness,
+                                         node1_contribution);
+      /* Calculations for second node contribution */
+      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
+                                                    Ni_rj_sk(1, r_ind, s_ind) * 0.5,
+                                                    node2_scaled_thickness);
+      node2_scale_expression = Vec3Scale(element.node2.shell_director,
+                                         node2_scaled_thickness,
+                                         node2_contribution);
+      /* Calculations for third node contribution */
+      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
+                                                    Ni_rj_sk(2, r_ind, s_ind) * 0.5,
+                                                    node3_scaled_thickness);
+      node3_scale_expression = Vec3Scale(element.node3.shell_director,
+                                         node3_scaled_thickness,
+                                         node3_contribution);
+      /* Calculations for fourth node contribution */
+      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
+                                                    Ni_rj_sk(3, r_ind, s_ind) * 0.5,
+                                                    node4_scaled_thickness);
+      node4_scale_expression = Vec3Scale(element.node4.shell_director,
+                                         node4_scaled_thickness,
+                                         node4_contribution);
+
+      /* Sum together the components. */
+      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
+      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
+      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
+    };
+
+    void reverse() {
+      /* Sum component calls: */
+      sum_1234_expression.reverse();
+      sum_123_expression.reverse();
+      sum_12_expression.reverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.reverse();
+      node4_thickness_scale_expression.reverse();
+      node3_scale_expression.reverse();
+      node3_thickness_scale_expression.reverse();
+      node2_scale_expression.reverse();
+      node2_thickness_scale_expression.reverse();
+      node1_scale_expression.reverse();
+      node1_thickness_scale_expression.reverse();
+    };
+
+    void hforward() {
+      /* Node expression calls: */
+      node1_thickness_scale_expression.hforward();
+      node1_scale_expression.hforward();
+      node2_thickness_scale_expression.hforward();
+      node2_scale_expression.hforward();
+      node3_thickness_scale_expression.hforward();
+      node3_scale_expression.hforward();
+      node4_thickness_scale_expression.hforward();
+      node4_scale_expression.hforward();
+
+      /* Sum component calls: */
+      sum_12_expression.hforward();
+      sum_123_expression.hforward();
+      sum_1234_expression.hforward();
+    };
+
+    void hreverse() {
+      /* Sum component calls: */
+      sum_1234_expression.hreverse();
+      sum_123_expression.hreverse();
+      sum_12_expression.hreverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.hhreverse();
+      node4_thickness_scale_expression.hreverse();
+      node3_scale_expression.hreverse();
+      node3_thickness_scale_expression.hreverse();
+      node2_scale_expression.hreverse();
+      node2_thickness_scale_expression.hreverse();
+      node1_scale_expression.hreverse();
+      node1_thickness_scale_expression.hreverse();
+    };
+
+   private:
+    A2DScalar<N, T>
+        node1_scaled_thickness,
+        node2_scaled_thickness,
+        node3_scaled_thickness,
+        node4_scaled_thickness;
+    A2DVec<N, Vec<T, 3>>
+        node1_contribution,
+        node2_contribution,
+        node3_contribution,
+        node4_contribution;
+    A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
+
+    /* Expressions: */
+
+    A2DScalarScalarMultExpr<N, T>
+        node1_thickness_scale_expression,
+        node2_thickness_scale_expression,
+        node3_thickness_scale_expression,
+        node4_thickness_scale_expression;
+    Vec3A2DScaleExpr<N, T>
+        node1_scale_expression,
+        node2_scale_expression,
+        node3_scale_expression,
+        node4_scale_expression;
+    A2DVec3A2DVecScalarAxpyExpr<N, T>
+        sum_12_expression,
+        sum_123_expression,
+        sum_1234_expression;
+  };
+
+  /**
+   * @brief Computes the du/dt vector for the given situation and element.
+   *
+   *
+   * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
+   *                    for r=1)
+   * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
+   *                    for s=1)
+   * @param element:    the MITC4 element object for which the du/dt vector is being computed.
+   * @param result:     an A2DVec where the resulting du/dt vector should be stored.
+   * */
+  class u_t {
+    u_t(const int r_ind,
+        const int s_ind,
+        const ShellElementMITC4<N, T>& element,
+        A2DVec<N, Vec<T, 3>>& result) {
+      /* Calculations for first node. */
+      node1_phi_expression = Vec3Cross(element.node1.rotation,
+                                       element.node1.shell_director,
+                                       node1_phi);
+      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
+                                                    Ni_rj_sk(0, r_ind, s_ind) * 0.5,
+                                                    node1_scaled_thickness);
+      node1_scale_expression = Vec3Scale(node1_phi,
+                                         node1_scaled_thickness,
+                                         node1_contribution);
+
+      /* Calculations for second node. */
+      node2_phi_expression = Vec3Cross(element.node2.rotation,
+                                       element.node2.shell_director,
+                                       node2_phi);
+      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
+                                                    Ni_rj_sk(1, r_ind, s_ind) * 0.5,
+                                                    node2_scaled_thickness);
+      node2_scale_expression = Vec3Scale(node2_phi,
+                                         node2_scaled_thickness,
+                                         node2_contribution);
+
+      /* Calculations for third node. */
+      node3_phi_expression = Vec3Cross(element.node3.rotation,
+                                       element.node3.shell_director,
+                                       node3_phi);
+      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
+                                                    Ni_rj_sk(2, r_ind, s_ind) * 0.5,
+                                                    node3_scaled_thickness);
+      node3_scale_expression = Vec3Scale(node3_phi,
+                                         node3_scaled_thickness,
+                                         node3_contribution);
+
+      /* Calculations for fourth node. */
+      node4_phi_expression = Vec3Cross(element.node4.rotation,
+                                       element.node4.shell_director,
+                                       node4_phi);
+      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
+                                                    Ni_rj_sk(3, r_ind, s_ind) * 0.5,
+                                                    node4_scaled_thickness);
+      node4_scale_expression = Vec3Scale(node4_phi,
+                                         node4_scaled_thickness,
+                                         node4_contribution);
+
+      /* Sum together the components. */
+      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
+      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
+      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
+    };
+
+    void reverse() {
+      /* Sum component calls: */
+      sum_1234_expression.reverse();
+      sum_123_expression.reverse();
+      sum_12_expression.reverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.reverse();
+      node4_thickness_scale_expression.reverse();
+      node4_phi_expression.reverse();
+      node3_scale_expression.reverse();
+      node3_thickness_scale_expression.reverse();
+      node3_phi_expression.reverse();
+      node2_scale_expression.reverse();
+      node2_thickness_scale_expression.reverse();
+      node2_phi_expression.reverse();
+      node1_scale_expression.reverse();
+      node1_thickness_scale_expression.reverse();
+      node1_phi_expression.reverse();
+    };
+
+    void hforward() {
+      /* Node expression calls: */
+      node1_phi_expression.hforward();
+      node1_thickness_scale_expression.hforward();
+      node1_scale_expression.hforward();
+      node2_phi_expression.hforward();
+      node2_thickness_scale_expression.hforward();
+      node2_scale_expression.hforward();
+      node3_phi_expression.hforward();
+      node3_thickness_scale_expression.hforward();
+      node3_scale_expression.hforward();
+      node4_phi_expression.hforward();
+      node4_thickness_scale_expression.hforward();
+      node4_scale_expression.hforward();
+
+      /* Sum component calls: */
+      sum_12_expression.hforward();
+      sum_123_expression.hforward();
+      sum_1234_expression.hforward();
+    };
+
+    void hreverse() {
+      /* Sum component calls: */
+      sum_1234_expression.hreverse();
+      sum_123_expression.hreverse();
+      sum_12_expression.hreverse();
+
+      /* Node expression calls: */
+      node4_scale_expression.hhreverse();
+      node4_thickness_scale_expression.hreverse();
+      node4_phi_expression.hreverse();
+      node3_scale_expression.hreverse();
+      node3_thickness_scale_expression.hreverse();
+      node3_phi_expression.hreverse();
+      node2_scale_expression.hreverse();
+      node2_thickness_scale_expression.hreverse();
+      node2_phi_expression.hreverse();
+      node1_scale_expression.hreverse();
+      node1_thickness_scale_expression.hreverse();
+      node1_phi_expression.hreverse();
+    };
+
+   private:
+    A2DVec<N, Vec<T, 3>>
+        node1_phi,
+        node2_phi,
+        node3_phi,
+        node4_phi;
+    A2DVec<N, Vec<T, 3>>
+        node1_contribution,
+        node2_contribution,
+        node3_contribution,
+        node4_contribution;
+    A2DScalar<N, T>
+        node1_scaled_thickness,
+        node2_scaled_thickness,
+        node3_scaled_thickness,
+        node4_scaled_thickness;
+    A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
+
+    /* Expressions: */
+
+    A2DVec3CrossVecExpr<N, T>
+        node1_phi_expression,
+        node2_phi_expression,
+        node3_phi_expression,
+        node4_phi_expression;
+    A2DScalarScalarMultExpr<N, T>
+        node1_thickness_scale_expression,
+        node2_thickness_scale_expression,
+        node3_thickness_scale_expression,
+        node4_thickness_scale_expression;
+    A2DVec3A2DScaleExpr<N, T>
+        node1_scale_expression,
+        node2_scale_expression,
+        node3_scale_expression,
+        node4_scale_expression;
+    A2DVec3A2DVecScalarAxpyExpr<N, T>
+        sum_12_expression,
+        sum_123_expression,
+        sum_1234_expression;
+  };
+
   class epsilon_ri_sj_tk {
-    // TODO:
+    // TODO:?
     epsilon_ri_sj_tk(const int i, const int j, const int k) {
 
     }
@@ -583,25 +894,25 @@ class ShellElementMITC4 {
 
     A2DVec<N, Vec<T, 3>>
     /** gr vector evaluated at the various quadrature points */
-        gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
+    gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
     /** gs vector evaluated at the various quadrature points */
-        gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
+    gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-        gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
+    gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
     /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
-        gr_r0_sp1_t0, gr_r0_sn1_t0,
+    gr_r0_sp1_t0, gr_r0_sn1_t0,
     /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
-        gs_rp1_s0_t0, gs_rn1_s0_t0,
+    gs_rp1_s0_t0, gs_rn1_s0_t0,
     /** derivatives of u with respect to r evaluated at the various quadrature points */
-        ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
+    ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
     /** derivatives of u with respect to s evaluated at the various quadrature points */
-        us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
+    us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
     /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-        ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,
+    ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,
     /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
-        ur_r0_sp1_t0, ur_r0_sn1_t0,
+    ur_r0_sp1_t0, ur_r0_sn1_t0,
     /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
-        us_rp1_s0_t0, us_rn1_s0_t0;
+    us_rp1_s0_t0, us_rn1_s0_t0;
 
     /** Cartesian local basis: */
     A2DVec<N, Vec<T, 3>>
@@ -628,43 +939,45 @@ class ShellElementMITC4 {
         e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;
     /*TODO: move all these to private members, and just reset their values whenever this method is called.*/
 
-    // TODO: write code for tying points
+
+
+    // code for tying points
     // TODO: remove non-dependencies *********
     /* e_rt_A calculations: */
     g_alpha gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
-    auto gt_r0_sp1_t0_expression = ;
+    g_t gt_r0_sp1_t0_expression(2, 4, this, gt_r0_sp1_t0);
     u_alpha ur_r0_sp1_t0_expression(0, 3, 0, this, ur_r0_sp1_t0);
-    auto ut_r0_sp1_t0_expression = ;
+    u_t ut_r0_sp1_t0_expression(2, 4, this, ut_r0_sp1_t0);
     A2DScalar<N, T> gr_ut_A, gt_ur_A;  // TODO: move declaration
-    auto gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
-    auto gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
+    A2DVec3DotA2DVecExpr gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
+    A2DVec3DotA2DVecExpr gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
     auto e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
     /* e_rt_B calculations: */
     g_alpha gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
-    auto gt_r0_sn1_t0_expression = ;
+    g_t gt_r0_sn1_t0_expression(2, 0, this, gt_r0_sn1_t0);
     u_alpha ur_r0_sn1_t0_expression(0, 0, 0, this, ur_r0_sn1_t0);
-    auto ut_r0_sn1_t0_expression = ;
+    u_t ut_r0_sn1_t0_expression(2, 0, this, ut_r0_sn1_t0);
     A2DScalar<N, T> gr_ut_B, gt_ur_B;  // TODO: move declaration
-    auto gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
-    auto gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
+    A2DVec3DotA2DVecExpr gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
+    A2DVec3DotA2DVecExpr gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
     auto e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
     /* e_st_C calculations: */
     g_alpha gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
-    auto gt_rp1_s0_t0_expression = ;
+    g_t gt_rp1_s0_t0_expression(4, 2, this, gt_rp1_s0_t0);
     u_alpha us_rp1_s0_t0_expression(1, 3, 0, this, us_rp1_s0_t0);
-    auto ut_rp1_s0_t0_expression = ;
+    u_t ut_rp1_s0_t0_expression(4, 2, this, ut_rp1_s0_t0);
     A2DScalar<N, T> gs_ut_C, gt_us_C;  // TODO: move declaration
-    auto gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
-    auto gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
+    A2DVec3DotA2DVecExpr gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
+    A2DVec3DotA2DVecExpr gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
     auto e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
     /* e_st_D calculations: */
     g_alpha gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
-    auto gt_rn1_s0_t0_expression = ;
+    g_t gt_rn1_s0_t0_expression(0, 2, this, gt_rn1_s0_t0);
     u_alpha us_rn1_s0_t0_expression(1, 0, 0, this, us_rn1_s0_t0);
-    auto ut_rn1_s0_t0_expression = ;
+    u_t ut_rn1_s0_t0_expression(0, 2, this, ut_rn1_s0_t0);
     A2DScalar<N, T> gs_ut_D, gt_us_D;  // TODO: move declaration
-    auto gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
-    auto gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
+    A2DVec3DotA2DVecExpr gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
+    A2DVec3DotA2DVecExpr gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
     auto e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);
 
 
@@ -707,76 +1020,150 @@ class ShellElementMITC4 {
  private:
   // TODO
 
-  // replace -1/sqrt(3) and 1/sqrt(3) with quad_0 and quad_1 respectively, do the reverse in comments?
+
   /** quadrature point values */
   constexpr static const T quad_0{-0.5773502691896257645091488}, quad_1{0.5773502691896257645091488};
 
-  /** shape functions evaluated at various quadrature points */
-  /*constexpr static const T  // TODO: remove
-      N1_r0s0{(1 - quad_0) * (1 - quad_0) * 0.25},
-      N1_r0s1{(1 - quad_0) * (1 - quad_1) * 0.25},
-      N1_r1s0{(1 - quad_1) * (1 - quad_0) * 0.25},
-      N1_r1s1{(1 - quad_1) * (1 - quad_1) * 0.25},
-      N2_r0s0{(1 + quad_0) * (1 - quad_0) * 0.25},
-      N2_r0s1{(1 + quad_0) * (1 - quad_1) * 0.25},
-      N2_r1s0{(1 + quad_1) * (1 - quad_0) * 0.25},
-      N2_r1s1{(1 + quad_1) * (1 - quad_1) * 0.25},
-      N3_r0s0{(1 + quad_0) * (1 + quad_0) * 0.25},
-      N3_r0s1{(1 + quad_0) * (1 + quad_1) * 0.25},
-      N3_r1s0{(1 + quad_1) * (1 + quad_0) * 0.25},
-      N3_r1s1{(1 + quad_1) * (1 + quad_1) * 0.25},
-      N4_r0s0{(1 - quad_0) * (1 + quad_0) * 0.25},
-      N4_r0s1{(1 - quad_0) * (1 + quad_1) * 0.25},
-      N4_r1s0{(1 - quad_1) * (1 + quad_0) * 0.25},
-      N4_r1s1{(1 - quad_1) * (1 + quad_1) * 0.25};*/
-  constexpr static const T Ni_rj_sk_data[16]{
+  /** shape functions evaluated at the various points of interest */
+  constexpr static const T Ni_rj_sk_data[100]{
+      (1 - (-1)) * (1 - (-1)) * 0.25,      /**< N1 evaluated at r=-1,     s=-1 */
+      (1 - (-1)) * (1 - quad_0) * 0.25,    /**< N1 evaluated at r=-1,     s=quad_0 */
+      (1 - (-1)) * (1 - (0)) * 0.25,       /**< N1 evaluated at r=-1,     s=0 */
+      (1 - (-1)) * (1 - quad_1) * 0.25,    /**< N1 evaluated at r=-1,     s=quad_1 */
+      (1 - (-1)) * (1 - (1)) * 0.25,       /**< N1 evaluated at r=-1,     s=1 */
+
+      (1 - quad_0) * (1 - (-1)) * 0.25,    /**< N1 evaluated at r=quad_0, s=-1 */
       (1 - quad_0) * (1 - quad_0) * 0.25,  /**< N1 evaluated at r=quad_0, s=quad_0 */
+      (1 - quad_0) * (1 - (0)) * 0.25,     /**< N1 evaluated at r=quad_0, s=0 */
       (1 - quad_0) * (1 - quad_1) * 0.25,  /**< N1 evaluated at r=quad_0, s=quad_1 */
+      (1 - quad_0) * (1 - (1)) * 0.25,     /**< N1 evaluated at r=quad_0, s=1 */
+
+      (1 - (0)) * (1 - (-1)) * 0.25,       /**< N1 evaluated at r=0,      s=-1 */
+      (1 - (0)) * (1 - quad_0) * 0.25,     /**< N1 evaluated at r=0,      s=quad_0 */
+      (1 - (0)) * (1 - (0)) * 0.25,        /**< N1 evaluated at r=0,      s=0 */
+      (1 - (0)) * (1 - quad_1) * 0.25,     /**< N1 evaluated at r=0,      s=quad_1 */
+      (1 - (0)) * (1 - (1)) * 0.25,        /**< N1 evaluated at r=0,      s=1 */
+
+      (1 - quad_1) * (1 - (-1)) * 0.25,    /**< N1 evaluated at r=quad_1, s=-1 */
       (1 - quad_1) * (1 - quad_0) * 0.25,  /**< N1 evaluated at r=quad_1, s=quad_0 */
+      (1 - quad_1) * (1 - (0)) * 0.25,     /**< N1 evaluated at r=quad_1, s=0 */
       (1 - quad_1) * (1 - quad_1) * 0.25,  /**< N1 evaluated at r=quad_1, s=quad_1 */
+      (1 - quad_1) * (1 - (1)) * 0.25,     /**< N1 evaluated at r=quad_1, s=1 */
 
+      (1 - (1)) * (1 - (-1)) * 0.25,       /**< N1 evaluated at r=1,      s=-1 */
+      (1 - (1)) * (1 - quad_0) * 0.25,     /**< N1 evaluated at r=1,      s=quad_0 */
+      (1 - (1)) * (1 - (0)) * 0.25,        /**< N1 evaluated at r=1,      s=0 */
+      (1 - (1)) * (1 - quad_1) * 0.25,     /**< N1 evaluated at r=1,      s=quad_1 */
+      (1 - (1)) * (1 - (1)) * 0.25,        /**< N1 evaluated at r=1,      s=1 */
+
+
+
+      (1 + (-1)) * (1 - (-1)) * 0.25,      /**< N2 evaluated at r=-1,     s=-1 */
+      (1 + (-1)) * (1 - quad_0) * 0.25,    /**< N2 evaluated at r=-1,     s=quad_0 */
+      (1 + (-1)) * (1 - (0)) * 0.25,       /**< N2 evaluated at r=-1,     s=0 */
+      (1 + (-1)) * (1 - quad_1) * 0.25,    /**< N2 evaluated at r=-1,     s=quad_1 */
+      (1 + (-1)) * (1 - (1)) * 0.25,       /**< N2 evaluated at r=-1,     s=1 */
+
+      (1 + quad_0) * (1 - (-1)) * 0.25,    /**< N2 evaluated at r=quad_0, s=-1 */
       (1 + quad_0) * (1 - quad_0) * 0.25,  /**< N2 evaluated at r=quad_0, s=quad_0 */
+      (1 + quad_0) * (1 - (0)) * 0.25,     /**< N2 evaluated at r=quad_0, s=0 */
       (1 + quad_0) * (1 - quad_1) * 0.25,  /**< N2 evaluated at r=quad_0, s=quad_1 */
+      (1 + quad_0) * (1 - (1)) * 0.25,     /**< N2 evaluated at r=quad_0, s=1 */
+
+      (1 + (0)) * (1 - (-1)) * 0.25,       /**< N2 evaluated at r=0,      s=-1 */
+      (1 + (0)) * (1 - quad_0) * 0.25,     /**< N2 evaluated at r=0,      s=quad_0 */
+      (1 + (0)) * (1 - (0)) * 0.25,        /**< N2 evaluated at r=0,      s=0 */
+      (1 + (0)) * (1 - quad_1) * 0.25,     /**< N2 evaluated at r=0,      s=quad_1 */
+      (1 + (0)) * (1 - (1)) * 0.25,        /**< N2 evaluated at r=0,      s=1 */
+
+      (1 + quad_1) * (1 - (-1)) * 0.25,    /**< N2 evaluated at r=quad_1, s=-1 */
       (1 + quad_1) * (1 - quad_0) * 0.25,  /**< N2 evaluated at r=quad_1, s=quad_0 */
+      (1 + quad_1) * (1 - (0)) * 0.25,     /**< N2 evaluated at r=quad_1, s=0 */
       (1 + quad_1) * (1 - quad_1) * 0.25,  /**< N2 evaluated at r=quad_1, s=quad_1 */
+      (1 + quad_1) * (1 - (1)) * 0.25,     /**< N2 evaluated at r=quad_1, s=1 */
 
+      (1 + (1)) * (1 - (-1)) * 0.25,       /**< N2 evaluated at r=1,      s=-1 */
+      (1 + (1)) * (1 - quad_0) * 0.25,     /**< N2 evaluated at r=1,      s=quad_0 */
+      (1 + (1)) * (1 - (0)) * 0.25,        /**< N2 evaluated at r=1,      s=0 */
+      (1 + (1)) * (1 - quad_1) * 0.25,     /**< N2 evaluated at r=1,      s=quad_1 */
+      (1 + (1)) * (1 - (1)) * 0.25,        /**< N2 evaluated at r=1,      s=1 */
+
+
+
+      (1 + (-1)) * (1 + (-1)) * 0.25,      /**< N3 evaluated at r=-1,     s=-1 */
+      (1 + (-1)) * (1 + quad_0) * 0.25,    /**< N3 evaluated at r=-1,     s=quad_0 */
+      (1 + (-1)) * (1 + (0)) * 0.25,       /**< N3 evaluated at r=-1,     s=0 */
+      (1 + (-1)) * (1 + quad_1) * 0.25,    /**< N3 evaluated at r=-1,     s=quad_1 */
+      (1 + (-1)) * (1 + (1)) * 0.25,       /**< N3 evaluated at r=-1,     s=1 */
+
+      (1 + quad_0) * (1 + (-1)) * 0.25,    /**< N3 evaluated at r=quad_0, s=-1 */
       (1 + quad_0) * (1 + quad_0) * 0.25,  /**< N3 evaluated at r=quad_0, s=quad_0 */
+      (1 + quad_0) * (1 + (0)) * 0.25,     /**< N3 evaluated at r=quad_0, s=0 */
       (1 + quad_0) * (1 + quad_1) * 0.25,  /**< N3 evaluated at r=quad_0, s=quad_1 */
-      (1 + quad_1) * (1 + quad_0) * 0.25,  /**< N3 evaluated at r=quad_1, s=quad_0 */
-      (1 + quad_1) * (1 + quad_1) * 0.25,  /**< N3 evaluated at r=quad_1, s=quad_1 */
+      (1 + quad_0) * (1 + (1)) * 0.25,     /**< N3 evaluated at r=quad_0, s=1 */
 
+      (1 + (0)) * (1 + (-1)) * 0.25,       /**< N3 evaluated at r=0,      s=-1 */
+      (1 + (0)) * (1 + quad_0) * 0.25,     /**< N3 evaluated at r=0,      s=quad_0 */
+      (1 + (0)) * (1 + (0)) * 0.25,        /**< N3 evaluated at r=0,      s=0 */
+      (1 + (0)) * (1 + quad_1) * 0.25,     /**< N3 evaluated at r=0,      s=quad_1 */
+      (1 + (0)) * (1 + (1)) * 0.25,        /**< N3 evaluated at r=0,      s=1 */
+
+      (1 + quad_1) * (1 + (-1)) * 0.25,    /**< N3 evaluated at r=quad_1, s=-1 */
+      (1 + quad_1) * (1 + quad_0) * 0.25,  /**< N3 evaluated at r=quad_1, s=quad_0 */
+      (1 + quad_1) * (1 + (0)) * 0.25,     /**< N3 evaluated at r=quad_1, s=0 */
+      (1 + quad_1) * (1 + quad_1) * 0.25,  /**< N3 evaluated at r=quad_1, s=quad_1 */
+      (1 + quad_1) * (1 + (1)) * 0.25,     /**< N3 evaluated at r=quad_1, s=1 */
+
+      (1 + (1)) * (1 + (-1)) * 0.25,       /**< N3 evaluated at r=1,      s=-1 */
+      (1 + (1)) * (1 + quad_0) * 0.25,     /**< N3 evaluated at r=1,      s=quad_0 */
+      (1 + (1)) * (1 + (0)) * 0.25,        /**< N3 evaluated at r=1,      s=0 */
+      (1 + (1)) * (1 + quad_1) * 0.25,     /**< N3 evaluated at r=1,      s=quad_1 */
+      (1 + (1)) * (1 + (1)) * 0.25,        /**< N3 evaluated at r=1,      s=1 */
+
+
+
+      (1 - (-1)) * (1 + (-1)) * 0.25,      /**< N4 evaluated at r=-1,     s=-1 */
+      (1 - (-1)) * (1 + quad_0) * 0.25,    /**< N4 evaluated at r=-1,     s=quad_0 */
+      (1 - (-1)) * (1 + (0)) * 0.25,       /**< N4 evaluated at r=-1,     s=0 */
+      (1 - (-1)) * (1 + quad_1) * 0.25,    /**< N4 evaluated at r=-1,     s=quad_1 */
+      (1 - (-1)) * (1 + (1)) * 0.25,       /**< N4 evaluated at r=-1,     s=1 */
+
+      (1 - quad_0) * (1 + (-1)) * 0.25,    /**< N4 evaluated at r=quad_0, s=-1 */
       (1 - quad_0) * (1 + quad_0) * 0.25,  /**< N4 evaluated at r=quad_0, s=quad_0 */
+      (1 - quad_0) * (1 + (0)) * 0.25,     /**< N4 evaluated at r=quad_0, s=0 */
       (1 - quad_0) * (1 + quad_1) * 0.25,  /**< N4 evaluated at r=quad_0, s=quad_1 */
+      (1 - quad_0) * (1 + (1)) * 0.25,     /**< N4 evaluated at r=quad_0, s=1 */
+
+      (1 - (0)) * (1 + (-1)) * 0.25,       /**< N4 evaluated at r=0,      s=-1 */
+      (1 - (0)) * (1 + quad_0) * 0.25,     /**< N4 evaluated at r=0,      s=quad_0 */
+      (1 - (0)) * (1 + (0)) * 0.25,        /**< N4 evaluated at r=0,      s=0 */
+      (1 - (0)) * (1 + quad_1) * 0.25,     /**< N4 evaluated at r=0,      s=quad_1 */
+      (1 - (0)) * (1 + (1)) * 0.25,        /**< N4 evaluated at r=0,      s=1 */
+
+      (1 - quad_1) * (1 + (-1)) * 0.25,    /**< N4 evaluated at r=quad_1, s=-1 */
       (1 - quad_1) * (1 + quad_0) * 0.25,  /**< N4 evaluated at r=quad_1, s=quad_0 */
-      (1 - quad_1) * (1 + quad_1) * 0.25   /**< N4 evaluated at r=quad_1, s=quad_1 */
+      (1 - quad_1) * (1 + (0)) * 0.25,     /**< N4 evaluated at r=quad_1, s=0 */
+      (1 - quad_1) * (1 + quad_1) * 0.25,  /**< N4 evaluated at r=quad_1, s=quad_1 */
+      (1 - quad_1) * (1 + (1)) * 0.25,     /**< N4 evaluated at r=quad_1, s=1 */
+
+      (1 - (1)) * (1 + (-1)) * 0.25,       /**< N4 evaluated at r=1,      s=-1 */
+      (1 - (1)) * (1 + quad_0) * 0.25,     /**< N4 evaluated at r=1,      s=quad_0 */
+      (1 - (1)) * (1 + (0)) * 0.25,        /**< N4 evaluated at r=1,      s=0 */
+      (1 - (1)) * (1 + quad_1) * 0.25,     /**< N4 evaluated at r=1,      s=quad_1 */
+      (1 - (1)) * (1 + (1)) * 0.25,        /**< N4 evaluated at r=1,      s=1 */
   };
-  /** getter for shape functions evaluated at the various quadrature points */  // TODO: doc
+  /**
+   * @brief getter for shape functions evaluated at the various points of interest
+   *
+   * @param i:  denotes which shape function is being queried
+   * @param j:  denotes the value for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4 for r=1)
+   * @param k:  denotes the value for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4 for s=1)
+   * */
   constexpr static T Ni_rj_sk(const int i, const int j, const int k) {
-    return Ni_rj_sk_data[i * 4 + j * 2 + k];
+    return Ni_rj_sk_data[i * 25 + j * 5 + k];
   }
 
-  /*/// shape function derivative with respect to r, evaluated at various quadrature points // TODO: remove
-  constexpr static const T
-      drN1_s0{-0.25 * (1 - quad_0)},
-      drN1_s1{-0.25 * (1 - quad_1)},
-      drN2_s0{0.25 * (1 - quad_0)},
-      drN2_s1{0.25 * (1 - quad_1)},
-      drN3_s0{0.25 * (1 + quad_0)},
-      drN3_s1{0.25 * (1 + quad_1)},
-      drN4_s0{-0.25 * (1 + quad_0)},
-      drN4_s1{-0.25 * (1 + quad_1)};
-
-  /// shape function derivative with respect to s, evaluated at various quadrature points
-  constexpr static const T
-      dsN1_r0{-0.25 * (1 - quad_0)},
-      dsN1_r1{-0.25 * (1 - quad_1)},
-      dsN2_r0{-0.25 * (1 + quad_0)},
-      dsN2_r1{-0.25 * (1 + quad_1)},
-      dsN3_r0{0.25 * (1 + quad_0)},
-      dsN3_r1{0.25 * (1 + quad_1)},
-      dsN4_r0{0.25 * (1 - quad_0)},
-      dsN4_r1{0.25 * (1 - quad_1)};*/
-  /** shape function derivative with respect to r and s, evaluated at various quadrature points */
+  /** shape function derivatives with respect to r and s, evaluated at the various points of interest */
   constexpr static const T dNi_d_alpha_alpha_j_data[32]{
       /** shape function derivative with respect to r, evaluated at s=-1, quad_0, quad_1, and 1 */
       -0.25 * (1 - (-1)),   /**< dN1/dr evaluated at s=-1 */
@@ -798,6 +1185,7 @@ class ShellElementMITC4 {
       -0.25 * (1 + quad_0), /**< dN4/dr evaluated at s=quad_0 */
       -0.25 * (1 + quad_1), /**< dN4/dr evaluated at s=quad_1 */
       -0.25 * (1 + (1)),    /**< dN4/dr evaluated at s=1 */
+
       /** shape function derivative with respect to s, evaluated at r=-1, quad_0, quad_1, and 1 */
       -0.25 * (1 - (-1)),   /**< dN1/ds evaluated at r=-1 */
       -0.25 * (1 - quad_0), /**< dN1/ds evaluated at r=quad_0 */
@@ -819,7 +1207,7 @@ class ShellElementMITC4 {
       0.25 * (1 - quad_1),  /**< dN4/ds evaluated at r=quad_1 */
       0.25 * (1 - (1))      /**< dN4/ds evaluated at r=1 */
   };
-  /** @brief getter for shape function derivatives evaluated at the various quadrature points
+  /** @brief getter for shape function derivatives evaluated at the various points of interest
    *
    * @param alpha:  denotes the derivative of the shape function, a value of 0 corresponds to  dNi/dr while a value of
    *                1 corresponds to dNi/ds.

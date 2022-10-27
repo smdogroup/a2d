@@ -270,47 +270,89 @@ struct __count_basis_dof<First, Remain...> {
       First::ndof + __count_basis_dof<Remain...>::ndof;
 };
 
+/*
+  Template pattern for computing the size of the interpolation matrices
+*/
+template <class... Basis>
+struct __count_basis_size;
+
+template <>
+struct __count_basis_size<> {
+  static const A2D::index_t basis_size = 0;
+};
+
+template <class First, class... Remain>
+struct __count_basis_size<First, Remain...> {
+  static const A2D::index_t basis_size =
+      First::basis_size + __count_basis_size<Remain...>::basis_size;
+};
+
+/*
+  The finite element basis class.
+
+  This class stores a collection of basis function objects
+*/
 template <typename T, class... Basis>
 class FEBasis {
  public:
   typedef std::tuple<Basis...> BasisSpace;
 
-  /*
-    Number of basis function objects
-  */
+  /**
+   * @brief Number of basis function objects
+   */
   static constexpr A2D::index_t nbasis =
       std::tuple_size<std::tuple<Basis...>>();
 
-  /*
-    Count up the total number of degrees of freedom for this set of basis
-    functions
-  */
+  /**
+   * @brief Count up the total number of degrees of freedom for this set of
+   * basis functions
+   */
   static constexpr A2D::index_t ndof = __count_basis_dof<Basis...>::ndof;
 
-  /*
-    Get the number of degrees of freedom associated with the given basis
-  */
+  /**
+   * @brief Count up the total basis size required to store all of the
+   * interpolation matrices for this set of basis functions
+   */
+  static constexpr A2D::index_t basis_size =
+      __count_basis_size<Basis...>::basis_size;
+
+  /**
+   * @brief Get the number of degrees of freedom associated with the given basis
+   */
   template <A2D::index_t index>
   static A2D::index_t get_ndof() {
     return std::tuple_element<index, BasisSpace>::type::ndof;
   }
 
+  /**
+   * @brief Get the cumulative number of degrees of associated with the basis
+   * before the given basis
+   */
   template <A2D::index_t index>
   static A2D::index_t get_dof_offset() {
     return get_dof_offset_<0, index, Basis...>();
   }
 
-  /*
-    Interpolate using the basis functions at the quadrature point
-  */
+  /**
+   * @brief Interpolate using the basis functions at the quadrature point
+   *
+   * @param pt The interpolation point index
+   * @param dof The degree of freedom object
+   * @param s The output finite element space object
+   */
   template <class Quadrature, class FEDof, class FiniteElementSpace>
   static void interp(A2D::index_t pt, const FEDof& dof, FiniteElementSpace& s) {
     interp_<Quadrature, FEDof, FiniteElementSpace, 0, Basis...>(pt, dof, s);
   }
 
-  /*
-    Interpolate using the basis functions at the quadrature point
-  */
+  /**
+   * @brief Add values to the degree of freedom using the interpolation
+   * functions
+   *
+   * @param pt The interpolation point index
+   * @param s The finite element space objec
+   * @param dof The degree of freedom object that values are added to
+   */
   template <class Quadrature, class FiniteElementSpace, class FEDof>
   static void add(A2D::index_t pt, const FiniteElementSpace& s, FEDof& dof) {
     add_<Quadrature, FiniteElementSpace, FEDof, 0, Basis...>(pt, s, dof);

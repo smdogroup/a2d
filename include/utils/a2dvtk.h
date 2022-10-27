@@ -20,7 +20,7 @@ void write_real_val(std::FILE* fp, double val) {
   std::fprintf(fp, "%-20.15f", val);
 }
 
-void write_real_val(std::FILE* fp, std::complex<double> val) {
+void write_real_val(std::FILE* fp, A2D_complex_t<double> val) {
   std::fprintf(fp, "%-20.15f", val.real());
 }
 
@@ -213,9 +213,9 @@ class ReadVTK {
       throw std::runtime_error(msg);
     }
 
-    nnodes = -1;
-    nelems_all = -1;
-    nelems = -1;
+    nnodes = 0;
+    nelems_all = 0;
+    nelems = 0;
 
     for (int i = 0; i != spatial_dim; i++) {
       domain_lower[i] = 1e9;

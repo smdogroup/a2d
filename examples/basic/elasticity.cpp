@@ -76,8 +76,7 @@ void test_adjoint_product(DesignArray& x,
 void main_body() {
   Timer timer("main()");
   using I = index_t;
-  // using T = A2D_complex_t<double>;
-  using T = std::complex<double>;
+  using T = A2D_complex_t<double>;
   using Basis = BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature>;
   using PDE = ElasticityPDEInfo<3, I, T>;
 

@@ -1,15 +1,6 @@
-name: unittests
+name: unit/build tests
 
-on:
-  # Triggers the workflow on push or pull request events but only for the main branch
-  # Remove push when finally merging.
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-  # Allows you to run this workflow manually from the Actions tab.
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   # job name
@@ -31,17 +22,21 @@ jobs:
       #   with:
       #     python-version: 3.8
 
-      - name: build tests
+      - name: build tests and examples
         run: |
           git clone https://github.com/kokkos/kokkos.git extern/kokkos;
           cd extern/kokkos;
           git checkout tags/3.6.01;
-          mkdir ../../build;
-          cd ../../build;
-          cmake .. -DA2D_BUILD_UNIT_TESTS=ON;
-          cd tests;
-          make -j 16;
-      - name: run tests
+          mkdir build;
+          cd build;
+          cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -G Ninja
+          ninja install;
+          mkdir ../../../build;
+          cd ../../../build;
+          cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
+          ninja;
+
+      - name: run unit tests
         run: |
           cd build/tests;
           ctest;

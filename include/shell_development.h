@@ -33,6 +33,31 @@ class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
 
 };
 
+template <int N, typename T>  // TODO: make the MatInnerProduct operation (a = x.A.y)
+class MatA2DVecA2DVecInnerProductExpr {
+
+};
+
+/*template <int N, typename T, int D>  // TODO: make the VecScalarAssembly operation (v = {v1, v2, v3, ..., vD})
+class A2DScalarVecAssemblyExpr {
+  A2DScalarVecAssemblyExpr(A2DVec<N, Vec<T, D>>& vObj,
+                           A2DScalar<N, T> x[D]){
+
+    for (int i = 0; i < D; ++i) {
+      v.value()(i) = x[i].value;
+    }
+  };
+};
+template <int N, typename T, int D>
+A2DScalarVecAssemblyExpr<N, T, D> VecScalarAssembly(A2DVec<N, Vec<T, D>>& v, A2DScalar<N, T> x[D]) {
+  return A2DScalarVecAssemblyExpr<N, T, D>(v, x);
+};*/
+template <int N, typename T>  // TODO: make the Vec5ScalarAssembly operation (v = {x0, x1, x2, x3, x4})
+class A2DScalar5VecAssemblyExpr {
+ public:
+
+};
+
 
 // END TODO: OPERATOR CLASSES
 
@@ -50,8 +75,8 @@ class LinearIsotropicMaterial {
         D_init{temp1, temp2, 0, 0, 0,
                temp2, temp1, 0, 0, 0,
                0, 0, temp3, 0, 0,
-               0, 0, 0, temp3, 0,
-               0, 0, 0, 0, temp3}, D(D_init) {};
+               0, 0, 0, temp3 * 5 / 6, 0,
+               0, 0, 0, 0, temp3 * 5 / 6}, D(D_init) {};
 
   const Mat<T, 5, 5> D;
 };
@@ -227,6 +252,7 @@ class ShellElementMITC4 {
    * @param result:           an A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
    * */
   class g_alpha {
+   public:
     g_alpha(const int alpha,
             const int n_alpha_var_ind,
             const T& t,
@@ -402,6 +428,7 @@ class ShellElementMITC4 {
    * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
    * */
   class u_alpha {
+   public:
     u_alpha(const int alpha,
             const int n_alpha_var_ind,
             const T& t,
@@ -607,6 +634,7 @@ class ShellElementMITC4 {
    * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
    * */
   class g_t {
+   public:
     g_t(const int r_ind,
         const int s_ind,
         const ShellElementMITC4<N, T>& element,
@@ -740,6 +768,7 @@ class ShellElementMITC4 {
    * @param result:     an A2DVec where the resulting du/dt vector should be stored.
    * */
   class u_t {
+   public:
     u_t(const int r_ind,
         const int s_ind,
         const ShellElementMITC4<N, T>& element,
@@ -912,6 +941,7 @@ class ShellElementMITC4 {
    * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
    * */
   class contravariant_basis {
+   public:
     contravariant_basis(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
                         A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt) {
       gs_cross_gt_expression = Vec3Cross(gs, gt, gs_cross_gt);
@@ -996,6 +1026,7 @@ class ShellElementMITC4 {
    * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
    * */
   class cartesian_local_basis {
+   public:
     cartesian_local_basis(A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
                           A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3) {
       e3_expression = Vec3Normalize(gt, e3);
@@ -1050,10 +1081,28 @@ class ShellElementMITC4 {
    * @param ur: the derivative of the displacement vector with respect to r (i.e. du/dr)
    * @param us: the derivative of the displacement vector with respect to s (i.e. du/ds)
    * */
-  class in_plane_strain_componentsExpr{
-    in_plane_strain_componentsExpr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs,
-                                   A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us,
-                                   A2DVec<N, Vec<T, 3>>& e_rr, A2DVec<N, Vec<T, 3>>& e_ss, A2DVec<N, Vec<T, 3>>& e_rs){
+  class in_plane_strain_components_expr {
+   public:
+    /**
+     * @brief Calculates the in-plane stain components (e<sub>rr</sub>, e<sub>ss</sub>, and e<sub>rs</sub>) based on the
+     * values of the covariant basis vectors g<sub>r</sub> and g<sub>s</sub>, and the displacement derivative vectors
+     * du/dr and du/ds.
+     *
+     * @note The covariant basis vectors, g<sub>r</sub> and g<sub>s</sub>, and displacement derivative vectors, du/dr and
+     * du/ds, must be evaluated at the desired point of interest (i.e. a quadrature point).
+     *
+     * @param gr: the g<sub>r</sub> covariant basis vector
+     * @param gs: the g<sub>s</sub> covariant basis vector
+     * @param ur: the derivative of the displacement vector with respect to r (i.e. du/dr)
+     * @param us: the derivative of the displacement vector with respect to s (i.e. du/ds)
+     * */
+    in_plane_strain_components_expr(A2DVec<N, Vec<T, 3>>& gr,
+                                    A2DVec<N, Vec<T, 3>>& gs,
+                                    A2DVec<N, Vec<T, 3>>& ur,
+                                    A2DVec<N, Vec<T, 3>>& us,
+                                    A2DVec<N, Vec<T, 3>>& e_rr,
+                                    A2DVec<N, Vec<T, 3>>& e_ss,
+                                    A2DVec<N, Vec<T, 3>>& e_rs) {
       e_rr_expression = Vec3Dot(gr, ur, e_rr);
       e_ss_expression = Vec3Dot(gs, us, e_ss);
       gr_us_expression = Vec3Dot(gr, us, gr_us);
@@ -1061,7 +1110,7 @@ class ShellElementMITC4 {
       e_rs_expression = ScalarAxpay(0.5, gr_us, gs_ur, e_rs);
     };
 
-    void reverse(){
+    void reverse() {
       e_rs_expression.reverse();
       gs_ur_expression.reverse();
       gr_us_expression.reverse();
@@ -1069,7 +1118,7 @@ class ShellElementMITC4 {
       e_rr_expression.reverse();
     };
 
-    void hforward(){
+    void hforward() {
       e_rr_expression.hforward();
       e_ss_expression.hforward();
       gr_us_expression.hforward();
@@ -1077,7 +1126,7 @@ class ShellElementMITC4 {
       e_rs_expression.hforward();
     };
 
-    void hreverse(){
+    void hreverse() {
       e_rs_expression.hreverse();
       gs_ur_expression.hreverse();
       gr_us_expression.hreverse();
@@ -1097,11 +1146,174 @@ class ShellElementMITC4 {
         e_rs_expression;
   };
 
-  class epsilon_ri_sj_tk {
-    // TODO:?
-    epsilon_ri_sj_tk(const int i, const int j, const int k) {
+  /**
+   * @brief Computes the i,j<sup>th</sup> local strain from the ...
+   *
+   * @param TODO
+   * */
+  class local_strain_expr {
+   public:
+    local_strain_expr(A2DVec<N, Vec<T, 3>>& ei, A2DVec<N, Vec<T, 3>>& ej,
+                      A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt,
+                      A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
+                      A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
+                      A2DScalar<N, T>& e_ij) {
+      A2DScalar<N, T>
+          Gr_ei, Gs_ei, ;
+    };
 
-    }
+    void reverse();
+    void hforward();
+    void hreverse();
+
+   private:
+  };
+
+  /**
+   * @brief Computes the local strains from the ...
+   *
+   * @param: TODO
+   * */
+  class local_strains_expr {
+   public:
+    local_strains_expr(A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt,
+                       A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3,
+                       A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
+                       A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
+                       A2DScalar<N, T>& e_11, A2DScalar<N, T>& e_22, A2DScalar<N, T>& e_12,
+                       A2DScalar<N, T>& e_13, A2DScalar<N, T>& e_23) {
+      e_11_expression = local_strain_expr(e1, e1, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_11);
+      e_22_expression = local_strain_expr(e2, e2, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_22);
+      e_12_expression = local_strain_expr(e1, e2, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_12);
+      e_13_expression = local_strain_expr(e1, e3, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_13);
+      e_23_expression = local_strain_expr(e2, e3, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_23);
+    };
+
+    void reverse() {
+      e_23_expression.reverse();
+      e_13_expression.reverse();
+      e_12_expression.reverse();
+      e_22_expression.reverse();
+      e_11_expression.reverse();
+    };
+
+    void hforward() {
+      e_11_expression.hforward();
+      e_22_expression.hforward();
+      e_12_expression.hforward();
+      e_13_expression.hforward();
+      e_23_expression.hforward();
+    };
+
+    void hreverse() {
+      e_23_expression.hreverse();
+      e_13_expression.hreverse();
+      e_12_expression.hreverse();
+      e_22_expression.hreverse();
+      e_11_expression.hreverse();
+    };
+
+   private:
+    local_strain_expr
+        e_11_expression,
+        e_22_expression,
+        e_12_expression,
+        e_13_expression,
+        e_23_expression;
+  };
+
+  /**
+   * @brief Compute the strain energy of the element for some point within the element.
+   *
+   * @note All inputs (gr, gs, gt, ur, us, ut, e_rt, and e_st) must be evaluated at the point of interest in order for
+   * the calculations to be correct.
+   *
+   * @param gr:         the g<sub>r</sub> covariant basis vector.
+   * @param gs:         the g<sub>s</sub> covariant basis vector.
+   * @param gt:         the g<sub>t</sub> covariant basis vector.
+   * @param ur:         the derivative of the displacement vector with respect to r (i.e. du/dr).
+   * @param us:         the derivative of the displacement vector with respect to s (i.e. du/ds).
+   * @param ut:         the derivative of the displacement vector with respect to t (i.e. du/dt).
+   * @param e_rt:       the covariant shear strain component between the r and t directions (e<sub>rt</sub>).
+   * @param e_st:       the covariant shear strain component between the s and t directions (e<sub>st</sub>).
+   * @param element:    the MITC4 element object for which the strain energy is being computed.
+   * @param energy:     the strain energy as an A2DScalar object to store the values (output).
+   * */
+  class strain_energy_expr {
+   public:
+    strain_energy_expr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
+                       A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us, A2DVec<N, Vec<T, 3>>& ut,
+                       A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st, ShellElementMITC4& element,
+                       A2DScalar<N, T>& energy) {
+      /* In plane strain calculations: */
+      strain_expression = in_plane_strain_components_expr(gr, gs,
+                                                          ur, us,
+                                                          e_rr, e_ss, e_rs);
+      /* Contravariant basis: */
+      contravariant_basis_expression = contravariant_basis(gr, gs, gt,
+                                                           Gr, Gs, Gt);
+      /* Cartesian local basis: */
+      local_basis_expression = cartesian_local_basis(gs, gt,
+                                                     e1, e2, e3);
+
+      /* Calculate local strains */
+      local_strains_expression = local_strains_expr(Gr, Gs, Gt,
+                                                    e1, e2, e3,
+                                                    e_rr, e_ss, e_rs, e_rt, e_st,
+                                                    e_11, e_22, e_12, e_13, e_23);
+      /* Assemble local strain vector */
+      local_strains_vec_expression = Vec5ScalarAssembly(local_strains_vec, e_11, e_22, e_12, e_13, e_23);
+
+      /* Calculate strain energy */
+      strain_energy_expression = MatInnerProduct(element.material.D, local_strains_vec, local_strains_vec, energy);
+    };
+
+    void reverse() {
+      strain_energy_expression.reverse();
+      local_strains_vec_expression.reverse();
+      local_strains_expression.reverse();
+      local_basis_expression.reverse();
+      contravariant_basis_expression.reverse();
+      strain_expression.reverse();
+    };
+
+    void hforward() {
+      strain_expression.hforward();
+      contravariant_basis_expression.hforward();
+      local_basis_expression.hforward();
+      local_strains_expression.hforward();
+      local_strains_vec_expression.hforward();
+      strain_energy_expression.hforward();
+    };
+
+    void hreverse() {
+      strain_energy_expression.hreverse();
+      local_strains_vec_expression.hreverse();
+      local_strains_expression.hreverse();
+      local_basis_expression.hreverse();
+      contravariant_basis_expression.hreverse();
+      strain_expression.hreverse();
+    };
+
+   private:
+    A2DScalar<N, T>
+        e_rr, e_ss, e_rs;
+    A2DVec<N, Vec<T, 3>>
+        Gr, Gs, Gt,
+        e1, e2, e3;
+    A2DScalar<N, T>
+        e_11, e_22, e_12, e_13, e_23;
+    A2DVec<N, Vec<T, 5>>
+        local_strains_vec;
+
+    /* Expressions */
+
+    in_plane_strain_components_expr strain_expression;
+    contravariant_basis contravariant_basis_expression;
+    cartesian_local_basis local_basis_expression;
+    local_strains_expr local_strains_expression;
+    A2DScalar5VecAssemblyExpr<N, T> local_strains_vec_expression;
+    MatA2DVecA2DVecInnerProductExpr<N, T> strain_energy_expression;
   };
 
   void generate_energy() {
@@ -1114,16 +1326,22 @@ class ShellElementMITC4 {
     gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
     /** gs vector evaluated at the various quadrature points */
     gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
+    /** gt vector evaluated at the various quadrature points */
+    gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA,
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
     gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
     /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
     gr_r0_sp1_t0, gr_r0_sn1_t0,
     /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
-    gs_rp1_s0_t0, gs_rn1_s0_t0,
+    gs_rp1_s0_t0, gs_rn1_s0_t0;
+
+    A2DVec<N, Vec<T, 3>>
     /** derivatives of u with respect to r evaluated at the various quadrature points */
     ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
     /** derivatives of u with respect to s evaluated at the various quadrature points */
     us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
+    /** derivatives of u with respect to t evaluated at the various quadrature points */
+    ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA,
     /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
     ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,
     /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
@@ -1132,34 +1350,36 @@ class ShellElementMITC4 {
     us_rp1_s0_t0, us_rn1_s0_t0;
 
     /** Cartesian local basis: */
-    A2DVec<N, Vec<T, 3>>
+    /*A2DVec<N, Vec<T, 3>>
         e3_r0s0, e3_r0s1, e3_r1s0, e3_r1s1,
         e1_r0s0t0, e1_r0s0t1, e1_r0s1t0, e1_r0s1t1, e1_r1s0t0, e1_r1s0t1, e1_r1s1t0, e1_r1s1t1,
-        e2_r0s0t0, e2_r0s0t1, e2_r0s1t0, e2_r0s1t1, e2_r1s0t0, e2_r1s0t1, e2_r1s1t0, e2_r1s1t1;
+        e2_r0s0t0, e2_r0s0t1, e2_r0s1t0, e2_r0s1t1, e2_r1s0t0, e2_r1s0t1, e2_r1s1t0, e2_r1s1t1;*/
 
     /** Contravariant basis: */
-    A2DVec<N, Vec<T, 3>>
+    /*A2DVec<N, Vec<T, 3>>
         Gr_r0s0t0, Gr_r0s0t1, Gr_r0s1t0, Gr_r0s1t1, Gr_r1s0t0, Gr_r1s0t1, Gr_r1s1t0, Gr_r1s1t1,
         Gs_r0s0t0, Gs_r0s0t1, Gs_r0s1t0, Gs_r0s1t1, Gs_r1s0t0, Gs_r1s0t1, Gs_r1s1t0, Gs_r1s1t1,
-        Gt_r0s0t0, Gt_r0s0t1, Gt_r0s1t0, Gt_r0s1t1, Gt_r1s0t0, Gt_r1s0t1, Gt_r1s1t0, Gt_r1s1t1;
+        Gt_r0s0t0, Gt_r0s0t1, Gt_r0s1t0, Gt_r0s1t1, Gt_r1s0t0, Gt_r1s0t1, Gt_r1s1t0, Gt_r1s1t1;*/
 
-    A2DScalar<N, T>
     /** Coefficients for the tying scheme. */
-    e_rt_A, e_rt_B, e_st_C, e_st_D,
+    A2DScalar<N, T>
+        e_rt_A, e_rt_B, e_st_C, e_st_D;
     /** Covariant transverse shear strains evaluated (using the tying points) at the various quadrature points. NOTE: the
      * values are the same for multiple quadrature points because we're assuming constant covariant transverse shear
      * strain conditions along the edges.*/
-    e_rt_rAs0tA, e_rt_rAs1tA, e_st_r0sAtA, e_st_r1sAtA,
+    A2DScalar<N, T>
+        e_rt_rAs0tA, e_rt_rAs1tA, e_st_r0sAtA, e_st_r1sAtA;
     /** Covariant in-plane strain components evaluated at the various quadrature points*/
-    e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
+    /*A2DScalar<N, T>
+        e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
         e_rs_r0s0t0, e_rs_r0s0t1, e_rs_r0s1t0, e_rs_r0s1t1, e_rs_r1s0t0, e_rs_r1s0t1, e_rs_r1s1t0, e_rs_r1s1t1,
-        e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;
+        e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;*/
     /*TODO: move all these to private members, and just reset their values whenever this method is called.*/
-
 
 
     // code for tying points
     // TODO: remove non-dependencies *********
+    // TODO: encapsulate these in helper classes
     /* e_rt_A calculations: */
     g_alpha gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
     g_t gt_r0_sp1_t0_expression(2, 4, this, gt_r0_sp1_t0);
@@ -1218,33 +1438,14 @@ class ShellElementMITC4 {
     u_alpha ur_rAs0t0_expression(0, 1, quad_0, this, ur_rAs0t0);
     u_alpha us_r0sAt0_expression(1, 1, quad_0, this, us_r0sAt0);
 
-    /* code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0*/
-    /*A2DVec3DotA2DVecExpr<N, T> e_rr_r0s0t0_expression = Vec3Dot(gr_rAs0t0, ur_rAs0t0, e_rr_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> e_ss_r0s0t0_expression = Vec3Dot(gs_r0sAt0, us_r0sAt0, e_ss_r0s0t0);
-    A2DScalar<N, T> gr_us_r0s0t0, gs_ur_r0s0t0;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr<N, T> gr_us_r0s0t0_expression = Vec3Dot(gr_rAs0t0, us_r0sAt0, gr_us_r0s0t0);
-    A2DVec3DotA2DVecExpr<N, T> gs_ur_r0s0t0_expression = Vec3Dot(gs_r0sAt0, ur_rAs0t0, gs_ur_r0s0t0);
-    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rs_r0s0t0_expression =
-        ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);*/
-    in_plane_strain_componentsExpr strain_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, ur_rAs0t0, us_r0sAt0,
-                                                            e_rr_r0s0t0, e_ss_r0s0t0, e_rs_r0s0t0);
+    /* code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0 */
+    /* Energy at the quadrature point: */
+    A2DScalar<N, T> energy_r0s0t0;  // TODO: move declaration
+    strain_energy_expr strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA,
+                                                       ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
+                                                       e_rt_rAs0tA, e_st_r0sAtA,
+                                                       this, energy_r0s0t0);
     // TODO: add code for other quadrature points
-
-
-    /* Contravariant basis: */
-    contravariant_basis contravariant_basis_r0s0t0_expression(); // TODO
-
-    /* Cartesian local basis: */
-    cartesian_local_basis local_basis_r0s0t0_expression(); // TODO
-
-
-    /* Energy at a quadrature point: */
-    A2DScalar<N, T> energy_r0s0t0, energy_r0s0t1 /* etc. */;
-    energy_r0s0t0 = ;
-
-
-    /*A2DVec<N, Vec<T, 5>> epsilon_r0s0t0;  // TODO: move declaration
-    epsilon_ri_sj_tk epsilon_r0s0t0_expression();*/
   };
 
   ShellNodeMITC<N, T>& node1;  /**< The top left node. */

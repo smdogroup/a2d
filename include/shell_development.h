@@ -23,6 +23,16 @@ class A2DVec3A2DScaleDivExpr {
 
 };
 
+template <int N, typename T>  // TODO: make the ScalarAxpay operation (z = a * (x + y))
+class ScalarA2DScalarA2DScalarAxpayExpr {
+
+};
+
+template <int N, typename T>  // TODO: make the ScalarAxpby operation (z = a * x + b * y)
+class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
+
+};
+
 
 // END TODO: OPERATOR CLASSES
 
@@ -199,6 +209,7 @@ class ShellElementMITC4 {
 
   // TODO: move documentation inside class (as doc to constructor) after instances are converted to members in this
   //  class.
+  // TODO: refactor these helper classes to <class name>Expr
 
   /**
    * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
@@ -1026,6 +1037,66 @@ class ShellElementMITC4 {
         e1_expression;
   };
 
+  /**
+   * @brief Calculates the in-plane stain components (e<sub>rr</sub>, e<sub>ss</sub>, and e<sub>rs</sub>) based on the
+   * values of the covariant basis vectors g<sub>r</sub> and g<sub>s</sub>, and the displacement derivative vectors
+   * du/dr and du/ds.
+   *
+   * @note The covariant basis vectors, g<sub>r</sub> and g<sub>s</sub>, and displacement derivative vectors, du/dr and
+   * du/ds, must be evaluated at the desired point of interest (i.e. a quadrature point).
+   *
+   * @param gr: the g<sub>r</sub> covariant basis vector
+   * @param gs: the g<sub>s</sub> covariant basis vector
+   * @param ur: the derivative of the displacement vector with respect to r (i.e. du/dr)
+   * @param us: the derivative of the displacement vector with respect to s (i.e. du/ds)
+   * */
+  class in_plane_strain_componentsExpr{
+    in_plane_strain_componentsExpr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs,
+                                   A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us,
+                                   A2DVec<N, Vec<T, 3>>& e_rr, A2DVec<N, Vec<T, 3>>& e_ss, A2DVec<N, Vec<T, 3>>& e_rs){
+      e_rr_expression = Vec3Dot(gr, ur, e_rr);
+      e_ss_expression = Vec3Dot(gs, us, e_ss);
+      gr_us_expression = Vec3Dot(gr, us, gr_us);
+      gs_ur_expression = Vec3Dot(gs, ur, gs_ur);
+      e_rs_expression = ScalarAxpay(0.5, gr_us, gs_ur, e_rs);
+    };
+
+    void reverse(){
+      e_rs_expression.reverse();
+      gs_ur_expression.reverse();
+      gr_us_expression.reverse();
+      e_ss_expression.reverse();
+      e_rr_expression.reverse();
+    };
+
+    void hforward(){
+      e_rr_expression.hforward();
+      e_ss_expression.hforward();
+      gr_us_expression.hforward();
+      gs_ur_expression.hforward();
+      e_rs_expression.hforward();
+    };
+
+    void hreverse(){
+      e_rs_expression.hreverse();
+      gs_ur_expression.hreverse();
+      gr_us_expression.hreverse();
+      e_ss_expression.hreverse();
+      e_rr_expression.hreverse();
+    };
+
+   private:
+    A2DScalar<N, T>
+        gr_us, gs_ur;
+
+    /* Expressions */
+    A2DVec3DotA2DVecExpr<N, T>
+        e_rr_expression, e_ss_expression,
+        gr_us_expression, gs_ur_expression;
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T>
+        e_rs_expression;
+  };
+
   class epsilon_ri_sj_tk {
     // TODO:?
     epsilon_ri_sj_tk(const int i, const int j, const int k) {
@@ -1097,7 +1168,7 @@ class ShellElementMITC4 {
     A2DScalar<N, T> gr_ut_A, gt_ur_A;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
     A2DVec3DotA2DVecExpr gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
-    auto e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
     /* e_rt_B calculations: */
     g_alpha gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
     g_t gt_r0_sn1_t0_expression(2, 0, this, gt_r0_sn1_t0);
@@ -1106,7 +1177,7 @@ class ShellElementMITC4 {
     A2DScalar<N, T> gr_ut_B, gt_ur_B;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
     A2DVec3DotA2DVecExpr gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
-    auto e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
     /* e_st_C calculations: */
     g_alpha gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
     g_t gt_rp1_s0_t0_expression(4, 2, this, gt_rp1_s0_t0);
@@ -1115,7 +1186,7 @@ class ShellElementMITC4 {
     A2DScalar<N, T> gs_ut_C, gt_us_C;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
     A2DVec3DotA2DVecExpr gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
-    auto e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
     /* e_st_D calculations: */
     g_alpha gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
     g_t gt_rn1_s0_t0_expression(0, 2, this, gt_rn1_s0_t0);
@@ -1124,32 +1195,39 @@ class ShellElementMITC4 {
     A2DScalar<N, T> gs_ut_D, gt_us_D;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
     A2DVec3DotA2DVecExpr gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
-    auto e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);
 
 
     /* Write code for e_rt_r... and e_st_r... values */
     /* Evaluate at s = quad_0; */
-    auto e_rt_rAs0tA_expression = ScalarAxpby((1 + quad_0) * 0.5, e_rt_A, (1 - quad_0) * 0.5, e_rt_B, e_rt_rAs0tA);
-    // TODO: make the ScalarAxpby operation (z = a * x + b * y)
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_rt_rAs0tA_expression =
+        ScalarAxpby((1 + quad_0) * 0.5, e_rt_A, (1 - quad_0) * 0.5, e_rt_B, e_rt_rAs0tA);
     /* Evaluate at r = quad_0; */
-    auto e_st_r0sAtA_expression = ScalarAxpby((1 + quad_0) * 0.5, e_st_C, (1 - quad_0) * 0.5, e_st_D, e_st_r0sAtA);
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r0sAtA_expression =
+        ScalarAxpby((1 + quad_0) * 0.5, e_st_C, (1 - quad_0) * 0.5, e_st_D, e_st_r0sAtA);
     /* Evaluate at s = quad_1; */
-    auto e_rt_rAs1tA_expression = ScalarAxpby((1 + quad_1) * 0.5, e_rt_A, (1 - quad_1) * 0.5, e_rt_B, e_rt_rAs1tA);
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_rt_rAs1tA_expression =
+        ScalarAxpby((1 + quad_1) * 0.5, e_rt_A, (1 - quad_1) * 0.5, e_rt_B, e_rt_rAs1tA);
     /* Evaluate at r = quad_1; */
-    auto e_st_r1sAtA_expression = ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r1sAtA_expression =
+        ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
 
-    /* write test code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0*/
+    /* gr, gs, ur, and us calculations (subset of) */
     g_alpha gr_rAs0t0_expression(0, 1, quad_0, this, gr_rAs0t0);
     g_alpha gs_r0sAt0_expression(1, 1, quad_0, this, gs_r0sAt0);
     u_alpha ur_rAs0t0_expression(0, 1, quad_0, this, ur_rAs0t0);
     u_alpha us_r0sAt0_expression(1, 1, quad_0, this, us_r0sAt0);
-    A2DVec3DotA2DVecExpr<N, T> e_rr_r0s0t0_expression = Vec3Dot(gr_rAs0t0, ur_rAs0t0, e_rr_r0s0t0);
+
+    /* code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0*/
+    /*A2DVec3DotA2DVecExpr<N, T> e_rr_r0s0t0_expression = Vec3Dot(gr_rAs0t0, ur_rAs0t0, e_rr_r0s0t0);
     A2DVec3DotA2DVecExpr<N, T> e_ss_r0s0t0_expression = Vec3Dot(gs_r0sAt0, us_r0sAt0, e_ss_r0s0t0);
     A2DScalar<N, T> gr_us_r0s0t0, gs_ur_r0s0t0;  // TODO: move declaration
     A2DVec3DotA2DVecExpr<N, T> gr_us_r0s0t0_expression = Vec3Dot(gr_rAs0t0, us_r0sAt0, gr_us_r0s0t0);
     A2DVec3DotA2DVecExpr<N, T> gs_ur_r0s0t0_expression = Vec3Dot(gs_r0sAt0, ur_rAs0t0, gs_ur_r0s0t0);
-    auto e_rs_r0s0t0_expression = ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);
-    // TODO: make the ScalarAxpay operation (z = a * (x + y))
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rs_r0s0t0_expression =
+        ScalarAxpay(0.5, gr_us_r0s0t0, gs_ur_r0s0t0, e_rs_r0s0t0);*/
+    in_plane_strain_componentsExpr strain_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, ur_rAs0t0, us_r0sAt0,
+                                                            e_rr_r0s0t0, e_ss_r0s0t0, e_rs_r0s0t0);
     // TODO: add code for other quadrature points
 
 
@@ -1157,7 +1235,12 @@ class ShellElementMITC4 {
     contravariant_basis contravariant_basis_r0s0t0_expression(); // TODO
 
     /* Cartesian local basis: */
+    cartesian_local_basis local_basis_r0s0t0_expression(); // TODO
 
+
+    /* Energy at a quadrature point: */
+    A2DScalar<N, T> energy_r0s0t0, energy_r0s0t1 /* etc. */;
+    energy_r0s0t0 = ;
 
 
     /*A2DVec<N, Vec<T, 5>> epsilon_r0s0t0;  // TODO: move declaration

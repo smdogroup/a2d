@@ -51,16 +51,16 @@ class MixedPoisson2D {
                     tau_div * u + v * sigma_div);
   }
 
-  static void eval_weak_coef(T wdetJ, FiniteElementSpace& s,
+  static void eval_weak_coef(T wdetJ, const FiniteElementSpace& s,
                              FiniteElementSpace& coef) {
     // Field objects for solution functions
-    A2D::L1ScalarSpace<T, 2>& u = s.template get<0>();
-    A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
+    const A2D::L1ScalarSpace<T, 2>& u = s.template get<0>();
+    const A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
 
     // Solution function values
-    A2D::Vec<T, 2>& sigma_val = sigma.get_value();
-    T& sigma_div = sigma.get_div();
-    T& u_val = u.get_value();
+    const A2D::Vec<T, 2>& sigma_val = sigma.get_value();
+    const T& sigma_div = sigma.get_div();
+    const T& u_val = u.get_value();
 
     // Test function values
     A2D::L1ScalarSpace<T, 2>& v = coef.template get<0>();
@@ -80,17 +80,18 @@ class MixedPoisson2D {
     v_val = wdetJ * sigma_div;
   }
 
-  static void eval_weak_jacobian_vec_product(T wdetJ, FiniteElementSpace& s,
-                                             FiniteElementSpace& p,
+  static void eval_weak_jacobian_vec_product(T wdetJ,
+                                             const FiniteElementSpace& s,
+                                             const FiniteElementSpace& p,
                                              FiniteElementSpace& coef) {
     // Field objects for solution functions
-    A2D::L1ScalarSpace<T, 2>& u = p.template get<0>();
-    A2D::Hdiv2DSpace<T>& sigma = p.template get<1>();
+    const A2D::L1ScalarSpace<T, 2>& u = p.template get<0>();
+    const A2D::Hdiv2DSpace<T>& sigma = p.template get<1>();
 
     // Solution function values
-    A2D::Vec<T, 2>& sigma_val = sigma.get_value();
-    T& sigma_div = sigma.get_div();
-    T& u_val = u.get_value();
+    const A2D::Vec<T, 2>& sigma_val = sigma.get_value();
+    const T& sigma_div = sigma.get_div();
+    const T& u_val = u.get_value();
 
     // Test function values
     A2D::L1ScalarSpace<T, 2>& v = coef.template get<0>();

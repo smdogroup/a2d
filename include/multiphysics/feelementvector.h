@@ -55,12 +55,11 @@ namespace A2D {
 template <typename T, class Basis>
 class ElementVector_InPlaceSerial {
  public:
-  ElementVector_InPlaceSerial(A2D::ElementMesh<Basis>& mesh,
-                              A2D::SolutionVector<T>& vec)
+  ElementVector_InPlaceSerial(A2D::ElementMesh<Basis>& mesh, A2D::SolutionVector<T>& vec)
       : mesh(mesh), vec(vec) {}
 
-  // Required DOF container object (different for each
-  // element vector implementation)
+  // Required DOF container object (different for each element vector
+  // implementation)
   class FEDof {
    public:
     FEDof() { std::fill(dof, dof + Basis::ndof, T(0.0)); }
@@ -184,117 +183,123 @@ class ElementVector_InPlaceSerial {
 };
 
 /*
-template <typename T, class FiniteElementSpace, class... Basis>
+  Kokkos implementation of the element vector type
+*/
+template <typename T, class Basis>
 class ElementVector_Kokkos {
  public:
-  static const A2D::index_t ndof_per_element = dof_in_basis<Basis...>;
+  ElementVector_Kokkos(ElementMesh<Basis>& mesh, SolutionVector<T>& vec)
+      : mesh(mesh), vec(vec), element_dof("element_dof", mesh.get_num_elements()) {}
 
-  ElementVector_Kokkos(ElementMesh<Basis...>& mesh, SolutionVector<T>& vec)
-      : mesh(mesh), vec(vec) {
-    A2D::index_t nelems = mesh.get_num_elements();
-  }
+  // Required DOF container object (different for each element vector
+  // implementation)
+  class FEDof {
+   public:
+    FEDof() {}
 
-  SolutionVector<T>& get_vector() { return vec; }
+    /**
+     * @brief Get the values associated with the given basis
+     *
+     * @return A pointer to the degrees of freedom
+     */
+    template <A2D::index_t index>
+    T* get() {
+      return dof[index];
+    }
 
-  void set_solution() {
-    // Go set values into element_dof and transfer them to the device
-    for (A2D::index_t elem = 0; elem < num_elements; elem++) {
-      for (A2D::index_t i = 0; i < First::ndof; i++) {
-        const int sign = mesh.get_global_dof_sign(elem, index, i);
-        const A2D::index_t dof = mesh.get_global_dof(elem, index, i);
-        element_dof[elem, i] = sign * vec[dof];
+    /**
+     * @brief Get the values associated with the given basis
+     *
+     * @return A pointer to the degrees of freedom
+     */
+    template <A2D::index_t index>
+    const T* get() const {
+      return dof[index];
+    }
+
+    // Variables for all the basis functions
+    T* dof[Basis::nbasis];
+  };
+
+  /**
+   * @brief Initialize the element vector values
+   *
+   * This function may be called once before element values are accessed.
+   */
+  void init_values() {
+    for (A2D::index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+      for (A2D::index_t basis = 0; basis < Basis::nbasis; basis++) {
+        for (A2D::index_t i = 0; i < Basis::get_ndof<basis>(); i++) {
+          const int sign = mesh.get_global_dof_sign(elem, basis, i);
+          const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+          element_dof(elem, dof_index) = sign * vec[dof_index];
+        }
       }
     }
+
+    // Transfer to device
   }
 
-  void get_residual() {
-    for (A2D::index_t elem = 0; elem < num_elements; elem++) {
-      for (A2D::index_t i = 0; i < First::ndof; i++) {
-        const int sign = mesh.get_global_dof_sign(elem, index, i);
-        const A2D::index_t dof = mesh.get_global_dof(elem, index, i);
-        vec[dof] += sign * element_dof[elem, i];
+  /**
+   * @brief Initialize any local element vector values to zero
+   *
+   * This function may be called before element values are added.
+   */
+  void init_zero_values() {
+    element_dof.zero();  // Zero element values
+  }
+
+  /**
+   * @brief Finish adding values to the element vector
+   *
+   * Add any values from the element vector into the source vector.
+   */
+  void add_values() {
+    for (A2D::index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+      for (A2D::index_t basis = 0; basis < Basis::nbasis; basis++) {
+        for (A2D::index_t i = 0; i < Basis::get_ndof<basis>(); i++) {
+          const int sign = mesh.get_global_dof_sign(elem, basis, i);
+          const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+          vec[dof_index] += sign * element_dof(elem, dof_index);
+        }
       }
     }
+
+    // Transfer to host
   }
 
-  template <class Quadrature>
-  void interp(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
-    interp_<Quadrature, 0, Basis...>(elem, pt, s);
-  }
+  /**
+   * @brief Get the element values from the object and store them in the FEDof
+   *
+   * @param elem the element index
+   * @param dof the object that stores a reference to the degrees of freedom
+   */
+  // Get values for this element from the vector
+  void get_element_values(A2D::index_t elem, FEDof& dof) {
+    element_dof();
 
- private:
-  template <class Quadrature, A2D::index_t index>
-  void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {}
-
-  template <class Quadrature, A2D::index_t index, class First, class...
-Remain> void interp_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace&
-s) { const values = subview(element_dof, elem, Kokkos::ALL);
-
-    // Interpolate
-    First::template interp<Quadrature>(pt, values, s.template get<index>());
-
-    // Do the next solution space, if any...
-    interp_<Quadrature, index + 1, Remain...>(elem, pt, s);
-  }
-
-  template <class Quadrature, A2D::index_t index>
-  void add_(A2D::index_t elem, A2D::index_t pt, const FiniteElementSpace& s)
-{}
-
-  template <class Quadrature, A2D::index_t index, class First, class...
-Remain> void add_(A2D::index_t elem, A2D::index_t pt, const
-FiniteElementSpace& s) { values = subview(element_dof, elem, Kokkos::ALL);
-
-    // Add the interpolation
-    First::template add<Quadrature>(pt, s.template get<index>(), values);
-
-    // Do the next solution space, if any...
-    add_<Quadrature, index + 1, Remain...>(elem, pt, s);
-  }
-
-  Kokkos::View<T* [ndof_per_element]> element_dof;
-};
-*/
-
-/*
-template <typename T, class FiniteElementSpace, class... Basis>
-class ElementMatrix_A2D {
- public:
-  ElementMatrix_A2D(A2D::ElementMesh<Basis...>& mesh,
-                    A2D::SolutionMatrix<T>& vec)
-      : mesh(mesh), vec(vec) {}
-
-  template <class Quadrature>
-  void outer(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {
-    outer_<Quadrature, 0, Basis...>(elem, pt, s);
-  }
-
- private:
-  template <class Quadrature, A2D::index_t index, class First, class...
-Remain> void outer_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s)
-{
-    // Un-pack to a local array
-    T values[First::ndof];
-    for (A2D::index_t i = 0; i < First::ndof; i++) {
-      const int sign = mesh.get_global_dof_sign(elem, index, i);
-      const A2D::index_t dof = mesh.get_global_dof(elem, index, i);
-      values[i] = sign * vec[dof];
+    for (A2D::index_t basis = 0; basis < Basis::nbasis; basis++) {
+      dof.dof[basis] = element_dof(elem, Kokkos::ALL);
     }
-
-    // Interpolate
-    First::template interp<Quadrature>(pt, values, s.template get<index>());
-
-    // Do the next solution space, if any...
-    outer_<Quadrature, index + 1, Remain...>(elem, pt, s);
   }
 
-  template <class Quadrature, A2D::index_t index>
-  void outer_(A2D::index_t elem, A2D::index_t pt, FiniteElementSpace& s) {}
+  /**
+   * @brief Add the degree of freedom values to the element vector
+   *
+   * @param elem the element index
+   * @param dof the FEDof object that stores a reference to the degrees of
+   * freeom
+   *
+   * If FEDof contains a pointer to data, this function may do nothing
+   */
+  // Add values for this element to the vector
+  void add_element_values(A2D::index_t elem, const FEDof& dof) {}
 
-  A2D::ElementMesh<Basis...>& mesh;
-  A2D::SolutionMatrix<T>& mat;
+ private:
+  A2D::ElementMesh<Basis>& mesh;
+  A2D::SolutionVector<T>& vec;
+  Kokkos::View<T * [Basis::ndof]> element_dof;
 };
-*/
 
 }  // namespace A2D
 

@@ -870,35 +870,33 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
-  /**
-   * @brief Computes the e<sub>&alpha t</sub> covariant strain at a tying point.
-   *
-   * @param TODO
-   * */
   class tying_shear_expr {
+   public:
+    /**
+     * @brief Computes the e<sub>&alpha t</sub> covariant strain at a tying point.
+     *
+     * @param TODO
+     * */
     tying_shear_expr(const int alpha, /* values are 0 (corresponding to r) or 1 (corresponding to s)*/
                      const int n_alpha_val_ind, /* values are 0 (corresponding to -1) or 1 (corresponding to 1)*/
                      const ShellElementMITC4<N, T>& element,
-                     A2DScalar<N, T>& e_alpha_t) {
-      int r_ind = (4 * n_alpha_val_ind * alpha) + (2 * (1 - alpha));
-      int s_ind = (2 * alpha) + (4 * n_alpha_val_ind * (1 - alpha));
-      int n_alpha_var_ind = 3 * n_alpha_val_ind;
-      /*if (alpha == 0) {
-        r_ind = 2;
-        s_ind = 4 * n_alpha_val_ind;
-      } else {
-        s_ind = 2;
-        r_ind = 4 * n_alpha_val_ind;
-      }*/
-
-      g_alpha_expression = g_alpha_expr(alpha, n_alpha_var_ind, 0, element, g_alpha);
-      gt_expression = g_t_expr(r_ind, s_ind, element, gt);
-      u_alpha_expression = u_alpha_expr(alpha, n_alpha_var_ind, 0, element, u_alpha);
-      ut_expression = u_t_expr(r_ind, s_ind, element, ut);
-      g_alpha_ut_expression = Vec3Dot(g_alpha, ut, g_alpha_ut);
-      gt_u_alpha_expression = Vec3Dot(gt, u_alpha, gt_u_alpha);
-      e_alpha_t_expression = ScalarAxpay(0.5, g_alpha_ut, gt_u_alpha, e_alpha_t);
-    };
+                     A2DScalar<N, T>& e_alpha_t)
+        : /* Initializations: */
+        g_alpha(g_alpha_v, g_alpha_bv),
+        u_alpha(u_alpha_v, u_alpha_bv),
+        gt(gt_v, gt_bv),
+        ut(ut_v, ut_bv),
+        r_ind((4 * n_alpha_val_ind * alpha) + (2 * (1 - alpha))),
+        s_ind((2 * alpha) + (4 * n_alpha_val_ind * (1 - alpha))),
+        n_alpha_var_ind(3 * n_alpha_val_ind),
+        /* Operations: */
+        g_alpha_expression(alpha, n_alpha_var_ind, 0, element, g_alpha),
+        gt_expression(r_ind, s_ind, element, gt),
+        u_alpha_expression(alpha, n_alpha_var_ind, 0, element, u_alpha),
+        ut_expression(r_ind, s_ind, element, ut),
+        g_alpha_ut_expression(g_alpha, ut, g_alpha_ut),
+        gt_u_alpha_expression(gt, u_alpha, gt_u_alpha),
+        e_alpha_t_expression(0.5, g_alpha_ut, gt_u_alpha, e_alpha_t) {};
 
     void reverse() {
       e_alpha_t_expression.reverse();
@@ -932,13 +930,21 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    int r_ind, s_ind, n_alpha_var_ind;
+    Vec<T, 3>
+        g_alpha_v, g_alpha_bv,
+        u_alpha_v, u_alpha_bv,
+        gt_v, gt_bv,
+        ut_v, ut_bv;
 
     /* A2D Objects: */
     A2DScalar<N, T>
         g_alpha_ut, gt_u_alpha;
     A2DVec<N, Vec<T, 3>>
-        g_alpha, gt,
-        u_alpha, ut;
+        g_alpha,
+        u_alpha,
+        gt,
+        ut;
 
     /* Expressions: */
     g_alpha_expr g_alpha_expression;

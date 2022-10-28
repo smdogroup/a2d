@@ -349,94 +349,89 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
-  /**
-   * @brief Computes the du/d&alpha vector for the given situation and element.
-   *
-   *
-   * @param alpha:            denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr
-   *                          vector while a value of 1 corresponds to the du/ds vector.
-   * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
-   *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
-   *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
-   *                          corresponds to evaluating du/dr(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
-   *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
-   * @param t:                the value of the t parametric coordinate.
-   * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
-   * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
-   * */
   class u_alpha_expr {
    public:
+    /**
+     * @brief Computes the du/d&alpha vector for the given situation and element.
+     *
+     *
+     * @param alpha:            denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr
+     *                          vector while a value of 1 corresponds to the du/ds vector.
+     * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
+     *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
+     *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
+     *                          corresponds to evaluating du/dr(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
+     *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
+     * @param t:                the value of the t parametric coordinate.
+     * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
+     * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
+     * */
     u_alpha_expr(const int alpha,
                  const int n_alpha_var_ind,
                  const T& t,
                  const ShellElementMITC4<N, T>& element,
-                 A2DVec<N, Vec<T, 3>>& result) {
+                 A2DVec<N, Vec<T, 3>>& result)
+        : /* Instantiations: */
+        node1_phi(node1_phi_v, node1_phi_bv),
+        node2_phi(node2_phi_v, node2_phi_bv),
+        node3_phi(node3_phi_v, node3_phi_bv),
+        node4_phi(node4_phi_v, node4_phi_bv),
+        node1_contribution(node1_contribution_v, node1_contribution_bv),
+        node2_contribution(node2_contribution_v, node2_contribution_bv),
+        node3_contribution(node3_contribution_v, node3_contribution_bv),
+        node4_contribution(node4_contribution_v, node4_contribution_bv),
+        node1_contribution_unscaled(node1_contribution_unscaled_v, node1_contribution_unscaled_bv),
+        node2_contribution_unscaled(node2_contribution_unscaled_v, node2_contribution_unscaled_bv),
+        node3_contribution_unscaled(node3_contribution_unscaled_v, node3_contribution_unscaled_bv),
+        node4_contribution_unscaled(node4_contribution_unscaled_v, node4_contribution_unscaled_bv),
+        n1c_n2c(n1c_n2c_v, n1c_n2c_bv),
+        n1c_n2c_n3c(n1c_n2c_n3c_v, n1c_n2c_n3c_bv),
+        /* Operations: */
+        /* Calculations for first node. */
+        node1_phi_expression(element.node1.rotation, element.node1.shell_director, node1_phi),
+        node1_thickness_scale_expression(element.node1.thickness, t * 0.5, node1_scaled_thickness),
+        node1_addition_expression(node1_scaled_thickness,
+                                  node1_phi,
+                                  element.node1.displacement,
+                                  node1_contribution_unscaled),
+        node1_scale_expression(node1_contribution_unscaled,
+                               dNi_d_alpha_alpha_j(alpha, 0, n_alpha_var_ind),
+                               node1_contribution),
+        /* Calculations for second node. */
+        node2_phi_expression(element.node2.rotation, element.node2.shell_director, node2_phi),
+        node2_thickness_scale_expression(element.node2.thickness, t * 0.5, node2_scaled_thickness),
+        node2_addition_expression(node2_scaled_thickness,
+                                  node2_phi,
+                                  element.node2.displacement,
+                                  node2_contribution_unscaled),
+        node2_scale_expression(node2_contribution_unscaled,
+                               dNi_d_alpha_alpha_j(alpha, 1, n_alpha_var_ind),
+                               node2_contribution),
+        /* Calculations for third node. */
+        node3_phi_expression(element.node3.rotation, element.node3.shell_director, node3_phi),
+        node3_thickness_scale_expression(element.node3.thickness, t * 0.5, node3_scaled_thickness),
+        node3_addition_expression(node3_scaled_thickness,
+                                  node3_phi,
+                                  element.node3.displacement,
+                                  node3_contribution_unscaled),
+        node3_scale_expression(node3_contribution_unscaled,
+                               dNi_d_alpha_alpha_j(alpha, 2, n_alpha_var_ind),
+                               node3_contribution),
+        /* Calculations for fourth node. */
+        node4_phi_expression(element.node4.rotation, element.node4.shell_director, node4_phi),
+        node4_thickness_scale_expression(element.node4.thickness, t * 0.5, node4_scaled_thickness),
+        node4_addition_expression(node4_scaled_thickness,
+                                  node4_phi,
+                                  element.node4.displacement,
+                                  node4_contribution_unscaled),
+        node4_scale_expression(node4_contribution_unscaled,
+                               dNi_d_alpha_alpha_j(alpha, 3, n_alpha_var_ind),
+                               node4_contribution),
 
-      /* Calculations for first node. */
-      node1_phi_expression = Vec3Cross(element.node1.rotation,
-                                       element.node1.shell_director,
-                                       node1_phi);
-      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
-                                                    t * 0.5,
-                                                    node1_scaled_thickness);
-      node1_addition_expression = Vec3Axpy(node1_scaled_thickness,
-                                           node1_phi,
-                                           element.node1.displacement,
-                                           node1_contribution_unscaled);
-      node1_scale_expression = Vec3Scale(node1_contribution_unscaled,
-                                         dNi_d_alpha_alpha_j(alpha, 0, n_alpha_var_ind),
-                                         node1_contribution);
-
-      /* Calculations for second node. */
-      node2_phi_expression = Vec3Cross(element.node2.rotation,
-                                       element.node2.shell_director,
-                                       node2_phi);
-      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
-                                                    t * 0.5,
-                                                    node2_scaled_thickness);
-      node2_addition_expression = Vec3Axpy(node2_scaled_thickness,
-                                           node2_phi,
-                                           element.node2.displacement,
-                                           node2_contribution_unscaled);
-      node2_scale_expression = Vec3Scale(node2_contribution_unscaled,
-                                         dNi_d_alpha_alpha_j(alpha, 1, n_alpha_var_ind),
-                                         node2_contribution);
-
-      /* Calculations for third node. */
-      node3_phi_expression = Vec3Cross(element.node3.rotation,
-                                       element.node3.shell_director,
-                                       node3_phi);
-      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
-                                                    t * 0.5,
-                                                    node3_scaled_thickness);
-      node3_addition_expression = Vec3Axpy(node3_scaled_thickness,
-                                           node3_phi,
-                                           element.node3.displacement,
-                                           node3_contribution_unscaled);
-      node3_scale_expression = Vec3Scale(node3_contribution_unscaled,
-                                         dNi_d_alpha_alpha_j(alpha, 2, n_alpha_var_ind),
-                                         node3_contribution);
-
-      /* Calculations for fourth node. */
-      node4_phi_expression = Vec3Cross(element.node4.rotation,
-                                       element.node4.shell_director,
-                                       node4_phi);
-      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
-                                                    t * 0.5,
-                                                    node4_scaled_thickness);
-      node4_addition_expression = Vec3Axpy(node4_scaled_thickness,
-                                           node4_phi,
-                                           element.node4.displacement,
-                                           node4_contribution_unscaled);
-      node4_scale_expression = Vec3Scale(node4_contribution_unscaled,
-                                         dNi_d_alpha_alpha_j(alpha, 3, n_alpha_var_ind),
-                                         node4_contribution);
-
-      /* Sum together the components. */
-      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
-      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
-      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
-    }
+        /* Sum together the components. */
+        sum_12_expression(1.0, node1_contribution, node2_contribution, n1c_n2c),
+        sum_123_expression(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c),
+        sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {};
 
     void reverse() {
       /* Sum component calls: */
@@ -515,6 +510,21 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    Vec<T, 3>
+        node1_phi_v, node1_phi_bv,
+        node2_phi_v, node2_phi_bv,
+        node3_phi_v, node3_phi_bv,
+        node4_phi_v, node4_phi_bv,
+        node1_contribution_v, node1_contribution_bv,
+        node2_contribution_v, node2_contribution_bv,
+        node3_contribution_v, node3_contribution_bv,
+        node4_contribution_v, node4_contribution_bv,
+        node1_contribution_unscaled_v, node1_contribution_unscaled_bv,
+        node2_contribution_unscaled_v, node2_contribution_unscaled_bv,
+        node3_contribution_unscaled_v, node3_contribution_unscaled_bv,
+        node4_contribution_unscaled_v, node4_contribution_unscaled_bv,
+        n1c_n2c_v, n1c_n2c_bv,
+        n1c_n2c_n3c_v, n1c_n2c_n3c_bv;
 
     /* A2D Objects: */
     A2DVec<N, Vec<T, 3>>

@@ -1038,28 +1038,30 @@ class ShellElementMITC4 {
         Gt_expression;
   };
 
-  /**
-   * @brief Constructs the cartesian local basis vectors (e<sub>1</sub>, e<sub>2</sub>, and e<sub>3</sub>) from two of
-   * the covariant basis vectors (g<sub>s</sub> and g<sub>t</sub>).
-   *
-   * @note The covariant basis vectors, g<sub>s</sub> and g<sub>t</sub>, must be evaluated at the desired point of
-   * interest.
-   *
-   * @param gs: the g<sub>s</sub> covariant basis vector
-   * @param gt: the g<sub>t</sub> covariant basis vector
-   * @param e1: the e<sub>1</sub> cartesian local basis vector (output)
-   * @param e2: the e<sub>2</sub> cartesian local basis vector (output)
-   * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
-   * */
   class cartesian_local_basis_expr {
    public:
+    /**
+     * @brief Constructs the cartesian local basis vectors (e<sub>1</sub>, e<sub>2</sub>, and e<sub>3</sub>) from two of
+     * the covariant basis vectors (g<sub>s</sub> and g<sub>t</sub>).
+     *
+     * @note The covariant basis vectors, g<sub>s</sub> and g<sub>t</sub>, must be evaluated at the desired point of
+     * interest.
+     *
+     * @param gs: the g<sub>s</sub> covariant basis vector
+     * @param gt: the g<sub>t</sub> covariant basis vector
+     * @param e1: the e<sub>1</sub> cartesian local basis vector (output)
+     * @param e2: the e<sub>2</sub> cartesian local basis vector (output)
+     * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
+     * */
     cartesian_local_basis_expr(A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
-                               A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3) {
-      e3_expression = Vec3Normalize(gt, e3);
-      gs_cross_e3_expression = Vec3Cross(gs, e3, gs_cross_e3);
-      e1_expression = Vec3Normalize(gs_cross_e3, e1);
-      e2_expression = Vec3Cross(e3, e1, e2);
-    };
+                               A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3)
+        : /* Initializations: */
+        gs_cross_e3(gs_cross_e3_v, gs_cross_e3_bv),
+        /* Operations: */
+        e3_expression(gt, e3),
+        gs_cross_e3_expression(gs, e3, gs_cross_e3),
+        e1_expression(gs_cross_e3, e1),
+        e2_expression(e3, e1, e2) {};
 
     void reverse() {
       e2_expression.reverse();
@@ -1084,6 +1086,8 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    Vec<T, 3>
+        gs_cross_e3_v, gs_cross_e3_bv;
 
     /* A2D Objects: */
     A2DVec<N, Vec<T, 3>> gs_cross_e3;

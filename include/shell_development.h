@@ -18,6 +18,11 @@ class A2DScalarScalarMultExpr {
 
 };
 
+template <int N, typename T>
+class A2DScalarA2DScalarMultExpr {
+
+};
+
 template <int N, typename T>  // TODO: make the Vec3ScaleDiv operation (v = (1/a) * x)
 class A2DVec3A2DScaleDivExpr {
 
@@ -30,6 +35,11 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
 
 template <int N, typename T>  // TODO: make the ScalarAxpby operation (z = a * x + b * y)
 class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
+
+};
+
+template <int N, typename T>
+class A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr {
 
 };
 
@@ -217,24 +227,8 @@ class ShellElementMITC4 {
     Vec3Axpy(tNh4, node4.shell_director, X, X);
   }
 
-  /*class InternalEnergy {
-    InternalEnergy() {
-
-    };
-
-    void forward();
-    void reverse();
-    void hforward();
-    void hreverse();
-
-    T value;
-  };
-
-  InternalEnergy internal_energy();*/
-
   // TODO: move documentation inside class (as doc to constructor) after instances are converted to members in this
   //  class.
-  // TODO: refactor these helper classes to <class name>Expr
 
   /**
    * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
@@ -251,13 +245,13 @@ class ShellElementMITC4 {
    * @param element:          the MITC4 element object for which the g<sub>&alpha</sub> vector is being computed.
    * @param result:           an A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
    * */
-  class g_alpha {
+  class g_alpha_expr {
    public:
-    g_alpha(const int alpha,
-            const int n_alpha_var_ind,
-            const T& t,
-            const ShellElementMITC4<N, T>& element,
-            A2DVec<N, Vec<T, 3>>& result) {
+    g_alpha_expr(const int alpha,
+                 const int n_alpha_var_ind,
+                 const T& t,
+                 const ShellElementMITC4<N, T>& element,
+                 A2DVec<N, Vec<T, 3>>& result) {
 
       /* Calculations for first node. */
       node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
@@ -427,13 +421,13 @@ class ShellElementMITC4 {
    * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
    * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
    * */
-  class u_alpha {
+  class u_alpha_expr {
    public:
-    u_alpha(const int alpha,
-            const int n_alpha_var_ind,
-            const T& t,
-            const ShellElementMITC4<N, T>& element,
-            A2DVec<N, Vec<T, 3>>& result) {
+    u_alpha_expr(const int alpha,
+                 const int n_alpha_var_ind,
+                 const T& t,
+                 const ShellElementMITC4<N, T>& element,
+                 A2DVec<N, Vec<T, 3>>& result) {
 
       /* Calculations for first node. */
       node1_phi_expression = Vec3Cross(element.node1.rotation,
@@ -633,12 +627,12 @@ class ShellElementMITC4 {
    * @param element:    the MITC4 element object for which the g<sub>t</sub> vector is being computed.
    * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
    * */
-  class g_t {
+  class g_t_expr {
    public:
-    g_t(const int r_ind,
-        const int s_ind,
-        const ShellElementMITC4<N, T>& element,
-        A2DVec<N, Vec<T, 3>>& result) {
+    g_t_expr(const int r_ind,
+             const int s_ind,
+             const ShellElementMITC4<N, T>& element,
+             A2DVec<N, Vec<T, 3>>& result) {
       /* Calculations for first node contribution */
       node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
                                                     Ni_rj_sk(0, r_ind, s_ind) * 0.5,
@@ -767,12 +761,12 @@ class ShellElementMITC4 {
    * @param element:    the MITC4 element object for which the du/dt vector is being computed.
    * @param result:     an A2DVec where the resulting du/dt vector should be stored.
    * */
-  class u_t {
+  class u_t_expr {
    public:
-    u_t(const int r_ind,
-        const int s_ind,
-        const ShellElementMITC4<N, T>& element,
-        A2DVec<N, Vec<T, 3>>& result) {
+    u_t_expr(const int r_ind,
+             const int s_ind,
+             const ShellElementMITC4<N, T>& element,
+             A2DVec<N, Vec<T, 3>>& result) {
       /* Calculations for first node. */
       node1_phi_expression = Vec3Cross(element.node1.rotation,
                                        element.node1.shell_director,
@@ -940,10 +934,10 @@ class ShellElementMITC4 {
    * @param Gs: the g<sup>s</sup> contravariant basis vector (output)
    * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
    * */
-  class contravariant_basis {
+  class contravariant_basis_expr {
    public:
-    contravariant_basis(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
-                        A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt) {
+    contravariant_basis_expr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
+                             A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt) {
       gs_cross_gt_expression = Vec3Cross(gs, gt, gs_cross_gt);
       gt_cross_gr_expression = Vec3Cross(gt, gr, gt_cross_gr);
       gr_cross_gs_expression = Vec3Cross(gr, gs, gr_cross_gs);
@@ -1025,10 +1019,10 @@ class ShellElementMITC4 {
    * @param e2: the e<sub>2</sub> cartesian local basis vector (output)
    * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
    * */
-  class cartesian_local_basis {
+  class cartesian_local_basis_expr {
    public:
-    cartesian_local_basis(A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
-                          A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3) {
+    cartesian_local_basis_expr(A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
+                               A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3) {
       e3_expression = Vec3Normalize(gt, e3);
       gs_cross_e3_expression = Vec3Cross(gs, e3, gs_cross_e3);
       e1_expression = Vec3Normalize(gs_cross_e3, e1);
@@ -1153,20 +1147,164 @@ class ShellElementMITC4 {
    * */
   class local_strain_expr {
    public:
-    local_strain_expr(A2DVec<N, Vec<T, 3>>& ei, A2DVec<N, Vec<T, 3>>& ej,
-                      A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt,
+    local_strain_expr(A2DScalar<N, T>& Gr_ei, A2DScalar<N, T>& Gs_ei, A2DScalar<N, T>& Gt_ei,
+                      A2DScalar<N, T>& Gr_ej, A2DScalar<N, T>& Gs_ej, A2DScalar<N, T>& Gt_ej,
                       A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
                       A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                       A2DScalar<N, T>& e_ij) {
-      A2DScalar<N, T>
-          Gr_ei, Gs_ei, ;
+      Gr_ej_Gs_ei_expression = ScalarMult(Gr_ej, Gs_ei, Gr_ej_Gs_ei);
+      Gr_ei_Gs_ej_expression = ScalarMult(Gr_ei, Gs_ej, Gr_ei_Gs_ej);
+
+      Gr_ej_Gt_ei_expression = ScalarMult(Gr_ej, Gt_ei, Gr_ej_Gt_ei);
+      Gr_ei_Gt_ej_expression = ScalarMult(Gr_ei, Gt_ej, Gr_ei_Gt_ej);
+
+      Gs_ej_Gt_ei_expression = ScalarMult(Gs_ej, Gt_ei, Gs_ej_Gt_ei);
+      Gs_ei_Gt_ej_expression = ScalarMult(Gs_ei, Gt_ej, Gs_ei_Gt_ej);
+
+      e_rr_multiplier_expression = ScalarMult(Gr_ei, Gr_ej, e_rr_multiplier);
+      e_ss_multiplier_expression = ScalarMult(Gs_ei, Gs_ej, e_ss_multiplier);
+      e_rs_multiplier_expression = ScalarAxpby(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier);
+      e_rt_multiplier_expression = ScalarAxpby(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier);
+      e_st_multiplier_expression = ScalarAxpby(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier);
+
+      e_rr_expression = ScalarMult(e_rr_multiplier, e_rr, scaled_e_rr);
+      e_ss_expression = ScalarMult(e_ss_multiplier, e_ss, scaled_e_ss);
+      e_rs_expression = ScalarMult(e_rs_multiplier, e_rs, scaled_e_rs);
+      e_rt_expression = ScalarMult(e_rt_multiplier, e_rt, scaled_e_rt);
+      e_st_expression = ScalarMult(e_st_multiplier, e_st, scaled_e_st);
+
+      sum_12_expression = ScalarAxpay(1, scaled_e_rr, scaled_e_ss, sum_12);
+      sum_123_expression = ScalarAxpay(1, sum_12, scaled_e_rs, sum_123);
+      sum_1234_expression = ScalarAxpay(1, sum_123, scaled_e_rt, sum_1234);
+      e_ij_expression = ScalarAxpay(1, sum_1234, scaled_e_st, e_ij);
     };
 
-    void reverse();
-    void hforward();
-    void hreverse();
+    void reverse() {
+      e_ij_expression.reverse();
+      sum_1234_expression.reverse();
+      sum_123_expression.reverse();
+      sum_12_expression.reverse();
+
+      e_st_expression.reverse();
+      e_rt_expression.reverse();
+      e_rs_expression.reverse();
+      e_ss_expression.reverse();
+      e_rr_expression.reverse();
+
+      e_st_multiplier_expression.reverse();
+      e_rt_multiplier_expression.reverse();
+      e_rs_multiplier_expression.reverse();
+      e_ss_multiplier_expression.reverse();
+      e_rr_multiplier_expression.reverse();
+
+      Gs_ei_Gt_ej_expression.reverse();
+      Gs_ej_Gt_ei_expression.reverse();
+
+      Gr_ei_Gt_ej_expression.reverse();
+      Gr_ej_Gt_ei_expression.reverse();
+
+      Gr_ei_Gs_ej_expression.reverse();
+      Gr_ej_Gs_ei_expression.reverse();
+    };
+
+    void hforward() {
+      Gr_ej_Gs_ei_expression.hforward();
+      Gr_ei_Gs_ej_expression.hforward();
+
+      Gr_ej_Gt_ei_expression.hforward();
+      Gr_ei_Gt_ej_expression.hforward();
+
+      Gs_ej_Gt_ei_expression.hforward();
+      Gs_ei_Gt_ej_expression.hforward();
+
+      e_rr_multiplier_expression.hforward();
+      e_ss_multiplier_expression.hforward();
+      e_rs_multiplier_expression.hforward();
+      e_rt_multiplier_expression.hforward();
+      e_st_multiplier_expression.hforward();
+
+      e_rr_expression.hforward();
+      e_ss_expression.hforward();
+      e_rs_expression.hforward();
+      e_rt_expression.hforward();
+      e_st_expression.hforward();
+
+      sum_12_expression.hforward();
+      sum_123_expression.hforward();
+      sum_1234_expression.hforward();
+      e_ij_expression.hforward();
+    };
+
+    void hreverse() {
+      e_ij_expression.hreverse();
+      sum_1234_expression.hreverse();
+      sum_123_expression.hreverse();
+      sum_12_expression.hreverse();
+
+      e_st_expression.hreverse();
+      e_rt_expression.hreverse();
+      e_rs_expression.hreverse();
+      e_ss_expression.hreverse();
+      e_rr_expression.hreverse();
+
+      e_st_multiplier_expression.hreverse();
+      e_rt_multiplier_expression.hreverse();
+      e_rs_multiplier_expression.hreverse();
+      e_ss_multiplier_expression.hreverse();
+      e_rr_multiplier_expression.hreverse();
+
+      Gs_ei_Gt_ej_expression.hreverse();
+      Gs_ej_Gt_ei_expression.hreverse();
+
+      Gr_ei_Gt_ej_expression.hreverse();
+      Gr_ej_Gt_ei_expression.hreverse();
+
+      Gr_ei_Gs_ej_expression.hreverse();
+      Gr_ej_Gs_ei_expression.hreverse();
+    };
 
    private:
+    A2DScalar<N, T>
+        e_rr_multiplier, e_ss_multiplier, e_rs_multiplier, e_rt_multiplier, e_st_multiplier,
+        scaled_e_rr, scaled_e_ss, scaled_e_rs, scaled_e_rt, scaled_e_st;
+    A2DScalar<N, T>
+        Gr_ej_Gs_ei, Gr_ei_Gs_ej,
+        Gr_ej_Gt_ei, Gr_ei_Gt_ej,
+        Gs_ej_Gt_ei, Gs_ei_Gt_ej;
+    A2DScalar<N, T>
+        sum_12, sum_123, sum_1234;
+
+    /* Expressions */
+
+    A2DScalarA2DScalarMultExpr<N, T>
+        Gr_ej_Gs_ei_expression,
+        Gr_ei_Gs_ej_expression,
+        Gr_ej_Gt_ei_expression,
+        Gr_ei_Gt_ej_expression,
+        Gs_ej_Gt_ei_expression,
+        Gs_ei_Gt_ej_expression;
+    A2DScalarA2DScalarMultExpr<N, T>
+        e_rr_multiplier_expression,
+        e_ss_multiplier_expression;
+    /*A2DScalarA2DScalarAddExpr<N, T>
+        e_rs_multiplier_expression,
+        e_rt_multiplier_expression,
+        e_st_multiplier_expression;*/
+    A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr<N, T>
+        e_rs_multiplier_expression,
+        e_rt_multiplier_expression,
+        e_st_multiplier_expression;
+    A2DScalarA2DScalarMultExpr<N, T>
+        e_rr_expression,
+        e_ss_expression,
+        e_rs_expression,
+        e_rt_expression,
+        e_st_expression;
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T>
+        sum_12_expression,
+        sum_123_expression,
+        sum_1234_expression,
+        e_ij_expression;
   };
 
   /**
@@ -1182,11 +1320,21 @@ class ShellElementMITC4 {
                        A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                        A2DScalar<N, T>& e_11, A2DScalar<N, T>& e_22, A2DScalar<N, T>& e_12,
                        A2DScalar<N, T>& e_13, A2DScalar<N, T>& e_23) {
-      e_11_expression = local_strain_expr(e1, e1, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_11);
-      e_22_expression = local_strain_expr(e2, e2, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_22);
-      e_12_expression = local_strain_expr(e1, e2, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_12);
-      e_13_expression = local_strain_expr(e1, e3, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_13);
-      e_23_expression = local_strain_expr(e2, e3, Gr, Gs, Gt, e_rr, e_ss, e_rs, e_rt, e_st, e_23);
+      Gr_e1_expression = Vec3Dot(Gr, e1, Gr_e1);
+      Gr_e2_expression = Vec3Dot(Gr, e2, Gr_e2);
+      Gr_e3_expression = Vec3Dot(Gr, e3, Gr_e3);
+      Gs_e1_expression = Vec3Dot(Gs, e1, Gs_e1);
+      Gs_e2_expression = Vec3Dot(Gs, e2, Gs_e2);
+      Gs_e3_expression = Vec3Dot(Gs, e3, Gs_e3);
+      Gt_e1_expression = Vec3Dot(Gt, e1, Gt_e1);
+      Gt_e2_expression = Vec3Dot(Gt, e2, Gt_e2);
+      Gt_e3_expression = Vec3Dot(Gt, e3, Gt_e3);
+
+      e_11_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e1, Gs_e1, Gt_e1, e_rr, e_ss, e_rs, e_rt, e_st, e_11);
+      e_22_expression = local_strain_expr(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22);
+      e_12_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12);
+      e_13_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13);
+      e_23_expression = local_strain_expr(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23);
     };
 
     void reverse() {
@@ -1195,9 +1343,29 @@ class ShellElementMITC4 {
       e_12_expression.reverse();
       e_22_expression.reverse();
       e_11_expression.reverse();
+
+      Gt_e3_expression.reverse();
+      Gt_e2_expression.reverse();
+      Gt_e1_expression.reverse();
+      Gs_e3_expression.reverse();
+      Gs_e2_expression.reverse();
+      Gs_e1_expression.reverse();
+      Gr_e3_expression.reverse();
+      Gr_e2_expression.reverse();
+      Gr_e1_expression.reverse();
     };
 
     void hforward() {
+      Gr_e1_expression.hforward();
+      Gr_e2_expression.hforward();
+      Gr_e3_expression.hforward();
+      Gs_e1_expression.hforward();
+      Gs_e2_expression.hforward();
+      Gs_e3_expression.hforward();
+      Gt_e1_expression.hforward();
+      Gt_e2_expression.hforward();
+      Gt_e3_expression.hforward();
+
       e_11_expression.hforward();
       e_22_expression.hforward();
       e_12_expression.hforward();
@@ -1211,9 +1379,36 @@ class ShellElementMITC4 {
       e_12_expression.hreverse();
       e_22_expression.hreverse();
       e_11_expression.hreverse();
+
+      Gt_e3_expression.hreverse();
+      Gt_e2_expression.hreverse();
+      Gt_e1_expression.hreverse();
+      Gs_e3_expression.hreverse();
+      Gs_e2_expression.hreverse();
+      Gs_e1_expression.hreverse();
+      Gr_e3_expression.hreverse();
+      Gr_e2_expression.hreverse();
+      Gr_e1_expression.hreverse();
     };
 
    private:
+    A2DScalar<N, T>
+        Gr_e1, Gr_e2, Gr_e3,
+        Gs_e1, Gs_e2, Gs_e3,
+        Gt_e1, Gt_e2, Gt_e3;
+
+    /* Expressions */
+
+    A2DVec3DotA2DVecExpr<N, T>
+        Gr_e1_expression,
+        Gr_e2_expression,
+        Gr_e3_expression,
+        Gs_e1_expression,
+        Gs_e2_expression,
+        Gs_e3_expression,
+        Gt_e1_expression,
+        Gt_e2_expression,
+        Gt_e3_expression;
     local_strain_expr
         e_11_expression,
         e_22_expression,
@@ -1250,11 +1445,11 @@ class ShellElementMITC4 {
                                                           ur, us,
                                                           e_rr, e_ss, e_rs);
       /* Contravariant basis: */
-      contravariant_basis_expression = contravariant_basis(gr, gs, gt,
-                                                           Gr, Gs, Gt);
+      contravariant_basis_expression = contravariant_basis_expr(gr, gs, gt,
+                                                                Gr, Gs, Gt);
       /* Cartesian local basis: */
-      local_basis_expression = cartesian_local_basis(gs, gt,
-                                                     e1, e2, e3);
+      local_basis_expression = cartesian_local_basis_expr(gs, gt,
+                                                          e1, e2, e3);
 
       /* Calculate local strains */
       local_strains_expression = local_strains_expr(Gr, Gs, Gt,
@@ -1309,8 +1504,8 @@ class ShellElementMITC4 {
     /* Expressions */
 
     in_plane_strain_components_expr strain_expression;
-    contravariant_basis contravariant_basis_expression;
-    cartesian_local_basis local_basis_expression;
+    contravariant_basis_expr contravariant_basis_expression;
+    cartesian_local_basis_expr local_basis_expression;
     local_strains_expr local_strains_expression;
     A2DScalar5VecAssemblyExpr<N, T> local_strains_vec_expression;
     MatA2DVecA2DVecInnerProductExpr<N, T> strain_energy_expression;
@@ -1381,37 +1576,37 @@ class ShellElementMITC4 {
     // TODO: remove non-dependencies *********
     // TODO: encapsulate these in helper classes
     /* e_rt_A calculations: */
-    g_alpha gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
-    g_t gt_r0_sp1_t0_expression(2, 4, this, gt_r0_sp1_t0);
-    u_alpha ur_r0_sp1_t0_expression(0, 3, 0, this, ur_r0_sp1_t0);
-    u_t ut_r0_sp1_t0_expression(2, 4, this, ut_r0_sp1_t0);
+    g_alpha_expr gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
+    g_t_expr gt_r0_sp1_t0_expression(2, 4, this, gt_r0_sp1_t0);
+    u_alpha_expr ur_r0_sp1_t0_expression(0, 3, 0, this, ur_r0_sp1_t0);
+    u_t_expr ut_r0_sp1_t0_expression(2, 4, this, ut_r0_sp1_t0);
     A2DScalar<N, T> gr_ut_A, gt_ur_A;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
     A2DVec3DotA2DVecExpr gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
     ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
     /* e_rt_B calculations: */
-    g_alpha gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
-    g_t gt_r0_sn1_t0_expression(2, 0, this, gt_r0_sn1_t0);
-    u_alpha ur_r0_sn1_t0_expression(0, 0, 0, this, ur_r0_sn1_t0);
-    u_t ut_r0_sn1_t0_expression(2, 0, this, ut_r0_sn1_t0);
+    g_alpha_expr gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
+    g_t_expr gt_r0_sn1_t0_expression(2, 0, this, gt_r0_sn1_t0);
+    u_alpha_expr ur_r0_sn1_t0_expression(0, 0, 0, this, ur_r0_sn1_t0);
+    u_t_expr ut_r0_sn1_t0_expression(2, 0, this, ut_r0_sn1_t0);
     A2DScalar<N, T> gr_ut_B, gt_ur_B;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
     A2DVec3DotA2DVecExpr gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
     ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
     /* e_st_C calculations: */
-    g_alpha gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
-    g_t gt_rp1_s0_t0_expression(4, 2, this, gt_rp1_s0_t0);
-    u_alpha us_rp1_s0_t0_expression(1, 3, 0, this, us_rp1_s0_t0);
-    u_t ut_rp1_s0_t0_expression(4, 2, this, ut_rp1_s0_t0);
+    g_alpha_expr gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
+    g_t_expr gt_rp1_s0_t0_expression(4, 2, this, gt_rp1_s0_t0);
+    u_alpha_expr us_rp1_s0_t0_expression(1, 3, 0, this, us_rp1_s0_t0);
+    u_t_expr ut_rp1_s0_t0_expression(4, 2, this, ut_rp1_s0_t0);
     A2DScalar<N, T> gs_ut_C, gt_us_C;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
     A2DVec3DotA2DVecExpr gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
     ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
     /* e_st_D calculations: */
-    g_alpha gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
-    g_t gt_rn1_s0_t0_expression(0, 2, this, gt_rn1_s0_t0);
-    u_alpha us_rn1_s0_t0_expression(1, 0, 0, this, us_rn1_s0_t0);
-    u_t ut_rn1_s0_t0_expression(0, 2, this, ut_rn1_s0_t0);
+    g_alpha_expr gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
+    g_t_expr gt_rn1_s0_t0_expression(0, 2, this, gt_rn1_s0_t0);
+    u_alpha_expr us_rn1_s0_t0_expression(1, 0, 0, this, us_rn1_s0_t0);
+    u_t_expr ut_rn1_s0_t0_expression(0, 2, this, ut_rn1_s0_t0);
     A2DScalar<N, T> gs_ut_D, gt_us_D;  // TODO: move declaration
     A2DVec3DotA2DVecExpr gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
     A2DVec3DotA2DVecExpr gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
@@ -1432,20 +1627,56 @@ class ShellElementMITC4 {
     ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r1sAtA_expression =
         ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
 
-    /* gr, gs, ur, and us calculations (subset of) */
-    g_alpha gr_rAs0t0_expression(0, 1, quad_0, this, gr_rAs0t0);
-    g_alpha gs_r0sAt0_expression(1, 1, quad_0, this, gs_r0sAt0);
-    u_alpha ur_rAs0t0_expression(0, 1, quad_0, this, ur_rAs0t0);
-    u_alpha us_r0sAt0_expression(1, 1, quad_0, this, us_r0sAt0);
+    /* gr and gs calculations */
+    g_alpha_expr gr_rAs0t0_expression(0, 1, quad_0, this, gr_rAs0t0);
+    g_alpha_expr gr_rAs0t1_expression(0, 1, quad_1, this, gr_rAs0t1);
+    g_alpha_expr gr_rAs1t0_expression(0, 2, quad_0, this, gr_rAs1t0);
+    g_alpha_expr gr_rAs1t1_expression(0, 2, quad_1, this, gr_rAs1t1);
+
+    g_alpha_expr gs_r0sAt0_expression(1, 1, quad_0, this, gs_r0sAt0);
+    g_alpha_expr gs_r0sAt1_expression(1, 1, quad_1, this, gs_r0sAt1);
+    g_alpha_expr gs_r1sAt0_expression(1, 2, quad_0, this, gs_r1sAt0);
+    g_alpha_expr gs_r1sAt1_expression(1, 2, quad_1, this, gs_r1sAt1);
+
+    /* ur and us calculations */
+    u_alpha_expr ur_rAs0t0_expression(0, 1, quad_0, this, ur_rAs0t0);
+    u_alpha_expr ur_rAs0t1_expression(0, 1, quad_1, this, ur_rAs0t1);
+    u_alpha_expr ur_rAs1t0_expression(0, 2, quad_0, this, ur_rAs1t0);
+    u_alpha_expr ur_rAs1t1_expression(0, 2, quad_1, this, ur_rAs1t1);
+
+    u_alpha_expr us_r0sAt0_expression(1, 1, quad_0, this, us_r0sAt0);
+    u_alpha_expr us_r0sAt1_expression(1, 1, quad_1, this, us_r0sAt1);
+    u_alpha_expr us_r1sAt0_expression(1, 2, quad_0, this, us_r1sAt0);
+    u_alpha_expr us_r1sAt1_expression(1, 2, quad_1, this, us_r1sAt1);
+
 
     /* code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0 */
-    /* Energy at the quadrature point: */
-    A2DScalar<N, T> energy_r0s0t0;  // TODO: move declaration
-    strain_energy_expr strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA,
-                                                       ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
-                                                       e_rt_rAs0tA, e_st_r0sAtA,
-                                                       this, energy_r0s0t0);
-    // TODO: add code for other quadrature points
+    /* Energy at the quadrature points: */
+    A2DScalar<N, T>
+        energy_r0s0t0,
+        energy_r0s0t1,
+        energy_r0s1t0,
+        energy_r0s1t1,
+        energy_r1s0t0,
+        energy_r1s0t1,
+        energy_r1s1t0,
+        energy_r1s1t1;  // TODO: move declaration
+    strain_energy_expr strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
+                                                       e_rt_rAs0tA, e_st_r0sAtA, this, energy_r0s0t0);
+    strain_energy_expr strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, ut_r0s0tA,
+                                                       e_rt_rAs0tA, e_st_r0sAtA, this, energy_r0s0t1);
+    strain_energy_expr strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, ut_r0s1tA,
+                                                       e_rt_rAs1tA, e_st_r0sAtA, this, energy_r0s1t0);
+    strain_energy_expr strain_energy_r0s1t1_expression(gr_rAs1t1, gs_r0sAt1, gt_r0s1tA, ur_rAs1t1, us_r0sAt1, ut_r0s1tA,
+                                                       e_rt_rAs1tA, e_st_r0sAtA, this, energy_r0s1t1);
+    strain_energy_expr strain_energy_r1s0t0_expression(gr_rAs0t0, gs_r1sAt0, gt_r1s0tA, ur_rAs0t0, us_r1sAt0, ut_r1s0tA,
+                                                       e_rt_rAs0tA, e_st_r1sAtA, this, energy_r1s0t0);
+    strain_energy_expr strain_energy_r1s0t1_expression(gr_rAs0t1, gs_r1sAt1, gt_r1s0tA, ur_rAs0t1, us_r1sAt1, ut_r1s0tA,
+                                                       e_rt_rAs0tA, e_st_r1sAtA, this, energy_r1s0t1);
+    strain_energy_expr strain_energy_r1s1t0_expression(gr_rAs1t0, gs_r1sAt0, gt_r1s1tA, ur_rAs1t0, us_r1sAt0, ut_r1s1tA,
+                                                       e_rt_rAs1tA, e_st_r1sAtA, this, energy_r1s1t0);
+    strain_energy_expr strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, ut_r1s1tA,
+                                                       e_rt_rAs1tA, e_st_r1sAtA, this, energy_r1s1t1);
   };
 
   ShellNodeMITC<N, T>& node1;  /**< The top left node. */

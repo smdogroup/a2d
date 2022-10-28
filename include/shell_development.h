@@ -870,7 +870,11 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
-  // TODO: document
+  /**
+   * @brief Computes the e<sub>&alpha t</sub> covariant strain at a tying point.
+   *
+   * @param TODO
+   * */
   class tying_shear_expr {
     tying_shear_expr(const int alpha, /* values are 0 (corresponding to r) or 1 (corresponding to s)*/
                      const int n_alpha_val_ind, /* values are 0 (corresponding to -1) or 1 (corresponding to 1)*/
@@ -1174,44 +1178,44 @@ class ShellElementMITC4 {
         e_rs_expression;
   };
 
-  /**
-   * @brief Computes the i,j<sup>th</sup> local strain from the ...
-   *
-   * @param TODO
-   * */
   class local_strain_expr {
    public:
+    /**
+     * @brief Computes the i,j<sup>th</sup> local strain (&epsilon <sub>ij</sub>) from the covariant strains and dot
+     * products of the contravariant basis vectors and cartesian basis vectors.
+     *
+     * @param TODO
+     * */
     local_strain_expr(A2DScalar<N, T>& Gr_ei, A2DScalar<N, T>& Gs_ei, A2DScalar<N, T>& Gt_ei,
                       A2DScalar<N, T>& Gr_ej, A2DScalar<N, T>& Gs_ej, A2DScalar<N, T>& Gt_ej,
                       A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
                       A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
-                      A2DScalar<N, T>& e_ij) {
-      Gr_ej_Gs_ei_expression = ScalarMult(Gr_ej, Gs_ei, Gr_ej_Gs_ei);
-      Gr_ei_Gs_ej_expression = ScalarMult(Gr_ei, Gs_ej, Gr_ei_Gs_ej);
+                      A2DScalar<N, T>& e_ij)
+        : Gr_ej_Gs_ei_expression(Gr_ej, Gs_ei, Gr_ej_Gs_ei),
+          Gr_ei_Gs_ej_expression(Gr_ei, Gs_ej, Gr_ei_Gs_ej),
 
-      Gr_ej_Gt_ei_expression = ScalarMult(Gr_ej, Gt_ei, Gr_ej_Gt_ei);
-      Gr_ei_Gt_ej_expression = ScalarMult(Gr_ei, Gt_ej, Gr_ei_Gt_ej);
+          Gr_ej_Gt_ei_expression(Gr_ej, Gt_ei, Gr_ej_Gt_ei),
+          Gr_ei_Gt_ej_expression(Gr_ei, Gt_ej, Gr_ei_Gt_ej),
 
-      Gs_ej_Gt_ei_expression = ScalarMult(Gs_ej, Gt_ei, Gs_ej_Gt_ei);
-      Gs_ei_Gt_ej_expression = ScalarMult(Gs_ei, Gt_ej, Gs_ei_Gt_ej);
+          Gs_ej_Gt_ei_expression(Gs_ej, Gt_ei, Gs_ej_Gt_ei),
+          Gs_ei_Gt_ej_expression(Gs_ei, Gt_ej, Gs_ei_Gt_ej),
 
-      e_rr_multiplier_expression = ScalarMult(Gr_ei, Gr_ej, e_rr_multiplier);
-      e_ss_multiplier_expression = ScalarMult(Gs_ei, Gs_ej, e_ss_multiplier);
-      e_rs_multiplier_expression = ScalarAxpby(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier);
-      e_rt_multiplier_expression = ScalarAxpby(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier);
-      e_st_multiplier_expression = ScalarAxpby(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier);
+          e_rr_multiplier_expression(Gr_ei, Gr_ej, e_rr_multiplier),
+          e_ss_multiplier_expression(Gs_ei, Gs_ej, e_ss_multiplier),
+          e_rs_multiplier_expression(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier),
+          e_rt_multiplier_expression(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier),
+          e_st_multiplier_expression(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier),
 
-      e_rr_expression = ScalarMult(e_rr_multiplier, e_rr, scaled_e_rr);
-      e_ss_expression = ScalarMult(e_ss_multiplier, e_ss, scaled_e_ss);
-      e_rs_expression = ScalarMult(e_rs_multiplier, e_rs, scaled_e_rs);
-      e_rt_expression = ScalarMult(e_rt_multiplier, e_rt, scaled_e_rt);
-      e_st_expression = ScalarMult(e_st_multiplier, e_st, scaled_e_st);
+          e_rr_expression(e_rr_multiplier, e_rr, scaled_e_rr),
+          e_ss_expression(e_ss_multiplier, e_ss, scaled_e_ss),
+          e_rs_expression(e_rs_multiplier, e_rs, scaled_e_rs),
+          e_rt_expression(e_rt_multiplier, e_rt, scaled_e_rt),
+          e_st_expression(e_st_multiplier, e_st, scaled_e_st),
 
-      sum_12_expression = ScalarAxpay(1, scaled_e_rr, scaled_e_ss, sum_12);
-      sum_123_expression = ScalarAxpay(1, sum_12, scaled_e_rs, sum_123);
-      sum_1234_expression = ScalarAxpay(1, sum_123, scaled_e_rt, sum_1234);
-      e_ij_expression = ScalarAxpay(1, sum_1234, scaled_e_st, e_ij);
-    };
+          sum_12_expression(1, scaled_e_rr, scaled_e_ss, sum_12),
+          sum_123_expression(1, sum_12, scaled_e_rs, sum_123),
+          sum_1234_expression(1, sum_123, scaled_e_rt, sum_1234),
+          e_ij_expression(1, sum_1234, scaled_e_st, e_ij) {};
 
     void reverse() {
       e_ij_expression.reverse();
@@ -1299,6 +1303,7 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    /* None necessary */
 
     /* A2D Objects: */
     A2DScalar<N, T>
@@ -1322,10 +1327,6 @@ class ShellElementMITC4 {
     A2DScalarA2DScalarMultExpr<N, T>
         e_rr_multiplier_expression,
         e_ss_multiplier_expression;
-    /*A2DScalarA2DScalarAddExpr<N, T>
-        e_rs_multiplier_expression,
-        e_rt_multiplier_expression,
-        e_st_multiplier_expression;*/
     A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr<N, T>
         e_rs_multiplier_expression,
         e_rt_multiplier_expression,

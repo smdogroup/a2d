@@ -312,6 +312,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DVec<N, Vec<T, 3>>
         node1_contribution, node1_contribution_unscaled,
         node2_contribution, node2_contribution_unscaled,
@@ -325,7 +328,6 @@ class ShellElementMITC4 {
     A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
 
     /* Expressions: */
-
     Vec3VecA2DScalarAxpyExpr<N, T>
         node1_addition_expression,
         node2_addition_expression,
@@ -512,6 +514,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DVec<N, Vec<T, 3>>
         node1_phi,
         node2_phi,
@@ -530,7 +535,6 @@ class ShellElementMITC4 {
     A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
 
     /* Expressions: */
-
     A2DVec3CrossVecExpr<N, T>
         node1_phi_expression,
         node2_phi_expression,
@@ -661,6 +665,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         node1_scaled_thickness,
         node2_scaled_thickness,
@@ -674,7 +681,6 @@ class ShellElementMITC4 {
     A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
 
     /* Expressions: */
-
     A2DScalarScalarMultExpr<N, T>
         node1_thickness_scale_expression,
         node2_thickness_scale_expression,
@@ -822,6 +828,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DVec<N, Vec<T, 3>>
         node1_phi,
         node2_phi,
@@ -840,7 +849,6 @@ class ShellElementMITC4 {
     A2DVec<N, Vec<T, 3>> n1c_n2c, n1c_n2c_n3c;
 
     /* Expressions: */
-
     A2DVec3CrossVecExpr<N, T>
         node1_phi_expression,
         node2_phi_expression,
@@ -919,6 +927,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         g_alpha_ut, gt_u_alpha;
     A2DVec<N, Vec<T, 3>>
@@ -926,7 +937,6 @@ class ShellElementMITC4 {
         u_alpha, ut;
 
     /* Expressions: */
-
     g_alpha_expr g_alpha_expression;
     g_t_expr gt_expression;
     u_alpha_expr u_alpha_expression;
@@ -1001,6 +1011,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         gr_dot_gs_cross_gt;
     A2DVec<N, Vec<T, 3>>
@@ -1066,6 +1079,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DVec<N, Vec<T, 3>> gs_cross_e3;
 
     /* Expressions: */
@@ -1144,10 +1160,13 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         gr_us, gs_ur;
 
-    /* Expressions */
+    /* Expressions: */
     A2DVec3DotA2DVecExpr<N, T>
         e_rr_expression, e_ss_expression,
         gr_us_expression, gs_ur_expression;
@@ -1279,6 +1298,9 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         e_rr_multiplier, e_ss_multiplier, e_rs_multiplier, e_rt_multiplier, e_st_multiplier,
         scaled_e_rr, scaled_e_ss, scaled_e_rs, scaled_e_rt, scaled_e_st;
@@ -1289,8 +1311,7 @@ class ShellElementMITC4 {
     A2DScalar<N, T>
         sum_12, sum_123, sum_1234;
 
-    /* Expressions */
-
+    /* Expressions: */
     A2DScalarA2DScalarMultExpr<N, T>
         Gr_ej_Gs_ei_expression,
         Gr_ei_Gs_ej_expression,
@@ -1407,13 +1428,15 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         Gr_e1, Gr_e2, Gr_e3,
         Gs_e1, Gs_e2, Gs_e3,
         Gt_e1, Gt_e2, Gt_e3;
 
-    /* Expressions */
-
+    /* Expressions: */
     A2DVec3DotA2DVecExpr<N, T>
         Gr_e1_expression,
         Gr_e2_expression,
@@ -1432,51 +1455,45 @@ class ShellElementMITC4 {
         e_23_expression;
   };
 
-  /**
-   * @brief Compute the strain energy of the element for some point within the element.
-   *
-   * @note All inputs (gr, gs, gt, ur, us, ut, e_rt, and e_st) must be evaluated at the point of interest in order for
-   * the calculations to be correct.
-   *
-   * @param gr:         the g<sub>r</sub> covariant basis vector.
-   * @param gs:         the g<sub>s</sub> covariant basis vector.
-   * @param gt:         the g<sub>t</sub> covariant basis vector.
-   * @param ur:         the derivative of the displacement vector with respect to r (i.e. du/dr).
-   * @param us:         the derivative of the displacement vector with respect to s (i.e. du/ds).
-   * @param ut:         the derivative of the displacement vector with respect to t (i.e. du/dt).
-   * @param e_rt:       the covariant shear strain component between the r and t directions (e<sub>rt</sub>).
-   * @param e_st:       the covariant shear strain component between the s and t directions (e<sub>st</sub>).
-   * @param element:    the MITC4 element object for which the strain energy is being computed.
-   * @param energy:     the strain energy as an A2DScalar object to store the values (output).
-   * */
   class strain_energy_expr {
    public:
+    /**
+     * @brief Compute the strain energy of the element for some point within the element.
+     *
+     * @note All inputs (gr, gs, gt, ur, us, ut, e_rt, and e_st) must be evaluated at the point of interest in order for
+     * the calculations to be correct.
+     *
+     * @param gr:         the g<sub>r</sub> covariant basis vector.
+     * @param gs:         the g<sub>s</sub> covariant basis vector.
+     * @param gt:         the g<sub>t</sub> covariant basis vector.
+     * @param ur:         the derivative of the displacement vector with respect to r (i.e. du/dr).
+     * @param us:         the derivative of the displacement vector with respect to s (i.e. du/ds).
+     * @param ut:         the derivative of the displacement vector with respect to t (i.e. du/dt).
+     * @param e_rt:       the covariant shear strain component between the r and t directions (e<sub>rt</sub>).
+     * @param e_st:       the covariant shear strain component between the s and t directions (e<sub>st</sub>).
+     * @param element:    the MITC4 element object for which the strain energy is being computed.
+     * @param energy:     the strain energy as an A2DScalar object to store the values (output).
+     * */
     strain_energy_expr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
                        A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us, A2DVec<N, Vec<T, 3>>& ut,
                        A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st, ShellElementMITC4& element,
-                       A2DScalar<N, T>& energy) {
-      /* In plane strain calculations: */
-      strain_expression = in_plane_strain_components_expr(gr, gs,
-                                                          ur, us,
-                                                          e_rr, e_ss, e_rs);
-      /* Contravariant basis: */
-      contravariant_basis_expression = contravariant_basis_expr(gr, gs, gt,
-                                                                Gr, Gs, Gt);
-      /* Cartesian local basis: */
-      local_basis_expression = cartesian_local_basis_expr(gs, gt,
-                                                          e1, e2, e3);
-
-      /* Calculate local strains */
-      local_strains_expression = local_strains_expr(Gr, Gs, Gt,
-                                                    e1, e2, e3,
-                                                    e_rr, e_ss, e_rs, e_rt, e_st,
-                                                    e_11, e_22, e_12, e_13, e_23);
-      /* Assemble local strain vector */
-      local_strains_vec_expression = Vec5ScalarAssembly(local_strains_vec, e_11, e_22, e_12, e_13, e_23);
-
-      /* Calculate strain energy */
-      strain_energy_expression = MatInnerProduct(element.material.D, local_strains_vec, local_strains_vec, energy);
-    };
+                       A2DScalar<N, T>& energy)
+        : /* Initializations: */
+        Gr(Gr_v, Gr_bv), Gs(Gs_v, Gs_bv), Gt(Gt_v, Gt_bv),
+        e1(e1_v, e1_bv), e2(e2_v, e2_bv), e3(e3_v, e3_bv),
+        local_strains_vec(lsv_v, lsv_bv),
+        /* In plane strain calculations: */
+        strain_expression(gr, gs, ur, us, e_rr, e_ss, e_rs),
+        /* Contravariant basis: */
+        contravariant_basis_expression(gr, gs, gt, Gr, Gs, Gt),
+        /* Cartesian local basis: */
+        local_basis_expression(gs, gt, e1, e2, e3),
+        /* Calculate local strains */
+        local_strains_expression(Gr, Gs, Gt, e1, e2, e3, e_rr, e_ss, e_rs, e_rt, e_st, e_11, e_22, e_12, e_13, e_23),
+        /* Assemble local strain vector */
+        local_strains_vec_expression(local_strains_vec, e_11, e_22, e_12, e_13, e_23),
+        /* Calculate strain energy */
+        strain_energy_expression(element.material.D, local_strains_vec, local_strains_vec, energy) {};
 
     void reverse() {
       strain_energy_expression.reverse();
@@ -1506,6 +1523,18 @@ class ShellElementMITC4 {
     };
 
    private:
+    /* Instantiating objects: */
+    Vec<T, 3>
+        Gr_v, Gr_bv,
+        Gs_v, Gs_bv,
+        Gt_v, Gt_bv,
+        e1_v, e1_bv,
+        e2_v, e2_bv,
+        e3_v, e3_bv;
+    Vec<T, 5>
+        lsv_v, lsv_bv;
+
+    /* A2D Objects: */
     A2DScalar<N, T>
         e_rr, e_ss, e_rs;
     A2DVec<N, Vec<T, 3>>
@@ -1516,8 +1545,7 @@ class ShellElementMITC4 {
     A2DVec<N, Vec<T, 5>>
         local_strains_vec;
 
-    /* Expressions */
-
+    /* Expressions: */
     in_plane_strain_components_expr strain_expression;
     contravariant_basis_expr contravariant_basis_expression;
     cartesian_local_basis_expr local_basis_expression;
@@ -1526,38 +1554,30 @@ class ShellElementMITC4 {
     MatA2DVecA2DVecInnerProductExpr<N, T, 5, 5> strain_energy_expression;
   };
 
-  void generate_energy() {
+  void generate_stiffness_matrix() {
     /* Generate the internal energy of the shell element, that will then be used to calculate the global stiffness
      * matrix
      * */
 
-
-
-
     // code for tying points
-    /* e_rt_A calculations: */
-    tying_shear_expr e_rt_A_expression(0, 1, this, e_rt_A);
-    /* e_rt_B calculations: */
-    tying_shear_expr e_rt_B_expression(0, 0, this, e_rt_B);
-    /* e_st_C calculations: */
-    tying_shear_expr e_st_C_expression(1, 1, this, e_st_C);
-    /* e_st_D calculations: */
-    tying_shear_expr e_st_D_expression(1, 0, this, e_st_D);
+    tying_shear_expr e_rt_A_expression(0, 1, this, e_rt_A);  /**< e_rt_A calculations: */
+    tying_shear_expr e_rt_B_expression(0, 0, this, e_rt_B);  /**< e_rt_B calculations: */
+    tying_shear_expr e_st_C_expression(1, 1, this, e_st_C);  /**< e_st_C calculations: */
+    tying_shear_expr e_st_D_expression(1, 0, this, e_st_D);  /**< e_st_D calculations: */
 
-
-    /* Write code for e_rt_r... and e_st_r... values */
-    /* Evaluate at s = quad_0; */
-    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_rt_rAs0tA_expression =
-        ScalarAxpby((1 + quad_0) * 0.5, e_rt_A, (1 - quad_0) * 0.5, e_rt_B, e_rt_rAs0tA);
-    /* Evaluate at r = quad_0; */
-    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r0sAtA_expression =
-        ScalarAxpby((1 + quad_0) * 0.5, e_st_C, (1 - quad_0) * 0.5, e_st_D, e_st_r0sAtA);
-    /* Evaluate at s = quad_1; */
-    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_rt_rAs1tA_expression =
-        ScalarAxpby((1 + quad_1) * 0.5, e_rt_A, (1 - quad_1) * 0.5, e_rt_B, e_rt_rAs1tA);
-    /* Evaluate at r = quad_1; */
-    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r1sAtA_expression =
-        ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
+    /* e_rt_r... and e_st_r... values */
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T>
+        e_rt_rAs0tA_expression = ScalarAxpby((1 + quad_0) * 0.5, e_rt_A, (1 - quad_0) * 0.5, e_rt_B, e_rt_rAs0tA);
+    /**< Evaluate e_rt at s = quad_0; */
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T>
+        e_st_r0sAtA_expression = ScalarAxpby((1 + quad_0) * 0.5, e_st_C, (1 - quad_0) * 0.5, e_st_D, e_st_r0sAtA);
+    /**< Evaluate e_st at r = quad_0; */
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T>
+        e_rt_rAs1tA_expression = ScalarAxpby((1 + quad_1) * 0.5, e_rt_A, (1 - quad_1) * 0.5, e_rt_B, e_rt_rAs1tA);
+    /**< Evaluate e_rt at s = quad_1; */
+    ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T>
+        e_st_r1sAtA_expression = ScalarAxpby((1 + quad_1) * 0.5, e_st_C, (1 - quad_1) * 0.5, e_st_D, e_st_r1sAtA);
+    /**< Evaluate e_st at r = quad_1; */
 
     /* gr and gs calculations */
     g_alpha_expr gr_rAs0t0_expression(0, 1, quad_0, this, gr_rAs0t0);
@@ -1581,20 +1601,9 @@ class ShellElementMITC4 {
     u_alpha_expr us_r1sAt0_expression(1, 2, quad_0, this, us_r1sAt0);
     u_alpha_expr us_r1sAt1_expression(1, 2, quad_1, this, us_r1sAt1);
 
-
-    /* code for a single quadrature point: r0s0t0 <=> s=r=t=-1/sqrt(3) <=> s=r=t=quad_0 */
     /* Energy at the quadrature points: */
-    A2DScalar<N, T>
-        energy_r0s0t0,
-        energy_r0s0t1,
-        energy_r0s1t0,
-        energy_r0s1t1,
-        energy_r1s0t0,
-        energy_r1s0t1,
-        energy_r1s1t0,
-        energy_r1s1t1;  // TODO: move declaration
-    strain_energy_expr strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
-                                                       e_rt_rAs0tA, e_st_r0sAtA, this, energy_r0s0t0);
+    strain_energy_expr strain_energy_r0s0t0_expression{gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
+                                                       e_rt_rAs0tA, e_st_r0sAtA, this, energy_r0s0t0};
     strain_energy_expr strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, ut_r0s0tA,
                                                        e_rt_rAs0tA, e_st_r0sAtA, this, energy_r0s0t1);
     strain_energy_expr strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, ut_r0s1tA,
@@ -1609,6 +1618,14 @@ class ShellElementMITC4 {
                                                        e_rt_rAs1tA, e_st_r1sAtA, this, energy_r1s1t0);
     strain_energy_expr strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, ut_r1s1tA,
                                                        e_rt_rAs1tA, e_st_r1sAtA, this, energy_r1s1t1);
+
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12_expression(1, energy_r0s0t0, energy_r0s0t1, sum_12);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123_expression(1, sum_12, energy_r0s1t0, sum_123);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234_expression(1, sum_123, energy_r0s1t1, sum_1234);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345_expression(1, sum_1234, energy_r1s0t0, sum_12345);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123456_expression(1, sum_12345, energy_r1s0t1, sum_123456);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234567_expression(1, sum_123456, energy_r1s1t0, sum_1234567);
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345678_expression(1, sum_1234567, energy_r1s1t1, strain_energy);
   };
 
   ShellNodeMITC<N, T>& node1;  /**< The top left node. */
@@ -1620,45 +1637,25 @@ class ShellElementMITC4 {
   const LinearIsotropicMaterial<T> material{5.2, 0.5};  /**< I'm using a linear isotropic material assumption here */
 
  private:
-  A2DVec<N, Vec<T, 3>>
   /** gr vector evaluated at the various quadrature points */
-  gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
-  /** gs vector evaluated at the various quadrature points */
-  gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
-  /** gt vector evaluated at the various quadrature points */
-  gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA;
-  /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-  /*gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,*/
-  /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
-  /*gr_r0_sp1_t0, gr_r0_sn1_t0,*/
-  /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
-  /*gs_rp1_s0_t0, gs_rn1_s0_t0;*/
-
   A2DVec<N, Vec<T, 3>>
+      gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1;
+  /** gs vector evaluated at the various quadrature points */
+  A2DVec<N, Vec<T, 3>>
+      gs_r0sAt0, gs_r0sAt1, gs_r1sAt0, gs_r1sAt1;
+  /** gt vector evaluated at the various quadrature points */
+  A2DVec<N, Vec<T, 3>>
+      gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA;
+
   /** derivatives of u with respect to r evaluated at the various quadrature points */
-  ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
+  A2DVec<N, Vec<T, 3>>
+      ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1;
   /** derivatives of u with respect to s evaluated at the various quadrature points */
-  us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
+  A2DVec<N, Vec<T, 3>>
+      us_r0sAt0, us_r0sAt1, us_r1sAt0, us_r1sAt1;
   /** derivatives of u with respect to t evaluated at the various quadrature points */
-  ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA;
-  /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-  /*ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,*/
-  /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
-  /*ur_r0_sp1_t0, ur_r0_sn1_t0,*/
-  /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
-  /*us_rp1_s0_t0, us_rn1_s0_t0;*/
-
-  /** Cartesian local basis: */
-  /*A2DVec<N, Vec<T, 3>>
-      e3_r0s0, e3_r0s1, e3_r1s0, e3_r1s1,
-      e1_r0s0t0, e1_r0s0t1, e1_r0s1t0, e1_r0s1t1, e1_r1s0t0, e1_r1s0t1, e1_r1s1t0, e1_r1s1t1,
-      e2_r0s0t0, e2_r0s0t1, e2_r0s1t0, e2_r0s1t1, e2_r1s0t0, e2_r1s0t1, e2_r1s1t0, e2_r1s1t1;*/
-
-  /** Contravariant basis: */
-  /*A2DVec<N, Vec<T, 3>>
-      Gr_r0s0t0, Gr_r0s0t1, Gr_r0s1t0, Gr_r0s1t1, Gr_r1s0t0, Gr_r1s0t1, Gr_r1s1t0, Gr_r1s1t1,
-      Gs_r0s0t0, Gs_r0s0t1, Gs_r0s1t0, Gs_r0s1t1, Gs_r1s0t0, Gs_r1s0t1, Gs_r1s1t0, Gs_r1s1t1,
-      Gt_r0s0t0, Gt_r0s0t1, Gt_r0s1t0, Gt_r0s1t1, Gt_r1s0t0, Gt_r1s0t1, Gt_r1s1t0, Gt_r1s1t1;*/
+  A2DVec<N, Vec<T, 3>>
+      ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA;
 
   /** Coefficients for the tying scheme. */
   A2DScalar<N, T>
@@ -1668,11 +1665,22 @@ class ShellElementMITC4 {
    * strain conditions along the edges.*/
   A2DScalar<N, T>
       e_rt_rAs0tA, e_rt_rAs1tA, e_st_r0sAtA, e_st_r1sAtA;
-  /** Covariant in-plane strain components evaluated at the various quadrature points*/
-  /*A2DScalar<N, T>
-      e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
-      e_rs_r0s0t0, e_rs_r0s0t1, e_rs_r0s1t0, e_rs_r0s1t1, e_rs_r1s0t0, e_rs_r1s0t1, e_rs_r1s1t0, e_rs_r1s1t1,
-      e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;*/
+
+  /** Energy contribution from the various quadrature points */
+  A2DScalar<N, T>
+      energy_r0s0t0,
+      energy_r0s0t1,
+      energy_r0s1t0,
+      energy_r0s1t1,
+      energy_r1s0t0,
+      energy_r1s0t1,
+      energy_r1s1t0,
+      energy_r1s1t1;
+
+  /** Strain energy summation objects */
+  A2DScalar<N, T> sum_12, sum_123, sum_1234, sum_12345, sum_123456, sum_1234567;
+  /** Strain energy object */
+  A2DScalar<N, T> strain_energy;
 
  private:
   /** quadrature point values */
@@ -1890,6 +1898,7 @@ int main() {
       n3{d3, db3, r3, rb3},
       n4{d4, db4, r4, rb4};
   ShellElementMITC4<24, double> x(n1, n2, n3, n4);
+//  x.generate_stiffness_matrix();
 
 //  x.test;
 //  x.Ni_rj_sk(0, 0, 0);

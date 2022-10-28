@@ -1343,35 +1343,35 @@ class ShellElementMITC4 {
         e_ij_expression;
   };
 
-  /**
-   * @brief Computes the local strains from the ...
-   *
-   * @param: TODO
-   * */
   class local_strains_expr {
    public:
+    /**
+     * @brief Computes the local strains from the contravariant basis vectors, cartesian basis vectors, and covariant
+     * strains.
+     *
+     * @param: TODO
+     * */
     local_strains_expr(A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt,
                        A2DVec<N, Vec<T, 3>>& e1, A2DVec<N, Vec<T, 3>>& e2, A2DVec<N, Vec<T, 3>>& e3,
                        A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
                        A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                        A2DScalar<N, T>& e_11, A2DScalar<N, T>& e_22, A2DScalar<N, T>& e_12,
-                       A2DScalar<N, T>& e_13, A2DScalar<N, T>& e_23) {
-      Gr_e1_expression = Vec3Dot(Gr, e1, Gr_e1);
-      Gr_e2_expression = Vec3Dot(Gr, e2, Gr_e2);
-      Gr_e3_expression = Vec3Dot(Gr, e3, Gr_e3);
-      Gs_e1_expression = Vec3Dot(Gs, e1, Gs_e1);
-      Gs_e2_expression = Vec3Dot(Gs, e2, Gs_e2);
-      Gs_e3_expression = Vec3Dot(Gs, e3, Gs_e3);
-      Gt_e1_expression = Vec3Dot(Gt, e1, Gt_e1);
-      Gt_e2_expression = Vec3Dot(Gt, e2, Gt_e2);
-      Gt_e3_expression = Vec3Dot(Gt, e3, Gt_e3);
+                       A2DScalar<N, T>& e_13, A2DScalar<N, T>& e_23)
+        : Gr_e1_expression(Gr, e1, Gr_e1),
+          Gr_e2_expression(Gr, e2, Gr_e2),
+          Gr_e3_expression(Gr, e3, Gr_e3),
+          Gs_e1_expression(Gs, e1, Gs_e1),
+          Gs_e2_expression(Gs, e2, Gs_e2),
+          Gs_e3_expression(Gs, e3, Gs_e3),
+          Gt_e1_expression(Gt, e1, Gt_e1),
+          Gt_e2_expression(Gt, e2, Gt_e2),
+          Gt_e3_expression(Gt, e3, Gt_e3),
 
-      e_11_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e1, Gs_e1, Gt_e1, e_rr, e_ss, e_rs, e_rt, e_st, e_11);
-      e_22_expression = local_strain_expr(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22);
-      e_12_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12);
-      e_13_expression = local_strain_expr(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13);
-      e_23_expression = local_strain_expr(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23);
-    };
+          e_11_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e1, Gs_e1, Gt_e1, e_rr, e_ss, e_rs, e_rt, e_st, e_11),
+          e_22_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22),
+          e_12_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12),
+          e_13_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13),
+          e_23_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23) {};
 
     void reverse() {
       e_23_expression.reverse();
@@ -1429,6 +1429,7 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    /* None necessary */
 
     /* A2D Objects: */
     A2DScalar<N, T>

@@ -950,33 +950,37 @@ class ShellElementMITC4 {
     ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_alpha_t_expression;
   };
 
-  /**
-   * @brief Constructs the contravariant basis vectors (g<sup>r</sup>, g<sup>s</sup>, and g<sup>t</sup>) from the
-   * covariant basis vectors (g<sub>r</sub>, g<sub>s</sub>, and g<sub>t</sub>).
-   *
-   * @note The covariant basis vectors must be evaluated at the desired point of interest.
-   *
-   * @param gr: the g<sub>r</sub> covariant basis vector
-   * @param gs: the g<sub>s</sub> covariant basis vector
-   * @param gt: the g<sub>t</sub> covariant basis vector
-   * @param Gr: the g<sup>r</sup> contravariant basis vector (output)
-   * @param Gs: the g<sup>s</sup> contravariant basis vector (output)
-   * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
-   * */
   class contravariant_basis_expr {
    public:
+    /**
+     * @brief Constructs the contravariant basis vectors (g<sup>r</sup>, g<sup>s</sup>, and g<sup>t</sup>) from the
+     * covariant basis vectors (g<sub>r</sub>, g<sub>s</sub>, and g<sub>t</sub>).
+     *
+     * @note The covariant basis vectors must be evaluated at the desired point of interest.
+     *
+     * @param gr: the g<sub>r</sub> covariant basis vector
+     * @param gs: the g<sub>s</sub> covariant basis vector
+     * @param gt: the g<sub>t</sub> covariant basis vector
+     * @param Gr: the g<sup>r</sup> contravariant basis vector (output)
+     * @param Gs: the g<sup>s</sup> contravariant basis vector (output)
+     * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
+     * */
     contravariant_basis_expr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
-                             A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt) {
-      gs_cross_gt_expression = Vec3Cross(gs, gt, gs_cross_gt);
-      gt_cross_gr_expression = Vec3Cross(gt, gr, gt_cross_gr);
-      gr_cross_gs_expression = Vec3Cross(gr, gs, gr_cross_gs);
+                             A2DVec<N, Vec<T, 3>>& Gr, A2DVec<N, Vec<T, 3>>& Gs, A2DVec<N, Vec<T, 3>>& Gt)
+        : /* Initializations: */
+        gs_cross_gt(gs_cross_gt_v, gs_cross_gt_bv),
+        gt_cross_gr(gt_cross_gr_v, gt_cross_gr_bv),
+        gr_cross_gs(gr_cross_gs_v, gr_cross_gs_bv),
+        /* Operations: */
+        gs_cross_gt_expression(gs, gt, gs_cross_gt),
+        gt_cross_gr_expression(gt, gr, gt_cross_gr),
+        gr_cross_gs_expression(gr, gs, gr_cross_gs),
 
-      gr_dot_gs_cross_gt_expression = Vec3Dot(gr, gs_cross_gt, gr_dot_gs_cross_gt);
+        gr_dot_gs_cross_gt_expression(gr, gs_cross_gt, gr_dot_gs_cross_gt),
 
-      Gr_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gs_cross_gt, Gr);
-      Gs_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gt_cross_gr, Gs);
-      Gt_expression = Vec3ScaleDiv(gr_dot_gs_cross_gt, gr_cross_gs, Gt);
-    };
+        Gr_expression(gr_dot_gs_cross_gt, gs_cross_gt, Gr),
+        Gs_expression(gr_dot_gs_cross_gt, gt_cross_gr, Gs),
+        Gt_expression(gr_dot_gs_cross_gt, gr_cross_gs, Gt) {};
 
     void reverse() {
       Gt_expression.reverse();
@@ -1016,6 +1020,10 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    Vec<T, 3>
+        gs_cross_gt_v, gs_cross_gt_bv,
+        gt_cross_gr_v, gt_cross_gr_bv,
+        gr_cross_gs_v, gr_cross_gs_bv;
 
     /* A2D Objects: */
     A2DScalar<N, T>

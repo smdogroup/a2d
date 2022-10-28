@@ -921,6 +921,80 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
+  // TODO: document
+  class tying_shear_expr {
+    tying_shear_expr(const int alpha, /* values are 0 (corresponding to r) or 1 (corresponding to s)*/
+                     const int n_alpha_val_ind, /* values are 0 (corresponding to -1) or 1 (corresponding to 1)*/
+                     const ShellElementMITC4<N, T>& element,
+                     A2DScalar<N, T>& e_alpha_t) {
+      int r_ind = (4 * n_alpha_val_ind * alpha) + (2 * (1 - alpha));
+      int s_ind = (2 * alpha) + (4 * n_alpha_val_ind * (1 - alpha));
+      int n_alpha_var_ind = 3 * n_alpha_val_ind;
+      /*if (alpha == 0) {
+        r_ind = 2;
+        s_ind = 4 * n_alpha_val_ind;
+      } else {
+        s_ind = 2;
+        r_ind = 4 * n_alpha_val_ind;
+      }*/
+
+      g_alpha_expression = g_alpha_expr(alpha, n_alpha_var_ind, 0, element, g_alpha);
+      gt_expression = g_t_expr(r_ind, s_ind, element, gt);
+      u_alpha_expression = u_alpha_expr(alpha, n_alpha_var_ind, 0, element, u_alpha);
+      ut_expression = u_t_expr(r_ind, s_ind, element, ut);
+      g_alpha_ut_expression = Vec3Dot(g_alpha, ut, g_alpha_ut);
+      gt_u_alpha_expression = Vec3Dot(gt, u_alpha, gt_u_alpha);
+      e_alpha_t_expression = ScalarAxpay(0.5, g_alpha_ut, gt_u_alpha, e_alpha_t);
+    };
+
+    void reverse() {
+      e_alpha_t_expression.reverse();
+      gt_u_alpha_expression.reverse();
+      g_alpha_ut_expression.reverse();
+      ut_expression.reverse();
+      u_alpha_expression.reverse();
+      gt_expression.reverse();
+      g_alpha_expression.reverse();
+    };
+
+    void hforward() {
+      g_alpha_expression.hforward();
+      gt_expression.hforward();
+      u_alpha_expression.hforward();
+      ut_expression.hforward();
+      g_alpha_ut_expression.hforward();
+      gt_u_alpha_expression.hforward();
+      e_alpha_t_expression.hforward();
+    };
+
+    void hreverse() {
+      e_alpha_t_expression.reverse();
+      gt_u_alpha_expression.reverse();
+      g_alpha_ut_expression.reverse();
+      ut_expression.reverse();
+      u_alpha_expression.reverse();
+      gt_expression.reverse();
+      g_alpha_expression.reverse();
+    };
+
+   private:
+    A2DScalar<N, T>
+        g_alpha_ut, gt_u_alpha;
+    A2DVec<N, Vec<T, 3>>
+        g_alpha, gt,
+        u_alpha, ut;
+
+    /* Expressions: */
+
+    g_alpha_expr g_alpha_expression;
+    g_t_expr gt_expression;
+    u_alpha_expr u_alpha_expression;
+    u_t_expr ut_expression;
+    A2DVec3DotA2DVecExpr<N, T> g_alpha_ut_expression;
+    A2DVec3DotA2DVecExpr<N, T> gt_u_alpha_expression;
+    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_alpha_t_expression;
+  };
+
   /**
    * @brief Constructs the contravariant basis vectors (g<sup>r</sup>, g<sup>s</sup>, and g<sup>t</sup>) from the
    * covariant basis vectors (g<sub>r</sub>, g<sub>s</sub>, and g<sub>t</sub>).
@@ -1524,7 +1598,7 @@ class ShellElementMITC4 {
     /** gt vector evaluated at the various quadrature points */
     gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA,
     /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,
+    /*gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,*/
     /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
     gr_r0_sp1_t0, gr_r0_sn1_t0,
     /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
@@ -1538,7 +1612,7 @@ class ShellElementMITC4 {
     /** derivatives of u with respect to t evaluated at the various quadrature points */
     ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA,
     /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,
+    /*ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,*/
     /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
     ur_r0_sp1_t0, ur_r0_sn1_t0,
     /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
@@ -1573,44 +1647,14 @@ class ShellElementMITC4 {
 
 
     // code for tying points
-    // TODO: remove non-dependencies *********
-    // TODO: encapsulate these in helper classes
     /* e_rt_A calculations: */
-    g_alpha_expr gr_r0_sp1_t0_expression(0, 3, 0, this, gr_r0_sp1_t0);
-    g_t_expr gt_r0_sp1_t0_expression(2, 4, this, gt_r0_sp1_t0);
-    u_alpha_expr ur_r0_sp1_t0_expression(0, 3, 0, this, ur_r0_sp1_t0);
-    u_t_expr ut_r0_sp1_t0_expression(2, 4, this, ut_r0_sp1_t0);
-    A2DScalar<N, T> gr_ut_A, gt_ur_A;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr gr_ut_A_expression = Vec3Dot(gr_r0_sp1_t0, ut_r0_sp1_t0, gr_ut_A);
-    A2DVec3DotA2DVecExpr gt_ur_A_expression = Vec3Dot(gt_r0_sp1_t0, ur_r0_sp1_t0, gt_ur_A);
-    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_A_expression = ScalarAxpay(0.5, gr_ut_A, gt_ur_A, e_rt_A);
+    tying_shear_expr e_rt_A_expression(0, 1, this, e_rt_A);
     /* e_rt_B calculations: */
-    g_alpha_expr gr_r0_sn1_t0_expression(0, 0, 0, this, gr_r0_sn1_t0);
-    g_t_expr gt_r0_sn1_t0_expression(2, 0, this, gt_r0_sn1_t0);
-    u_alpha_expr ur_r0_sn1_t0_expression(0, 0, 0, this, ur_r0_sn1_t0);
-    u_t_expr ut_r0_sn1_t0_expression(2, 0, this, ut_r0_sn1_t0);
-    A2DScalar<N, T> gr_ut_B, gt_ur_B;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr gr_ut_B_expression = Vec3Dot(gr_r0_sn1_t0, ut_r0_sn1_t0, gr_ut_B);
-    A2DVec3DotA2DVecExpr gt_ur_B_expression = Vec3Dot(gt_r0_sn1_t0, ur_r0_sn1_t0, gt_ur_B);
-    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_rt_B_expression = ScalarAxpay(0.5, gr_ut_B, gt_ur_B, e_rt_B);
+    tying_shear_expr e_rt_B_expression(0, 0, this, e_rt_B);
     /* e_st_C calculations: */
-    g_alpha_expr gs_rp1_s0_t0_expression(1, 3, 0, this, gs_rp1_s0_t0);
-    g_t_expr gt_rp1_s0_t0_expression(4, 2, this, gt_rp1_s0_t0);
-    u_alpha_expr us_rp1_s0_t0_expression(1, 3, 0, this, us_rp1_s0_t0);
-    u_t_expr ut_rp1_s0_t0_expression(4, 2, this, ut_rp1_s0_t0);
-    A2DScalar<N, T> gs_ut_C, gt_us_C;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr gs_ut_C_expression = Vec3Dot(gs_rp1_s0_t0, ut_rp1_s0_t0, gs_ut_C);
-    A2DVec3DotA2DVecExpr gt_us_C_expression = Vec3Dot(gt_rp1_s0_t0, us_rp1_s0_t0, gt_us_C);
-    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_st_C_expression = ScalarAxpay(0.5, gs_ut_C, gt_us_C, e_st_C);
+    tying_shear_expr e_st_C_expression(1, 1, this, e_st_C);
     /* e_st_D calculations: */
-    g_alpha_expr gs_rn1_s0_t0_expression(1, 0, 0, this, gs_rn1_s0_t0);
-    g_t_expr gt_rn1_s0_t0_expression(0, 2, this, gt_rn1_s0_t0);
-    u_alpha_expr us_rn1_s0_t0_expression(1, 0, 0, this, us_rn1_s0_t0);
-    u_t_expr ut_rn1_s0_t0_expression(0, 2, this, ut_rn1_s0_t0);
-    A2DScalar<N, T> gs_ut_D, gt_us_D;  // TODO: move declaration
-    A2DVec3DotA2DVecExpr gs_ut_D_expression = Vec3Dot(gs_rn1_s0_t0, ut_rn1_s0_t0, gs_ut_D);
-    A2DVec3DotA2DVecExpr gt_us_D_expression = Vec3Dot(gt_rn1_s0_t0, us_rn1_s0_t0, gt_us_D);
-    ScalarA2DScalarA2DScalarAxpayExpr<N, T> e_st_D_expression = ScalarAxpay(0.5, gs_ut_D, gt_us_D, e_st_D);
+    tying_shear_expr e_st_D_expression(1, 0, this, e_st_D);
 
 
     /* Write code for e_rt_r... and e_st_r... values */

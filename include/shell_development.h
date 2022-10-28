@@ -8,68 +8,9 @@
 #include "a2dtypes.h"
 #include "a2dvecops3d.h"
 #include "a2dmatops3d.h"
+#include "shell_dev_ops.h"
 
 namespace A2D {
-
-// TODO: OPERATOR CLASSES:
-
-template <int N, typename T>  // TODO: make the ScalarMult operation (z = a * b)
-class A2DScalarScalarMultExpr {
-
-};
-
-template <int N, typename T>
-class A2DScalarA2DScalarMultExpr {
-
-};
-
-template <int N, typename T>  // TODO: make the Vec3ScaleDiv operation (v = (1/a) * x)
-class A2DVec3A2DScaleDivExpr {
-
-};
-
-template <int N, typename T>  // TODO: make the ScalarAxpay operation (z = a * (x + y))
-class ScalarA2DScalarA2DScalarAxpayExpr {
-
-};
-
-template <int N, typename T>  // TODO: make the ScalarAxpby operation (z = a * x + b * y)
-class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
-
-};
-
-template <int N, typename T>
-class A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr {
-
-};
-
-template <int N, typename T>  // TODO: make the MatInnerProduct operation (a = x.A.y)
-class MatA2DVecA2DVecInnerProductExpr {
-
-};
-
-/*template <int N, typename T, int D>  // TODO: make the VecScalarAssembly operation (v = {v1, v2, v3, ..., vD})
-class A2DScalarVecAssemblyExpr {
-  A2DScalarVecAssemblyExpr(A2DVec<N, Vec<T, D>>& vObj,
-                           A2DScalar<N, T> x[D]){
-
-    for (int i = 0; i < D; ++i) {
-      v.value()(i) = x[i].value;
-    }
-  };
-};
-template <int N, typename T, int D>
-A2DScalarVecAssemblyExpr<N, T, D> VecScalarAssembly(A2DVec<N, Vec<T, D>>& v, A2DScalar<N, T> x[D]) {
-  return A2DScalarVecAssemblyExpr<N, T, D>(v, x);
-};*/
-template <int N, typename T>  // TODO: make the Vec5ScalarAssembly operation (v = {x0, x1, x2, x3, x4})
-class A2DScalar5VecAssemblyExpr {
- public:
-
-};
-
-
-// END TODO: OPERATOR CLASSES
 
 template <typename T>
 class LinearIsotropicMaterial {
@@ -1582,7 +1523,7 @@ class ShellElementMITC4 {
     cartesian_local_basis_expr local_basis_expression;
     local_strains_expr local_strains_expression;
     A2DScalar5VecAssemblyExpr<N, T> local_strains_vec_expression;
-    MatA2DVecA2DVecInnerProductExpr<N, T> strain_energy_expression;
+    MatA2DVecA2DVecInnerProductExpr<N, T, 5, 5> strain_energy_expression;
   };
 
   void generate_energy() {
@@ -1590,60 +1531,7 @@ class ShellElementMITC4 {
      * matrix
      * */
 
-    A2DVec<N, Vec<T, 3>>
-    /** gr vector evaluated at the various quadrature points */
-    gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
-    /** gs vector evaluated at the various quadrature points */
-    gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
-    /** gt vector evaluated at the various quadrature points */
-    gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA,
-    /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    /*gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,*/
-    /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
-    gr_r0_sp1_t0, gr_r0_sn1_t0,
-    /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
-    gs_rp1_s0_t0, gs_rn1_s0_t0;
 
-    A2DVec<N, Vec<T, 3>>
-    /** derivatives of u with respect to r evaluated at the various quadrature points */
-    ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
-    /** derivatives of u with respect to s evaluated at the various quadrature points */
-    us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
-    /** derivatives of u with respect to t evaluated at the various quadrature points */
-    ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA,
-    /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
-    /*ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,*/
-    /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
-    ur_r0_sp1_t0, ur_r0_sn1_t0,
-    /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
-    us_rp1_s0_t0, us_rn1_s0_t0;
-
-    /** Cartesian local basis: */
-    /*A2DVec<N, Vec<T, 3>>
-        e3_r0s0, e3_r0s1, e3_r1s0, e3_r1s1,
-        e1_r0s0t0, e1_r0s0t1, e1_r0s1t0, e1_r0s1t1, e1_r1s0t0, e1_r1s0t1, e1_r1s1t0, e1_r1s1t1,
-        e2_r0s0t0, e2_r0s0t1, e2_r0s1t0, e2_r0s1t1, e2_r1s0t0, e2_r1s0t1, e2_r1s1t0, e2_r1s1t1;*/
-
-    /** Contravariant basis: */
-    /*A2DVec<N, Vec<T, 3>>
-        Gr_r0s0t0, Gr_r0s0t1, Gr_r0s1t0, Gr_r0s1t1, Gr_r1s0t0, Gr_r1s0t1, Gr_r1s1t0, Gr_r1s1t1,
-        Gs_r0s0t0, Gs_r0s0t1, Gs_r0s1t0, Gs_r0s1t1, Gs_r1s0t0, Gs_r1s0t1, Gs_r1s1t0, Gs_r1s1t1,
-        Gt_r0s0t0, Gt_r0s0t1, Gt_r0s1t0, Gt_r0s1t1, Gt_r1s0t0, Gt_r1s0t1, Gt_r1s1t0, Gt_r1s1t1;*/
-
-    /** Coefficients for the tying scheme. */
-    A2DScalar<N, T>
-        e_rt_A, e_rt_B, e_st_C, e_st_D;
-    /** Covariant transverse shear strains evaluated (using the tying points) at the various quadrature points. NOTE: the
-     * values are the same for multiple quadrature points because we're assuming constant covariant transverse shear
-     * strain conditions along the edges.*/
-    A2DScalar<N, T>
-        e_rt_rAs0tA, e_rt_rAs1tA, e_st_r0sAtA, e_st_r1sAtA;
-    /** Covariant in-plane strain components evaluated at the various quadrature points*/
-    /*A2DScalar<N, T>
-        e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
-        e_rs_r0s0t0, e_rs_r0s0t1, e_rs_r0s1t0, e_rs_r0s1t1, e_rs_r1s0t0, e_rs_r1s0t1, e_rs_r1s1t0, e_rs_r1s1t1,
-        e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;*/
-    /*TODO: move all these to private members, and just reset their values whenever this method is called.*/
 
 
     // code for tying points
@@ -1732,9 +1620,61 @@ class ShellElementMITC4 {
   const LinearIsotropicMaterial<T> material{5.2, 0.5};  /**< I'm using a linear isotropic material assumption here */
 
  private:
-  // TODO
+  A2DVec<N, Vec<T, 3>>
+  /** gr vector evaluated at the various quadrature points */
+  gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1, /*gr_rAs0t0, gr_rAs0t1, gr_rAs1t0, gr_rAs1t1,*/
+  /** gs vector evaluated at the various quadrature points */
+  gs_r0sAt0, gs_r0sAt1, /*gs_r0sAt0, gs_r0sAt1,*/ gs_r1sAt0, gs_r1sAt1, /*gs_r1sAt0, gs_r1sAt1,*/
+  /** gt vector evaluated at the various quadrature points */
+  gt_r0s0tA, gt_r0s1tA, gt_r1s0tA, gt_r1s1tA;
+  /** gt vector evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
+  /*gt_r0_sp1_t0, gt_r0_sn1_t0, gt_rp1_s0_t0, gt_rn1_s0_t0,*/
+  /** gr vector evaluated at the tying points (s={1, -1} with t=0)*/
+  /*gr_r0_sp1_t0, gr_r0_sn1_t0,*/
+  /** gs vector evaluated at the tying points (r={1, -1} with t=0)*/
+  /*gs_rp1_s0_t0, gs_rn1_s0_t0;*/
 
+  A2DVec<N, Vec<T, 3>>
+  /** derivatives of u with respect to r evaluated at the various quadrature points */
+  ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1, /*ur_rAs0t0, ur_rAs0t1, ur_rAs1t0, ur_rAs1t1,*/
+  /** derivatives of u with respect to s evaluated at the various quadrature points */
+  us_r0sAt0, us_r0sAt1, /*us_r0sAt0, us_r0sAt1,*/ us_r1sAt0, us_r1sAt1, /*us_r1sAt0, us_r1sAt1,*/
+  /** derivatives of u with respect to t evaluated at the various quadrature points */
+  ut_r0s0tA, ut_r0s1tA, ut_r1s0tA, ut_r1s1tA;
+  /** derivative of u with respect to t evaluated at the tying points (s={1, -1} with r=t=0, r={1, -1} with s=t=0)*/
+  /*ut_r0_sp1_t0, ut_r0_sn1_t0, ut_rp1_s0_t0, ut_rn1_s0_t0,*/
+  /** derivative of u with respect to r evaluated at the tying points (s={1,-1} with t=0)*/
+  /*ur_r0_sp1_t0, ur_r0_sn1_t0,*/
+  /** derivative of u with respect to s evaluated at the tying points (r={1,-1} with t=0)*/
+  /*us_rp1_s0_t0, us_rn1_s0_t0;*/
 
+  /** Cartesian local basis: */
+  /*A2DVec<N, Vec<T, 3>>
+      e3_r0s0, e3_r0s1, e3_r1s0, e3_r1s1,
+      e1_r0s0t0, e1_r0s0t1, e1_r0s1t0, e1_r0s1t1, e1_r1s0t0, e1_r1s0t1, e1_r1s1t0, e1_r1s1t1,
+      e2_r0s0t0, e2_r0s0t1, e2_r0s1t0, e2_r0s1t1, e2_r1s0t0, e2_r1s0t1, e2_r1s1t0, e2_r1s1t1;*/
+
+  /** Contravariant basis: */
+  /*A2DVec<N, Vec<T, 3>>
+      Gr_r0s0t0, Gr_r0s0t1, Gr_r0s1t0, Gr_r0s1t1, Gr_r1s0t0, Gr_r1s0t1, Gr_r1s1t0, Gr_r1s1t1,
+      Gs_r0s0t0, Gs_r0s0t1, Gs_r0s1t0, Gs_r0s1t1, Gs_r1s0t0, Gs_r1s0t1, Gs_r1s1t0, Gs_r1s1t1,
+      Gt_r0s0t0, Gt_r0s0t1, Gt_r0s1t0, Gt_r0s1t1, Gt_r1s0t0, Gt_r1s0t1, Gt_r1s1t0, Gt_r1s1t1;*/
+
+  /** Coefficients for the tying scheme. */
+  A2DScalar<N, T>
+      e_rt_A, e_rt_B, e_st_C, e_st_D;
+  /** Covariant transverse shear strains evaluated (using the tying points) at the various quadrature points. NOTE: the
+   * values are the same for multiple quadrature points because we're assuming constant covariant transverse shear
+   * strain conditions along the edges.*/
+  A2DScalar<N, T>
+      e_rt_rAs0tA, e_rt_rAs1tA, e_st_r0sAtA, e_st_r1sAtA;
+  /** Covariant in-plane strain components evaluated at the various quadrature points*/
+  /*A2DScalar<N, T>
+      e_rr_r0s0t0, e_rr_r0s0t1, e_rr_r0s1t0, e_rr_r0s1t1, e_rr_r1s0t0, e_rr_r1s0t1, e_rr_r1s1t0, e_rr_r1s1t1,
+      e_rs_r0s0t0, e_rs_r0s0t1, e_rs_r0s1t0, e_rs_r0s1t1, e_rs_r1s0t0, e_rs_r1s0t1, e_rs_r1s1t0, e_rs_r1s1t1,
+      e_ss_r0s0t0, e_ss_r0s0t1, e_ss_r0s1t0, e_ss_r0s1t1, e_ss_r1s0t0, e_ss_r1s0t1, e_ss_r1s1t0, e_ss_r1s1t1;*/
+
+ private:
   /** quadrature point values */
   constexpr static const T quad_0{-0.5773502691896257645091488}, quad_1{0.5773502691896257645091488};
 

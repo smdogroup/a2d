@@ -1097,19 +1097,6 @@ class ShellElementMITC4 {
         e1_expression;
   };
 
-  /**
-   * @brief Calculates the in-plane stain components (e<sub>rr</sub>, e<sub>ss</sub>, and e<sub>rs</sub>) based on the
-   * values of the covariant basis vectors g<sub>r</sub> and g<sub>s</sub>, and the displacement derivative vectors
-   * du/dr and du/ds.
-   *
-   * @note The covariant basis vectors, g<sub>r</sub> and g<sub>s</sub>, and displacement derivative vectors, du/dr and
-   * du/ds, must be evaluated at the desired point of interest (i.e. a quadrature point).
-   *
-   * @param gr: the g<sub>r</sub> covariant basis vector
-   * @param gs: the g<sub>s</sub> covariant basis vector
-   * @param ur: the derivative of the displacement vector with respect to r (i.e. du/dr)
-   * @param us: the derivative of the displacement vector with respect to s (i.e. du/ds)
-   * */
   class in_plane_strain_components_expr {
    public:
     /**
@@ -1131,13 +1118,12 @@ class ShellElementMITC4 {
                                     A2DVec<N, Vec<T, 3>>& us,
                                     A2DVec<N, Vec<T, 3>>& e_rr,
                                     A2DVec<N, Vec<T, 3>>& e_ss,
-                                    A2DVec<N, Vec<T, 3>>& e_rs) {
-      e_rr_expression = Vec3Dot(gr, ur, e_rr);
-      e_ss_expression = Vec3Dot(gs, us, e_ss);
-      gr_us_expression = Vec3Dot(gr, us, gr_us);
-      gs_ur_expression = Vec3Dot(gs, ur, gs_ur);
-      e_rs_expression = ScalarAxpay(0.5, gr_us, gs_ur, e_rs);
-    };
+                                    A2DVec<N, Vec<T, 3>>& e_rs)
+        : e_rr_expression(gr, ur, e_rr),
+          e_ss_expression(gs, us, e_ss),
+          gr_us_expression(gr, us, gr_us),
+          gs_ur_expression(gs, ur, gs_ur),
+          e_rs_expression(0.5, gr_us, gs_ur, e_rs) {};
 
     void reverse() {
       e_rs_expression.reverse();
@@ -1165,6 +1151,7 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    /* None necessary */
 
     /* A2D Objects: */
     A2DScalar<N, T>

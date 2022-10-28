@@ -561,57 +561,55 @@ class ShellElementMITC4 {
         sum_1234_expression;
   };
 
-  /**
-   * @brief Computes the g<sub>t</sub> vector for the given situation and element.
-   *
-   *
-   * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
-   *                    for r=1)
-   * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
-   *                    for s=1)
-   * @param element:    the MITC4 element object for which the g<sub>t</sub> vector is being computed.
-   * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
-   * */
   class g_t_expr {
    public:
+    /**
+     * @brief Computes the g<sub>t</sub> vector for the given situation and element.
+     *
+     *
+     * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
+     *                    for r=1)
+     * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
+     *                    for s=1)
+     * @param element:    the MITC4 element object for which the g<sub>t</sub> vector is being computed.
+     * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
+     * */
     g_t_expr(const int r_ind,
              const int s_ind,
              const ShellElementMITC4<N, T>& element,
-             A2DVec<N, Vec<T, 3>>& result) {
-      /* Calculations for first node contribution */
-      node1_thickness_scale_expression = ScalarMult(element.node1.thickness,
-                                                    Ni_rj_sk(0, r_ind, s_ind) * 0.5,
-                                                    node1_scaled_thickness);
-      node1_scale_expression = Vec3Scale(element.node1.shell_director,
-                                         node1_scaled_thickness,
-                                         node1_contribution);
-      /* Calculations for second node contribution */
-      node2_thickness_scale_expression = ScalarMult(element.node2.thickness,
-                                                    Ni_rj_sk(1, r_ind, s_ind) * 0.5,
-                                                    node2_scaled_thickness);
-      node2_scale_expression = Vec3Scale(element.node2.shell_director,
-                                         node2_scaled_thickness,
-                                         node2_contribution);
-      /* Calculations for third node contribution */
-      node3_thickness_scale_expression = ScalarMult(element.node3.thickness,
-                                                    Ni_rj_sk(2, r_ind, s_ind) * 0.5,
-                                                    node3_scaled_thickness);
-      node3_scale_expression = Vec3Scale(element.node3.shell_director,
-                                         node3_scaled_thickness,
-                                         node3_contribution);
-      /* Calculations for fourth node contribution */
-      node4_thickness_scale_expression = ScalarMult(element.node4.thickness,
-                                                    Ni_rj_sk(3, r_ind, s_ind) * 0.5,
-                                                    node4_scaled_thickness);
-      node4_scale_expression = Vec3Scale(element.node4.shell_director,
-                                         node4_scaled_thickness,
-                                         node4_contribution);
-
-      /* Sum together the components. */
-      sum_12_expression = Vec3Axpy(1.0, node1_contribution, node2_contribution, n1c_n2c);
-      sum_123_expression = Vec3Axpy(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c);
-      sum_1234_expression = Vec3Axpy(1.0, n1c_n2c_n3c, node4_contribution, result);
-    };
+             A2DVec<N, Vec<T, 3>>& result)
+        : /* Instantiations: */
+        node1_contribution(node1_contribution_v, node1_contribution_bv),
+        node2_contribution(node2_contribution_v, node2_contribution_bv),
+        node3_contribution(node3_contribution_v, node3_contribution_bv),
+        node4_contribution(node4_contribution_v, node4_contribution_bv),
+        n1c_n2c(n1c_n2c_v, n1c_n2c_bv),
+        n1c_n2c_n3c(n1c_n2c_n3c_v, n1c_n2c_n3c_bv),
+        /* Operations: */
+        /* Calculations for first node contribution */
+        node1_thickness_scale_expression(element.node1.thickness,
+                                         Ni_rj_sk(0, r_ind, s_ind) * 0.5,
+                                         node1_scaled_thickness),
+        node1_scale_expression(element.node1.shell_director, node1_scaled_thickness, node1_contribution),
+        /* Calculations for second node contribution */
+        node2_thickness_scale_expression(element.node2.thickness,
+                                         Ni_rj_sk(1, r_ind, s_ind) * 0.5,
+                                         node2_scaled_thickness),
+        node2_scale_expression(element.node2.shell_director, node2_scaled_thickness, node2_contribution),
+        /* Calculations for third node contribution */
+        node3_thickness_scale_expression(element.node3.thickness,
+                                         Ni_rj_sk(2, r_ind, s_ind) * 0.5,
+                                         node3_scaled_thickness),
+        node3_scale_expression(element.node3.shell_director, node3_scaled_thickness, node3_contribution),
+        /* Calculations for fourth node contribution */
+        node4_thickness_scale_expression(element.node4.thickness,
+                                         Ni_rj_sk(3, r_ind, s_ind) * 0.5,
+                                         node4_scaled_thickness),
+        node4_scale_expression(element.node4.shell_director, node4_scaled_thickness, node4_contribution),
+        /* Sum together the components. */
+        sum_12_expression(1.0, node1_contribution, node2_contribution, n1c_n2c),
+        sum_123_expression(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c),
+        sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {};
 
     void reverse() {
       /* Sum component calls: */
@@ -666,6 +664,13 @@ class ShellElementMITC4 {
 
    private:
     /* Instantiating objects: */
+    Vec<T, 3>
+        node1_contribution_v, node1_contribution_bv,
+        node2_contribution_v, node2_contribution_bv,
+        node3_contribution_v, node3_contribution_bv,
+        node4_contribution_v, node4_contribution_bv,
+        n1c_n2c_v, n1c_n2c_bv,
+        n1c_n2c_n3c_v, n1c_n2c_n3c_bv;
 
     /* A2D Objects: */
     A2DScalar<N, T>

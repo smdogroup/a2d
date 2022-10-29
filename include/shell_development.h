@@ -50,16 +50,19 @@ class ShellNodeMITC {
     shell_director.zero();
   }
 
-//  Vec<T, 3>& position;  /**< <u> X </u> <sup> I </sup>: The position vector at the node.*/
-//  A2DScalar<N, T>& thickness;  /**< h <sup> I </sup>: The thickness of the shell at the node. */
-//  Vec<T, 3>& shell_director;  /**< <u> v </u> <sup> I </sup>: The shell director vector at the node. */
-//  A2DVec<N, Vec<T, 3>>& displacement;  /**< <u> u </u> <sup> I </sup>: The displacement vector at the node.*/
-//  A2DVec<N, Vec<T, 3>>& rotation;  /**< <u> &theta </u> <sup> I </sup>: The rotation vector at the node. */
+  ShellNodeMITC(Vec<T, 3>& initial_position,
+                Vec<T, 3>& initial_shell_director,
+                Vec<T, 3>& displacement, Vec<T, 3>& displacement_bvalue,
+                Vec<T, 3>& rotation_vector, Vec<T, 3>& rotation_vector_bvalue)
+      : /**/
+      position(initial_position),
+      thickness(1, 0),
+      shell_director(initial_shell_director),
+      displacement(displacement, displacement_bvalue),
+      rotation(rotation_vector, rotation_vector_bvalue) {};
 
-//  A2DVec<N, Vec<T, 3>>& position;  /**< <u> X </u> <sup> I </sup>: The position vector at the node.*/
   Vec<T, 3> position;  /**< <u> X </u> <sup> I </sup>: The position vector at the node.*/
   A2DScalar<N, T> thickness;  /**< h <sup> I </sup>: The thickness of the shell at the node. */
-//  A2DVec<N, Vec<T, 3>>& shell_director;  /**< <u> v </u> <sup> I </sup>: The shell director vector at the node. */
   Vec<T, 3> shell_director;  /**< <u> v </u> <sup> I </sup>: The shell director vector at the node. */
   A2DVec<N, Vec<T, 3>> displacement;  /**< <u> u </u> <sup> I </sup>: The displacement vector at the node.*/
   A2DVec<N, Vec<T, 3>> rotation;  /**< <u> &theta </u> <sup> I </sup>: The rotation vector at the node. */

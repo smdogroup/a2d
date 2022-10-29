@@ -12,14 +12,46 @@ namespace A2D {
  * */
 template <int N, typename T>  // TODO: make the ScalarMult operation (z = a * b)
 class A2DScalarScalarMultExpr {
-// TODO
  public:
   A2DScalarScalarMultExpr(A2DScalar<N, T>& aObj,
                           const T& b,
-                          A2DScalar<N, T>& zObj) {
-
+                          A2DScalar<N, T>& zObj)
+      : aObj(aObj), b(b), zObj(zObj) {
+    zObj.value = aObj.value * b;
   };
-};  // TODO **********************************************************************
+
+  void reverse() {
+//            input:
+    const T& zb = zObj.bvalue;
+    const T& a = aObj.value;
+//            operations:
+    aObj.bvalue += zb * b;
+  };
+
+  void hforward() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& ap = aObj.pvalue[i];
+//                operations:
+      zObj.pvalue[i] = ap * b;
+    }
+  };
+
+  void hreverse() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& zh = zObj.hvalue[i];
+//                operations:
+      aObj.hvalue[i] += zh * b;
+    }
+  };
+
+  A2DScalar<N, T>& aObj;
+  const T& b;
+  A2DScalar<N, T>& zObj;
+};
 
 template <int N, typename T>
 class A2DScalarA2DScalarMultExpr {
@@ -169,15 +201,40 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
     zObj.value = a * (xObj.value + yObj.value);
   };
 
-  void reverse();
-  void hforward();
-  void hreverse();
+  void reverse() {
+//            input:
+    const T& zb = zObj.bvalue;
+//            operations:
+    xObj.bvalue += zb * a;
+    yObj.bvalue += zb * a;
+  };
+
+  void hforward() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& xppyp = xObj.pvalue[i] + yObj.pvalue[i];
+//                operations:
+      zObj.pvalue[i] = a * xppyp;
+    }
+  };
+
+  void hreverse() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& zh = zObj.hvalue[i];
+//                operations:
+      xObj.hvalue[i] += zh * a;
+      yObj.hvalue[i] += zh * a;
+    }
+  };
 
   const T& a;
   A2DScalar<N, T>& xObj;
   A2DScalar<N, T>& yObj;
   A2DScalar<N, T>& zObj;
-};  // TODO
+};
 
 template <int N, typename T>
 class A2DScalarA2DScalarA2DScalarAxpayExpr {
@@ -253,12 +310,42 @@ class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
     zObj.value = a * xObj.value + b * yObj.value;
   };
 
+  void reverse() {
+//            input:
+    const T& zb = zObj.bvalue;
+//            operations:
+    xObj.bvalue += zb * a;
+    yObj.bvalue += zb * b;
+  };
+
+  void hforward() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& xp = xObj.pvalue[i];
+      const T& yp = yObj.pvalue[i];
+//                operations:
+      zObj.pvalue[i] = a * xp + b * yp;
+    }
+  };
+
+  void hreverse() {
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const T& zh = zObj.hvalue[i];
+//                operations:
+      xObj.hvalue[i] += zh * a;
+      yObj.hvalue[i] += zh * b;
+    }
+  };
+
   const T& a;
   A2DScalar<N, T>& xObj;
   const T& b;
   A2DScalar<N, T>& yObj;
   A2DScalar<N, T>& zObj;
-};  // TODO
+};
 
 template <int N, typename T>
 class A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr {
@@ -487,15 +574,72 @@ class MatA2DVecA2DVecInnerProductExpr {
     aObj.value = MatInnerProductCore(A, x, y);
   };
 
-  void reverse();
-  void hforward();
-  void hreverse();
+  void reverse() {
+//            input:
+    const Vec<T, P>& x = xObj.value();
+    const Vec<T, Q>& y = yObj.value();
+    const T& ab = aObj.bvalue;
+//            output:
+    Vec < T, 3 > &xb = xObj.bvalue();
+    Vec < T, 3 > &yb = yObj.bvalue();
+//            operations:
+    MatVecScaleMultCore(ab, A, y, xb);
+    MatTransVecScaleMultCore(ab, A, x, yb);
+  };
+
+  void hforward() {
+//            input:
+    const Vec<T, P>& x = xObj.value();
+    const Vec<T, Q>& y = yObj.value();
+    Vec < T, P > &Ay{};
+    Vec < T, Q > &xA{};
+    MatVecScaleMultCore(1, A, y, Ay);
+    MatTransVecScaleMultCore(1, A, x, xA);
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const Vec<T, P>& xp = xObj.pvalue(i);
+      const Vec<T, Q>& yp = yObj.pvalue(i);
+//                operations:
+      aObj.pvalue[i] = VecDotCore(xp, Ay) + VecDotCore(xA, yp);
+    }
+  };
+
+  void hreverse() {
+//            input:
+    const Vec<T, P>& x = xObj.value();
+    const Vec<T, Q>& y = yObj.value();
+    const T& ab = aObj.bvalue;
+    Vec<T, P>& Ay{};
+    Vec<T, Q>& xA{};
+    MatVecScaleMultCore(1, A, y, Ay);
+    MatTransVecScaleMultCore(1, A, x, xA);
+//            main loop:
+    for (int i = 0; i < N; i++) {
+//                input:
+      const Vec<T, P>& xp = xObj.pvalue(i);
+      const Vec<T, Q>& yp = yObj.pvalue(i);
+      const T& ah = aObj.hvalue[i];
+//                Interstitial values:
+      Vec<T, P> Ayp{};
+      Vec<T, P> xpA{};
+//                output:
+      Vec<T, P>& xh = xObj.hvalue(i);
+      Vec<T, Q>& yh = yObj.hvalue(i);
+//                operations:
+      MatVecScaleMultCore(1, A, yp, Ayp);
+      VecAXPBYIncrementCore(ah, Ay, ab, Ayp, xh);
+
+      MatTransVecScaleMultCore(1, A, xp, xpA);
+      VecAXPBYIncrementCore(ah, xA, ab, xpA, yh);
+    }
+  };
 
   const Mat<T, P, Q>& A;
   A2DVec<N, Vec<T, P>>& xObj;
   A2DVec<N, Vec<T, Q>>& yObj;
   A2DScalar<N, T>& aObj;
-};  // TODO
+};
 
 template <int N, typename T, int P, int Q>
 class A2DMatA2DVecA2DVecInnerProductExpr {

@@ -121,7 +121,7 @@ class A2DVec3A2DScaleDivExpr {
       : xObj(xObj), aObj(aObj), vObj(vObj) {
     const T a = aObj.value;
     const Vec<T, 3>& x = xObj.value();
-    Vec < T, 3 > &v = vObj.value();
+    Vec<T, 3>& v = vObj.value();
 
     v(0) = x(0) / a;
     v(1) = x(1) / a;
@@ -134,7 +134,7 @@ class A2DVec3A2DScaleDivExpr {
     const Vec<T, 3>& x = xObj.value();
     const T& a = aObj.value;
 //            output:
-    Vec < T, 3 > &xb = xObj.bvalue();
+    Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
     aObj.bvalue += -Vec3DotCore<T, Vec<T, 3>>(vb, x) / (a * a);
     Vec3AXPYCore(1 / a, vb, xb, xb);  // TODO: check if a scale-add in place is faster
@@ -151,7 +151,7 @@ class A2DVec3A2DScaleDivExpr {
       const Vec<T, 3>& xp = xObj.pvalue(i);
       const T& ap = aObj.pvalue[i];
 //                output:
-      Vec < T, 3 > &vp = vObj.pvalue(i);
+      Vec<T, 3>& vp = vObj.pvalue(i);
 //                operations:
       Vec3AXPBYCore(ap * aNegativeInvSquared, x, aInv, xp, vp);
     }
@@ -171,7 +171,7 @@ class A2DVec3A2DScaleDivExpr {
       const Vec<T, 3>& vh = vObj.hvalue(i);
       const T& ap = aObj.pvalue[i];
 //                output:
-      Vec < T, 3 > &xh = xObj.hvalue(i);
+      Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
       aObj.hvalue[i] +=
           (Vec3DotCore<T>(vh, x) * aNegativeInvSquared) +
@@ -580,21 +580,21 @@ class MatA2DVecA2DVecInnerProductExpr {
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
 //            output:
-    Vec < T, 3 > &xb = xObj.bvalue();
-    Vec < T, 3 > &yb = yObj.bvalue();
+    Vec<T, P>& xb = xObj.bvalue();
+    Vec<T, Q>& yb = yObj.bvalue();
 //            operations:
-    MatVecScaleMultCore(ab, A, y, xb);
-    MatTransVecScaleMultCore(ab, A, x, yb);
+    MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
+    MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
   };
 
   void hforward() {
 //            input:
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
-    Vec < T, P > &Ay{};
-    Vec < T, Q > &xA{};
-    MatVecScaleMultCore(1, A, y, Ay);
-    MatTransVecScaleMultCore(1, A, x, xA);
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
+    MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
+    MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
@@ -610,10 +610,10 @@ class MatA2DVecA2DVecInnerProductExpr {
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
-    Vec<T, P>& Ay{};
-    Vec<T, Q>& xA{};
-    MatVecScaleMultCore(1, A, y, Ay);
-    MatTransVecScaleMultCore(1, A, x, xA);
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
+    MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
+    MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
@@ -621,16 +621,16 @@ class MatA2DVecA2DVecInnerProductExpr {
       const Vec<T, Q>& yp = yObj.pvalue(i);
       const T& ah = aObj.hvalue[i];
 //                Interstitial values:
-      Vec<T, P> Ayp{};
-      Vec<T, P> xpA{};
+      Vec<T, P> Ayp;
+      Vec<T, Q> xpA;
 //                output:
       Vec<T, P>& xh = xObj.hvalue(i);
       Vec<T, Q>& yh = yObj.hvalue(i);
 //                operations:
-      MatVecScaleMultCore(1, A, yp, Ayp);
+      MatVecScaleMultCore<T, P, Q>(1, A, yp, Ayp);
       VecAXPBYIncrementCore(ah, Ay, ab, Ayp, xh);
 
-      MatTransVecScaleMultCore(1, A, xp, xpA);
+      MatTransVecScaleMultCore<T, P, Q>(1, A, xp, xpA);
       VecAXPBYIncrementCore(ah, xA, ab, xpA, yh);
     }
   };
@@ -662,13 +662,13 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
 //            output:
-    Vec < T, 3 > &xb = xObj.bvalue();
-    Vec < T, 3 > &yb = yObj.bvalue();
+    Vec<T, P>& xb = xObj.bvalue();
+    Vec<T, Q>& yb = yObj.bvalue();
     Mat<T, P, Q>& Ab = AObj.bvalue();
 //            operations:
-    MatVecScaleMultCore(ab, A, y, xb);
+    MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
     VecOuterProductScaleIncrementCore(ab, x, y, Ab);
-    MatTransVecScaleMultCore(ab, A, x, yb);
+    MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
   };
 
   void hforward() {
@@ -676,10 +676,10 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Mat<T, P, Q>& A = AObj.value();
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
-    Vec < T, P > &Ay{};
-    Vec < T, Q > &xA{};
-    MatVecScaleMultCore(1, A, y, Ay);
-    MatTransVecScaleMultCore(1, A, x, xA);
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
+    MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
+    MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
@@ -697,10 +697,10 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
-    Vec < T, P > &Ay{};
-    Vec < T, Q > &xA{};
-    MatVecScaleMultCore(1, A, y, Ay);
-    MatTransVecScaleMultCore(1, A, x, xA);
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
+    MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
+    MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
@@ -709,20 +709,20 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
       const Vec<T, Q>& yp = yObj.pvalue(i);
       const T& ah = aObj.hvalue[i];
 //                Interstitial values:
-      Vec < T, P > Apy{}, Ayp{}, ApyAyp{};
-      Vec < T, P > xAp{}, xpA{}, xApxpA{};
+      Vec<T, P> Apy, Ayp, ApyAyp;
+      Vec<T, Q> xAp, xpA, xApxpA;
 //                output:
       Mat<T, P, Q>& Ah = AObj.hvalue(i);
-      Vec < T, P > &xh = xObj.hvalue(i);
-      Vec < T, Q > &yh = yObj.hvalue(i);
+      Vec<T, P>& xh = xObj.hvalue(i);
+      Vec<T, Q>& yh = yObj.hvalue(i);
 //                operations:
-      MatVecScaleMultCore(1, Ap, y, Apy);
-      MatVecScaleMultCore(1, A, yp, Ayp);
+      MatVecScaleMultCore<T, P, Q>(1, Ap, y, Apy);
+      MatVecScaleMultCore<T, P, Q>(1, A, yp, Ayp);
       VecAXPYCore(1, Apy, Ayp, ApyAyp);
       VecAXPBYIncrementCore(ah, Ay, ab, ApyAyp, xh);
 
-      MatTransVecScaleMultCore(1, Ap, x, xAp);
-      MatTransVecScaleMultCore(1, A, xp, xpA);
+      MatTransVecScaleMultCore<T, P, Q>(1, Ap, x, xAp);
+      MatTransVecScaleMultCore<T, P, Q>(1, A, xp, xpA);
       VecAXPYCore(1, xAp, xpA, xApxpA);
       VecAXPBYIncrementCore(ah, xA, ab, xApxpA, yh);
 
@@ -751,7 +751,7 @@ class A2DScalar5VecAssemblyExpr {
                             A2DScalar<N, T>& x3Obj,
                             A2DScalar<N, T>& x4Obj)
       : vObj(vObj), x0Obj(x0Obj), x1Obj(x1Obj), x2Obj(x2Obj), x3Obj(x3Obj), x4Obj(x4Obj) {
-    Vec < T, 5 > &v = vObj.value();
+    Vec<T, 5>& v = vObj.value();
     v(0) = x0Obj.value;
     v(1) = x1Obj.value;
     v(2) = x2Obj.value;
@@ -761,7 +761,7 @@ class A2DScalar5VecAssemblyExpr {
 
   void reverse() {
 //            input:
-    const Vec<T, 3>& vb = vObj.bvalue();
+    const Vec<T, 5>& vb = vObj.bvalue();
 //            operations:
     x0Obj.bvalue += vb(0);
     x1Obj.bvalue += vb(1);
@@ -774,13 +774,13 @@ class A2DScalar5VecAssemblyExpr {
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
-      const Vec<T, 3>& x0p = x0Obj.pvalue(i);
-      const Vec<T, 3>& x1p = x1Obj.pvalue(i);
-      const Vec<T, 3>& x2p = x2Obj.pvalue(i);
-      const Vec<T, 3>& x3p = x3Obj.pvalue(i);
-      const Vec<T, 3>& x4p = x4Obj.pvalue(i);
+      const T& x0p = x0Obj.pvalue[i];
+      const T& x1p = x1Obj.pvalue[i];
+      const T& x2p = x2Obj.pvalue[i];
+      const T& x3p = x3Obj.pvalue[i];
+      const T& x4p = x4Obj.pvalue[i];
 //                output:
-      Vec < T, 3 > &vp = vObj.pvalue(i);
+      Vec<T, 5>& vp = vObj.pvalue(i);
 //                operations:
       vp(0) = x0p;
       vp(1) = x1p;
@@ -794,13 +794,13 @@ class A2DScalar5VecAssemblyExpr {
 //            main loop:
     for (int i = 0; i < N; i++) {
 //                input:
-      const Vec<T, 3>& vh = vObj.hvalue(i);
+      const Vec<T, 5>& vh = vObj.hvalue(i);
 //                operations:
-      x0Obj.hvalue(i) += vh(0);
-      x1Obj.hvalue(i) += vh(1);
-      x2Obj.hvalue(i) += vh(2);
-      x3Obj.hvalue(i) += vh(3);
-      x4Obj.hvalue(i) += vh(4);
+      x0Obj.hvalue[i] += vh(0);
+      x1Obj.hvalue[i] += vh(1);
+      x2Obj.hvalue[i] += vh(2);
+      x3Obj.hvalue[i] += vh(3);
+      x4Obj.hvalue[i] += vh(4);
     }
   };
 

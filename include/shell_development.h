@@ -350,11 +350,161 @@ class ShellElementMITC4 {
     ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345678_expression(1, sum_1234567, energy_r1s1t1, strain_energy);*/
   };
 
+  void reverse() {
+    sum_12345678_expression.reverse();
+    sum_1234567_expression.reverse();
+    sum_123456_expression.reverse();
+    sum_12345_expression.reverse();
+    sum_1234_expression.reverse();
+    sum_123_expression.reverse();
+    sum_12_expression.reverse();
+
+    strain_energy_r1s1t1_expression.reverse();
+    strain_energy_r1s1t0_expression.reverse();
+    strain_energy_r1s0t1_expression.reverse();
+    strain_energy_r1s0t0_expression.reverse();
+    strain_energy_r0s1t1_expression.reverse();
+    strain_energy_r0s1t0_expression.reverse();
+    strain_energy_r0s0t1_expression.reverse();
+    strain_energy_r0s0t0_expression.reverse();
+
+    us_r1sAt1_expression.reverse();
+    us_r1sAt0_expression.reverse();
+    us_r0sAt1_expression.reverse();
+    us_r0sAt0_expression.reverse();
+
+    ur_rAs1t1_expression.reverse();
+    ur_rAs1t0_expression.reverse();
+    ur_rAs0t1_expression.reverse();
+    ur_rAs0t0_expression.reverse();
+
+    gs_r1sAt1_expression.reverse();
+    gs_r1sAt0_expression.reverse();
+    gs_r0sAt1_expression.reverse();
+    gs_r0sAt0_expression.reverse();
+
+    gr_rAs1t1_expression.reverse();
+    gr_rAs1t0_expression.reverse();
+    gr_rAs0t1_expression.reverse();
+    gr_rAs0t0_expression.reverse();
+
+    e_st_r1sAtA_expression.reverse();
+    e_rt_rAs1tA_expression.reverse();
+    e_st_r0sAtA_expression.reverse();
+    e_rt_rAs0tA_expression.reverse();
+
+    e_st_D_expression.reverse();
+    e_st_C_expression.reverse();
+    e_rt_B_expression.reverse();
+    e_rt_A_expression.reverse();
+  };
+
+  void hforward() {
+    e_rt_A_expression.hforward();
+    e_rt_B_expression.hforward();
+    e_st_C_expression.hforward();
+    e_st_D_expression.hforward();
+
+    e_rt_rAs0tA_expression.hforward();
+    e_st_r0sAtA_expression.hforward();
+    e_rt_rAs1tA_expression.hforward();
+    e_st_r1sAtA_expression.hforward();
+
+    gr_rAs0t0_expression.hforward();
+    gr_rAs0t1_expression.hforward();
+    gr_rAs1t0_expression.hforward();
+    gr_rAs1t1_expression.hforward();
+
+    gs_r0sAt0_expression.hforward();
+    gs_r0sAt1_expression.hforward();
+    gs_r1sAt0_expression.hforward();
+    gs_r1sAt1_expression.hforward();
+
+    ur_rAs0t0_expression.hforward();
+    ur_rAs0t1_expression.hforward();
+    ur_rAs1t0_expression.hforward();
+    ur_rAs1t1_expression.hforward();
+
+    us_r0sAt0_expression.hforward();
+    us_r0sAt1_expression.hforward();
+    us_r1sAt0_expression.hforward();
+    us_r1sAt1_expression.hforward();
+
+    strain_energy_r0s0t0_expression.hforward();
+    strain_energy_r0s0t1_expression.hforward();
+    strain_energy_r0s1t0_expression.hforward();
+    strain_energy_r0s1t1_expression.hforward();
+    strain_energy_r1s0t0_expression.hforward();
+    strain_energy_r1s0t1_expression.hforward();
+    strain_energy_r1s1t0_expression.hforward();
+    strain_energy_r1s1t1_expression.hforward();
+
+    sum_12_expression.hforward();
+    sum_123_expression.hforward();
+    sum_1234_expression.hforward();
+    sum_12345_expression.hforward();
+    sum_123456_expression.hforward();
+    sum_1234567_expression.hforward();
+    sum_12345678_expression.hforward();
+  };
+
+  void hreverse() {
+    sum_12345678_expression.hreverse();
+    sum_1234567_expression.hreverse();
+    sum_123456_expression.hreverse();
+    sum_12345_expression.hreverse();
+    sum_1234_expression.hreverse();
+    sum_123_expression.hreverse();
+    sum_12_expression.hreverse();
+
+    strain_energy_r1s1t1_expression.hreverse();
+    strain_energy_r1s1t0_expression.hreverse();
+    strain_energy_r1s0t1_expression.hreverse();
+    strain_energy_r1s0t0_expression.hreverse();
+    strain_energy_r0s1t1_expression.hreverse();
+    strain_energy_r0s1t0_expression.hreverse();
+    strain_energy_r0s0t1_expression.hreverse();
+    strain_energy_r0s0t0_expression.hreverse();
+
+    us_r1sAt1_expression.hreverse();
+    us_r1sAt0_expression.hreverse();
+    us_r0sAt1_expression.hreverse();
+    us_r0sAt0_expression.hreverse();
+
+    ur_rAs1t1_expression.hreverse();
+    ur_rAs1t0_expression.hreverse();
+    ur_rAs0t1_expression.hreverse();
+    ur_rAs0t0_expression.hreverse();
+
+    gs_r1sAt1_expression.hreverse();
+    gs_r1sAt0_expression.hreverse();
+    gs_r0sAt1_expression.hreverse();
+    gs_r0sAt0_expression.hreverse();
+
+    gr_rAs1t1_expression.hreverse();
+    gr_rAs1t0_expression.hreverse();
+    gr_rAs0t1_expression.hreverse();
+    gr_rAs0t0_expression.hreverse();
+
+    e_st_r1sAtA_expression.hreverse();
+    e_rt_rAs1tA_expression.hreverse();
+    e_st_r0sAtA_expression.hreverse();
+    e_rt_rAs0tA_expression.hreverse();
+
+    e_st_D_expression.hreverse();
+    e_st_C_expression.hreverse();
+    e_rt_B_expression.hreverse();
+    e_rt_A_expression.hreverse();
+  };
+
   ShellNodeMITC<N, T>& node1;  /**< The top left node. */
   ShellNodeMITC<N, T>& node2;  /**< The top right node.*/
   ShellNodeMITC<N, T>& node3;  /**< The bottom left node. */
   ShellNodeMITC<N, T>& node4;  /**< The bottom right node.*/
   // TODO: make sure this is correct ^
+
+  /** Strain energy object */
+  A2DScalar<N, T> strain_energy;
 
   const LinearIsotropicMaterial<T> material{5.2, 0.5};  /**< I'm using a linear isotropic material assumption here */
 
@@ -449,8 +599,6 @@ class ShellElementMITC4 {
 
   /** Strain energy summation objects */
   A2DScalar<N, T> sum_12, sum_123, sum_1234, sum_12345, sum_123456, sum_1234567;
-  /** Strain energy object */
-  A2DScalar<N, T> strain_energy;
 
  private:
   /** <h1>Expressions:</h1> */
@@ -707,12 +855,11 @@ class ShellElementMITC4 {
    *                dNi_d_alpha_alpha_j(0, i, 1) corresponds to dNi/dr evaluated at s=quad_0.
    * */
   constexpr static T dNi_d_alpha_alpha_j(const int alpha, const int i, const int j) {
-    // TODO: see if template <int alpha, int i, int j> improves performance (or is viable)
     return dNi_d_alpha_alpha_j_data[alpha * 16 + i * 4 + j];
   }
 };
 
-/* Helper Classes */
+/** <h1>Helper Classes:</h1> */
 
 template <int N, typename T>
 class g_alpha_expr {
@@ -842,7 +989,7 @@ class g_alpha_expr {
     sum_12_expression.hreverse();
 
     /* Node expression calls: */
-    node4_scale_expression.hhreverse();
+    node4_scale_expression.hreverse();
     node4_addition_expression.hreverse();
     node4_thickness_scale_expression.hreverse();
     node3_scale_expression.hreverse();
@@ -1055,7 +1202,7 @@ class u_alpha_expr {
     sum_12_expression.hreverse();
 
     /* Node expression calls: */
-    node4_scale_expression.hhreverse();
+    node4_scale_expression.hreverse();
     node4_addition_expression.hreverse();
     node4_thickness_scale_expression.hreverse();
     node4_phi_expression.hreverse();
@@ -2172,8 +2319,14 @@ namespace A2D::TEST {
 
 int main() {
   Vec<double, 3>
-      d1, db1, d2, db2, d3, db3, d4, db4,
-      r1, rb1, r2, rb2, r3, rb3, r4, rb4;
+      d1, db1,
+      d2, db2,
+      d3, db3,
+      d4, db4,
+      r1, rb1,
+      r2, rb2,
+      r3, rb3,
+      r4, rb4;
   ShellNodeMITC<24, double>
       n1{d1, db1, r1, rb1},
       n2{d2, db2, r2, rb2},
@@ -2181,6 +2334,10 @@ int main() {
       n4{d4, db4, r4, rb4};
   ShellElementMITC4<24, double> x(n1, n2, n3, n4);
 //  x.generate_stiffness_matrix();
+  x.strain_energy.bvalue = 1;
+  x.reverse();
+  x.hforward();
+  x.hreverse();
 
 //  x.test;
 //  x.Ni_rj_sk(0, 0, 0);

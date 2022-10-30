@@ -2,6 +2,9 @@
 // Created by James on 10/28/2022.
 //
 
+#include "a2dveccore3d.h"
+#include <iostream>
+
 #ifndef A2D_SHELL_DEV_OPS
 #define A2D_SHELL_DEV_OPS
 
@@ -24,6 +27,7 @@ class A2DScalarScalarMultExpr {
 //            input:
     const T& zb = zObj.bvalue;
     const T& a = aObj.value;
+    /*std::cout << "UNQ.A2DScalarScalarMultExpr.reverse  zb=" << zb << ", a=" << a << ", b=" << b << std::endl;*/
 //            operations:
     aObj.bvalue += zb * b;
   };
@@ -55,9 +59,9 @@ class A2DScalarScalarMultExpr {
 
 template <int N, typename T>
 inline A2DScalarScalarMultExpr<N, T> ScalarMult(A2DScalar<N, T>& a,
-const T& b,
-    A2DScalar<N, T>& z) {
-  return A2DScalarScalarMultExpr < N, T > (a, b, z);
+                                                const T& b,
+                                                A2DScalar<N, T>& z) {
+  return A2DScalarScalarMultExpr<N, T>(a, b, z);
 };
 
 template <int N, typename T>
@@ -117,9 +121,9 @@ class A2DScalarA2DScalarMultExpr {
 };
 
 template <int N, typename T>
-inline A2DScalarA2DScalarMultExpr<N, T> ScalarMult(A2DScalar < N, T > &a,
-                                                   A2DScalar < N, T > &b,
-                                                   A2DScalar < N, T > &z) {
+inline A2DScalarA2DScalarMultExpr<N, T> ScalarMult(A2DScalar<N, T>& a,
+                                                   A2DScalar<N, T>& b,
+                                                   A2DScalar<N, T>& z) {
   return A2DScalarA2DScalarMultExpr<N, T>(a, b, z);
 };
 
@@ -135,7 +139,7 @@ class A2DVec3A2DScaleDivExpr {
       : xObj(xObj), aObj(aObj), vObj(vObj) {
     const T a = aObj.value;
     const Vec<T, 3>& x = xObj.value();
-    Vec < T, 3 > &v = vObj.value();
+    Vec<T, 3>& v = vObj.value();
 
     v(0) = x(0) / a;
     v(1) = x(1) / a;
@@ -148,7 +152,7 @@ class A2DVec3A2DScaleDivExpr {
     const Vec<T, 3>& x = xObj.value();
     const T& a = aObj.value;
 //            output:
-    Vec < T, 3 > &xb = xObj.bvalue();
+    Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
     aObj.bvalue += -Vec3DotCore<T, Vec<T, 3>>(vb, x) / (a * a);
     Vec3AXPYCore(1 / a, vb, xb, xb);  // TODO: check if a scale-add in place is faster
@@ -165,7 +169,7 @@ class A2DVec3A2DScaleDivExpr {
       const Vec<T, 3>& xp = xObj.pvalue(i);
       const T& ap = aObj.pvalue[i];
 //                output:
-      Vec < T, 3 > &vp = vObj.pvalue(i);
+      Vec<T, 3>& vp = vObj.pvalue(i);
 //                operations:
       Vec3AXPBYCore(ap * aNegativeInvSquared, x, aInv, xp, vp);
     }
@@ -185,7 +189,7 @@ class A2DVec3A2DScaleDivExpr {
       const Vec<T, 3>& vh = vObj.hvalue(i);
       const T& ap = aObj.pvalue[i];
 //                output:
-      Vec < T, 3 > &xh = xObj.hvalue(i);
+      Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
       aObj.hvalue[i] +=
           (Vec3DotCore<T>(vh, x) * aNegativeInvSquared) +
@@ -205,7 +209,7 @@ template <int N, typename T>
 inline A2DVec3A2DScaleDivExpr<N, T> Vec3ScaleDiv(A2DVec<N, Vec<T, 3>>& x,
                                                  A2DScalar<N, T>& a,
                                                  A2DVec<N, Vec<T, 3>>& v) {
-  return A2DVec3A2DScaleDivExpr < N, T > (x, a, v);
+  return A2DVec3A2DScaleDivExpr<N, T>(x, a, v);
 };
 
 /**
@@ -218,13 +222,15 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
                                     A2DScalar<N, T>& xObj,
                                     A2DScalar<N, T>& yObj,
                                     A2DScalar<N, T>& zObj)
-      : a(a), xObj(xObj), yObj(yObj), zObj(zObj) {
+      : a{a}, xObj(xObj), yObj(yObj), zObj(zObj) {
+    /*std::cout << "UNQ.ScalarA2DScalarA2DScalarAxpayExpr.constructor  " << a << std::endl;*/
     zObj.value = a * (xObj.value + yObj.value);
   };
 
   void reverse() {
 //            input:
     const T& zb = zObj.bvalue;
+    std::cout << "UNQ.ScalarA2DScalarA2DScalarAxpayExpr.reverse  " << zb << ", " << a << std::endl;
 //            operations:
     xObj.bvalue += zb * a;
     yObj.bvalue += zb * a;
@@ -262,7 +268,7 @@ inline ScalarA2DScalarA2DScalarAxpayExpr<N, T> ScalarAxpay(const T& a,
                                                            A2DScalar<N, T>& x,
                                                            A2DScalar<N, T>& y,
                                                            A2DScalar<N, T>& z) {
-  return ScalarA2DScalarA2DScalarAxpayExpr < N, T > (a, x, y, z);
+  return ScalarA2DScalarA2DScalarAxpayExpr<N, T>(a, x, y, z);
 };
 
 template <int N, typename T>
@@ -325,10 +331,10 @@ class A2DScalarA2DScalarA2DScalarAxpayExpr {
 };
 
 template <int N, typename T>
-inline A2DScalarA2DScalarA2DScalarAxpayExpr<N, T> ScalarAxpay(A2DScalar < N, T > &a,
-                                                              A2DScalar < N, T > &x,
-                                                              A2DScalar < N, T > &y,
-                                                              A2DScalar < N, T > &z) {
+inline A2DScalarA2DScalarA2DScalarAxpayExpr<N, T> ScalarAxpay(A2DScalar<N, T>& a,
+                                                              A2DScalar<N, T>& x,
+                                                              A2DScalar<N, T>& y,
+                                                              A2DScalar<N, T>& z) {
   return A2DScalarA2DScalarA2DScalarAxpayExpr<N, T>(a, x, y, z);
 };
 
@@ -390,7 +396,7 @@ inline ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> ScalarAxpby(const T& a,
                                                                  const T& b,
                                                                  A2DScalar<N, T>& y,
                                                                  A2DScalar<N, T>& z) {
-  return ScalarA2DScalarScalarA2DScalarAxpbyExpr < N, T > (a, x, b, y, z);
+  return ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T>(a, x, b, y, z);
 };
 
 template <int N, typename T>
@@ -464,12 +470,12 @@ class A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr {
 };
 
 template <int N, typename T>
-inline A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr<N, T> ScalarAxpby(A2DScalar < N, T > &a,
-                                                                       A2DScalar < N, T > &x,
-                                                                       A2DScalar < N, T > &b,
-                                                                       A2DScalar < N, T > &y,
-                                                                       A2DScalar < N, T > &z) {
-  return A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr < N, T > (a, x, b, y, z);
+inline A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr<N, T> ScalarAxpby(A2DScalar<N, T>& a,
+                                                                       A2DScalar<N, T>& x,
+                                                                       A2DScalar<N, T>& b,
+                                                                       A2DScalar<N, T>& y,
+                                                                       A2DScalar<N, T>& z) {
+  return A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr<N, T>(a, x, b, y, z);
 };
 
 /**
@@ -635,8 +641,8 @@ class MatA2DVecA2DVecInnerProductExpr {
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
 //            output:
-    Vec < T, P > &xb = xObj.bvalue();
-    Vec < T, Q > &yb = yObj.bvalue();
+    Vec<T, P>& xb = xObj.bvalue();
+    Vec<T, Q>& yb = yObj.bvalue();
 //            operations:
     MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
     MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
@@ -646,8 +652,8 @@ class MatA2DVecA2DVecInnerProductExpr {
 //            input:
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
-    Vec < T, P > Ay;
-    Vec < T, Q > xA;
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
     MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
     MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
@@ -665,8 +671,8 @@ class MatA2DVecA2DVecInnerProductExpr {
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
-    Vec < T, P > Ay;
-    Vec < T, Q > xA;
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
     MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
     MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
@@ -676,11 +682,11 @@ class MatA2DVecA2DVecInnerProductExpr {
       const Vec<T, Q>& yp = yObj.pvalue(i);
       const T& ah = aObj.hvalue[i];
 //                Interstitial values:
-      Vec < T, P > Ayp;
-      Vec < T, Q > xpA;
+      Vec<T, P> Ayp;
+      Vec<T, Q> xpA;
 //                output:
-      Vec < T, P > &xh = xObj.hvalue(i);
-      Vec < T, Q > &yh = yObj.hvalue(i);
+      Vec<T, P>& xh = xObj.hvalue(i);
+      Vec<T, Q>& yh = yObj.hvalue(i);
 //                operations:
       MatVecScaleMultCore<T, P, Q>(1, A, yp, Ayp);
       VecAXPBYIncrementCore(ah, Ay, ab, Ayp, xh);
@@ -725,8 +731,8 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
 //            output:
-    Vec < T, P > &xb = xObj.bvalue();
-    Vec < T, Q > &yb = yObj.bvalue();
+    Vec<T, P>& xb = xObj.bvalue();
+    Vec<T, Q>& yb = yObj.bvalue();
     Mat<T, P, Q>& Ab = AObj.bvalue();
 //            operations:
     MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
@@ -739,8 +745,8 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Mat<T, P, Q>& A = AObj.value();
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
-    Vec < T, P > Ay;
-    Vec < T, Q > xA;
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
     MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
     MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
@@ -760,8 +766,8 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     const Vec<T, P>& x = xObj.value();
     const Vec<T, Q>& y = yObj.value();
     const T& ab = aObj.bvalue;
-    Vec < T, P > Ay;
-    Vec < T, Q > xA;
+    Vec<T, P> Ay;
+    Vec<T, Q> xA;
     MatVecScaleMultCore<T, P, Q>(1, A, y, Ay);
     MatTransVecScaleMultCore<T, P, Q>(1, A, x, xA);
 //            main loop:
@@ -772,21 +778,21 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
       const Vec<T, Q>& yp = yObj.pvalue(i);
       const T& ah = aObj.hvalue[i];
 //                Interstitial values:
-      Vec < T, P > Apy, Ayp, ApyAyp;
-      Vec < T, Q > xAp, xpA, xApxpA;
+      Vec<T, P> Apy, Ayp, ApyAyp;
+      Vec<T, Q> xAp, xpA, xApxpA;
 //                output:
       Mat<T, P, Q>& Ah = AObj.hvalue(i);
-      Vec < T, P > &xh = xObj.hvalue(i);
-      Vec < T, Q > &yh = yObj.hvalue(i);
+      Vec<T, P>& xh = xObj.hvalue(i);
+      Vec<T, Q>& yh = yObj.hvalue(i);
 //                operations:
       MatVecScaleMultCore<T, P, Q>(1, Ap, y, Apy);
       MatVecScaleMultCore<T, P, Q>(1, A, yp, Ayp);
-      VecAXPYCore(1, Apy, Ayp, ApyAyp);
+      VecAXPYCore<T, P>(1, Apy, Ayp, ApyAyp);
       VecAXPBYIncrementCore(ah, Ay, ab, ApyAyp, xh);
 
       MatTransVecScaleMultCore<T, P, Q>(1, Ap, x, xAp);
       MatTransVecScaleMultCore<T, P, Q>(1, A, xp, xpA);
-      VecAXPYCore(1, xAp, xpA, xApxpA);
+      VecAXPYCore<T, Q>(1, xAp, xpA, xApxpA);
       VecAXPBYIncrementCore(ah, xA, ab, xApxpA, yh);
 
       VecOuterProductScaleIncrementCore(ah, x, y, Ah);
@@ -815,14 +821,14 @@ inline A2DMatA2DVecA2DVecInnerProductExpr<N, T, P, Q> MatInnerProduct(A2DMat<N, 
 template <int N, typename T>  // TODO: complete the Vec5ScalarAssembly operation (v = {x0, x1, x2, x3, x4})
 class A2DScalar5VecAssemblyExpr {
  public:
-  A2DScalar5VecAssemblyExpr(A2DVec<N, Vec<T, 5>>& vObj,
-                            A2DScalar<N, T>& x0Obj,
+  A2DScalar5VecAssemblyExpr(A2DScalar<N, T>& x0Obj,
                             A2DScalar<N, T>& x1Obj,
                             A2DScalar<N, T>& x2Obj,
                             A2DScalar<N, T>& x3Obj,
-                            A2DScalar<N, T>& x4Obj)
+                            A2DScalar<N, T>& x4Obj,
+                            A2DVec<N, Vec<T, 5>>& vObj)
       : vObj(vObj), x0Obj(x0Obj), x1Obj(x1Obj), x2Obj(x2Obj), x3Obj(x3Obj), x4Obj(x4Obj) {
-    Vec < T, 5 > &v = vObj.value();
+    Vec<T, 5>& v = vObj.value();
     v(0) = x0Obj.value;
     v(1) = x1Obj.value;
     v(2) = x2Obj.value;
@@ -851,7 +857,7 @@ class A2DScalar5VecAssemblyExpr {
       const T& x3p = x3Obj.pvalue[i];
       const T& x4p = x4Obj.pvalue[i];
 //                output:
-      Vec < T, 5 > &vp = vObj.pvalue(i);
+      Vec<T, 5>& vp = vObj.pvalue(i);
 //                operations:
       vp(0) = x0p;
       vp(1) = x1p;
@@ -884,12 +890,12 @@ class A2DScalar5VecAssemblyExpr {
 };
 
 template <int N, typename T>
-inline A2DScalar5VecAssemblyExpr<N, T> Vec5ScalarAssembly(A2DVec<N, Vec<T, 5>>& v,
-                                                          A2DScalar<N, T>& x0,
+inline A2DScalar5VecAssemblyExpr<N, T> Vec5ScalarAssembly(A2DScalar<N, T>& x0,
                                                           A2DScalar<N, T>& x1,
                                                           A2DScalar<N, T>& x2,
                                                           A2DScalar<N, T>& x3,
-                                                          A2DScalar<N, T>& x4) {
+                                                          A2DScalar<N, T>& x4,
+                                                          A2DVec<N, Vec<T, 5>>& v) {
   return A2DScalar5VecAssemblyExpr<N, T>(v, x0, x1, x2, x3, x4);
 };
 

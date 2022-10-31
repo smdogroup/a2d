@@ -5,6 +5,8 @@
 #ifndef A2D_SHELL_DEVELOPMENT_H_
 #define A2D_SHELL_DEVELOPMENT_H_
 
+#include <iostream>
+
 #include "a2dtypes.h"
 #include "a2dvecops3d.h"
 #include "a2dmatops3d.h"
@@ -43,24 +45,44 @@ class LinearIsotropicMaterial {
 template <int N, typename T>
 class ShellNodeMITC {
  public:
-  ShellNodeMITC(Vec<T, 3> disp, Vec<T, 3> dispb, Vec<T, 3> rot, Vec<T, 3> rotb)
-      : displacement(disp, dispb), rotation(rot, rotb) {
-    // TODO: delete me
-    position.zero();
-    shell_director.zero();
-  }
 
-  ShellNodeMITC(Vec<T, 3>& initial_position,
-                Vec<T, 3>& initial_shell_director,
-                Vec<T, 3>& displacement, Vec<T, 3>& displacement_bvalue,
-                Vec<T, 3>& rotation_vector, Vec<T, 3>& rotation_vector_bvalue)
-      : /**/
-      position(initial_position),
-      thickness(1, 0),
-      shell_director(initial_shell_director),
-      displacement(displacement, displacement_bvalue),
-      rotation(rotation_vector, rotation_vector_bvalue) {};
+  ShellNodeMITC(Vec<T, 3> initial_position,
+                Vec<T, 3> initial_shell_director,
+                Vec<T, 3> displacement,
+                Vec<T, 3> rotation_vector)
+      : position(initial_position),
+        thickness(0.1, 0),
+        shell_director(initial_shell_director),
+        displacement(displacement, displacement_bvalue),
+        rotation(rotation_vector, rotation_vector_bvalue) {};
 
+  ShellNodeMITC(Vec<T, 3> initial_position,
+                Vec<T, 3> initial_shell_director,
+                Vec<T, 3> rotation_vector)
+      : position(initial_position),
+        thickness(0.1, 0),
+        shell_director(initial_shell_director),
+        displacement(displacement_value, displacement_bvalue),
+        rotation(rotation_vector, rotation_vector_bvalue) {};
+
+  ShellNodeMITC(Vec<T, 3> initial_position,
+                Vec<T, 3> initial_shell_director)
+      : position(initial_position),
+        thickness(0.1, 0),
+        shell_director(initial_shell_director),
+        displacement(displacement_value, displacement_bvalue),
+        rotation(rotation_vector_value, rotation_vector_bvalue) {
+    for (int i = 0; i < 3; ++i) {
+      rotation.value()(i) = shell_director(i);
+    }
+  };
+
+ private:
+  Vec<T, 3> displacement_value;
+  Vec<T, 3> displacement_bvalue;
+  Vec<T, 3> rotation_vector_value;
+  Vec<T, 3> rotation_vector_bvalue;
+ public:
   Vec<T, 3> position;  /**< <u> X </u> <sup> I </sup>: The position vector at the node.*/
   A2DScalar<N, T> thickness;  /**< h <sup> I </sup>: The thickness of the shell at the node. */
   Vec<T, 3> shell_director;  /**< <u> v </u> <sup> I </sup>: The shell director vector at the node. */
@@ -206,6 +228,11 @@ class ShellElementMITC4 {
         gs_r0sAt1_expression(1, 1, quad_1, node1, node2, node3, node4, gs_r0sAt1),
         gs_r1sAt0_expression(1, 2, quad_0, node1, node2, node3, node4, gs_r1sAt0),
         gs_r1sAt1_expression(1, 2, quad_1, node1, node2, node3, node4, gs_r1sAt1),
+      /* gt calculations */
+        gt_r0s0tA_expression(1, 1, node1, node2, node3, node4, gt_r0s0tA),
+        gt_r0s1tA_expression(1, 3, node1, node2, node3, node4, gt_r0s1tA),
+        gt_r1s0tA_expression(3, 1, node1, node2, node3, node4, gt_r1s0tA),
+        gt_r1s1tA_expression(3, 3, node1, node2, node3, node4, gt_r1s1tA),
 
       /* ur calculations */
         ur_rAs0t0_expression(0, 1, quad_0, node1, node2, node3, node4, ur_rAs0t0),
@@ -217,6 +244,11 @@ class ShellElementMITC4 {
         us_r0sAt1_expression(1, 1, quad_1, node1, node2, node3, node4, us_r0sAt1),
         us_r1sAt0_expression(1, 2, quad_0, node1, node2, node3, node4, us_r1sAt0),
         us_r1sAt1_expression(1, 2, quad_1, node1, node2, node3, node4, us_r1sAt1),
+      /* ut calculations */
+        ut_r0s0tA_expression(1, 1, node1, node2, node3, node4, ut_r0s0tA),
+        ut_r0s1tA_expression(1, 3, node1, node2, node3, node4, ut_r0s1tA),
+        ut_r1s0tA_expression(3, 1, node1, node2, node3, node4, ut_r1s0tA),
+        ut_r1s1tA_expression(3, 3, node1, node2, node3, node4, ut_r1s1tA),
 
       /* Energy at the quadrature points: */
         strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
@@ -237,13 +269,13 @@ class ShellElementMITC4 {
                                         e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t1),
 
       /* Summation of the strain energy: */
-        sum_12_expression(1, energy_r0s0t0, energy_r0s0t1, sum_12),
-        sum_123_expression(1, sum_12, energy_r0s1t0, sum_123),
-        sum_1234_expression(1, sum_123, energy_r0s1t1, sum_1234),
-        sum_12345_expression(1, sum_1234, energy_r1s0t0, sum_12345),
-        sum_123456_expression(1, sum_12345, energy_r1s0t1, sum_123456),
-        sum_1234567_expression(1, sum_123456, energy_r1s1t0, sum_1234567),
-        sum_12345678_expression(1, sum_1234567, energy_r1s1t1, strain_energy) {};
+        sum_12_expression(1.0, energy_r0s0t0, energy_r0s0t1, sum_12),
+        sum_123_expression(1.0, sum_12, energy_r0s1t0, sum_123),
+        sum_1234_expression(1.0, sum_123, energy_r0s1t1, sum_1234),
+        sum_12345_expression(1.0, sum_1234, energy_r1s0t0, sum_12345),
+        sum_123456_expression(1.0, sum_12345, energy_r1s0t1, sum_123456),
+        sum_1234567_expression(1.0, sum_123456, energy_r1s1t0, sum_1234567),
+        sum_12345678_expression(1.0, sum_1234567, energy_r1s1t1, strain_energy) {};
 
   /**
    * @brief Position of a point on the undeformed shell element defined by parameters r, s, and t.
@@ -257,22 +289,20 @@ class ShellElementMITC4 {
    * @param X: a three vector output indicating the position of the point in the undeformed shell element as defined by
    * the given values of the parameters.
    * */
-  template <typename S>
-  // might want to replace S with T or double
-  void position(const S r, const S s, const S t, Vec<T, 3>& X) {
-    S N1, N2, N3, N4;
-    S tNh1, tNh2, tNh3, tNh4;
-    S s1{1 - s}, s2{1 + s};
+  void position(const T r, const T s, const T t, Vec<T, 3>& X) {
+    T quarter{0.25}, half{0.5};
+    T N1{quarter}, N2, N3, N4;
+    T tNh1, tNh2, tNh3, tNh4;
+    T s1{1.0 - s}, s2{1.0 + s};
 
-    N1 = (1 / 4);
-    N2 = N1 * (1 + r);
-    N1 *= (1 - r);
+    N2 = N1 * (1.0 + r);
+    N1 *= (1.0 - r);
     N3 = N2 * s2;
     N4 = N1 * s2;
     N1 *= s1;
     N2 *= s1;
 
-    tNh1 = t / 2;
+    tNh1 = t * half;
     tNh2 = tNh1 * N2 * node2.thickness.value;
     tNh3 = tNh1 * N3 * node3.thickness.value;
     tNh4 = tNh1 * N4 * node2.thickness.value;
@@ -361,8 +391,10 @@ class ShellElementMITC4 {
     sum_1234_expression.reverse();
     sum_123_expression.reverse();
     sum_12_expression.reverse();
+    std::cout << "end sum reverses" << std::endl;
 
     strain_energy_r1s1t1_expression.reverse();
+    std::cout << std::endl;
     strain_energy_r1s1t0_expression.reverse();
     strain_energy_r1s0t1_expression.reverse();
     strain_energy_r1s0t0_expression.reverse();
@@ -370,6 +402,11 @@ class ShellElementMITC4 {
     strain_energy_r0s1t0_expression.reverse();
     strain_energy_r0s0t1_expression.reverse();
     strain_energy_r0s0t0_expression.reverse();
+
+    ut_r1s1tA_expression.reverse();
+    ut_r1s0tA_expression.reverse();
+    ut_r0s1tA_expression.reverse();
+    ut_r0s0tA_expression.reverse();
 
     us_r1sAt1_expression.reverse();
     us_r1sAt0_expression.reverse();
@@ -380,6 +417,11 @@ class ShellElementMITC4 {
     ur_rAs1t0_expression.reverse();
     ur_rAs0t1_expression.reverse();
     ur_rAs0t0_expression.reverse();
+
+    gt_r1s1tA_expression.reverse();
+    gt_r1s0tA_expression.reverse();
+    gt_r0s1tA_expression.reverse();
+    gt_r0s0tA_expression.reverse();
 
     gs_r1sAt1_expression.reverse();
     gs_r1sAt0_expression.reverse();
@@ -423,6 +465,11 @@ class ShellElementMITC4 {
     gs_r1sAt0_expression.hforward();
     gs_r1sAt1_expression.hforward();
 
+    gt_r0s0tA_expression.hforward();
+    gt_r0s1tA_expression.hforward();
+    gt_r1s0tA_expression.hforward();
+    gt_r1s1tA_expression.hforward();
+
     ur_rAs0t0_expression.hforward();
     ur_rAs0t1_expression.hforward();
     ur_rAs1t0_expression.hforward();
@@ -432,6 +479,11 @@ class ShellElementMITC4 {
     us_r0sAt1_expression.hforward();
     us_r1sAt0_expression.hforward();
     us_r1sAt1_expression.hforward();
+
+    ut_r0s0tA_expression.hforward();
+    ut_r0s1tA_expression.hforward();
+    ut_r1s0tA_expression.hforward();
+    ut_r1s1tA_expression.hforward();
 
     strain_energy_r0s0t0_expression.hforward();
     strain_energy_r0s0t1_expression.hforward();
@@ -469,6 +521,11 @@ class ShellElementMITC4 {
     strain_energy_r0s0t1_expression.hreverse();
     strain_energy_r0s0t0_expression.hreverse();
 
+    ut_r1s1tA_expression.hreverse();
+    ut_r1s0tA_expression.hreverse();
+    ut_r0s1tA_expression.hreverse();
+    ut_r0s0tA_expression.hreverse();
+
     us_r1sAt1_expression.hreverse();
     us_r1sAt0_expression.hreverse();
     us_r0sAt1_expression.hreverse();
@@ -478,6 +535,11 @@ class ShellElementMITC4 {
     ur_rAs1t0_expression.hreverse();
     ur_rAs0t1_expression.hreverse();
     ur_rAs0t0_expression.hreverse();
+
+    gt_r1s1tA_expression.hreverse();
+    gt_r1s0tA_expression.hreverse();
+    gt_r0s1tA_expression.hreverse();
+    gt_r0s0tA_expression.hreverse();
 
     gs_r1sAt1_expression.hreverse();
     gs_r1sAt0_expression.hreverse();
@@ -615,27 +677,37 @@ class ShellElementMITC4 {
   ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_rt_rAs1tA_expression; /**< Evaluate e_rt at s = quad_1; */
   ScalarA2DScalarScalarA2DScalarAxpbyExpr<N, T> e_st_r1sAtA_expression; /**< Evaluate e_st at r = quad_1; */
 
-  /* gr and gs calculations */
+  /* gr calculations */
   g_alpha_expr<N, T> gr_rAs0t0_expression;
   g_alpha_expr<N, T> gr_rAs0t1_expression;
   g_alpha_expr<N, T> gr_rAs1t0_expression;
   g_alpha_expr<N, T> gr_rAs1t1_expression;
-
+  /* gs calculations */
   g_alpha_expr<N, T> gs_r0sAt0_expression;
   g_alpha_expr<N, T> gs_r0sAt1_expression;
   g_alpha_expr<N, T> gs_r1sAt0_expression;
   g_alpha_expr<N, T> gs_r1sAt1_expression;
+  /* gt calculations */
+  g_t_expr<N, T> gt_r0s0tA_expression;
+  g_t_expr<N, T> gt_r0s1tA_expression;
+  g_t_expr<N, T> gt_r1s0tA_expression;
+  g_t_expr<N, T> gt_r1s1tA_expression;
 
-  /* ur and us calculations */
+  /* ur calculations */
   u_alpha_expr<N, T> ur_rAs0t0_expression;
   u_alpha_expr<N, T> ur_rAs0t1_expression;
   u_alpha_expr<N, T> ur_rAs1t0_expression;
   u_alpha_expr<N, T> ur_rAs1t1_expression;
-
+  /* us calculations */
   u_alpha_expr<N, T> us_r0sAt0_expression;
   u_alpha_expr<N, T> us_r0sAt1_expression;
   u_alpha_expr<N, T> us_r1sAt0_expression;
   u_alpha_expr<N, T> us_r1sAt1_expression;
+  /* ut calculations */
+  u_t_expr<N, T> ut_r0s0tA_expression;
+  u_t_expr<N, T> ut_r0s1tA_expression;
+  u_t_expr<N, T> ut_r1s0tA_expression;
+  u_t_expr<N, T> ut_r1s1tA_expression;
 
   /* Energy at the quadrature points: */
   strain_energy_expr<N, T> strain_energy_r0s0t0_expression;
@@ -865,6 +937,21 @@ class ShellElementMITC4 {
 /** <h1>Helper Classes:</h1> */
 
 template <int N, typename T>
+/**
+ * @brief Computes the g<sub>&alpha</sub> vector for the given situation and element.
+ *
+ *
+ * @param alpha:            denotes the variant of the g<sub>&alpha</sub> vector, a value of 0 corresponds to the
+ *                          g<sub>r</sub> vector while a value of 1 corresponds to the g<sub>s</sub> vector.
+ * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
+ *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
+ *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
+ *                          corresponds to evaluating g<sub>r</sub>(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
+ *                          corresponds to evaluating g<sub>s</sub>(r,t) with r=quad_1.
+ * @param t:                the value of the t parametric coordinate.
+ * @param element:          the MITC4 element object for which the g<sub>&alpha</sub> vector is being computed.
+ * @param result:           an A2DVec where the resulting g<sub>&alpha</sub> vector should be stored.
+ * */
 class g_alpha_expr {
  public:
   /**
@@ -941,7 +1028,18 @@ class g_alpha_expr {
       /* Sum together the components. */
       sum_12_expression(1.0, node1_contribution, node2_contribution, n1c_n2c),
       sum_123_expression(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c),
-      sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {};
+      sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {
+    /*std::cout << "UNQ_g_alpha_expr" << std::endl;
+    if (alpha == 0) {
+      std::cout << "gr: ";
+    } else {
+      std::cout << "gs: ";
+    }
+    for (int i = 0; i < 3; ++i) {
+      std::cout << result.value()(i) << ", ";
+    }
+    std::cout << std::endl;*/
+  };
 
   void reverse() {
     /* Sum component calls: */
@@ -1062,6 +1160,21 @@ class g_alpha_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Computes the du/d&alpha vector for the given situation and element.
+ *
+ *
+ * @param alpha:            denotes the variant of the du/d&alpha vector, a value of 0 corresponds to the du/dr
+ *                          vector while a value of 1 corresponds to the du/ds vector.
+ * @param n_alpha_var_ind:  denotes which value to use (0 for ~&alpha =-1; 1 for ~&alpha =quad_0; 2 for
+ *                          ~&alpha =quad_1; or 3 for ~&alpha=1).  This corresponds to the value of the index
+ *                          <u>not</u> represented by the alpha parameter.  For example, alpha=0, n_alpha_var_ind=0
+ *                          corresponds to evaluating du/dr(s,t) with s=-1; and alpha=1, n_alpha_var_ind=2
+ *                          corresponds to evaluating du/ds(r,t) with r=quad_1.
+ * @param t:                the value of the t parametric coordinate.
+ * @param element:          the MITC4 element object for which the du/d&alpha vector is being computed.
+ * @param result:           an A2DVec where the resulting du/d&alpha vector should be stored.
+ * */
 class u_alpha_expr {
  public:
   /**
@@ -1292,6 +1405,17 @@ class u_alpha_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Computes the g<sub>t</sub> vector for the given situation and element.
+ *
+ *
+ * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
+ *                    for r=1)
+ * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
+ *                    for s=1)
+ * @param element:    the MITC4 element object for which the g<sub>t</sub> vector is being computed.
+ * @param result:     an A2DVec where the resulting g<sub>t</sub> vector should be stored.
+ * */
 class g_t_expr {
  public:
   /**
@@ -1342,7 +1466,14 @@ class g_t_expr {
       /* Sum together the components. */
       sum_12_expression(1.0, node1_contribution, node2_contribution, n1c_n2c),
       sum_123_expression(1.0, n1c_n2c, node3_contribution, n1c_n2c_n3c),
-      sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {};
+      sum_1234_expression(1.0, n1c_n2c_n3c, node4_contribution, result) {
+    /*std::cout << "UNQ_g_t_expr" << std::endl;
+    std::cout << "g_t(" << r_ind << ", " << s_ind << ")={"
+              << result.value()(0) << ", "
+              << result.value()(1) << ", "
+              << result.value()(2) << "}"
+              << std::endl;*/
+  };
 
   void reverse() {
     /* Sum component calls: */
@@ -1385,7 +1516,7 @@ class g_t_expr {
     sum_12_expression.hreverse();
 
     /* Node expression calls: */
-    node4_scale_expression.hhreverse();
+    node4_scale_expression.hreverse();
     node4_thickness_scale_expression.hreverse();
     node3_scale_expression.hreverse();
     node3_thickness_scale_expression.hreverse();
@@ -1438,6 +1569,17 @@ class g_t_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Computes the du/dt vector for the given situation and element.
+ *
+ *
+ * @param r_ind:      denotes which value to use for r (0 for r=-1; 1 for r=quad_0; 2 for r=0; 3 for r=quad_1; and 4
+ *                    for r=1)
+ * @param s_ind:      denotes which value to use for s (0 for s=-1; 1 for s=quad_0; 2 for s=0; 3 for s=quad_1; and 4
+ *                    for s=1)
+ * @param element:    the MITC4 element object for which the du/dt vector is being computed.
+ * @param result:     an A2DVec where the resulting du/dt vector should be stored.
+ * */
 class u_t_expr {
  public:
   /**
@@ -1547,7 +1689,7 @@ class u_t_expr {
     sum_12_expression.hreverse();
 
     /* Node expression calls: */
-    node4_scale_expression.hhreverse();
+    node4_scale_expression.hreverse();
     node4_thickness_scale_expression.hreverse();
     node4_phi_expression.hreverse();
     node3_scale_expression.hreverse();
@@ -1707,6 +1849,19 @@ class tying_shear_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Constructs the contravariant basis vectors (g<sup>r</sup>, g<sup>s</sup>, and g<sup>t</sup>) from the
+ * covariant basis vectors (g<sub>r</sub>, g<sub>s</sub>, and g<sub>t</sub>).
+ *
+ * @note The covariant basis vectors must be evaluated at the desired point of interest.
+ *
+ * @param gr: the g<sub>r</sub> covariant basis vector
+ * @param gs: the g<sub>s</sub> covariant basis vector
+ * @param gt: the g<sub>t</sub> covariant basis vector
+ * @param Gr: the g<sup>r</sup> contravariant basis vector (output)
+ * @param Gs: the g<sup>s</sup> contravariant basis vector (output)
+ * @param Gt: the g<sup>t</sup> contravariant basis vector (output)
+ * */
 class contravariant_basis_expr {
  public:
   /**
@@ -1804,6 +1959,19 @@ class contravariant_basis_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Constructs the cartesian local basis vectors (e<sub>1</sub>, e<sub>2</sub>, and e<sub>3</sub>) from two of
+ * the covariant basis vectors (g<sub>s</sub> and g<sub>t</sub>).
+ *
+ * @note The covariant basis vectors, g<sub>s</sub> and g<sub>t</sub>, must be evaluated at the desired point of
+ * interest.
+ *
+ * @param gs: the g<sub>s</sub> covariant basis vector
+ * @param gt: the g<sub>t</sub> covariant basis vector
+ * @param e1: the e<sub>1</sub> cartesian local basis vector (output)
+ * @param e2: the e<sub>2</sub> cartesian local basis vector (output)
+ * @param e3: the e<sub>3</sub> cartesian local basis vector (output)
+ * */
 class cartesian_local_basis_expr {
  public:
   /**
@@ -1827,7 +1995,21 @@ class cartesian_local_basis_expr {
       e3_expression(gt, e3),
       gs_cross_e3_expression(gs, e3, gs_cross_e3),
       e1_expression(gs_cross_e3, e1),
-      e2_expression(e3, e1, e2) {};
+      e2_expression(e3, e1, e2) {
+    /*std::cout << "UNQ_cartesian_local_basis_expr" << std::endl;
+    std::cout << "Covariant basis vectors:   "
+              << "gs={" << gs.value()(0) << ", " << gs.value()(1) << ", " << gs.value()(2) << "}" << std::endl
+              << "                           "
+              << "gt={" << gt.value()(0) << ", " << gt.value()(1) << ", " << gt.value()(2) << "}"
+              << std::endl;
+    std::cout << "Cartesian basis vectors:   "
+              << "e1={" << e1.value()(0) << ", " << e1.value()(1) << ", " << e1.value()(2) << "}" << std::endl
+              << "                           "
+              << "e2={" << e2.value()(0) << ", " << e2.value()(1) << ", " << e2.value()(2) << "}" << std::endl
+              << "                           "
+              << "e3={" << e3.value()(0) << ", " << e3.value()(1) << ", " << e3.value()(2) << "}"
+              << std::endl << std::endl;*/
+  };
 
   void reverse() {
     e2_expression.reverse();
@@ -1866,6 +2048,19 @@ class cartesian_local_basis_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Calculates the in-plane stain components (e<sub>rr</sub>, e<sub>ss</sub>, and e<sub>rs</sub>) based on the
+ * values of the covariant basis vectors g<sub>r</sub> and g<sub>s</sub>, and the displacement derivative vectors
+ * du/dr and du/ds.
+ *
+ * @note The covariant basis vectors, g<sub>r</sub> and g<sub>s</sub>, and displacement derivative vectors, du/dr and
+ * du/ds, must be evaluated at the desired point of interest (i.e. a quadrature point).
+ *
+ * @param gr: the g<sub>r</sub> covariant basis vector
+ * @param gs: the g<sub>s</sub> covariant basis vector
+ * @param ur: the derivative of the displacement vector with respect to r (i.e. du/dr)
+ * @param us: the derivative of the displacement vector with respect to s (i.e. du/ds)
+ * */
 class in_plane_strain_components_expr {
  public:
   /**
@@ -1892,7 +2087,28 @@ class in_plane_strain_components_expr {
         e_ss_expression(gs, us, e_ss),
         gr_us_expression(gr, us, gr_us),
         gs_ur_expression(gs, ur, gs_ur),
-        e_rs_expression(0.5, gr_us, gs_ur, e_rs) {};
+        e_rs_expression(0.5, gr_us, gs_ur, e_rs) {
+    /* std::cout << "UNQ_in_plane_strain_components_expr" << std::endl;
+    std::cout << "Covariant basis vectors:            "
+              << "gr={" << gr.value()(0) << ", " << gr.value()(1) << ", " << gr.value()(2) << "}" << std::endl
+              << "                                    "
+              << "gs={" << gs.value()(0) << ", " << gs.value()(1) << ", " << gs.value()(2) << "}"
+              << std::endl;
+
+    std::cout << "Displacement derivative vectors:    "
+              << "ur={" << ur.value()(0) << ", " << ur.value()(1) << ", " << ur.value()(2) << "}" << std::endl
+              << "                                    "
+              << "us={" << us.value()(0) << ", " << us.value()(1) << ", " << us.value()(2) << "}"
+              << std::endl;
+
+    std::cout << "In plane covariant strains:         "
+              << "e_rr=" << e_rr.value << std::endl
+              << "                                    "
+              << "e_ss=" << e_ss.value << std::endl
+              << "                                    "
+              << "e_rs=" << e_rs.value
+              << std::endl << std::endl;*/
+  };
 
   void reverse() {
     e_rs_expression.reverse();
@@ -1948,31 +2164,31 @@ class local_strain_expr {
                     A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
                     A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                     A2DScalar<N, T>& e_ij)
-      : Gr_ej_Gs_ei_expression(Gr_ej, Gs_ei, Gr_ej_Gs_ei),
+      : /*Gr_ej_Gs_ei_expression(Gr_ej, Gs_ei, Gr_ej_Gs_ei),
         Gr_ei_Gs_ej_expression(Gr_ei, Gs_ej, Gr_ei_Gs_ej),
 
         Gr_ej_Gt_ei_expression(Gr_ej, Gt_ei, Gr_ej_Gt_ei),
         Gr_ei_Gt_ej_expression(Gr_ei, Gt_ej, Gr_ei_Gt_ej),
 
         Gs_ej_Gt_ei_expression(Gs_ej, Gt_ei, Gs_ej_Gt_ei),
-        Gs_ei_Gt_ej_expression(Gs_ei, Gt_ej, Gs_ei_Gt_ej),
+        Gs_ei_Gt_ej_expression(Gs_ei, Gt_ej, Gs_ei_Gt_ej),*/
 
-        e_rr_multiplier_expression(Gr_ei, Gr_ej, e_rr_multiplier),
-        e_ss_multiplier_expression(Gs_ei, Gs_ej, e_ss_multiplier),
-        e_rs_multiplier_expression(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier),
-        e_rt_multiplier_expression(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier),
-        e_st_multiplier_expression(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier),
+      e_rr_multiplier_expression(Gr_ei, Gr_ej, e_rr_multiplier),
+      e_ss_multiplier_expression(Gs_ei, Gs_ej, e_ss_multiplier),
+      e_rs_multiplier_expression(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier),
+      e_rt_multiplier_expression(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier),
+      e_st_multiplier_expression(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier),
 
-        e_rr_expression(e_rr_multiplier, e_rr, scaled_e_rr),
-        e_ss_expression(e_ss_multiplier, e_ss, scaled_e_ss),
-        e_rs_expression(e_rs_multiplier, e_rs, scaled_e_rs),
-        e_rt_expression(e_rt_multiplier, e_rt, scaled_e_rt),
-        e_st_expression(e_st_multiplier, e_st, scaled_e_st),
+      e_rr_expression(e_rr_multiplier, e_rr, scaled_e_rr),
+      e_ss_expression(e_ss_multiplier, e_ss, scaled_e_ss),
+      e_rs_expression(e_rs_multiplier, e_rs, scaled_e_rs),
+      e_rt_expression(e_rt_multiplier, e_rt, scaled_e_rt),
+      e_st_expression(e_st_multiplier, e_st, scaled_e_st),
 
-        sum_12_expression(1, scaled_e_rr, scaled_e_ss, sum_12),
-        sum_123_expression(1, sum_12, scaled_e_rs, sum_123),
-        sum_1234_expression(1, sum_123, scaled_e_rt, sum_1234),
-        e_ij_expression(1, sum_1234, scaled_e_st, e_ij) {};
+      sum_12_expression(1, scaled_e_rr, scaled_e_ss, sum_12),
+      sum_123_expression(1, sum_12, scaled_e_rs, sum_123),
+      sum_1234_expression(1, sum_123, scaled_e_rt, sum_1234),
+      e_ij_expression(1, sum_1234, scaled_e_st, e_ij) {};
 
   void reverse() {
     e_ij_expression.reverse();
@@ -1992,6 +2208,8 @@ class local_strain_expr {
     e_ss_multiplier_expression.reverse();
     e_rr_multiplier_expression.reverse();
 
+    /*// URGENT: z bvalue of 0 here!!!
+    std::cout << "NOTICE" << std::endl;
     Gs_ei_Gt_ej_expression.reverse();
     Gs_ej_Gt_ei_expression.reverse();
 
@@ -1999,18 +2217,18 @@ class local_strain_expr {
     Gr_ej_Gt_ei_expression.reverse();
 
     Gr_ei_Gs_ej_expression.reverse();
-    Gr_ej_Gs_ei_expression.reverse();
+    Gr_ej_Gs_ei_expression.reverse();*/
   };
 
   void hforward() {
-    Gr_ej_Gs_ei_expression.hforward();
+    /*Gr_ej_Gs_ei_expression.hforward();
     Gr_ei_Gs_ej_expression.hforward();
 
     Gr_ej_Gt_ei_expression.hforward();
     Gr_ei_Gt_ej_expression.hforward();
 
     Gs_ej_Gt_ei_expression.hforward();
-    Gs_ei_Gt_ej_expression.hforward();
+    Gs_ei_Gt_ej_expression.hforward();*/
 
     e_rr_multiplier_expression.hforward();
     e_ss_multiplier_expression.hforward();
@@ -2048,14 +2266,14 @@ class local_strain_expr {
     e_ss_multiplier_expression.hreverse();
     e_rr_multiplier_expression.hreverse();
 
-    Gs_ei_Gt_ej_expression.hreverse();
+    /*Gs_ei_Gt_ej_expression.hreverse();
     Gs_ej_Gt_ei_expression.hreverse();
 
     Gr_ei_Gt_ej_expression.hreverse();
     Gr_ej_Gt_ei_expression.hreverse();
 
     Gr_ei_Gs_ej_expression.hreverse();
-    Gr_ej_Gs_ei_expression.hreverse();
+    Gr_ej_Gs_ei_expression.hreverse();*/
   };
 
  private:
@@ -2074,13 +2292,13 @@ class local_strain_expr {
       sum_12, sum_123, sum_1234;
 
   /* Expressions: */
-  A2DScalarA2DScalarMultExpr<N, T>
+  /*A2DScalarA2DScalarMultExpr<N, T>
       Gr_ej_Gs_ei_expression,
       Gr_ei_Gs_ej_expression,
       Gr_ej_Gt_ei_expression,
       Gr_ei_Gt_ej_expression,
       Gs_ej_Gt_ei_expression,
-      Gs_ei_Gt_ej_expression;
+      Gs_ei_Gt_ej_expression;*/
   A2DScalarA2DScalarMultExpr<N, T>
       e_rr_multiplier_expression,
       e_ss_multiplier_expression;
@@ -2130,7 +2348,43 @@ class local_strains_expr {
         e_22_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22),
         e_12_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12),
         e_13_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13),
-        e_23_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23) {};
+        e_23_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23) {
+    /* std::cout << "UNQ_local_strains_expr" << std::endl;
+    std::cout << "Contravariant basis vectors:   "
+              << "Gr={" << Gr.value()(0) << ", " << Gr.value()(1) << ", " << Gr.value()(2) << "}" << std::endl
+              << "                               "
+              << "Gs={" << Gs.value()(0) << ", " << Gs.value()(1) << ", " << Gs.value()(2) << "}" << std::endl
+              << "                               "
+              << "Gt={" << Gt.value()(0) << ", " << Gt.value()(1) << ", " << Gt.value()(2) << "}"
+              << std::endl;
+
+    std::cout << "Cartesian basis vectors:       "
+              << "e1={" << e1.value()(0) << ", " << e1.value()(1) << ", " << e1.value()(2) << "}" << std::endl
+              << "                               "
+              << "e2={" << e2.value()(0) << ", " << e2.value()(1) << ", " << e2.value()(2) << "}" << std::endl
+              << "                               "
+              << "e3={" << e3.value()(0) << ", " << e3.value()(1) << ", " << e3.value()(2) << "}"
+              << std::endl;
+
+//    std::cout << "   Gr_e1=" << Gr_e1.value
+//              << "   Gr_e2=" << Gr_e2.value
+//              << "   Gr_e3=" << Gr_e3.value
+//              << "   Gs_e1=" << Gs_e1.value
+//              << "   Gs_e2=" << Gs_e2.value
+//              << "   Gs_e3=" << Gs_e3.value
+//              << "   Gt_e1=" << Gt_e1.value
+//              << "   Gt_e2=" << Gt_e2.value
+//              << "   Gt_e3=" << Gt_e3.value
+//              << std::endl;
+
+    std::cout << "Local strains:                 "
+              << "e11=" << e_11.value
+              << "  e22=" << e_22.value
+              << "  e12=" << e_12.value
+              << "  e13=" << e_13.value
+              << "  e23=" << e_23.value
+              << std::endl << std::endl;*/
+  };
 
   void reverse() {
     e_23_expression.reverse();
@@ -2216,6 +2470,23 @@ class local_strains_expr {
 };
 
 template <int N, typename T>
+/**
+ * @brief Compute the strain energy of the element for some point within the element.
+ *
+ * @note All inputs (gr, gs, gt, ur, us, ut, e_rt, and e_st) must be evaluated at the point of interest in order for
+ * the calculations to be correct.
+ *
+ * @param gr:         the g<sub>r</sub> covariant basis vector.
+ * @param gs:         the g<sub>s</sub> covariant basis vector.
+ * @param gt:         the g<sub>t</sub> covariant basis vector.
+ * @param ur:         the derivative of the displacement vector with respect to r (i.e. du/dr).
+ * @param us:         the derivative of the displacement vector with respect to s (i.e. du/ds).
+ * @param ut:         the derivative of the displacement vector with respect to t (i.e. du/dt).
+ * @param e_rt:       the covariant shear strain component between the r and t directions (e<sub>rt</sub>).
+ * @param e_st:       the covariant shear strain component between the s and t directions (e<sub>st</sub>).
+ * @param element:    the MITC4 element object for which the strain energy is being computed.
+ * @param energy:     the strain energy as an A2DScalar object to store the values (output).
+ * */
 class strain_energy_expr {
  public:
   /**
@@ -2253,11 +2524,15 @@ class strain_energy_expr {
       /* Calculate local strains */
       local_strains_expression(Gr, Gs, Gt, e1, e2, e3, e_rr, e_ss, e_rs, e_rt, e_st, e_11, e_22, e_12, e_13, e_23),
       /* Assemble local strain vector */
-      local_strains_vec_expression(local_strains_vec, e_11, e_22, e_12, e_13, e_23),
+      local_strains_vec_expression(e_11, e_22, e_12, e_13, e_23, local_strains_vec),
       /* Calculate strain energy */
-      strain_energy_expression(material.D, local_strains_vec, local_strains_vec, energy) {};
+      strain_energy_expression(material.D, local_strains_vec, local_strains_vec, energy) {
+    /*std::cout << "UNQ_strain_energy_expr" << std::endl;
+    std::cout << "strain energy: " << energy.value << std::endl;*/
+  };
 
   void reverse() {
+    std::cout << this << ":UNQ.strain_energy_expr.reverse" << std::endl;
     strain_energy_expression.reverse();
     local_strains_vec_expression.reverse();
     local_strains_expression.reverse();

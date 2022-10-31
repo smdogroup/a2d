@@ -8,6 +8,32 @@
 #ifndef A2D_SHELL_DEV_OPS
 #define A2D_SHELL_DEV_OPS
 
+// NOTE: I changed the constant scalar inputs to store by copy to get rid of memory management issues.
+// If they are done by reference for a reason, it will need to be changed back.
+// TODO: if not, change this for all other operations.
+
+template <typename T, int P>
+void print_vector_no_endl(const A2D::Vec<T, P>& x) {
+  for (int i = 0; i < P - 1; ++i) {
+    std::cout << x(i) << ", ";
+  }
+  std::cout << x(P - 1);
+};
+
+template <typename T, int P, int Q>
+void print_mat_no_endl(const A2D::Mat<T, P, Q>& A) {
+  for (int i = 0; i < P - 1; ++i) {
+    for (int j = 0; j < Q; ++j) {
+      std::cout << A(i, j) << ", ";
+    }
+    std::cout << std::endl;
+  }
+  for (int j = 0; j < Q - 1; ++j) {
+    std::cout << A(P - 1, j) << ", ";
+  }
+  std::cout << A(P - 1, Q - 1);
+};
+
 namespace A2D {
 
 /**
@@ -27,9 +53,10 @@ class A2DScalarScalarMultExpr {
 //            input:
     const T& zb = zObj.bvalue;
     const T& a = aObj.value;
-    /*std::cout << "UNQ.A2DScalarScalarMultExpr.reverse  zb=" << zb << ", a=" << a << ", b=" << b << std::endl;*/
 //            operations:
     aObj.bvalue += zb * b;
+    std::cout << this << ":UNQ_A2DScalarScalarMultExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl;
   };
 
   void hforward() {
@@ -53,7 +80,7 @@ class A2DScalarScalarMultExpr {
   };
 
   A2DScalar<N, T>& aObj;
-  const T& b;
+  const T b;
   A2DScalar<N, T>& zObj;
 };
 
@@ -82,6 +109,8 @@ class A2DScalarA2DScalarMultExpr {
 //            operations:
     aObj.bvalue += zb * b;
     bObj.bvalue += zb * a;
+    std::cout << this << ":UNQ_A2DScalarA2DScalarMultExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl;
   };
 
   void hforward() {
@@ -156,6 +185,14 @@ class A2DVec3A2DScaleDivExpr {
 //            operations:
     aObj.bvalue += -Vec3DotCore<T, Vec<T, 3>>(vb, x) / (a * a);
     Vec3AXPYCore(1 / a, vb, xb, xb);  // TODO: check if a scale-add in place is faster
+
+    /*std::cout << this << ":UNQ_A2DVec3A2DScaleDivExpr_reverse" << std::endl;
+    std::cout << "vb={";
+    print_vector_no_endl(vb);
+    std::cout << "}" << std::endl;
+    std::cout << "x={";
+    print_vector_no_endl(x);
+    std::cout << "}" << std::endl;*/
   };
 
   void hforward() {
@@ -223,17 +260,19 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
                                     A2DScalar<N, T>& yObj,
                                     A2DScalar<N, T>& zObj)
       : a{a}, xObj(xObj), yObj(yObj), zObj(zObj) {
-    /*std::cout << "UNQ.ScalarA2DScalarA2DScalarAxpayExpr.constructor  " << a << std::endl;*/
+    /*std::cout << this << ":UNQ_ScalarA2DScalarA2DScalarAxpayExpr_constructor  " << std::endl;*/
     zObj.value = a * (xObj.value + yObj.value);
   };
 
   void reverse() {
 //            input:
     const T& zb = zObj.bvalue;
-    std::cout << "UNQ.ScalarA2DScalarA2DScalarAxpayExpr.reverse  " << zb << ", " << a << std::endl;
 //            operations:
     xObj.bvalue += zb * a;
     yObj.bvalue += zb * a;
+
+    std::cout << this << ":UNQ_ScalarA2DScalarA2DScalarAxpayExpr_reverse" << std::endl;
+    std::cout << "zb=" << zb << ", a=" << a << std::endl;
   };
 
   void hforward() {
@@ -257,7 +296,7 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
     }
   };
 
-  const T& a;
+  const T a;
   A2DScalar<N, T>& xObj;
   A2DScalar<N, T>& yObj;
   A2DScalar<N, T>& zObj;
@@ -383,9 +422,9 @@ class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
     }
   };
 
-  const T& a;
+  const T a;
   A2DScalar<N, T>& xObj;
-  const T& b;
+  const T b;
   A2DScalar<N, T>& yObj;
   A2DScalar<N, T>& zObj;
 };
@@ -646,6 +685,12 @@ class MatA2DVecA2DVecInnerProductExpr {
 //            operations:
     MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
     MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
+
+    /*std::cout << this << ":UNQ.MatA2DVecA2DVecInnerProductExpr.reverse" << std::endl;
+    std::cout << "A={";
+    print_mat_no_endl(A);
+    std::cout << "}";
+    std::cout << std::endl;*/
   };
 
   void hforward() {
@@ -696,7 +741,7 @@ class MatA2DVecA2DVecInnerProductExpr {
     }
   };
 
-  const Mat<T, P, Q>& A;
+  const Mat<T, P, Q>& A;  // TODO: see if this needs to be stored by copy
   A2DVec<N, Vec<T, P>>& xObj;
   A2DVec<N, Vec<T, Q>>& yObj;
   A2DScalar<N, T>& aObj;

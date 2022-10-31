@@ -244,28 +244,28 @@ class ShellElementMITC4 {
         us_r0sAt1_expression(1, 1, quad_1, node1, node2, node3, node4, us_r0sAt1),
         us_r1sAt0_expression(1, 2, quad_0, node1, node2, node3, node4, us_r1sAt0),
         us_r1sAt1_expression(1, 2, quad_1, node1, node2, node3, node4, us_r1sAt1),
-      /* ut calculations */
+      /* ut calculations *//*
         ut_r0s0tA_expression(1, 1, node1, node2, node3, node4, ut_r0s0tA),
         ut_r0s1tA_expression(1, 3, node1, node2, node3, node4, ut_r0s1tA),
         ut_r1s0tA_expression(3, 1, node1, node2, node3, node4, ut_r1s0tA),
-        ut_r1s1tA_expression(3, 3, node1, node2, node3, node4, ut_r1s1tA),
+        ut_r1s1tA_expression(3, 3, node1, node2, node3, node4, ut_r1s1tA),*/
 
       /* Energy at the quadrature points: */
-        strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, ut_r0s0tA,
+        strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, /*ut_r0s0tA,*/
                                         e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t0),
-        strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, ut_r0s0tA,
+        strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, /*ut_r0s0tA,*/
                                         e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t1),
-        strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, ut_r0s1tA,
+        strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, /*ut_r0s1tA,*/
                                         e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t0),
-        strain_energy_r0s1t1_expression(gr_rAs1t1, gs_r0sAt1, gt_r0s1tA, ur_rAs1t1, us_r0sAt1, ut_r0s1tA,
+        strain_energy_r0s1t1_expression(gr_rAs1t1, gs_r0sAt1, gt_r0s1tA, ur_rAs1t1, us_r0sAt1, /*ut_r0s1tA,*/
                                         e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t1),
-        strain_energy_r1s0t0_expression(gr_rAs0t0, gs_r1sAt0, gt_r1s0tA, ur_rAs0t0, us_r1sAt0, ut_r1s0tA,
+        strain_energy_r1s0t0_expression(gr_rAs0t0, gs_r1sAt0, gt_r1s0tA, ur_rAs0t0, us_r1sAt0, /*ut_r1s0tA,*/
                                         e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t0),
-        strain_energy_r1s0t1_expression(gr_rAs0t1, gs_r1sAt1, gt_r1s0tA, ur_rAs0t1, us_r1sAt1, ut_r1s0tA,
+        strain_energy_r1s0t1_expression(gr_rAs0t1, gs_r1sAt1, gt_r1s0tA, ur_rAs0t1, us_r1sAt1, /*ut_r1s0tA,*/
                                         e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t1),
-        strain_energy_r1s1t0_expression(gr_rAs1t0, gs_r1sAt0, gt_r1s1tA, ur_rAs1t0, us_r1sAt0, ut_r1s1tA,
+        strain_energy_r1s1t0_expression(gr_rAs1t0, gs_r1sAt0, gt_r1s1tA, ur_rAs1t0, us_r1sAt0, /*ut_r1s1tA,*/
                                         e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t0),
-        strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, ut_r1s1tA,
+        strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, /*ut_r1s1tA,*/
                                         e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t1),
 
       /* Summation of the strain energy: */
@@ -392,9 +392,15 @@ class ShellElementMITC4 {
     sum_123_expression.reverse();
     sum_12_expression.reverse();
     std::cout << "end sum reverses" << std::endl;
+    std::cout << std::endl
+              << "#######################################################################################################"
+              << std::endl
+              << "####################################        end sum reverses       ####################################"
+              << std::endl
+              << "#######################################################################################################"
+              << std::endl << std::endl;
 
     strain_energy_r1s1t1_expression.reverse();
-    std::cout << std::endl;
     strain_energy_r1s1t0_expression.reverse();
     strain_energy_r1s0t1_expression.reverse();
     strain_energy_r1s0t0_expression.reverse();
@@ -403,10 +409,18 @@ class ShellElementMITC4 {
     strain_energy_r0s0t1_expression.reverse();
     strain_energy_r0s0t0_expression.reverse();
 
-    ut_r1s1tA_expression.reverse();
+    std::cout << std::endl
+              << "#######################################################################################################"
+              << std::endl
+              << "#################################### end strain energy expressions ####################################"
+              << std::endl
+              << "#######################################################################################################"
+              << std::endl << std::endl;
+
+    /*ut_r1s1tA_expression.reverse();
     ut_r1s0tA_expression.reverse();
     ut_r0s1tA_expression.reverse();
-    ut_r0s0tA_expression.reverse();
+    ut_r0s0tA_expression.reverse();*/
 
     us_r1sAt1_expression.reverse();
     us_r1sAt0_expression.reverse();
@@ -480,10 +494,10 @@ class ShellElementMITC4 {
     us_r1sAt0_expression.hforward();
     us_r1sAt1_expression.hforward();
 
-    ut_r0s0tA_expression.hforward();
+    /*ut_r0s0tA_expression.hforward();
     ut_r0s1tA_expression.hforward();
     ut_r1s0tA_expression.hforward();
-    ut_r1s1tA_expression.hforward();
+    ut_r1s1tA_expression.hforward();*/
 
     strain_energy_r0s0t0_expression.hforward();
     strain_energy_r0s0t1_expression.hforward();
@@ -521,10 +535,10 @@ class ShellElementMITC4 {
     strain_energy_r0s0t1_expression.hreverse();
     strain_energy_r0s0t0_expression.hreverse();
 
-    ut_r1s1tA_expression.hreverse();
+    /*ut_r1s1tA_expression.hreverse();
     ut_r1s0tA_expression.hreverse();
     ut_r0s1tA_expression.hreverse();
-    ut_r0s0tA_expression.hreverse();
+    ut_r0s0tA_expression.hreverse();*/
 
     us_r1sAt1_expression.hreverse();
     us_r1sAt0_expression.hreverse();
@@ -704,10 +718,10 @@ class ShellElementMITC4 {
   u_alpha_expr<N, T> us_r1sAt0_expression;
   u_alpha_expr<N, T> us_r1sAt1_expression;
   /* ut calculations */
-  u_t_expr<N, T> ut_r0s0tA_expression;
+  /*u_t_expr<N, T> ut_r0s0tA_expression;
   u_t_expr<N, T> ut_r0s1tA_expression;
   u_t_expr<N, T> ut_r1s0tA_expression;
-  u_t_expr<N, T> ut_r1s1tA_expression;
+  u_t_expr<N, T> ut_r1s1tA_expression;*/
 
   /* Energy at the quadrature points: */
   strain_energy_expr<N, T> strain_energy_r0s0t0_expression;
@@ -2164,31 +2178,22 @@ class local_strain_expr {
                     A2DScalar<N, T>& e_rr, A2DScalar<N, T>& e_ss, A2DScalar<N, T>& e_rs,
                     A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                     A2DScalar<N, T>& e_ij)
-      : /*Gr_ej_Gs_ei_expression(Gr_ej, Gs_ei, Gr_ej_Gs_ei),
-        Gr_ei_Gs_ej_expression(Gr_ei, Gs_ej, Gr_ei_Gs_ej),
+      : e_rr_multiplier_expression(Gr_ei, Gr_ej, e_rr_multiplier),
+        e_ss_multiplier_expression(Gs_ei, Gs_ej, e_ss_multiplier),
+        e_rs_multiplier_expression(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier),
+        e_rt_multiplier_expression(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier),
+        e_st_multiplier_expression(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier),
 
-        Gr_ej_Gt_ei_expression(Gr_ej, Gt_ei, Gr_ej_Gt_ei),
-        Gr_ei_Gt_ej_expression(Gr_ei, Gt_ej, Gr_ei_Gt_ej),
+        e_rr_expression(e_rr_multiplier, e_rr, scaled_e_rr),
+        e_ss_expression(e_ss_multiplier, e_ss, scaled_e_ss),
+        e_rs_expression(e_rs_multiplier, e_rs, scaled_e_rs),
+        e_rt_expression(e_rt_multiplier, e_rt, scaled_e_rt),
+        e_st_expression(e_st_multiplier, e_st, scaled_e_st),
 
-        Gs_ej_Gt_ei_expression(Gs_ej, Gt_ei, Gs_ej_Gt_ei),
-        Gs_ei_Gt_ej_expression(Gs_ei, Gt_ej, Gs_ei_Gt_ej),*/
-
-      e_rr_multiplier_expression(Gr_ei, Gr_ej, e_rr_multiplier),
-      e_ss_multiplier_expression(Gs_ei, Gs_ej, e_ss_multiplier),
-      e_rs_multiplier_expression(Gr_ej, Gs_ei, Gr_ei, Gs_ej, e_rs_multiplier),
-      e_rt_multiplier_expression(Gr_ej, Gt_ei, Gr_ei, Gt_ej, e_rt_multiplier),
-      e_st_multiplier_expression(Gs_ej, Gt_ei, Gs_ei, Gt_ej, e_st_multiplier),
-
-      e_rr_expression(e_rr_multiplier, e_rr, scaled_e_rr),
-      e_ss_expression(e_ss_multiplier, e_ss, scaled_e_ss),
-      e_rs_expression(e_rs_multiplier, e_rs, scaled_e_rs),
-      e_rt_expression(e_rt_multiplier, e_rt, scaled_e_rt),
-      e_st_expression(e_st_multiplier, e_st, scaled_e_st),
-
-      sum_12_expression(1, scaled_e_rr, scaled_e_ss, sum_12),
-      sum_123_expression(1, sum_12, scaled_e_rs, sum_123),
-      sum_1234_expression(1, sum_123, scaled_e_rt, sum_1234),
-      e_ij_expression(1, sum_1234, scaled_e_st, e_ij) {};
+        sum_12_expression(1, scaled_e_rr, scaled_e_ss, sum_12),
+        sum_123_expression(1, sum_12, scaled_e_rs, sum_123),
+        sum_1234_expression(1, sum_123, scaled_e_rt, sum_1234),
+        e_ij_expression(1, sum_1234, scaled_e_st, e_ij) {};
 
   void reverse() {
     e_ij_expression.reverse();
@@ -2207,29 +2212,9 @@ class local_strain_expr {
     e_rs_multiplier_expression.reverse();
     e_ss_multiplier_expression.reverse();
     e_rr_multiplier_expression.reverse();
-
-    /*// URGENT: z bvalue of 0 here!!!
-    std::cout << "NOTICE" << std::endl;
-    Gs_ei_Gt_ej_expression.reverse();
-    Gs_ej_Gt_ei_expression.reverse();
-
-    Gr_ei_Gt_ej_expression.reverse();
-    Gr_ej_Gt_ei_expression.reverse();
-
-    Gr_ei_Gs_ej_expression.reverse();
-    Gr_ej_Gs_ei_expression.reverse();*/
   };
 
   void hforward() {
-    /*Gr_ej_Gs_ei_expression.hforward();
-    Gr_ei_Gs_ej_expression.hforward();
-
-    Gr_ej_Gt_ei_expression.hforward();
-    Gr_ei_Gt_ej_expression.hforward();
-
-    Gs_ej_Gt_ei_expression.hforward();
-    Gs_ei_Gt_ej_expression.hforward();*/
-
     e_rr_multiplier_expression.hforward();
     e_ss_multiplier_expression.hforward();
     e_rs_multiplier_expression.hforward();
@@ -2265,15 +2250,6 @@ class local_strain_expr {
     e_rs_multiplier_expression.hreverse();
     e_ss_multiplier_expression.hreverse();
     e_rr_multiplier_expression.hreverse();
-
-    /*Gs_ei_Gt_ej_expression.hreverse();
-    Gs_ej_Gt_ei_expression.hreverse();
-
-    Gr_ei_Gt_ej_expression.hreverse();
-    Gr_ej_Gt_ei_expression.hreverse();
-
-    Gr_ei_Gs_ej_expression.hreverse();
-    Gr_ej_Gs_ei_expression.hreverse();*/
   };
 
  private:
@@ -2292,13 +2268,6 @@ class local_strain_expr {
       sum_12, sum_123, sum_1234;
 
   /* Expressions: */
-  /*A2DScalarA2DScalarMultExpr<N, T>
-      Gr_ej_Gs_ei_expression,
-      Gr_ei_Gs_ej_expression,
-      Gr_ej_Gt_ei_expression,
-      Gr_ei_Gt_ej_expression,
-      Gs_ej_Gt_ei_expression,
-      Gs_ei_Gt_ej_expression;*/
   A2DScalarA2DScalarMultExpr<N, T>
       e_rr_multiplier_expression,
       e_ss_multiplier_expression;
@@ -2507,7 +2476,7 @@ class strain_energy_expr {
    * @param energy:     the strain energy as an A2DScalar object to store the values (output).
    * */
   strain_energy_expr(A2DVec<N, Vec<T, 3>>& gr, A2DVec<N, Vec<T, 3>>& gs, A2DVec<N, Vec<T, 3>>& gt,
-                     A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us, A2DVec<N, Vec<T, 3>>& ut,
+                     A2DVec<N, Vec<T, 3>>& ur, A2DVec<N, Vec<T, 3>>& us, /*A2DVec<N, Vec<T, 3>>& ut,*/
                      A2DScalar<N, T>& e_rt, A2DScalar<N, T>& e_st,
                      const LinearIsotropicMaterial<T>& material,
                      A2DScalar<N, T>& energy)

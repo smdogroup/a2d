@@ -48,7 +48,8 @@ class ADVec3NormExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(nb / n, x, xb);
+//    Vec3ScaleCore(nb / n, x, xb);
+    Vec3AXPYCore(nb / n, x, xb, xb);  // TODO: see if increment scale is faster
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -101,12 +102,13 @@ class ADVec3ScaleExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(a, vb, xb);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   };
 
   ADVec<Vec<T, 3>>& xObj;
   ADVec<Vec<T, 3>>& vObj;
-  const T& a;
+  const T a;
 };
 
 template <typename T>
@@ -143,7 +145,7 @@ class Vec3ADScaleExpr {
 //            output:
     T& ab = aObj.bvalue;
 //            operations:
-    ab = Vec3DotCore<T, Vec<T, 3>>(vb, x);
+    ab += Vec3DotCore<T, Vec<T, 3>>(vb, x);
   };
 
   const Vec<T, 3>& x;
@@ -192,8 +194,9 @@ class ADVec3ADScaleExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     T& ab = aObj.bvalue;
 //            operations:
-    ab = Vec3DotCore<T, Vec<T, 3>>(vb, x);
-    Vec3ScaleCore(a, vb, xb);
+    ab += Vec3DotCore<T, Vec<T, 3>>(vb, x);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -510,7 +513,8 @@ class ADVec3DotVecExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(ab, y, xb);
+//    Vec3ScaleCore(ab, y, xb);
+    Vec3AXPYCore(ab, y, xb, xb);  // TODO: see if increment scale is faster
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -559,8 +563,10 @@ class ADVec3DotADVecExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    Vec3ScaleCore(ab, y, xb);
-    Vec3ScaleCore(ab, x, yb);
+//    Vec3ScaleCore(ab, y, xb);
+//    Vec3ScaleCore(ab, x, yb);
+    Vec3AXPYCore(ab, y, xb, xb);  // TODO: see if increment scale is faster
+    Vec3AXPYCore(ab, x, yb, yb);  // TODO: see if increment scale is faster
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -673,7 +679,7 @@ class ADVec3NormalizeExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3AXPBYCore(normInv, vb, negativeSquaredNormInv * Vec3DotCore<T>(vb, x), v, xb);
+    Vec3AXPBYIncrementCore(normInv, vb, negativeSquaredNormInv * Vec3DotCore<T>(vb, x), v, xb);
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -734,12 +740,12 @@ class ADVec3ScaleSymmetricOuterProductExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Mat3x3VecMultScaleCore(2 * a, Sb, x, xb);
+    Mat3x3VecMultAddScaleCore(2 * a, Sb, x, xb);
   }
 
   ADVec<Vec<T, 3>>& xObj;
   ADMat<Mat<T, 3, 3>>& sObj;
-  const T& a;
+  const T a;
 };
 
 template <typename T>
@@ -777,7 +783,7 @@ class Vec3ADScaleSymmetricOuterProductExpr {
 //            output:
     T& ab = aObj.bvalue;
 //            operations:
-    ab = Mat3x3InnerProductCore<T>(Sb, x, x);
+    ab += Mat3x3InnerProductCore<T>(Sb, x, x);
   }
 
   const Vec<T, 3>& x;
@@ -830,8 +836,8 @@ class ADVec3ADScaleSymmetricOuterProductExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     T& ab = aObj.bvalue;
 //            operations:
-    ab = Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
-    Mat3x3VecMultScaleCore(2 * a, Sb, x, xb);
+    ab += Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
+    Mat3x3VecMultAddScaleCore(2 * a, Sb, x, xb);
   }
 
   ADVec<Vec<T, 3>>& xObj;
@@ -876,7 +882,8 @@ class A2DVec3NormExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(nb / n, x, xb);
+//    Vec3ScaleCore(nb / n, x, xb);
+    Vec3AXPYCore(nb / n, x, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -912,6 +919,7 @@ class A2DVec3NormExpr {
     const T& norm = normObj.value;
     const T& nb = normObj.bvalue;
     T invNorm = 1 / norm;
+    Vec<T, 3> xhTemp;
 /*
 //            main loop:
             for (int i = N - 1; i != 0; i--) {
@@ -944,9 +952,11 @@ class A2DVec3NormExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(-Vec3DotCore<T>(normX, xp), normX, xh);
-      Vec3AddThenScaleCore(nb * invNorm, xp, xh);
-      Vec3ScaleAndAddCore(nh, normX, xh);
+// TODO: improve this
+      Vec3ScaleCore(-Vec3DotCore<T>(normX, xp), normX, xhTemp);
+      Vec3AddThenScaleCore(nb * invNorm, xp, xhTemp);
+      Vec3ScaleAndAddCore(nh, normX, xhTemp);
+      Vec3AXPYCore(1.0, xhTemp, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
@@ -987,7 +997,8 @@ class A2DVec3ScaleExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(a, vb, xb);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1010,13 +1021,14 @@ class A2DVec3ScaleExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(a, vh, xh);
+//      Vec3ScaleCore(a, vh, xh);
+      Vec3AXPYCore(a, vh, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
   A2DVec<N, Vec<T, 3>>& xObj;
+  const T a;
   A2DVec<N, Vec<T, 3>>& vObj;
-  const T& a;
 };
 
 template <int N, typename T>
@@ -1042,7 +1054,7 @@ class Vec3A2DScaleExpr {
 //            input:
     const Vec<T, 3>& vb = vObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T, Vec<T, 3>>(vb, x);
+    aObj.bvalue += Vec3DotCore<T, Vec<T, 3>>(vb, x);
   };
 
   void hforward() {
@@ -1065,13 +1077,13 @@ class Vec3A2DScaleExpr {
 //                input:
       const Vec<T, 3>& vh = vObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x);
     }
   };
 
   const Vec<T, 3>& x;
-  A2DVec<N, Vec<T, 3>>& vObj;
   A2DScalar<N, T>& aObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
@@ -1102,8 +1114,9 @@ class A2DVec3A2DScaleExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T, Vec<T, 3>>(vb, x);
-    Vec3ScaleCore(a, vb, xb);
+    aObj.bvalue += Vec3DotCore<T, Vec<T, 3>>(vb, x);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1136,14 +1149,14 @@ class A2DVec3A2DScaleExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
-      Vec3AXPBYCore(a, vh, ap, vb, xh);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
+      Vec3AXPBYIncrementCore(a, vh, ap, vb, xh);
     }
   };
 
   A2DVec<N, Vec<T, 3>>& xObj;
-  A2DVec<N, Vec<T, 3>>& vObj;
   A2DScalar<N, T>& aObj;
+  A2DVec<N, Vec<T, 3>>& vObj;
 };
 
 template <int N, typename T>
@@ -1176,7 +1189,7 @@ class Vec3VecA2DScalarAxpyExpr {
 //            input:
     const Vec<T, 3>& vb = vObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T>(vb, x);
+    aObj.bvalue += Vec3DotCore<T>(vb, x);
   };
 
   void hforward() {
@@ -1197,7 +1210,7 @@ class Vec3VecA2DScalarAxpyExpr {
 //                input:
       const Vec<T, 3>& vh = vObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x);
     }
   };
 
@@ -1234,7 +1247,8 @@ class A2DVec3VecScalarAxpyExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(a, vb, xb);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1257,11 +1271,12 @@ class A2DVec3VecScalarAxpyExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(a, vh, xh);
+//      Vec3ScaleCore(a, vh, xh);
+      Vec3AXPYCore(a, vh, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
-  const T& a;
+  const T a;
   A2DVec<N, Vec<T, 3>>& xObj;
   const Vec<T, 3>& y;
   A2DVec<N, Vec<T, 3>>& vObj;
@@ -1294,9 +1309,9 @@ class Vec3A2DVecScalarAxpyExpr {
 //            output:
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    yb(0) = vb(0);
-    yb(1) = vb(1);
-    yb(2) = vb(2);
+    yb(0) += vb(0);
+    yb(1) += vb(1);
+    yb(2) += vb(2);
   };
 
   void hforward() {
@@ -1321,13 +1336,13 @@ class Vec3A2DVecScalarAxpyExpr {
 //                output:
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      yh(0) = vh(0);
-      yh(1) = vh(1);
-      yh(2) = vh(2);
+      yh(0) += vh(0);
+      yh(1) += vh(1);
+      yh(2) += vh(2);
     }
   };
 
-  const T& a;
+  const T a;
   const Vec<T, 3>& x;
   A2DVec<N, Vec<T, 3>>& yObj;
   A2DVec<N, Vec<T, 3>>& vObj;
@@ -1363,8 +1378,9 @@ class A2DVec3VecA2DScalarAxpyExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T>(vb, x);
-    Vec3ScaleCore(a, vb, xb);
+    aObj.bvalue += Vec3DotCore<T>(vb, x);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1397,8 +1413,8 @@ class A2DVec3VecA2DScalarAxpyExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
-      Vec3AXPBYCore(a, vh, ap, vb, xh);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
+      Vec3AXPBYIncrementCore(a, vh, ap, vb, xh);
     }
   };
 
@@ -1437,10 +1453,10 @@ class Vec3A2DVecA2DScalarAxpyExpr {
 //            output:
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T>(vb, x);
-    yb(0) = vb(0);
-    yb(1) = vb(1);
-    yb(2) = vb(2);
+    aObj.bvalue += Vec3DotCore<T>(vb, x);
+    yb(0) += vb(0);
+    yb(1) += vb(1);
+    yb(2) += vb(2);
   };
 
   void hforward() {
@@ -1464,10 +1480,10 @@ class Vec3A2DVecA2DScalarAxpyExpr {
 //                output:
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x);
-      yh(0) = vh(0);
-      yh(1) = vh(1);
-      yh(2) = vh(2);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x);
+      yh(0) += vh(0);
+      yh(1) += vh(1);
+      yh(2) += vh(2);
     }
   };
 
@@ -1507,10 +1523,11 @@ class A2DVec3A2DVecScalarAxpyExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    Vec3ScaleCore(a, vb, xb);
-    yb(0) = vb(0);
-    yb(1) = vb(1);
-    yb(2) = vb(2);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
+    yb(0) += vb(0);
+    yb(1) += vb(1);
+    yb(2) += vb(2);
   };
 
   void hforward() {
@@ -1537,14 +1554,15 @@ class A2DVec3A2DVecScalarAxpyExpr {
       Vec<T, 3>& xh = xObj.hvalue(i);
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(a, vh, xh);
-      yh(0) = vh(0);
-      yh(1) = vh(1);
-      yh(2) = vh(2);
+//      Vec3ScaleCore(a, vh, xh);
+      Vec3AXPYCore(a, vh, xh, xh);  // TODO: see if increment scale is faster
+      yh(0) += vh(0);
+      yh(1) += vh(1);
+      yh(2) += vh(2);
     }
   };
 
-  const T& a;
+  const T a;
   A2DVec<N, Vec<T, 3>>& xObj;
   A2DVec<N, Vec<T, 3>>& yObj;
   A2DVec<N, Vec<T, 3>>& vObj;
@@ -1582,11 +1600,12 @@ class A2DVec3A2DVecA2DScalarAxpyExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    aObj.bvalue = Vec3DotCore<T>(vb, x);
-    Vec3ScaleCore(a, vb, xb);
-    yb(0) = vb(0);
-    yb(1) = vb(1);
-    yb(2) = vb(2);
+    aObj.bvalue += Vec3DotCore<T>(vb, x);
+//    Vec3ScaleCore(a, vb, xb);
+    Vec3AXPYCore(a, vb, xb, xb);  // TODO: see if increment scale is faster
+    yb(0) += vb(0);
+    yb(1) += vb(1);
+    yb(2) += vb(2);
   };
 
   void hforward() {
@@ -1623,11 +1642,11 @@ class A2DVec3A2DVecA2DScalarAxpyExpr {
       Vec<T, 3>& xh = xObj.hvalue(i);
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
-      Vec3AXPBYCore(a, vh, ap, vb, xh);
-      yh(0) = vh(0);
-      yh(1) = vh(1);
-      yh(2) = vh(2);
+      aObj.hvalue[i] += Vec3DotCore<T>(vh, x) + Vec3DotCore<T>(vb, xp);
+      Vec3AXPBYIncrementCore(a, vh, ap, vb, xh);
+      yh(0) += vh(0);
+      yh(1) += vh(1);
+      yh(2) += vh(2);
     }
   };
 
@@ -1669,7 +1688,8 @@ class A2DVec3DotVecExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3ScaleCore(ab, y, xb);
+//    Vec3ScaleCore(ab, y, xb);
+    Vec3AXPYCore(ab, y, xb, xb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1690,7 +1710,8 @@ class A2DVec3DotVecExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(ah, y, xh);
+//      Vec3ScaleCore(ah, y, xh);
+      Vec3AXPYCore(ah, y, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
@@ -1723,7 +1744,8 @@ class Vec3DotA2DVecExpr {
 //            output:
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    Vec3ScaleCore(ab, x, yb);
+//    Vec3ScaleCore(ab, x, yb);
+    Vec3AXPYCore(ab, x, yb, yb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1744,7 +1766,8 @@ class Vec3DotA2DVecExpr {
 //                output:
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      Vec3ScaleCore(ah, x, yh);
+//      Vec3ScaleCore(ah, x, yh);
+      Vec3AXPYCore(ah, x, yh, yh);  // TODO: see if increment scale is faster
     }
   };
 
@@ -1782,8 +1805,10 @@ class A2DVec3DotA2DVecExpr {
     Vec<T, 3>& xb = xObj.bvalue();
     Vec<T, 3>& yb = yObj.bvalue();
 //            operations:
-    Vec3ScaleCore(ab, y, xb);
-    Vec3ScaleCore(ab, x, yb);
+//    Vec3ScaleCore(ab, y, xb);
+//    Vec3ScaleCore(ab, x, yb);
+    Vec3AXPYCore(ab, y, xb, xb);  // TODO: see if increment scale is faster
+    Vec3AXPYCore(ab, x, yb, yb);  // TODO: see if increment scale is faster
   };
 
   void hforward() {
@@ -1815,8 +1840,8 @@ class A2DVec3DotA2DVecExpr {
       Vec<T, 3>& xh = xObj.hvalue(i);
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      Vec3AXPBYCore(ah, y, ab, yp, xh);
-      Vec3AXPBYCore(ah, x, ab, xp, yh);
+      Vec3AXPBYIncrementCore(ah, y, ab, yp, xh);
+      Vec3AXPBYIncrementCore(ah, x, ab, xp, yh);
     }
   };
 
@@ -2008,9 +2033,9 @@ class A2DVec3CrossA2DVecExpr {
       Vec<T, 3>& xh = xObj.hvalue(i);
       Vec<T, 3>& yh = yObj.hvalue(i);
 //                operations:
-      Vec3CrossProductCore(y, vh, xh);
+      Vec3CrossProductAddCore(y, vh, xh);
       Vec3CrossProductAddCore(yp, vb, xh);
-      Vec3CrossProductCore(vh, x, yh);
+      Vec3CrossProductAddCore(vh, x, yh);
       Vec3CrossProductAddCore(vb, xp, yh);
     }
   };
@@ -2052,7 +2077,7 @@ class A2DVec3NormalizeExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Vec3AXPBYCore(normInv, vb, -normInv * normInv * Vec3DotCore<T>(vb, x), v, xb);
+    Vec3AXPBYIncrementCore(normInv, vb, -normInv * normInv * Vec3DotCore<T>(vb, x), v, xb);
   };
 
   void hforward() {
@@ -2075,6 +2100,7 @@ class A2DVec3NormalizeExpr {
     const Vec<T, 3>& v = vObj.value();
     const Vec<T, 3>& vb = vObj.bvalue();
     const Vec<T, 3>& x = xObj.value();
+    Vec<T, 3> xhTemp;
 //            operations:
     T temp1{Vec3DotCore<T>(vb, v)}, temp2;
 //            main loop:
@@ -2085,11 +2111,13 @@ class A2DVec3NormalizeExpr {
 //                output:
       Vec<T, 3>& xh = xObj.hvalue(i);
 //                operations:
+// TODO: improve this
       temp2 = Vec3DotCore<T>(xp, v);
-      Vec3AXPBYCore(-temp2, vb, -temp1, xp, xh);
-      Vec3AXPYCore(3 * temp2 * temp1 - Vec3DotCore<T>(vh, x) - Vec3DotCore<T>(vb, xp), v, xh, xh);
-      Vec3AXPYCore(normInv, xh, vh, xh);
-      Vec3ScaleCore(normInv, xh, xh);
+      Vec3AXPBYCore(-temp2, vb, -temp1, xp, xhTemp);
+      Vec3AXPYCore(3 * temp2 * temp1 - Vec3DotCore<T>(vh, x) - Vec3DotCore<T>(vb, xp), v, xhTemp, xhTemp);
+      Vec3AXPYCore(normInv, xhTemp, vh, xhTemp);
+//      Vec3ScaleCore(normInv, xh, xh);
+      Vec3AXPYCore(normInv, xhTemp, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
@@ -2130,7 +2158,7 @@ class A2DVec3ScaleSymmetricOuterProductExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    Mat3x3VecMultScaleCore(2 * a, Sb, x, xb);
+    Mat3x3VecMultAddScaleCore(2 * a, Sb, x, xb);
   };
 
   void hforward() {
@@ -2167,13 +2195,14 @@ class A2DVec3ScaleSymmetricOuterProductExpr {
       Mat3x3VecMultCore(sb, xp, sbxp);
       Mat3x3VecMultCore(sh, x, shx);
       Vec3AddCore(shx, sbxp, x_sx);
-      Vec3ScaleCore(2 * a, x_sx, xh);
+//      Vec3ScaleCore(2 * a, x_sx, xh);
+      Vec3AXPYCore(2 * a, x_sx, xh, xh);  // TODO: see if increment scale is faster
     }
   };
 
   A2DVec<N, Vec<T, 3>>& xObj;
   A2DMat<N, Mat<T, 3, 3>>& sObj;
-  const T& a;
+  const T a;
 };
 
 template <int N, typename T>
@@ -2202,7 +2231,7 @@ class Vec3A2DScaleSymmetricOuterProductExpr {
 //            input:
     const Mat<T, 3, 3>& Sb = sObj.bvalue();
 //            operations:
-    aObj.bvalue = Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
+    aObj.bvalue += Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
   };
 
   void hforward() {
@@ -2223,7 +2252,7 @@ class Vec3A2DScaleSymmetricOuterProductExpr {
 //                input:
       const Mat<T, 3, 3>& sh = sObj.hvalue(i);
 //                operations:
-      aObj.hvalue[i] = Mat3x3InnerProductCore<T>(sh, x, x);
+      aObj.hvalue[i] += Mat3x3InnerProductCore<T>(sh, x, x);
     }
   };
 
@@ -2263,8 +2292,8 @@ class A2DVec3A2DScaleSymmetricOuterProductExpr {
 //            output:
     Vec<T, 3>& xb = xObj.bvalue();
 //            operations:
-    aObj.bvalue = Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
-    Mat3x3VecMultScaleCore(2 * a, Sb, x, xb);
+    aObj.bvalue += Mat3x3InnerProductCore<T, Vec<T, 3>, Mat<T, 3, 3>>(Sb, x, x);
+    Mat3x3VecMultAddScaleCore(2 * a, Sb, x, xb);
   };
 
   void hforward() {
@@ -2309,8 +2338,8 @@ class A2DVec3A2DScaleSymmetricOuterProductExpr {
       Mat3x3VecMultCore(sh, x, shx);
       Vec3AXPYCore(2, sbxp, shx, a_sx);
       Vec3AddCore(shx, sbxp, x_sx);
-      aObj.hvalue[i] = Vec3DotCore<T>(x, a_sx);
-      Vec3AXPBYCore(2 * a, x_sx, 2 * ap, sbx, xh);
+      aObj.hvalue[i] += Vec3DotCore<T>(x, a_sx);
+      Vec3AXPBYIncrementCore(2 * a, x_sx, 2 * ap, sbx, xh);
     }
   };
 

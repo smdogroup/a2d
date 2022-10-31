@@ -52,6 +52,25 @@ A2D_INLINE_FUNCTION void Vec3AXPBYCore(const T alpha,
 }
 
 /**
+ * @brief scalar-vector multiply and add (with increment assignment):  v += a * x + b * y
+ * @param alpha:  Scalar to multiply x
+ * @param x    :  3-Vector
+ * @param beta :  Scalar to multiply y
+ * @param y    :  3-Vector
+ * @param v    :  3-Vector to which the result is added
+ */
+template <typename T, class VecType>
+A2D_INLINE_FUNCTION void Vec3AXPBYIncrementCore(const T alpha,
+                                                const VecType& x,
+                                                const T beta,
+                                                const VecType& y,
+                                                VecType& v) {
+  v(0) += (alpha * x(0)) + (beta * y(0));
+  v(1) += (alpha * x(1)) + (beta * y(1));
+  v(2) += (alpha * x(2)) + (beta * y(2));
+}
+
+/**
  * @brief vector add then multiply (in place):  v = (v + x) * a
  * @param alpha:  Scalar to multiply result
  * @param x    :  3-Vector

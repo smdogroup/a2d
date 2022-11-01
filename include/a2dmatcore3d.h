@@ -6,6 +6,27 @@
 namespace A2D {
 
 /**
+ * @brief mat-mat addition C = A + B
+ * @param A: 3-by-3 matrix
+ * @param B: 3-by-3 matrix
+ * @param C: 3-by-3 matrix, output
+ */
+template <typename T>
+A2D_INLINE_FUNCTION void Mat3x3MatAddCore(const Mat<T, 3, 3>& A,
+                                          const Mat<T, 3, 3>& B,
+                                          Mat<T, 3, 3>& C) {
+  C(0, 0) = A(0, 0) + B(0, 0);
+  C(0, 1) = A(0, 1) + B(0, 1);
+  C(0, 2) = A(0, 2) + B(0, 2);
+  C(1, 0) = A(1, 0) + B(1, 0);
+  C(1, 1) = A(1, 1) + B(1, 1);
+  C(1, 2) = A(1, 2) + B(1, 2);
+  C(2, 0) = A(2, 0) + B(2, 0);
+  C(2, 1) = A(2, 1) + B(2, 1);
+  C(2, 2) = A(2, 2) + B(2, 2);
+}
+
+/**
  * @brief mat-mat multiplication C = A * B
  * @param A, M-by-N matrix
  * @param B, N-by-P matrix

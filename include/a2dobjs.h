@@ -5,11 +5,12 @@
 #include <complex>
 #include <cstdint>
 
-#include "Kokkos_Core.hpp"
+/*#include "Kokkos_Core.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 
 #define A2D_LAMBDA KOKKOS_LAMBDA
-#define A2D_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION
+#define A2D_INLINE_FUNCTION KOKKOS_INLINE_FUNCTION*/
+#define A2D_INLINE_FUNCTION inline
 
 namespace A2D {
 

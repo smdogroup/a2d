@@ -7,6 +7,11 @@
 
 namespace A2D {
 
+// TODO: remove disassemblies that store to zero vectors and instead replace them with implementations of calls to NULL
+//  in place of that vector
+// TODO: remove assemblies that use zero vectors and instead replace them with implementations of calls to NULL in
+//  place of that vector
+
 /*
   Mat3x2ToVec3
   This represents the disassembly of a 3x2 matrix into two 3 vectors

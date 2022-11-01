@@ -55,8 +55,11 @@ class A2DScalarScalarMultExpr {
     const T& a = aObj.value;
 //            operations:
     aObj.bvalue += zb * b;
-    std::cout << this << ":UNQ_A2DScalarScalarMultExpr_reverse" << std::endl
-              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl;
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DScalarScalarMultExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl
+              << "aObj.bvalue=" << aObj.bvalue << std::endl;*/
   };
 
   void hforward() {
@@ -109,8 +112,11 @@ class A2DScalarA2DScalarMultExpr {
 //            operations:
     aObj.bvalue += zb * b;
     bObj.bvalue += zb * a;
-    std::cout << this << ":UNQ_A2DScalarA2DScalarMultExpr_reverse" << std::endl
-              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl;
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DScalarA2DScalarMultExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl
+              << "aObj.bvalue=" << aObj.bvalue << ", bObj.bvalue=" << bObj.bvalue << std::endl;*/
   };
 
   void hforward() {
@@ -186,12 +192,18 @@ class A2DVec3A2DScaleDivExpr {
     aObj.bvalue += -Vec3DotCore<T, Vec<T, 3>>(vb, x) / (a * a);
     Vec3AXPYCore(1 / a, vb, xb, xb);  // TODO: check if a scale-add in place is faster
 
-    /*std::cout << this << ":UNQ_A2DVec3A2DScaleDivExpr_reverse" << std::endl;
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DVec3A2DScaleDivExpr_reverse" << std::endl
+              << "a=" << a << std::endl;
     std::cout << "vb={";
     print_vector_no_endl(vb);
     std::cout << "}" << std::endl;
     std::cout << "x={";
     print_vector_no_endl(x);
+    std::cout << "}" << std::endl
+              << "aObj.bvalue=" << aObj.bvalue << std::endl
+              << "xObj.bvalue={";
+    print_vector_no_endl(xb);
     std::cout << "}" << std::endl;*/
   };
 
@@ -260,7 +272,6 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
                                     A2DScalar<N, T>& yObj,
                                     A2DScalar<N, T>& zObj)
       : a{a}, xObj(xObj), yObj(yObj), zObj(zObj) {
-    /*std::cout << this << ":UNQ_ScalarA2DScalarA2DScalarAxpayExpr_constructor  " << std::endl;*/
     zObj.value = a * (xObj.value + yObj.value);
   };
 
@@ -271,8 +282,10 @@ class ScalarA2DScalarA2DScalarAxpayExpr {
     xObj.bvalue += zb * a;
     yObj.bvalue += zb * a;
 
-    std::cout << this << ":UNQ_ScalarA2DScalarA2DScalarAxpayExpr_reverse" << std::endl;
-    std::cout << "zb=" << zb << ", a=" << a << std::endl;
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_ScalarA2DScalarA2DScalarAxpayExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << std::endl
+              << "xObj.bvalue=" << xObj.bvalue << ", yObj.bvalue=" << yObj.bvalue << std::endl;*/
   };
 
   void hforward() {
@@ -329,6 +342,12 @@ class A2DScalarA2DScalarA2DScalarAxpayExpr {
     aObj.bvalue += zb * (xObj.value + yObj.value);
     xObj.bvalue += zb * a;
     yObj.bvalue += zb * a;
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DScalarA2DScalarA2DScalarAxpayExpr_reverse" << std::endl
+              << "zb=" << zb << ", a=" << a << ", x=" << xObj.value << ", y=" << xObj.value << std::endl
+              << "aObj.bvalue=" << aObj.bvalue << ", xObj.bvalue=" << xObj.bvalue << ", yObj.bvalue=" << yObj.bvalue
+              << std::endl;*/
   };
 
   void hforward() {
@@ -398,6 +417,11 @@ class ScalarA2DScalarScalarA2DScalarAxpbyExpr {
 //            operations:
     xObj.bvalue += zb * a;
     yObj.bvalue += zb * b;
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_ScalarA2DScalarScalarA2DScalarAxpbyExpr_reverse" << std::endl;
+    std::cout << "zb=" << zb << ", a=" << a << ", b=" << b << std::endl
+              << "xObj.bvalue=" << xObj.bvalue << ", yObj.bvalue=" << yObj.bvalue << std::endl;*/
   };
 
   void hforward() {
@@ -458,6 +482,13 @@ class A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr {
     xObj.bvalue += zb * aObj.value;
     bObj.bvalue += zb * yObj.value;
     yObj.bvalue += zb * bObj.value;
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DScalarA2DScalarA2DScalarA2DScalarAxpbyExpr_reverse" << std::endl;
+    std::cout << "zb=" << zb << ", a=" << aObj.value << ", b=" << bObj.value
+              << ", x=" << xObj.value << ", y=" << yObj.value << std::endl
+              << "aObj.bvalue=" << aObj.bvalue << ", bObj.bvalue=" << bObj.bvalue
+              << ", xObj.bvalue=" << xObj.bvalue << ", yObj.bvalue=" << yObj.bvalue << std::endl;*/
   };
 
   void hforward() {
@@ -686,9 +717,27 @@ class MatA2DVecA2DVecInnerProductExpr {
     MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
     MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
 
-    /*std::cout << this << ":UNQ.MatA2DVecA2DVecInnerProductExpr.reverse" << std::endl;
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_MatA2DVecA2DVecInnerProductExpr_reverse" << std::endl;
+    std::cout << "ab=" << ab << std::endl;
     std::cout << "A={";
     print_mat_no_endl(A);
+    std::cout << "}";
+    std::cout << std::endl;
+    std::cout << "x={";
+    print_vector_no_endl(x);
+    std::cout << "}";
+    std::cout << std::endl;
+    std::cout << "y={";
+    print_vector_no_endl(y);
+    std::cout << "}";
+    std::cout << std::endl;
+    std::cout << "xb={";
+    print_vector_no_endl(xb);
+    std::cout << "}";
+    std::cout << std::endl;
+    std::cout << "yb={";
+    print_vector_no_endl(yb);
     std::cout << "}";
     std::cout << std::endl;*/
   };
@@ -741,7 +790,7 @@ class MatA2DVecA2DVecInnerProductExpr {
     }
   };
 
-  const Mat<T, P, Q>& A;  // TODO: see if this needs to be stored by copy
+  const Mat<T, P, Q>& A;  // TODO: see if this needs to be stored by copy (doesn't appear so)
   A2DVec<N, Vec<T, P>>& xObj;
   A2DVec<N, Vec<T, Q>>& yObj;
   A2DScalar<N, T>& aObj;
@@ -783,6 +832,9 @@ class A2DMatA2DVecA2DVecInnerProductExpr {
     MatVecScaleMultCore<T, P, Q>(ab, A, y, xb);
     VecOuterProductScaleIncrementCore(ab, x, y, Ab);
     MatTransVecScaleMultCore<T, P, Q>(ab, A, x, yb);
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          TODO: UNQ_TODO_32473247542955" << std::endl;*/
   };
 
   void hforward() {
@@ -890,6 +942,17 @@ class A2DScalar5VecAssemblyExpr {
     x2Obj.bvalue += vb(2);
     x3Obj.bvalue += vb(3);
     x4Obj.bvalue += vb(4);
+
+    /*std::cout << "****************************************************************" << std::endl
+              << "          " << this << ":UNQ_A2DScalar5VecAssemblyExpr_reverse" << std::endl;
+    std::cout << "vb={";
+    print_vector_no_endl(vb);
+    std::cout << "}" << std::endl;
+    std::cout << "x0Obj.bvalue=" << x0Obj.bvalue
+              << ",   x1Obj.bvalue=" << x1Obj.bvalue
+              << ",   x2Obj.bvalue=" << x2Obj.bvalue
+              << ",   x3Obj.bvalue=" << x3Obj.bvalue
+              << ",   x4Obj.bvalue=" << x4Obj.bvalue << std::endl;*/
   };
 
   void hforward() {

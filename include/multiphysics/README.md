@@ -87,7 +87,7 @@ numerical integration are defined here.
 Each quadrature class template will be used as template argument in the static
 sense, i.e. no object instantiation, and complies with the following skeleton:
 ```c++
-class XXXQuadrature{
+class XXXQuadrature {
     static index_type get_num_points();  // return number of quadrature points
     static void get_point(const index_type n,
                           double pt[]);  // get n-th quadrature point in reference
@@ -102,7 +102,7 @@ class XXXQuadrature{
 A2D solves PDEs. Such problem instances need to be implemented to comply with
 the following skeleton:
 ```c++
-class XXXPDE{
+class XXXPDE {
     static const index_type dim;  // spatial dimension
     typename FiniteElementSpace;  // specialized FESpace for solution
     typename FiniteElementGeometry;  // specialized FESpace for geometry
@@ -121,7 +121,42 @@ class XXXPDE{
 };
 ```
 
-## ```feelementvector.h```
+## Enabling access and manipulation of global dof on an element level: ```feelementvector.h```
+This class implements interface for element-level computations.
+Such interfaces are called ```ElementVector_XXX```, and must comply with the
+following skeleton:
+```c++
+class ElementVector_XXX {
+
+    ElementVector_XXX(...);  // takes in global solution vector and other needed
+                             // information
+
+    // A light-weight nested class that gains access to an element's local
+    // degrees of freedom
+    class FEDof {
+        FEDof();  // must have empty argument list
+        template<index_type index>
+        square_bracket_indexable_type get();  // returns an object associated
+                                              // with local dof, index is the
+                                              // index of certain basis in the
+                                              // basis collection FEBasis
+        template<index_type index>
+        const square_bracket_indexable_type get() const;  // const variant
+    };
+
+    // Following methods may be empty implementations depending on the specific
+    // ElementVector_XXX implementation
+    void get_element_values(index_type elem,
+                            FEDof& dof);  // populate dof object, elem is element
+                                          // index
+    void add_element_values(index_type elem,
+                            const FEDof& dof);  // update global solution vector
+                                                // from this element
+    void init_values();  // initialize local storage from global solution vector
+    void init_zero_values();  // allocate local storage and set values to 0
+    void add_values();  // add values to source from local storage
+};
+```
 
 ## The finite element problem assembler: ```feelement.h```
 The finite element problem is assembled here.

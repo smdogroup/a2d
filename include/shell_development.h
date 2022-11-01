@@ -196,7 +196,10 @@ class ShellElementMITC4 {
                     ShellNodeMITC<N, T>& node2,
                     ShellNodeMITC<N, T>& node3,
                     ShellNodeMITC<N, T>& node4)
-      : node1(node1), node2(node2), node3(node3), node4(node4),
+      : node1(node1),
+        node2(node2),
+        node3(node3),
+        node4(node4),
       /* Private Initializations: */
         gr_rAs0t0(gr_rAs0t0_v, gr_rAs0t0_bv),
         gr_rAs0t1(gr_rAs0t1_v, gr_rAs0t1_bv),
@@ -262,39 +265,40 @@ class ShellElementMITC4 {
         us_r0sAt1_expression(1, 1, quad_1, node1, node2, node3, node4, us_r0sAt1),
         us_r1sAt0_expression(1, 2, quad_0, node1, node2, node3, node4, us_r1sAt0),
         us_r1sAt1_expression(1, 2, quad_1, node1, node2, node3, node4, us_r1sAt1)
-  /* ut calculations *//*
+      /* ut calculations *//*
         ,ut_r0s0tA_expression(1, 1, node1, node2, node3, node4, ut_r0s0tA),
         ut_r0s1tA_expression(1, 3, node1, node2, node3, node4, ut_r0s1tA),
         ut_r1s0tA_expression(3, 1, node1, node2, node3, node4, ut_r1s0tA),
         ut_r1s1tA_expression(3, 3, node1, node2, node3, node4, ut_r1s1tA)*/
 
-  /* Energy at the quadrature points: */
-//      , strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, /*ut_r0s0tA,*/
-//                                        e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t0),
-//        strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, /*ut_r0s0tA,*/
-//                                        e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t1)
-//        ,strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, /*ut_r0s1tA,*/
-//                                        e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t0),
-//        strain_energy_r0s1t1_expression(gr_rAs1t1, gs_r0sAt1, gt_r0s1tA, ur_rAs1t1, us_r0sAt1, /*ut_r0s1tA,*/
-//                                        e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t1),
-//        strain_energy_r1s0t0_expression(gr_rAs0t0, gs_r1sAt0, gt_r1s0tA, ur_rAs0t0, us_r1sAt0, /*ut_r1s0tA,*/
-//                                        e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t0),
-//        strain_energy_r1s0t1_expression(gr_rAs0t1, gs_r1sAt1, gt_r1s0tA, ur_rAs0t1, us_r1sAt1, /*ut_r1s0tA,*/
-//                                        e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t1),
-//        strain_energy_r1s1t0_expression(gr_rAs1t0, gs_r1sAt0, gt_r1s1tA, ur_rAs1t0, us_r1sAt0, /*ut_r1s1tA,*/
-//                                        e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t0),
-//        strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, /*ut_r1s1tA,*/
-//                                        e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t1)
+      /* Energy at the quadrature points: */
+      ,
+        strain_energy_r0s0t0_expression(gr_rAs0t0, gs_r0sAt0, gt_r0s0tA, ur_rAs0t0, us_r0sAt0, /*ut_r0s0tA,*/
+                                        e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t0),
+        strain_energy_r0s0t1_expression(gr_rAs0t1, gs_r0sAt1, gt_r0s0tA, ur_rAs0t1, us_r0sAt1, /*ut_r0s0tA,*/
+                                        e_rt_rAs0tA, e_st_r0sAtA, material, energy_r0s0t1),
+        strain_energy_r0s1t0_expression(gr_rAs1t0, gs_r0sAt0, gt_r0s1tA, ur_rAs1t0, us_r0sAt0, /*ut_r0s1tA,*/
+                                        e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t0),
+        strain_energy_r0s1t1_expression(gr_rAs1t1, gs_r0sAt1, gt_r0s1tA, ur_rAs1t1, us_r0sAt1, /*ut_r0s1tA,*/
+                                        e_rt_rAs1tA, e_st_r0sAtA, material, energy_r0s1t1),
+        strain_energy_r1s0t0_expression(gr_rAs0t0, gs_r1sAt0, gt_r1s0tA, ur_rAs0t0, us_r1sAt0, /*ut_r1s0tA,*/
+                                        e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t0),
+        strain_energy_r1s0t1_expression(gr_rAs0t1, gs_r1sAt1, gt_r1s0tA, ur_rAs0t1, us_r1sAt1, /*ut_r1s0tA,*/
+                                        e_rt_rAs0tA, e_st_r1sAtA, material, energy_r1s0t1),
+        strain_energy_r1s1t0_expression(gr_rAs1t0, gs_r1sAt0, gt_r1s1tA, ur_rAs1t0, us_r1sAt0, /*ut_r1s1tA,*/
+                                        e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t0),
+        strain_energy_r1s1t1_expression(gr_rAs1t1, gs_r1sAt1, gt_r1s1tA, ur_rAs1t1, us_r1sAt1, /*ut_r1s1tA,*/
+                                        e_rt_rAs1tA, e_st_r1sAtA, material, energy_r1s1t1)
 
-  /* Summation of the strain energy: */
-//  ,sum_12_expression(1.0, energy_r0s0t0, energy_r0s0t1, sum_12),
-//  sum_123_expression(1.0, sum_12, energy_r0s1t0, sum_123),
-//  sum_1234_expression(1.0, sum_123, energy_r0s1t1, sum_1234),
-//  sum_12345_expression(1.0, sum_1234, energy_r1s0t0, sum_12345),
-//  sum_123456_expression(1.0, sum_12345, energy_r1s0t1, sum_123456),
-//  sum_1234567_expression(1.0, sum_123456, energy_r1s1t0, sum_1234567),
-//  sum_12345678_expression(1.0, sum_1234567, energy_r1s1t1, strain_energy)
-  {};
+      /* Summation of the strain energy: */
+      ,
+        sum_12_expression(1.0, energy_r0s0t0, energy_r0s0t1, sum_12),
+        sum_123_expression(1.0, sum_12, energy_r0s1t0, sum_123),
+        sum_1234_expression(1.0, sum_123, energy_r0s1t1, sum_1234),
+        sum_12345_expression(1.0, sum_1234, energy_r1s0t0, sum_12345),
+        sum_123456_expression(1.0, sum_12345, energy_r1s0t1, sum_123456),
+        sum_1234567_expression(1.0, sum_123456, energy_r1s1t0, sum_1234567),
+        sum_12345678_expression(1.0, sum_1234567, energy_r1s1t1, strain_energy) {};
 
   /**
    * @brief Position of a point on the undeformed shell element defined by parameters r, s, and t.
@@ -403,13 +407,13 @@ class ShellElementMITC4 {
   };
 
   void reverse() {
-//    sum_12345678_expression.reverse();
-//    sum_1234567_expression.reverse();
-//    sum_123456_expression.reverse();
-//    sum_12345_expression.reverse();
-//    sum_1234_expression.reverse();
-//    sum_123_expression.reverse();
-//    sum_12_expression.reverse();
+    sum_12345678_expression.reverse();
+    sum_1234567_expression.reverse();
+    sum_123456_expression.reverse();
+    sum_12345_expression.reverse();
+    sum_1234_expression.reverse();
+    sum_123_expression.reverse();
+    sum_12_expression.reverse();
     /* std::cout << "end sum reverses" << std::endl;
      std::cout << std::endl
                << "#######################################################################################################"
@@ -419,14 +423,14 @@ class ShellElementMITC4 {
                << "#######################################################################################################"
                << std::endl << std::endl;*/
 
-//    strain_energy_r1s1t1_expression.reverse();
-//    strain_energy_r1s1t0_expression.reverse();
-//    strain_energy_r1s0t1_expression.reverse();
-//    strain_energy_r1s0t0_expression.reverse();
-//    strain_energy_r0s1t1_expression.reverse();
-//    strain_energy_r0s1t0_expression.reverse();
-//    strain_energy_r0s0t1_expression.reverse();
-//    strain_energy_r0s0t0_expression.reverse();
+    strain_energy_r1s1t1_expression.reverse();
+    strain_energy_r1s1t0_expression.reverse();
+    strain_energy_r1s0t1_expression.reverse();
+    strain_energy_r1s0t0_expression.reverse();
+    strain_energy_r0s1t1_expression.reverse();
+    strain_energy_r0s1t0_expression.reverse();
+    strain_energy_r0s0t1_expression.reverse();
+    strain_energy_r0s0t0_expression.reverse();
 
     /* std::cout << std::endl
                << "#######################################################################################################"
@@ -604,7 +608,7 @@ class ShellElementMITC4 {
   /** Strain energy object */
   A2DScalar<N, T> strain_energy;
 
-//  const LinearIsotropicMaterial<T> material{5.2, 0.5};  /**< I'm using a linear isotropic material assumption here */
+  const LinearIsotropicMaterial<T> material{5.2, 0.5};  /**< I'm using a linear isotropic material assumption here */
 
  private:
   /** <h1>Instantiating objects:</h1> */
@@ -743,23 +747,23 @@ class ShellElementMITC4 {
   u_t_expr<N, T> ut_r1s1tA_expression;*/
 
   /* Energy at the quadrature points: */
-//  strain_energy_expr<N, T> strain_energy_r0s0t0_expression;
-//  strain_energy_expr<N, T> strain_energy_r0s0t1_expression;
-//  strain_energy_expr<N, T> strain_energy_r0s1t0_expression;
-//  strain_energy_expr<N, T> strain_energy_r0s1t1_expression;
-//  strain_energy_expr<N, T> strain_energy_r1s0t0_expression;
-//  strain_energy_expr<N, T> strain_energy_r1s0t1_expression;
-//  strain_energy_expr<N, T> strain_energy_r1s1t0_expression;
-//  strain_energy_expr<N, T> strain_energy_r1s1t1_expression;
+  strain_energy_expr<N, T> strain_energy_r0s0t0_expression;
+  strain_energy_expr<N, T> strain_energy_r0s0t1_expression;
+  strain_energy_expr<N, T> strain_energy_r0s1t0_expression;
+  strain_energy_expr<N, T> strain_energy_r0s1t1_expression;
+  strain_energy_expr<N, T> strain_energy_r1s0t0_expression;
+  strain_energy_expr<N, T> strain_energy_r1s0t1_expression;
+  strain_energy_expr<N, T> strain_energy_r1s1t0_expression;
+  strain_energy_expr<N, T> strain_energy_r1s1t1_expression;
 
   /* Summation of the strain energy: */
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123456_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234567_expression;
-//  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345678_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_123456_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_1234567_expression;
+  ScalarA2DScalarA2DScalarAxpayExpr<N, T> sum_12345678_expression;
 
  private:
   /** <h1> Static variables: </h1>*/

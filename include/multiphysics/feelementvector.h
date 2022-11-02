@@ -157,16 +157,8 @@ class ElementVector_Serial {
       const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
       values[i] = sign * vec[dof_index];
     }
-    get_element_values_<basis - 1>(elem, dof);
-  }
-
-  template <>
-  void get_element_values_<0>(A2D::index_t elem, FEDof& dof) {
-    T* values = dof.template get<0>();
-    for (A2D::index_t i = 0; i < Basis::template get_ndof<0>(); i++) {
-      const int sign = mesh.get_global_dof_sign(elem, 0, i);
-      const A2D::index_t dof_index = mesh.get_global_dof(elem, 0, i);
-      values[i] = sign * vec[dof_index];
+    if constexpr (basis > 0) {
+      get_element_values_<basis - 1>(elem, dof);
     }
   }
 
@@ -178,16 +170,8 @@ class ElementVector_Serial {
       const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
       vec[dof_index] += sign * values[i];
     }
-    add_element_values_<basis - 1>(elem, dof);
-  }
-
-  template <>
-  void add_element_values_<0>(A2D::index_t elem, const FEDof& dof) {
-    const T* values = dof.template get<0>();
-    for (A2D::index_t i = 0; i < Basis::template get_ndof<0>(); i++) {
-      const int sign = mesh.get_global_dof_sign(elem, 0, i);
-      const A2D::index_t dof_index = mesh.get_global_dof(elem, 0, i);
-      vec[dof_index] += sign * values[i];
+    if constexpr (basis > 0) {
+      add_element_values_<basis - 1>(elem, dof);
     }
   }
 

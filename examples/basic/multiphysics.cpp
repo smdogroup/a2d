@@ -1,25 +1,28 @@
 #include <iostream>
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
-#include "a2dobjs.h"
+#include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
+#include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/fespace.h"
-#include "multiphysics/poisson.h"
 #include "sparse/sparse_matrix.h"
 
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
   typedef double T;
-  typedef MixedPoisson2D<T> PDE;
+  typedef NonlinearElasticity2D<T> PDE;
   typedef TriQuadrature3 Quadrature;
-  typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
-  typedef FEBasis<T, LagrangeTri0<T>, RT2DTri1<T>> Basis;
 
-  typedef FiniteElement<T, Quadrature, PDE, GeoBasis, Basis> PoissonFE;
+  typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
+  typedef FEBasis<T, LagrangeTri1<T, 2>> Basis;
+
+  // type PoissonMixed2D PDE;
+  // typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
+  // typedef FEBasis<T, LagrangeTri0<T>, RT2DTri1<T>> Basis;
+
+  typedef FiniteElement<T, Quadrature, PDE, GeoBasis, Basis> FE;
 
   // Set the node locations
   index_t nx = 10, ny = 10;
@@ -69,15 +72,30 @@ int main(int argc, char* argv[]) {
   index_t ndof = mesh.get_num_dof();
 
   SolutionVector<T> sol(ndof), res(ndof), pert(ndof);
-  PoissonFE poisson(geomesh, nodes, mesh, sol, res);
+  FE fe(geomesh, nodes, mesh, sol, res);
 
   for (index_t i = 0; i < ndof; i++) {
     pert[i] = 1.0;
   }
 
-  poisson.add_residual();
-  poisson.add_jacobian_vector_product(pert, res);
-  poisson.add_jacobian();
+  fd.add_residual();
+  // fd.add_jacobian_vector_product(pert, res);
+  // poisson.add_jacobian();
+
+  // typedef double T;
+  // typedef NonlinearElasticity<T> PDE;
+
+  // typename PDE::FiniteElementGeometry geo;
+  // typename PDE::DataSpace data;
+  // typename PDE::FiniteElementSpace s, coef;
+
+  // T wdetJ = 0.5842;
+  // //   PDE::eval_weak_coef(wdetJ, data, s, coef);
+
+  // typename PDE::JacVecProduct jvp(wdetJ, data, s);
+
+  // typename PDE::FiniteElementSpace p, Jp;
+  // jvp(p, Jp);
 
   return (0);
 }

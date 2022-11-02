@@ -89,17 +89,17 @@ template <typename T>
 class LagrangeTri0 {
  public:
   static const A2D::index_t ndof = 1;
-  static const A2D::index_t ncomp = A2D::L1ScalarSpace<T, 2>::ncomp;
+  static const A2D::index_t ncomp = A2D::L2ScalarSpace<T, 2>::ncomp;
 
   template <class Quadrature, class SolnType>
   static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::L1ScalarSpace<T, 2>& out) {
+                     A2D::L2ScalarSpace<T, 2>& out) {
     T& u = out.get_value();
     u = sol[0];
   }
 
   template <class Quadrature, class SolnType>
-  static void add(A2D::index_t n, const A2D::L1ScalarSpace<T, 2>& in,
+  static void add(A2D::index_t n, const A2D::L2ScalarSpace<T, 2>& in,
                   SolnType res) {
     const T& u = in.get_value();
     res[0] += u;
@@ -123,7 +123,7 @@ class LagrangeTri1 {
   static const A2D::index_t ndof = 3 * C;
   static const A2D::index_t ncomp = A2D::H1Space<T, C, 2>::ncomp;
 
-  template <class Quadrature, class SolnType>
+  template <class Quadrature, A2D::index_t index, class SolnType>
   static void interp(A2D::index_t n, const SolnType sol,
                      A2D::H1Space<T, C, 2>& out) {
     double pt[2];
@@ -139,9 +139,10 @@ class LagrangeTri1 {
     A2D::Mat<T, C, 2>& grad = out.get_grad();
 
     for (A2D::index_t i = 0; i < C; i++) {
-      u(i) = N[0] * sol[i] + N[1] * sol[C + i] + N[2] * sol[2 * C + i];
-      grad(i, 0) = sol[C + i] - sol[i];
-      grad(i, 1) = sol[2 * C + i] - sol[i];
+      u(i) = N[0] * sol<index>[i] + N[1] * sol<index>[C + i] +
+             N[2] * sol<index>[2 * C + i];
+      grad(i, 0) = sol<index>[C + i] - sol<index>[i];
+      grad(i, 1) = sol<index>[2 * C + i] - sol<index>[i];
     }
   }
 

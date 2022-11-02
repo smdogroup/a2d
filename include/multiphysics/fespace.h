@@ -31,9 +31,9 @@ namespace A2D {
   1. static const ncomp: Number of component outputs treating solution and
   derivative information as independent.
 
-  2. set_seed(comp): Sets a 1.0 in the given component index, all other values
-  are unmodified. The comp value must satisfy 0 <= comp < ncomps. Behavior
-  undefined otherwise.
+  2. set_value(comp, val): Sets the value in the given component index, all
+  other values are unmodified. The comp value must satisfy 0 <= comp < ncomps.
+  Behavior undefined otherwise.
 
   3. get_value(comp): Returns the value in the given component index. The comp
   value must satisfy 0 <= comp < ncomps. Behavior undefined otherwise.
@@ -51,9 +51,9 @@ namespace A2D {
 */
 
 template <typename T, A2D::index_t D>
-class L1ScalarSpace {
+class L2ScalarSpace {
  public:
-  L1ScalarSpace() { u = 0.0; }
+  L2ScalarSpace() { u = 0.0; }
 
   // Number of solution components
   static const A2D::index_t ncomp = 1;
@@ -61,11 +61,11 @@ class L1ScalarSpace {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input seed based on the component index
-  void set_seed(const A2D::index_t comp) { u = 1.0; }
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) { u = val; }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) { return u; }
+  T get_value(const A2D::index_t comp) const { return u; }
 
   // Get the scalar solution value
   T& get_value() { return u; }
@@ -73,18 +73,55 @@ class L1ScalarSpace {
 
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) const {
+                 const A2D::Mat<T, D, D>& Jinv, L2ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, L1ScalarSpace<T, D>& s) const {
+                  const A2D::Mat<T, D, D>& Jinv, L2ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
  private:
   T u;
+};
+
+template <typename T, A2D::index_t C, A2D::index_t D>
+class L2Space {
+ public:
+  L2Space() { u.zero(); }
+
+  // Number of solution components
+  static const A2D::index_t ncomp = C;
+
+  // Spatial dimension
+  static const A2D::index_t dim = D;
+
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) { u(comp) = val; }
+
+  // Get the value of the specified component
+  T get_value(const A2D::index_t comp) const { return u(comp); }
+
+  // Get the scalar solution value
+  A2D::Vec<T, C>& get_value() { return u; }
+  const A2D::Vec<T, C>& get_value() const { return u; }
+
+  // Transform the values from the reference to the physical space
+  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
+                 const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
+    s.u = u;
+  }
+
+  // Transform derivatives from the physical to the refernece space
+  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
+                  const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
+    s.u = u;
+  }
+
+ private:
+  A2D::Vec<T, C> u;
 };
 
 template <typename T, A2D::index_t D>
@@ -98,21 +135,21 @@ class H1ScalarSpace {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input seed based on the component index
-  void set_seed(const A2D::index_t seed) {
-    if (seed == 0) {
-      u = 1.0;
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) {
+    if (comp == 0) {
+      u = val;
     } else {
-      grad(seed - 1) = 1.0;
+      grad(comp - 1) = val;
     }
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t seed) {
-    if (seed == 0) {
+  T get_value(const A2D::index_t comp) const {
+    if (comp == 0) {
       return u;
     } else {
-      return grad(seed - 1);
+      return grad(comp - 1);
     }
   }
 
@@ -154,21 +191,21 @@ class H1Space {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input seed based on the component index
-  void set_seed(const A2D::index_t seed) {
-    if (seed % (D + 1) == 0) {
-      u(seed / (D + 1)) = 1.0;
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) {
+    if (comp % (D + 1) == 0) {
+      u(comp / (D + 1)) = val;
     } else {
-      grad(seed / (D + 1), (seed % (D + 1)) - 1) = 1.0;
+      grad(comp / (D + 1), (comp % (D + 1)) - 1) = val;
     }
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t seed) {
-    if (seed % (D + 1) == 0) {
-      return u(seed / (D + 1));
+  T get_value(const A2D::index_t comp) const {
+    if (comp % (D + 1) == 0) {
+      return u(comp / (D + 1));
     } else {
-      return grad(seed / (D + 1), (seed % (D + 1)) - 1);
+      return grad(comp / (D + 1), (comp % (D + 1)) - 1);
     }
   }
 
@@ -184,14 +221,22 @@ class H1Space {
   void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
-    s.grad = grad;
+
+    // s.grad = grad * Jinv
+    MatMatMult(grad, Jinv, s.grad);
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
                   const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
+    // dot{s.grad} = dot{grad} Jinv =>
+    // tr(bar{s.grad}^{T} * dot{s.grad})
+    // = tr(bar{s.grad}^{T} * dot{grad} * Jinv)
+    // = tr(Jinv * bar{s.grad}^{T} * dot{grad})
+    // = tr((s.grad * Jinv^{T})^{T} * dot{grad})
     s.u = u;
-    s.grad = grad;
+
+    MatMatMult(s.grad, transpose(Jinv), grad);
   }
 
  private:
@@ -210,19 +255,19 @@ class Hdiv2DSpace {
   // Spatial dimension
   static const A2D::index_t dim = 2;
 
-  // Set the input seed based on the component index
-  void set_seed(const A2D::index_t seed) {
-    if (seed < 2) {
-      u(seed) = 1.0;
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) {
+    if (comp < 2) {
+      u(comp) = val;
     } else {
-      div = 1.0;
+      div = val;
     }
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t seed) {
-    if (seed < 2) {
-      return u(seed);
+  T get_value(const A2D::index_t comp) const {
+    if (comp < 2) {
+      return u(comp);
     } else {
       return div;
     }
@@ -266,19 +311,19 @@ class Hcurl2DSpace {
   // Spatial dimension
   static const A2D::index_t dim = 2;
 
-  // Set the input seed based on the component index
-  void set_seed(const A2D::index_t seed) {
-    if (seed < 2) {
-      u(seed) = 1.0;
+  // Set the input value based on the component index
+  void set_value(const A2D::index_t comp, T val) {
+    if (comp < 2) {
+      u(comp) = val;
     } else {
-      curl = 1.0;
+      curl = val;
     }
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t seed) {
-    if (seed < 2) {
-      return u(seed);
+  T get_value(const A2D::index_t comp) const {
+    if (comp < 2) {
+      return u(comp);
     } else {
       return curl;
     }
@@ -335,15 +380,15 @@ struct __count_space_components<First, Remain...> {
 
   FESpace<double, 3, H1Space, L2Space, Hdiv3DSpace>
 
-  FESpace implements a static member ncomp as well as set_seed(comp),
+  FESpace implements a static member ncomp as well as set_value(comp, val),
   get_value(comp) in an analogous manner to the solution spaces. However, the
   implementation in FESpace treats these as a concatenated list across all
   solution spaces.
 
   FESpace implements a get<index>() function that returns a reference to the
   index-th type in the FESpace. When writing to or reading from FESpace, you can
-  either use the set_seed(comp) get_value(comp) functions or the get<index>()
-  that returns the solution space directly. Both can be useful.
+  either use the set_value(comp, val) get_value(comp) functions or the
+  get<index>() that returns the solution space directly. Both can be useful.
 
   T The typename
   D The dimension of the problem
@@ -364,9 +409,11 @@ class FESpace {
       __count_space_components<Spaces...>::ncomp;
 
   /*
-    Set a seed on a given solution field
+    Set a value on a given solution field
   */
-  void set_seed(const A2D::index_t comp) { set_seed_<0, Spaces...>(comp); }
+  void set_value(const A2D::index_t comp, T val) {
+    set_value_<0, Spaces...>(comp, val);
+  }
 
   /*
     Get a solution value based on the index
@@ -439,24 +486,24 @@ class FESpace {
   }
 
   template <A2D::index_t index>
-  void set_seed_(const A2D::index_t comp) {}
+  void set_value_(const A2D::index_t comp, T val) {}
 
   template <A2D::index_t index, class First, class... Remain>
-  void set_seed_(const A2D::index_t comp) {
+  void set_value_(const A2D::index_t comp, T val) {
     if (comp < First::ncomp) {
-      std::get<index>(u).set_seed(comp);
+      std::get<index>(u).set_value(comp, val);
     } else {
-      set_seed_<index + 1, Remain...>(comp - First::ncomp);
+      set_value_<index + 1, Remain...>(comp - First::ncomp, val);
     }
   }
 
   template <A2D::index_t index>
-  T get_value_(const A2D::index_t comp) {
+  T get_value_(const A2D::index_t comp) const {
     return 0.0;
   }
 
   template <A2D::index_t index, class First, class... Remain>
-  T get_value_(const A2D::index_t comp) {
+  T get_value_(const A2D::index_t comp) const {
     if (comp < First::ncomp) {
       return std::get<index>(u).get_value(comp);
     } else {

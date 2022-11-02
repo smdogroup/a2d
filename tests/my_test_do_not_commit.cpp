@@ -297,7 +297,7 @@ int main() {
 //  A2D::ShellNodeMITC<24, double> n4_2{n1_2};
 //  A2D::ShellNodeMITC<24, double> n4_3{n1_3};
 //  A2D::ShellNodeMITC<24, double> n4_4{n1_4};
-  double move_amount4[3] = {-2.3, 51.2, -0.9};
+  double move_amount4[3] = {7.53, -6.45, -9.7};
   for (int i = 0; i < 3; ++i) {
     n4_1.position(i) += move_amount4[i];
     n4_2.position(i) += move_amount4[i];

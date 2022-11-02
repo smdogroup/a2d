@@ -522,41 +522,41 @@ class ShellElementMITC4 {
     ut_r1s0tA_expression.hforward();
     ut_r1s1tA_expression.hforward();*/
 
-//    strain_energy_r0s0t0_expression.hforward();
-//    strain_energy_r0s0t1_expression.hforward();
-//    strain_energy_r0s1t0_expression.hforward();
-//    strain_energy_r0s1t1_expression.hforward();
-//    strain_energy_r1s0t0_expression.hforward();
-//    strain_energy_r1s0t1_expression.hforward();
-//    strain_energy_r1s1t0_expression.hforward();
-//    strain_energy_r1s1t1_expression.hforward();
+    strain_energy_r0s0t0_expression.hforward();
+    strain_energy_r0s0t1_expression.hforward();
+    strain_energy_r0s1t0_expression.hforward();
+    strain_energy_r0s1t1_expression.hforward();
+    strain_energy_r1s0t0_expression.hforward();
+    strain_energy_r1s0t1_expression.hforward();
+    strain_energy_r1s1t0_expression.hforward();
+    strain_energy_r1s1t1_expression.hforward();
 
-//    sum_12_expression.hforward();
-//    sum_123_expression.hforward();
-//    sum_1234_expression.hforward();
-//    sum_12345_expression.hforward();
-//    sum_123456_expression.hforward();
-//    sum_1234567_expression.hforward();
-//    sum_12345678_expression.hforward();
+    sum_12_expression.hforward();
+    sum_123_expression.hforward();
+    sum_1234_expression.hforward();
+    sum_12345_expression.hforward();
+    sum_123456_expression.hforward();
+    sum_1234567_expression.hforward();
+    sum_12345678_expression.hforward();
   };
 
   void hreverse() {
-//    sum_12345678_expression.hreverse();
-//    sum_1234567_expression.hreverse();
-//    sum_123456_expression.hreverse();
-//    sum_12345_expression.hreverse();
-//    sum_1234_expression.hreverse();
-//    sum_123_expression.hreverse();
-//    sum_12_expression.hreverse();
+    sum_12345678_expression.hreverse();
+    sum_1234567_expression.hreverse();
+    sum_123456_expression.hreverse();
+    sum_12345_expression.hreverse();
+    sum_1234_expression.hreverse();
+    sum_123_expression.hreverse();
+    sum_12_expression.hreverse();
 
-//    strain_energy_r1s1t1_expression.hreverse();
-//    strain_energy_r1s1t0_expression.hreverse();
-//    strain_energy_r1s0t1_expression.hreverse();
-//    strain_energy_r1s0t0_expression.hreverse();
-//    strain_energy_r0s1t1_expression.hreverse();
-//    strain_energy_r0s1t0_expression.hreverse();
-//    strain_energy_r0s0t1_expression.hreverse();
-//    strain_energy_r0s0t0_expression.hreverse();
+    strain_energy_r1s1t1_expression.hreverse();
+    strain_energy_r1s1t0_expression.hreverse();
+    strain_energy_r1s0t1_expression.hreverse();
+    strain_energy_r1s0t0_expression.hreverse();
+    strain_energy_r0s1t1_expression.hreverse();
+    strain_energy_r0s1t0_expression.hreverse();
+    strain_energy_r0s0t1_expression.hreverse();
+    strain_energy_r0s0t0_expression.hreverse();
 
     /*ut_r1s1tA_expression.hreverse();
     ut_r1s0tA_expression.hreverse();
@@ -2338,11 +2338,10 @@ class local_strains_expr {
       /**/
       ,
         e_11_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e1, Gs_e1, Gt_e1, e_rr, e_ss, e_rs, e_rt, e_st, e_11),
-        e_22_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22)
-//        ,e_12_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12)
-//        ,e_13_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13)
-//        ,e_23_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23)
-  {
+        e_22_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_22),
+        e_12_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e2, Gs_e2, Gt_e2, e_rr, e_ss, e_rs, e_rt, e_st, e_12),
+        e_13_expression(Gr_e1, Gs_e1, Gt_e1, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_13),
+        e_23_expression(Gr_e2, Gs_e2, Gt_e2, Gr_e3, Gs_e3, Gt_e3, e_rr, e_ss, e_rs, e_rt, e_st, e_23) {
     /* std::cout << "UNQ_local_strains_expr" << std::endl;
     std::cout << "Contravariant basis vectors:   "
               << "Gr={" << Gr.value()(0) << ", " << Gr.value()(1) << ", " << Gr.value()(2) << "}" << std::endl
@@ -2360,16 +2359,16 @@ class local_strains_expr {
               << "e3={" << e3.value()(0) << ", " << e3.value()(1) << ", " << e3.value()(2) << "}"
               << std::endl;
 
-//    std::cout << "   Gr_e1=" << Gr_e1.value
-//              << "   Gr_e2=" << Gr_e2.value
-//              << "   Gr_e3=" << Gr_e3.value
-//              << "   Gs_e1=" << Gs_e1.value
-//              << "   Gs_e2=" << Gs_e2.value
-//              << "   Gs_e3=" << Gs_e3.value
-//              << "   Gt_e1=" << Gt_e1.value
-//              << "   Gt_e2=" << Gt_e2.value
-//              << "   Gt_e3=" << Gt_e3.value
-//              << std::endl;
+    std::cout << "   Gr_e1=" << Gr_e1.value
+              << "   Gr_e2=" << Gr_e2.value
+              << "   Gr_e3=" << Gr_e3.value
+              << "   Gs_e1=" << Gs_e1.value
+              << "   Gs_e2=" << Gs_e2.value
+              << "   Gs_e3=" << Gs_e3.value
+              << "   Gt_e1=" << Gt_e1.value
+              << "   Gt_e2=" << Gt_e2.value
+              << "   Gt_e3=" << Gt_e3.value
+              << std::endl;
 
     std::cout << "Local strains:                 "
               << "e11=" << e_11.value
@@ -2381,9 +2380,9 @@ class local_strains_expr {
   };
 
   void reverse() {
-//    e_23_expression.reverse();
-//    e_13_expression.reverse();
-//    e_12_expression.reverse();
+    e_23_expression.reverse();
+    e_13_expression.reverse();
+    e_12_expression.reverse();
     e_22_expression.reverse();
     e_11_expression.reverse();
 
@@ -2411,15 +2410,15 @@ class local_strains_expr {
 
     e_11_expression.hforward();
     e_22_expression.hforward();
-//    e_12_expression.hforward();
-//    e_13_expression.hforward();
-//    e_23_expression.hforward();
+    e_12_expression.hforward();
+    e_13_expression.hforward();
+    e_23_expression.hforward();
   };
 
   void hreverse() {
-//    e_23_expression.hreverse();
-//    e_13_expression.hreverse();
-//    e_12_expression.hreverse();
+    e_23_expression.hreverse();
+    e_13_expression.hreverse();
+    e_12_expression.hreverse();
     e_22_expression.hreverse();
     e_11_expression.hreverse();
 
@@ -2457,9 +2456,9 @@ class local_strains_expr {
       Gt_e3_expression;
   local_strain_expr<N, T> e_11_expression;
   local_strain_expr<N, T> e_22_expression;
-//  local_strain_expr<N, T> e_12_expression;
-//  local_strain_expr<N, T> e_13_expression;
-//  local_strain_expr<N, T> e_23_expression;
+  local_strain_expr<N, T> e_12_expression;
+  local_strain_expr<N, T> e_13_expression;
+  local_strain_expr<N, T> e_23_expression;
 };
 
 template <int N, typename T>
@@ -2514,22 +2513,21 @@ class strain_energy_expr {
       , contravariant_basis_expression(gr, gs, gt, Gr, Gs, Gt)
       /* Cartesian local basis: */
       , local_basis_expression(gs, gt, e1, e2, e3)
-  /* Calculate local strains */
-//      , local_strains_expression(Gr, Gs, Gt, e1, e2, e3, e_rr, e_ss, e_rs, e_rt, e_st, e_11, e_22, e_12, e_13, e_23)
-  /* Assemble local strain vector */
-//      ,local_strains_vec_expression(e_11, e_22, e_12, e_13, e_23, local_strains_vec)
-  /* Calculate strain energy */
-//      ,strain_energy_expression(material.D, local_strains_vec, local_strains_vec, energy)
-  {
+      /* Calculate local strains */
+      , local_strains_expression(Gr, Gs, Gt, e1, e2, e3, e_rr, e_ss, e_rs, e_rt, e_st, e_11, e_22, e_12, e_13, e_23)
+      /* Assemble local strain vector */
+      , local_strains_vec_expression(e_11, e_22, e_12, e_13, e_23, local_strains_vec)
+      /* Calculate strain energy */
+      , strain_energy_expression(material.D, local_strains_vec, local_strains_vec, energy) {
     /*std::cout << "UNQ_strain_energy_expr" << std::endl;
     std::cout << "strain energy: " << energy.value << std::endl;*/
   };
 
   void reverse() {
     /*std::cout << this << ":UNQ.strain_energy_expr.reverse" << std::endl;*/
-//    strain_energy_expression.reverse();
-//    local_strains_vec_expression.reverse();
-//    local_strains_expression.reverse();
+    strain_energy_expression.reverse();
+    local_strains_vec_expression.reverse();
+    local_strains_expression.reverse();
     local_basis_expression.reverse();
     contravariant_basis_expression.reverse();
     strain_expression.reverse();
@@ -2539,15 +2537,15 @@ class strain_energy_expr {
     strain_expression.hforward();
     contravariant_basis_expression.hforward();
     local_basis_expression.hforward();
-//    local_strains_expression.hforward();
-//    local_strains_vec_expression.hforward();
-//    strain_energy_expression.hforward();
+    local_strains_expression.hforward();
+    local_strains_vec_expression.hforward();
+    strain_energy_expression.hforward();
   };
 
   void hreverse() {
-//    strain_energy_expression.hreverse();
-//    local_strains_vec_expression.hreverse();
-//    local_strains_expression.hreverse();
+    strain_energy_expression.hreverse();
+    local_strains_vec_expression.hreverse();
+    local_strains_expression.hreverse();
     local_basis_expression.hreverse();
     contravariant_basis_expression.hreverse();
     strain_expression.hreverse();
@@ -2580,9 +2578,9 @@ class strain_energy_expr {
   in_plane_strain_components_expr<N, T> strain_expression;
   contravariant_basis_expr<N, T> contravariant_basis_expression;
   cartesian_local_basis_expr<N, T> local_basis_expression;
-//  local_strains_expr<N, T> local_strains_expression;
-//  A2DScalar5VecAssemblyExpr<N, T> local_strains_vec_expression;
-//  MatA2DVecA2DVecInnerProductExpr<N, T, 5, 5> strain_energy_expression;
+  local_strains_expr<N, T> local_strains_expression;
+  A2DScalar5VecAssemblyExpr<N, T> local_strains_vec_expression;
+  MatA2DVecA2DVecInnerProductExpr<N, T, 5, 5> strain_energy_expression;
 };
 
 }  // namespace A2D

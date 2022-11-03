@@ -11,12 +11,9 @@
 #include "a2dmatops2d.h"
 #include "multiphysics/fespace.h"
 
-template <typename T>
-class NonlinearElasticity2D {
+template <typename T, A2D::index_t dim>
+class NonlinearElasticity {
  public:
-  // Number of spatial dimensions
-  static const A2D::index_t dim = 2;
-
   // Number of data dimensions
   static const A2D::index_t data_dim = 2;
 

@@ -14,22 +14,34 @@ class MixedPoisson2D {
   // Spatial dimension
   static const A2D::index_t dim = 2;
 
+  // No data associated with this element
+  static const A2D::index_t data_dim = 0;
+
+  // Space for the finite-element data
+  typedef A2D::FESpace<T, data_dim> DataSpace;
+
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::L1ScalarSpace<T, dim>, A2D::Hdiv2DSpace<T>>
+  typedef A2D::FESpace<T, dim, A2D::L2ScalarSpace<T, dim>, A2D::Hdiv2DSpace<T>>
       FiniteElementSpace;
 
   // Space for the element geometry - parametrized by H1 in 2D
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
 
   /**
-   * Evaluate the variational form at a quadrature point
+   * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
    *
    * <tau, sigma> - <div(tau), u> + <v, div(sigma)>
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param dobj The data at the quadrature point
+   * @param s The trial solution
+   * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  static T eval_weak_form(T wdetJ, FiniteElementSpace& s,
-                          FiniteElementSpace& t) {
+  static T eval_weak_form(T wdetJ, const DataSpace& dobj,
+                          const FiniteElementSpace& s,
+                          FiniteElementSpace& coef) {
     // Field objects for solution functions
-    A2D::L1ScalarSpace<T, 2>& u = s.template get<0>();
+    A2D::L2ScalarSpace<T, 2>& u = s.template get<0>();
     A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
 
     // Solution function values
@@ -38,7 +50,7 @@ class MixedPoisson2D {
     T& u_val = u.get_value();
 
     // Test function values
-    A2D::L1ScalarSpace<T, 2>& v = t.template get<0>();
+    A2D::L2ScalarSpace<T, 2>& v = t.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = t.template get<1>();
 
     // Test function values
@@ -51,10 +63,19 @@ class MixedPoisson2D {
                     tau_div * u + v * sigma_div);
   }
 
-  static void eval_weak_coef(T wdetJ, const FiniteElementSpace& s,
+  /**
+   * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param dobj The data at the quadrature point
+   * @param s The trial solution
+   * @param coef Derivative of the weak form w.r.t. coefficients
+   */
+  static void eval_weak_coef(T wdetJ, const DataSpace& dobj,
+                             const FiniteElementSpace& s,
                              FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::L1ScalarSpace<T, 2>& u = s.template get<0>();
+    const A2D::L2ScalarSpace<T, 2>& u = s.template get<0>();
     const A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
 
     // Solution function values
@@ -63,7 +84,7 @@ class MixedPoisson2D {
     const T& u_val = u.get_value();
 
     // Test function values
-    A2D::L1ScalarSpace<T, 2>& v = coef.template get<0>();
+    A2D::L2ScalarSpace<T, 2>& v = coef.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = coef.template get<1>();
 
     // Test function values
@@ -80,12 +101,22 @@ class MixedPoisson2D {
     v_val = wdetJ * sigma_div;
   }
 
-  static void eval_weak_jacobian_vec_product(T wdetJ,
-                                             const FiniteElementSpace& s,
-                                             const FiniteElementSpace& p,
-                                             FiniteElementSpace& coef) {
+  /**
+   * @brief Evaluate the derivative of the weak form coefficients along the
+   * solution direction p
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param dobj The data at the quadrature point
+   * @param s The trial solution
+   * @param p The direction of the tangent
+   * @param coef The coeffcients
+   */
+  static JVP_t eval_weak_jacobian_vec_product(T wdetJ, const DataSpace& dobj,
+                                              const FiniteElementSpace& s,
+                                              const FiniteElementSpace& p,
+                                              FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::L1ScalarSpace<T, 2>& u = p.template get<0>();
+    const A2D::L2ScalarSpace<T, 2>& u = p.template get<0>();
     const A2D::Hdiv2DSpace<T>& sigma = p.template get<1>();
 
     // Solution function values
@@ -94,7 +125,7 @@ class MixedPoisson2D {
     const T& u_val = u.get_value();
 
     // Test function values
-    A2D::L1ScalarSpace<T, 2>& v = coef.template get<0>();
+    A2D::L2ScalarSpace<T, 2>& v = coef.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = coef.template get<1>();
 
     // Test function values

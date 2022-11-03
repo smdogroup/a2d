@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "a2dobjs.h"
+
 namespace A2D {
 
 /*

@@ -26,6 +26,7 @@ template <typename I, typename T, class PDEInfo>
 class FEModel {
  public:
   static const index_t SPATIAL_DIM = PDEInfo::SPATIAL_DIM;
+
   FEModel(const index_t nnodes, const index_t nbcs)
       : nnodes(nnodes), nbcs(nbcs) {
     Timer t("FEModel::FEModel(1)");

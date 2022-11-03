@@ -19,8 +19,11 @@ option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
 
 # Set global compiler flags
+# add_compile_options(
+#   -O3 -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
+#   )
 add_compile_options(
-  -O3 -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
+  -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   )
 
 # Require Lapack and OpenMP

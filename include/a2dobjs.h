@@ -158,6 +158,22 @@ class Mat {
       A[i] = 0.0;
     }
   }
+  template <class MatType>
+  A2D_INLINE_FUNCTION void set(const MatType& mat) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A[N * i + j] = mat(i, j);
+      }
+    }
+  }
+  template <class MatType>
+  A2D_INLINE_FUNCTION void get(MatType& mat) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        mat(i, j) = A[N * i + j];
+      }
+    }
+  }
   template <class IdxType1, class IdxType2>
   A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     return A[N * i + j];
@@ -194,6 +210,23 @@ class SymmMat {
       A[i] = 0.0;
     }
   }
+  template <class SymmMat>
+  A2D_INLINE_FUNCTION void set(const SymmMat& mat) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        A[i + j * (j + 1) / 2] = mat(i, j);
+      }
+    }
+  }
+  template <class SymmMat>
+  A2D_INLINE_FUNCTION void get(SymmMat& mat) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        mat(i, j) = A[i + j * (j + 1) / 2];
+      }
+    }
+  }
+
   template <class IdxType1, class IdxType2>
   A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     if (i >= j) {

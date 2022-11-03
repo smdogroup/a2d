@@ -3,23 +3,20 @@
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
-#include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/fespace.h"
-#include "sparse/sparse_matrix.h"
 
 using namespace A2D;
 
-int main(int argc, char* argv[]) {
+void main_body() {
   using T = double;
-  using PDE = NonlinearElasticity<T, 2>;
+  using PDE = NonlinearElasticity2D<T>;
   using Quadrature = TriQuadrature3;
   using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
   using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
   using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
 
-  constexpr bool use_parallel_elemvec = false;
-  // constexpr bool use_parallel_elemvec = true;
+  // constexpr bool use_parallel_elemvec = false;
+  constexpr bool use_parallel_elemvec = true;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
                            use_parallel_elemvec>;
 
@@ -59,7 +56,7 @@ int main(int argc, char* argv[]) {
   ElementConnectivity connect(nnodes, nelems, conn);
   delete[] conn;
 
-  // Create the mesh for the geometry
+  // Create the meshes
   SpaceType geo_space[] = {H1};
   index_t dims[] = {2};
   ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
@@ -67,11 +64,8 @@ int main(int argc, char* argv[]) {
   SpaceType data_space[] = {H1};
   ElementMesh<DataBasis> datamesh(connect, data_space, dims);
 
-  SpaceType sol_space[] = {H1};
-  ElementMesh<Basis> mesh(connect, sol_space, dims);
-
-  // Get the total number of degrees of freedom
-  index_t ndof = mesh.get_num_dof();
+  SpaceType sol_space[] = {L2, EDGE};
+  ElementMesh<Basis> mesh(connect, sol_space);
 
   // Allocate global data, X, U, residual vectors
   SolutionVector<T> global_data(2 * nnodes);
@@ -96,60 +90,11 @@ int main(int argc, char* argv[]) {
   // Create finite element instance
   FE fe(elem_data, elem_geo, elem_sol, elem_vec);
 
-  fe.add_residual(global_U);
+  fe.add_residual(global_res);
+}
 
-  // fd.add_jacobian_vector_product(pert, res);
-  // poisson.add_jacobian();
-
-  // typedef double T;
-  // typedef NonlinearElasticity<T> PDE;
-
-  // typename PDE::FiniteElementGeometry geo;
-  // typename PDE::DataSpace data;
-  // typename PDE::FiniteElementSpace s, coef;
-
-  // T wdetJ = 0.5842;
-  // //   PDE::eval_weak_coef(wdetJ, data, s, coef);
-
-  // typename PDE::JacVecProduct jvp(wdetJ, data, s);
-
-  // typename PDE::FiniteElementSpace p, Jp;
-  // jvp(p, Jp);
-
-  // type PoissonMixed2D PDE;
-  // typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
-  // typedef FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>> Basis;
-
-  // A2D::Mat<T, Basis::ncomp, Basis::ncomp> mat;
-  // A2D::Mat<T, Basis::ndof, Basis::ndof> jac;
-  // Basis::add_outer<Quadrature>(0, mat, jac);
-
-  // T dof[Basis::ndof];
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   dof[i] = -1.32 + 0.31 * i;
-  // }
-
-  // FiniteElementSpace s1, s2;
-  // Basis::interp<Quadrature>(0, dof, s1);
-  // Basis::interp_basis<Quadrature>(0, dof, s2);
-
-  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-  //   std::cout << s1.get_value(i) << "  " << s2.get_value(i) << std::endl;
-  // }
-
-  // std::fill(dof, dof + Basis::ndof, T(0.0));
-  // Basis::add<Quadrature>(0, s1, dof);
-
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   std::cout << dof[i] << std::endl;
-  // }
-
-  // std::fill(dof, dof + Basis::ndof, T(0.0));
-  // Basis::add<Quadrature>(0, s2, dof);
-
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   std::cout << dof[i] << std::endl;
-  // }
-
-  return (0);
+int main() {
+  Kokkos::initialize();
+  { main_body(); }
+  Kokkos::finalize();
 }

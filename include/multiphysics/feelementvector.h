@@ -91,7 +91,7 @@ class ElementVector_Serial {
   };
 
   /**
-   * @brief Get number of elements
+   * @brief Get the number of elements
    */
   A2D::index_t get_num_elements() const { return mesh.get_num_elements(); }
 

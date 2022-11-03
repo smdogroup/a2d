@@ -11,107 +11,93 @@
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
-  typedef double T;
-  typedef NonlinearElasticity<T, 2> PDE;
-  typedef TriQuadrature3 Quadrature;
+  using T = double;
+  using PDE = NonlinearElasticity<T, 2>;
+  using Quadrature = TriQuadrature3;
+  using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
+  using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
+  using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
 
-  // typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
-  // typedef FEBasis<T, LagrangeTri1<T, 2>> Basis;
+  constexpr bool use_parallel_elemvec = false;
+  // constexpr bool use_parallel_elemvec = true;
+  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
+                           use_parallel_elemvec>;
 
-  // type PoissonMixed2D PDE;
-  typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
-  typedef FEBasis<T, LagrangeTri0<T>, RT2DTri1<T>> Basis;
-  typedef A2D::FESpace<T, 2, A2D::L2ScalarSpace<T, 2>, A2D::Hdiv2DSpace<T>>
-      FiniteElementSpace;
+  // Set the node locations
+  index_t nx = 10, ny = 10;
+  index_t nnodes = (nx + 1) * (ny + 1);
+  index_t nelems = 2 * nx * ny;
 
-  // A2D::Mat<T, Basis::ncomp, Basis::ncomp> mat;
-  // A2D::Mat<T, Basis::ndof, Basis::ndof> jac;
-  // Basis::add_outer<Quadrature>(0, mat, jac);
+  // Create the node vector
+  SolutionVector<T> nodes(2 * nnodes);
 
-  T dof[Basis::ndof];
-  for (int i = 0; i < Basis::ndof; i++) {
-    dof[i] = -1.32 + 0.31 * i;
+  for (index_t j = 0; j < ny + 1; j++) {
+    for (index_t i = 0; i < nx + 1; i++) {
+      index_t node = i + j * (nx + 1);
+      nodes[2 * node] = 1.0 * i;
+      nodes[2 * node + 1] = 1.0 * j;
+    }
   }
 
-  FiniteElementSpace s1, s2;
-  Basis::interp<Quadrature>(0, dof, s1);
-  Basis::interp_basis<Quadrature>(0, dof, s2);
+  // Set the connectivity
+  index_t* conn = new index_t[3 * nelems];
 
-  for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-    std::cout << s1.get_value(i) << "  " << s2.get_value(i) << std::endl;
+  for (index_t j = 0; j < ny; j++) {
+    for (index_t i = 0; i < nx; i++) {
+      index_t elem = 2 * (i + j * nx);
+      conn[3 * elem] = i + j * (nx + 1);
+      conn[3 * elem + 1] = i + 1 + j * (nx + 1);
+      conn[3 * elem + 2] = i + 1 + (j + 1) * (nx + 1);
+
+      elem += 1;
+      conn[3 * elem] = i + j * (nx + 1);
+      conn[3 * elem + 1] = i + 1 + (j + 1) * (nx + 1);
+      conn[3 * elem + 2] = i + (j + 1) * (nx + 1);
+    }
   }
 
-  std::fill(dof, dof + Basis::ndof, T(0.0));
-  Basis::add<Quadrature>(0, s1, dof);
+  ElementConnectivity connect(nnodes, nelems, conn);
+  delete[] conn;
 
-  for (int i = 0; i < Basis::ndof; i++) {
-    std::cout << dof[i] << std::endl;
-  }
+  // Create the mesh for the geometry
+  SpaceType geo_space[] = {H1};
+  index_t dims[] = {2};
+  ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
 
-  std::fill(dof, dof + Basis::ndof, T(0.0));
-  Basis::add<Quadrature>(0, s2, dof);
+  SpaceType data_space[] = {H1};
+  ElementMesh<DataBasis> datamesh(connect, data_space, dims);
 
-  for (int i = 0; i < Basis::ndof; i++) {
-    std::cout << dof[i] << std::endl;
-  }
+  SpaceType sol_space[] = {H1};
+  ElementMesh<Basis> mesh(connect, sol_space, dims);
 
-  // typedef FiniteElement<T, Quadrature, PDE, GeoBasis, Basis> FE;
+  // Get the total number of degrees of freedom
+  index_t ndof = mesh.get_num_dof();
 
-  // // Set the node locations
-  // index_t nx = 10, ny = 10;
-  // index_t nnodes = (nx + 1) * (ny + 1);
-  // index_t nelems = 2 * nx * ny;
+  // Allocate global data, X, U, residual vectors
+  SolutionVector<T> global_data(2 * nnodes);
+  SolutionVector<T> global_X(2 * nnodes);
+  SolutionVector<T> global_U(2 * nnodes);
+  SolutionVector<T> global_res(2 * nnodes);
 
-  // // Create the node vector
-  // SolutionVector<T> nodes(2 * nnodes);
+  // Create element vector views
+  FE::DataElemVec elem_data(datamesh, global_data);
+  FE::GeoElemVec elem_geo(mesh, global_X);
+  FE::ElemVec elem_sol(mesh, global_U);
+  FE::ElemVec elem_vec(mesh, global_res);
 
-  // for (index_t j = 0; j < ny + 1; j++) {
-  //   for (index_t i = 0; i < nx + 1; i++) {
-  //     index_t node = i + j * (nx + 1);
-  //     nodes[2 * node] = 1.0 * i;
-  //     nodes[2 * node + 1] = 1.0 * j;
-  //   }
-  // }
+  // Fabricate data, X, and U
+  // TODO
 
-  // // Set the connectivity
-  // index_t* conn = new index_t[3 * nelems];
+  // Populate element views using global vectors
+  elem_data.init_values();
+  elem_geo.init_values();
+  elem_sol.init_values();
 
-  // for (index_t j = 0; j < ny + 1; j++) {
-  //   for (index_t i = 0; i < nx + 1; i++) {
-  //     index_t elem = 2 * (i + j * nx);
-  //     conn[3 * elem] = i + j * (nx + 1);
-  //     conn[3 * elem + 1] = i + 1 + j * (nx + 1);
-  //     conn[3 * elem + 2] = i + 1 + (j + 1) * (nx + 1);
+  // Create finite element instance
+  FE fe(elem_data, elem_geo, elem_sol, elem_vec);
 
-  //     elem += 1;
-  //     conn[3 * elem] = i + j * (nx + 1);
-  //     conn[3 * elem + 1] = i + 1 + (j + 1) * (nx + 1);
-  //     conn[3 * elem + 2] = i + (j + 1) * (nx + 1);
-  //   }
-  // }
+  fe.add_residual(global_U);
 
-  // ElementConnectivity connect(nnodes, nelems, conn);
-  // delete[] conn;
-
-  // // Create the mesh for the geometry
-  // SpaceType geo_space[] = {H1};
-  // index_t dims[] = {2};
-  // ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
-
-  // SpaceType sol_space[] = {L2, EDGE};
-  // ElementMesh<Basis> mesh(connect, sol_space);
-
-  // // Get the total number of degrees of freedom
-  // index_t ndof = mesh.get_num_dof();
-
-  // SolutionVector<T> sol(ndof), res(ndof), pert(ndof);
-  // FE fe(geomesh, nodes, mesh, sol, res);
-
-  // for (index_t i = 0; i < ndof; i++) {
-  //   pert[i] = 1.0;
-  // }
-
-  // fd.add_residual();
   // fd.add_jacobian_vector_product(pert, res);
   // poisson.add_jacobian();
 
@@ -129,6 +115,41 @@ int main(int argc, char* argv[]) {
 
   // typename PDE::FiniteElementSpace p, Jp;
   // jvp(p, Jp);
+
+  // type PoissonMixed2D PDE;
+  // typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
+  // typedef FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>> Basis;
+
+  // A2D::Mat<T, Basis::ncomp, Basis::ncomp> mat;
+  // A2D::Mat<T, Basis::ndof, Basis::ndof> jac;
+  // Basis::add_outer<Quadrature>(0, mat, jac);
+
+  // T dof[Basis::ndof];
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   dof[i] = -1.32 + 0.31 * i;
+  // }
+
+  // FiniteElementSpace s1, s2;
+  // Basis::interp<Quadrature>(0, dof, s1);
+  // Basis::interp_basis<Quadrature>(0, dof, s2);
+
+  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
+  //   std::cout << s1.get_value(i) << "  " << s2.get_value(i) << std::endl;
+  // }
+
+  // std::fill(dof, dof + Basis::ndof, T(0.0));
+  // Basis::add<Quadrature>(0, s1, dof);
+
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   std::cout << dof[i] << std::endl;
+  // }
+
+  // std::fill(dof, dof + Basis::ndof, T(0.0));
+  // Basis::add<Quadrature>(0, s2, dof);
+
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   std::cout << dof[i] << std::endl;
+  // }
 
   return (0);
 }

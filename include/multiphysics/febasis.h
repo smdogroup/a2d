@@ -132,20 +132,20 @@ class LagrangeTri0 {
   static const A2D::index_t ndof = C;
   static const A2D::index_t ncomp = A2D::L2Space<T, C, 2>::ncomp;
 
-  template <class Quadrature, class SolnType>
+  template <class Quadrature, A2D::index_t offset, class SolnType>
   static void interp(A2D::index_t n, const SolnType sol,
                      A2D::L2Space<T, C, 2>& out) {
     A2D::Vec<T, 2>& u = out.get_value();
-    u(0) = sol[0];
-    u(1) = sol[1];
+    u(0) = sol[offset];
+    u(1) = sol[offset + 1];
   }
 
-  template <class Quadrature, class SolnType>
+  template <class Quadrature, A2D::index_t offset, class SolnType>
   static void add(A2D::index_t n, const A2D::L2Space<T, C, 2>& in,
                   SolnType res) {
     const A2D::Vec<T, 2>& u = in.get_value();
-    res[0] += u(0);
-    res[1] += u(1);
+    res[offset] += u(0);
+    res[offset + 1] += u(1);
   }
 
   // Set the matrix stride

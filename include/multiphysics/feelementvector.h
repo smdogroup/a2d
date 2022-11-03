@@ -75,15 +75,8 @@ class ElementVector_Serial {
      *
      * @return A pointer to the degrees of freedom
      */
-    template <A2D::index_t index>
-    T* get() {
-      return &dof[Basis::template get_dof_offset<index>()];
-    }
-
-    template <A2D::index_t index>
-    const T* get() const {
-      return &dof[Basis::template get_dof_offset<index>()];
-    }
+    T& operator[](const int index) { return dof[index]; }
+    const T& operator[](const int index) const { return dof[index]; }
 
    private:
     // Variables for all the basis functions
@@ -143,11 +136,10 @@ class ElementVector_Serial {
  private:
   template <A2D::index_t basis>
   void get_element_values_(A2D::index_t elem, FEDof& dof) {
-    T* values = dof.template get<basis>();
     for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
       const int sign = mesh.get_global_dof_sign(elem, basis, i);
       const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
-      values[i] = sign * vec[dof_index];
+      dof[i + Basis::template get_dof_offset<basis>()] = sign * vec[dof_index];
     }
     if constexpr (basis > 0) {
       get_element_values_<basis - 1>(elem, dof);
@@ -156,11 +148,10 @@ class ElementVector_Serial {
 
   template <A2D::index_t basis>
   void add_element_values_(A2D::index_t elem, const FEDof& dof) {
-    const T* values = dof.template get<basis>();
     for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
       const int sign = mesh.get_global_dof_sign(elem, basis, i);
       const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
-      vec[dof_index] += sign * values[i];
+      vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
     }
     if constexpr (basis > 0) {
       add_element_values_<basis - 1>(elem, dof);
@@ -194,29 +185,35 @@ class ElementVector_Parallel {
     FEDof(A2D::index_t elem, ElementVector_Parallel& elem_vec)
         : elem(elem), elem_vec_array(elem_vec.elem_vec_array) {}
 
-    /**
-     * @brief Get the values associated with the given basis
-     *
-     * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof
-     * local to index-th basis
-     *
-     * @return A subview to the degrees of freedom
-     */
-    template <A2D::index_t index>
-    auto get() {
-      return Kokkos::subview(elem_vec_array, elem,
-                             Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-                                               Basis::template get_dof_offset<index>() +
-                                                   Basis::template get_ndof<index>()));
-    }
+    T& operator[](const int index) { return elem_vec_array(elem, index); }
 
-    template <A2D::index_t index>
-    const auto get() const {
-      return Kokkos::subview(elem_vec_array, elem,
-                             Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-                                               Basis::template get_dof_offset<index>() +
-                                                   Basis::template get_ndof<index>()));
-    }
+    const T& operator[](const int index) const { return elem_vec_array(elem, index); }
+
+    // const T& operator[](const int index) const { return dof[index]; }
+
+    // /**
+    //  * @brief Get the values associated with the given basis
+    //  *
+    //  * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof
+    //  * local to index-th basis
+    //  *
+    //  * @return A subview to the degrees of freedom
+    //  */
+    // template <A2D::index_t index>
+    // auto get() {
+    //   return Kokkos::subview(elem_vec_array, elem,
+    //                          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+    //                                            Basis::template get_dof_offset<index>() +
+    //                                                Basis::template get_ndof<index>()));
+    // }
+
+    // template <A2D::index_t index>
+    // const auto get() const {
+    //   return Kokkos::subview(elem_vec_array, elem,
+    //                          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+    //                                            Basis::template get_dof_offset<index>() +
+    //                                                Basis::template get_ndof<index>()));
+    // }
 
    private:
     const A2D::index_t elem;

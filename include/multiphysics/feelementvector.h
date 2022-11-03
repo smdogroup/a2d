@@ -2,6 +2,7 @@
 #ifndef A2D_FE_ELEMENT_VECTOR_H
 #define A2D_FE_ELEMENT_VECTOR_H
 
+#include "array.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fesolution.h"
 
@@ -67,18 +68,11 @@ class ElementVector_Serial {
       std::fill(dof, dof + Basis::ndof, T(0.0));
     }
 
-    template <A2D::index_t index>
-    A2D_INLINE_FUNCTION T& operator[](const int i) {
-      return dof[Basis::template get_dof_offset<index>() + i];
-    }
-
-    template <A2D::index_t index>
-    A2D_INLINE_FUNCTION const T& operator[](const int i) const {
-      return dof[Basis::template get_dof_offset<index>() + i];
-    }
-
     /**
      * @brief Get the values associated with the given basis
+     *
+     * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof local
+     * to index-th basis
      *
      * @return A pointer to the degrees of freedom
      */
@@ -87,11 +81,6 @@ class ElementVector_Serial {
       return &dof[Basis::template get_dof_offset<index>()];
     }
 
-    /**
-     * @brief Get the values associated with the given basis
-     *
-     * @return A pointer to the degrees of freedom
-     */
     template <A2D::index_t index>
     const T* get() const {
       return &dof[Basis::template get_dof_offset<index>()];
@@ -103,12 +92,16 @@ class ElementVector_Serial {
   };
 
   /**
+   * @brief Get number of elements
+   */
+  A2D::index_t get_num_elements() const { return mesh.get_num_elements(); }
+
+  /**
    * @brief Initialize the element vector values
    *
    * This function may be called once before element values are accessed.
    */
   void init_values() {}
-
   /**
    * @brief Initialize any local element vector values to zero
    *
@@ -139,7 +132,7 @@ class ElementVector_Serial {
    *
    * @param elem the element index
    * @param dof the FEDof object that stores a reference to the degrees of
-   * freeom
+   * freedom
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
@@ -180,9 +173,9 @@ class ElementVector_Serial {
 };
 
 /*
-   This class allocates a heavy-weight 2-dimensional array to store (potentially
-   duplicated) local degrees of freedom to realize a between-element
-   parallelization.
+   This class allocates a heavy-weight 2-dimensional array to store
+   (potentially duplicated) local degrees of freedom to realize a
+   between-element parallelization.
 
    global to local dof population is done in parallel, local to global dof add
    is done by atomic operation to resolve write conflicts.
@@ -190,48 +183,43 @@ class ElementVector_Serial {
 template <typename T, class Basis>
 class ElementVector_Parallel {
  public:
+  using ElemVecArray_t = A2D::MultiArrayNew<T*>;
+
   ElementVector_Parallel(A2D::ElementMesh<Basis>& mesh,
                          A2D::SolutionVector<T>& vec)
-      : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", Basis::ndof) {
-    // Populate the array
-    init_values();
-  }
+      : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", Basis::ndof) {}
 
   // Required DOF container object (different for each element vector
   // implementation)
   class FEDof {
    public:
-    FEDof(A2D::index_t elem, ElementVector_Parallel& elem_vec_array)
-        : elem(elem), elem_vec_array(elem_vec_array) {}
-
-    template <A2D::index_t index>
-    A2D_INLINE_FUNCTION T& operator[](const int i) {
-      return elem_vec_array(elem, Basis::template get_dof_offset<index>() + i);
-    }
-
-    template <A2D::index_t index>
-    A2D_INLINE_FUNCTION const T& operator[](const int i) const {
-      return elem_vec_array(elem, Basis::template get_dof_offset<index>() + i);
-    }
+    FEDof(A2D::index_t elem, ElementVector_Parallel& elem_vec)
+        : elem(elem), elem_vec_array(elem_vec.elem_vec_array) {}
 
     /**
      * @brief Get the values associated with the given basis
      *
-     * @return A pointer to the degrees of freedom
+     * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof
+     * local to index-th basis
+     *
+     * @return A subview to the degrees of freedom
      */
     template <A2D::index_t index>
-    T& operator[](int i) T* get() {
-      return &dof[Basis::template get_dof_offset<index>()];
+    auto get() {
+      return Kokkos::subview(
+          elem_vec_array, elem,
+          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+                            Basis::template get_dof_offset<index>() +
+                                Basis::template get_ndof<index>()));
     }
 
-    /**
-     * @brief Get the values associated with the given basis
-     *
-     * @return A pointer to the degrees of freedom
-     */
     template <A2D::index_t index>
-    const T* get() const {
-      return &dof[Basis::template get_dof_offset<index>()];
+    const auto get() const {
+      return Kokkos::subview(
+          elem_vec_array, elem,
+          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+                            Basis::template get_dof_offset<index>() +
+                                Basis::template get_ndof<index>()));
     }
 
    private:
@@ -240,24 +228,44 @@ class ElementVector_Parallel {
   };
 
   /**
-   * @brief Add local dof to global dof
+   * @brief Get number of elements
    */
-  void add_values() {
-    for (A2D::index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
-      add_element_values<Basis::nbasis>(elem);
-    }
-  }
+  A2D::index_t get_num_elements() const { return mesh.get_num_elements(); }
 
- private:
   /**
    * @brief Populate local dofs from global dof
    */
   void init_values() {
     for (A2D::index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
-      populate_element_values<Basis::nbasis>(elem);
+      _get_element_values<Basis::nbasis>(elem);
     }
   }
 
+  /**
+   * @brief Initialize local dof values to zero
+   */
+  void init_zero_values() { A2D::BLAS::zero(elem_vec_array); }
+
+  /**
+   * @brief Add local dof to global dof
+   */
+  void add_values() {
+    for (A2D::index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+      _add_element_values<Basis::nbasis>(elem);
+    }
+  }
+
+  /**
+   * @brief Does nothing for this parallel implementation
+   */
+  void get_element_values(A2D::index_t elem, FEDof& dof) {}
+
+  /**
+   * @brief Does nothing for this parallel implementation
+   */
+  void add_element_values(A2D::index_t elem, const FEDof& dof) {}
+
+ private:
   /**
    * @brief Populate local dof for a single element
    *
@@ -265,15 +273,15 @@ class ElementVector_Parallel {
    * @param elem_idx element index
    */
   template <A2D::index_t nbasis>
-  void populate_element_values(const A2D::index_t& elem_idx) {
-    for (A2D::index_t i = 0; i < Basis::get_ndof<nbasis - 1>; i++) {
+  void _get_element_values(const A2D::index_t& elem_idx) {
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.get_global_dof_sign(elem_idx, nbasis - 1, i);
       const A2D::index_t& dof_index =
           mesh.get_global_dof(elem_idx, nbasis - 1, i);
-      element_vec_array(elem_idx, dof_index) = sign * vec[dof_index];
+      elem_vec_array(elem_idx, dof_index) = sign * vec[dof_index];
     }
     if constexpr (nbasis > 1) {
-      populate_element_values<nbasis - 2>(elem_idx);
+      _get_element_values<nbasis - 2>(elem_idx);
     }
     return;
   }
@@ -284,21 +292,20 @@ class ElementVector_Parallel {
    * @tparam nbasis number of function spaces for the element, at least 1
    */
   template <A2D::index_t nbasis>
-  void add_element_values(const A2D::index_t& elem_idx) {
-    for (A2D::index_t i = 0; i < Basis::get_ndof<nbasis - 1>; i++) {
+  void _add_element_values(const A2D::index_t& elem_idx) {
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.get_global_dof_sign(elem_idx, nbasis - 1, i);
       const A2D::index_t& dof_index =
           mesh.get_global_dof(elem_idx, nbasis - 1, i);
       Kokkos::atomic_add(&vec[dof_index],
-                         sign * element_vec_array(elem_idx, dof_index));
+                         sign * elem_vec_array(elem_idx, dof_index));
     }
     if constexpr (nbasis > 1) {
-      populate_element_values<nbasis - 2>(elem_idx);
+      _add_element_values<nbasis - 2>(elem_idx);
     }
     return;
   }
 
-  using ElemVecArray_t = A2D::MultiArrayNew<T*>;
   A2D::ElementMesh<Basis>& mesh;
   A2D::SolutionVector<T>& vec;
   ElemVecArray_t elem_vec_array;  // The heavy-weight storage

@@ -86,7 +86,7 @@ namespace A2D {
   Lagrange basis for a triangle
 */
 template <typename T>
-class LagrangeTri0 {
+class LagrangeTri0Scalar {
  public:
   static const A2D::index_t ndof = 1;
   static const A2D::index_t ncomp = A2D::L2ScalarSpace<T, 2>::ncomp;
@@ -115,6 +115,40 @@ class LagrangeTri0 {
 };
 
 /*
+  Lagrange basis for a triangle, TODO: finish the implementation
+*/
+template <typename T, A2D::index_t C>
+class LagrangeTri0 {
+ public:
+  static const A2D::index_t ndof = C;
+  static const A2D::index_t ncomp = A2D::L2Space<T, C, 2>::ncomp;
+
+  template <class Quadrature, class SolnType>
+  static void interp(A2D::index_t n, const SolnType sol,
+                     A2D::L2Space<T, C, 2>& out) {
+    A2D::Vec<T, 2>& u = out.get_value();
+    u(0) = sol[0];
+    u(1) = sol[1];
+  }
+
+  template <class Quadrature, class SolnType>
+  static void add(A2D::index_t n, const A2D::L2Space<T, C, 2>& in,
+                  SolnType res) {
+    const A2D::Vec<T, 2>& u = in.get_value();
+    res[0] += u(0);
+    res[1] += u(1);
+  }
+
+  // Set the matrix stride
+  static const A2D::index_t stride = 1;
+
+  template <class Quadrature, class BasisType>
+  static void basis(A2D::index_t n, BasisType N) {
+    N[0] = 1.0;
+  }
+};
+
+/*
   Lagrange basis for a triangle
 */
 template <typename T, A2D::index_t C>
@@ -123,7 +157,7 @@ class LagrangeTri1 {
   static const A2D::index_t ndof = 3 * C;
   static const A2D::index_t ncomp = A2D::H1Space<T, C, 2>::ncomp;
 
-  template <class Quadrature, A2D::index_t index, class SolnType>
+  template <class Quadrature, class SolnType>
   static void interp(A2D::index_t n, const SolnType sol,
                      A2D::H1Space<T, C, 2>& out) {
     double pt[2];
@@ -139,10 +173,9 @@ class LagrangeTri1 {
     A2D::Mat<T, C, 2>& grad = out.get_grad();
 
     for (A2D::index_t i = 0; i < C; i++) {
-      u(i) = N[0] * sol<index>[i] + N[1] * sol<index>[C + i] +
-             N[2] * sol<index>[2 * C + i];
-      grad(i, 0) = sol<index>[C + i] - sol<index>[i];
-      grad(i, 1) = sol<index>[2 * C + i] - sol<index>[i];
+      u(i) = N[0] * sol[i] + N[1] * sol[C + i] + N[2] * sol[2 * C + i];
+      grad(i, 0) = sol[C + i] - sol[i];
+      grad(i, 1) = sol[2 * C + i] - sol[i];
     }
   }
 

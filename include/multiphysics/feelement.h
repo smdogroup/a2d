@@ -17,33 +17,38 @@ class FiniteElement_Serial : public ElementBase<T> {
   typedef A2D::ElementVector_Serial<T, GeoBasis> GeoElemVec;
   typedef A2D::ElementVector_Serial<T, Basis> ElemVec;
 
-  FiniteElement_Serial(DataElemVec& data, GeoElemVec& geo, ElemVec& sol,
-                       ElemVec& res)
-      : data(data), geo(geo), sol(sol), res(res) {}
+  FiniteElement_Serial(DataElemVec& elem_data, GeoElemVec& elem_geo,
+                       ElemVec& elem_sol, ElemVec& elem_res)
+      : elem_data(elem_data),
+        elem_geo(elem_geo),
+        elem_sol(elem_sol),
+        elem_res(elem_res) {}
 
   void set_geo(SolutionVector<T>& X) {}
 
   void set_solution(SolutionVector<T>& U) {}
 
-  void add_residual(SolutionVector<T>& res) {
-    const A2D::index_t num_elements = geo.get_num_elements();
+  // TODO: global_res unused!
+  void add_residual(SolutionVector<T>& global_res) {
+    const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
       // Get the data for the element
-      typename DataElemVec::FEDof data_dof;
-      data.get_element_values(i, data_dof);
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      elem_data.get_element_values(i, data_dof);
 
       // Get the geometry values
-      typename GeoElemVec::FEDof geo_dof;
-      geo.get_element_values(i, geo_dof);
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      elem_geo.get_element_values(i, geo_dof);
 
       // Get the degrees of freedom for the element
-      typename ElemVec::FEDof dof;
-      sol.get_element_values(i, dof);
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+      elem_sol.get_element_values(i, sol_dof);
 
-      // Set up values for the residual
-      typename ElemVec::FEDof element_res;
+      // Get residual for the element
+      typename ElemVec::FEDof res_dof(i, elem_res);
+      elem_res.get_element_values(i, res_dof);
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
@@ -65,7 +70,7 @@ class FiniteElement_Serial : public ElementBase<T> {
 
         // Interpolate the solution vector using the basis
         typename PDE::FiniteElementSpace sref;
-        Basis::template interp<Quadrature>(j, dof, sref);
+        Basis::template interp<Quadrature>(j, sol_dof, sref);
 
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace s;
@@ -74,18 +79,23 @@ class FiniteElement_Serial : public ElementBase<T> {
         // Compute the coefficients for the weak form of the PDE
         typename PDE::FiniteElementSpace coef;
         double weight = Quadrature::get_weight(j);
-        PDE::eval_weak_coef(weight * detJ, qdata, s, coef);
+        // PDE::eval_weak_coef(weight * detJ, qdata, s, coef); //TODO: fix this!
 
         // Compute the coefficients in the reference element
         typename PDE::FiniteElementSpace cref;
         coef.rtransform(detJ, J, Jinv, cref);
 
         // Add the contributions back to the residual
-        Basis::template add<Quadrature>(j, cref, element_res);
+        Basis::template add<Quadrature>(j, cref, res_dof);
       }
 
-      res.add_element_values(i, element_res);
+      elem_res.add_element_values(i, res_dof);
     }
+
+    // We may call this to add to global dof at once in parallel
+    elem_res.add_values();
+
+    return;
   }
 
   /*
@@ -102,11 +112,11 @@ class FiniteElement_Serial : public ElementBase<T> {
   //   for (A2D::index_t i = 0; i < num_elements; i++) {
   //     // Get the geometry values
   //     typename GeoElemVec::FEDof geo_dof;
-  //     geo.get_element_values(i, geo_dof);
+  //     elem_geo.get_element_values(i, geo_dof);
 
   //     // Get the degrees of freedom for the element
   //     typename ElemVec::FEDof dof, xdof;
-  //     sol.get_element_values(i, dof);
+  //     elem_res.get_element_values(i, dof);
   //     x.get_element_values(i, xdof);
 
   //     // Set up values for the residual
@@ -167,11 +177,11 @@ class FiniteElement_Serial : public ElementBase<T> {
   //   for (A2D::index_t i = 0; i < num_elements; i++) {
   //     // Get the geometry values
   //     typename GeoElemVec::FEDof geo_dof;
-  //     geo.get_element_values(i, geo_dof);
+  //     elem_geo.get_element_values(i, geo_dof);
 
   //     // Get the degrees of freedom for the element
   //     typename ElemVec::FEDof dof;
-  //     sol.get_element_values(i, dof);
+  //     elem_res.get_element_values(i, dof);
 
   //     for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
   //       // Extract the Jacobian of the element transformation
@@ -215,10 +225,10 @@ class FiniteElement_Serial : public ElementBase<T> {
   // }
 
  private:
-  DataElemVec& data;
-  GeoElemVec& geo;
-  ElemVec& sol;
-  ElemVec& res;
+  DataElemVec& elem_data;
+  GeoElemVec& elem_geo;
+  ElemVec& elem_sol;
+  ElemVec& elem_res;
 };
 
 }  // namespace A2D

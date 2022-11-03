@@ -1,6 +1,8 @@
 #ifndef A2D_FE_ELEMENT_H
 #define A2D_FE_ELEMENT_H
 
+#include <type_traits>
+
 #include "multiphysics/febase.h"
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
@@ -10,15 +12,24 @@
 namespace A2D {
 
 template <typename T, class PDE, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis>
-class FiniteElement_Serial : public ElementBase<T> {
+          class GeoBasis, class Basis, bool use_parallel_elemvec = false>
+class FiniteElement : public ElementBase<T> {
  public:
-  typedef A2D::ElementVector_Serial<T, DataBasis> DataElemVec;
-  typedef A2D::ElementVector_Serial<T, GeoBasis> GeoElemVec;
-  typedef A2D::ElementVector_Serial<T, Basis> ElemVec;
+  using DataElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, DataBasis>,
+                                A2D::ElementVector_Serial<T, DataBasis>>::type;
+  using GeoElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, GeoBasis>,
+                                A2D::ElementVector_Serial<T, GeoBasis>>::type;
+  using ElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, Basis>,
+                                A2D::ElementVector_Serial<T, Basis>>::type;
 
-  FiniteElement_Serial(DataElemVec& elem_data, GeoElemVec& elem_geo,
-                       ElemVec& elem_sol, ElemVec& elem_res)
+  FiniteElement(DataElemVec& elem_data, GeoElemVec& elem_geo, ElemVec& elem_sol,
+                ElemVec& elem_res)
       : elem_data(elem_data),
         elem_geo(elem_geo),
         elem_sol(elem_sol),

@@ -56,8 +56,7 @@ namespace A2D {
 template <typename T, class Basis>
 class ElementVector_Serial {
  public:
-  ElementVector_Serial(A2D::ElementMesh<Basis>& mesh,
-                       A2D::SolutionVector<T>& vec)
+  ElementVector_Serial(A2D::ElementMesh<Basis>& mesh, A2D::SolutionVector<T>& vec)
       : mesh(mesh), vec(vec) {}
 
   // Required DOF container object (different for each element vector
@@ -183,11 +182,10 @@ class ElementVector_Serial {
 template <typename T, class Basis>
 class ElementVector_Parallel {
  public:
-  using ElemVecArray_t = A2D::MultiArrayNew<T*>;
+  using ElemVecArray_t = A2D::MultiArrayNew<T * [Basis::ndof]>;
 
-  ElementVector_Parallel(A2D::ElementMesh<Basis>& mesh,
-                         A2D::SolutionVector<T>& vec)
-      : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", Basis::ndof) {}
+  ElementVector_Parallel(A2D::ElementMesh<Basis>& mesh, A2D::SolutionVector<T>& vec)
+      : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", mesh.get_num_elements()) {}
 
   // Required DOF container object (different for each element vector
   // implementation)
@@ -206,25 +204,23 @@ class ElementVector_Parallel {
      */
     template <A2D::index_t index>
     auto get() {
-      return Kokkos::subview(
-          elem_vec_array, elem,
-          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-                            Basis::template get_dof_offset<index>() +
-                                Basis::template get_ndof<index>()));
+      return Kokkos::subview(elem_vec_array, elem,
+                             Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+                                               Basis::template get_dof_offset<index>() +
+                                                   Basis::template get_ndof<index>()));
     }
 
     template <A2D::index_t index>
     const auto get() const {
-      return Kokkos::subview(
-          elem_vec_array, elem,
-          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-                            Basis::template get_dof_offset<index>() +
-                                Basis::template get_ndof<index>()));
+      return Kokkos::subview(elem_vec_array, elem,
+                             Kokkos::make_pair(Basis::template get_dof_offset<index>(),
+                                               Basis::template get_dof_offset<index>() +
+                                                   Basis::template get_ndof<index>()));
     }
 
    private:
-    ElemVecArray_t& elem_vec_array;
     const A2D::index_t elem;
+    ElemVecArray_t& elem_vec_array;
   };
 
   /**
@@ -276,9 +272,9 @@ class ElementVector_Parallel {
   void _get_element_values(const A2D::index_t& elem_idx) {
     for (A2D::index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.get_global_dof_sign(elem_idx, nbasis - 1, i);
-      const A2D::index_t& dof_index =
-          mesh.get_global_dof(elem_idx, nbasis - 1, i);
-      elem_vec_array(elem_idx, dof_index) = sign * vec[dof_index];
+      const A2D::index_t& dof_index = mesh.get_global_dof(elem_idx, nbasis - 1, i);
+      const A2D::index_t dof_idx = i + Basis::template get_dof_offset<nbasis - 1>();
+      elem_vec_array(elem_idx, dof_idx) = sign * vec[dof_index];
     }
     if constexpr (nbasis > 1) {
       _get_element_values<nbasis - 2>(elem_idx);
@@ -295,10 +291,9 @@ class ElementVector_Parallel {
   void _add_element_values(const A2D::index_t& elem_idx) {
     for (A2D::index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.get_global_dof_sign(elem_idx, nbasis - 1, i);
-      const A2D::index_t& dof_index =
-          mesh.get_global_dof(elem_idx, nbasis - 1, i);
-      Kokkos::atomic_add(&vec[dof_index],
-                         sign * elem_vec_array(elem_idx, dof_index));
+      const A2D::index_t& dof_index = mesh.get_global_dof(elem_idx, nbasis - 1, i);
+      const A2D::index_t dof_idx = i + Basis::template get_dof_offset<nbasis - 1>();
+      Kokkos::atomic_add(&vec[dof_index], sign * elem_vec_array(elem_idx, dof_idx));
     }
     if constexpr (nbasis > 1) {
       _add_element_values<nbasis - 2>(elem_idx);

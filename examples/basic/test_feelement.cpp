@@ -7,7 +7,7 @@
 
 using namespace A2D;
 
-int main() {
+void main_body() {
   using T = double;
   using PDE = NonlinearElasticity2D<T>;
   using Quadrature = TriQuadrature3;
@@ -15,8 +15,10 @@ int main() {
   using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
   using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
 
-  using FE =
-      FiniteElement_Serial<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  // constexpr bool use_parallel_elemvec = false;
+  constexpr bool use_parallel_elemvec = true;
+  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
+                           use_parallel_elemvec>;
 
   // Set the node locations
   index_t nx = 10, ny = 10;
@@ -67,15 +69,15 @@ int main() {
 
   // Allocate global data, X, U, residual vectors
   SolutionVector<T> global_data(2 * nnodes);
-  SolutionVector<T> X(2 * nnodes);
-  SolutionVector<T> U(nnodes);
-  SolutionVector<T> res(nnodes);
+  SolutionVector<T> global_X(2 * nnodes);
+  SolutionVector<T> global_U(2 * nnodes);
+  SolutionVector<T> global_res(2 * nnodes);
 
   // Create element vector views
   FE::DataElemVec elem_data(datamesh, global_data);
-  FE::GeoElemVec elem_geo(mesh, X);
-  FE::ElemVec elem_sol(mesh, U);
-  FE::ElemVec elem_vec(mesh, res);
+  FE::GeoElemVec elem_geo(mesh, global_X);
+  FE::ElemVec elem_sol(mesh, global_U);
+  FE::ElemVec elem_vec(mesh, global_res);
 
   // Fabricate data, X, and U
   // TODO
@@ -88,5 +90,11 @@ int main() {
   // Create finite element instance
   FE fe(elem_data, elem_geo, elem_sol, elem_vec);
 
-  fe.add_residual(res);
+  fe.add_residual(global_res);
+}
+
+int main() {
+  Kokkos::initialize();
+  { main_body(); }
+  Kokkos::finalize();
 }

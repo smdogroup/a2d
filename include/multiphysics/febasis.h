@@ -88,19 +88,19 @@ namespace A2D {
 template <typename T>
 class LagrangeTri0Scalar {
  public:
+  using SpaceType = A2D::L2ScalarSpace<T, 2>;
+
   static const A2D::index_t ndof = 1;
-  static const A2D::index_t ncomp = A2D::L2ScalarSpace<T, 2>::ncomp;
+  static const A2D::index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::L2ScalarSpace<T, 2>& out) {
+  static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
     T& u = out.get_value();
     u = sol[offset];
   }
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::L2ScalarSpace<T, 2>& in,
-                  SolnType res) {
+  static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
     const T& u = in.get_value();
     res[offset] += u;
   }
@@ -124,25 +124,25 @@ class LagrangeTri0Scalar {
 };
 
 /*
-  Lagrange basis for a triangle, TODO: finish the implementation
+  Lagrange basis for a triangle
 */
 template <typename T, A2D::index_t C>
 class LagrangeTri0 {
  public:
+  using SpaceType = A2D::L2Space<T, C, 2>;
+
   static const A2D::index_t ndof = C;
-  static const A2D::index_t ncomp = A2D::L2Space<T, C, 2>::ncomp;
+  static const A2D::index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::L2Space<T, C, 2>& out) {
+  static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
     A2D::Vec<T, 2>& u = out.get_value();
     u(0) = sol[offset];
     u(1) = sol[offset + 1];
   }
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::L2Space<T, C, 2>& in,
-                  SolnType res) {
+  static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
     const A2D::Vec<T, 2>& u = in.get_value();
     res[offset] += u(0);
     res[offset + 1] += u(1);
@@ -150,6 +150,15 @@ class LagrangeTri0 {
 
   // Set the matrix stride
   static const A2D::index_t stride = 1;
+
+  // Set the basis size
+  static const A2D::index_t basis_size = 1;
+
+  // Set the derived quantities - number of dof for each stride
+  static const A2D::index_t ndof_per_stride = ndof / stride;
+
+  // Number of components per stride
+  static const A2D::index_t ncomp_per_stride = ncomp / stride;
 
   template <class Quadrature, class BasisType>
   static void basis(A2D::index_t n, BasisType N) {
@@ -163,12 +172,13 @@ class LagrangeTri0 {
 template <typename T, A2D::index_t C>
 class LagrangeTri1 {
  public:
+  using SpaceType = A2D::H1Space<T, C, 2>;
+
   static const A2D::index_t ndof = 3 * C;
-  static const A2D::index_t ncomp = A2D::H1Space<T, C, 2>::ncomp;
+  static const A2D::index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::H1Space<T, C, 2>& out) {
+  static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -190,8 +200,7 @@ class LagrangeTri1 {
   }
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::H1Space<T, C, 2>& in,
-                  SolnType res) {
+  static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -249,12 +258,13 @@ class LagrangeTri1 {
 template <typename T>
 class RT2DTri1 {
  public:
+  using SpaceType = A2D::Hdiv2DSpace<T>;
+
   static const A2D::index_t ndof = 3;
-  static const A2D::index_t ncomp = A2D::Hdiv2DSpace<T>::ncomp;
+  static const A2D::index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::Hdiv2DSpace<T>& out) {
+  static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -269,7 +279,7 @@ class RT2DTri1 {
   }
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::Hdiv2DSpace<T>& in, SolnType res) {
+  static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 

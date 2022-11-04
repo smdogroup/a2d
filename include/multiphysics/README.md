@@ -1,3 +1,43 @@
+# Function space, element and basis
+Solution (as well as test) functions involved in the PDEs can have different
+- spatial dimention ```D``` (2-dimensional, 3-dimensional, etc.)
+- number of components ```C``` (```C=1``` for scalar variable, ```C>1``` for
+vector variable)
+
+More importantly, each of them falls in one of the following function spaces:
+- L2 space: (scalar or vector) values only
+- H1 space: (scalar or vector) values and 1st order derivatives
+- Hdiv space: vector values and divergence
+- Hcurl space: vector values and curl
+
+Abstract function spaces above are implemented in ```multiphysics/fespace.h```.
+Currently, supported function spaces are:
+- ```L2ScalarSpace<T, D>```: L2 space for scalar variable and with spatial
+dimension ```D```
+- ```L2Space<T, C, D>```: L2 space for ```C```-component vector variable with
+spatial dimension ```D```
+- ```H1Space<T, C, D>```: L2 space for ```C```-component vector variable with
+spatial dimension ```D```
+- ```Hdiv2DSpace<T>```: H1 space for 2-component vector variable with spatial
+dimensional 2
+- ```Hcurl2DSpace<T>```: H1 space for 2-component vector variable with spatial
+dimensional 2
+
+Numerical approximations of abstract function spaces are implemented in
+```multiphysics/febasis.h```.
+Each basis class corresponds to exact one type of the function space.
+Currently, supported bases are:
+- 2-dimensional:
+    - ```LagrangeTri0Scalar<T>```: associated with ```L2ScalarSpace<T, 2>```,
+    degree-0 Lagrange triangle
+    - ```LagrangeTri0<T, C>```: associated with ```L2Space<T, C, 2>```, degree-0
+    Lagrange triangle
+    - ```LagrangeTri1<T, C>```: associated with ```H1Space<T, C, 2>```, degree-1
+    Lagrange triangle
+    - ```RT2DTri1<T>```: associated with ```Hdiv2DSpace<T>```, degree-1
+    Raviart–Thomas triangle
+
+
 # Class template skeletons
 
 ## Function spaces: ```fespace.h```
@@ -12,10 +52,13 @@ Such class templates comply with the following skeleton:
  ```c++
  class SpaceType {
     SpaceType();
-    static const index_type ncomp;  // number of components (e.g. number of
-                                    // solution variables and derivatives
-                                    // combined)
-    static const index_type dim;  // spatial dimension (e.g. 2D or 3D)
+    // number of components (e.g. number of solution variables and derivatives
+    // combined)
+    static const A2D::index_t ncomp = SpaceType::ncomp;
+
+    // spatial dimension (e.g. 2D or 3D)
+    static const A2D::index_t dim;
+
     void set_seed(const index_type comp);  // set input seed (1.0) comp-th
                                            // component (could be solution or
                                            // derivative)
@@ -56,24 +99,56 @@ Raviart-Thomas element, etc.
 Such class templates comply with the following skeleton:
 ```c++
 class BasisType {
-    static const index_type ndof;  // number of degrees of freedom of such
-                                   // element
-    static const index_type ncomp;  // number of components (e.g. number of
-                                    // solution variables and derivatives
-                                    // combined)
-    static void interp(index_type n, const sol_type sol,
-                       function_space_type out);  // at n-th quadrature point,
-                                                  // given solution to the local
-                                                  // dof, evaluate components of
-                                                  // function space object out
-    static void add(index_type n, const function_space_type in,
-                    const sol_type res);  // at n-th quadrature point, given
-                                          // function space object in, evaluate
-                                          // local degrees of freedom and add to
-                                          // res (of a local solution type)
-    static const index_type stride;
-    static void basis(index_type n, basis_type N);  // evaluate basis functions
-                                                    // N at n-th quadrature point
+    // The space type associated with this basis type
+    using SpaceType = ...;
+
+    // number of degrees of freedom of such element
+    static const A2D::index_t ndof;
+
+    // number of components (e.g. number of solution variables and derivatives
+    // combined)
+    static const A2D::index_t ncomp = SpaceType::ncomp;
+
+    /**
+     * Interpolate component(s) at a quadrature point.
+     * @tparam offset number of dof combined for previous bases of this element
+     * @param n quadrature index
+     * @param sol element(potentially containing multiple bases)-level dof
+     * @param out function space object that stores component(s) to be computed
+    */
+    template <class Quadrature, A2D::index_t offset, class SolnType>
+    static void interp(A2D::index_t n, const SolnType sol,
+                       SpaceType& out);
+
+    /**
+     * Add basis-level components to element-level dof
+     * @tparam offset number of dof combined for previous bases of this element
+     * @param n quadrature index
+     * @param in function space object that stores component(s) to be used
+     * @param res element(potentially containing multiple bases)-level dof
+    */
+    template <class Quadrature, A2D::index_t offset, class SolnType>
+    static void add(A2D::index_t n, const SpaceType& in,
+                    SolnType res);
+
+    //
+    static const A2D::index_t stride;
+
+    // Number of basis functions, including gradient, div, etc. if supported by
+    // the basis type
+    static const A2D::index_t basis_size;
+
+    // number of dof and component per stride
+    static const A2D::index_t ndof_per_stride = ndof / stride;
+    static const A2D::index_t ncomp_per_stride = ncomp / stride;
+
+    /**
+     * Evaluate basis functions (and derivatives, div, curl, etc.) at a quadrature point
+     * @param n quadrature intex
+     * @param N []-indexable array of basis function values
+    */
+    template <class Quadrature, class BasisType>
+    static void basis(A2D::index_t n, BasisType N);
 };
 ```
 

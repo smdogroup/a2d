@@ -1,7 +1,7 @@
 # Function space, element and basis
 Solution (as well as test) functions involved in the PDEs can have different
 - spatial dimention ```D``` (2-dimensional, 3-dimensional, etc.)
-- number of components ```C``` (```C=1``` for scalar variable, ```C>1``` for
+- variable dimensin ```C``` (```C=1``` for scalar variable, ```C>1``` for
 vector variable)
 
 More importantly, each of them falls in one of the following function spaces:
@@ -12,11 +12,9 @@ More importantly, each of them falls in one of the following function spaces:
 
 Abstract function spaces above are implemented in ```multiphysics/fespace.h```.
 Currently, supported function spaces are:
-- ```L2ScalarSpace<T, D>```: L2 space for scalar variable and with spatial
-dimension ```D```
-- ```L2Space<T, C, D>```: L2 space for ```C```-component vector variable with
+- ```L2Space<T, C, D>```: L2 space for ```C```-dimensional vector variable with
 spatial dimension ```D```
-- ```H1Space<T, C, D>```: L2 space for ```C```-component vector variable with
+- ```H1Space<T, C, D>```: L2 space for ```C```-dimensional vector variable with
 spatial dimension ```D```
 - ```Hdiv2DSpace<T>```: H1 space for 2-component vector variable with spatial
 dimensional 2
@@ -28,8 +26,6 @@ Numerical approximations of abstract function spaces are implemented in
 Each basis class corresponds to exact one type of the function space.
 Currently, supported bases are:
 - 2-dimensional:
-    - ```LagrangeTri0Scalar<T>```: associated with ```L2ScalarSpace<T, 2>```,
-    degree-0 Lagrange triangle
     - ```LagrangeTri0<T, C>```: associated with ```L2Space<T, C, 2>```, degree-0
     Lagrange triangle
     - ```LagrangeTri1<T, C>```: associated with ```H1Space<T, C, 2>```, degree-1

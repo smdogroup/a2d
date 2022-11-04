@@ -21,7 +21,7 @@ class MixedPoisson2D {
   typedef A2D::FESpace<T, data_dim> DataSpace;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::L2ScalarSpace<T, dim>, A2D::Hdiv2DSpace<T>>
+  typedef A2D::FESpace<T, dim, A2D::L2Space<T, 1, dim>, A2D::Hdiv2DSpace<T>>
       FiniteElementSpace;
 
   // Space for the element geometry - parametrized by H1 in 2D
@@ -41,7 +41,7 @@ class MixedPoisson2D {
                           const FiniteElementSpace& s,
                           FiniteElementSpace& coef) {
     // Field objects for solution functions
-    A2D::L2ScalarSpace<T, 2>& u = s.template get<0>();
+    A2D::L2Space<T, 1, 2>& u = s.template get<0>();
     A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
 
     // Solution function values
@@ -50,7 +50,7 @@ class MixedPoisson2D {
     T& u_val = u.get_value();
 
     // Test function values
-    A2D::L2ScalarSpace<T, 2>& v = t.template get<0>();
+    A2D::L2Space<T, 1, 2>& v = t.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = t.template get<1>();
 
     // Test function values
@@ -75,7 +75,7 @@ class MixedPoisson2D {
                              const FiniteElementSpace& s,
                              FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::L2ScalarSpace<T, 2>& u = s.template get<0>();
+    const A2D::L2Space<T, 1, 2>& u = s.template get<0>();
     const A2D::Hdiv2DSpace<T>& sigma = s.template get<1>();
 
     // Solution function values
@@ -84,7 +84,7 @@ class MixedPoisson2D {
     const T& u_val = u.get_value();
 
     // Test function values
-    A2D::L2ScalarSpace<T, 2>& v = coef.template get<0>();
+    A2D::L2Space<T, 1, 2>& v = coef.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = coef.template get<1>();
 
     // Test function values
@@ -116,7 +116,7 @@ class MixedPoisson2D {
                                               const FiniteElementSpace& p,
                                               FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::L2ScalarSpace<T, 2>& u = p.template get<0>();
+    const A2D::L2Space<T, 1, 2>& u = p.template get<0>();
     const A2D::Hdiv2DSpace<T>& sigma = p.template get<1>();
 
     // Solution function values
@@ -125,7 +125,7 @@ class MixedPoisson2D {
     const T& u_val = u.get_value();
 
     // Test function values
-    A2D::L2ScalarSpace<T, 2>& v = coef.template get<0>();
+    A2D::L2Space<T, 1, 2>& v = coef.template get<0>();
     A2D::Hdiv2DSpace<T>& tau = coef.template get<1>();
 
     // Test function values

@@ -88,67 +88,37 @@ namespace A2D {
 /*
   Lagrange basis for a triangle
 */
-template <typename T>
-class LagrangeTri0Scalar {
- public:
-  using SpaceType = A2D::L2ScalarSpace<T, 2>;
-
-  static const A2D::index_t ndof = 1;
-  static const A2D::index_t ncomp = SpaceType::ncomp;
-
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
-    T& u = out.get_value();
-    u = sol[offset];
-  }
-
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
-    const T& u = in.get_value();
-    res[offset] += u;
-  }
-
-  // Set the matrix stride
-  static const A2D::index_t stride = 1;
-
-  // Set the basis size
-  static const A2D::index_t basis_size = 1;
-
-  // Set the derived quantities - number of dof for each stride
-  static const A2D::index_t ndof_per_stride = ndof / stride;
-
-  // Number of components per stride
-  static const A2D::index_t ncomp_per_stride = ncomp / stride;
-
-  template <class Quadrature, class BasisType>
-  static void basis(A2D::index_t n, BasisType N) {
-    N[0] = 1.0;
-  }
-};
-
-/*
-  Lagrange basis for a triangle
-*/
 template <typename T, A2D::index_t C>
 class LagrangeTri0 {
  public:
   using SpaceType = A2D::L2Space<T, C, 2>;
+  using VarType = typename SpaceType::VarType;
 
   static const A2D::index_t ndof = C;
   static const A2D::index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
   static void interp(A2D::index_t n, const SolnType sol, SpaceType& out) {
-    A2D::Vec<T, 2>& u = out.get_value();
-    u(0) = sol[offset];
-    u(1) = sol[offset + 1];
+    VarType& u = out.get_value();
+    if constexpr (C == 1) {
+      u = sol[offset];
+    } else {
+      for (A2D::index_t i = 0; i < C; i++) {
+        u(i) = sol[offset + i];
+      }
+    }
   }
 
   template <class Quadrature, A2D::index_t offset, class SolnType>
   static void add(A2D::index_t n, const SpaceType& in, SolnType res) {
-    const A2D::Vec<T, 2>& u = in.get_value();
-    res[offset] += u(0);
-    res[offset + 1] += u(1);
+    const VarType& u = in.get_value();
+    if constexpr (C == 1) {
+      res[offset] += u;
+    } else {
+      for (A2D::index_t i = 0; i < C; i++) {
+        res[offset + i] += u(i);
+      }
+    }
   }
 
   // Set the matrix stride

@@ -28,25 +28,28 @@ namespace A2D {
 
   0. The constructor must initialize all solution entries to zero.
 
-  1. static const ncomp: Number of component outputs treating solution and
-  derivative information as independent.
+  1. static const index_t ncomp: Number of component outputs treating solution
+  and derivative information as independent.
 
-  2. set_value(comp, val): Sets the value in the given component index, all
-  other values are unmodified. The comp value must satisfy 0 <= comp < ncomps.
+  2. static const index_t dim: Number of spatial dimensions
+
+  3. zero(): Zero all component values for this space
+
+  3. get_value(comp): Returns a reference or constant reference to the value in
+  the given component index. The comp value must satisfy 0 <= comp < ncomps.
   Behavior undefined otherwise.
 
-  3. get_value(comp): Returns the value in the given component index. The comp
-  value must satisfy 0 <= comp < ncomps. Behavior undefined otherwise.
-
-  4. The space object must implement getters for each of the specific values
+  3. The space object must implement getters for each of the specific values
   that it computes such as:
 
-  get_value(), get_grad(), get_div(), get_curl() etc.
+  get_value(), get_grad(), get_div(), get_curl()
 
-  5. sref.transform(detJ, J, Jinv, s): This function transforms the current
+  must be defined according to the actual finite element space.
+
+  4. sref.transform(detJ, J, Jinv, s): This function transforms the current
   sref object from the reference element to the physical element.
 
-  6. s.rtransform(detJ, J, Jinv, sref): Transform the derivatives from the
+  5. s.rtransform(detJ, J, Jinv, sref): Transform the derivatives from the
   physical element back to the reference element.
 */
 
@@ -61,11 +64,12 @@ class L2ScalarSpace {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) { u = val; }
+  // Zero the solution
+  void zero() { u = 0.0; }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const { return u; }
+  T& get_value(const A2D::index_t comp) { return u; }
+  const T& get_value(const A2D::index_t comp) const { return u; }
 
   // Get the scalar solution value
   T& get_value() { return u; }
@@ -98,11 +102,12 @@ class L2Space {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) { u(comp) = val; }
+  // Zero the solution
+  void zero() { u.zero(); }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const { return u(comp); }
+  T& get_value(const A2D::index_t comp) { return u(comp); }
+  const T& get_value(const A2D::index_t comp) const { return u(comp); }
 
   // Get the scalar solution value
   A2D::Vec<T, C>& get_value() { return u; }
@@ -135,17 +140,21 @@ class H1ScalarSpace {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) {
-    if (comp == 0) {
-      u = val;
-    } else {
-      grad(comp - 1) = val;
-    }
+  // Zero the solution
+  void zero() {
+    u.zero();
+    grad.zero();
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const {
+  T& get_value(const A2D::index_t comp) {
+    if (comp == 0) {
+      return u;
+    } else {
+      return grad(comp - 1);
+    }
+  }
+  const T& get_value(const A2D::index_t comp) const {
     if (comp == 0) {
       return u;
     } else {
@@ -191,17 +200,21 @@ class H1Space {
   // Spatial dimension
   static const A2D::index_t dim = D;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) {
-    if (comp % (D + 1) == 0) {
-      u(comp / (D + 1)) = val;
-    } else {
-      grad(comp / (D + 1), (comp % (D + 1)) - 1) = val;
-    }
+  // Zero the solution
+  void zero() {
+    u.zero();
+    grad.zero();
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const {
+  T& get_value(const A2D::index_t comp) {
+    if (comp % (D + 1) == 0) {
+      return u(comp / (D + 1));
+    } else {
+      return grad(comp / (D + 1), (comp % (D + 1)) - 1);
+    }
+  }
+  const T& get_value(const A2D::index_t comp) const {
     if (comp % (D + 1) == 0) {
       return u(comp / (D + 1));
     } else {
@@ -255,17 +268,21 @@ class Hdiv2DSpace {
   // Spatial dimension
   static const A2D::index_t dim = 2;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) {
-    if (comp < 2) {
-      u(comp) = val;
-    } else {
-      div = val;
-    }
+  // Zero the solution
+  void zero() {
+    u.zero();
+    div = 0.0;
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const {
+  T& get_value(const A2D::index_t comp) {
+    if (comp < 2) {
+      return u(comp);
+    } else {
+      return div;
+    }
+  }
+  const T& get_value(const A2D::index_t comp) const {
     if (comp < 2) {
       return u(comp);
     } else {
@@ -311,17 +328,21 @@ class Hcurl2DSpace {
   // Spatial dimension
   static const A2D::index_t dim = 2;
 
-  // Set the input value based on the component index
-  void set_value(const A2D::index_t comp, T val) {
-    if (comp < 2) {
-      u(comp) = val;
-    } else {
-      curl = val;
-    }
+  // Zero the solution
+  void zero() {
+    u.zero();
+    curl = 0.0;
   }
 
   // Get the value of the specified component
-  T get_value(const A2D::index_t comp) const {
+  T& get_value(const A2D::index_t comp) {
+    if (comp < 2) {
+      return u(comp);
+    } else {
+      return curl;
+    }
+  }
+  const T& get_value(const A2D::index_t comp) const {
     if (comp < 2) {
       return u(comp);
     } else {
@@ -409,16 +430,17 @@ class FESpace {
       __count_space_components<Spaces...>::ncomp;
 
   /*
-    Set a value on a given solution field
+    Zero all the values in all the spaces
   */
-  void set_value(const A2D::index_t comp, T val) {
-    set_value_<0, Spaces...>(comp, val);
-  }
+  void zero() { zero_<0, Spaces...>(); }
 
   /*
     Get a solution value based on the index
   */
-  T get_value(const A2D::index_t comp) const {
+  T& operator[](const A2D::index_t comp) {
+    return get_value_<0, Spaces...>(comp);
+  }
+  const T& operator[](const A2D::index_t comp) const {
     return get_value_<0, Spaces...>(comp);
   }
 
@@ -483,29 +505,33 @@ class FESpace {
     rtransform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }
 
-  template <A2D::index_t index>
-  void set_value_(const A2D::index_t comp, T val) {}
-
   template <A2D::index_t index, class First, class... Remain>
-  void set_value_(const A2D::index_t comp, T val) {
-    if (comp < First::ncomp) {
-      std::get<index>(u).set_value(comp, val);
-    } else {
-      set_value_<index + 1, Remain...>(comp - First::ncomp, val);
-    }
-  }
-
-  template <A2D::index_t index>
-  T get_value_(const A2D::index_t comp) const {
-    return 0.0;
-  }
-
-  template <A2D::index_t index, class First, class... Remain>
-  T get_value_(const A2D::index_t comp) const {
-    if (comp < First::ncomp) {
+  T& get_value_(const A2D::index_t comp) {
+    if constexpr (sizeof...(Remain) == 0) {
+      return std::get<index>(u).get_value(comp);
+    } else if (comp < First::ncomp) {
       return std::get<index>(u).get_value(comp);
     } else {
       return get_value_<index + 1, Remain...>(comp - First::ncomp);
+    }
+  }
+
+  template <A2D::index_t index, class First, class... Remain>
+  const T& get_value_(const A2D::index_t comp) const {
+    if constexpr (sizeof...(Remain) == 0) {
+      return std::get<index>(u).get_value(comp);
+    } else if (comp < First::ncomp) {
+      return std::get<index>(u).get_value(comp);
+    } else {
+      return get_value_<index + 1, Remain...>(comp - First::ncomp);
+    }
+  }
+
+  template <A2D::index_t index, class First, class... Remain>
+  void zero_() {
+    std::get<index>(u).zero();
+    if constexpr (sizeof...(Remain) > 0) {
+      zero_<index + 1, Remain...>();
     }
   }
 };

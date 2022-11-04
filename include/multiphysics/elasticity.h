@@ -29,6 +29,9 @@ class NonlinearElasticity {
   // Space for the element geometry
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
 
+  // The type of matrix used to store data at each quadrature point
+  typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear
    * elasticity
@@ -42,8 +45,8 @@ class NonlinearElasticity {
                                             const FiniteElementSpace& s,
                                             FiniteElementSpace& coef) {
     // Get the constitutive data at the points
-    T mu = data.get_value(0);
-    T lambda = data.get_value(1);
+    T mu = data[0];
+    T lambda = data[1];
 
     // Extract the trial solution gradient and the coefficient terms. Here
     // Uxb is the output computed as the derivative of the strain energy
@@ -71,7 +74,9 @@ class NonlinearElasticity {
   }
 
   /**
-   * @brief Construct a new JacVecProduct object
+   * @brief Construct a JacVecProduct functor
+   *
+   * This functor computes a Jacobian-vector product of the
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
@@ -82,8 +87,8 @@ class NonlinearElasticity {
     A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data
-          mu(data.get_value(0)),
-          lambda(data.get_value(1)),
+          mu(data[0]),
+          lambda(data[1]),
 
           // Initialize the displacement gradient
           Ux(s.template get<0>().get_grad()),
@@ -123,13 +128,20 @@ class NonlinearElasticity {
     decltype(A2D::SymmIsotropicEnergy(mu, lambda, E, output)) energy;
   };
 
+  /**
+   * @brief Construct a JacVecProduct functor
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param s The solution at the quadrature point
+   */
   class AdjVecProduct {
    public:
     A2D_INLINE_FUNCTION AdjVecProduct(T wdetJ, const DataSpace& data,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data
-          mu(data.get_value(0)),
-          lambda(data.get_value(1)),
+          mu(data[0]),
+          lambda(data[1]),
 
           // Initialize the displacement gradient
           Ux(s.template get<0>().get_grad()),

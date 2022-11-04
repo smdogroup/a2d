@@ -23,6 +23,70 @@ int main(int argc, char* argv[]) {
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
                            use_parallel_elemvec>;
 
+  // using Basis = FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>>;
+  // using FiniteElementSpace = FESpace<T, 2, L2ScalarSpace<T, 2>,
+  // Hdiv2DSpace<T>>;
+
+  // T dof[Basis::ndof], res[Basis::ndof], test[Basis::ndof];
+  // std::fill(res, res + Basis::ndof, T(0.0));
+  // std::fill(test, test + Basis::ndof, T(0.0));
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   dof[i] = 0.0;
+  // }
+  // dof[2] = 1.0;
+
+  // FiniteElementSpace s1, s2;
+
+  // std::cout << "interp_basis test" << std::endl;
+  // Basis::interp<Quadrature>(0, dof, s1);
+  // Basis::interp_basis<Quadrature>(0, dof, s2);
+  // for (int i = 0; i < Basis::ncomp; i++) {
+  //   std::cout << s1[i] << "  " << s2[i] << std::endl;
+  // }
+
+  // std::cout << "add_basis test" << std::endl;
+  // Basis::add<Quadrature>(0, s1, res);
+  // Basis::add_basis<Quadrature>(0, s2, test);
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   std::cout << res[i] << "  " << test[i] << std::endl;
+  // }
+
+  // A2D::Mat<T, FiniteElementSpace::ncomp, FiniteElementSpace::ncomp> jac;
+  // A2D::Mat<T, Basis::ndof, Basis::ndof> mat;
+
+  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
+  //   for (int j = 0; j < FiniteElementSpace::ncomp; j++) {
+  //     jac(i, j) = -2.3 + 0.531 * i - 0.127 * j;
+  //   }
+  // }
+
+  // Basis::add_outer<Quadrature>(0, jac, mat);
+
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   res[i] = 0.0;
+  //   for (int j = 0; j < Basis::ndof; j++) {
+  //     res[i] += mat(i, j) * dof[j];
+  //   }
+  // }
+
+  // // Test to see that the basis is correctly implemented
+  // Basis::interp<Quadrature>(0, dof, s1);
+
+  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
+  //   s2[i] = 0.0;
+  //   for (int j = 0; j < FiniteElementSpace::ncomp; j++) {
+  //     s2[i] += jac(i, j) * s1[j];
+  //   }
+  // }
+
+  // std::fill(test, test + Basis::ndof, T(0.0));
+  // Basis::add<Quadrature>(0, s2, test);
+
+  // std::cout << "add_outer test" << std::endl;
+  // for (int i = 0; i < Basis::ndof; i++) {
+  //   std::cout << test[i] << "  " << res[i] << std::endl;
+  // }
+
   // Set the node locations
   index_t nx = 10, ny = 10;
   index_t nnodes = (nx + 1) * (ny + 1);
@@ -99,7 +163,7 @@ int main(int argc, char* argv[]) {
   fe.add_residual(global_U);
 
   // fd.add_jacobian_vector_product(pert, res);
-  // poisson.add_jacobian();
+  fe.add_jacobian();
 
   // typedef double T;
   // typedef NonlinearElasticity<T> PDE;

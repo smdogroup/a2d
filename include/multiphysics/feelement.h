@@ -13,7 +13,7 @@ namespace A2D {
 
 template <typename T, class PDE, class Quadrature, class DataBasis,
           class GeoBasis, class Basis, bool use_parallel_elemvec = false>
-class FiniteElement : public ElementBase<T> {
+class FiniteElementResidual {  // : public ElementBase<T> {
  public:
   using DataElemVec =
       typename std::conditional<use_parallel_elemvec,
@@ -28,19 +28,10 @@ class FiniteElement : public ElementBase<T> {
                                 A2D::ElementVector_Parallel<T, Basis>,
                                 A2D::ElementVector_Serial<T, Basis>>::type;
 
-  FiniteElement(DataElemVec& elem_data, GeoElemVec& elem_geo, ElemVec& elem_sol,
-                ElemVec& elem_res)
-      : elem_data(elem_data),
-        elem_geo(elem_geo),
-        elem_sol(elem_sol),
-        elem_res(elem_res) {}
+  FiniteElementResidual() {}
 
-  void set_geo(SolutionVector<T>& X) {}
-
-  void set_solution(SolutionVector<T>& U) {}
-
-  // TODO: global_res unused!
-  void add_residual(SolutionVector<T>& global_res) {
+  void add_residual(DataElemVec& elem_data, GeoElemVec& elem_geo,
+                    ElemVec& elem_sol, ElemVec& elem_res) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -103,21 +94,14 @@ class FiniteElement : public ElementBase<T> {
 
       elem_res.add_element_values(i, res_dof);
     }
-
-    // We may call this to add to global dof at once in parallel
-    elem_res.add_values();
-
-    return;
   }
 
   /*
     Compute y = y + J * x
   */
-  void add_jacobian_vector_product(SolutionVector<T>& xvec,
-                                   SolutionVector<T>& yvec) {
-    // ElemVec x(mesh, xvec);
-    // ElemVec y(mesh, yvec);
-
+  void add_jacobian_vector_product(DataElemVec& elem_data, GeoElemVec& elem_geo,
+                                   ElemVec& elem_sol, ElemVec& elem_xvec,
+                                   ElemVec& elem_yvec) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -134,12 +118,12 @@ class FiniteElement : public ElementBase<T> {
       typename ElemVec::FEDof sol_dof(i, elem_sol);
       elem_sol.get_element_values(i, sol_dof);
 
-      // // Set up the values for the input vector
-      // typename ElemVec::FEDof x_dof(i, elem_sol);
-      // elem_xvec.get_element_values(i, x_dof);
+      // Set up the values for the input vector
+      typename ElemVec::FEDof x_dof(i, elem_sol);
+      elem_xvec.get_element_values(i, x_dof);
 
-      // // Set up values for the output vector
-      // typename ElemVec::FEDof y_dof(i, elem_sol);
+      // Set up values for the output vector
+      typename ElemVec::FEDof y_dof(i, elem_sol);
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
@@ -173,7 +157,7 @@ class FiniteElement : public ElementBase<T> {
 
         // Interpolate the x-dof
         typename PDE::FiniteElementSpace xref, x;
-        // Basis::interp<Quadrature>(j, x_dof, xref);
+        Basis::interp<Quadrature>(j, x_dof, xref);
 
         xref.transform(detJ, J, Jinv, x);
 
@@ -185,19 +169,35 @@ class FiniteElement : public ElementBase<T> {
         y.rtransform(detJ, J, Jinv, yref);
 
         // Add the contributions back to the residual
-        // Basis::template add<Quadrature>(j, yref, y_dof);
+        Basis::template add<Quadrature>(j, yref, y_dof);
       }
 
-      // elem_yvec.add_element_values(i, ydof);
+      elem_yvec.add_element_values(i, ydof);
     }
-
-    // We may call this to add to global dof at once in parallel
-    // elem_yvec.add_values();
   }
+};
 
-  // void add_dof_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
+template <typename T, class PDE, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis, bool use_parallel_elemvec = false>
+class FiniteElementJacobian {  // : public ElementBase<T> {
+ public:
+  using DataElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, DataBasis>,
+                                A2D::ElementVector_Serial<T, DataBasis>>::type;
+  using GeoElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, GeoBasis>,
+                                A2D::ElementVector_Serial<T, GeoBasis>>::type;
+  using ElemVec =
+      typename std::conditional<use_parallel_elemvec,
+                                A2D::ElementVector_Parallel<T, Basis>,
+                                A2D::ElementVector_Serial<T, Basis>>::type;
 
-  void add_jacobian() {
+  FiniteElementJacobian() {}
+
+  void void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
+                         ElemVec& elem_sol, ElemMat& elem_mat) {
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
@@ -216,7 +216,7 @@ class FiniteElement : public ElementBase<T> {
       elem_sol.get_element_values(i, sol_dof);
 
       // Set up values for the element matrix
-      // typename ElemMat::FEDof element_res(i, res);
+      typename ElemMat::FEMat element_mat(i, elem_mat);
 
       A2D::Mat<T, Basis::ndof, Basis::ndof> element_mat;
 
@@ -269,7 +269,7 @@ class FiniteElement : public ElementBase<T> {
           Jp.rtransform(detJ, J, Jinv, pref);
 
           for (A2D::index_t m = 0; m < ncomp; m++) {
-            jac(m, k) = Jp[m];
+            jac(m, k) = pref[m];
           }
         }
 
@@ -278,12 +278,6 @@ class FiniteElement : public ElementBase<T> {
       }
     }
   }
-
- private:
-  DataElemVec& elem_data;
-  GeoElemVec& elem_geo;
-  ElemVec& elem_sol;
-  ElemVec& elem_res;
 };
 
 }  // namespace A2D

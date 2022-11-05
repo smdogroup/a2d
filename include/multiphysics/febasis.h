@@ -377,6 +377,8 @@ class FEBasis {
  public:
   typedef std::tuple<Basis...> BasisSpace;
 
+  // using FiniteElementSpace = FESpace<BasisSpace...::SpaceType>;
+
   /**
    * @brief Number of basis function objects
    */
@@ -495,6 +497,17 @@ class FEBasis {
     add_basis_<FiniteElementSpace, FEDof, 0, Basis...>(N, s, dof);
   }
 
+  /**
+   * @brief Add the outer product of the interpolation matrix with the Jacobian
+   * of the components at the quadrature point
+   *
+   * @tparam Quadrature The quadrature point object
+   * @tparam QMat The Jacobian matrix at the quadrature point
+   * @tparam Mat The matrix type
+   * @param pt The quadrature point index
+   * @param jac The Jacobian at the quadrature point
+   * @param mat The element Jacobian matrix
+   */
   template <class Quadrature, class QMat, class Mat>
   static void add_outer(A2D::index_t pt, const QMat& jac, Mat& mat) {
     // Evaluate the basis functions

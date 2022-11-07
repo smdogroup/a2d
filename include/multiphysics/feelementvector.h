@@ -19,9 +19,10 @@ namespace A2D {
   details of the underlying element vector implementation. This class must
   contain the following members:
 
-  1.1 Constructor with no arguments
-  1.2 T* get() and const T* get const () that retrieves a pointer to the
-  element data
+  1.1 The FEDof constructor must take the element index and a reference to
+  the element vector object itself as arguments
+
+  1.2 The FEDof must be indexable via operator[](const A2D::index_t)
 
   2. get_element_values(elem, dof)
 
@@ -68,12 +69,9 @@ class ElementVector_Serial {
     }
 
     /**
-     * @brief Get the values associated with the given basis
+     * @brief Get a reference to the underlying element data
      *
-     * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof local
-     * to index-th basis
-     *
-     * @return A pointer to the degrees of freedom
+     * @return A reference to the degree of freedom
      */
     T& operator[](const int index) { return dof[index]; }
     const T& operator[](const int index) const { return dof[index]; }
@@ -81,6 +79,110 @@ class ElementVector_Serial {
    private:
     // Variables for all the basis functions
     T dof[Basis::ndof];
+  };
+
+  /**
+   * @brief Get the number of elements
+   */
+  A2D::index_t get_num_elements() const { return mesh.get_num_elements(); }
+
+  /**
+   * @brief Initialize the element vector values
+   *
+   * This function may be called once before element values are accessed.
+   */
+  void init_values() {}
+  /**
+   * @brief Initialize any local element vector values to zero
+   *
+   * This function may be called before element values are added.
+   */
+  void init_zero_values() {}
+
+  /**
+   * @brief Finish adding values to the element vector
+   *
+   * Add any values from the element vector into the source vector.
+   */
+  void add_values() {}
+
+  /**
+   * @brief Get the element values from the object and store them in the FEDof
+   *
+   * @param elem the element index
+   * @param dof the object that stores a reference to the degrees of freedom
+   */
+  // Get values for this element from the vector
+  void get_element_values(A2D::index_t elem, FEDof& dof) {
+    get_element_values_<Basis::nbasis - 1>(elem, dof);
+  }
+
+  /**
+   * @brief Add the degree of freedom values to the element vector
+   *
+   * @param elem the element index
+   * @param dof the FEDof object that stores a reference to the degrees of
+   * freedom
+   *
+   * If FEDof contains a pointer to data, this function may do nothing
+   */
+  // Add values for this element to the vector
+  void add_element_values(A2D::index_t elem, const FEDof& dof) {
+    add_element_values_<Basis::nbasis - 1>(elem, dof);
+  }
+
+ private:
+  template <A2D::index_t basis>
+  void get_element_values_(A2D::index_t elem, FEDof& dof) {
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, basis, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      dof[i + Basis::template get_dof_offset<basis>()] = sign * vec[dof_index];
+    }
+    if constexpr (basis > 0) {
+      get_element_values_<basis - 1>(elem, dof);
+    }
+  }
+
+  template <A2D::index_t basis>
+  void add_element_values_(A2D::index_t elem, const FEDof& dof) {
+    for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
+      const int sign = mesh.get_global_dof_sign(elem, basis, i);
+      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
+    }
+    if constexpr (basis > 0) {
+      add_element_values_<basis - 1>(elem, dof);
+    }
+  }
+
+  A2D::ElementMesh<Basis>& mesh;
+  A2D::SolutionVector<T>& vec;
+};
+
+template <typename T, class Basis>
+class ElementMat_Serial {
+ public:
+  ElementMat_Serial(A2D::ElementMesh<Basis>& mesh, A2D::CSRMat<T>& mat) : mesh(mesh), mat(mat) {}
+
+  // Required DOF container object (different for each element vector
+  // implementation)
+  class FEMat {
+    FEMat : FEDof(A2D::index_t elem, ElementMat_Serial& elem_mat) {
+      std::fill(A, A + Basis::ndof * Basis::ndof, T(0.0));
+    }
+
+    /**
+     * @brief Get a reference to the underlying element data
+     *
+     * @return A reference to the degree of freedom
+     */
+    T& operator()(const int i, const int j) { return A[i * Basis::ndof + j]; }
+    const T& operator()(const int i, const int j) const { return A[i * Basis::ndof + j]; }
+
+   private:
+    // Variables for all the basis functions
+    T A[Basis::ndof * Basis::ndof];
   };
 
   /**
@@ -188,32 +290,6 @@ class ElementVector_Parallel {
     T& operator[](const int index) { return elem_vec_array(elem, index); }
 
     const T& operator[](const int index) const { return elem_vec_array(elem, index); }
-
-    // const T& operator[](const int index) const { return dof[index]; }
-
-    // /**
-    //  * @brief Get the values associated with the given basis
-    //  *
-    //  * Given basis index, return a []-indexable ret s.t. ret[i] = i-th dof
-    //  * local to index-th basis
-    //  *
-    //  * @return A subview to the degrees of freedom
-    //  */
-    // template <A2D::index_t index>
-    // auto get() {
-    //   return Kokkos::subview(elem_vec_array, elem,
-    //                          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-    //                                            Basis::template get_dof_offset<index>() +
-    //                                                Basis::template get_ndof<index>()));
-    // }
-
-    // template <A2D::index_t index>
-    // const auto get() const {
-    //   return Kokkos::subview(elem_vec_array, elem,
-    //                          Kokkos::make_pair(Basis::template get_dof_offset<index>(),
-    //                                            Basis::template get_dof_offset<index>() +
-    //                                                Basis::template get_ndof<index>()));
-    // }
 
    private:
     const A2D::index_t elem;

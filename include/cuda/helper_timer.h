@@ -225,6 +225,7 @@ inline float StopWatchWin::getAverageTime() {
 // Declarations for Stopwatch on Linux and Mac OSX
 // includes, system
 #include <sys/time.h>
+
 #include <ctime>
 
 //! Windows specific implementation of StopWatch

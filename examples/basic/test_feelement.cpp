@@ -9,7 +9,7 @@ using namespace A2D;
 
 void main_body() {
   using T = double;
-  using PDE = NonlinearElasticity2D<T>;
+  using PDE = NonlinearElasticity<T, 2>;
   using Quadrature = TriQuadrature3;
   using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
   using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;

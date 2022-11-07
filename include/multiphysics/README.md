@@ -1,20 +1,20 @@
 # Function space, element and basis
-Solution (as well as test) functions involved in the PDEs can have different
-- spatial dimention ```D``` (2-dimensional, 3-dimensional, etc.)
+Solution (as well as test) functions involved in the PDEs has different
+- spatial dimention ```D``` (2-dimensional, 3-dimensional, etc.),
 - variable dimensin ```C``` (```C=1``` for scalar variable, ```C>1``` for
-vector variable)
+vector variable).
 
 More importantly, each of them falls in one of the following function spaces:
 - L2 space: (scalar or vector) values only
 - H1 space: (scalar or vector) values and 1st order derivatives
-- Hdiv space: vector values and divergence
-- Hcurl space: vector values and curl
+- H(div) space: vector values and divergence
+- H(curl) space: vector values and curl
 
 Abstract function spaces above are implemented in ```multiphysics/fespace.h```.
 Currently, supported function spaces are:
 - ```L2Space<T, C, D>```: L2 space for ```C```-dimensional vector variable with
 spatial dimension ```D```
-- ```H1Space<T, C, D>```: L2 space for ```C```-dimensional vector variable with
+- ```H1Space<T, C, D>```: H1 space for ```C```-dimensional vector variable with
 spatial dimension ```D```
 - ```Hdiv2DSpace<T>```: H1 space for 2-component vector variable with spatial
 dimensional 2
@@ -42,33 +42,55 @@ Two types of class templates are defined:
 - ```FESpace```
 
  ### ```SpaceType```
-```SpaceType``` implements specific function function space instances, such as
+```SpaceType``` implements specific function space instances, such as
 L2 space, H1 space, H(div) space, etc.
 Such class templates comply with the following skeleton:
  ```c++
  class SpaceType {
-    SpaceType();
+    // The type of function variable associated with this function space
+    using VarType = typename SpaceType::VarType;
+
     // number of components (e.g. number of solution variables and derivatives
     // combined)
-    static const A2D::index_t ncomp = SpaceType::ncomp;
+    static const A2D::index_t ncomp;
 
-    // spatial dimension (e.g. 2D or 3D)
+    // spatial dimension (usually 2 or 3)
     static const A2D::index_t dim;
 
-    void set_seed(const index_type comp);  // set input seed (1.0) comp-th
-                                           // component (could be solution or
-                                           // derivative)
-    sol_type& get_value(const index_type comp);  // get the value of comp-the
-                                                 // component
-    sol_type& get_value();  // get solution variable (could be scalar or vector
-                            // type)
-    sol_type& get_value() const;
-    void transform(const T& detJ, const mat_type& J, const mat_type& Jinv,
-                   SpaceType& s);  // transform from this (reference) element to
-                                  // physical element
-    void rtransform(const T& detJ, const mat_type& J, const mat_type& Jinv,
-                   SpaceType& sref);  // transform from this (physical) element
-                                     // to reference element
+    // zero the variables (solution, grad, div, curl, egc.)
+    void zero();
+
+    /**
+     * Get a component of the variables
+     * @param comp component index
+    */
+    T& get_value(const A2D::index_t comp);
+    const T& get_value(const A2D::index_t comp) const;
+
+    /**
+     * Get the solution variable (not including grad, div, etc.)
+    */
+    VarType& get_value();
+    const VarType& get_value() const;
+
+
+    /**
+     * Transform solution variables from this (reference) element to physical
+     * element s
+     * @param s the function space associated with the physical element
+    */
+    void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
+                    const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const;
+
+
+    /**
+     * Transform solution variables from this (physical) element to reference
+     * element s
+     * @param s the function space associated with the reference element
+    */
+    void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
+                    const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const;
+
 
     /* Depend on the instance, could have methods below */
     grad_type& get_grad();  // get gradient
@@ -97,6 +119,9 @@ Such class templates comply with the following skeleton:
 class BasisType {
     // The space type associated with this basis type
     using SpaceType = ...;
+
+    // The type of function variable associated with this function space
+    using VarType = typename SpaceType::VarType;
 
     // number of degrees of freedom of such element
     static const A2D::index_t ndof;

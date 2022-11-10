@@ -4,8 +4,7 @@
 namespace A2D {
 
 /**
- * @brief Connecitivity types for all the elements implemented by A2D
- *
+ * @brief Element types implemented by A2D
  */
 enum A2D_ELEMENT_TYPES {
   POINT,
@@ -135,12 +134,9 @@ class ElementTypes {
                                                   {0, 1, 5, 4}, {2, 3, 7, 6},
                                                   {0, 3, 2, 1}, {4, 5, 6, 7}};
 
-  // Faces adjacent to the given edge index
   static constexpr index_t HEX_EDGE_TO_ADJ_FACES[][2] = {
       {2, 4}, {1, 4}, {3, 4}, {0, 4}, {2, 5}, {1, 5},
       {3, 5}, {0, 5}, {0, 2}, {1, 2}, {1, 3}, {0, 3}};
-
-  // Index of the edge on each adjacent face
   static constexpr index_t HEX_EDGE_TO_ADJ_FACE_EDGE[][2] = {
       {0, 3}, {0, 2}, {0, 1}, {3, 0}, {2, 0}, {2, 1},
       {2, 2}, {1, 3}, {0, 3}, {3, 1}, {1, 3}, {2, 1}};
@@ -171,9 +167,18 @@ class ElementTypes {
       {0, 3, 4, 1}, {1, 4, 5, 2}, {0, 2, 5, 3}};
 
   static constexpr index_t WEDGE_EDGE_TO_ADJ_FACES[][2] = {
-      {0, 2}, {0, 3}, {0, 4}, {1, 2}, {1, 3}, {1, 4}, {2, 4}, {2, 3}, {3, 4}};
+      {2, 4}, {1, 4}, {3, 4}, {0, 4}, {2, 5}, {1, 5},
+      {3, 5}, {0, 5}, {0, 2}, {1, 2}, {1, 3}, {0, 3}};
   static constexpr index_t WEDGE_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-      {0, 3}, {1, 3}, {2, 0}, {0, 1}, {1, 1}, {2, 2}, {0, 3}, {2, 0}, {2, 1}};
+      {0, 3}, {0, 2}, {0, 1}, {3, 0}, {2, 0}, {2, 1},
+      {2, 2}, {1, 3}, {0, 3}, {3, 1}, {1, 3}, {2, 1}};
+
+  // static constexpr index_t WEDGE_EDGE_TO_ADJ_FACES[][2] = {
+  //     {0, 2}, {0, 3}, {0, 4}, {1, 2}, {1, 3}, {1, 4}, {2, 4}, {2, 3}, {3,
+  //     4}};
+  // static constexpr index_t WEDGE_EDGE_TO_ADJ_FACE_EDGE[][2] = {
+  //     {0, 3}, {1, 3}, {2, 0}, {0, 1}, {1, 1}, {2, 2}, {0, 3}, {2, 0}, {2,
+  //     1}};
 
   /**
    * @brief Pyramid properties

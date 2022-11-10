@@ -28,18 +28,18 @@ class BSRMat {
    * @param _cols vector of column indices
    */
   template <class VecType>
-  BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &_rowp,
-         const VecType &_cols)
+  BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &rowp_,
+         const VecType &cols_)
       : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals("Avals", nnz) {
     rowp = IdxArray1D_t("rowp", nbrows + 1);
     cols = IdxArray1D_t("cols", nnz);
 
     for (I i = 0; i < nbrows + 1; i++) {
-      rowp[i] = _rowp[i];
+      rowp[i] = rowp_[i];
     }
 
     for (I i = 0; i < nnz; i++) {
-      cols[i] = _cols[i];
+      cols[i] = cols_[i];
     }
   }
 

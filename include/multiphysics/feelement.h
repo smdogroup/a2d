@@ -13,7 +13,7 @@ namespace A2D {
 
 template <typename T, class PDE, class Quadrature, class DataBasis,
           class GeoBasis, class Basis, bool use_parallel_elemvec = false>
-class FiniteElementResidual {  // : public ElementBase<T> {
+class FiniteElement {  // : public ElementBase<T> {
  public:
   using DataElemVec =
       typename std::conditional<use_parallel_elemvec,
@@ -28,7 +28,7 @@ class FiniteElementResidual {  // : public ElementBase<T> {
                                 A2D::ElementVector_Parallel<T, Basis>,
                                 A2D::ElementVector_Serial<T, Basis>>::type;
 
-  FiniteElementResidual() {}
+  FiniteElement() {}
 
   void add_residual(DataElemVec& elem_data, GeoElemVec& elem_geo,
                     ElemVec& elem_sol, ElemVec& elem_res) {
@@ -175,26 +175,6 @@ class FiniteElementResidual {  // : public ElementBase<T> {
       elem_yvec.add_element_values(i, ydof);
     }
   }
-};
-
-template <typename T, class PDE, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis, bool use_parallel_elemvec = false>
-class FiniteElementJacobian {  // : public ElementBase<T> {
- public:
-  using DataElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, DataBasis>,
-                                A2D::ElementVector_Serial<T, DataBasis>>::type;
-  using GeoElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, GeoBasis>,
-                                A2D::ElementVector_Serial<T, GeoBasis>>::type;
-  using ElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, Basis>,
-                                A2D::ElementVector_Serial<T, Basis>>::type;
-
-  FiniteElementJacobian() {}
 
   void void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
                          ElemVec& elem_sol, ElemMat& elem_mat) {
@@ -217,8 +197,6 @@ class FiniteElementJacobian {  // : public ElementBase<T> {
 
       // Set up values for the element matrix
       typename ElemMat::FEMat element_mat(i, elem_mat);
-
-      A2D::Mat<T, Basis::ndof, Basis::ndof> element_mat;
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
@@ -276,6 +254,8 @@ class FiniteElementJacobian {  // : public ElementBase<T> {
         // Add the results of the matrix-vector product to the
         Basis::template add_outer<Quadrature>(j, jac, element_mat);
       }
+
+      elem_mat.add_element_values(i, element_mat);
     }
   }
 };

@@ -1,10 +1,12 @@
 #include <iostream>
 
-// #include "multiphysics/elasticity.h"
-// #include "multiphysics/febasis.h"
+#include "multiphysics/elasticity.h"
+#include "multiphysics/febasis.h"
+#include "multiphysics/hexa_basis.h"
+
 // #include "multiphysics/feelement.h"
 // #include "multiphysics/femesh.h"
-// #include "multiphysics/fequadrature.h"
+#include "multiphysics/fequadrature.h"
 // #include "multiphysics/fespace.h"
 // #include "sparse/sparse_matrix.h"
 
@@ -13,8 +15,44 @@
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
+  // using T = double;
+  // using PDE = NonlinearElasticity<T, 2>;
+
+  // using Quadrature_Tri = TriQuadrature3;
+  // using DataBasis_Tri = FEBasis<T, LagrangeTri0<T, 2>>;
+  // using GeoBasis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using Basis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using FE_Tri = FiniteElement<T, PDE, Quadrature_Tri, DataBasis_Tri,
+  //                              GeoBasis_Tri, Basis_Tri,
+  //                              use_parallel_elemvec>;
+
+  // using Quadrature_Quad = QuadQuadrature3;
+  // using DataBasis_Quad = FEBasis<T, LagrangeQuad0<T, 2>>;
+  // using GeoBasis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using Basis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using FE_Quad = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
+  // Basis,
+  //                               use_parallel_elemvec>;
+
+  // // Set the mesh connectivity
+  // MeshConnectivity2D conn(nverts, ntris, tris, nquads, quads);
+
+  // // Perform some ordering on the connectivity...
+
+  // // ....
+  // ElementMesh<Basis_Tri> ElementMesh_Tri();
+  // ElementMesh<Basis_Quad> ElementMesh_Quad();
+
+  const index_t degree = 2;
+  using T = double;
+  using PDE = NonlinearElasticity<T, 3>;
+  using Quadrature = TriQuadrature3;
+  using GeoBasis = FEBasis<T, LagrangeHexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeHexBasis<T, 3, degree>,
+                        LagrangeHexBasis<T, 3, degree + 1>>;
+
   // Number of elements in each dimension
-  const int nx = 5, ny = 5, nz = 5;
+  const int nx = 25, ny = 25, nz = 25;
   auto node_num = [](int i, int j, int k) {
     return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
   };
@@ -45,18 +83,31 @@ int main(int argc, char* argv[]) {
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
 
-  std::cout << "Number of elements: " << conn.get_num_elements() << std::endl;
-  std::cout << "Number of faces: " << conn.get_num_faces() << std::endl;
+  // index_t nelems = nx * ny * nz;
+  // index_t nfaces = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny *
+  // nz; index_t nedges = nx * (ny + 1) * (nz + 1) + (nx + 1) * ny * (nz + 1) +
+  //                  (nx + 1) * (ny + 1) * nz;
 
-  for (A2D::index_t face = 0; face < conn.get_num_faces(); face++) {
-    A2D::index_t e1, e2;
-    bool boundary = conn.get_face_elements(face, &e1, &e2);
-    if (boundary) {
-      std::cout << e1 << std::endl;
-    } else {
-      std::cout << e1 << " " << e2 << std::endl;
-    }
-  }
+  // std::cout << "Number of elements: " << nelems << " "
+  //           << conn.get_num_elements() << std::endl;
+  // std::cout << "Number of faces:    " << nfaces << " " <<
+  // conn.get_num_faces()
+  //           << std::endl;
+  // std::cout << "Number of edges:    " << nedges << " " <<
+  // conn.get_num_edges()
+  //           << std::endl;
+
+  ElementMesh<Basis> mesh_data(conn);
+
+  // for (A2D::index_t face = 0; face < conn.get_num_faces(); face++) {
+  //   A2D::index_t e1, e2;
+  //   bool boundary = conn.get_face_elements(face, &e1, &e2);
+  //   if (boundary) {
+  //     std::cout << e1 << std::endl;
+  //   } else {
+  //     std::cout << e1 << " " << e2 << std::endl;
+  //   }
+  // }
 
   // using T = double;
   // using PDE = NonlinearElasticity<T, 2>;
@@ -67,7 +118,8 @@ int main(int argc, char* argv[]) {
 
   // constexpr bool use_parallel_elemvec = false;
   // // constexpr bool use_parallel_elemvec = true;
-  // using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
+  // using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
+  // Basis,
   //                          use_parallel_elemvec>;
 
   // using Basis = FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>>;

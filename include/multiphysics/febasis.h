@@ -4,6 +4,7 @@
 #include "a2dmatops2d.h"
 #include "a2dmatops3d.h"
 #include "a2dobjs.h"
+#include "multiphysics/feelementtypes.h"
 #include "multiphysics/fespace.h"
 
 namespace A2D {
@@ -91,37 +92,35 @@ namespace A2D {
 template <typename T>
 class LagrangeTri0Scalar {
  public:
-  static const A2D::index_t ndof = 1;
-  static const A2D::index_t ncomp = A2D::L2ScalarSpace<T, 2>::ncomp;
+  static const index_t ndof = 1;
+  static const index_t ncomp = L2ScalarSpace<T, 2>::ncomp;
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::L2ScalarSpace<T, 2>& out) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void interp(index_t n, const SolnType sol, L2ScalarSpace<T, 2>& out) {
     T& u = out.get_value();
     u = sol[offset];
   }
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::L2ScalarSpace<T, 2>& in,
-                  SolnType res) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void add(index_t n, const L2ScalarSpace<T, 2>& in, SolnType res) {
     const T& u = in.get_value();
     res[offset] += u;
   }
 
   // Set the matrix stride
-  static const A2D::index_t stride = 1;
+  static const index_t stride = 1;
 
   // Set the basis size
-  static const A2D::index_t basis_size = 1;
+  static const index_t basis_size = 1;
 
   // Set the derived quantities - number of dof for each stride
-  static const A2D::index_t ndof_per_stride = ndof / stride;
+  static const index_t ndof_per_stride = ndof / stride;
 
   // Number of components per stride
-  static const A2D::index_t ncomp_per_stride = ncomp / stride;
+  static const index_t ncomp_per_stride = ncomp / stride;
 
   template <class Quadrature, class BasisType>
-  static void basis(A2D::index_t n, BasisType N) {
+  static void basis(index_t n, BasisType N) {
     N[0] = 1.0;
   }
 };
@@ -129,33 +128,31 @@ class LagrangeTri0Scalar {
 /*
   Lagrange basis for a triangle, TODO: finish the implementation
 */
-template <typename T, A2D::index_t C>
+template <typename T, index_t C>
 class LagrangeTri0 {
  public:
-  static const A2D::index_t ndof = C;
-  static const A2D::index_t ncomp = A2D::L2Space<T, C, 2>::ncomp;
+  static const index_t ndof = C;
+  static const index_t ncomp = L2Space<T, C, 2>::ncomp;
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::L2Space<T, C, 2>& out) {
-    A2D::Vec<T, 2>& u = out.get_value();
+  template <class Quadrature, index_t offset, class SolnType>
+  static void interp(index_t n, const SolnType sol, L2Space<T, C, 2>& out) {
+    Vec<T, 2>& u = out.get_value();
     u(0) = sol[offset];
     u(1) = sol[offset + 1];
   }
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::L2Space<T, C, 2>& in,
-                  SolnType res) {
-    const A2D::Vec<T, 2>& u = in.get_value();
+  template <class Quadrature, index_t offset, class SolnType>
+  static void add(index_t n, const L2Space<T, C, 2>& in, SolnType res) {
+    const Vec<T, 2>& u = in.get_value();
     res[offset] += u(0);
     res[offset + 1] += u(1);
   }
 
   // Set the matrix stride
-  static const A2D::index_t stride = 1;
+  static const index_t stride = 1;
 
   template <class Quadrature, class BasisType>
-  static void basis(A2D::index_t n, BasisType N) {
+  static void basis(index_t n, BasisType N) {
     N[0] = 1.0;
   }
 };
@@ -163,15 +160,14 @@ class LagrangeTri0 {
 /*
   Lagrange basis for a triangle
 */
-template <typename T, A2D::index_t C>
+template <typename T, index_t C>
 class LagrangeTri1 {
  public:
-  static const A2D::index_t ndof = 3 * C;
-  static const A2D::index_t ncomp = A2D::H1Space<T, C, 2>::ncomp;
+  static const index_t ndof = 3 * C;
+  static const index_t ncomp = H1Space<T, C, 2>::ncomp;
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::H1Space<T, C, 2>& out) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void interp(index_t n, const SolnType sol, H1Space<T, C, 2>& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -181,10 +177,10 @@ class LagrangeTri1 {
     N[1] = pt[0];
     N[2] = pt[1];
 
-    A2D::Vec<T, C>& u = out.get_value();
-    A2D::Mat<T, C, 2>& grad = out.get_grad();
+    Vec<T, C>& u = out.get_value();
+    Mat<T, C, 2>& grad = out.get_grad();
 
-    for (A2D::index_t i = 0; i < C; i++) {
+    for (index_t i = 0; i < C; i++) {
       u(i) = N[0] * sol[i + offset] + N[1] * sol[C + i + offset] +
              N[2] * sol[2 * C + i + offset];
       grad(i, 0) = sol[C + i + offset] - sol[i + offset];
@@ -192,9 +188,8 @@ class LagrangeTri1 {
     }
   }
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::H1Space<T, C, 2>& in,
-                  SolnType res) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void add(index_t n, const H1Space<T, C, 2>& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -204,10 +199,10 @@ class LagrangeTri1 {
     N[1] = pt[0];
     N[2] = pt[1];
 
-    const A2D::Vec<T, C>& u = in.get_value();
-    const A2D::Mat<T, C, 2>& grad = in.get_grad();
+    const Vec<T, C>& u = in.get_value();
+    const Mat<T, C, 2>& grad = in.get_grad();
 
-    for (A2D::index_t i = 0; i < C; i++) {
+    for (index_t i = 0; i < C; i++) {
       res[i + offset] += N[0] * u(i) - grad(i, 0) - grad(i, 1);
       res[C + i + offset] += N[1] * u(i) + grad(i, 0);
       res[2 * C + i + offset] += N[2] * u(i) + grad(i, 1);
@@ -215,20 +210,20 @@ class LagrangeTri1 {
   }
 
   // Set the matrix stride
-  static const A2D::index_t stride = C;
+  static const index_t stride = C;
 
   // Set the basis size
-  static const A2D::index_t basis_size = 9;
+  static const index_t basis_size = 9;
 
   // Set the derived quantities - number of dof for each stride
-  static const A2D::index_t ndof_per_stride = ndof / stride;
+  static const index_t ndof_per_stride = ndof / stride;
 
   // Number of components per stride
-  static const A2D::index_t ncomp_per_stride = ncomp / stride;
+  static const index_t ncomp_per_stride = ncomp / stride;
 
   // Compute the full matrix of basis functions
   template <class Quadrature, class BasisType>
-  static void basis(A2D::index_t n, BasisType N) {
+  static void basis(index_t n, BasisType N) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -252,16 +247,15 @@ class LagrangeTri1 {
 template <typename T>
 class RT2DTri1 {
  public:
-  static const A2D::index_t ndof = 3;
-  static const A2D::index_t ncomp = A2D::Hdiv2DSpace<T>::ncomp;
+  static const index_t ndof = 3;
+  static const index_t ncomp = Hdiv2DSpace<T>::ncomp;
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void interp(A2D::index_t n, const SolnType sol,
-                     A2D::Hdiv2DSpace<T>& out) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void interp(index_t n, const SolnType sol, Hdiv2DSpace<T>& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
-    A2D::Vec<T, 2>& u = out.get_value();
+    Vec<T, 2>& u = out.get_value();
     T& div = out.get_div();
 
     u(0) = pt[0] * sol[offset] + (pt[0] - 1.0) * sol[1 + offset] +
@@ -271,12 +265,12 @@ class RT2DTri1 {
     div = 2.0 * (sol[offset] + sol[1 + offset] + sol[2 + offset]);
   }
 
-  template <class Quadrature, A2D::index_t offset, class SolnType>
-  static void add(A2D::index_t n, const A2D::Hdiv2DSpace<T>& in, SolnType res) {
+  template <class Quadrature, index_t offset, class SolnType>
+  static void add(index_t n, const Hdiv2DSpace<T>& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
-    const A2D::Vec<T, 2>& u = in.get_value();
+    const Vec<T, 2>& u = in.get_value();
     const T& div = in.get_div();
 
     res[offset] += pt[0] * u(0) + pt[1] * u(1) + 2.0 * div;
@@ -285,20 +279,20 @@ class RT2DTri1 {
   }
 
   // Set the matrix stride
-  static const A2D::index_t stride = 1;
+  static const index_t stride = 1;
 
   // Set the matrix size
-  static const A2D::index_t basis_size = 9;
+  static const index_t basis_size = 9;
 
   // Set the derived quantities - number of dof for each stride
-  static const A2D::index_t ndof_per_stride = ndof / stride;
+  static const index_t ndof_per_stride = ndof / stride;
 
   // Number of components per stride
-  static const A2D::index_t ncomp_per_stride = ncomp / stride;
+  static const index_t ncomp_per_stride = ncomp / stride;
 
   // Compute the full matrix of basis functions
   template <class Quadrature, class BasisType>
-  static void basis(A2D::index_t n, BasisType N) {
+  static void basis(index_t n, BasisType N) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -324,13 +318,12 @@ struct __count_basis_dof;
 
 template <>
 struct __count_basis_dof<> {
-  static const A2D::index_t ndof = 0;
+  static const index_t ndof = 0;
 };
 
 template <class First, class... Remain>
 struct __count_basis_dof<First, Remain...> {
-  static const A2D::index_t ndof =
-      First::ndof + __count_basis_dof<Remain...>::ndof;
+  static const index_t ndof = First::ndof + __count_basis_dof<Remain...>::ndof;
 };
 
 /*
@@ -341,12 +334,12 @@ struct __count_basis_ncomp;
 
 template <>
 struct __count_basis_ncomp<> {
-  static const A2D::index_t ncomp = 0;
+  static const index_t ncomp = 0;
 };
 
 template <class First, class... Remain>
 struct __count_basis_ncomp<First, Remain...> {
-  static const A2D::index_t ncomp =
+  static const index_t ncomp =
       First::ncomp + __count_basis_ncomp<Remain...>::ncomp;
 };
 
@@ -358,12 +351,12 @@ struct __count_basis_size;
 
 template <>
 struct __count_basis_size<> {
-  static const A2D::index_t basis_size = 0;
+  static const index_t basis_size = 0;
 };
 
 template <class First, class... Remain>
 struct __count_basis_size<First, Remain...> {
-  static const A2D::index_t basis_size =
+  static const index_t basis_size =
       First::basis_size + __count_basis_size<Remain...>::basis_size;
 };
 
@@ -377,37 +370,39 @@ class FEBasis {
  public:
   typedef std::tuple<Basis...> BasisSpace;
 
+  // Use the definitions from the element types
+  using ET = ElementTypes;
+
   // using FiniteElementSpace = FESpace<BasisSpace...::SpaceType>;
 
   /**
    * @brief Number of basis function objects
    */
-  static constexpr A2D::index_t nbasis =
-      std::tuple_size<std::tuple<Basis...>>();
+  static constexpr index_t nbasis = std::tuple_size<std::tuple<Basis...>>();
 
   /**
    * @brief Count the total number of components from all the basis functions
    */
-  static constexpr A2D::index_t ncomp = __count_basis_ncomp<Basis...>::ncomp;
+  static constexpr index_t ncomp = __count_basis_ncomp<Basis...>::ncomp;
 
   /**
    * @brief Count up the total number of degrees of freedom for this set of
    * basis functions
    */
-  static constexpr A2D::index_t ndof = __count_basis_dof<Basis...>::ndof;
+  static constexpr index_t ndof = __count_basis_dof<Basis...>::ndof;
 
   /**
    * @brief Count up the total basis size required to store all of the
    * interpolation matrices for this set of basis functions
    */
-  static constexpr A2D::index_t basis_size =
+  static constexpr index_t basis_size =
       __count_basis_size<Basis...>::basis_size;
 
   /**
    * @brief Get the number of degrees of freedom associated with the given basis
    */
-  template <A2D::index_t index>
-  static constexpr A2D::index_t get_ndof() {
+  template <index_t index>
+  static constexpr index_t get_ndof() {
     return std::tuple_element<index, BasisSpace>::type::ndof;
   }
 
@@ -415,24 +410,24 @@ class FEBasis {
    * @brief Get the cumulative number of degrees of associated with the basis
    * before the given basis
    */
-  template <A2D::index_t index>
-  static constexpr A2D::index_t get_dof_offset() {
+  template <index_t index>
+  static constexpr index_t get_dof_offset() {
     return get_dof_offset_<0, index, Basis...>();
   }
 
   /**
    * @brief Get the basis offset
    */
-  template <A2D::index_t index>
-  static constexpr A2D::index_t get_basis_size_offset() {
+  template <index_t index>
+  static constexpr index_t get_basis_size_offset() {
     return get_basis_size_offset_<0, index, Basis...>();
   }
 
   /**
    * @brief Get the component offset for the given basis
    */
-  template <A2D::index_t index>
-  static constexpr A2D::index_t get_comp_offset() {
+  template <index_t index>
+  static constexpr index_t get_comp_offset() {
     return get_comp_offset_<0, index, Basis...>();
   }
 
@@ -444,7 +439,7 @@ class FEBasis {
    * @param s The output finite element space object
    */
   template <class Quadrature, class FEDof, class FiniteElementSpace>
-  static void interp(A2D::index_t pt, const FEDof& dof, FiniteElementSpace& s) {
+  static void interp(index_t pt, const FEDof& dof, FiniteElementSpace& s) {
     interp_<Quadrature, FEDof, FiniteElementSpace, 0, Basis...>(pt, dof, s);
   }
 
@@ -457,7 +452,7 @@ class FEBasis {
    * @param dof The degree of freedom object that values are added to
    */
   template <class Quadrature, class FiniteElementSpace, class FEDof>
-  static void add(A2D::index_t pt, const FiniteElementSpace& s, FEDof& dof) {
+  static void add(index_t pt, const FiniteElementSpace& s, FEDof& dof) {
     add_<Quadrature, FiniteElementSpace, FEDof, 0, Basis...>(pt, s, dof);
   }
 
@@ -470,7 +465,7 @@ class FEBasis {
    * @param s The output finite element space object
    */
   template <class Quadrature, class FEDof, class FiniteElementSpace>
-  static void interp_basis(A2D::index_t pt, const FEDof& dof,
+  static void interp_basis(index_t pt, const FEDof& dof,
                            FiniteElementSpace& s) {
     // Evaluate the basis functions
     double N[basis_size];
@@ -488,8 +483,7 @@ class FEBasis {
    * @param dof The degree of freedom object that values are added to
    */
   template <class Quadrature, class FiniteElementSpace, class FEDof>
-  static void add_basis(A2D::index_t pt, const FiniteElementSpace& s,
-                        FEDof& dof) {
+  static void add_basis(index_t pt, const FiniteElementSpace& s, FEDof& dof) {
     // Evaluate the basis functions
     double N[basis_size];
     eval_basis<Quadrature, Basis...>(pt, N);
@@ -509,7 +503,7 @@ class FEBasis {
    * @param mat The element Jacobian matrix
    */
   template <class Quadrature, class QMat, class Mat>
-  static void add_outer(A2D::index_t pt, const QMat& jac, Mat& mat) {
+  static void add_outer(index_t pt, const QMat& jac, Mat& mat) {
     // Evaluate the basis functions
     double N[basis_size];
     eval_basis<Quadrature, Basis...>(pt, N);
@@ -518,10 +512,60 @@ class FEBasis {
     add_outer_<QMat, Mat, 0, Basis...>(N, jac, mat);
   }
 
+  /**
+   * @brief Get the number of degrees of freedom for the entity
+   *
+   * @param basis The basis index
+   * @param entity The entity type defined in the ElementTypes object
+   * @param index The index of the entity e.g. vertex index
+   * @return The number of degrees of freedom
+   */
+  static index_t get_entity_ndof(index_t basis, ET::ElementEntity entity,
+                                 index_t index) {
+    return get_entity_ndof<0, Basis...>(basis, entity, index);
+  }
+
+  /**
+   * @brief Get the number of degrees of freedom for the entity
+   *
+   * @param basis The basis index
+   * @param entity The entity type defined in the ElementTypes object
+   * @param index The index of the entity e.g. vertex index
+   * @param orient Orientation flag indicating the relative orientation
+   * @param element_dof Degrees of freedom for this element
+   * @param entity_dof Entity DOF in the global orientation
+   */
+  static void get_entity_dof(index_t basis, ET::ElementEntity entity,
+                             index_t index, index_t orient,
+                             const index_t element_dof[],
+                             index_t entity_dof[]) {
+    get_entity_dof<0, Basis...>(basis, entity, index, orient, element_dof,
+                                entity_dof);
+  }
+
+  /**
+   * @brief Get the number of degrees of freedom for the entity
+   *
+   * @param basis The basis index
+   * @param entity The entity type defined in the ElementTypes object
+   * @param index The index of the entity e.g. vertex index
+   * @param orient Orientation flag indicating the relative orientation
+   * @param entity_dof Entity DOF in the global orientation
+   * @param element_dof Degrees of freedom for this element
+   * @param element_sign Sign indices for each degree of freedom
+   */
+  static void set_entity_dof(index_t basis, ET::ElementEntity entity,
+                             index_t index, index_t orient,
+                             const index_t entity_dof[], index_t element_dof[],
+                             int element_sign[]) {
+    set_entity_dof<0, Basis...>(basis, entity, index, orient, entity_dof,
+                                element_dof, element_sign);
+  }
+
  private:
   template <class Quadrature, class FEDof, class FiniteElementSpace,
-            A2D::index_t index, class First, class... Remain>
-  static void interp_(const A2D::index_t pt, const FEDof& dof,
+            index_t index, class First, class... Remain>
+  static void interp_(const index_t pt, const FEDof& dof,
                       FiniteElementSpace& s) {
     // Interpolate
     First::template interp<Quadrature, get_dof_offset<index>()>(
@@ -533,14 +577,13 @@ class FEBasis {
   }
 
   template <class Quadrature, class FEDof, class FiniteElementSpace,
-            A2D::index_t index>
-  static void interp_(const A2D::index_t pt, const FEDof& dof,
+            index_t index>
+  static void interp_(const index_t pt, const FEDof& dof,
                       FiniteElementSpace& s) {}
 
   template <class Quadrature, class FiniteElementSpace, class FEDof,
-            A2D::index_t index, class First, class... Remain>
-  static void add_(const A2D::index_t pt, const FiniteElementSpace& s,
-                   FEDof& dof) {
+            index_t index, class First, class... Remain>
+  static void add_(const index_t pt, const FiniteElementSpace& s, FEDof& dof) {
     // Add the interpolation
     First::template add<Quadrature, get_dof_offset<index>()>(
         pt, s.template get<index>(), dof);
@@ -551,51 +594,50 @@ class FEBasis {
   }
 
   template <class Quadrature, class FiniteElementSpace, class FEDof,
-            A2D::index_t index>
-  static void add_(const A2D::index_t pt, const FiniteElementSpace& s,
-                   FEDof& dof) {}
+            index_t index>
+  static void add_(const index_t pt, const FiniteElementSpace& s, FEDof& dof) {}
 
   template <class Quadrature, class First, class... Remain>
-  static void eval_basis(const A2D::index_t pt, double N[]) {
+  static void eval_basis(const index_t pt, double N[]) {
     First::template basis<Quadrature>(pt, N);
 
     eval_basis<Quadrature, Remain...>(pt, &N[First::basis_size]);
   }
 
   template <class Quadrature>
-  static void eval_basis(const A2D::index_t pt, double N[]) {}
+  static void eval_basis(const index_t pt, double N[]) {}
 
   // Get the offset recursively
-  template <A2D::index_t r, A2D::index_t index, class First, class... Remain>
-  static constexpr A2D::index_t get_dof_offset_() {
+  template <index_t r, index_t index, class First, class... Remain>
+  static constexpr index_t get_dof_offset_() {
     if (r == index) {
       return 0;
     }
     return First::ndof + get_dof_offset_<r + 1, index, Remain...>();
   }
 
-  template <A2D::index_t r, A2D::index_t index>
-  static constexpr A2D::index_t get_dof_offset_() {
+  template <index_t r, index_t index>
+  static constexpr index_t get_dof_offset_() {
     return 0;
   }
 
   // Get the component offset recursively
-  template <A2D::index_t r, A2D::index_t index, class First, class... Remain>
-  static constexpr A2D::index_t get_comp_offset_() {
+  template <index_t r, index_t index, class First, class... Remain>
+  static constexpr index_t get_comp_offset_() {
     if (r == index) {
       return 0;
     }
     return First::ncomp + get_comp_offset_<r + 1, index, Remain...>();
   }
 
-  template <A2D::index_t r, A2D::index_t index>
-  static constexpr A2D::index_t get_comp_offset_() {
+  template <index_t r, index_t index>
+  static constexpr index_t get_comp_offset_() {
     return 0;
   }
 
   // Get the basis size offset recursively
-  template <A2D::index_t r, A2D::index_t index, class First, class... Remain>
-  static constexpr A2D::index_t get_basis_size_offset_() {
+  template <index_t r, index_t index, class First, class... Remain>
+  static constexpr index_t get_basis_size_offset_() {
     if (r == index) {
       return 0;
     }
@@ -603,27 +645,26 @@ class FEBasis {
            get_basis_size_offset_<r + 1, index, Remain...>();
   }
 
-  template <A2D::index_t r, A2D::index_t index>
-  static constexpr A2D::index_t get_basis_size_offset_() {
+  template <index_t r, index_t index>
+  static constexpr index_t get_basis_size_offset_() {
     return 0;
   }
 
   // Interpolate with the basis functions evaluated
-  template <class FEDof, class FiniteElementSpace, A2D::index_t index,
-            class First, class... Remain>
+  template <class FEDof, class FiniteElementSpace, index_t index, class First,
+            class... Remain>
   static void interp_basis_(const double N[], const FEDof& dof,
                             FiniteElementSpace& s) {
     T value[First::ncomp];
-    for (A2D::index_t icomp = 0; icomp < First::ncomp; icomp++) {
+    for (index_t icomp = 0; icomp < First::ncomp; icomp++) {
       value[icomp] = 0.0;
     }
 
-    A2D::index_t idof = get_dof_offset<index>();
-    for (A2D::index_t idx = 0; idx < First::ndof_per_stride; idx++) {
+    index_t idof = get_dof_offset<index>();
+    for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       T* v = value;
-      for (A2D::index_t istride = 0; istride < First::stride;
-           istride++, idof++) {
-        for (A2D::index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
+      for (index_t istride = 0; istride < First::stride; istride++, idof++) {
+        for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
           v[0] += N[icomp] * dof[idof];
           v++;
         }
@@ -631,33 +672,32 @@ class FEBasis {
       N += First::ncomp_per_stride;
     }
 
-    for (A2D::index_t icomp = 0; icomp < First::ncomp; icomp++) {
+    for (index_t icomp = 0; icomp < First::ncomp; icomp++) {
       s[get_comp_offset<index>() + icomp] = value[icomp];
     }
 
     interp_basis_<FEDof, FiniteElementSpace, index + 1, Remain...>(N, dof, s);
   }
 
-  template <class FEDof, class FiniteElementSpace, A2D::index_t index>
+  template <class FEDof, class FiniteElementSpace, index_t index>
   static void interp_basis_(const double N[], const FEDof& dof,
                             FiniteElementSpace& s) {}
 
   // Interpolate with the basis functions evaluated
-  template <class FiniteElementSpace, class FEDof, A2D::index_t index,
-            class First, class... Remain>
+  template <class FiniteElementSpace, class FEDof, index_t index, class First,
+            class... Remain>
   static void add_basis_(const double N[], const FiniteElementSpace& s,
                          FEDof& dof) {
     T values[First::ncomp];
-    for (A2D::index_t icomp = 0; icomp < First::ncomp; icomp++) {
+    for (index_t icomp = 0; icomp < First::ncomp; icomp++) {
       values[icomp] = s[get_comp_offset<index>() + icomp];
     }
 
-    A2D::index_t idof = get_dof_offset<index>();
-    for (A2D::index_t idx = 0; idx < First::ndof_per_stride; idx++) {
+    index_t idof = get_dof_offset<index>();
+    for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       T* v = values;
-      for (A2D::index_t istride = 0; istride < First::stride;
-           istride++, idof++) {
-        for (A2D::index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
+      for (index_t istride = 0; istride < First::stride; istride++, idof++) {
+        for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
           dof[idof] += N[icomp] * v[0];
           v++;
         }
@@ -668,28 +708,25 @@ class FEBasis {
     add_basis_<FiniteElementSpace, FEDof, index + 1, Remain...>(N, s, dof);
   }
 
-  template <class FiniteElementSpace, class FEDof, A2D::index_t index>
+  template <class FiniteElementSpace, class FEDof, index_t index>
   static void add_basis_(const double N[], const FiniteElementSpace& s,
                          FEDof& dof) {}
 
-  template <class QMat, class Mat, A2D::index_t index, class First,
-            class... Remain>
+  template <class QMat, class Mat, index_t index, class First, class... Remain>
   static void add_outer_(const double N0[], const QMat& jac, Mat& mat) {
     const double* N = &N0[get_basis_size_offset<index>()];
 
-    A2D::index_t idof = get_dof_offset<index>();
-    for (A2D::index_t idx = 0; idx < First::ndof_per_stride; idx++) {
-      for (A2D::index_t istride = 0; istride < First::stride;
-           istride++, idof++) {
+    index_t idof = get_dof_offset<index>();
+    for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
+      for (index_t istride = 0; istride < First::stride; istride++, idof++) {
         // Compute the values in a row vector values = N_{i}^{T} * jac
         T values[ncomp];
-        for (A2D::index_t jcomp = 0; jcomp < ncomp; jcomp++) {
+        for (index_t jcomp = 0; jcomp < ncomp; jcomp++) {
           values[jcomp] = 0.0;
 
-          const A2D::index_t offset =
+          const index_t offset =
               istride * First::ncomp_per_stride + get_comp_offset<index>();
-          for (A2D::index_t icomp = 0; icomp < First::ncomp_per_stride;
-               icomp++) {
+          for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
             values[jcomp] += jac(icomp + offset, jcomp) * N[icomp];
           }
         }
@@ -704,20 +741,19 @@ class FEBasis {
     add_outer_<QMat, Mat, index + 1, Remain...>(N0, jac, mat);
   }
 
-  template <class QMat, class Mat, A2D::index_t index>
+  template <class QMat, class Mat, index_t index>
   static void add_outer_(const double N0[], const QMat& jac, Mat& mat) {}
 
-  template <class Mat, A2D::index_t index, class First, class... Remain>
-  static void add_outer_row_(const A2D::index_t idof, const double N[],
+  template <class Mat, index_t index, class First, class... Remain>
+  static void add_outer_row_(const index_t idof, const double N[],
                              const T values[], Mat& mat) {
-    A2D::index_t jdof = get_dof_offset<index>();
-    for (A2D::index_t idx = 0; idx < First::ndof_per_stride; idx++) {
+    index_t jdof = get_dof_offset<index>();
+    for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       const T* v = &values[get_comp_offset<index>()];
 
-      for (A2D::index_t jstride = 0; jstride < First::stride;
-           jstride++, jdof++) {
+      for (index_t jstride = 0; jstride < First::stride; jstride++, jdof++) {
         T val = 0.0;
-        for (A2D::index_t jcomp = 0; jcomp < First::ncomp_per_stride; jcomp++) {
+        for (index_t jcomp = 0; jcomp < First::ncomp_per_stride; jcomp++) {
           val += N[jcomp] * v[0];
           v++;
         }
@@ -731,9 +767,58 @@ class FEBasis {
     add_outer_row_<Mat, index + 1, Remain...>(idof, N, values, mat);
   }
 
-  template <class Mat, A2D::index_t index>
-  static void add_outer_row_(const A2D::index_t idof, const T values[],
+  template <class Mat, index_t index>
+  static void add_outer_row_(const index_t idof, const T values[],
                              const double N[], Mat& mat) {}
+
+  template <index_t r, class First, class... Remain>
+  static index_t get_entity_ndof(index_t basis, ET::ElementEntity entity,
+                                 index_t index) {
+    if (basis == r) {
+      return First::get_entity_ndof(entity, index);
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      return First::get_entity_ndof(entity, index);
+    } else {
+      return get_entity_ndof<r + 1, Remain...>(basis, entity, index);
+    }
+  }
+
+  template <index_t r, class First, class... Remain>
+  static void get_entity_dof(index_t basis, ET::ElementEntity entity,
+                             index_t index, index_t orient,
+                             const index_t element_dof[],
+                             index_t entity_dof[]) {
+    if (basis == r) {
+      First::template get_entity_dof<get_dof_offset<r>()>(
+          entity, index, orient, element_dof, entity_dof);
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      First::template get_entity_dof<get_dof_offset<r>()>(
+          entity, index, orient, element_dof, entity_dof);
+    } else {
+      get_entity_dof<r + 1, Remain...>(basis, entity, index, orient,
+                                       element_dof, entity_dof);
+    }
+  }
+
+  template <index_t r, class First, class... Remain>
+  static void set_entity_dof(index_t basis, ET::ElementEntity entity,
+                             index_t index, index_t orient,
+                             const index_t entity_dof[], index_t element_dof[],
+                             int element_sign[]) {
+    if (basis == r) {
+      First::template set_entity_dof<get_dof_offset<r>()>(
+          entity, index, orient, entity_dof, element_dof, element_sign);
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      First::template set_entity_dof<get_dof_offset<r>()>(
+          entity, index, orient, entity_dof, element_dof, element_sign);
+    } else {
+      set_entity_dof<r + 1, Remain...>(basis, entity, index, orient, entity_dof,
+                                       element_dof, element_sign);
+    }
+  }
 };
 
 }  // namespace A2D

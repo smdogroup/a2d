@@ -3,37 +3,42 @@
 
 namespace A2D {
 
-/**
- * @brief Element types implemented by A2D
- */
-enum A2D_ELEMENT_TYPES {
-  POINT,
-  EDGE,
-  TRIANGLE,
-  QUADRILATERAL,
-  TETRAHEDRAL,
-  HEXAHEDRAL,
-  WEDGE,
-  PYRAMID
-};
-
 class ElementTypes {
  public:
   static const index_t MAX_ELEMENT_EDGES = 12;
+
+  /**
+   * @brief Element types implemented by A2D
+   */
+  enum ElementReferenceDomain {
+    NODE,
+    LINE,
+    TRIANGLE,
+    QUADRILATERAL,
+    TETRAHEDRAL,
+    HEXAHEDRAL,
+    WEDGE,
+    PYRAMID
+  };
+
+  /**
+   * @brief Element entity for ordering
+   */
+  enum ElementEntity { VERTEX, EDGE, FACE, VOLUME };
 
   /**
    * @brief Triangle element
    *
    *  The vertices of the triangle are
    *
-   *         2
-   *        / \
-   *       /   \
-   * (1)  /     \ (0)
-   *     /       \
-   *    /         \
-   *   0 --------- 1
-   *        (2)
+   *     2
+   *     | .
+   *     |    .
+   * (1) |       . (0)
+   *     |          .
+   *     |             .
+   *     0 ------------- 1
+   *            (2)
    *
    *  The edges of the triangle are
    *  (0)  1 -> 2
@@ -68,6 +73,37 @@ class ElementTypes {
   static const index_t QUAD_EDGES = 4;
   static constexpr index_t QUAD_EDGE_VERTS[][2] = {
       {0, 1}, {1, 2}, {2, 3}, {3, 0}};
+
+  static constexpr index_t QUAD_VERTS_CART[][2] = {
+      {0, 0}, {1, 0}, {1, 1}, {1, 0}};
+
+  static const index_t NUM_QUAD_FACE_ORIENTATIONS = 8;
+  static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
+      {0, 1, 2, 3}, {2, 0, 3, 1}, {3, 2, 1, 0}, {1, 3, 0, 2},
+      {0, 2, 1, 3}, {2, 3, 0, 1}, {3, 1, 2, 0}, {1, 0, 3, 2}};
+
+  /**
+   * @brief Given the reference transformation
+   *
+   * @param ref
+   * @param face
+   * @return index_t
+   */
+  static index_t get_quad_face_orientation(const index_t ref[],
+                                           const index_t face[]) {
+    index_t orient = 0;
+    for (; orient < NUM_QUAD_FACE_ORIENTATIONS; orient++) {
+      if (ref[0] == face[QUAD_FACE_ORIENTATIONS[orient][0]] &&
+          ref[1] == face[QUAD_FACE_ORIENTATIONS[orient][1]] &&
+          ref[2] == face[QUAD_FACE_ORIENTATIONS[orient][2]] &&
+          ref[3] == face[QUAD_FACE_ORIENTATIONS[orient][3]]) {
+        break;
+      }
+    }
+    return orient;
+  }
+
+  // static void transform_quad_face(index_t xref, index_t yref, ) {}
 
   /**
    * @brief Tetrahedral properties
@@ -104,11 +140,6 @@ class ElementTypes {
   static constexpr index_t TET_FACE_VERTS[][3] = {
       {1, 2, 3}, {0, 3, 2}, {0, 1, 3}, {0, 2, 1}};
 
-  static constexpr index_t TET_EDGE_TO_ADJ_FACES[][2] = {
-      {2, 3}, {0, 3}, {1, 3}, {1, 2}, {0, 2}, {0, 1}};
-  static constexpr index_t TET_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-      {0, 2}, {0, 1}, {2, 0}, {0, 2}, {2, 1}, {1, 1}};
-
   /**
    * @brief Hexahedral properties
    *
@@ -134,12 +165,9 @@ class ElementTypes {
                                                   {0, 1, 5, 4}, {2, 3, 7, 6},
                                                   {0, 3, 2, 1}, {4, 5, 6, 7}};
 
-  static constexpr index_t HEX_EDGE_TO_ADJ_FACES[][2] = {
-      {2, 4}, {1, 4}, {3, 4}, {0, 4}, {2, 5}, {1, 5},
-      {3, 5}, {0, 5}, {0, 2}, {1, 2}, {1, 3}, {0, 3}};
-  static constexpr index_t HEX_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-      {0, 3}, {0, 2}, {0, 1}, {3, 0}, {2, 0}, {2, 1},
-      {2, 2}, {1, 3}, {0, 3}, {3, 1}, {1, 3}, {2, 1}};
+  static constexpr index_t HEX_VERTS_CART[][3] = {
+      {0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
+      {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
 
   /**
    * @brief Wedge properties

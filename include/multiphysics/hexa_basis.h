@@ -2,6 +2,7 @@
 #define A2D_HEXA_BASIS_H
 
 #include "multiphysics/febasis.h"
+#include "multiphysics/feelementtypes.h"
 #include "multiphysics/lagrange_tools.h"
 
 namespace A2D {
@@ -9,6 +10,8 @@ namespace A2D {
 template <typename T, index_t C, index_t degree>
 class LagrangeHexBasis {
  public:
+  using ET = ElementTypes;
+
   static const index_t dim = 3;             // Spatial dimension
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
@@ -25,72 +28,164 @@ class LagrangeHexBasis {
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
-  index_t get_entity_ndof(TopoEntity entity, index_t index) {
-    if (entity == VERTEX) {
+  static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
+    if (entity == ET::VERTEX) {
       return C;
-    } else if (entity == EDGE) {
+    } else if (entity == ET::EDGE) {
       return C * (order - 2);
-    } else if (entity == FACE) {
+    } else if (entity == ET::FACE) {
       return C * (order - 2) * (order - 2);
-    } else if (entity == VOLUME) {
+    } else if (entity == ET::VOLUME) {
       return C * (order - 2) * (order - 2) * (order - 2);
     }
+    return 0;
   }
 
   /**
-   * @brief Get the DOF from the element dof
+   * @brief Get the entity DOF from the element DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of topological entity (vertex, edge, face or volume)
-   * @param index The index of the topological entity (e.g. edge index)
+   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param element_dof Degrees of freedom for this element
    * @param entity_dof Entity DOF in the global orientation
    */
-
   template <index_t offset>
-  void get_dof(TopoEntity entity, index_t index, index_t orient,
-               const index_t element_dof[], index_t entity_dof[]) {
-    if (entity == VERTEX) {
-      for (index i = 0; i < C; i++) {
-        entity_dof[i] =
-            element_dof[offset +
-                        C * (j1 + j2 * order + j3 * order * order * order) + i];
-      }
-    } else if (entity == EDGE) {
-      for (index i = 0; i < C; i++) {
-        entity_dof[i] =
-            element_dof[offset +
-                        C * (j1 + j2 * order + j3 * order * order * order) + i];
-      }
-    } else if (entity == FACE) {
-      entity_dof[i] =
-          element_dof[offset +
-                      C * (j1 + j2 * order + j3 * order * order * order) + i];
+  static void get_entity_dof(ET::ElementEntity entity, index_t index,
+                             index_t orient, const index_t element_dof[],
+                             index_t entity_dof[]) {
+    if (entity == ET::VERTEX) {
+      index_t node = (order - 1) * ET::HEX_VERTS_CART[index][0] +
+                     (order - 1) * order * ET::HEX_VERTS_CART[index][1] +
+                     (order - 1) * order * order * ET::HEX_VERTS_CART[index][2];
 
-    } else if (entity == VOLUME) {
-      for (index_t k3 = 0; k3 < order; k3++) {
-        for (index_t k2 = 0; k2 < order; k2++) {
-          for (index_t k1 = 0; k1 < order; k1++) {
+      for (index_t i = 0; i < C; i++) {
+        entity_dof[i] = element_dof[offset + C * node + i];
+      }
+    } else if (entity == ET::EDGE) {
+      // Get the start and end location - flip the orientation if orient = 1
+      // (reversed edges)
+      index_t v1 = ET::HEX_EDGE_VERTS[index][orient];
+      index_t v2 = ET::HEX_EDGE_VERTS[index][(orient + 1) % 2];
+
+      index_t start = (order - 1) * ET::HEX_VERTS_CART[v1][0] +
+                      (order - 1) * order * ET::HEX_VERTS_CART[v1][1] +
+                      (order - 1) * order * order * ET::HEX_VERTS_CART[v1][2];
+      index_t incr =
+          (order - 1) *
+              (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
+          (order - 1) * order *
+              (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
+          (order - 1) * order * order *
+              (ET::HEX_VERTS_CART[v2][2] - ET::HEX_VERTS_CART[v1][2]);
+
+      for (index_t k = 1; k < order - 1; k++) {
+        for (index_t i = 0; i < C; i++) {
+          index_t node = start + k * incr;
+          entity_dof[C * (k - 1) + i] = element_dof[offset + C * node + i];
+        }
+      }
+    } else if (entity == ET::FACE) {
+      // Loop over the reference face and transform to the local face
+      // for (index_t k2 = 0; k2 < order - 2; k2++) {
+      //   for (index_t k1 = 0; k1 < order - 2; k1++) {
+      //     index_t j1 = k1 + 1;
+      //     index_t j2 = k2 + 1;
+      //     // index_t e = k1 + k2
+
+      //     for (index_t i = 0; i < C; i++) {
+      //       entity_dof[C * e + i] = element_dof[offset + C * node + i];
+      //     }
+      //   }
+      // }
+    } else if (entity == ET::VOLUME) {
+      for (index_t k3 = 0; k3 < order - 2; k3++) {
+        for (index_t k2 = 0; k2 < order - 2; k2++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
             index_t j1 = k1 + 1;
             index_t j2 = k2 + 1;
             index_t j3 = k3 + 1;
             index_t e = k1 + k2 * (order - 2) + k3 * (order - 2) * (order - 2);
+            index_t node = j1 + j2 * order + j3 * order * order * order;
 
-            entity_dof[e] =
-                element_dof[offset +
-                            C * (j1 + j2 * order + j3 * order * order * order) +
-                            i];
+            for (index_t i = 0; i < C; i++) {
+              entity_dof[C * e + i] = element_dof[offset + C * node + i];
+            }
           }
         }
       }
     }
   }
 
+  /**
+   * @brief Set the element DOF and signs from the entity DOF
+   *
+   * @tparam offset The offset into the basis
+   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param index The index of the entity (e.g. edge index)
+   * @param orient Orientation flag indicating the relative orientation
+   * @param entity_dof Entity DOF in the global orientation
+   * @param element_dof Degrees of freedom for this element
+   * @param element_sign Sign indices for each degree of freedom
+   */
   template <index_t offset>
-  void set_dof(TopoEntity domain, index_t index, index_t orient,
-               index_t entity_dof[], index_t element_dof[],
-               int element_sign[]) {}
+  static void set_entity_dof(ET::ElementEntity entity, index_t index,
+                             index_t orient, const index_t entity_dof[],
+                             index_t element_dof[], int element_sign[]) {
+    if (entity == ET::VERTEX) {
+      index_t node = (order - 1) * ET::HEX_VERTS_CART[index][0] +
+                     (order - 1) * order * ET::HEX_VERTS_CART[index][1] +
+                     (order - 1) * order * order * ET::HEX_VERTS_CART[index][2];
+
+      for (index_t i = 0; i < C; i++) {
+        element_dof[offset + C * node + i] = entity_dof[i];
+        element_sign[offset + C * node + i] = 1;
+      }
+    } else if (entity == ET::EDGE) {
+      // Get the start and end location - flip the orientation if orient = 1
+      // (reversed edges)
+      index_t v1 = ET::HEX_EDGE_VERTS[index][orient];
+      index_t v2 = ET::HEX_EDGE_VERTS[index][(orient + 1) % 2];
+
+      index_t start = (order - 1) * ET::HEX_VERTS_CART[v1][0] +
+                      (order - 1) * order * ET::HEX_VERTS_CART[v1][1] +
+                      (order - 1) * order * order * ET::HEX_VERTS_CART[v1][2];
+      index_t incr =
+          (order - 1) *
+              (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
+          (order - 1) * order *
+              (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
+          (order - 1) * order * order *
+              (ET::HEX_VERTS_CART[v2][2] - ET::HEX_VERTS_CART[v1][2]);
+
+      for (index_t k = 1; k < order - 1; k++) {
+        index_t node = start + k * incr;
+        for (index_t i = 0; i < C; i++) {
+          element_dof[offset + C * node + i] = entity_dof[C * (k - 1) + i];
+          element_sign[offset + C * node + i] = 1;
+        }
+      }
+    } else if (entity == ET::FACE) {
+    } else if (entity == ET::VOLUME) {
+      for (index_t k3 = 0; k3 < order - 2; k3++) {
+        for (index_t k2 = 0; k2 < order - 2; k2++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
+            index_t j1 = k1 + 1;
+            index_t j2 = k2 + 1;
+            index_t j3 = k3 + 1;
+            index_t e = k1 + k2 * (order - 2) + k3 * (order - 2) * (order - 2);
+            index_t node = j1 + j2 * order + j3 * order * order * order;
+
+            for (index_t i = 0; i < C; i++) {
+              element_dof[offset + C * node + i] = entity_dof[C * e + i];
+              element_sign[offset + C * node + i] = 1;
+            }
+          }
+        }
+      }
+    }
+  }
 
   template <class Quadrature, index_t offset, class SolnType>
   static void interp(index_t n, const SolnType sol, H1Space<T, C, dim>& out) {
@@ -110,7 +205,7 @@ class LagrangeHexBasis {
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {
         for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C : i++) {
+          for (index_t i = 0; i < C; i++) {
             u(i) +=
                 n1[j1] * n2[j2] * n3[j3] *
                 sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
@@ -150,7 +245,7 @@ class LagrangeHexBasis {
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {
         for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C : i++) {
+          for (index_t i = 0; i < C; i++) {
             res[offset + C * (j1 + j2 * order + j3 * order * order) + i] +=
                 n1[j1] * n2[j2] * n3[j3] * u(i) +
                 d1[j1] * n2[j2] * n3[j3] * grad(i, 0) +

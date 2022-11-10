@@ -45,9 +45,11 @@ class MeshConnectivity3D {
     tri_face_elements = NULL;
     quad_face_elements = NULL;
 
-    // face -> edge connectivity
-    tri_edges = NULL;
-    quad_edges = NULL;
+    // element -> edge connectivity
+    tet_edges = NULL;
+    hex_edges = NULL;
+    wedge_edges = NULL;
+    pyrmd_edges = NULL;
 
     // Count the total number of elements
     nelems = ntets + nhex + nwedge + npyrmd;
@@ -110,11 +112,17 @@ class MeshConnectivity3D {
       delete[] quad_face_elements;
     }
 
-    if (tri_edges) {
-      delete[] tri_edges;
+    if (tet_edges) {
+      delete[] tet_edges;
     }
-    if (quad_edges) {
-      delete[] quad_edges;
+    if (hex_edges) {
+      delete[] hex_edges;
+    }
+    if (wedge_edges) {
+      delete[] wedge_edges;
+    }
+    if (pyrmd_edges) {
+      delete[] pyrmd_edges;
     }
   }
 
@@ -433,87 +441,27 @@ class MeshConnectivity3D {
   }
 
   /**
-   * @brief Get the edges associated with the global face index
-   *
-   * @param face Input face index
-   * @param edges The edges associated with the face index
-   * @return The number of edges
-   */
-  index_t get_face_edges(index_t face, const index_t* edges[]) {
-    if (face < ntri_faces) {
-      *edges = &tri_edges[ET::TRI_EDGES * face];
-      return ET::TRI_EDGES;
-    } else {
-      face = face - ntri_faces;
-      *edges = &quad_edges[ET::QUAD_EDGES * face];
-      return ET::QUAD_EDGES;
-    }
-  }
-
-  /**
-   * @brief Get the number of elements associated with an edge
-   */
-  index_t get_num_element_edges(index_t elem) {
-    if (elem < ntets) {
-      return ET::TET_EDGES;
-    } else if (elem < ntets + nhex) {
-      return ET::HEX_EDGES;
-    } else if (elem < ntets + nhex + nwedge) {
-      return ET::WEDGE_EDGES;
-    } else if (elem < ntets + nhex + nwedge + npyrmd) {
-      return ET::PYRMD_EDGES;
-    }
-    return 0;
-  }
-
-  /**
    * @brief Get the element edges
    *
    * @param elem The element index
    * @param edges The edge indices
    * @return The number of edges for this element
    */
-  index_t get_element_edges(index_t elem, index_t edges[]) {
-    const index_t* faces;
-    index_t nf = get_element_faces(elem, &faces);
+  index_t get_element_edges(index_t elem, const index_t* edges[]) {
     if (elem < ntets) {
-      for (index_t i = 0; i < ET::TET_EDGES; i++) {
-        index_t f0 = faces[ET::TET_EDGE_TO_ADJ_FACES[i][0]];
-        index_t e0 = ET::TET_EDGE_TO_ADJ_FACE_EDGE[i][0];
-        index_t* f0_edges;
-        get_face_edges(f0, &f0_edges);
-        edges[i] = f0_edges[e0];
-      }
+      *edges = &tet_edges[ET::TET_EDGES * elem];
       return ET::TET_EDGES;
     } else if (elem < ntets + nhex) {
       elem = elem - ntets;
-      for (index_t i = 0; i < ET::HEX_EDGES; i++) {
-        index_t f0 = faces[ET::HEX_EDGE_TO_ADJ_FACES[i][0]];
-        index_t e0 = ET::HEX_EDGE_TO_ADJ_FACE_EDGE[i][0];
-        index_t* f0_edges;
-        get_face_edges(f0, &f0_edges);
-        edges[i] = f0_edges[e0];
-      }
+      *edges = &hex_edges[ET::HEX_EDGES * elem];
       return ET::HEX_EDGES;
     } else if (elem < ntets + nhex + nwedge) {
       elem = elem - ntets - nhex;
-      for (index_t i = 0; i < ET::WEDGE_EDGES; i++) {
-        index_t f0 = faces[ET::WEDGE_EDGE_TO_ADJ_FACES[i][0]];
-        index_t e0 = ET::WEDGE_EDGE_TO_ADJ_FACE_EDGE[i][0];
-        index_t* f0_edges;
-        get_face_edges(f0, &f0_edges);
-        edges[i] = f0_edges[e0];
-      }
+      *edges = &wedge_edges[ET::WEDGE_EDGES * elem];
       return ET::WEDGE_EDGES;
     } else if (elem < ntets + nhex + nwedge + npyrmd) {
       elem = elem - ntets - nhex - nwedge;
-      for (index_t i = 0; i < ET::PYRMD_EDGES; i++) {
-        index_t f0 = faces[ET::PYRMD_EDGE_TO_ADJ_FACES[i][0]];
-        index_t e0 = ET::PYRMD_EDGE_TO_ADJ_FACE_EDGE[i][0];
-        index_t* f0_edges;
-        get_face_edges(f0, &f0_edges);
-        edges[i] = f0_edges[e0];
-      }
+      *edges = &pyrmd_edges[ET::PYRMD_EDGES * elem];
       return ET::PYRMD_EDGES;
     }
     return 0;
@@ -548,30 +496,6 @@ class MeshConnectivity3D {
           pyrmd_verts[ET::PYRMD_VERTS * elem + ET::PYRMD_EDGE_VERTS[edge][0]];
       verts[1] =
           pyrmd_verts[ET::PYRMD_VERTS * elem + ET::PYRMD_EDGE_VERTS[edge][1]];
-    }
-  }
-
-  /**
-   * @brief Get the edges associated with the given element and local face index
-   *
-   * @param elem The element index
-   * @param f The local face number
-   * @param edges The edges associated with the local face
-   * @return The number of edges for the given face
-   */
-  index_t get_element_face_edges(index_t elem, index_t f,
-                                 const index_t* edges[]) {
-    const index_t* faces;
-    get_element_faces(elem, &faces);
-    index_t face = faces[f];
-
-    if (face < ntri_faces) {
-      *edges = &tri_edges[ET::TRI_EDGES * face];
-      return ET::TRI_EDGES;
-    } else {
-      face = face - ntri_faces;
-      *edges = &quad_edges[ET::QUAD_EDGES * face];
-      return ET::QUAD_EDGES;
     }
   }
 
@@ -646,21 +570,30 @@ class MeshConnectivity3D {
   }
 
   /**
-   * @brief Get the edges associated with the global face index
+   * @brief Get the element edges
    *
-   * @param face Input face index
-   * @param edges The edges associated with the face index
-   * @return The number of edges
+   * @param elem The element index
+   * @param edges The edge indices
+   * @return The number of edges for this element
    */
-  index_t get_face_edges(index_t face, index_t* edges[]) {
-    if (face < ntri_faces) {
-      *edges = &tri_edges[ET::TRI_EDGES * face];
-      return ET::TRI_EDGES;
-    } else {
-      face = face - ntri_faces;
-      *edges = &quad_edges[ET::QUAD_EDGES * face];
-      return ET::QUAD_EDGES;
+  index_t get_element_edges(index_t elem, index_t* edges[]) {
+    if (elem < ntets) {
+      *edges = &tet_edges[ET::TET_EDGES * elem];
+      return ET::TET_EDGES;
+    } else if (elem < ntets + nhex) {
+      elem = elem - ntets;
+      *edges = &hex_edges[ET::HEX_EDGES * elem];
+      return ET::HEX_EDGES;
+    } else if (elem < ntets + nhex + nwedge) {
+      elem = elem - ntets - nhex;
+      *edges = &wedge_edges[ET::WEDGE_EDGES * elem];
+      return ET::WEDGE_EDGES;
+    } else if (elem < ntets + nhex + nwedge + npyrmd) {
+      elem = elem - ntets - nhex - nwedge;
+      *edges = &pyrmd_edges[ET::PYRMD_EDGES * elem];
+      return ET::PYRMD_EDGES;
     }
+    return 0;
   }
 
   /**
@@ -826,169 +759,6 @@ class MeshConnectivity3D {
   }
 
   /**
-   * @brief Get the given edge index and make sure it's consistent
-   *
-   * The edge numbering may not be consistent on an element when the edge
-   * numbering is taking place. This function will check if either face defines
-   * an edge number not equal to NO_LABEL and make it consistent before
-   * returning a value.
-   *
-   * @param elem The element index
-   * @param edge The edge index
-   */
-  index_t get_element_edge_consistent(index_t elem, index_t edge) {
-    const index_t* faces;
-    index_t nf = get_element_faces(elem, &faces);
-    if (elem < ntets) {
-      index_t f0 = faces[ET::TET_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::TET_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-
-      index_t f1 = faces[ET::TET_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::TET_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-
-      if (f0_edges[e0] != f1_edges[e1]) {
-        if (f0_edges[e0] == NO_LABEL) {
-          f0_edges[e0] = f1_edges[e1];
-        } else if (f1_edges[e1] == NO_LABEL) {
-          f1_edges[e1] = f0_edges[e0];
-        }
-      }
-      return f0_edges[e0];
-    } else if (elem < ntets + nhex) {
-      elem = elem - ntets;
-      index_t f0 = faces[ET::HEX_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::HEX_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-
-      index_t f1 = faces[ET::HEX_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::HEX_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-
-      if (f0_edges[e0] != f1_edges[e1]) {
-        if (f0_edges[e0] == NO_LABEL) {
-          //          f0_edges[e0] = f1_edges[e1];
-        } else if (f1_edges[e1] == NO_LABEL) {
-          //          f1_edges[e1] = f0_edges[e0];
-        } else {
-          std::cout << "Something's always wrong " << edge << " "
-                    << f0_edges[e0] << " " << f1_edges[e1] << std::endl;
-        }
-      }
-
-      return f0_edges[e0];
-    } else if (elem < ntets + nhex + nwedge) {
-      elem = elem - ntets - nhex;
-      index_t f0 = faces[ET::WEDGE_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::WEDGE_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-
-      index_t f1 = faces[ET::WEDGE_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::WEDGE_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-
-      if (f0_edges[e0] != f1_edges[e1]) {
-        if (f0_edges[e0] == NO_LABEL) {
-          f0_edges[e0] = f1_edges[e1];
-        } else if (f1_edges[e1] == NO_LABEL) {
-          f1_edges[e1] = f0_edges[e0];
-        }
-      }
-
-      return f0_edges[e0];
-    } else if (elem < ntets + nhex + nwedge + npyrmd) {
-      elem = elem - ntets - nhex - nwedge;
-      index_t f0 = faces[ET::PYRMD_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::PYRMD_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-
-      index_t f1 = faces[ET::PYRMD_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::PYRMD_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-
-      if (f0_edges[e0] != f1_edges[e1]) {
-        if (f0_edges[e0] == NO_LABEL) {
-          f0_edges[e0] = f1_edges[e1];
-        } else if (f1_edges[e1] == NO_LABEL) {
-          f1_edges[e1] = f0_edges[e0];
-        }
-      }
-
-      return f0_edges[e0];
-    }
-
-    return NO_LABEL;
-  }
-
-  void set_element_edge_consistent(index_t elem, index_t edge, index_t num) {
-    const index_t* faces;
-    index_t nf = get_element_faces(elem, &faces);
-    if (elem < ntets) {
-      index_t f0 = faces[ET::TET_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::TET_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-      f0_edges[e0] = num;
-
-      index_t f1 = faces[ET::TET_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::TET_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-      f1_edges[e1] = num;
-    } else if (elem < ntets + nhex) {
-      elem = elem - ntets;
-      for (index_t k = 0; k < 2; k++) {
-        index_t f0 = faces[ET::HEX_EDGE_TO_ADJ_FACES[edge][k]];
-        index_t e0 = ET::HEX_EDGE_TO_ADJ_FACE_EDGE[edge][k];
-        index_t* f0_edges;
-        get_face_edges(f0, &f0_edges);
-        f0_edges[e0] = num;
-      }
-
-      // index_t f1 = faces[ET::HEX_EDGE_TO_ADJ_FACES[edge][1]];
-      // index_t e1 = ET::HEX_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      // index_t* f1_edges;
-      // get_face_edges(f1, &f1_edges);
-      // f1_edges[e1] = num;
-    } else if (elem < ntets + nhex + nwedge) {
-      elem = elem - ntets - nhex;
-      index_t f0 = faces[ET::WEDGE_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::WEDGE_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-      f0_edges[e0] = num;
-
-      index_t f1 = faces[ET::WEDGE_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::WEDGE_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-      f1_edges[e1] = num;
-    } else if (elem < ntets + nhex + nwedge + npyrmd) {
-      elem = elem - ntets - nhex - nwedge;
-      index_t f0 = faces[ET::PYRMD_EDGE_TO_ADJ_FACES[edge][0]];
-      index_t e0 = ET::PYRMD_EDGE_TO_ADJ_FACE_EDGE[edge][0];
-      index_t* f0_edges;
-      get_face_edges(f0, &f0_edges);
-      f0_edges[e0] = num;
-
-      index_t f1 = faces[ET::PYRMD_EDGE_TO_ADJ_FACES[edge][1]];
-      index_t e1 = ET::PYRMD_EDGE_TO_ADJ_FACE_EDGE[edge][1];
-      index_t* f1_edges;
-      get_face_edges(f1, &f1_edges);
-      f1_edges[e1] = num;
-    }
-  }
-
-  /**
    * @brief Initialize and order the edge information.
    *
    * This relies on the face connectivity data - so that must be initialized
@@ -997,31 +767,41 @@ class MeshConnectivity3D {
   void init_edge_data() {
     nedges = 0;
 
-    if (tri_edges) {
-      delete[] tri_edges;
+    if (tet_edges) {
+      delete[] tet_edges;
     }
-    if (quad_edges) {
-      delete[] quad_edges;
+    if (hex_edges) {
+      delete[] hex_edges;
+    }
+    if (wedge_edges) {
+      delete[] wedge_edges;
+    }
+    if (pyrmd_edges) {
+      delete[] pyrmd_edges;
     }
 
-    tri_edges = new index_t[ET::TRI_EDGES * ntri_faces];
-    quad_edges = new index_t[ET::QUAD_EDGES * nquad_faces];
+    tet_edges = new index_t[ET::TET_EDGES * ntets];
+    hex_edges = new index_t[ET::HEX_EDGES * nhex];
+    wedge_edges = new index_t[ET::WEDGE_EDGES * nwedge];
+    pyrmd_edges = new index_t[ET::PYRMD_EDGES * npyrmd];
 
     // Fill the face arrays with NO_LABEL
-    std::fill(tri_edges, tri_edges + ET::TRI_EDGES * ntri_faces, NO_LABEL);
-    std::fill(quad_edges, quad_edges + ET::QUAD_EDGES * nquad_faces, NO_LABEL);
+    std::fill(tet_edges, tet_edges + ET::TET_EDGES * ntets, NO_LABEL);
+    std::fill(hex_edges, hex_edges + ET::HEX_EDGES * nhex, NO_LABEL);
+    std::fill(wedge_edges, wedge_edges + ET::WEDGE_EDGES * nwedge, NO_LABEL);
+    std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_EDGES * npyrmd, NO_LABEL);
 
     for (index_t elem = 0; elem < nelems; elem++) {
       // Get the number of element edges
-      index_t ne = get_num_element_edges(elem);
+      index_t* elem_edges;
+      index_t ne = get_element_edges(elem, &elem_edges);
 
       for (index_t e0 = 0; e0 < ne; e0++) {
-        index_t edge_num = get_element_edge_consistent(elem, e0);
-
-        if (edge_num == NO_LABEL) {
-          edge_num = nedges;
+        if (elem_edges[e0] == NO_LABEL) {
+          index_t edge_num = nedges;
           nedges++;
-          set_element_edge_consistent(elem, e0, edge_num);
+
+          elem_edges[e0] = edge_num;
 
           // Find adjacent elements with this edge
           index_t v0[2];
@@ -1036,39 +816,23 @@ class MeshConnectivity3D {
           //   numbering
           for (index_t i = 0; i < nadj_elems; i++) {
             if (adj_elems[i] != elem) {
-              index_t adj_ne = get_num_element_edges(adj_elems[i]);
+              index_t* adj_elem_edges;
+              index_t adj_ne = get_element_edges(adj_elems[i], &adj_elem_edges);
 
               // Check for a matching vertex
               for (index_t e1 = 0; e1 < adj_ne; e1++) {
                 index_t v1[2];
                 get_element_edge_verts(adj_elems[i], e1, v1);
 
-                // We have a match
+                // Check if we have a match
                 if (global_edge_equality(v0, v1)) {
-                  std::cout << "element source: " << elem << " " << e0
-                            << std::endl;
-                  std::cout << "element match:  " << adj_elems[i] << " " << e1
-                            << std::endl;
-
-                  set_element_edge_consistent(adj_elems[i], e1, edge_num);
+                  adj_elem_edges[e1] = edge_num;
                 }
               }
             }
           }
         }
       }
-
-      std::cout << "Element " << elem << "\n";
-      for (index_t i = 0; i < nfaces; i++) {
-        const index_t* edges;
-        index_t ne = get_face_edges(i, &edges);
-        std::cout << "Face " << i << "\n";
-        for (index_t j = 0; j < ne; j++) {
-          std::cout << edges[j] << " ";
-        }
-        std::cout << "\n";
-      }
-      std::cout << "\n";
     }
   }
 
@@ -1102,9 +866,11 @@ class MeshConnectivity3D {
   index_t* tri_face_elements;
   index_t* quad_face_elements;
 
-  // Face -> edge connectivity
-  index_t* tri_edges;
-  index_t* quad_edges;
+  // Element -> edge connectivity
+  index_t* tet_edges;
+  index_t* hex_edges;
+  index_t* wedge_edges;
+  index_t* pyrmd_edges;
 };
 
 /*
@@ -1114,35 +880,215 @@ class MeshConnectivity3D {
 template <class Basis>
 class ElementMesh {
  public:
+  using ET = ElementTypes;
+
   static constexpr index_t NO_INDEX = std::numeric_limits<index_t>::max();
 
   ElementMesh(MeshConnectivity3D& conn) : nelems(conn.get_num_elements()) {
     // Count up the number of degrees of freedom
-    element_dof = new index_t[nelems * ndof_per_elem];
-    std::fill(element_dof, element_dof + nelems * ndof_per_elem, NO_INDEX);
+    element_dof = new index_t[nelems * ndof_per_element];
+    element_sign = new int[nelems * ndof_per_element];
+    std::fill(element_dof, element_dof + nelems * ndof_per_element, NO_INDEX);
+
+    // Perform a sweep of the elements
+    std::vector<index_t> ids(nelems, NO_INDEX), stack(nelems);
+
+    index_t start = 0, end = 1, level = 0;
+    stack[0] = 0;
+
+    while (start < end) {
+      index_t next = end;
+      for (index_t i = start; i < end; i++) {
+        // Loop over
+        const index_t* faces;
+        index_t nf = conn.get_element_faces(stack[i], &faces);
+
+        for (index_t j = 0; j < nf; j++) {
+          // Look at the adjacent elements
+          index_t e1, e2;
+          conn.get_face_elements(faces[j], &e1, &e2);
+
+          if (e1 < nelems && ids[e1] == NO_INDEX) {
+            ids[e1] = level;
+            stack[next] = e1;
+            next++;
+          }
+          if (e2 < nelems && ids[e2] == NO_INDEX) {
+            ids[e2] = level;
+            stack[next] = e2;
+            next++;
+          }
+        }
+      }
+
+      start = end;
+      end = next;
+      level++;
+    }
+
+    std::vector<index_t> face_owners(conn.get_num_faces(), NO_INDEX);
+    std::vector<index_t> edge_owners(conn.get_num_edges(), NO_INDEX);
+    std::vector<index_t> vert_owners(conn.get_num_verts(), NO_INDEX);
+
+    index_t dof_counter = 0;
+    index_t dof[ndof_per_element];
+
+    for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+      for (index_t counter = nelems; counter > 0; counter--) {
+        index_t elem = stack[counter - 1];
+
+        index_t* elem_dof = &element_dof[elem * ndof_per_element];
+        int* elem_sign = &element_sign[elem * ndof_per_element];
+
+        // The volume DOF are always owned by the element - no need to check for
+        // the element that owns them
+        index_t ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
+
+        for (index_t i = 0; i < ndof; i++, dof_counter++) {
+          dof[i] = dof_counter;
+        }
+        Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof,
+                              elem_sign);
+
+        // Order the faces
+        const index_t* faces;
+        index_t nf = conn.get_element_faces(elem, &faces);
+        for (index_t index = 0; index < nf; index++) {
+          index_t face = faces[index];
+          index_t orient = 0;
+          if (face_owners[face] == NO_INDEX || face_owners[face] == elem) {
+            face_owners[face] = elem;
+
+            ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
+            for (index_t i = 0; i < ndof; i++, dof_counter++) {
+              dof[i] = dof_counter;
+            }
+          } else {
+            index_t owner_elem = face_owners[face];
+            const index_t* owner_faces;
+            index_t nf_owner = conn.get_element_faces(owner_elem, &owner_faces);
+
+            for (index_t i = 0; i < nf_owner; i++) {
+              if (owner_faces[i] == face) {
+                index_t ref[4], verts[4];
+                index_t nverts =
+                    conn.get_element_face_verts(owner_elem, i, ref);
+                conn.get_element_face_verts(elem, index, verts);
+
+                Basis::get_entity_dof(
+                    basis, ET::FACE, i, 0,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+
+                if (nverts == 4) {
+                  orient = ET::get_quad_face_orientation(ref, verts);
+                }
+                break;
+              }
+            }
+          }
+
+          Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof,
+                                elem_sign);
+        }
+
+        // Order the edges
+        const index_t* edges;
+        index_t ne = conn.get_element_edges(elem, &edges);
+        for (index_t index = 0; index < ne; index++) {
+          index_t edge = edges[index];
+          index_t orient = 0;
+          if (edge_owners[edge] == NO_INDEX || edge_owners[edge] == elem) {
+            edge_owners[edge] = elem;
+
+            ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
+            for (index_t i = 0; i < ndof; i++, dof_counter++) {
+              dof[i] = dof_counter;
+            }
+          } else {
+            index_t owner_elem = edge_owners[edge];
+            const index_t* owner_edges;
+            index_t ne_owner = conn.get_element_edges(owner_elem, &owner_edges);
+
+            for (index_t i = 0; i < ne_owner; i++) {
+              if (owner_edges[i] == edge) {
+                index_t ref[2], verts[2];
+                conn.get_element_edge_verts(owner_elem, i, ref);
+                conn.get_element_edge_verts(elem, index, verts);
+
+                Basis::get_entity_dof(
+                    basis, ET::EDGE, i, 0,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+
+                if (ref[0] == verts[1] && ref[1] == verts[0]) {
+                  orient = 1;
+                }
+                break;
+              }
+            }
+          }
+
+          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof,
+                                elem_sign);
+        }
+
+        // Order the vertices
+        const index_t* verts;
+        index_t nv = conn.get_element_verts(elem, &verts);
+        for (index_t index = 0; index < nv; index++) {
+          index_t vert = verts[index];
+          index_t orient = 0;
+          if (vert_owners[vert] == NO_INDEX || vert_owners[vert] == elem) {
+            vert_owners[vert] = elem;
+
+            ndof = Basis::get_entity_ndof(basis, ET::VERTEX, index);
+            for (index_t i = 0; i < ndof; i++, dof_counter++) {
+              dof[i] = dof_counter;
+            }
+          } else {
+            index_t owner_elem = vert_owners[vert];
+            const index_t* owner_verts;
+            index_t nv_owner = conn.get_element_verts(owner_elem, &owner_verts);
+
+            for (index_t i = 0; i < nv_owner; i++) {
+              if (owner_verts[i] == vert) {
+                Basis::get_entity_dof(
+                    basis, ET::VERTEX, i, 0,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+                break;
+              }
+            }
+          }
+
+          Basis::set_entity_dof(basis, ET::VERTEX, index, orient, dof, elem_dof,
+                                elem_sign);
+        }
+      }
+
+      std::cout << "dof_counter = " << dof_counter << std::endl;
+    }
 
     // Loop over all the elements
-    index_t temp[ndof_per_elem];
-    for (index_t i = 0; i < nelems; i++) {
-      ET::VERTEX
-    }
+    //     index_t temp[ndof_per_elem];
+    //     for (index_t i = 0; i < nelems; i++) {
+    //       ET::VERTEX
+    //     }
   }
 
   index_t get_num_elements() { return nelems; }
 
-  static const index_t ndof_per_elem = Basis::ndof;
+  static const index_t ndof_per_element = Basis::ndof;
 
   template <index_t basis>
   int get_global_dof_sign(index_t elem, index_t index) {
     return element_sign[ndof_per_element * elem +
-                        Basis::get_dof_offset<basis>() + index];
+                        Basis::template get_dof_offset<basis>() + index];
     return 1;
   }
 
   template <index_t basis>
   index_t get_global_dof(index_t elem, index_t index) {
     return element_dof[ndof_per_element * elem +
-                       Basis::get_dof_offset<basis>() + index];
+                       Basis::template get_dof_offset<basis>() + index];
   }
 
  private:

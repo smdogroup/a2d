@@ -78,9 +78,6 @@ class ElementTypes {
       {0, 0}, {1, 0}, {1, 1}, {1, 0}};
 
   static const index_t NUM_QUAD_FACE_ORIENTATIONS = 8;
-  // static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
-  //     {0, 1, 2, 3}, {2, 0, 3, 1}, {3, 2, 1, 0}, {1, 3, 0, 2},
-  //     {0, 2, 1, 3}, {2, 3, 0, 1}, {3, 1, 2, 0}, {1, 0, 3, 2}};
   static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
       {0, 1, 2, 3}, {3, 0, 1, 2}, {2, 3, 0, 1}, {1, 2, 3, 0},
       {0, 3, 2, 1}, {3, 2, 1, 0}, {2, 1, 0, 3}, {1, 0, 3, 2}};
@@ -239,20 +236,6 @@ class ElementTypes {
   static constexpr index_t WEDGE_QUAD_FACE_VERTS[][4] = {
       {0, 3, 4, 1}, {1, 4, 5, 2}, {0, 2, 5, 3}};
 
-  static constexpr index_t WEDGE_EDGE_TO_ADJ_FACES[][2] = {
-      {2, 4}, {1, 4}, {3, 4}, {0, 4}, {2, 5}, {1, 5},
-      {3, 5}, {0, 5}, {0, 2}, {1, 2}, {1, 3}, {0, 3}};
-  static constexpr index_t WEDGE_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-      {0, 3}, {0, 2}, {0, 1}, {3, 0}, {2, 0}, {2, 1},
-      {2, 2}, {1, 3}, {0, 3}, {3, 1}, {1, 3}, {2, 1}};
-
-  // static constexpr index_t WEDGE_EDGE_TO_ADJ_FACES[][2] = {
-  //     {0, 2}, {0, 3}, {0, 4}, {1, 2}, {1, 3}, {1, 4}, {2, 4}, {2, 3}, {3,
-  //     4}};
-  // static constexpr index_t WEDGE_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-  //     {0, 3}, {1, 3}, {2, 0}, {0, 1}, {1, 1}, {2, 2}, {0, 3}, {2, 0}, {2,
-  //     1}};
-
   /**
    * @brief Pyramid properties
    *
@@ -276,11 +259,6 @@ class ElementTypes {
       {0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {0, 4, 3}};
   static const index_t PYRMD_QUAD_FACES = 4;
   static constexpr index_t PYRMD_QUAD_FACE_VERTS[] = {0, 3, 2, 1};
-
-  static constexpr index_t PYRMD_EDGE_TO_ADJ_FACES[][2] = {
-      {0, 4}, {1, 4}, {2, 4}, {3, 4}, {0, 3}, {0, 1}, {1, 2}, {2, 3}};
-  static constexpr index_t PYRMD_EDGE_TO_ADJ_FACE_EDGE[][2] = {
-      {0, 3}, {0, 2}, {0, 1}, {2, 0}, {2, 0}, {1, 2}, {1, 2}, {1, 1}};
 };
 
 }  // namespace A2D

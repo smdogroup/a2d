@@ -53,37 +53,37 @@ namespace A2D {
   physical element back to the reference element.
 */
 
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class L2ScalarSpace {
  public:
   L2ScalarSpace() { u = 0.0; }
 
   // Number of solution components
-  static const A2D::index_t ncomp = 1;
+  static const index_t ncomp = 1;
 
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Zero the solution
   void zero() { u = 0.0; }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) { return u; }
-  const T& get_value(const A2D::index_t comp) const { return u; }
+  T& get_value(const index_t comp) { return u; }
+  const T& get_value(const index_t comp) const { return u; }
 
   // Get the scalar solution value
   T& get_value() { return u; }
   const T& get_value() const { return u; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, L2ScalarSpace<T, D>& s) const {
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
+                 L2ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, L2ScalarSpace<T, D>& s) const {
+  void rtransform(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, L2ScalarSpace<T, D>& s) const {
     s.u = u;
   }
 
@@ -91,54 +91,54 @@ class L2ScalarSpace {
   T u;
 };
 
-template <typename T, A2D::index_t C, A2D::index_t D>
+template <typename T, index_t C, index_t D>
 class L2Space {
  public:
   L2Space() { u.zero(); }
 
   // Number of solution components
-  static const A2D::index_t ncomp = C;
+  static const index_t ncomp = C;
 
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Zero the solution
   void zero() { u.zero(); }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) { return u(comp); }
-  const T& get_value(const A2D::index_t comp) const { return u(comp); }
+  T& get_value(const index_t comp) { return u(comp); }
+  const T& get_value(const index_t comp) const { return u(comp); }
 
   // Get the scalar solution value
-  A2D::Vec<T, C>& get_value() { return u; }
-  const A2D::Vec<T, C>& get_value() const { return u; }
+  Vec<T, C>& get_value() { return u; }
+  const Vec<T, C>& get_value() const { return u; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
+                 L2Space<T, C, D>& s) const {
     s.u = u;
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
+  void rtransform(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
     s.u = u;
   }
 
  private:
-  A2D::Vec<T, C> u;
+  Vec<T, C> u;
 };
 
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class H1ScalarSpace {
  public:
   H1ScalarSpace() { u = 0.0; }
 
   // Number of solution components
-  static const A2D::index_t ncomp = 1 + D;
+  static const index_t ncomp = 1 + D;
 
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Zero the solution
   void zero() {
@@ -147,14 +147,14 @@ class H1ScalarSpace {
   }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) {
+  T& get_value(const index_t comp) {
     if (comp == 0) {
       return u;
     } else {
       return grad(comp - 1);
     }
   }
-  const T& get_value(const A2D::index_t comp) const {
+  const T& get_value(const index_t comp) const {
     if (comp == 0) {
       return u;
     } else {
@@ -167,38 +167,38 @@ class H1ScalarSpace {
   const T& get_value() const { return u; }
 
   // Get the gradient of the solution
-  A2D::Vec<T, D>& get_grad() { return grad; }
-  const A2D::Vec<T, D>& get_grad() const { return grad; }
+  Vec<T, D>& get_grad() { return grad; }
+  const Vec<T, D>& get_grad() const { return grad; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
+                 H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
+  void rtransform(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, H1ScalarSpace<T, D>& s) const {
     s.u = u;
     s.grad = grad;
   }
 
  private:
   T u;
-  A2D::Vec<T, D> grad;
+  Vec<T, D> grad;
 };
 
-template <typename T, A2D::index_t C, A2D::index_t D>
+template <typename T, index_t C, index_t D>
 class H1Space {
  public:
   H1Space() {}
 
   // Number of solution components
-  static const A2D::index_t ncomp = (D + 1) * C;
+  static const index_t ncomp = (D + 1) * C;
 
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Zero the solution
   void zero() {
@@ -207,14 +207,14 @@ class H1Space {
   }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) {
+  T& get_value(const index_t comp) {
     if (comp % (D + 1) == 0) {
       return u(comp / (D + 1));
     } else {
       return grad(comp / (D + 1), (comp % (D + 1)) - 1);
     }
   }
-  const T& get_value(const A2D::index_t comp) const {
+  const T& get_value(const index_t comp) const {
     if (comp % (D + 1) == 0) {
       return u(comp / (D + 1));
     } else {
@@ -223,16 +223,16 @@ class H1Space {
   }
 
   // Get the value of the solution
-  A2D::Vec<T, C>& get_value() { return u; }
-  const A2D::Vec<T, C>& get_value() const { return u; }
+  Vec<T, C>& get_value() { return u; }
+  const Vec<T, C>& get_value() const { return u; }
 
   // Get the gradient of the solution
-  A2D::Mat<T, C, D>& get_grad() { return grad; }
-  const A2D::Mat<T, C, D>& get_grad() const { return grad; }
+  Mat<T, C, D>& get_grad() { return grad; }
+  const Mat<T, C, D>& get_grad() const { return grad; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) const {
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
+                 H1Space<T, C, D>& s) const {
     s.u = u;
 
     // s.grad = grad * Jinv
@@ -240,8 +240,8 @@ class H1Space {
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) {
+  void rtransform(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) {
     // dot{s.grad} = dot{grad} Jinv =>
     // tr(bar{s.grad}^{T} * dot{s.grad})
     // = tr(bar{s.grad}^{T} * dot{grad} * Jinv)
@@ -253,20 +253,20 @@ class H1Space {
   }
 
  private:
-  A2D::Vec<T, C> u;
-  A2D::Mat<T, C, D> grad;
+  Vec<T, C> u;
+  Mat<T, C, D> grad;
 };
 
-template <typename T>
-class Hdiv2DSpace {
+template <typename T, index_t D>
+class HdivSpace {
  public:
-  Hdiv2DSpace() { div = 0.0; }
-
-  // Number of solution components
-  static const A2D::index_t ncomp = 3;
+  HdivSpace() { div = 0.0; }
 
   // Spatial dimension
-  static const A2D::index_t dim = 2;
+  static const index_t dim = D;
+
+  // Number of solution components
+  static const index_t ncomp = 1 + D;
 
   // Zero the solution
   void zero() {
@@ -275,15 +275,15 @@ class Hdiv2DSpace {
   }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) {
-    if (comp < 2) {
+  T& get_value(const index_t comp) {
+    if (comp < D) {
       return u(comp);
     } else {
       return div;
     }
   }
-  const T& get_value(const A2D::index_t comp) const {
-    if (comp < 2) {
+  const T& get_value(const index_t comp) const {
+    if (comp < D) {
       return u(comp);
     } else {
       return div;
@@ -291,29 +291,29 @@ class Hdiv2DSpace {
   }
 
   // Get the solution value
-  A2D::Vec<T, 2>& get_value() { return u; }
-  const A2D::Vec<T, 2>& get_value() const { return u; }
+  Vec<T, D>& get_value() { return u; }
+  const Vec<T, D>& get_value() const { return u; }
 
   // Get the value of the divergence
   T& get_div() { return div; }
   const T& get_div() const { return div; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                 const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) const {
+  void transform(const T& detJ, const Mat<T, dim, dim>& J,
+                 const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
     s.u = u;
-    s.div = div;
+    s.div = detJ * div;
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                  const A2D::Mat<T, dim, dim>& Jinv, Hdiv2DSpace<T>& s) const {
+  void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
+                  const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
     s.u = u;
-    s.div = div;
+    s.div = detJ * div;
   }
 
  private:
-  A2D::Vec<T, 2> u;
+  Vec<T, D> u;
   T div;
 };
 
@@ -323,10 +323,10 @@ class Hcurl2DSpace {
   Hcurl2DSpace() { curl = 0.0; }
 
   // Number of solution components
-  static const A2D::index_t ncomp = 3;
+  static const index_t ncomp = 3;
 
   // Spatial dimension
-  static const A2D::index_t dim = 2;
+  static const index_t dim = 2;
 
   // Zero the solution
   void zero() {
@@ -335,14 +335,14 @@ class Hcurl2DSpace {
   }
 
   // Get the value of the specified component
-  T& get_value(const A2D::index_t comp) {
+  T& get_value(const index_t comp) {
     if (comp < 2) {
       return u(comp);
     } else {
       return curl;
     }
   }
-  const T& get_value(const A2D::index_t comp) const {
+  const T& get_value(const index_t comp) const {
     if (comp < 2) {
       return u(comp);
     } else {
@@ -351,29 +351,29 @@ class Hcurl2DSpace {
   }
 
   // Get the solution value
-  A2D::Vec<T, 2>& get_value() { return u; }
-  const A2D::Vec<T, 2>& get_value() const { return u; }
+  Vec<T, 2>& get_value() { return u; }
+  const Vec<T, 2>& get_value() const { return u; }
 
   // Get the curl (2D so it's a scalar value)
   T& get_curl() { return curl; }
   const T& get_curl() const { return curl; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                 const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
+  void transform(const T& detJ, const Mat<T, dim, dim>& J,
+                 const Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
     s.u = u;
     s.curl = curl;
   }
 
   // Transform derivatives from the physical to the refernece space
-  void rtransform(const T& detJ, const A2D::Mat<T, dim, dim>& J,
-                  const A2D::Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
+  void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
+                  const Mat<T, dim, dim>& Jinv, Hcurl2DSpace<T>& s) const {
     s.u = u;
     s.curl = curl;
   }
 
  private:
-  A2D::Vec<T, dim> u;
+  Vec<T, dim> u;
   T curl;
 };
 
@@ -382,12 +382,12 @@ struct __count_space_components;
 
 template <>
 struct __count_space_components<> {
-  static const A2D::index_t ncomp = 0;
+  static const index_t ncomp = 0;
 };
 
 template <class First, class... Remain>
 struct __count_space_components<First, Remain...> {
-  static const A2D::index_t ncomp =
+  static const index_t ncomp =
       First::ncomp + __count_space_components<Remain...>::ncomp;
 };
 
@@ -415,19 +415,16 @@ struct __count_space_components<First, Remain...> {
   D The dimension of the problem
   Spaces The varidic template list of finite element space types
 */
-
-template <typename T, A2D::index_t D, class... Spaces>
+template <typename T, index_t D, class... Spaces>
 class FESpace {
  public:
   typedef std::tuple<Spaces...> SolutionSpace;
-  static constexpr A2D::index_t nspaces =
-      std::tuple_size<std::tuple<Spaces...>>();
+  static constexpr index_t nspaces = std::tuple_size<std::tuple<Spaces...>>();
 
   /*
     Count up the total number of degrees of freedom
   */
-  static constexpr A2D::index_t ncomp =
-      __count_space_components<Spaces...>::ncomp;
+  static constexpr index_t ncomp = __count_space_components<Spaces...>::ncomp;
 
   /*
     Zero all the values in all the spaces
@@ -437,21 +434,19 @@ class FESpace {
   /*
     Get a solution value based on the index
   */
-  T& operator[](const A2D::index_t comp) {
-    return get_value_<0, Spaces...>(comp);
-  }
-  const T& operator[](const A2D::index_t comp) const {
+  T& operator[](const index_t comp) { return get_value_<0, Spaces...>(comp); }
+  const T& operator[](const index_t comp) const {
     return get_value_<0, Spaces...>(comp);
   }
 
   /*
     Extract the specified solution space from the FESpace object
   */
-  template <A2D::index_t index>
+  template <index_t index>
   typename std::tuple_element<index, SolutionSpace>::type& get() noexcept {
     return std::get<index>(u);
   }
-  template <A2D::index_t index>
+  template <index_t index>
   const typename std::tuple_element<index, SolutionSpace>::type& get()
       const noexcept {
     return std::get<index>(u);
@@ -461,8 +456,7 @@ class FESpace {
     Transform the solution space from the reference element to the physical
     element
   */
-  void transform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                 const A2D::Mat<T, D, D>& Jinv,
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
                  FESpace<T, D, Spaces...>& s) const {
     transform_<0, Spaces...>(detJ, J, Jinv, s);
   }
@@ -471,8 +465,8 @@ class FESpace {
     Perform the reverse of the transform - transfer the derivative from the
     physical element to the reference element
   */
-  void rtransform(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+  void rtransform(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
     rtransform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
@@ -480,33 +474,31 @@ class FESpace {
   // Solution space tuple object
   SolutionSpace u;
 
-  template <A2D::index_t index>
-  void transform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv,
-                  FESpace<T, D, Spaces...>& s) const {}
+  template <index_t index>
+  void transform_(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) const {
+  }
 
-  template <A2D::index_t index, class First, class... Remain>
-  void transform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                  const A2D::Mat<T, D, D>& Jinv,
-                  FESpace<T, D, Spaces...>& s) const {
+  template <index_t index, class First, class... Remain>
+  void transform_(const T& detJ, const Mat<T, D, D>& J,
+                  const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).transform(detJ, J, Jinv, std::get<index>(s.u));
     transform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }
 
-  template <A2D::index_t index>
-  void rtransform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                   const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
-  }
+  template <index_t index>
+  void rtransform_(const T& detJ, const Mat<T, D, D>& J,
+                   const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {}
 
-  template <A2D::index_t index, class First, class... Remain>
-  void rtransform_(const T& detJ, const A2D::Mat<T, D, D>& J,
-                   const A2D::Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+  template <index_t index, class First, class... Remain>
+  void rtransform_(const T& detJ, const Mat<T, D, D>& J,
+                   const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
     std::get<index>(u).rtransform(detJ, J, Jinv, std::get<index>(s.u));
     rtransform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }
 
-  template <A2D::index_t index, class First, class... Remain>
-  T& get_value_(const A2D::index_t comp) {
+  template <index_t index, class First, class... Remain>
+  T& get_value_(const index_t comp) {
     if constexpr (sizeof...(Remain) == 0) {
       return std::get<index>(u).get_value(comp);
     } else if (comp < First::ncomp) {
@@ -516,8 +508,8 @@ class FESpace {
     }
   }
 
-  template <A2D::index_t index, class First, class... Remain>
-  const T& get_value_(const A2D::index_t comp) const {
+  template <index_t index, class First, class... Remain>
+  const T& get_value_(const index_t comp) const {
     if constexpr (sizeof...(Remain) == 0) {
       return std::get<index>(u).get_value(comp);
     } else if (comp < First::ncomp) {
@@ -527,7 +519,7 @@ class FESpace {
     }
   }
 
-  template <A2D::index_t index, class First, class... Remain>
+  template <index_t index, class First, class... Remain>
   void zero_() {
     std::get<index>(u).zero();
     if constexpr (sizeof...(Remain) > 0) {

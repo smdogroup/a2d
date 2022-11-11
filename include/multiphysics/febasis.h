@@ -248,10 +248,10 @@ template <typename T>
 class RT2DTri1 {
  public:
   static const index_t ndof = 3;
-  static const index_t ncomp = Hdiv2DSpace<T>::ncomp;
+  static const index_t ncomp = HdivSpace<T, 2>::ncomp;
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, Hdiv2DSpace<T>& out) {
+  static void interp(index_t n, const SolnType sol, HdivSpace<T, 2>& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -266,7 +266,7 @@ class RT2DTri1 {
   }
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const Hdiv2DSpace<T>& in, SolnType res) {
+  static void add(index_t n, const HdivSpace<T, 2>& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 

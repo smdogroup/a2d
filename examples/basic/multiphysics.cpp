@@ -2,7 +2,8 @@
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
-#include "multiphysics/hexa_basis.h"
+#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/qhdiv_hex_basis.h"
 
 // #include "multiphysics/feelement.h"
 // #include "multiphysics/femesh.h"
@@ -47,9 +48,9 @@ int main(int argc, char* argv[]) {
   using T = double;
   using PDE = NonlinearElasticity<T, 3>;
   using Quadrature = TriQuadrature3;
-  using GeoBasis = FEBasis<T, LagrangeHexBasis<T, 3, degree>>;
-  using Basis = FEBasis<T, LagrangeHexBasis<T, 3, degree>,
-                        LagrangeHexBasis<T, 3, degree - 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>,
+                        QHdivHexBasis<T, degree - 1>>;
 
   // Number of elements in each dimension
   const int nx = 25, ny = 25, nz = 25;

@@ -173,7 +173,6 @@ class LagrangeTri1 {
     }
   }
 
-
   template <class Quadrature, index_t offset, class SolnType>
   static void add(index_t n, const SpaceType& in, SolnType res) {
     double pt[2];
@@ -233,7 +232,7 @@ class LagrangeTri1 {
 template <typename T>
 class RT2DTri1 {
  public:
-  using SpaceType = Hdiv2DSpace<T>;
+  using SpaceType = HdivSpace<T, 2>;
 
   static const index_t ndof = 3;
   static const index_t ncomp = SpaceType::ncomp;

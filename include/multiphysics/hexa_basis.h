@@ -73,32 +73,77 @@ class LagrangeHexBasis {
                       (order - 1) * order * ET::HEX_VERTS_CART[v1][1] +
                       (order - 1) * order * order * ET::HEX_VERTS_CART[v1][2];
       index_t incr =
-          (order - 1) *
-              (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
-          (order - 1) * order *
-              (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
-          (order - 1) * order * order *
+          (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
+          order * (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
+          order * order *
               (ET::HEX_VERTS_CART[v2][2] - ET::HEX_VERTS_CART[v1][2]);
 
       for (index_t k = 1; k < order - 1; k++) {
+        index_t node = start + k * incr;
         for (index_t i = 0; i < C; i++) {
-          index_t node = start + k * incr;
           entity_dof[C * (k - 1) + i] = element_dof[offset + C * node + i];
         }
       }
     } else if (entity == ET::FACE) {
       // Loop over the reference face and transform to the local face
-      // for (index_t k2 = 0; k2 < order - 2; k2++) {
-      //   for (index_t k1 = 0; k1 < order - 2; k1++) {
-      //     index_t j1 = k1 + 1;
-      //     index_t j2 = k2 + 1;
-      //     // index_t e = k1 + k2
+      if (index < 2) {
+        for (index_t k3 = 0; k3 < order - 2; k3++) {
+          for (index_t k2 = 0; k2 < order - 2; k2++) {
+            index_t j1 = (index % 2) * (order - 1);
+            index_t j2 = k2 + 1;
+            index_t j3 = k3 + 1;
 
-      //     for (index_t i = 0; i < C; i++) {
-      //       entity_dof[C * e + i] = element_dof[offset + C * node + i];
-      //     }
-      //   }
-      // }
+            index_t i2, i3;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j2, j3, &i2,
+                                               &i3);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i2 - 1) + (order - 2) * (i3 - 1);
+            for (index_t i = 0; i < C; i++) {
+              entity_dof[C * enode + i] = element_dof[offset + C * node + i];
+            }
+          }
+        }
+      } else if (index < 4) {
+        for (index_t k3 = 0; k3 < order - 2; k3++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
+            index_t j1 = k1 + 1;
+            index_t j2 = (index % 2) * (order - 1);
+            index_t j3 = k3 + 1;
+
+            index_t i1, i3;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j1, j3, &i1,
+                                               &i3);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i1 - 1) + (order - 2) * (i3 - 1);
+            for (index_t i = 0; i < C; i++) {
+              entity_dof[C * enode + i] = element_dof[offset + C * node + i];
+            }
+          }
+        }
+      } else {
+        for (index_t k2 = 0; k2 < order - 2; k2++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
+            index_t j1 = k1 + 1;
+            index_t j2 = k2 + 1;
+            index_t j3 = (index % 2) * (order - 1);
+
+            index_t i1, i2;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j1, j2, &i1,
+                                               &i2);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i1 - 1) + (order - 2) * (i2 - 1);
+            for (index_t i = 0; i < C; i++) {
+              entity_dof[C * enode + i] = element_dof[offset + C * node + i];
+            }
+          }
+        }
+      }
     } else if (entity == ET::VOLUME) {
       for (index_t k3 = 0; k3 < order - 2; k3++) {
         for (index_t k2 = 0; k2 < order - 2; k2++) {
@@ -107,7 +152,7 @@ class LagrangeHexBasis {
             index_t j2 = k2 + 1;
             index_t j3 = k3 + 1;
             index_t e = k1 + k2 * (order - 2) + k3 * (order - 2) * (order - 2);
-            index_t node = j1 + j2 * order + j3 * order * order * order;
+            index_t node = j1 + j2 * order + j3 * order * order;
 
             for (index_t i = 0; i < C; i++) {
               entity_dof[C * e + i] = element_dof[offset + C * node + i];
@@ -143,8 +188,8 @@ class LagrangeHexBasis {
         element_sign[offset + C * node + i] = 1;
       }
     } else if (entity == ET::EDGE) {
-      // Get the start and end location - flip the orientation if orient = 1
-      // (reversed edges)
+      // Get the start and end location - flip the orientation if orient =
+      // 1 (reversed edges)
       index_t v1 = ET::HEX_EDGE_VERTS[index][orient];
       index_t v2 = ET::HEX_EDGE_VERTS[index][(orient + 1) % 2];
 
@@ -152,11 +197,9 @@ class LagrangeHexBasis {
                       (order - 1) * order * ET::HEX_VERTS_CART[v1][1] +
                       (order - 1) * order * order * ET::HEX_VERTS_CART[v1][2];
       index_t incr =
-          (order - 1) *
-              (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
-          (order - 1) * order *
-              (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
-          (order - 1) * order * order *
+          (ET::HEX_VERTS_CART[v2][0] - ET::HEX_VERTS_CART[v1][0]) +
+          order * (ET::HEX_VERTS_CART[v2][1] - ET::HEX_VERTS_CART[v1][1]) +
+          order * order *
               (ET::HEX_VERTS_CART[v2][2] - ET::HEX_VERTS_CART[v1][2]);
 
       for (index_t k = 1; k < order - 1; k++) {
@@ -167,6 +210,68 @@ class LagrangeHexBasis {
         }
       }
     } else if (entity == ET::FACE) {
+      // Loop over the reference face and transform to the local face
+      if (index < 2) {
+        for (index_t k3 = 0; k3 < order - 2; k3++) {
+          for (index_t k2 = 0; k2 < order - 2; k2++) {
+            index_t j1 = (index % 2) * (order - 1);
+            index_t j2 = k2 + 1;
+            index_t j3 = k3 + 1;
+
+            index_t i2, i3;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j2, j3, &i2,
+                                               &i3);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i2 - 1) + (order - 2) * (i3 - 1);
+            for (index_t i = 0; i < C; i++) {
+              element_dof[offset + C * node + i] = entity_dof[C * enode + i];
+              element_sign[offset + C * node + i] = 1;
+            }
+          }
+        }
+      } else if (index < 4) {
+        for (index_t k3 = 0; k3 < order - 2; k3++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
+            index_t j1 = k1 + 1;
+            index_t j2 = (index % 2) * (order - 1);
+            index_t j3 = k3 + 1;
+
+            index_t i1, i3;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j1, j3, &i1,
+                                               &i3);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i1 - 1) + (order - 2) * (i3 - 1);
+            for (index_t i = 0; i < C; i++) {
+              element_dof[offset + C * node + i] = entity_dof[C * enode + i];
+              element_sign[offset + C * node + i] = 1;
+            }
+          }
+        }
+      } else {
+        for (index_t k2 = 0; k2 < order - 2; k2++) {
+          for (index_t k1 = 0; k1 < order - 2; k1++) {
+            index_t j1 = k1 + 1;
+            index_t j2 = k2 + 1;
+            index_t j3 = (index % 2) * (order - 1);
+
+            index_t i1, i2;
+            ET::get_coords_on_quad_ref_element(orient, order - 1, j1, j2, &i1,
+                                               &i2);
+
+            // Get the node on the face
+            index_t node = j1 + order * j2 + order * order * j3;
+            index_t enode = (i1 - 1) + (order - 2) * (i2 - 1);
+            for (index_t i = 0; i < C; i++) {
+              element_dof[offset + C * node + i] = entity_dof[C * enode + i];
+              element_sign[offset + C * node + i] = 1;
+            }
+          }
+        }
+      }
     } else if (entity == ET::VOLUME) {
       for (index_t k3 = 0; k3 < order - 2; k3++) {
         for (index_t k2 = 0; k2 < order - 2; k2++) {
@@ -175,7 +280,7 @@ class LagrangeHexBasis {
             index_t j2 = k2 + 1;
             index_t j3 = k3 + 1;
             index_t e = k1 + k2 * (order - 2) + k3 * (order - 2) * (order - 2);
-            index_t node = j1 + j2 * order + j3 * order * order * order;
+            index_t node = j1 + j2 * order + j3 * order * order;
 
             for (index_t i = 0; i < C; i++) {
               element_dof[offset + C * node + i] = entity_dof[C * e + i];

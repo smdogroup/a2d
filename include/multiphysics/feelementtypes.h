@@ -78,12 +78,15 @@ class ElementTypes {
       {0, 0}, {1, 0}, {1, 1}, {1, 0}};
 
   static const index_t NUM_QUAD_FACE_ORIENTATIONS = 8;
+  // static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
+  //     {0, 1, 2, 3}, {2, 0, 3, 1}, {3, 2, 1, 0}, {1, 3, 0, 2},
+  //     {0, 2, 1, 3}, {2, 3, 0, 1}, {3, 1, 2, 0}, {1, 0, 3, 2}};
   static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
-      {0, 1, 2, 3}, {2, 0, 3, 1}, {3, 2, 1, 0}, {1, 3, 0, 2},
-      {0, 2, 1, 3}, {2, 3, 0, 1}, {3, 1, 2, 0}, {1, 0, 3, 2}};
+      {0, 1, 2, 3}, {3, 0, 1, 2}, {2, 3, 0, 1}, {1, 2, 3, 0},
+      {0, 3, 2, 1}, {3, 2, 1, 0}, {2, 1, 0, 3}, {1, 0, 3, 2}};
 
   /**
-   * @brief Given the reference transformation
+   * @brief Given a reference face, find the orientation
    *
    * @param ref
    * @param face
@@ -103,7 +106,49 @@ class ElementTypes {
     return orient;
   }
 
-  // static void transform_quad_face(index_t xref, index_t yref, ) {}
+  /**
+   * @brief Get the coords on quad ref element object
+   *
+   * @param orient The orientation
+   * @param h The edge length
+   * @param x The 1st coordinate on the transformed face
+   * @param y The 2nd coordinate on the transformed face
+   * @param u The 1st coordinate on the reference face
+   * @param v The 2nd coordinate on the reference face
+   */
+  static void get_coords_on_quad_ref_element(const index_t orient,
+                                             const index_t h, const index_t x,
+                                             const index_t y, index_t *u,
+                                             index_t *v) {
+    if (orient == 0) {
+      *u = x;
+      *v = y;
+    } else if (orient == 1) {
+      *u = h - y;
+      *v = x;
+    } else if (orient == 2) {
+      *u = h - x;
+      *v = h - y;
+    } else if (orient == 3) {
+      *u = y;
+      *v = h - x;
+    } else if (orient == 4) {
+      *u = y;
+      *v = x;
+    } else if (orient == 5) {
+      *u = x;
+      *v = h - y;
+    } else if (orient == 6) {
+      *u = h - y;
+      *v = h - x;
+    } else if (orient == 7) {
+      *u = h - x;
+      *v = y;
+    } else {
+      *u = 0;
+      *v = 0;
+    }
+  }
 
   /**
    * @brief Tetrahedral properties

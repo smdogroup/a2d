@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   using Quadrature = TriQuadrature3;
   using GeoBasis = FEBasis<T, LagrangeHexBasis<T, 3, degree>>;
   using Basis = FEBasis<T, LagrangeHexBasis<T, 3, degree>,
-                        LagrangeHexBasis<T, 3, degree + 1>>;
+                        LagrangeHexBasis<T, 3, degree - 1>>;
 
   // Number of elements in each dimension
   const int nx = 25, ny = 25, nz = 25;
@@ -98,6 +98,13 @@ int main(int argc, char* argv[]) {
   //           << std::endl;
 
   ElementMesh<Basis> mesh_data(conn);
+
+  // for (index_t i = 0; i < mesh_data.get_num_elements() && i < 4; i++) {
+  //   for (index_t j = 0; j < Basis::template get_ndof<0>(); j++) {
+  //     index_t dof = mesh_data.get_global_dof<0>(i, j);
+  //     std::cout << i << " " << j << " " << dof << std::endl;
+  //   }
+  // }
 
   // for (A2D::index_t face = 0; face < conn.get_num_faces(); face++) {
   //   A2D::index_t e1, e2;

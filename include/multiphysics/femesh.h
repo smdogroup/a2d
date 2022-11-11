@@ -895,9 +895,12 @@ class ElementMesh {
 
     index_t start = 0, end = 1, level = 0;
     stack[0] = 0;
+    ids[0] = level;
 
     while (start < end) {
       index_t next = end;
+      level++;
+
       for (index_t i = start; i < end; i++) {
         // Loop over
         const index_t* faces;
@@ -923,7 +926,6 @@ class ElementMesh {
 
       start = end;
       end = next;
-      level++;
     }
 
     std::vector<index_t> face_owners(conn.get_num_faces(), NO_INDEX);
@@ -1063,15 +1065,19 @@ class ElementMesh {
                                 elem_sign);
         }
       }
-
-      std::cout << "dof_counter = " << dof_counter << std::endl;
     }
 
-    // Loop over all the elements
-    //     index_t temp[ndof_per_elem];
-    //     for (index_t i = 0; i < nelems; i++) {
-    //       ET::VERTEX
-    //     }
+    std::cout << "Total number of dof: " << dof_counter << std::endl;
+
+    index_t count = 0;
+    for (index_t i = 0; i < nelems * ndof_per_element; i++) {
+      if (element_dof[i] == NO_INDEX) {
+        count++;
+        std::cout << i / ndof_per_element << " " << i % ndof_per_element
+                  << std::endl;
+      }
+    }
+    std::cout << "Uncounted variables: " << count << std::endl;
   }
 
   index_t get_num_elements() { return nelems; }

@@ -130,8 +130,8 @@ int main(int argc, char* argv[]) {
   // Basis,
   //                          use_parallel_elemvec>;
 
-  // using Basis = FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>>;
-  // using FiniteElementSpace = FESpace<T, 2, L2ScalarSpace<T, 2>,
+  // using Basis = FEBasis<T, LagrangeTri0<T, 1>, RT2DTri1<T>>;
+  // using FiniteElementSpace = FESpace<T, 2, L2Space<T, 1, 2>,
   // Hdiv2DSpace<T>>;
 
   // T dof[Basis::ndof], res[Basis::ndof], test[Basis::ndof];
@@ -289,7 +289,7 @@ int main(int argc, char* argv[]) {
 
   // type PoissonMixed2D PDE;
   // typedef FEBasis<T, LagrangeTri1<T, 2>> GeoBasis;
-  // typedef FEBasis<T, LagrangeTri0Scalar<T>, RT2DTri1<T>> Basis;
+  // typedef FEBasis<T, LagrangeTri0<T, 1>, RT2DTri1<T>> Basis;
 
   // A2D::Mat<T, Basis::ncomp, Basis::ncomp> mat;
   // A2D::Mat<T, Basis::ndof, Basis::ndof> jac;

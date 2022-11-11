@@ -89,22 +89,37 @@ namespace A2D {
 /*
   Lagrange basis for a triangle
 */
-template <typename T>
-class LagrangeTri0Scalar {
+template <typename T, index_t C>
+class LagrangeTri0 {
  public:
-  static const index_t ndof = 1;
-  static const index_t ncomp = L2ScalarSpace<T, 2>::ncomp;
+  using SpaceType = L2Space<T, C, 2>;
+  using VarType = typename SpaceType::VarType;
+
+  static const index_t ndof = C;
+  static const index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, L2ScalarSpace<T, 2>& out) {
-    T& u = out.get_value();
-    u = sol[offset];
+  static void interp(index_t n, const SolnType sol, SpaceType& out) {
+    VarType& u = out.get_value();
+    if constexpr (C == 1) {
+      u = sol[offset];
+    } else {
+      for (index_t i = 0; i < C; i++) {
+        u(i) = sol[offset + i];
+      }
+    }
   }
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const L2ScalarSpace<T, 2>& in, SolnType res) {
-    const T& u = in.get_value();
-    res[offset] += u;
+  static void add(index_t n, const SpaceType& in, SolnType res) {
+    const VarType& u = in.get_value();
+    if constexpr (C == 1) {
+      res[offset] += u;
+    } else {
+      for (index_t i = 0; i < C; i++) {
+        res[offset + i] += u(i);
+      }
+    }
   }
 
   // Set the matrix stride
@@ -126,48 +141,18 @@ class LagrangeTri0Scalar {
 };
 
 /*
-  Lagrange basis for a triangle, TODO: finish the implementation
-*/
-template <typename T, index_t C>
-class LagrangeTri0 {
- public:
-  static const index_t ndof = C;
-  static const index_t ncomp = L2Space<T, C, 2>::ncomp;
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, L2Space<T, C, 2>& out) {
-    Vec<T, 2>& u = out.get_value();
-    u(0) = sol[offset];
-    u(1) = sol[offset + 1];
-  }
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const L2Space<T, C, 2>& in, SolnType res) {
-    const Vec<T, 2>& u = in.get_value();
-    res[offset] += u(0);
-    res[offset + 1] += u(1);
-  }
-
-  // Set the matrix stride
-  static const index_t stride = 1;
-
-  template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
-    N[0] = 1.0;
-  }
-};
-
-/*
   Lagrange basis for a triangle
 */
 template <typename T, index_t C>
 class LagrangeTri1 {
  public:
+  using SpaceType = H1Space<T, C, 2>;
+
   static const index_t ndof = 3 * C;
-  static const index_t ncomp = H1Space<T, C, 2>::ncomp;
+  static const index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, H1Space<T, C, 2>& out) {
+  static void interp(index_t n, const SolnType sol, SpaceType& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -188,8 +173,9 @@ class LagrangeTri1 {
     }
   }
 
+
   template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const H1Space<T, C, 2>& in, SolnType res) {
+  static void add(index_t n, const SpaceType& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -247,11 +233,13 @@ class LagrangeTri1 {
 template <typename T>
 class RT2DTri1 {
  public:
+  using SpaceType = Hdiv2DSpace<T>;
+
   static const index_t ndof = 3;
-  static const index_t ncomp = HdivSpace<T, 2>::ncomp;
+  static const index_t ncomp = SpaceType::ncomp;
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, HdivSpace<T, 2>& out) {
+  static void interp(index_t n, const SolnType sol, SpaceType& out) {
     double pt[2];
     Quadrature::get_point(n, pt);
 
@@ -266,7 +254,7 @@ class RT2DTri1 {
   }
 
   template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const HdivSpace<T, 2>& in, SolnType res) {
+  static void add(index_t n, const SpaceType& in, SolnType res) {
     double pt[2];
     Quadrature::get_point(n, pt);
 

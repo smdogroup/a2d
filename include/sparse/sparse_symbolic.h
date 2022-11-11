@@ -28,8 +28,8 @@ struct COO {
 /*
   Given the CSR data, sort each row
 */
-template <typename I>
-void SortCSRData(I nrows, MultiArrayNew<I*>& rowp, MultiArrayNew<I*>& cols) {
+template <typename I, class ArrayType>
+void SortCSRData(I nrows, ArrayType& rowp, ArrayType& cols) {
   Timer t("SortCSRData()");
   // Sort the cols array
   I* it1;

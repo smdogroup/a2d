@@ -5,6 +5,7 @@
 #include "array.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fesolution.h"
+#include "sparse/sparse_symbolic.h"
 
 namespace A2D {
 
@@ -200,7 +201,7 @@ class ElementMat_Serial {
    * If FEDof contains a pointer to data, this function may do nothing
    */
   // Add values for this element to the vector
-  void add_element_values(index_t elem, const FEMat& elem_mat) {
+  void add_element_values(index_t elem, FEMat& elem_mat) {
     index_t dof[Basis::ndof];
     int sign[Basis::ndof];
     get_dof<Basis::nbasis - 1>(elem, dof, sign);
@@ -218,8 +219,10 @@ class ElementMat_Serial {
   template <index_t basis>
   void get_dof(index_t elem, index_t dof[], int sign[]) {
     for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-      sign[i + Basis::template get_dof_offset<basis>()] = mesh.get_global_dof_sign<basis>(elem, i);
-      dof[i + Basis::template get_dof_offset<basis>()] = mesh.get_global_dof<basis>(elem, i);
+      sign[i + Basis::template get_dof_offset<basis>()] =
+          mesh.template get_global_dof_sign<basis>(elem, i);
+      dof[i + Basis::template get_dof_offset<basis>()] =
+          mesh.template get_global_dof<basis>(elem, i);
     }
     if constexpr (basis > 0) {
       get_dof<basis - 1>(elem, dof, sign);

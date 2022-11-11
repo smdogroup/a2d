@@ -8,11 +8,11 @@
 /*
   The PDE object
 */
-template <typename T>
+template <typename T, index_t D>
 class MixedPoisson2D {
  public:
   // Spatial dimension
-  static const A2D::index_t dim = 2;
+  static const A2D::index_t dim = D;
 
   // No data associated with this element
   static const A2D::index_t data_dim = 0;
@@ -21,7 +21,7 @@ class MixedPoisson2D {
   typedef A2D::FESpace<T, data_dim> DataSpace;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::L2Space<T, 1, dim>, A2D::Hdiv2DSpace<T>>
+  typedef A2D::FESpace<T, dim, A2D::L2Space<T, 1, dim>, A2D::HdivSpace<T, D>>
       FiniteElementSpace;
 
   // Space for the element geometry - parametrized by H1 in 2D

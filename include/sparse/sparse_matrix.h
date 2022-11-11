@@ -84,6 +84,27 @@ class BSRMat {
     return nullptr;
   }
 
+  template <class Mat>
+  void add_values(const index_t m, const index_t i[], const index_t n,
+                  const index_t j[], Mat &mat) {
+    for (index_t ii = 0; ii < m; ii++) {
+      index_t block_row = i[ii] / M;
+      index_t eq_row = i[ii] % M;
+
+      for (index_t jj = 0; jj < n; jj++) {
+        index_t block_col = j[jj] / N;
+        index_t eq_col = j[jj] % N;
+
+        index_t *col_ptr = find_column_index(block_row, block_col);
+        if (col_ptr) {
+          index_t jp = col_ptr - cols.data();
+
+          Avals(jp, eq_row, eq_col) += mat(ii, jj);
+        }
+      }
+    }
+  }
+
   // Array type
   using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 

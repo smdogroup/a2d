@@ -1,10 +1,15 @@
 #ifndef A2D_FE_MESH_H
 #define A2D_FE_MESH_H
 
+#include <algorithm>
+#include <set>
+
 #include "a2dmatops2d.h"
 #include "a2dmatops3d.h"
 #include "a2dobjs.h"
 #include "multiphysics/feelementtypes.h"
+#include "sparse/sparse_matrix.h"
+#include "sparse/sparse_symbolic.h"
 
 namespace A2D {
 
@@ -884,7 +889,8 @@ class ElementMesh {
 
   static constexpr index_t NO_INDEX = std::numeric_limits<index_t>::max();
 
-  ElementMesh(MeshConnectivity3D& conn) : nelems(conn.get_num_elements()) {
+  ElementMesh(MeshConnectivity3D& conn)
+      : nelems(conn.get_num_elements()), num_dof(0) {
     // Count up the number of degrees of freedom
     element_dof = new index_t[nelems * ndof_per_element];
     element_sign = new int[nelems * ndof_per_element];
@@ -1067,6 +1073,9 @@ class ElementMesh {
       }
     }
 
+    // Set the number of degrees of freedom
+    num_dof = dof_counter;
+
     std::cout << "Total number of dof: " << dof_counter << std::endl;
 
     index_t count = 0;
@@ -1081,6 +1090,7 @@ class ElementMesh {
   }
 
   index_t get_num_elements() { return nelems; }
+  index_t get_num_dof() { return num_dof; }
 
   static const index_t ndof_per_element = Basis::ndof;
 
@@ -1097,8 +1107,68 @@ class ElementMesh {
                        Basis::template get_dof_offset<basis>() + index];
   }
 
+  template <typename T, index_t M>
+  BSRMat<index_t, T, M, M>* create_block_matrix() {
+    std::set<std::pair<index_t, index_t>> node_set;
+
+    for (index_t i = 0; i < nelems; i++) {
+      for (index_t j1 = 0; j1 < Basis::ndof; j1++) {
+        for (index_t j2 = 0; j2 < Basis::ndof; j2++) {
+          index_t row = element_dof[i * Basis::ndof + j1] / M;
+          index_t col = element_dof[i * Basis::ndof + j2] / M;
+
+          node_set.insert(std::make_pair(row, col));
+        }
+      }
+    }
+
+    index_t nrows = num_dof / M;
+    if (num_dof % M > 0) {
+      nrows += 1;
+    }
+
+    // Find the number of nodes referenced by other nodes
+    std::vector<index_t> rowp(nrows + 1);
+
+    typename std::set<std::pair<index_t, index_t>>::iterator it;
+    for (it = node_set.begin(); it != node_set.end(); it++) {
+      rowp[it->first + 1] += 1;
+    }
+
+    // Set the pointer into the rows
+    rowp[0] = 0;
+    for (index_t i = 0; i < nrows; i++) {
+      rowp[i + 1] += rowp[i];
+    }
+
+    index_t nnz = rowp[nrows];
+    std::vector<index_t> cols(nnz);
+
+    for (it = node_set.begin(); it != node_set.end(); it++) {
+      cols[rowp[it->first]] = it->second;
+      rowp[it->first]++;
+    }
+
+    // Reset the pointer into the nodes
+    for (index_t i = nrows; i > 0; i--) {
+      rowp[i] = rowp[i - 1];
+    }
+    rowp[0] = 0;
+
+    // Sort the cols array
+    SortCSRData(nrows, rowp, cols);
+
+    BSRMat<index_t, T, M, M>* A =
+        new BSRMat<index_t, T, M, M>(nrows, nrows, nnz, rowp, cols);
+
+    return A;
+  }
+
  private:
-  index_t nelems;
+  index_t nelems;   // Total number of elements
+  index_t num_dof;  // Total number of degrees of freedom
+
+  // Store the degrees of freedom for each element and the element sign
   index_t* element_dof;
   int* element_sign;
 };

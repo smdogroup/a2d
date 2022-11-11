@@ -9,6 +9,7 @@
 // #include "utils/a2dprofiler.h"
 
 #include "a2dmatops2d.h"
+#include "a2dmatops3d.h"
 #include "multiphysics/fespace.h"
 
 template <typename T, A2D::index_t D>
@@ -21,7 +22,7 @@ class NonlinearElasticity {
   static const A2D::index_t data_dim = 2;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>> DataSpace;
+  typedef A2D::FESpace<T, data_dim, A2D::H1Space<T, data_dim, dim>> DataSpace;
 
   // Finite element space
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementSpace;

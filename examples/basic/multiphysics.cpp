@@ -2,13 +2,12 @@
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
+#include "multiphysics/feelement.h"
+#include "multiphysics/femesh.h"
+#include "multiphysics/fequadrature.h"
 #include "multiphysics/lagrange_hex_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 
-// #include "multiphysics/feelement.h"
-// #include "multiphysics/femesh.h"
-#include "multiphysics/fequadrature.h"
-// #include "multiphysics/fespace.h"
 // #include "sparse/sparse_matrix.h"
 
 #include "multiphysics/femesh.h"
@@ -16,41 +15,17 @@
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
-  // using T = double;
-  // using PDE = NonlinearElasticity<T, 2>;
-
-  // using Quadrature_Tri = TriQuadrature3;
-  // using DataBasis_Tri = FEBasis<T, LagrangeTri0<T, 2>>;
-  // using GeoBasis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
-  // using Basis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
-  // using FE_Tri = FiniteElement<T, PDE, Quadrature_Tri, DataBasis_Tri,
-  //                              GeoBasis_Tri, Basis_Tri,
-  //                              use_parallel_elemvec>;
-
-  // using Quadrature_Quad = QuadQuadrature3;
-  // using DataBasis_Quad = FEBasis<T, LagrangeQuad0<T, 2>>;
-  // using GeoBasis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
-  // using Basis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
-  // using FE_Quad = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
-  // Basis,
-  //                               use_parallel_elemvec>;
-
-  // // Set the mesh connectivity
-  // MeshConnectivity2D conn(nverts, ntris, tris, nquads, quads);
-
-  // // Perform some ordering on the connectivity...
-
-  // // ....
-  // ElementMesh<Basis_Tri> ElementMesh_Tri();
-  // ElementMesh<Basis_Quad> ElementMesh_Quad();
-
   const index_t degree = 2;
   using T = double;
   using PDE = NonlinearElasticity<T, 3>;
   using Quadrature = TriQuadrature3;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>,
-                        QHdivHexBasis<T, degree - 1>>;
+  using DataBasis = FEBasis<T, LagrangeH1HexBasis<T, 2, 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, 1>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+
+  constexpr bool use_parallel_elemvec = false;
+  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
+                           use_parallel_elemvec>;
 
   // Number of elements in each dimension
   const int nx = 25, ny = 25, nz = 25;
@@ -98,106 +73,70 @@ int main(int argc, char* argv[]) {
   // conn.get_num_edges()
   //           << std::endl;
 
-  ElementMesh<Basis> mesh_data(conn);
+  ElementMesh<Basis> mesh(conn);
+  ElementMesh<GeoBasis> geomesh(conn);
+  ElementMesh<DataBasis> datamesh(conn);
 
-  // for (index_t i = 0; i < mesh_data.get_num_elements() && i < 4; i++) {
-  //   for (index_t j = 0; j < Basis::template get_ndof<0>(); j++) {
-  //     index_t dof = mesh_data.get_global_dof<0>(i, j);
-  //     std::cout << i << " " << j << " " << dof << std::endl;
-  //   }
-  // }
+  index_t ndof = mesh.get_num_dof();
+  SolutionVector<T> global_U(mesh.get_num_dof());
+  SolutionVector<T> global_res(mesh.get_num_dof());
+  SolutionVector<T> global_geo(geomesh.get_num_dof());
+  SolutionVector<T> global_data(datamesh.get_num_dof());
 
-  // for (A2D::index_t face = 0; face < conn.get_num_faces(); face++) {
-  //   A2D::index_t e1, e2;
-  //   bool boundary = conn.get_face_elements(face, &e1, &e2);
-  //   if (boundary) {
-  //     std::cout << e1 << std::endl;
-  //   } else {
-  //     std::cout << e1 << " " << e2 << std::endl;
-  //   }
-  // }
+  FE::DataElemVec elem_data(datamesh, global_data);
+  FE::GeoElemVec elem_geo(geomesh, global_geo);
+  FE::ElemVec elem_sol(mesh, global_U);
+  FE::ElemVec elem_res(mesh, global_res);
 
-  // using T = double;
-  // using PDE = NonlinearElasticity<T, 2>;
-  // using Quadrature = TriQuadrature3;
-  // using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
-  // using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
-  // using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
+  SolutionVector<T> global_x(mesh.get_num_dof());
+  SolutionVector<T> global_y(mesh.get_num_dof());
+  FE::ElemVec elem_x(mesh, global_x);
+  FE::ElemVec elem_y(mesh, global_y);
 
-  // constexpr bool use_parallel_elemvec = false;
-  // // constexpr bool use_parallel_elemvec = true;
-  // using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
-  // Basis,
-  //                          use_parallel_elemvec>;
+  FE fe;
 
-  // using Basis = FEBasis<T, LagrangeTri0<T, 1>, RT2DTri1<T>>;
-  // using FiniteElementSpace = FESpace<T, 2, L2Space<T, 1, 2>,
-  // Hdiv2DSpace<T>>;
+  // Add the residual
+  elem_res.init_zero_values();
+  fe.add_residual(elem_data, elem_geo, elem_sol, elem_res);
+  elem_res.add_values();
 
-  // T dof[Basis::ndof], res[Basis::ndof], test[Basis::ndof];
-  // std::fill(res, res + Basis::ndof, T(0.0));
-  // std::fill(test, test + Basis::ndof, T(0.0));
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   dof[i] = 0.0;
-  // }
-  // dof[2] = 1.0;
+  fe.add_jacobian_vector_product(elem_data, elem_geo, elem_sol, elem_x, elem_y);
 
-  // FiniteElementSpace s1, s2;
+  BSRMat<index_t, T, 3, 3>* mat =
+      mesh.create_
 
-  // std::cout << "interp_basis test" << std::endl;
-  // Basis::interp<Quadrature>(0, dof, s1);
-  // Basis::interp_basis<Quadrature>(0, dof, s2);
-  // for (int i = 0; i < Basis::ncomp; i++) {
-  //   std::cout << s1[i] << "  " << s2[i] << std::endl;
-  // }
+          ElementMat_Serial<T, Basis, BSRMat<index_t, T, 3, 3>>
+              elem_mat(mesh);
 
-  // std::cout << "add_basis test" << std::endl;
-  // Basis::add<Quadrature>(0, s1, res);
-  // Basis::add_basis<Quadrature>(0, s2, test);
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   std::cout << res[i] << "  " << test[i] << std::endl;
-  // }
+  fe.add_jacobian(elem_data, elem_geo, elem_sol, elem_mat);
 
-  // A2D::Mat<T, FiniteElementSpace::ncomp, FiniteElementSpace::ncomp> jac;
-  // A2D::Mat<T, Basis::ndof, Basis::ndof> mat;
+  // // Allocate global data, X, U, residual vectors
+  // SolutionVector<T> global_data(2 * nnodes);
+  // SolutionVector<T> global_X(2 * nnodes);
+  // SolutionVector<T> global_U(2 * nnodes);
+  // SolutionVector<T> global_res(2 * nnodes);
 
-  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-  //   for (int j = 0; j < FiniteElementSpace::ncomp; j++) {
-  //     jac(i, j) = -2.3 + 0.531 * i - 0.127 * j;
-  //   }
-  // }
+  // // Create element vector views
+  // FE::DataElemVec elem_data(datamesh, global_data);
+  // FE::GeoElemVec elem_geo(mesh, global_X);
+  // FE::ElemVec elem_sol(mesh, global_U);
+  // FE::ElemVec elem_vec(mesh, global_res);
 
-  // Basis::add_outer<Quadrature>(0, jac, mat);
+  // // Fabricate data, X, and U
+  // // TODO
 
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   res[i] = 0.0;
-  //   for (int j = 0; j < Basis::ndof; j++) {
-  //     res[i] += mat(i, j) * dof[j];
-  //   }
-  // }
+  // // Populate element views using global vectors
+  // elem_data.init_values();
+  // elem_geo.init_values();
+  // elem_sol.init_values();
 
-  // // Test to see that the basis is correctly implemented
-  // Basis::interp<Quadrature>(0, dof, s1);
+  // // Create finite element instance
+  // FE fe(elem_data, elem_geo, elem_sol, elem_vec);
 
-  // for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-  //   s2[i] = 0.0;
-  //   for (int j = 0; j < FiniteElementSpace::ncomp; j++) {
-  //     s2[i] += jac(i, j) * s1[j];
-  //   }
-  // }
+  // fe.add_residual(global_U);
 
-  // std::fill(test, test + Basis::ndof, T(0.0));
-  // Basis::add<Quadrature>(0, s2, test);
-
-  // std::cout << "add_outer test" << std::endl;
-  // for (int i = 0; i < Basis::ndof; i++) {
-  //   std::cout << test[i] << "  " << res[i] << std::endl;
-  // }
-
-  // // Set the node locations
-  // index_t nx = 10, ny = 10;
-  // index_t nnodes = (nx + 1) * (ny + 1);
-  // index_t nelems = 2 * nx * ny;
+  // // fd.add_jacobian_vector_product(pert, res);
+  // fe.add_jacobian();
 
   // // Create the node vector
   // SolutionVector<T> nodes(2 * nnodes);

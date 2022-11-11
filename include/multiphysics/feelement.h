@@ -119,11 +119,11 @@ class FiniteElement {  // : public ElementBase<T> {
       elem_sol.get_element_values(i, sol_dof);
 
       // Set up the values for the input vector
-      typename ElemVec::FEDof x_dof(i, elem_sol);
+      typename ElemVec::FEDof x_dof(i, elem_xvec);
       elem_xvec.get_element_values(i, x_dof);
 
       // Set up values for the output vector
-      typename ElemVec::FEDof y_dof(i, elem_sol);
+      typename ElemVec::FEDof y_dof(i, elem_yvec);
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation
@@ -157,7 +157,7 @@ class FiniteElement {  // : public ElementBase<T> {
 
         // Interpolate the x-dof
         typename PDE::FiniteElementSpace xref, x;
-        Basis::interp<Quadrature>(j, x_dof, xref);
+        Basis::template interp<Quadrature>(j, x_dof, xref);
 
         xref.transform(detJ, J, Jinv, x);
 
@@ -172,12 +172,13 @@ class FiniteElement {  // : public ElementBase<T> {
         Basis::template add<Quadrature>(j, yref, y_dof);
       }
 
-      elem_yvec.add_element_values(i, ydof);
+      elem_yvec.add_element_values(i, y_dof);
     }
   }
 
-  void void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
-                         ElemVec& elem_sol, ElemMat& elem_mat) {
+  template <class ElemMat>
+  void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
+                    ElemVec& elem_sol, ElemMat& elem_mat) {
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
@@ -197,6 +198,7 @@ class FiniteElement {  // : public ElementBase<T> {
 
       // Set up values for the element matrix
       typename ElemMat::FEMat element_mat(i, elem_mat);
+      // A2D::Mat<T, Basis::ndof, Basis::ndof> element_mat;
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Extract the Jacobian of the element transformation

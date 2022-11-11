@@ -73,8 +73,8 @@ class ElementVector_Serial {
      *
      * @return A reference to the degree of freedom
      */
-    T& operator[](const int index) { return dof[index]; }
-    const T& operator[](const int index) const { return dof[index]; }
+    T& operator[](const A2D::index_t index) { return dof[index]; }
+    const T& operator[](const A2D::index_t index) const { return dof[index]; }
 
    private:
     // Variables for all the basis functions
@@ -163,7 +163,7 @@ class ElementVector_Serial {
 template <typename T, class Basis>
 class ElementMat_Serial {
  public:
-  ElementMat_Serial(A2D::ElementMesh<Basis>& mesh, A2D::CSRMat<T>& mat) : mesh(mesh), mat(mat) {}
+  ElementMat_Serial(A2D::ElementMesh<Basis>& mesh, A2D::BSRMat<T>& mat) : mesh(mesh), mat(mat) {}
 
   // Required DOF container object (different for each element vector
   // implementation)
@@ -177,8 +177,10 @@ class ElementMat_Serial {
      *
      * @return A reference to the degree of freedom
      */
-    T& operator()(const int i, const int j) { return A[i * Basis::ndof + j]; }
-    const T& operator()(const int i, const int j) const { return A[i * Basis::ndof + j]; }
+    T& operator()(const A2D::index_t i, const A2D::index_t j) { return A[i * Basis::ndof + j]; }
+    const T& operator()(const A2D::index_t i, const A2D::index_t j) const {
+      return A[i * Basis::ndof + j];
+    }
 
    private:
     // Variables for all the basis functions
@@ -239,8 +241,8 @@ class ElementMat_Serial {
   template <A2D::index_t basis>
   void get_element_values_(A2D::index_t elem, FEDof& dof) {
     for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-      const int sign = mesh.get_global_dof_sign(elem, basis, i);
-      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      const int sign = mesh.get_global_dof_sign<basis>(elem, i);
+      const A2D::index_t dof_index = mesh.get_global_dof<basis>(elem, i);
       dof[i + Basis::template get_dof_offset<basis>()] = sign * vec[dof_index];
     }
     if constexpr (basis > 0) {
@@ -251,8 +253,8 @@ class ElementMat_Serial {
   template <A2D::index_t basis>
   void add_element_values_(A2D::index_t elem, const FEDof& dof) {
     for (A2D::index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-      const int sign = mesh.get_global_dof_sign(elem, basis, i);
-      const A2D::index_t dof_index = mesh.get_global_dof(elem, basis, i);
+      const int sign = mesh.get_global_dof_sign<basis>(elem, i);
+      const A2D::index_t dof_index = mesh.get_global_dof<basis>(elem, i);
       vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
     }
     if constexpr (basis > 0) {

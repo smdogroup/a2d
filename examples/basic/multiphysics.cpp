@@ -2,26 +2,133 @@
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
-#include "multiphysics/feelement.h"
-#include "multiphysics/femesh.h"
+#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/qhdiv_hex_basis.h"
+
+// #include "multiphysics/feelement.h"
+// #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/fespace.h"
-#include "sparse/sparse_matrix.h"
+// #include "multiphysics/fespace.h"
+// #include "sparse/sparse_matrix.h"
+
+#include "multiphysics/femesh.h"
 
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
-  using T = double;
-  using PDE = NonlinearElasticity<T, 2>;
-  using Quadrature = TriQuadrature3;
-  using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
-  using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
-  using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using T = double;
+  // using PDE = NonlinearElasticity<T, 2>;
 
-  constexpr bool use_parallel_elemvec = false;
-  // constexpr bool use_parallel_elemvec = true;
-  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
-                           use_parallel_elemvec>;
+  // using Quadrature_Tri = TriQuadrature3;
+  // using DataBasis_Tri = FEBasis<T, LagrangeTri0<T, 2>>;
+  // using GeoBasis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using Basis_Tri = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using FE_Tri = FiniteElement<T, PDE, Quadrature_Tri, DataBasis_Tri,
+  //                              GeoBasis_Tri, Basis_Tri,
+  //                              use_parallel_elemvec>;
+
+  // using Quadrature_Quad = QuadQuadrature3;
+  // using DataBasis_Quad = FEBasis<T, LagrangeQuad0<T, 2>>;
+  // using GeoBasis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using Basis_Quad = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using FE_Quad = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
+  // Basis,
+  //                               use_parallel_elemvec>;
+
+  // // Set the mesh connectivity
+  // MeshConnectivity2D conn(nverts, ntris, tris, nquads, quads);
+
+  // // Perform some ordering on the connectivity...
+
+  // // ....
+  // ElementMesh<Basis_Tri> ElementMesh_Tri();
+  // ElementMesh<Basis_Quad> ElementMesh_Quad();
+
+  const index_t degree = 2;
+  using T = double;
+  using PDE = NonlinearElasticity<T, 3>;
+  using Quadrature = TriQuadrature3;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>,
+                        QHdivHexBasis<T, degree - 1>>;
+
+  // Number of elements in each dimension
+  const int nx = 25, ny = 25, nz = 25;
+  auto node_num = [](int i, int j, int k) {
+    return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
+  };
+
+  // Number of edges
+  const int nverts = (nx + 1) * (ny + 1) * (nz + 1);
+  int ntets = 0, nwedge = 0, npyrmd = 0;
+  const int nhex = nx * ny * nz;
+
+  int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
+  int hex[8 * nhex];
+
+  for (int k = 0, e = 0; k < nz; k++) {
+    for (int j = 0; j < ny; j++) {
+      for (int i = 0; i < nx; i++, e++) {
+        hex[8 * e + 0] = node_num(i, j, k);
+        hex[8 * e + 1] = node_num(i + 1, j, k);
+        hex[8 * e + 2] = node_num(i + 1, j + 1, k);
+        hex[8 * e + 3] = node_num(i, j + 1, k);
+        hex[8 * e + 4] = node_num(i, j, k + 1);
+        hex[8 * e + 5] = node_num(i + 1, j, k + 1);
+        hex[8 * e + 6] = node_num(i + 1, j + 1, k + 1);
+        hex[8 * e + 7] = node_num(i, j + 1, k + 1);
+      }
+    }
+  }
+
+  MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
+                          pyrmd);
+
+  // index_t nelems = nx * ny * nz;
+  // index_t nfaces = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny *
+  // nz; index_t nedges = nx * (ny + 1) * (nz + 1) + (nx + 1) * ny * (nz + 1) +
+  //                  (nx + 1) * (ny + 1) * nz;
+
+  // std::cout << "Number of elements: " << nelems << " "
+  //           << conn.get_num_elements() << std::endl;
+  // std::cout << "Number of faces:    " << nfaces << " " <<
+  // conn.get_num_faces()
+  //           << std::endl;
+  // std::cout << "Number of edges:    " << nedges << " " <<
+  // conn.get_num_edges()
+  //           << std::endl;
+
+  ElementMesh<Basis> mesh_data(conn);
+
+  // for (index_t i = 0; i < mesh_data.get_num_elements() && i < 4; i++) {
+  //   for (index_t j = 0; j < Basis::template get_ndof<0>(); j++) {
+  //     index_t dof = mesh_data.get_global_dof<0>(i, j);
+  //     std::cout << i << " " << j << " " << dof << std::endl;
+  //   }
+  // }
+
+  // for (A2D::index_t face = 0; face < conn.get_num_faces(); face++) {
+  //   A2D::index_t e1, e2;
+  //   bool boundary = conn.get_face_elements(face, &e1, &e2);
+  //   if (boundary) {
+  //     std::cout << e1 << std::endl;
+  //   } else {
+  //     std::cout << e1 << " " << e2 << std::endl;
+  //   }
+  // }
+
+  // using T = double;
+  // using PDE = NonlinearElasticity<T, 2>;
+  // using Quadrature = TriQuadrature3;
+  // using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
+  // using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
+  // using Basis = FEBasis<T, LagrangeTri1<T, 2>>;
+
+  // constexpr bool use_parallel_elemvec = false;
+  // // constexpr bool use_parallel_elemvec = true;
+  // using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis,
+  // Basis,
+  //                          use_parallel_elemvec>;
 
   // using Basis = FEBasis<T, LagrangeTri0<T, 1>, RT2DTri1<T>>;
   // using FiniteElementSpace = FESpace<T, 2, L2Space<T, 1, 2>,
@@ -87,83 +194,83 @@ int main(int argc, char* argv[]) {
   //   std::cout << test[i] << "  " << res[i] << std::endl;
   // }
 
-  // Set the node locations
-  index_t nx = 10, ny = 10;
-  index_t nnodes = (nx + 1) * (ny + 1);
-  index_t nelems = 2 * nx * ny;
+  // // Set the node locations
+  // index_t nx = 10, ny = 10;
+  // index_t nnodes = (nx + 1) * (ny + 1);
+  // index_t nelems = 2 * nx * ny;
 
-  // Create the node vector
-  SolutionVector<T> nodes(2 * nnodes);
+  // // Create the node vector
+  // SolutionVector<T> nodes(2 * nnodes);
 
-  for (index_t j = 0; j < ny + 1; j++) {
-    for (index_t i = 0; i < nx + 1; i++) {
-      index_t node = i + j * (nx + 1);
-      nodes[2 * node] = 1.0 * i;
-      nodes[2 * node + 1] = 1.0 * j;
-    }
-  }
+  // for (index_t j = 0; j < ny + 1; j++) {
+  //   for (index_t i = 0; i < nx + 1; i++) {
+  //     index_t node = i + j * (nx + 1);
+  //     nodes[2 * node] = 1.0 * i;
+  //     nodes[2 * node + 1] = 1.0 * j;
+  //   }
+  // }
 
-  // Set the connectivity
-  index_t* conn = new index_t[3 * nelems];
+  // // Set the connectivity
+  // index_t* conn = new index_t[3 * nelems];
 
-  for (index_t j = 0; j < ny; j++) {
-    for (index_t i = 0; i < nx; i++) {
-      index_t elem = 2 * (i + j * nx);
-      conn[3 * elem] = i + j * (nx + 1);
-      conn[3 * elem + 1] = i + 1 + j * (nx + 1);
-      conn[3 * elem + 2] = i + 1 + (j + 1) * (nx + 1);
+  // for (index_t j = 0; j < ny; j++) {
+  //   for (index_t i = 0; i < nx; i++) {
+  //     index_t elem = 2 * (i + j * nx);
+  //     conn[3 * elem] = i + j * (nx + 1);
+  //     conn[3 * elem + 1] = i + 1 + j * (nx + 1);
+  //     conn[3 * elem + 2] = i + 1 + (j + 1) * (nx + 1);
 
-      elem += 1;
-      conn[3 * elem] = i + j * (nx + 1);
-      conn[3 * elem + 1] = i + 1 + (j + 1) * (nx + 1);
-      conn[3 * elem + 2] = i + (j + 1) * (nx + 1);
-    }
-  }
+  //     elem += 1;
+  //     conn[3 * elem] = i + j * (nx + 1);
+  //     conn[3 * elem + 1] = i + 1 + (j + 1) * (nx + 1);
+  //     conn[3 * elem + 2] = i + (j + 1) * (nx + 1);
+  //   }
+  // }
 
-  ElementConnectivity connect(nnodes, nelems, conn);
-  delete[] conn;
+  // ElementConnectivity connect(nnodes, nelems, conn);
+  // delete[] conn;
 
-  // Create the mesh for the geometry
-  SpaceType geo_space[] = {H1};
-  index_t dims[] = {2};
-  ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
+  // // Create the mesh for the geometry
+  // SpaceType geo_space[] = {H1};
+  // index_t dims[] = {2};
+  // ElementMesh<GeoBasis> geomesh(connect, geo_space, dims);
 
-  SpaceType data_space[] = {H1};
-  ElementMesh<DataBasis> datamesh(connect, data_space, dims);
+  // SpaceType data_space[] = {H1};
+  // ElementMesh<DataBasis> datamesh(connect, data_space, dims);
 
-  SpaceType sol_space[] = {H1};
-  ElementMesh<Basis> mesh(connect, sol_space, dims);
+  // SpaceType sol_space[] = {H1};
+  // ElementMesh<Basis> mesh(connect, sol_space, dims);
 
-  // Get the total number of degrees of freedom
-  index_t ndof = mesh.get_num_dof();
+  // // Get the total number of degrees of freedom
+  // index_t ndof = mesh.get_num_dof();
 
-  // Allocate global data, X, U, residual vectors
-  SolutionVector<T> global_data(2 * nnodes);
-  SolutionVector<T> global_X(2 * nnodes);
-  SolutionVector<T> global_U(2 * nnodes);
-  SolutionVector<T> global_res(2 * nnodes);
+  // // Allocate global data, X, U, residual vectors
+  // SolutionVector<T> global_data(2 * nnodes);
+  // SolutionVector<T> global_X(2 * nnodes);
+  // SolutionVector<T> global_U(2 * nnodes);
+  // SolutionVector<T> global_res(2 * nnodes);
 
-  // Create element vector views
-  FE::DataElemVec elem_data(datamesh, global_data);
-  FE::GeoElemVec elem_geo(mesh, global_X);
-  FE::ElemVec elem_sol(mesh, global_U);
-  FE::ElemVec elem_vec(mesh, global_res);
+  // // Create element vector views
+  // FE::DataElemVec elem_data(datamesh, global_data);
+  // FE::GeoElemVec elem_geo(mesh, global_X);
+  // FE::ElemVec elem_sol(mesh, global_U);
+  // FE::ElemVec elem_vec(mesh, global_res);
 
-  // Fabricate data, X, and U
-  // TODO
+  // // Fabricate data, X, and U
+  // // TODO
 
-  // Populate element views using global vectors
-  elem_data.init_values();
-  elem_geo.init_values();
-  elem_sol.init_values();
+  // // Populate element views using global vectors
+  // elem_data.init_values();
+  // elem_geo.init_values();
+  // elem_sol.init_values();
 
-  // Create finite element instance
-  FE fe(elem_data, elem_geo, elem_sol, elem_vec);
+  // // Create finite element instance
+  // FE fe(elem_data, elem_geo, elem_sol, elem_vec);
 
-  fe.add_residual(global_U);
+  // fe.add_residual(global_U);
 
-  // fd.add_jacobian_vector_product(pert, res);
-  fe.add_jacobian();
+  // // fd.add_jacobian_vector_product(pert, res);
+  // fe.add_jacobian();
 
   // typedef double T;
   // typedef NonlinearElasticity<T> PDE;

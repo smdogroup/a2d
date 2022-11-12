@@ -292,6 +292,17 @@ class LagrangeH1HexBasis {
     }
   }
 
+  /**
+   * @brief Interpolate the degrees of freedom to obtain the values in the space
+   * object
+   *
+   * @tparam Quadrature The quadrature object
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param n The quadrature point index
+   * @param sol The solution array
+   * @param out The finite element space output object
+   */
   template <class Quadrature, index_t offset, class SolnType>
   static void interp(index_t n, const SolnType sol, H1Space<T, C, dim>& out) {
     double pt[dim];
@@ -335,6 +346,17 @@ class LagrangeH1HexBasis {
     }
   }
 
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam Quadrature The quadrature object
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param n The quadrature point index
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
   template <class Quadrature, index_t offset, class SolnType>
   static void add(index_t n, const H1Space<T, C, dim>& in, SolnType res) {
     double pt[dim];
@@ -377,7 +399,14 @@ class LagrangeH1HexBasis {
   // Number of components per stride
   static const index_t ncomp_per_stride = ncomp / stride;
 
-  // Compute the full matrix of basis functions
+  /**
+   * @brief Evaluate the full set of basis functions for this object
+   *
+   * @tparam Quadrature The quadrature object
+   * @tparam BasisType The type of the basis function array
+   * @param n The quadrature point index
+   * @param N The basis functions
+   */
   template <class Quadrature, class BasisType>
   static void basis(index_t n, BasisType N) {
     double pt[dim];
@@ -562,10 +591,9 @@ class LagrangeL2HexBasis {
 
     // Evaluate the basis functions
     double n1[order], n2[order], n3[order];
-    double d1[order], d2[order], d3[order];
-    lagrange_basis<order>(pt[0], n1, d1);
-    lagrange_basis<order>(pt[1], n2, d2);
-    lagrange_basis<order>(pt[2], n3, d3);
+    lagrange_basis<order>(pt[0], n1);
+    lagrange_basis<order>(pt[1], n2);
+    lagrange_basis<order>(pt[2], n3);
 
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {

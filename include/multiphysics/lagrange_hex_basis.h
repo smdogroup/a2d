@@ -481,7 +481,12 @@ class LagrangeL2HexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    Vec<T, C>& u = out.get_value();
+    typename L2Space<T, C, dim>::VarType u = out.get_value();
+    if constexpr (C == 1) {
+      u = 0.0;
+    } else {
+      u.zero();
+    }
 
     // Evaluate the basis functions
     double n1[order], n2[order], n3[order];
@@ -492,10 +497,15 @@ class LagrangeL2HexBasis {
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {
         for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C; i++) {
-            u(i) +=
-                n1[j1] * n2[j2] * n3[j3] *
-                sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+          if constexpr (C == 1) {
+            u += n1[j1] * n2[j2] * n3[j3] *
+                 sol[offset + C * (j1 + j2 * order + j3 * order * order)];
+          } else {
+            for (index_t i = 0; i < C; i++) {
+              u(i) +=
+                  n1[j1] * n2[j2] * n3[j3] *
+                  sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+            }
           }
         }
       }
@@ -507,22 +517,25 @@ class LagrangeL2HexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    const Vec<T, C>& u = in.get_value();
-    u.zero();
+    const typename L2Space<T, C, dim>::VarType u = in.get_value();
 
     // Evaluate the basis functions
     double n1[order], n2[order], n3[order];
-    double d1[order], d2[order], d3[order];
-    lagrange_basis<order>(pt[0], n1, d1);
-    lagrange_basis<order>(pt[1], n2, d2);
-    lagrange_basis<order>(pt[2], n3, d3);
+    lagrange_basis<order>(pt[0], n1);
+    lagrange_basis<order>(pt[1], n2);
+    lagrange_basis<order>(pt[2], n3);
 
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {
         for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C; i++) {
-            res[offset + C * (j1 + j2 * order + j3 * order * order) + i] +=
-                n1[j1] * n2[j2] * n3[j3] * u(i);
+          if constexpr (C == 1) {
+            res[offset + C * (j1 + j2 * order + j3 * order * order)] +=
+                n1[j1] * n2[j2] * n3[j3] * u;
+          } else {
+            for (index_t i = 0; i < C; i++) {
+              res[offset + C * (j1 + j2 * order + j3 * order * order) + i] +=
+                  n1[j1] * n2[j2] * n3[j3] * u(i);
+            }
           }
         }
       }

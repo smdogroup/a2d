@@ -6,22 +6,31 @@
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
-
-// #include "sparse/sparse_matrix.h"
-
-#include "multiphysics/femesh.h"
 
 using namespace A2D;
 
 int main(int argc, char* argv[]) {
+  Kokkos::initialize();
+
   const index_t degree = 2;
   using T = double;
+
+  /*
   using PDE = NonlinearElasticity<T, 3>;
-  using Quadrature = TriQuadrature3;
+  using Quadrature = HexQuadrature<degree + 1>;
   using DataBasis = FEBasis<T, LagrangeH1HexBasis<T, 2, 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  */
+
+  using PDE = MixedPoisson<T, 3>;
+  using Quadrature = HexQuadrature<degree + 1>;
+  using DataBasis = FEBasis<T>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
+                        LagrangeL2HexBasis<T, 1, degree - 1>>;
 
   constexpr bool use_parallel_elemvec = false;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
@@ -59,19 +68,17 @@ int main(int argc, char* argv[]) {
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
 
-  // index_t nelems = nx * ny * nz;
-  // index_t nfaces = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny *
-  // nz; index_t nedges = nx * (ny + 1) * (nz + 1) + (nx + 1) * ny * (nz + 1) +
-  //                  (nx + 1) * (ny + 1) * nz;
+  index_t nelems = nx * ny * nz;
+  index_t nfaces = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny * nz;
+  index_t nedges = nx * (ny + 1) * (nz + 1) + (nx + 1) * ny * (nz + 1) +
+                   (nx + 1) * (ny + 1) * nz;
 
-  // std::cout << "Number of elements: " << nelems << " "
-  //           << conn.get_num_elements() << std::endl;
-  // std::cout << "Number of faces:    " << nfaces << " " <<
-  // conn.get_num_faces()
-  //           << std::endl;
-  // std::cout << "Number of edges:    " << nedges << " " <<
-  // conn.get_num_edges()
-  //           << std::endl;
+  std::cout << "Number of elements: " << nelems << " "
+            << conn.get_num_elements() << std::endl;
+  std::cout << "Number of faces:    " << nfaces << " " << conn.get_num_faces()
+            << std::endl;
+  std::cout << "Number of edges:    " << nedges << " " << conn.get_num_edges()
+            << std::endl;
 
   ElementMesh<Basis> mesh(conn);
   ElementMesh<GeoBasis> geomesh(conn);
@@ -111,6 +118,8 @@ int main(int argc, char* argv[]) {
 
   std::cout << "add_jacobian" << std::endl;
   fe.add_jacobian(elem_data, elem_geo, elem_sol, elem_mat);
+
+  Kokkos::finalize();
 
   return (0);
 }

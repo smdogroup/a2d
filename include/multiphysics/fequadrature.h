@@ -1,6 +1,8 @@
 #ifndef A2D_FE_QUADRATURE_H
 #define A2D_FE_QUADRATURE_H
 
+#include "multiphysics/lagrange_tools.h"
+
 namespace A2D {
 
 /*
@@ -20,22 +22,20 @@ class TriQuadrature3 {
   static double get_weight(const index_t n) { return TriangleWts3[n]; }
 };
 
-/*
-  Quadrature class for quadrilaterals
-*/
-const double GaussQuadPts2[] = {-0.577350269189626, 0.577350269189626};
-const double GaussQuadWts2[] = {1.0, 1.0};
-
-class Quad4ptQuadrature {
+template <index_t order>
+class HexQuadrature {
  public:
-  static index_t get_num_points() { return 4; };
-  static void get_point(const index_t index, double pt[]) {
-    pt[0] = GaussQuadPts2[index % 2];
-    pt[1] = GaussQuadPts2[(index % 4) / 2];
+  static index_t get_num_points() { return order * order * order; }
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % order * order) / order];
+    pt[2] = pts[n / (order * order)];
   }
-
-  static double get_weight(const index_t index) {
-    return (GaussQuadWts2[index % 2] * GaussQuadWts2[(index % 4) / 2]);
+  static double get_weight(const index_t n) {
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n % order] * wts[(n % (order * order)) / order] *
+           wts[n / (order * order)];
   }
 };
 

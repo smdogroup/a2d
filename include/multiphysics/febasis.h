@@ -390,7 +390,11 @@ class FEBasis {
    */
   template <index_t index>
   static constexpr index_t get_ndof() {
-    return std::tuple_element<index, BasisSpace>::type::ndof;
+    if constexpr (nbasis == 0) {
+      return 0;
+    } else {
+      return std::tuple_element<index, BasisSpace>::type::ndof;
+    }
   }
 
   /**
@@ -509,7 +513,11 @@ class FEBasis {
    */
   static index_t get_entity_ndof(index_t basis, ET::ElementEntity entity,
                                  index_t index) {
-    return get_entity_ndof<0, Basis...>(basis, entity, index);
+    if constexpr (sizeof...(Basis) == 0) {
+      return 0;
+    } else {
+      return get_entity_ndof<0, Basis...>(basis, entity, index);
+    }
   }
 
   /**
@@ -526,8 +534,12 @@ class FEBasis {
                              index_t index, index_t orient,
                              const index_t element_dof[],
                              index_t entity_dof[]) {
-    get_entity_dof<0, Basis...>(basis, entity, index, orient, element_dof,
-                                entity_dof);
+    if constexpr (sizeof...(Basis) == 0) {
+      return;
+    } else {
+      get_entity_dof<0, Basis...>(basis, entity, index, orient, element_dof,
+                                  entity_dof);
+    }
   }
 
   /**
@@ -545,8 +557,12 @@ class FEBasis {
                              index_t index, index_t orient,
                              const index_t entity_dof[], index_t element_dof[],
                              int element_sign[]) {
-    set_entity_dof<0, Basis...>(basis, entity, index, orient, entity_dof,
-                                element_dof, element_sign);
+    if constexpr (sizeof...(Basis) == 0) {
+      return;
+    } else {
+      set_entity_dof<0, Basis...>(basis, entity, index, orient, entity_dof,
+                                  element_dof, element_sign);
+    }
   }
 
  private:

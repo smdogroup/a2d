@@ -275,7 +275,7 @@ class QHdivHexBasis {
         }
       }
 
-      for (index_t j3 = 0; j3 < order; j3++) {
+      for (index_t j3 = 1; j3 < order - 1; j3++) {
         for (index_t j2 = 0; j2 < order - 1; j2++) {
           for (index_t j1 = 0; j1 < order - 1; j1++, enode++) {
             index_t node3 =

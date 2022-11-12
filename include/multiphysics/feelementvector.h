@@ -114,7 +114,9 @@ class ElementVector_Serial {
    */
   // Get values for this element from the vector
   void get_element_values(index_t elem, FEDof& dof) {
-    get_element_values_<Basis::nbasis - 1>(elem, dof);
+    if constexpr (Basis::nbasis > 0) {
+      get_element_values_<0>(elem, dof);
+    }
   }
 
   /**
@@ -128,7 +130,9 @@ class ElementVector_Serial {
    */
   // Add values for this element to the vector
   void add_element_values(index_t elem, const FEDof& dof) {
-    add_element_values_<Basis::nbasis - 1>(elem, dof);
+    if constexpr (Basis::nbasis > 0) {
+      add_element_values_<0>(elem, dof);
+    }
   }
 
  private:
@@ -139,8 +143,8 @@ class ElementVector_Serial {
       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
       dof[i + Basis::template get_dof_offset<basis>()] = sign * vec[dof_index];
     }
-    if constexpr (basis > 0) {
-      get_element_values_<basis - 1>(elem, dof);
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_element_values_<basis + 1>(elem, dof);
     }
   }
 
@@ -151,8 +155,8 @@ class ElementVector_Serial {
       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
       vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
     }
-    if constexpr (basis > 0) {
-      add_element_values_<basis - 1>(elem, dof);
+    if constexpr (basis + 1 < Basis::nbasis) {
+      add_element_values_<basis + 1>(elem, dof);
     }
   }
 
@@ -204,7 +208,9 @@ class ElementMat_Serial {
   void add_element_values(index_t elem, FEMat& elem_mat) {
     index_t dof[Basis::ndof];
     int sign[Basis::ndof];
-    get_dof<Basis::nbasis - 1>(elem, dof, sign);
+    if constexpr (Basis::nbasis > 0) {
+      get_dof<0>(elem, dof, sign);
+    }
 
     for (index_t i = 0; i < Basis::ndof; i++) {
       for (index_t j = 0; j < Basis::ndof; j++) {
@@ -224,22 +230,10 @@ class ElementMat_Serial {
       dof[i + Basis::template get_dof_offset<basis>()] =
           mesh.template get_global_dof<basis>(elem, i);
     }
-    if constexpr (basis > 0) {
-      get_dof<basis - 1>(elem, dof, sign);
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_dof<basis + 1>(elem, dof, sign);
     }
   }
-
-  // template <index_t basis>
-  // void add_element_values_(index_t elem, const FEDof& dof) {
-  //   for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-  //     const int sign = mesh.get_global_dof_sign<basis>(elem, i);
-  //     const index_t dof_index = mesh.get_global_dof<basis>(elem, i);
-  //     vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
-  //   }
-  //   if constexpr (basis > 0) {
-  //     add_element_values_<basis - 1>(elem, dof);
-  //   }
-  // }
 
   ElementMesh<Basis>& mesh;
   MatType& mat;

@@ -1112,12 +1112,20 @@ class ElementMesh {
     std::set<std::pair<index_t, index_t>> node_set;
 
     for (index_t i = 0; i < nelems; i++) {
-      for (index_t j1 = 0; j1 < Basis::ndof; j1++) {
-        for (index_t j2 = 0; j2 < Basis::ndof; j2++) {
-          index_t row = element_dof[i * Basis::ndof + j1] / M;
-          index_t col = element_dof[i * Basis::ndof + j2] / M;
+      index_t dof_reduced[Basis::ndof];
+      index_t n = 0;
+      for (index_t j1 = 0; j1 < Basis::ndof; j1++, n++) {
+        index_t row = element_dof[i * Basis::ndof + j1] / M;
+        while (j1 + 1 < Basis::ndof &&
+               row == (element_dof[i * Basis::ndof + j1 + 1] / M)) {
+          j1++;
+        }
+        dof_reduced[n] = row;
+      }
 
-          node_set.insert(std::make_pair(row, col));
+      for (index_t j1 = 0; j1 < n; j1++) {
+        for (index_t j2 = 0; j2 < n; j2++) {
+          node_set.insert(std::make_pair(dof_reduced[j1], dof_reduced[j2]));
         }
       }
     }

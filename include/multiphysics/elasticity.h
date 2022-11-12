@@ -1,13 +1,6 @@
 #ifndef A2D_ELASTICITY_H
 #define A2D_ELASTICITY_H
 
-// #include "array.h"
-// #include "basis.h"
-// #include "constitutive.h"
-// #include "element.h"
-// #include "functional.h"
-// #include "utils/a2dprofiler.h"
-
 #include "a2dmatops2d.h"
 #include "a2dmatops3d.h"
 #include "multiphysics/fespace.h"

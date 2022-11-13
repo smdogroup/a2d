@@ -293,6 +293,22 @@ class LagrangeH1HexBasis {
   }
 
   /**
+   * @brief Get the parametric point location associated with the given degree
+   * of freedom
+   *
+   * @param index The index for the dof
+   * @param pt The parametric point location of dimension dim
+   */
+  static void get_dof_point(index_t index, double pt[]) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+
+    index_t n = index / C;
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % order * order) / order];
+    pt[2] = pts[n / (order * order)];
+  }
+
+  /**
    * @brief Interpolate the degrees of freedom to obtain the values in the space
    * object
    *
@@ -503,6 +519,22 @@ class LagrangeL2HexBasis {
         element_sign[offset + i] = 1;
       }
     }
+  }
+
+  /**
+   * @brief Get the parametric point location associated with the given degree
+   * of freedom
+   *
+   * @param index The index for the dof
+   * @param pt The parametric point location of dimension dim
+   */
+  static void get_dof_point(index_t index, double pt[]) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+
+    index_t n = index / C;
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % order * order) / order];
+    pt[2] = pts[n / (order * order)];
   }
 
   template <class Quadrature, index_t offset, class SolnType>

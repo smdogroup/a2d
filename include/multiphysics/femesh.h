@@ -504,13 +504,77 @@ class MeshConnectivity3D {
     }
   }
 
+  /**
+   * @brief Label the verts, edges and faces that touch the list of vertices
+   *
+   * @param nv The number of input vertices
+   * @param verts The vertex numbers
+   * @param vert_labels An array of length nverts
+   * @param edge_labels An array of length nedges
+   * @param face_labels An array of length nfaces
+   */
+  template <typename IdxType>
+  void get_labels_from_verts(const index_t nv, const IdxType verts[],
+                             index_t vert_labels[], index_t edge_labels[],
+                             index_t face_labels[]) {
+    std::fill(vert_labels, vert_labels + nverts, NO_LABEL);
+    std::fill(edge_labels, edge_labels + nedges, NO_LABEL);
+    std::fill(face_labels, face_labels + nfaces, NO_LABEL);
+
+    // Label the vertices
+    for (index_t i = 0; i < nv; i++) {
+      if (verts[i] < nverts) {
+        vert_labels[verts[i]] = i;
+      }
+    }
+
+    // Loop over elements and label the edges and faces
+    for (index_t elem = 0; elem < nelems; elem++) {
+      // Check whether the edges are labeled
+      const index_t* elem_edges;
+      index_t ne = get_element_edges(elem, &elem_edges);
+      for (index_t e = 0; e < ne; e++) {
+        index_t v[2];
+        get_element_edge_verts(elem, e, v);
+
+        // Both verts of this element edge are labeled - label the edge
+        if (vert_labels[v[0]] != NO_LABEL && vert_labels[v[1]] != NO_LABEL) {
+          edge_labels[elem_edges[e]] = elem_edges[e];
+        }
+      }
+
+      const index_t* elem_faces;
+      index_t nf = get_element_faces(elem, &elem_faces);
+      for (index_t f = 0; f < nf; f++) {
+        index_t fv[4];  // Face vertices
+        index_t nfv = get_element_face_verts(elem, f, fv);
+
+        // Check if all the face vertices are labeled
+        if (nfv == 3) {
+          if (vert_labels[fv[0]] != NO_LABEL &&
+              vert_labels[fv[1]] != NO_LABEL &&
+              vert_labels[fv[2]] != NO_LABEL) {
+            face_labels[elem_faces[f]] = elem_faces[f];
+          }
+        } else if (nfv == 4) {
+          if (vert_labels[fv[0]] != NO_LABEL &&
+              vert_labels[fv[1]] != NO_LABEL &&
+              vert_labels[fv[2]] != NO_LABEL &&
+              vert_labels[fv[3]] != NO_LABEL) {
+            face_labels[elem_faces[f]] = elem_faces[f];
+          }
+        }
+      }
+    }
+  }
+
  private:
   /**
    * @brief Initialize the data for the connection between vertices and
    * the elements
    *
-   * Given a vertex index, this enables retrieval of all elements that reference
-   * that vertex.
+   * Given a vertex index, this enables retrieval of all elements that
+   * reference that vertex.
    */
   void init_vert_element_data() {
     // Construct vert -> element data
@@ -658,7 +722,8 @@ class MeshConnectivity3D {
             const index_t nadj_elems =
                 get_adjacent_elements_from_vert(face_verts[m], &adj_elems);
 
-            // Loop over all adjacent elements that are not the current element
+            // Loop over all adjacent elements that are not the current
+            // element
             for (index_t k = 0; k < nadj_elems; k++) {
               if (adj_elems[k] != elem) {
                 // Loop over the elements of this face
@@ -667,7 +732,8 @@ class MeshConnectivity3D {
                     get_element_faces(adj_elems[k], &adj_faces);
 
                 for (index_t adj_face = 0; adj_face < adj_nf; adj_face++) {
-                  // Get the unique set of vertices corresponding to this face
+                  // Get the unique set of vertices corresponding to this
+                  // face
                   index_t adj_face_verts[4];
                   index_t adj_nface_verts = get_element_global_face_verts(
                       adj_elems[k], adj_face, adj_face_verts);
@@ -720,10 +786,10 @@ class MeshConnectivity3D {
     // Sum up the total number of faces
     nfaces = ntri_faces + nquad_faces;
 
-    // Set the face indices associated with the two adjacent elements. At this
-    // point the face indices stored are with respect to separate lists of
-    // triangular and quadrilateral faces. We order the triangular faces first,
-    // so we have to add the total number of triangular faces to each
+    // Set the face indices associated with the two adjacent elements. At
+    // this point the face indices stored are with respect to separate lists
+    // of triangular and quadrilateral faces. We order the triangular faces
+    // first, so we have to add the total number of triangular faces to each
     // quadrilateral face index to get the global index.
     tri_face_elements = new index_t[2 * ntri_faces];
     std::fill(tri_face_elements, tri_face_elements + 2 * ntri_faces, NO_LABEL);
@@ -755,8 +821,9 @@ class MeshConnectivity3D {
             quad_face_elements[2 * faces[face] + 1] = elem;
           }
 
-          // Reset the face index into the global face index - add the number of
-          // triangle faces. Now the faces will index from a global face number.
+          // Reset the face index into the global face index - add the
+          // number of triangle faces. Now the faces will index from a
+          // global face number.
           faces[face] += ntri_faces;
         }
       }
@@ -948,8 +1015,8 @@ class ElementMesh {
         index_t* elem_dof = &element_dof[elem * ndof_per_element];
         int* elem_sign = &element_sign[elem * ndof_per_element];
 
-        // The volume DOF are always owned by the element - no need to check for
-        // the element that owns them
+        // The volume DOF are always owned by the element - no need to check
+        // for the element that owns them
         index_t ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
 
         for (index_t i = 0; i < ndof; i++, dof_counter++) {
@@ -1075,19 +1142,11 @@ class ElementMesh {
 
     // Set the number of degrees of freedom
     num_dof = dof_counter;
-
-    std::cout << "Total number of dof: " << dof_counter << std::endl;
-
-    index_t count = 0;
-    for (index_t i = 0; i < nelems * ndof_per_element; i++) {
-      if (element_dof[i] == NO_INDEX) {
-        count++;
-        std::cout << i / ndof_per_element << " " << i % ndof_per_element
-                  << std::endl;
-      }
-    }
-    std::cout << "Uncounted variables: " << count << std::endl;
   }
+
+  void get_dof_from_verts(MeshConnectivity3D& conn, index_t nv,
+                          const index_t verts[], index_t basis_select[],
+                          index_t* ndof, index_t* dof[]) {}
 
   index_t get_num_elements() { return nelems; }
   index_t get_num_dof() { return num_dof; }
@@ -1105,6 +1164,11 @@ class ElementMesh {
   index_t get_global_dof(index_t elem, index_t index) {
     return element_dof[ndof_per_element * elem +
                        Basis::template get_dof_offset<basis>() + index];
+  }
+
+  // Get the degrees of freedom associated with this element
+  void get_element_dof(const index_t elem, const index_t* dof[]) {
+    *dof = &element_dof[ndof_per_element * elem];
   }
 
   template <typename T, index_t M>
@@ -1179,6 +1243,144 @@ class ElementMesh {
   // Store the degrees of freedom for each element and the element sign
   index_t* element_dof;
   int* element_sign;
+};
+
+template <typename T, class Basis>
+class BoundaryCondition {
+ public:
+  // Use the definitions from the element types
+  using ET = ElementTypes;
+
+  /**
+   * @brief Construct a new Boundary Condition object by constraining the
+   * degrees of freedom from the vertices, edges and faces that touch the
+   * specified degrees of freedom
+   *
+   * @param conn The connectivity
+   * @param mesh The mesh object with the ordered degrees of freedom
+   * @param basis_select The degrees of freedom indices selected for each basis
+   * @param ndof Output number of degrees of freedom
+   * @param dof Output degrees of freedom
+   */
+  template <typename IdxType>
+  BoundaryCondition(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh, T value,
+                    const index_t basis_select[], index_t nv,
+                    const IdxType verts[])
+      : value(value) {
+    index_t nelems = conn.get_num_elements();
+    index_t nverts = conn.get_num_verts();
+    index_t nedges = conn.get_num_edges();
+    index_t nfaces = conn.get_num_faces();
+    index_t* vert_labels = new index_t[nverts];
+    index_t* edge_labels = new index_t[nedges];
+    index_t* face_labels = new index_t[nfaces];
+
+    conn.get_labels_from_verts(nv, verts, vert_labels, edge_labels,
+                               face_labels);
+
+    index_t num_dof = mesh.get_num_dof();
+    index_t boundary_dof_counter = 0;
+    index_t* boundary_dof = new index_t[num_dof];
+
+    for (index_t elem = 0; elem < nelems; elem++) {
+      index_t dof[Basis::ndof];
+      const index_t* elem_dof;
+      mesh.get_element_dof(elem, &elem_dof);
+
+      // Scan over the faces
+      const index_t* elem_faces;
+      index_t nf = conn.get_element_faces(elem, &elem_faces);
+      for (index_t f = 0; f < nf; f++) {
+        if (face_labels[elem_faces[f]] != MeshConnectivity3D::NO_LABEL) {
+          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+            if (basis_select[basis]) {
+              index_t orient = 0;  // Orientation doesn't matter here
+              index_t nface_dof = Basis::get_entity_ndof(basis, ET::FACE, f);
+              Basis::get_entity_dof(basis, ET::FACE, f, orient, elem_dof, dof);
+
+              for (index_t k = 0; k < nface_dof; k++) {
+                boundary_dof[boundary_dof_counter] = dof[k];
+                boundary_dof_counter++;
+              }
+            }
+          }
+
+          face_labels[elem_faces[f]] = MeshConnectivity3D::NO_LABEL;
+        }
+      }
+
+      // Scan over the edges
+      const index_t* elem_edges;
+      index_t ne = conn.get_element_faces(elem, &elem_edges);
+      for (index_t e = 0; e < ne; e++) {
+        if (edge_labels[elem_edges[e]] != MeshConnectivity3D::NO_LABEL) {
+          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+            if (basis_select[basis]) {
+              index_t orient = 0;  // Orientation doesn't matter here
+              index_t nedge_dof = Basis::get_entity_ndof(basis, ET::EDGE, e);
+              Basis::get_entity_dof(basis, ET::EDGE, e, orient, elem_dof, dof);
+
+              for (index_t k = 0; k < nedge_dof; k++) {
+                boundary_dof[boundary_dof_counter] = dof[k];
+                boundary_dof_counter++;
+              }
+            }
+          }
+
+          edge_labels[elem_edges[e]] = MeshConnectivity3D::NO_LABEL;
+        }
+      }
+
+      // Scan over the vertices
+      const index_t* elem_verts;
+      index_t nv = conn.get_element_verts(elem, &elem_verts);
+      for (index_t v = 0; v < nv; v++) {
+        if (vert_labels[elem_verts[v]] != MeshConnectivity3D::NO_LABEL) {
+          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+            if (basis_select[basis]) {
+              index_t orient = 0;  // Orientation doesn't matter here
+              index_t nvert_dof = Basis::get_entity_ndof(basis, ET::VERTEX, v);
+              Basis::get_entity_dof(basis, ET::VERTEX, v, orient, elem_dof,
+                                    dof);
+
+              for (index_t k = 0; k < nvert_dof; k++) {
+                boundary_dof[boundary_dof_counter] = dof[k];
+                boundary_dof_counter++;
+              }
+            }
+          }
+
+          vert_labels[elem_verts[v]] = MeshConnectivity3D::NO_LABEL;
+        }
+      }
+    }
+
+    delete[] vert_labels;
+    delete[] edge_labels;
+    delete[] face_labels;
+
+    ndof = boundary_dof_counter;
+    dof = new index_t[ndof];
+    for (index_t i = 0; i < ndof; i++) {
+      dof[i] = boundary_dof[i];
+    }
+
+    // Free the boundary_dof array
+    delete[] boundary_dof;
+  }
+
+  index_t get_bcs(const index_t* bcs[], T* val = NULL) {
+    *bcs = dof;
+    if (val) {
+      *val = value;
+    }
+    return ndof;
+  }
+
+ private:
+  index_t ndof;
+  index_t* dof;
+  T value;
 };
 
 }  // namespace A2D

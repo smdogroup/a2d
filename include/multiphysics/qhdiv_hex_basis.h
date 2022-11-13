@@ -7,26 +7,9 @@
 
 namespace A2D {
 
-static const double QHdivKnots1[] = {0.0};
-
-static const double QHdivKnots2[] = {-0.5, 0.5};
-
-static const double QHdivKnots3[] = {-2.0 / 3.0, 0.0, 2.0 / 3.0};
-
-static const double QHdivKnots4[] = {-0.75, -0.25, 0.25, 0.75};
-
 template <index_t degree>
-inline const double* get_qhdiv_knots() {
-  if (degree == 1) {
-    return QHdivKnots1;
-  } else if (degree == 2) {
-    return QHdivKnots2;
-  } else if (degree == 3) {
-    return QHdivKnots3;
-  } else if (degree == 4) {
-    return QHdivKnots4;
-  }
-  return NULL;
+constexpr const double* get_qhdiv_knots() {
+  return get_gauss_quadrature_wts<degree>();
 }
 
 template <typename T, index_t degree>
@@ -287,6 +270,34 @@ class QHdivHexBasis {
           }
         }
       }
+    }
+  }
+
+  /**
+   * @brief Get the parametric point location associated with the given degree
+   * of freedom
+   *
+   * @param index The index for the dof
+   * @param pt The parametric point location of dimension dim
+   */
+  static void get_dof_point(index_t index, double pt[]) {
+    const double* knots = get_qhdiv_knots<degree>();
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+
+    if (index < order * (order - 1) * (order - 1)) {
+      pt[0] = pts[index % order];
+      pt[1] = knots[(index % (order * (order - 1))) / order];
+      pt[2] = knots[index / (order * (order - 1))];
+    } else if (index < 2 * order * (order - 1) * (order - 1)) {
+      index = index - order * (order - 1) * (order - 1);
+      pt[0] = knots[index % (order - 1)];
+      pt[1] = pts[(index % ((order - 1) * order)) / (order - 1)];
+      pt[2] = knots[index / ((order - 1) * order)];
+    } else {
+      index = index - order * (order - 1) * (order - 1);
+      pt[0] = knots[index % (order - 1)];
+      pt[1] = knots[(index % ((order - 1) * (order - 1))) / (order - 1)];
+      pt[2] = pts[index / ((order - 1) * (order - 1))];
     }
   }
 

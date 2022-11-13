@@ -30,15 +30,37 @@ class MixedPoisson {
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
+  static const A2D::index_t num_near_nullspace = 1;
+
+  /**
+   * @brief Given the index of the near null space basis
+   *
+   * @param null_index The index of the near null space
+   * @param space The index of the space
+   * @param pt The interpolated geometry information
+   * @param coef The coefficients from the solution field
+   */
+  A2D_INLINE_FUNCTION static void near_nullspace(
+      const A2D::index_t null_index, A2D::index_t space, const DataSpace& dobj,
+      const FiniteElementGeometry& pt, FiniteElementSpace& coef) {
+    if (space == 0) {
+      A2D::H1Space<T, dim, dim>& geo = pt.template get<0>();
+      A2D::Vec<T, dim>& X = geo.get_value();
+    } else if (space == 1) {
+    }
+  }
+
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param dobj The data at the quadrature point
+   * @param geo The geometry evaluated at the current point
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
   A2D_INLINE_FUNCTION static void weak_coef(T wdetJ, const DataSpace& dobj,
+                                            const FiniteElementGeometry& geo,
                                             const FiniteElementSpace& s,
                                             FiniteElementSpace& coef) {
     // Field objects for solution functions
@@ -80,6 +102,7 @@ class MixedPoisson {
   class JacVecProduct {
    public:
     A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 

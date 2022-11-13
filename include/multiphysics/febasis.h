@@ -564,6 +564,18 @@ class FEBasis {
                                   element_dof, element_sign);
     }
   }
+  /**
+   * @brief Get the parametric point location associated with the given degree
+   * of freedom
+   *
+   * @param index The index for the dof
+   * @param pt The parametric point location of dimension dim
+   */
+  static void get_dof_point(index_t index, double pt[]) {
+    if constexpr (sizeof...(Basis) > 0) {
+      get_dof_point_<0, Basis...>(index, pt);
+    }
+  }
 
  private:
   template <class Quadrature, class FEDof, class FiniteElementSpace,
@@ -820,6 +832,15 @@ class FEBasis {
     } else {
       set_entity_dof<r + 1, Remain...>(basis, entity, index, orient, entity_dof,
                                        element_dof, element_sign);
+    }
+  }
+
+  template <index_t r, class First, class... Remain>
+  static void get_dof_point_(index_t index, double pt[]) {
+    if (index < get_ndof<r>()) {
+      return First::get_dof_point(index, pt);
+    } else if constexpr (sizeof...(Remain) > 0) {
+      get_dof_point_<r + 1, Remain...>(index - get_ndof<r>(), pt);
     }
   }
 };

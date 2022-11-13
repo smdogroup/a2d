@@ -11,7 +11,7 @@
 
 using namespace A2D;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const index_t degree = 2;
@@ -65,24 +65,35 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  int boundary_verts[(ny + 1) * (nz + 1)];
+  for (int k = 0, index = 0; k < nz; k++) {
+    for (int j = 0; j < ny; j++, index++) {
+      boundary_verts[index] = node_num(0, j, k);
+    }
+  }
+
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
-
-  index_t nelems = nx * ny * nz;
-  index_t nfaces = nx * ny * (nz + 1) + nx * (ny + 1) * nz + (nx + 1) * ny * nz;
-  index_t nedges = nx * (ny + 1) * (nz + 1) + (nx + 1) * ny * (nz + 1) +
-                   (nx + 1) * (ny + 1) * nz;
-
-  std::cout << "Number of elements: " << nelems << " "
-            << conn.get_num_elements() << std::endl;
-  std::cout << "Number of faces:    " << nfaces << " " << conn.get_num_faces()
-            << std::endl;
-  std::cout << "Number of edges:    " << nedges << " " << conn.get_num_edges()
-            << std::endl;
 
   ElementMesh<Basis> mesh(conn);
   ElementMesh<GeoBasis> geomesh(conn);
   ElementMesh<DataBasis> datamesh(conn);
+
+  // Set the boundary conditions on the first field
+  index_t basis_select[2] = {1, 0};
+
+  T value = 0.0;
+  BoundaryCondition<T, Basis> bc(conn, mesh, value, basis_select,
+                                 (ny + 1) * (nz + 1), boundary_verts);
+
+  std::cout << "Number of elements:           " << conn.get_num_elements()
+            << std::endl;
+  std::cout << "Number of degrees of freedom: " << mesh.get_num_dof()
+            << std::endl;
+
+  // Set boundary conditions based on the vertex indices and finite-element
+  // space
+  // We can
 
   index_t ndof = mesh.get_num_dof();
   SolutionVector<T> global_U(mesh.get_num_dof());
@@ -107,17 +118,21 @@ int main(int argc, char* argv[]) {
   fe.add_residual(elem_data, elem_geo, elem_sol, elem_res);
   elem_res.add_values();
 
-  fe.add_jacobian_vector_product(elem_data, elem_geo, elem_sol, elem_x, elem_y);
+  // fe.add_jacobian_vector_product(elem_data, elem_geo, elem_sol, elem_x,
+  // elem_y);
 
-  std::cout << "create_block_matrix" << std::endl;
-  BSRMat<index_t, T, 3, 3>* mat = mesh.create_block_matrix<T, 3>();
-  BSRMat<index_t, T, 3, 3> mat_ref = *mat;
+  // std::cout << "create_block_matrix" << std::endl;
+  // BSRMat<index_t, T, 3, 3>* mat = mesh.create_block_matrix<T, 3>();
+  // BSRMat<index_t, T, 3, 3> mat_ref = *mat;
 
-  std::cout << "initialize element matrix" << std::endl;
-  ElementMat_Serial<T, Basis, BSRMat<index_t, T, 3, 3>> elem_mat(mesh, mat_ref);
+  // std::cout << "initialize element matrix" << std::endl;
+  // ElementMat_Serial<T, Basis, BSRMat<index_t, T, 3, 3>> elem_mat(mesh,
+  // mat_ref);
 
-  std::cout << "add_jacobian" << std::endl;
-  fe.add_jacobian(elem_data, elem_geo, elem_sol, elem_mat);
+  // std::cout << "add_jacobian" << std::endl;
+  // fe.add_jacobian(elem_data, elem_geo, elem_sol, elem_mat);
+
+  fe.get_near_nullspace(0, elem_data, elem_geo, elem_res);
 
   Kokkos::finalize();
 

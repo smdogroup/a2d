@@ -530,15 +530,16 @@ class FEBasis {
    * @param element_dof Degrees of freedom for this element
    * @param entity_dof Entity DOF in the global orientation
    */
+  template <class ElemDof, class EntityDof>
   static void get_entity_dof(index_t basis, ET::ElementEntity entity,
                              index_t index, index_t orient,
-                             const index_t element_dof[],
-                             index_t entity_dof[]) {
+                             const ElemDof& element_dof,
+                             EntityDof& entity_dof) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
-      get_entity_dof<0, Basis...>(basis, entity, index, orient, element_dof,
-                                  entity_dof);
+      get_entity_dof<0, ElemDof, EntityDof, Basis...>(
+          basis, entity, index, orient, element_dof, entity_dof);
     }
   }
 
@@ -553,15 +554,16 @@ class FEBasis {
    * @param element_dof Degrees of freedom for this element
    * @param element_sign Sign indices for each degree of freedom
    */
+  template <class EntityDof, class ElemDof>
   static void set_entity_dof(index_t basis, ET::ElementEntity entity,
                              index_t index, index_t orient,
-                             const index_t entity_dof[], index_t element_dof[],
+                             const EntityDof& entity_dof, ElemDof& element_dof,
                              int element_sign[]) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
-      set_entity_dof<0, Basis...>(basis, entity, index, orient, entity_dof,
-                                  element_dof, element_sign);
+      set_entity_dof<0, EntityDof, ElemDof, Basis...>(
+          basis, entity, index, orient, entity_dof, element_dof, element_sign);
     }
   }
   /**
@@ -799,39 +801,41 @@ class FEBasis {
     }
   }
 
-  template <index_t r, class First, class... Remain>
+  template <index_t r, class ElemDof, class EntityDof, class First,
+            class... Remain>
   static void get_entity_dof(index_t basis, ET::ElementEntity entity,
                              index_t index, index_t orient,
-                             const index_t element_dof[],
-                             index_t entity_dof[]) {
+                             const ElemDof& element_dof,
+                             EntityDof& entity_dof) {
     if (basis == r) {
-      First::template get_entity_dof<get_dof_offset<r>()>(
+      First::template get_entity_dof<get_dof_offset<r>(), ElemDof, EntityDof>(
           entity, index, orient, element_dof, entity_dof);
     }
     if constexpr (sizeof...(Remain) == 0) {
-      First::template get_entity_dof<get_dof_offset<r>()>(
+      First::template get_entity_dof<get_dof_offset<r>(), ElemDof, EntityDof>(
           entity, index, orient, element_dof, entity_dof);
     } else {
-      get_entity_dof<r + 1, Remain...>(basis, entity, index, orient,
-                                       element_dof, entity_dof);
+      get_entity_dof<r + 1, ElemDof, EntityDof, Remain...>(
+          basis, entity, index, orient, element_dof, entity_dof);
     }
   }
 
-  template <index_t r, class First, class... Remain>
+  template <index_t r, class EntityDof, class ElemDof, class First,
+            class... Remain>
   static void set_entity_dof(index_t basis, ET::ElementEntity entity,
                              index_t index, index_t orient,
-                             const index_t entity_dof[], index_t element_dof[],
+                             const EntityDof& entity_dof, ElemDof& element_dof,
                              int element_sign[]) {
     if (basis == r) {
-      First::template set_entity_dof<get_dof_offset<r>()>(
+      First::template set_entity_dof<get_dof_offset<r>(), EntityDof, ElemDof>(
           entity, index, orient, entity_dof, element_dof, element_sign);
     }
     if constexpr (sizeof...(Remain) == 0) {
-      First::template set_entity_dof<get_dof_offset<r>()>(
+      First::template set_entity_dof<get_dof_offset<r>(), EntityDof, ElemDof>(
           entity, index, orient, entity_dof, element_dof, element_sign);
     } else {
-      set_entity_dof<r + 1, Remain...>(basis, entity, index, orient, entity_dof,
-                                       element_dof, element_sign);
+      set_entity_dof<r + 1, EntityDof, ElemDof, Remain...>(
+          basis, entity, index, orient, entity_dof, element_dof, element_sign);
     }
   }
 

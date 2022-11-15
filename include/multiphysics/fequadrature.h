@@ -29,7 +29,7 @@ class HexQuadrature {
   static void get_point(const index_t n, double pt[]) {
     constexpr const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n % order];
-    pt[1] = pts[(n % order * order) / order];
+    pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
   static double get_weight(const index_t n) {

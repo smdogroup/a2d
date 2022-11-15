@@ -1144,10 +1144,6 @@ class ElementMesh {
     num_dof = dof_counter;
   }
 
-  void get_dof_from_verts(MeshConnectivity3D& conn, index_t nv,
-                          const index_t verts[], index_t basis_select[],
-                          index_t* ndof, index_t* dof[]) {}
-
   index_t get_num_elements() { return nelems; }
   index_t get_num_dof() { return num_dof; }
 
@@ -1245,7 +1241,7 @@ class ElementMesh {
   int* element_sign;
 };
 
-template <typename T, class Basis>
+template <class Basis>
 class BoundaryCondition {
  public:
   // Use the definitions from the element types
@@ -1263,10 +1259,9 @@ class BoundaryCondition {
    * @param dof Output degrees of freedom
    */
   template <typename IdxType>
-  BoundaryCondition(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh, T value,
+  BoundaryCondition(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh,
                     const index_t basis_select[], index_t nv,
-                    const IdxType verts[])
-      : value(value) {
+                    const IdxType verts[]) {
     index_t nelems = conn.get_num_elements();
     index_t nverts = conn.get_num_verts();
     index_t nedges = conn.get_num_edges();
@@ -1369,18 +1364,23 @@ class BoundaryCondition {
     delete[] boundary_dof;
   }
 
-  index_t get_bcs(const index_t* bcs[], T* val = NULL) {
-    *bcs = dof;
-    if (val) {
-      *val = value;
+  index_t get_bcs(const index_t* bcs[]) {
+    if (bcs) {
+      *bcs = dof;
     }
     return ndof;
+  }
+
+  template <class VecType, typename T>
+  void set_bcs(VecType& vec, T value) {
+    for (index_t i = 0; i < ndof; i++) {
+      vec[dof[i]] = value;
+    }
   }
 
  private:
   index_t ndof;
   index_t* dof;
-  T value;
 };
 
 }  // namespace A2D

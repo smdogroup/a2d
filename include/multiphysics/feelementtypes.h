@@ -151,14 +151,17 @@ class ElementTypes {
    * @brief Tetrahedral properties
    * The vertices of the tetrahedral element are
    *
-   *     3
-   *    /. \
-   *   / .  \
-   *  /  .   \
-   * 0 --.---- 2
-   *  \  .   /
-   *   \ . /
-   *     1
+   *       3
+   *     / . \
+   *    /  .  \
+   *   /   .   \
+   *  /    .    \
+   * 0 ----.---- 2
+   *  \    .    /
+   *   \   .   /
+   *    \  .  /
+   *     \ . /
+   *       1
    *
    * The edges of the tetrahedral are
    * 0 -> 1

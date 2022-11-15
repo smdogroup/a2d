@@ -9,7 +9,7 @@ namespace A2D {
 
 template <index_t degree>
 constexpr const double* get_qhdiv_knots() {
-  return get_gauss_quadrature_wts<degree>();
+  return get_gauss_quadrature_pts<degree>();
 }
 
 template <typename T, index_t degree>
@@ -52,10 +52,10 @@ class QHdivHexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param entity_dof Entity DOF in the global orientation
    */
-  template <index_t offset>
+  template <index_t offset, class ElemDof, class EntityDof>
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t element_dof[],
-                             index_t entity_dof[]) {
+                             index_t orient, const ElemDof& element_dof,
+                             EntityDof& entity_dof) {
     if (entity == ET::FACE) {
       // Loop over the reference face and transform to the local face
       if (index < 2) {
@@ -156,10 +156,10 @@ class QHdivHexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param element_sign Sign indices for each degree of freedom
    */
-  template <index_t offset>
+  template <index_t offset, class EntityDof, class ElemDof>
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t entity_dof[],
-                             index_t element_dof[], int element_sign[]) {
+                             index_t orient, const EntityDof& entity_dof,
+                             ElemDof& element_dof, int element_sign[]) {
     if (entity == ET::FACE) {
       // Loop over the reference face and transform to the local face
       if (index < 2) {

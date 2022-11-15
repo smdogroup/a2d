@@ -17,6 +17,8 @@ class SolutionVector {
   T& operator[](A2D::index_t index) { return x[index]; }
   const T& operator[](A2D::index_t index) const { return x[index]; }
 
+  index_t get_num_dof() const { return ndof; }
+
  private:
   const A2D::index_t ndof;
   std::vector<T> x;

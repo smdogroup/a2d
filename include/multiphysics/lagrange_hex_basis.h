@@ -51,10 +51,10 @@ class LagrangeH1HexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param entity_dof Entity DOF in the global orientation
    */
-  template <index_t offset>
+  template <index_t offset, class ElemDof, class EntityDof>
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t element_dof[],
-                             index_t entity_dof[]) {
+                             index_t orient, const ElemDof& element_dof,
+                             EntityDof& entity_dof) {
     if (entity == ET::VERTEX) {
       index_t node = (order - 1) * ET::HEX_VERTS_CART[index][0] +
                      (order - 1) * order * ET::HEX_VERTS_CART[index][1] +
@@ -174,10 +174,10 @@ class LagrangeH1HexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param element_sign Sign indices for each degree of freedom
    */
-  template <index_t offset>
+  template <index_t offset, class EntityDof, class ElemDof>
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t entity_dof[],
-                             index_t element_dof[], int element_sign[]) {
+                             index_t orient, const EntityDof& entity_dof,
+                             ElemDof& element_dof, int element_sign[]) {
     if (entity == ET::VERTEX) {
       index_t node = (order - 1) * ET::HEX_VERTS_CART[index][0] +
                      (order - 1) * order * ET::HEX_VERTS_CART[index][1] +
@@ -345,15 +345,15 @@ class LagrangeH1HexBasis {
                 n1[j1] * n2[j2] * n3[j3] *
                 sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
 
-            grad(i, 0) =
+            grad(i, 0) +=
                 d1[j1] * n2[j2] * n3[j3] *
                 sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
 
-            grad(i, 1) =
+            grad(i, 1) +=
                 n1[j1] * d2[j2] * n3[j3] *
                 sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
 
-            grad(i, 2) =
+            grad(i, 2) +=
                 n1[j1] * n2[j2] * d3[j3] *
                 sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
           }
@@ -487,10 +487,10 @@ class LagrangeL2HexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param entity_dof Entity DOF in the global orientation
    */
-  template <index_t offset>
+  template <index_t offset, class ElemDof, class EntityDof>
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t element_dof[],
-                             index_t entity_dof[]) {
+                             index_t orient, const ElemDof& element_dof,
+                             EntityDof& entity_dof) {
     if (entity == ET::VOLUME) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
@@ -509,10 +509,10 @@ class LagrangeL2HexBasis {
    * @param element_dof Degrees of freedom for this element
    * @param element_sign Sign indices for each degree of freedom
    */
-  template <index_t offset>
+  template <index_t offset, class EntityDof, class ElemDof>
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const index_t entity_dof[],
-                             index_t element_dof[], int element_sign[]) {
+                             index_t orient, const EntityDof& entity_dof,
+                             ElemDof& element_dof, int element_sign[]) {
     if (entity == ET::VOLUME) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];

@@ -26,6 +26,8 @@ class NonlinearElasticity {
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
+  static const A2D::index_t num_near_nullspace = 6;
+
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear
    * elasticity
@@ -36,6 +38,7 @@ class NonlinearElasticity {
    * @param coef Output weak form coefficients of the test space
    */
   A2D_INLINE_FUNCTION static void weak_coef(T wdetJ, const DataSpace& data,
+                                            const FiniteElementGeometry& geo,
                                             const FiniteElementSpace& s,
                                             FiniteElementSpace& coef) {
     // Get the constitutive data at the points
@@ -79,6 +82,7 @@ class NonlinearElasticity {
   class JacVecProduct {
    public:
     A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),
@@ -132,6 +136,7 @@ class NonlinearElasticity {
   class AdjVecProduct {
    public:
     A2D_INLINE_FUNCTION AdjVecProduct(T wdetJ, const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),

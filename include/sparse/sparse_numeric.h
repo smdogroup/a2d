@@ -5,6 +5,7 @@
 
 #include "array.h"
 #include "block_numeric.h"
+#include "parallel.h"
 #include "slice_numeric.h"
 #include "sparse_matrix.h"
 #include "sparse_symbolic.h"

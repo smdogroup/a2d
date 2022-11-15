@@ -193,7 +193,7 @@ void lagrange_basis<1u>(const double pt, double N[]) {
 template <>
 void lagrange_basis<2u>(const double pt, double N[]) {
   N[0] = 0.5 * (1.0 - pt);
-  N[1] = 0.5 * (pt - 1.0);
+  N[1] = 0.5 * (1.0 + pt);
 }
 
 template <>
@@ -221,7 +221,7 @@ void lagrange_basis<1u>(const double pt, double N[], double Nx[]) {
 template <>
 void lagrange_basis<2u>(const double pt, double N[], double Nx[]) {
   N[0] = 0.5 * (1.0 - pt);
-  N[1] = 0.5 * (pt - 1.0);
+  N[1] = 0.5 * (1.0 + pt);
 
   Nx[0] = -0.5;
   Nx[1] = 0.5;

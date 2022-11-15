@@ -135,6 +135,22 @@ class ElementVector_Serial {
     }
   }
 
+  /**
+   * @brief Set the degree of freedom values to the element vector
+   *
+   * @param elem the element index
+   * @param dof the FEDof object that stores a reference to the degrees of
+   * freedom
+   *
+   * If FEDof contains a pointer to data, this function may do nothing
+   */
+  // Add values for this element to the vector
+  void set_element_values(index_t elem, const FEDof& dof) {
+    if constexpr (Basis::nbasis > 0) {
+      set_element_values_<0>(elem, dof);
+    }
+  }
+
  private:
   template <index_t basis>
   void get_element_values_(index_t elem, FEDof& dof) {
@@ -157,6 +173,18 @@ class ElementVector_Serial {
     }
     if constexpr (basis + 1 < Basis::nbasis) {
       add_element_values_<basis + 1>(elem, dof);
+    }
+  }
+
+  template <index_t basis>
+  void set_element_values_(index_t elem, const FEDof& dof) {
+    for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
+      const int sign = mesh.template get_global_dof_sign<basis>(elem, i);
+      const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
+      vec[dof_index] = sign * dof[i + Basis::template get_dof_offset<basis>()];
+    }
+    if constexpr (basis + 1 < Basis::nbasis) {
+      set_element_values_<basis + 1>(elem, dof);
     }
   }
 

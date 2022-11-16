@@ -1168,7 +1168,7 @@ class ElementMesh {
   }
 
   template <typename T, index_t M>
-  BSRMat<index_t, T, M, M>* create_block_matrix() {
+  std::shared_ptr<BSRMat<index_t, T, M, M>> create_block_matrix() {
     std::set<std::pair<index_t, index_t>> node_set;
 
     for (index_t i = 0; i < nelems; i++) {
@@ -1226,10 +1226,8 @@ class ElementMesh {
     // Sort the cols array
     SortCSRData(nrows, rowp, cols);
 
-    BSRMat<index_t, T, M, M>* A =
-        new BSRMat<index_t, T, M, M>(nrows, nrows, nnz, rowp, cols);
-
-    return A;
+    return std::make_shared<BSRMat<index_t, T, M, M>>(nrows, nrows, nnz, rowp,
+                                                      cols);
   }
 
  private:

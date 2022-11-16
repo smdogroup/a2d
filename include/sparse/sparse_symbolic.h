@@ -65,8 +65,9 @@ void BSRMatAddConnectivity(ConnArray& conn,
       fail);
   if (fail) {
     char msg[256];
-    std::sprintf(msg, "BSRMatAddConnectivity failed with %d failing inserts.",
-                 fail);
+    std::snprintf(msg, sizeof(msg),
+                  "BSRMatAddConnectivity failed with %d failing inserts.",
+                  fail);
     throw std::runtime_error(msg);
   }
 }
@@ -117,8 +118,9 @@ BSRMat<I, T, M, M>* BSRMatFromNodeSet(
       fail);
   if (fail) {
     char msg[256];
-    std::sprintf(
-        msg, "Populating offset_tracker failed with %d failing inserts.", fail);
+    std::snprintf(msg, sizeof(msg),
+                  "Populating offset_tracker failed with %d failing inserts.",
+                  fail);
     throw std::runtime_error(msg);
   }
 

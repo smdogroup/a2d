@@ -6,7 +6,7 @@
 #include "multiphysics/fespace.h"
 
 /*
-  The PDE object
+  Mixed Poisson problem
 */
 template <typename T, A2D::index_t D>
 class MixedPoisson {

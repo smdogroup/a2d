@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
   using PDE = MixedPoisson<T, 3>;
   using Quadrature = HexQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, 1>>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
                         LagrangeL2HexBasis<T, 1, degree - 1>>;
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
                            use_parallel_elemvec>;
 
   // Number of elements in each dimension
-  const int nx = 10, ny = 10, nz = 10;
+  const int nx = 3, ny = 3, nz = 3;
   auto node_num = [](int i, int j, int k) {
     return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
   };
@@ -76,10 +76,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int boundary_verts[(ny + 1) * (nz + 1)];
+  int boundary1_verts[(ny + 1) * (nz + 1)];
   for (int k = 0, index = 0; k < nz + 1; k++) {
     for (int j = 0; j < ny + 1; j++, index++) {
-      boundary_verts[index] = node_num(0, j, k);
+      boundary1_verts[index] = node_num(0, j, k);
+    }
+  }
+
+  int boundary2_verts[(ny + 1) * (nz + 1)];
+  for (int k = 0, index = 0; k < nz + 1; k++) {
+    for (int j = 0; j < ny + 1; j++, index++) {
+      boundary2_verts[index] = node_num(nx, j, k);
     }
   }
 
@@ -90,13 +97,17 @@ int main(int argc, char *argv[]) {
   ElementMesh<GeoBasis> geomesh(conn);
   ElementMesh<DataBasis> datamesh(conn);
 
-  // Set the boundary conditions on the first field
-  index_t basis_select[2] = {1, 0};
+  // Set boundary conditions based on the vertex indices and finite-element
+  // space
+  index_t basis_select1[2] = {1, 0};
+  BoundaryCondition<Basis> bcs1(conn, mesh, basis_select1, (ny + 1) * (nz + 1),
+                                boundary1_verts);
 
   // Set boundary conditions based on the vertex indices and finite-element
   // space
-  BoundaryCondition<Basis> bcs(conn, mesh, basis_select, (ny + 1) * (nz + 1),
-                               boundary_verts);
+  index_t basis_select2[2] = {0, 1};
+  BoundaryCondition<Basis> bcs2(conn, mesh, basis_select2, (ny + 1) * (nz + 1),
+                                boundary2_verts);
 
   std::cout << "Number of elements:            " << conn.get_num_elements()
             << std::endl;
@@ -104,7 +115,9 @@ int main(int argc, char *argv[]) {
             << std::endl;
 
   const index_t *bcs_index;
-  std::cout << "Number of boundary conditions: " << bcs.get_bcs(&bcs_index)
+  std::cout << "Number of boundary conditions: " << bcs1.get_bcs(&bcs_index)
+            << std::endl;
+  std::cout << "Number of boundary conditions: " << bcs2.get_bcs(&bcs_index)
             << std::endl;
 
   index_t ndof = mesh.get_num_dof();
@@ -148,6 +161,7 @@ int main(int argc, char *argv[]) {
   FE::ElemVec elem_x(mesh, global_x);
   FE::ElemVec elem_y(mesh, global_y);
 
+  // Create the finite-element model
   FE fe;
 
   // Add the residual
@@ -159,31 +173,79 @@ int main(int argc, char *argv[]) {
   // elem_y);
 
   std::cout << "create_block_matrix" << std::endl;
-  BSRMat<index_t, T, 3, 3> *mat = mesh.create_block_matrix<T, 3>();
-  BSRMat<index_t, T, 3, 3> mat_ref = *mat;
+  auto mat = mesh.create_block_matrix<T, 1>();
+  BSRMat<index_t, T, 1, 1> &mat_ref = *mat;
 
   std::cout << "initialize element matrix" << std::endl;
-  ElementMat_Serial<T, Basis, BSRMat<index_t, T, 3, 3>> elem_mat(mesh, *mat);
+  ElementMat_Serial<T, Basis, BSRMat<index_t, T, 1, 1>> elem_mat(mesh, mat_ref);
 
   std::cout << "add_jacobian" << std::endl;
   fe.add_jacobian(elem_data, elem_geo, elem_sol, elem_mat);
 
-  // SolutionVector<T> *B1[6];
+  const index_t *bc_dofs1;
+  index_t nbcs1 = bcs1.get_bcs(&bc_dofs1);
+  mat->zero_rows(nbcs1, bc_dofs1);
 
-  // for (index_t i = 0; i < 6; i++ ){
-  //   fe.get_near_nullspace(0, elem_data, elem_geo, elem_res);
-  //   elem_res.
+  // const index_t *bc_dofs2;
+  // index_t nbcs2 = bcs1.get_bcs(&bc_dofs2);
+  index_t nbcs2 = 1;
+  index_t bc_dofs2[] = {33199};
 
+  mat->zero_rows(nbcs2, bc_dofs2);
+
+  MultiArrayNew<T *[1][1]> B("B", global_U.get_num_dof());
+  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+    B(i, 0, 0) = 1.0;
+  }
+
+  for (index_t i = 0; i < nbcs1; i++) {
+    B(bc_dofs1[i], 0, 0) = 0.0;
+  }
+
+  for (index_t i = 0; i < nbcs2; i++) {
+    B(bc_dofs2[i], 0, 0) = 0.0;
+  }
+
+  // index_t num_levels = 0;
+  // double omega = 3.0 / 4.0;
+  // double epsilon = 0.1;
+  // bool print_info = true;
+  // BSRMatAmg<index_t, T, 1, 1> amg(num_levels, omega, epsilon, mat, B,
+  //                                 print_info);
+
+  BSRMat<index_t, T, 1, 1> *factor = BSRMatFactorSymbolic(*mat);
+  BSRMatCopy(*mat, *factor);
+  BSRMatFactor(*factor);
+
+  std::cout << "nnz = " << mat->nnz << std::endl;
+
+  MultiArrayNew<T *[1]> x("x", global_U.get_num_dof());
+  MultiArrayNew<T *[1]> rhs("rhs", global_U.get_num_dof());
+
+  for (index_t i = 0; i < nbcs1; i++) {
+    rhs(bc_dofs1[i], 0) = 1.0;
+  }
+
+  // for (index_t i = 0; i < mat->nbrows; i++) {
+  //   for (index_t jp = mat->rowp(i); jp < mat->rowp(i + 1); jp++) {
+  //     std::cout << mat->Avals(jp, 0, 0) << std::endl;
+  //   }
+  //   std::cout << std::endl;
   // }
-  // bcs.set_bcs
 
-  int num_levels = 3;
-  T omega = 2.0 / 3.0;
-  T epsilon = 0.1;
+  BSRMatApplyFactor(*factor, rhs, x);
 
-  // amg = new BSRMatAmg(num_levels, omega, epsilon, bsr, B);
+  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+    std::cout << "rhs[" << i << "]: " << rhs(i, 0) << std::endl;
+  }
 
-  Kokkos::finalize();
+  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+    std::cout << "u[" << i << "]: " << x(i, 0) << std::endl;
+  }
+
+  // amg.cg(rhs, x, 5);
+
+  // Kokkos::finalize();
 
   return (0);
 }

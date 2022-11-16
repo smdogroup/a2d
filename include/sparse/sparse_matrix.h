@@ -105,6 +105,23 @@ class BSRMat {
     }
   }
 
+  void zero_rows(const index_t nbcs, const index_t dof[]) {
+    for (index_t ii = 0; ii < nbcs; ii++) {
+      index_t block_row = dof[ii] / M;
+      index_t eq_row = dof[ii] % M;
+
+      for (index_t jp = rowp[block_row]; jp < rowp[block_row + 1]; jp++) {
+        for (index_t k = 0; k < N; k++) {
+          Avals(jp, eq_row, k) = 0.0;
+        }
+
+        if (cols[jp] == block_row) {
+          Avals(jp, eq_row, eq_row) = 1.0;
+        }
+      }
+    }
+  }
+
   // Array type
   using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 

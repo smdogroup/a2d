@@ -55,7 +55,6 @@ namespace A2D {
   physical element back to the reference element.
 */
 
-
 /**
  * @brief The L2 space, which has (scalar or vector) values only, no derivatives
  *
@@ -114,8 +113,8 @@ class L2Space {
   const VarType& get_value() const { return u; }
 
   // Transform the values from the reference to the physical space
-  void transform(const T& detJ, const Mat<T, D, D>& J,
-                 const Mat<T, D, D>& Jinv, L2Space<T, C, D>& s) const {
+  void transform(const T& detJ, const Mat<T, D, D>& J, const Mat<T, D, D>& Jinv,
+                 L2Space<T, C, D>& s) const {
     s.u = u;
   }
 
@@ -132,8 +131,8 @@ class L2Space {
 template <typename T, index_t C, index_t D>
 class H1Space {
   using VarType = typename std::conditional<C == 1, T, Vec<T, C>>::type;
-  using GradType = typename std::conditional<C == 1, Vec<T, D>,
-                                             Mat<T, C, D>>::type;
+  using GradType =
+      typename std::conditional<C == 1, Vec<T, D>, Mat<T, C, D>>::type;
 
  public:
   H1Space() { zero(); }
@@ -274,14 +273,28 @@ class HdivSpace {
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const Mat<T, dim, dim>& J,
                  const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
-    s.u = u;
+    if (D == 2) {
+      s.u(0) = (J(0, 0) * u(0) + J(0, 1) * u(1)) / detJ;
+      s.u(1) = (J(1, 0) * u(0) + J(1, 1) * u(1)) / detJ;
+    } else if (D == 3) {
+      s.u(0) = (J(0, 0) * u(0) + J(0, 1) * u(1) + J(0, 2) * u(2)) / detJ;
+      s.u(1) = (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2)) / detJ;
+      s.u(2) = (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2)) / detJ;
+    }
     s.div = detJ * div;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
                   const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
-    s.u = u;
+    if (D == 2) {
+      s.u(0) = (J(0, 0) * u(0) + J(1, 0) * u(1)) / detJ;
+      s.u(1) = (J(0, 1) * u(0) + J(1, 1) * u(1)) / detJ;
+    } else if (D == 3) {
+      s.u(0) = (J(0, 0) * u(0) + J(1, 0) * u(1) + J(2, 0) * u(2)) / detJ;
+      s.u(1) = (J(0, 1) * u(0) + J(1, 1) * u(1) + J(2, 1) * u(2)) / detJ;
+      s.u(2) = (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2)) / detJ;
+    }
     s.div = detJ * div;
   }
 

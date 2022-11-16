@@ -844,7 +844,7 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   for (I i = 0; i < size; i++) {
     // Allocate the next vector
     char label[256];
-    sprintf(label, "W[%d]", i + 1);
+    snprintf(label, sizeof(label), "W[%d]", i + 1);
     W[i + 1] = MultiArrayNew<T *[M]>(label, A.nbrows);
 
     // Multiply by the matrix to get the next vector
@@ -880,7 +880,8 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
   // Throw runtime error if dgeev failed
   if (info != 0) {
     char msg[256];
-    std::sprintf(msg, "Eigensolver failed with exit code %d.", info);
+    std::snprintf(msg, sizeof(msg), "Eigensolver failed with exit code %d.",
+                  info);
     throw std::runtime_error(msg);
   }
 

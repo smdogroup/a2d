@@ -10,30 +10,35 @@
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
+#include "utils/a2dvtk.h"
 
 using namespace A2D;
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
+  const index_t dim = 3;
   const index_t degree = 2;
+  const index_t geo_degree = 1;
   using T = double;
   using ET = ElementTypes;
 
   /*
   using PDE = NonlinearElasticity<T, 3>;
-  using Quadrature = HexQuadrature<degree + 1>;
+  using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T, LagrangeH1HexBasis<T, 2, 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, 1>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
-  */
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
+  //*/
 
-  using PDE = MixedPoisson<T, 3>;
-  using Quadrature = HexQuadrature<degree + 1>;
+  //*
+  using PDE = MixedPoisson<T, dim>;
+  using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
                         LagrangeL2HexBasis<T, 1, degree - 1>>;
+  // */
 
   constexpr bool use_parallel_elemvec = false;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
@@ -137,7 +142,6 @@ int main(int argc, char *argv[]) {
       for (int i = 0; i < nx; i++, e++) {
         // Get the geometry values
         typename FE::GeoElemVec::FEDof geo_dof(e, elem_geo);
-        int sign[GeoBasis::ndof];
 
         for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
           index_t node = node_num(i + ET::HEX_VERTS_CART[ii][0],
@@ -148,7 +152,7 @@ int main(int argc, char *argv[]) {
           index_t basis = 0;
           index_t orient = 0;
           GeoBasis::set_entity_dof(basis, ET::VERTEX, ii, orient,
-                                   &Xloc[3 * node], geo_dof, sign);
+                                   &Xloc[3 * node], geo_dof);
         }
 
         elem_geo.set_element_values(e, geo_dof);
@@ -189,7 +193,7 @@ int main(int argc, char *argv[]) {
   // const index_t *bc_dofs2;
   // index_t nbcs2 = bcs1.get_bcs(&bc_dofs2);
   index_t nbcs2 = 1;
-  index_t bc_dofs2[] = {33199};
+  index_t bc_dofs2[] = {global_x.get_num_dof() - 1};
 
   mat->zero_rows(nbcs2, bc_dofs2);
 
@@ -226,13 +230,6 @@ int main(int argc, char *argv[]) {
     rhs(bc_dofs1[i], 0) = 1.0;
   }
 
-  // for (index_t i = 0; i < mat->nbrows; i++) {
-  //   for (index_t jp = mat->rowp(i); jp < mat->rowp(i + 1); jp++) {
-  //     std::cout << mat->Avals(jp, 0, 0) << std::endl;
-  //   }
-  //   std::cout << std::endl;
-  // }
-
   BSRMatApplyFactor(*factor, rhs, x);
 
   for (index_t i = 0; i < global_U.get_num_dof(); i++) {
@@ -243,8 +240,109 @@ int main(int argc, char *argv[]) {
     std::cout << "u[" << i << "]: " << x(i, 0) << std::endl;
   }
 
-  // amg.cg(rhs, x, 5);
+  // Copy the solution to the solution vector
+  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+    global_U[i] = x(i, 0);
+  }
 
+  const index_t nex = 3;
+  index_t nvtk_elems = nhex * nex * nex * nex;
+  index_t nvtk_nodes = nhex * (nex + 1) * (nex + 1) * (nex + 1);
+
+  auto vtk_node_num = [](index_t i, index_t j, index_t k) {
+    return i + j * (nex + 1) + k * (nex + 1) * (nex + 1);
+  };
+
+  MultiArrayNew<int *[8]> vtk_conn("vtk_elems", nvtk_elems);
+  MultiArrayNew<double *[3]> vtk_nodes("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<double *> vtk_solt("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<double *> vtk_solqx("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<double *> vtk_solqy("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<double *> vtk_solqz("vtk_nodes", nvtk_nodes);
+
+  // for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+  //   global_U[i] = 0.0;
+  // }
+
+  // T entity_vals[degree * degree];
+  // for (index_t k = 0; k < degree * degree; k++) {
+  //   entity_vals[k] = 0.0;
+  // }
+  // entity_vals[2] = 1.0;
+
+  // typename FE::ElemVec::FEDof sol_dof(0, elem_sol);
+  // elem_sol.get_element_values(0, sol_dof);
+
+  // // Set the entity DOF
+  // index_t basis = 0;
+  // index_t orient = 0;
+  // Basis::set_entity_dof(basis, ET::FACE, 1, orient, entity_vals, sol_dof);
+
+  // elem_sol.set_element_values(0, sol_dof);
+
+  for (index_t n = 0, counter = 0; n < nhex; n++) {
+    typename FE::ElemVec::FEDof sol_dof(n, elem_sol);
+    elem_sol.get_element_values(n, sol_dof);
+
+    typename FE::GeoElemVec::FEDof geo_dof(n, elem_geo);
+    elem_geo.get_element_values(n, geo_dof);
+
+    for (index_t k = 0; k < nex + 1; k++) {
+      for (index_t j = 0; j < nex + 1; j++) {
+        for (index_t i = 0; i < nex + 1; i++) {
+          index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
+
+          index_t index = vtk_node_num(i, j, k);
+          typename PDE::FiniteElementSpace sol;
+          typename PDE::FiniteElementGeometry geo;
+
+          Basis::template interp<HexGaussLobattoQuadrature<nex + 1>>(
+              index, sol_dof, sol);
+          GeoBasis::template interp<HexGaussLobattoQuadrature<nex + 1>>(
+              index, geo_dof, geo);
+
+          auto X = geo.template get<0>().get_value();
+          auto sigma = sol.template get<0>().get_value();
+          auto u = sol.template get<1>().get_value();
+
+          index_t node = off + vtk_node_num(i, j, k);
+          vtk_nodes(node, 0) = X(0);
+          vtk_nodes(node, 1) = X(1);
+          vtk_nodes(node, 2) = X(2);
+
+          vtk_solt(node) = u;
+          vtk_solqx(node) = sigma(0);
+          vtk_solqy(node) = sigma(1);
+          vtk_solqz(node) = sigma(2);
+        }
+      }
+    }
+
+    for (index_t k = 0; k < nex; k++) {
+      for (index_t j = 0; j < nex; j++) {
+        for (index_t i = 0; i < nex; i++, counter++) {
+          index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
+
+          for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
+            vtk_conn(counter, ii) =
+                off + vtk_node_num(i + ET::HEX_VERTS_CART[ii][0],
+                                   j + ET::HEX_VERTS_CART[ii][1],
+                                   k + ET::HEX_VERTS_CART[ii][2]);
+          }
+        }
+      }
+    }
+  }
+
+  ToVTK vtk(vtk_conn, vtk_nodes);
+  vtk.write_mesh();
+  vtk.write_sol("t", vtk_solt);
+  vtk.write_sol("qx", vtk_solqx);
+  vtk.write_sol("qy", vtk_solqy);
+  vtk.write_sol("qz", vtk_solqz);
+
+  // amg.cg(rhs, x, 5);
+  // * /
   // Kokkos::finalize();
 
   return (0);

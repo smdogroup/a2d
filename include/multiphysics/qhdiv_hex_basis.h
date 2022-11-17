@@ -54,67 +54,36 @@ class QHdivHexBasis {
    */
   template <index_t offset, class ElemDof, class EntityDof>
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const ElemDof& element_dof,
+                             const ElemDof& element_dof,
                              EntityDof& entity_dof) {
     if (entity == ET::FACE) {
-      // Loop over the reference face and transform to the local face
       if (index < 2) {
-        for (index_t j3 = 0; j3 < order - 1; j3++) {
-          for (index_t j2 = 0; j2 < order - 1; j2++) {
-            index_t j1 = (index % 2) * (order - 1);
-
-            index_t i2, i3;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j2, j3, &i2,
-                                               &i3);
-
-            // Get the node on the face
-            index_t node1 = offset + j1 + order * j2 + (order - 1) * order * j3;
-            index_t enode = i2 + (order - 1) * i3;
-            entity_dof[enode] = element_dof[node1];
-          }
-        }
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::get_hex_face_dof<offset, endp, ndof, order, order - 1, order - 1,
+                             ElemDof, EntityDof>(index, element_dof,
+                                                 entity_dof);
       } else if (index < 4) {
-        for (index_t j3 = 0; j3 < order - 1; j3++) {
-          for (index_t j1 = 0; j1 < order - 1; j1++) {
-            index_t j2 = (index % 2) * (order - 1);
-
-            index_t i1, i3;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j1, j3, &i1,
-                                               &i3);
-
-            // Get the node on the face
-            index_t node2 = (offset + order * (order - 1) * (order - 1)) +
-                            (j1 + (order - 1) * j2 + order * (order - 1) * j3);
-            index_t enode = i1 + (order - 1) * i3;
-            entity_dof[enode] = element_dof[node2];
-          }
-        }
+        const index_t off = offset + order * (order - 1) * (order - 1);
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::get_hex_face_dof<off, endp, ndof, order - 1, order, order - 1,
+                             ElemDof, EntityDof>(index, element_dof,
+                                                 entity_dof);
       } else {
-        for (index_t j2 = 0; j2 < order - 1; j2++) {
-          for (index_t j1 = 0; j1 < order - 1; j1++) {
-            index_t j3 = (index % 2) * (order - 1);
-
-            index_t i1, i2;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j1, j2, &i1,
-                                               &i2);
-
-            // Get the node on the face
-            index_t node3 =
-                (offset + 2 * order * (order - 1) * (order - 1)) +
-                (j1 + (order - 1) * j2 + (order - 1) * (order - 1) * j3);
-            index_t enode = i1 + (order - 1) * i2;
-            entity_dof[enode] = element_dof[node3];
-          }
-        }
+        const index_t off = offset + 2 * order * (order - 1) * (order - 1);
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::get_hex_face_dof<off, endp, ndof, order - 1, order - 1, order,
+                             ElemDof, EntityDof>(index, element_dof,
+                                                 entity_dof);
       }
     } else if (entity == ET::VOLUME) {
       index_t enode = 0;
-
       for (index_t j3 = 0; j3 < order - 1; j3++) {
         for (index_t j2 = 0; j2 < order - 1; j2++) {
           for (index_t j1 = 1; j2 < order - 1; j1++, enode++) {
             index_t node1 = offset + j1 + order * j2 + (order - 1) * order * j3;
-
             entity_dof[enode] = element_dof[node1];
           }
         }
@@ -125,7 +94,6 @@ class QHdivHexBasis {
           for (index_t j1 = 0; j2 < order - 1; j1++, enode++) {
             index_t node2 = (offset + order * (order - 1) * (order - 1)) +
                             (j1 + (order - 1) * j2 + order * (order - 1) * j3);
-
             entity_dof[enode] = element_dof[node2];
           }
         }
@@ -137,7 +105,6 @@ class QHdivHexBasis {
             index_t node3 =
                 (offset + 2 * order * (order - 1) * (order - 1)) +
                 (j1 + (order - 1) * j2 + (order - 1) * (order - 1) * j3);
-
             entity_dof[enode] = element_dof[node3];
           }
         }
@@ -154,83 +121,32 @@ class QHdivHexBasis {
    * @param orient Orientation flag indicating the relative orientation
    * @param entity_dof Entity DOF in the global orientation
    * @param element_dof Degrees of freedom for this element
-   * @param element_sign Sign indices for each degree of freedom
    */
   template <index_t offset, class EntityDof, class ElemDof>
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
-                             ElemDof& element_dof, int element_sign[]) {
+                             ElemDof& element_dof) {
     if (entity == ET::FACE) {
-      // Loop over the reference face and transform to the local face
       if (index < 2) {
-        for (index_t j3 = 0; j3 < order - 1; j3++) {
-          for (index_t j2 = 0; j2 < order - 1; j2++) {
-            index_t j1 = (index % 2) * (order - 1);
-
-            index_t i2, i3;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j2, j3, &i2,
-                                               &i3);
-
-            // Get the node on the face
-            index_t node1 = offset + j1 + order * j2 + (order - 1) * order * j3;
-            index_t enode = i2 + (order - 1) * i3;
-            element_dof[node1] = entity_dof[enode];
-
-            // Check if the orientation is flipped relative to the reference
-            if (orient >= 4) {
-              element_sign[node1] = -1;
-            } else {
-              element_sign[node1] = 1;
-            }
-          }
-        }
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::set_hex_face_dof<offset, endp, ndof, order, order - 1, order - 1,
+                             EntityDof, ElemDof>(index, orient, entity_dof,
+                                                 element_dof);
       } else if (index < 4) {
-        for (index_t j3 = 0; j3 < order - 1; j3++) {
-          for (index_t j1 = 0; j1 < order - 1; j1++) {
-            index_t j2 = (index % 2) * (order - 1);
-
-            index_t i1, i3;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j1, j3, &i1,
-                                               &i3);
-
-            // Get the node on the face
-            index_t node2 = (offset + order * (order - 1) * (order - 1)) +
-                            (j1 + (order - 1) * j2 + order * (order - 1) * j3);
-            index_t enode = i1 + (order - 1) * i3;
-            element_dof[node2] = entity_dof[enode];
-
-            // Check if the orientation is flipped relative to the reference
-            if (orient >= 4) {
-              element_sign[node2] = -1;
-            } else {
-              element_sign[node2] = 1;
-            }
-          }
-        }
+        const index_t off = offset + order * (order - 1) * (order - 1);
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::set_hex_face_dof<off, endp, ndof, order - 1, order, order - 1,
+                             EntityDof, ElemDof>(index, orient, entity_dof,
+                                                 element_dof);
       } else {
-        for (index_t j2 = 0; j2 < order - 1; j2++) {
-          for (index_t j1 = 0; j1 < order - 1; j1++) {
-            index_t j3 = (index % 2) * (order - 1);
-
-            index_t i1, i2;
-            ET::get_coords_on_quad_ref_element(orient, order - 2, j1, j2, &i1,
-                                               &i2);
-
-            // Get the node on the face
-            index_t node3 =
-                (offset + 2 * order * (order - 1) * (order - 1)) +
-                (j1 + (order - 1) * j2 + (order - 1) * (order - 1) * j3);
-            index_t enode = i1 + (order - 1) * i2;
-            element_dof[node3] = entity_dof[enode];
-
-            // Check if the orientation is flipped relative to the reference
-            if (orient >= 4) {
-              element_sign[node3] = -1;
-            } else {
-              element_sign[node3] = 1;
-            }
-          }
-        }
+        const index_t off = offset + 2 * order * (order - 1) * (order - 1);
+        const bool endp = true;
+        const index_t ndof = 1;
+        ET::set_hex_face_dof<off, endp, ndof, order - 1, order - 1, order,
+                             EntityDof, ElemDof>(index, orient, entity_dof,
+                                                 element_dof);
       }
     } else if (entity == ET::VOLUME) {
       index_t enode = 0;
@@ -239,9 +155,7 @@ class QHdivHexBasis {
         for (index_t j2 = 0; j2 < order - 1; j2++) {
           for (index_t j1 = 1; j1 < order - 1; j1++, enode++) {
             index_t node1 = offset + j1 + order * j2 + (order - 1) * order * j3;
-
             element_dof[node1] = entity_dof[enode];
-            element_sign[node1] = 1;
           }
         }
       }
@@ -251,9 +165,7 @@ class QHdivHexBasis {
           for (index_t j1 = 0; j1 < order - 1; j1++, enode++) {
             index_t node2 = (offset + order * (order - 1) * (order - 1)) +
                             (j1 + (order - 1) * j2 + order * (order - 1) * j3);
-
             element_dof[node2] = entity_dof[enode];
-            element_sign[node2] = 1;
           }
         }
       }
@@ -264,13 +176,40 @@ class QHdivHexBasis {
             index_t node3 =
                 (offset + 2 * order * (order - 1) * (order - 1)) +
                 (j1 + (order - 1) * j2 + (order - 1) * (order - 1) * j3);
-
             element_dof[node3] = entity_dof[enode];
-            element_sign[node3] = 1;
           }
         }
       }
     }
+  }
+
+  /**
+   * @brief Set the signs for the entity
+   *
+   * @tparam offset Offset into the element array
+   * @param entity Geometric entity type
+   * @param index Index of the entity
+   * @param orient Orientation of the entity relative to the reference
+   * @param signs Array of sign values
+   */
+  template <index_t offset>
+  static void set_entity_signs(ET::ElementEntity entity, index_t index,
+                               index_t orient, int signs[]) {
+    int sgns[ndof];
+    const index_t entity_ndof = get_entity_ndof(entity, index);
+    for (index_t k = 0; k < entity_ndof; k++) {
+      sgns[k] = 1;
+    }
+
+    if (entity == ET::FACE) {
+      if (orient >= 4) {
+        for (index_t k = 0; k < entity_ndof; k++) {
+          sgns[k] = -1;
+        }
+      }
+    }
+
+    set_entity_dof<offset>(entity, index, orient, sgns, signs);
   }
 
   /**

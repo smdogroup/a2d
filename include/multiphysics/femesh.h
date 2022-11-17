@@ -1022,8 +1022,8 @@ class ElementMesh {
         for (index_t i = 0; i < ndof; i++, dof_counter++) {
           dof[i] = dof_counter;
         }
-        Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof,
-                              elem_sign);
+        Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
 
         // Order the faces
         const index_t* faces;
@@ -1051,7 +1051,7 @@ class ElementMesh {
                 conn.get_element_face_verts(elem, index, verts);
 
                 Basis::get_entity_dof(
-                    basis, ET::FACE, i, 0,
+                    basis, ET::FACE, i,
                     &element_dof[owner_elem * ndof_per_element], dof);
 
                 if (nverts == 4) {
@@ -1062,8 +1062,8 @@ class ElementMesh {
             }
           }
 
-          Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof,
-                                elem_sign);
+          Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof);
+          Basis::set_entity_signs(basis, ET::FACE, index, orient, elem_sign);
         }
 
         // Order the edges
@@ -1091,7 +1091,7 @@ class ElementMesh {
                 conn.get_element_edge_verts(elem, index, verts);
 
                 Basis::get_entity_dof(
-                    basis, ET::EDGE, i, 0,
+                    basis, ET::EDGE, i,
                     &element_dof[owner_elem * ndof_per_element], dof);
 
                 if (ref[0] == verts[1] && ref[1] == verts[0]) {
@@ -1102,8 +1102,8 @@ class ElementMesh {
             }
           }
 
-          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof,
-                                elem_sign);
+          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
+          Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
         }
 
         // Order the vertices
@@ -1127,15 +1127,16 @@ class ElementMesh {
             for (index_t i = 0; i < nv_owner; i++) {
               if (owner_verts[i] == vert) {
                 Basis::get_entity_dof(
-                    basis, ET::VERTEX, i, 0,
+                    basis, ET::VERTEX, i,
                     &element_dof[owner_elem * ndof_per_element], dof);
                 break;
               }
             }
           }
 
-          Basis::set_entity_dof(basis, ET::VERTEX, index, orient, dof, elem_dof,
-                                elem_sign);
+          Basis::set_entity_dof(basis, ET::VERTEX, index, orient, dof,
+                                elem_dof);
+          Basis::set_entity_signs(basis, ET::VERTEX, index, orient, elem_sign);
         }
       }
     }
@@ -1287,9 +1288,8 @@ class BoundaryCondition {
         if (face_labels[elem_faces[f]] != MeshConnectivity3D::NO_LABEL) {
           for (index_t basis = 0; basis < Basis::nbasis; basis++) {
             if (basis_select[basis]) {
-              index_t orient = 0;  // Orientation doesn't matter here
               index_t nface_dof = Basis::get_entity_ndof(basis, ET::FACE, f);
-              Basis::get_entity_dof(basis, ET::FACE, f, orient, elem_dof, dof);
+              Basis::get_entity_dof(basis, ET::FACE, f, elem_dof, dof);
 
               for (index_t k = 0; k < nface_dof; k++) {
                 boundary_dof[boundary_dof_counter] = dof[k];
@@ -1309,9 +1309,8 @@ class BoundaryCondition {
         if (edge_labels[elem_edges[e]] != MeshConnectivity3D::NO_LABEL) {
           for (index_t basis = 0; basis < Basis::nbasis; basis++) {
             if (basis_select[basis]) {
-              index_t orient = 0;  // Orientation doesn't matter here
               index_t nedge_dof = Basis::get_entity_ndof(basis, ET::EDGE, e);
-              Basis::get_entity_dof(basis, ET::EDGE, e, orient, elem_dof, dof);
+              Basis::get_entity_dof(basis, ET::EDGE, e, elem_dof, dof);
 
               for (index_t k = 0; k < nedge_dof; k++) {
                 boundary_dof[boundary_dof_counter] = dof[k];
@@ -1331,10 +1330,8 @@ class BoundaryCondition {
         if (vert_labels[elem_verts[v]] != MeshConnectivity3D::NO_LABEL) {
           for (index_t basis = 0; basis < Basis::nbasis; basis++) {
             if (basis_select[basis]) {
-              index_t orient = 0;  // Orientation doesn't matter here
               index_t nvert_dof = Basis::get_entity_ndof(basis, ET::VERTEX, v);
-              Basis::get_entity_dof(basis, ET::VERTEX, v, orient, elem_dof,
-                                    dof);
+              Basis::get_entity_dof(basis, ET::VERTEX, v, elem_dof, dof);
 
               for (index_t k = 0; k < nvert_dof; k++) {
                 boundary_dof[boundary_dof_counter] = dof[k];

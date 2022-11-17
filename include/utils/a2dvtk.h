@@ -139,7 +139,7 @@ class ToVTK {
 
     // Write data
     for (index_t i = 0; i < nnodes; i++) {
-      write_real_val(fp, sol_vec(i, second_dim));
+      write_real_val(fp, sol_vec(i));  // , second_dim));
       std::fprintf(fp, "\n");
     }
   }

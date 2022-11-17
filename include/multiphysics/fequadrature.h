@@ -23,7 +23,7 @@ class TriQuadrature3 {
 };
 
 template <index_t order>
-class HexQuadrature {
+class HexGaussQuadrature {
  public:
   static index_t get_num_points() { return order * order * order; }
   static void get_point(const index_t n, double pt[]) {
@@ -36,6 +36,24 @@ class HexQuadrature {
     constexpr const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];
+  }
+};
+
+template <index_t order>
+class HexGaussLobattoQuadrature {
+ public:
+  static index_t get_num_points() { return order * order * order; }
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % (order * order)) / order];
+    pt[2] = pts[n / (order * order)];
+  }
+  static double get_weight(const index_t n) {
+    // constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    // return wts[n % order] * wts[(n % (order * order)) / order] *
+    //        wts[n / (order * order)];
+    return 0.0;
   }
 };
 

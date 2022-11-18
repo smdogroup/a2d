@@ -201,7 +201,12 @@ class H1Space {
 
     // s.grad = grad * Jinv
     if constexpr (C == 1) {
-      // Mat-vec operations here
+      for (index_t i = 0; i < dim; i++) {
+        s.grad(i) = 0.0;
+        for (index_t j = 0; j < dim; j++) {
+          s.grad(i) += grad(j) * Jinv(j, i);
+        }
+      }
     } else {
       MatMatMult(grad, Jinv, s.grad);
     }
@@ -218,9 +223,14 @@ class H1Space {
     s.u = u;
 
     if constexpr (C == 1) {
-      // Mat-vec operations here
+      for (index_t i = 0; i < dim; i++) {
+        s.grad(i) = 0.0;
+        for (index_t j = 0; j < dim; j++) {
+          s.grad(i) += Jinv(i, j) * grad(j);
+        }
+      }
     } else {
-      MatMatMult<T, false, true>(s.grad, Jinv, grad);
+      MatMatMult<T, false, true>(grad, Jinv, s.grad);
     }
   }
 

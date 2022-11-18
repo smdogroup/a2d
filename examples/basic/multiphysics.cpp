@@ -6,6 +6,7 @@
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
+#include "multiphysics/heat_conduction.h"
 #include "multiphysics/lagrange_hex_basis.h"
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
@@ -31,14 +32,24 @@ int main(int argc, char *argv[]) {
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
   //*/
 
-  //*
   using PDE = MixedPoisson<T, dim>;
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
                         LagrangeL2HexBasis<T, 1, degree - 1>>;
-  // */
+
+  std::cout << "Mixed Poisson\n";
+  TestPDEImplementation<std::complex<T>, MixedPoisson<std::complex<T>, dim>>();
+  std::cout << "Nonlinear elasticity\n";
+  TestPDEImplementation<std::complex<T>,
+                        NonlinearElasticity<std::complex<T>, dim>>();
+  std::cout << "Heat conduction\n";
+  TestPDEImplementation<std::complex<T>,
+                        HeatConduction<std::complex<T>, dim>>();
+  std::cout << "Mixed heat conduction\n";
+  TestPDEImplementation<std::complex<T>,
+                        MixedHeatConduction<std::complex<T>, dim>>();
 
   constexpr bool use_parallel_elemvec = false;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
@@ -232,13 +243,13 @@ int main(int argc, char *argv[]) {
 
   BSRMatApplyFactor(*factor, rhs, x);
 
-  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
-    std::cout << "rhs[" << i << "]: " << rhs(i, 0) << std::endl;
-  }
+  // for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+  //   std::cout << "rhs[" << i << "]: " << rhs(i, 0) << std::endl;
+  // }
 
-  for (index_t i = 0; i < global_U.get_num_dof(); i++) {
-    std::cout << "u[" << i << "]: " << x(i, 0) << std::endl;
-  }
+  // for (index_t i = 0; i < global_U.get_num_dof(); i++) {
+  //   std::cout << "u[" << i << "]: " << x(i, 0) << std::endl;
+  // }
 
   // Copy the solution to the solution vector
   for (index_t i = 0; i < global_U.get_num_dof(); i++) {

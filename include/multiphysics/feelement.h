@@ -1,6 +1,9 @@
 #ifndef A2D_FE_ELEMENT_H
 #define A2D_FE_ELEMENT_H
 
+#include <iomanip>
+#include <iostream>
+#include <random>
 #include <type_traits>
 
 #include "multiphysics/febase.h"
@@ -11,9 +14,98 @@
 
 namespace A2D {
 
+template <typename T, class PDE>
+void TestPDEImplementation(double dh = 1e-7) {
+  typename PDE::DataSpace data;
+  typename PDE::FiniteElementGeometry geo;
+  typename PDE::FiniteElementSpace s, sref;
+  typename PDE::FiniteElementSpace p, pref;
+  typename PDE::FiniteElementSpace coef, cref, cref0;
+  typename PDE::FiniteElementSpace Jp, Jpref;
+
+  // Generate random data
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> distr(-1.0, 1.0);
+
+  // Set random values for the data
+  if constexpr (PDE::DataSpace::ncomp > 0) {
+    for (index_t i = 0; i < PDE::DataSpace::ncomp; i++) {
+      data[i] = distr(gen);
+    }
+  }
+
+  // Set random values for the geometry
+  for (index_t i = 0; i < PDE::FiniteElementGeometry::ncomp; i++) {
+    geo[i] = distr(gen);
+  }
+
+  // Set the random values
+  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    sref[i] = distr(gen);
+    pref[i] = distr(gen);
+  }
+
+  A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
+  A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
+  A2D::MatInverse(J, Jinv);
+
+  T detJ;
+  A2D::MatDet(J, detJ);
+
+  // Compute the coefficients
+  sref.transform(detJ, J, Jinv, s);
+  PDE::weak_coef(detJ, data, geo, s, coef);
+  coef.rtransform(detJ, J, Jinv, cref0);
+
+  if constexpr (std::is_same<T, std::complex<double>>::value) {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      sref[i] = sref[i] + dh * pref[i] * std::complex<double>(0.0, 1.0);
+    }
+  } else {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      sref[i] = sref[i] + dh * pref[i];
+    }
+  }
+
+  // Compute the coefficients
+  sref.transform(detJ, J, Jinv, s);
+  PDE::weak_coef(detJ, data, geo, s, coef);
+  coef.rtransform(detJ, J, Jinv, cref);
+
+  // Compute the Jacobian-vector product
+  typename PDE::JacVecProduct jvp(detJ, data, geo, s);
+
+  // Compute the Jacobian-vector product
+  pref.transform(detJ, J, Jinv, p);
+  jvp(p, Jp);
+  Jp.rtransform(detJ, J, Jinv, Jpref);
+
+  // Compute the finite-difference value
+  typename PDE::FiniteElementSpace fd;
+
+  if constexpr (std::is_same<T, std::complex<double>>::value) {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      fd[i] = std::imag(cref[i]) / dh;
+    }
+  } else {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      fd[i] = (cref[i] - cref0[i]) / dh;
+    }
+  }
+
+  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    std::cout << "fd[" << std::setw(2) << i << "]: " << std::setw(12)
+              << std::real(fd[i]) << " Jpref[" << std::setw(2) << i
+              << "]: " << std::setw(12) << std::real(Jpref[i]) << " err["
+              << std::setw(2) << i << "]: " << std::setw(12)
+              << std::real((fd[i] - Jpref[i]) / fd[i]) << std::endl;
+  }
+}
+
 template <typename T, class PDE, class Quadrature, class DataBasis,
           class GeoBasis, class Basis, bool use_parallel_elemvec = false>
-class FiniteElement {  // : public ElementBase<T> {
+class FiniteElement {
  public:
   /*
     This wraps an FEBasis class to make it look like a quadrature class

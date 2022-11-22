@@ -23,7 +23,26 @@ class ElementTesterPDE {
 template <index_t order>
 class SamplerQuadrature {
  public:
-  static index_t get_num_points() { return order * order * order; }
+  static const bool is_tensor_product = true;
+  static constexpr index_t num_quad_points = order * order * order;
+  static const index_t tensor_dim0 = order;
+  static const index_t tensor_dim1 = order;
+  static const index_t tensor_dim2 = order;
+
+  static double get_tensor_point(const index_t dim, const index_t pt) {
+    return 2 * double(pt) / double(order - 1) - 1.0;
+  }
+
+  static double get_tensor_weight(const index_t dim, const index_t pt) {
+    return 1.0;
+  }
+
+  static index_t get_tensor_index(const index_t q0, const index_t q1,
+                                  const index_t q2) {
+    return q0 + order * (q1 + order * q2);
+  }
+
+  static constexpr index_t get_num_points() { return num_quad_points; }
 
   static void get_point(const index_t n, double pt[]) {
     index_t i = n % order;
@@ -43,7 +62,7 @@ void main_body() {
   constexpr index_t dim = 3;
   constexpr index_t geo_degree = 1;  // use quadratic element for the mesh
   constexpr index_t degree = 2;      // use quadratic element for "physics"
-  constexpr index_t nsample_per_dim = 10;
+  constexpr index_t nsample_per_dim = 20;
 
   // Set up type aliases
   using T = double;
@@ -144,7 +163,6 @@ void main_body() {
         elemvec.get_element_values(elem, dof);
 
         // Get the geometry values
-
         for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
           index_t node = node_num(i + ET::HEX_VERTS_CART[ii][0],
                                   j + ET::HEX_VERTS_CART[ii][1],
@@ -159,27 +177,33 @@ void main_body() {
 
         geoelemvec.set_element_values(elem, dof_geo);
 
+        using QptSpaceSol =
+            QptSpace<SamplingQuadrature, PDE::FiniteElementSpace>;
+        QptSpaceSol qptspace;
+        using QptSpaceGeo =
+            QptSpace<SamplingQuadrature, PDE::FiniteElementGeometry>;
+        QptSpaceGeo qptspace_geo;
+
+        Basis::template interp<SamplingQuadrature, ElemVec::FEDof,
+                               PDE::FiniteElementSpace>(dof, qptspace);
+        GeoBasis::template interp<SamplingQuadrature, GeoElemVec::FEDof,
+                                  PDE::FiniteElementGeometry>(dof_geo,
+                                                              qptspace_geo);
+
         // Loop over sample points in each element
         for (index_t kk = 0, pt = 0; kk < nsample_per_dim; kk++) {
           for (index_t jj = 0; jj < nsample_per_dim; jj++) {
             for (index_t ii = 0; ii < nsample_per_dim; ii++, pt++, index++) {
-              // Get physical coordinates for sample point
-              GeoBasis::template interp<SamplingQuadrature, GeoElemVec::FEDof,
-                                        PDE::FiniteElementGeometry>(
-                  pt, dof_geo, geo_spaces[index]);
+              Vec<T, dim>& u = qptspace.get(pt).get<0>().get_value();
+              T& div = qptspace.get(pt).get<0>().get_div();
 
-              // Interpolate vector
-              Basis::template interp<SamplingQuadrature, ElemVec::FEDof,
-                                     PDE::FiniteElementSpace>(pt, dof,
-                                                              spaces[index]);
-              Vec<T, dim>& u = spaces[index].get<0>().get_value();
-              T& div = spaces[index].get<0>().get_div();
-              Vec<T, dim>& x = geo_spaces[index].get<0>().get_value();
+              Vec<T, dim>& x = qptspace_geo.get(pt).get<0>().get_value();
 
               printf(
-                  "elem: %2d, sample: %3d, u: %10.5f v: %10.5f w:%10.5f div: "
-                  "%10.5f\n",
-                  elem, pt, u(0), u(1), u(2), div);
+                  "elem: %2d, sample: %3d, x: %10.5f y: %10.5f z: %10.5f u: "
+                  "%10.5f v: %10.5f w:%10.5f "
+                  "div:%10.5f\n",
+                  elem, pt, x(0), x(1), x(2), u(0), u(1), u(2), div);
 
               for (index_t idim = 0; idim < dim; idim++) {
                 vector_field[dim * index + idim] = u(idim);

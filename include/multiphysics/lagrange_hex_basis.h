@@ -142,53 +142,105 @@ class LagrangeH1HexBasis {
   }
 
   /**
-   * @brief Interpolate the degrees of freedom to obtain the values in the space
-   * object
+   * @brief Interpolate over all quadrature points on the element
    *
-   * @tparam Quadrature The quadrature object
-   * @tparam offset Degree of freedom offset into the array
-   * @tparam SolnType Solution array type
-   * @param n The quadrature point index
+   * @tparam space The finite element space index
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType
    * @param sol The solution array
-   * @param out The finite element space output object
+   * @param out The finite element space object at all quadrature points
    */
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, H1Space<T, C, dim>& out) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void interp(const SolnType sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    if constexpr (Quadrature::is_tensor_product) {
+      const index_t q0dim = Quadrature::tensor_dim0;
+      const index_t q1dim = Quadrature::tensor_dim1;
+      const index_t q2dim = Quadrature::tensor_dim2;
 
-    Vec<T, C>& u = out.get_value();
-    Mat<T, C, dim>& grad = out.get_grad();
+      for (index_t q2 = 0; q2 < q2dim; q2++) {
+        double n2[order], d2[order];
+        const double pt2 = Quadrature::get_tensor_point(2, q2);
+        lagrange_basis<order>(pt2, n2, d2);
 
-    u.zero();
-    grad.zero();
+        for (index_t q1 = 0; q1 < q1dim; q1++) {
+          double n1[order], d1[order];
+          const double pt1 = Quadrature::get_tensor_point(1, q1);
+          lagrange_basis<order>(pt1, n1, d1);
 
-    // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    double d1[order], d2[order], d3[order];
-    lagrange_basis<order>(pt[0], n1, d1);
-    lagrange_basis<order>(pt[1], n2, d2);
-    lagrange_basis<order>(pt[2], n3, d3);
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            // Evaluate the basis functions
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            lagrange_basis<order>(pt0, n0, d0);
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C; i++) {
-            u(i) +=
-                n1[j1] * n2[j2] * n3[j3] *
-                sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+            // Get the quadrature point index
+            const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
 
-            grad(i, 0) +=
-                d1[j1] * n2[j2] * n3[j3] *
-                sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+            FiniteElementSpace& s = out.get(qindex);
+            H1Space<T, C, dim>& h1 = s.template get<space>();
+            Vec<T, C>& u = h1.get_value();
+            Mat<T, C, dim>& grad = h1.get_grad();
 
-            grad(i, 1) +=
-                n1[j1] * d2[j2] * n3[j3] *
-                sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+            u.zero();
+            grad.zero();
 
-            grad(i, 2) +=
-                n1[j1] * n2[j2] * d3[j3] *
-                sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  for (index_t i = 0; i < C; i++) {
+                    const T val =
+                        sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+
+                    u(i) += n0[j0] * n1[j1] * n2[j2] * val;
+                    grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
+                    grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
+                    grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+        // Get the quadrature point
+        double pt[dim];
+        Quadrature::get_point(q, pt);
+
+        // Evaluate the basis functions
+        double n0[order], d0[order];
+        double n1[order], d1[order];
+        double n2[order], d2[order];
+        lagrange_basis<order>(pt[0], n0, d0);
+        lagrange_basis<order>(pt[1], n1, d1);
+        lagrange_basis<order>(pt[2], n2, d2);
+
+        FiniteElementSpace& s = out.get(q);
+        H1Space<T, C, dim>& h1 = s.template get<space>();
+        Vec<T, C>& u = h1.get_value();
+        Mat<T, C, dim>& grad = h1.get_grad();
+
+        u.zero();
+        grad.zero();
+
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              for (index_t i = 0; i < C; i++) {
+                const T val =
+                    sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+
+                u(i) += n0[j0] * n1[j1] * n2[j2] * val;
+                grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
+                grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
+                grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+              }
+            }
           }
         }
       }
@@ -199,37 +251,95 @@ class LagrangeH1HexBasis {
    * @brief Add the derivative contained in the solution space to the output
    * residual object
    *
+   * @tparam space The finite element space index
    * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace
    * @tparam offset Degree of freedom offset into the array
    * @tparam SolnType Solution array type
-   * @param n The quadrature point index
    * @param in The finite element space output object
    * @param res The residual array - same shape as the solution array
    */
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const H1Space<T, C, dim>& in, SolnType res) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType res) {
+    if constexpr (Quadrature::is_tensor_product) {
+      const index_t q0dim = Quadrature::tensor_dim0;
+      const index_t q1dim = Quadrature::tensor_dim1;
+      const index_t q2dim = Quadrature::tensor_dim2;
 
-    const Vec<T, C>& u = in.get_value();
-    const Mat<T, C, dim>& grad = in.get_grad();
+      for (index_t q2 = 0; q2 < q2dim; q2++) {
+        double n2[order], d2[order];
+        const double pt2 = Quadrature::get_tensor_point(2, q2);
+        lagrange_basis<order>(pt2, n2, d2);
 
-    // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    double d1[order], d2[order], d3[order];
-    lagrange_basis<order>(pt[0], n1, d1);
-    lagrange_basis<order>(pt[1], n2, d2);
-    lagrange_basis<order>(pt[2], n3, d3);
+        for (index_t q1 = 0; q1 < q1dim; q1++) {
+          double n1[order], d1[order];
+          const double pt1 = Quadrature::get_tensor_point(1, q1);
+          lagrange_basis<order>(pt1, n1, d1);
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          for (index_t i = 0; i < C; i++) {
-            res[offset + C * (j1 + j2 * order + j3 * order * order) + i] +=
-                n1[j1] * n2[j2] * n3[j3] * u(i) +
-                d1[j1] * n2[j2] * n3[j3] * grad(i, 0) +
-                n1[j1] * d2[j2] * n3[j3] * grad(i, 1) +
-                n1[j1] * n2[j2] * d3[j3] * grad(i, 2);
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            // Evaluate the basis functions
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            lagrange_basis<order>(pt0, n0, d0);
+
+            // Get the quadrature point index
+            const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+
+            const FiniteElementSpace& s = in.get(qindex);
+            const H1Space<T, C, dim>& h1 = s.template get<space>();
+
+            const Vec<T, C>& u = h1.get_value();
+            const Mat<T, C, dim>& grad = h1.get_grad();
+
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  for (index_t i = 0; i < C; i++) {
+                    res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
+                        n0[j0] * n1[j1] * n2[j2] * u(i) +
+                        d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
+                        n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
+                        n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+        // Get the quadrature point
+        double pt[dim];
+        Quadrature::get_point(q, pt);
+
+        // Evaluate the basis functions
+        double n0[order], d0[order];
+        double n1[order], d1[order];
+        double n2[order], d2[order];
+        lagrange_basis<order>(pt[0], n0, d0);
+        lagrange_basis<order>(pt[1], n1, d1);
+        lagrange_basis<order>(pt[2], n2, d2);
+
+        const FiniteElementSpace& s = in.get(q);
+        const H1Space<T, C, dim>& h1 = s.template get<space>();
+
+        const Vec<T, C>& u = h1.get_value();
+        const Mat<T, C, dim>& grad = h1.get_grad();
+
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              for (index_t i = 0; i < C; i++) {
+                res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
+                    n0[j0] * n1[j1] * n2[j2] * u(i) +
+                    d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
+                    n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
+                    n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+              }
+            }
           }
         }
       }
@@ -297,9 +407,11 @@ class LagrangeL2HexBasis {
   static const index_t ncomp = L2Space<T, C, dim>::ncomp;
 
   /**
-   * @brief Degree of freedom handling on the vertices, edges, faces and volume
+   * @brief Degree of freedom handling on the vertices, edges, faces and
+   * volume
    *
-   * @param entity The type of topological entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (vertex, edge, face or
+   * volume)
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
@@ -374,8 +486,8 @@ class LagrangeL2HexBasis {
   }
 
   /**
-   * @brief Get the parametric point location associated with the given degree
-   * of freedom
+   * @brief Get the parametric point location associated with the given
+   * degree of freedom
    *
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
@@ -389,35 +501,43 @@ class LagrangeL2HexBasis {
     pt[2] = pts[n / (order * order)];
   }
 
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, L2Space<T, C, dim>& out) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void interp(const SolnType sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+      // Get the quadrature point
+      double pt[dim];
+      Quadrature::get_point(q, pt);
 
-    typename L2Space<T, C, dim>::VarType u = out.get_value();
-    if constexpr (C == 1) {
-      u = 0.0;
-    } else {
-      u.zero();
-    }
+      FiniteElementSpace& s = out.get(q);
+      L2Space<T, C, dim>& l2 = s.template get<space>();
+      typename L2Space<T, C, dim>::VarType u = l2.get_value();
 
-    // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(pt[0], n1);
-    lagrange_basis<order>(pt[1], n2);
-    lagrange_basis<order>(pt[2], n3);
+      if constexpr (C == 1) {
+        u = 0.0;
+      } else {
+        u.zero();
+      }
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          if constexpr (C == 1) {
-            u += n1[j1] * n2[j2] * n3[j3] *
-                 sol[offset + C * (j1 + j2 * order + j3 * order * order)];
-          } else {
-            for (index_t i = 0; i < C; i++) {
-              u(i) +=
-                  n1[j1] * n2[j2] * n3[j3] *
-                  sol[offset + C * (j1 + j2 * order + j3 * order * order) + i];
+      // Evaluate the basis functions
+      double n1[order], n2[order], n3[order];
+      lagrange_basis<order>(pt[0], n1);
+      lagrange_basis<order>(pt[1], n2);
+      lagrange_basis<order>(pt[2], n3);
+
+      for (index_t j3 = 0; j3 < order; j3++) {
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            if constexpr (C == 1) {
+              u += n1[j1] * n2[j2] * n3[j3] *
+                   sol[offset + C * (j1 + j2 * order + j3 * order * order)];
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                u(i) += n1[j1] * n2[j2] * n3[j3] *
+                        sol[offset +
+                            C * (j1 + j2 * order + j3 * order * order) + i];
+              }
             }
           }
         }
@@ -425,29 +545,36 @@ class LagrangeL2HexBasis {
     }
   }
 
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const L2Space<T, C, dim>& in, SolnType res) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType res) {
+    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+      // Get the quadrature point
+      double pt[dim];
+      Quadrature::get_point(q, pt);
 
-    const typename L2Space<T, C, dim>::VarType u = in.get_value();
+      const FiniteElementSpace& s = in.get(q);
+      const L2Space<T, C, dim>& l2 = s.template get<space>();
+      const typename L2Space<T, C, dim>::VarType u = l2.get_value();
 
-    // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(pt[0], n1);
-    lagrange_basis<order>(pt[1], n2);
-    lagrange_basis<order>(pt[2], n3);
+      // Evaluate the basis functions
+      double n1[order], n2[order], n3[order];
+      lagrange_basis<order>(pt[0], n1);
+      lagrange_basis<order>(pt[1], n2);
+      lagrange_basis<order>(pt[2], n3);
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          if constexpr (C == 1) {
-            res[offset + C * (j1 + j2 * order + j3 * order * order)] +=
-                n1[j1] * n2[j2] * n3[j3] * u;
-          } else {
-            for (index_t i = 0; i < C; i++) {
-              res[offset + C * (j1 + j2 * order + j3 * order * order) + i] +=
-                  n1[j1] * n2[j2] * n3[j3] * u(i);
+      for (index_t j3 = 0; j3 < order; j3++) {
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            if constexpr (C == 1) {
+              res[offset + j1 + order * (j2 + order * j3)] +=
+                  n1[j1] * n2[j2] * n3[j3] * u;
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                res[offset + C * (j1 + order * (j2 + order * j3)) + i] +=
+                    n1[j1] * n2[j2] * n3[j3] * u(i);
+              }
             }
           }
         }

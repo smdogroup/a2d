@@ -17,30 +17,27 @@ class NonlinearElasticity {
   // Space for the finite-element data
   typedef A2D::FESpace<T, data_dim, A2D::H1Space<T, data_dim, dim>> DataSpace;
 
-  // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementSpace;
-
   // Space for the element geometry
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+
+  // Finite element space
+  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementSpace;
 
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
-  static const A2D::index_t num_near_nullspace = 6;
-
   /**
-   * @brief Evaluate the weak form of the coefficients for nonlinear
-   * elasticity
+   * @brief Evaluate the weak form coefficients for nonlinear elasticity
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  A2D_INLINE_FUNCTION static void weak_coef(T wdetJ, const DataSpace& data,
-                                            const FiniteElementGeometry& geo,
-                                            const FiniteElementSpace& s,
-                                            FiniteElementSpace& coef) {
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
     // Get the constitutive data at the points
     T mu = data[0];
     T lambda = data[1];
@@ -81,7 +78,8 @@ class NonlinearElasticity {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const NonlinearElasticity<T, D>& pde,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data
@@ -135,7 +133,8 @@ class NonlinearElasticity {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(T wdetJ, const DataSpace& data,
+    A2D_INLINE_FUNCTION AdjVecProduct(const NonlinearElasticity<T, D>& pde,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         :  // Initialize constitutive data

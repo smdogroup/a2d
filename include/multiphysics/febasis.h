@@ -87,217 +87,6 @@ namespace A2D {
 */
 
 /*
-  Lagrange basis for a triangle
-*/
-template <typename T, index_t C>
-class LagrangeTri0 {
- public:
-  using SpaceType = L2Space<T, C, 2>;
-  using VarType = typename SpaceType::VarType;
-
-  static const index_t ndof = C;
-  static const index_t ncomp = SpaceType::ncomp;
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, SpaceType& out) {
-    VarType& u = out.get_value();
-    if constexpr (C == 1) {
-      u = sol[offset];
-    } else {
-      for (index_t i = 0; i < C; i++) {
-        u(i) = sol[offset + i];
-      }
-    }
-  }
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const SpaceType& in, SolnType res) {
-    const VarType& u = in.get_value();
-    if constexpr (C == 1) {
-      res[offset] += u;
-    } else {
-      for (index_t i = 0; i < C; i++) {
-        res[offset + i] += u(i);
-      }
-    }
-  }
-
-  // Set the matrix stride
-  static const index_t stride = 1;
-
-  // Set the basis size
-  static const index_t basis_size = 1;
-
-  // Set the derived quantities - number of dof for each stride
-  static const index_t ndof_per_stride = ndof / stride;
-
-  // Number of components per stride
-  static const index_t ncomp_per_stride = ncomp / stride;
-
-  template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
-    N[0] = 1.0;
-  }
-};
-
-/*
-  Lagrange basis for a triangle
-*/
-template <typename T, index_t C>
-class LagrangeTri1 {
- public:
-  using SpaceType = H1Space<T, C, 2>;
-
-  static const index_t ndof = 3 * C;
-  static const index_t ncomp = SpaceType::ncomp;
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, SpaceType& out) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    // Compute the shape functions
-    double N[3];
-    N[0] = 1.0 - pt[0] - pt[1];
-    N[1] = pt[0];
-    N[2] = pt[1];
-
-    Vec<T, C>& u = out.get_value();
-    Mat<T, C, 2>& grad = out.get_grad();
-
-    for (index_t i = 0; i < C; i++) {
-      u(i) = N[0] * sol[i + offset] + N[1] * sol[C + i + offset] +
-             N[2] * sol[2 * C + i + offset];
-      grad(i, 0) = sol[C + i + offset] - sol[i + offset];
-      grad(i, 1) = sol[2 * C + i + offset] - sol[i + offset];
-    }
-  }
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const SpaceType& in, SolnType res) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    // Compute the shape functions
-    double N[3];
-    N[0] = 1.0 - pt[0] - pt[1];
-    N[1] = pt[0];
-    N[2] = pt[1];
-
-    const Vec<T, C>& u = in.get_value();
-    const Mat<T, C, 2>& grad = in.get_grad();
-
-    for (index_t i = 0; i < C; i++) {
-      res[i + offset] += N[0] * u(i) - grad(i, 0) - grad(i, 1);
-      res[C + i + offset] += N[1] * u(i) + grad(i, 0);
-      res[2 * C + i + offset] += N[2] * u(i) + grad(i, 1);
-    }
-  }
-
-  // Set the matrix stride
-  static const index_t stride = C;
-
-  // Set the basis size
-  static const index_t basis_size = 9;
-
-  // Set the derived quantities - number of dof for each stride
-  static const index_t ndof_per_stride = ndof / stride;
-
-  // Number of components per stride
-  static const index_t ncomp_per_stride = ncomp / stride;
-
-  // Compute the full matrix of basis functions
-  template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    N[0] = 1.0 - pt[0] - pt[1];
-    N[1] = -1.0;
-    N[2] = -1.0;
-
-    N[3] = pt[0];
-    N[4] = 1.0;
-    N[5] = 0.0;
-
-    N[6] = pt[1];
-    N[7] = 0.0;
-    N[8] = 1.0;
-  }
-};
-
-/*
-  Raviart-Thomas element for H(div) in 2D
-*/
-template <typename T>
-class RT2DTri1 {
- public:
-  using SpaceType = HdivSpace<T, 2>;
-
-  static const index_t ndof = 3;
-  static const index_t ncomp = SpaceType::ncomp;
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, SpaceType& out) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    Vec<T, 2>& u = out.get_value();
-    T& div = out.get_div();
-
-    u(0) = pt[0] * sol[offset] + (pt[0] - 1.0) * sol[1 + offset] +
-           pt[0] * sol[2 + offset];
-    u(1) = pt[1] * sol[offset] + pt[1] * sol[1 + offset] +
-           (pt[1] - 1.0) * sol[2 + offset];
-    div = 2.0 * (sol[offset] + sol[1 + offset] + sol[2 + offset]);
-  }
-
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const SpaceType& in, SolnType res) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    const Vec<T, 2>& u = in.get_value();
-    const T& div = in.get_div();
-
-    res[offset] += pt[0] * u(0) + pt[1] * u(1) + 2.0 * div;
-    res[1 + offset] += (pt[0] - 1.0) * u(0) + pt[1] * u(1) + 2.0 * div;
-    res[2 + offset] += pt[0] * u(0) + (pt[1] - 1.0) * u(1) + 2.0 * div;
-  }
-
-  // Set the matrix stride
-  static const index_t stride = 1;
-
-  // Set the matrix size
-  static const index_t basis_size = 9;
-
-  // Set the derived quantities - number of dof for each stride
-  static const index_t ndof_per_stride = ndof / stride;
-
-  // Number of components per stride
-  static const index_t ncomp_per_stride = ncomp / stride;
-
-  // Compute the full matrix of basis functions
-  template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
-    double pt[2];
-    Quadrature::get_point(n, pt);
-
-    N[0] = pt[0];
-    N[1] = pt[1];
-    N[2] = 2.0;
-
-    N[3] = (pt[0] - 1.0);
-    N[4] = pt[1];
-    N[5] = 2.0;
-
-    N[6] = pt[0];
-    N[7] = (pt[1] - 1.0);
-    N[8] = 2.0;
-  }
-};
-
-/*
   Template pattern for computing the number of dof in a basis
 */
 template <class... Basis>
@@ -359,8 +148,6 @@ class FEBasis {
 
   // Use the definitions from the element types
   using ET = ElementTypes;
-
-  // using FiniteElementSpace = FESpace<BasisSpace...::SpaceType>;
 
   /**
    * @brief Number of basis function objects
@@ -425,26 +212,26 @@ class FEBasis {
   /**
    * @brief Interpolate using the basis functions at the quadrature point
    *
-   * @param pt The interpolation point index
    * @param dof The degree of freedom object
    * @param s The output finite element space object
    */
   template <class Quadrature, class FEDof, class FiniteElementSpace>
-  static void interp(index_t pt, const FEDof& dof, FiniteElementSpace& s) {
-    interp_<Quadrature, FEDof, FiniteElementSpace, 0, Basis...>(pt, dof, s);
+  static void interp(const FEDof& dof,
+                     QptSpace<Quadrature, FiniteElementSpace>& s) {
+    interp_<Quadrature, FEDof, FiniteElementSpace, 0, Basis...>(dof, s);
   }
 
   /**
    * @brief Add values to the degree of freedom using the interpolation
    * functions
    *
-   * @param pt The interpolation point index
    * @param s The finite element space objec
    * @param dof The degree of freedom object that values are added to
    */
   template <class Quadrature, class FiniteElementSpace, class FEDof>
-  static void add(index_t pt, const FiniteElementSpace& s, FEDof& dof) {
-    add_<Quadrature, FiniteElementSpace, FEDof, 0, Basis...>(pt, s, dof);
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& s,
+                  FEDof& dof) {
+    add_<Quadrature, FiniteElementSpace, FEDof, 0, Basis...>(s, dof);
   }
 
   /**
@@ -599,37 +386,38 @@ class FEBasis {
  private:
   template <class Quadrature, class FEDof, class FiniteElementSpace,
             index_t index, class First, class... Remain>
-  static void interp_(const index_t pt, const FEDof& dof,
-                      FiniteElementSpace& s) {
+  static void interp_(const FEDof& dof,
+                      QptSpace<Quadrature, FiniteElementSpace>& s) {
     // Interpolate
-    First::template interp<Quadrature, get_dof_offset<index>()>(
-        pt, dof, s.template get<index>());
+    First::template interp<index, Quadrature, FiniteElementSpace,
+                           get_dof_offset<index>()>(dof, s);
 
     // Do the next solution space, if any...
-    interp_<Quadrature, FEDof, FiniteElementSpace, index + 1, Remain...>(
-        pt, dof, s);
+    interp_<Quadrature, FEDof, FiniteElementSpace, index + 1, Remain...>(dof,
+                                                                         s);
   }
 
   template <class Quadrature, class FEDof, class FiniteElementSpace,
             index_t index>
-  static void interp_(const index_t pt, const FEDof& dof,
-                      FiniteElementSpace& s) {}
+  static void interp_(const FEDof& dof,
+                      QptSpace<Quadrature, FiniteElementSpace>& s) {}
 
   template <class Quadrature, class FiniteElementSpace, class FEDof,
             index_t index, class First, class... Remain>
-  static void add_(const index_t pt, const FiniteElementSpace& s, FEDof& dof) {
+  static void add_(const QptSpace<Quadrature, FiniteElementSpace>& s,
+                   FEDof& dof) {
     // Add the interpolation
-    First::template add<Quadrature, get_dof_offset<index>()>(
-        pt, s.template get<index>(), dof);
+    First::template add<index, Quadrature, FiniteElementSpace,
+                        get_dof_offset<index>()>(s, dof);
 
     // Do the next solution space, if any...
-    add_<Quadrature, FiniteElementSpace, FEDof, index + 1, Remain...>(pt, s,
-                                                                      dof);
+    add_<Quadrature, FiniteElementSpace, FEDof, index + 1, Remain...>(s, dof);
   }
 
   template <class Quadrature, class FiniteElementSpace, class FEDof,
             index_t index>
-  static void add_(const index_t pt, const FiniteElementSpace& s, FEDof& dof) {}
+  static void add_(const QptSpace<Quadrature, FiniteElementSpace>& s,
+                   FEDof& dof) {}
 
   template <class Quadrature, class First, class... Remain>
   static void eval_basis(const index_t pt, double N[]) {

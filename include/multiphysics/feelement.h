@@ -15,7 +15,7 @@
 namespace A2D {
 
 template <typename T, class PDE>
-void TestPDEImplementation(double dh = 1e-7) {
+void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
   typename PDE::DataSpace data;
   typename PDE::FiniteElementGeometry geo;
   typename PDE::FiniteElementSpace s, sref;
@@ -55,7 +55,7 @@ void TestPDEImplementation(double dh = 1e-7) {
 
   // Compute the coefficients
   sref.transform(detJ, J, Jinv, s);
-  PDE::weak_coef(detJ, data, geo, s, coef);
+  pde.weak(detJ, data, geo, s, coef);
   coef.rtransform(detJ, J, Jinv, cref0);
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
@@ -70,11 +70,11 @@ void TestPDEImplementation(double dh = 1e-7) {
 
   // Compute the coefficients
   sref.transform(detJ, J, Jinv, s);
-  PDE::weak_coef(detJ, data, geo, s, coef);
+  pde.weak(detJ, data, geo, s, coef);
   coef.rtransform(detJ, J, Jinv, cref);
 
   // Compute the Jacobian-vector product
-  typename PDE::JacVecProduct jvp(detJ, data, geo, s);
+  typename PDE::JacVecProduct jvp(pde, detJ, data, geo, s);
 
   // Compute the Jacobian-vector product
   pref.transform(detJ, J, Jinv, p);
@@ -107,17 +107,14 @@ template <typename T, class PDE, class Quadrature, class DataBasis,
           class GeoBasis, class Basis, bool use_parallel_elemvec = false>
 class FiniteElement {
  public:
-  /*
-    This wraps an FEBasis class to make it look like a quadrature class
-  */
-  template <class MyBasis>
-  class DofPoints {
-   public:
-    static index_t get_num_points() { return MyBasis::ndof; }
-    static void get_point(const index_t n, double pt[]) {
-      MyBasis::get_dof_point(n, pt);
-    }
-  };
+  // Quadrature point object for the data space
+  using QDataSpace = QptSpace<Quadrature, typename PDE::DataSpace>;
+
+  // Quadrature point object for the geometry
+  using QGeoSpace = QptSpace<Quadrature, typename PDE::FiniteElementGeometry>;
+
+  // Quadrature point object for the finite-element space
+  using QSpace = QptSpace<Quadrature, typename PDE::FiniteElementSpace>;
 
   using DataElemVec =
       typename std::conditional<use_parallel_elemvec,
@@ -134,35 +131,7 @@ class FiniteElement {
 
   FiniteElement() {}
 
-  void get_near_nullspace(const index_t null_index, DataElemVec& elem_data,
-                          GeoElemVec& elem_geo, ElemVec& elem_null) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element
-      typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-
-      // Get the geometry values
-      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-
-      for (A2D::index_t dof = 0; dof < Basis::ndof; dof++) {
-        // Extract the Jacobian of the element transformation
-        typename PDE::FiniteElementGeometry geo;
-        GeoBasis::template interp<DofPoints<Basis>>(dof, geo_dof, geo);
-
-        // Interpolate the data to the quadrature point
-        typename PDE::DataSpace qdata;
-        DataBasis::template interp<DofPoints<Basis>>(dof, data_dof, qdata);
-
-        // // Set the solution space
-        // PDE::near_nullspace(null_index, qdata)
-      }
-    }
-  }
-
-  void add_residual(DataElemVec& elem_data, GeoElemVec& elem_geo,
+  void add_residual(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
                     ElemVec& elem_sol, ElemVec& elem_res) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
@@ -172,23 +141,37 @@ class FiniteElement {
       typename DataElemVec::FEDof data_dof(i, elem_data);
       elem_data.get_element_values(i, data_dof);
 
+      // Interpolate the data
+      QDataSpace data;
+      DataBasis::template interp(data_dof, data);
+
       // Get the geometry values
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       elem_geo.get_element_values(i, geo_dof);
+
+      // Interpolate the geometric data for all quadrature points
+      QGeoSpace geo;
+      GeoBasis::template interp(geo_dof, geo);
 
       // Get the degrees of freedom for the element
       typename ElemVec::FEDof sol_dof(i, elem_sol);
       elem_sol.get_element_values(i, sol_dof);
 
-      // Get residual for the element
-      typename ElemVec::FEDof res_dof(i, elem_res);
-      elem_res.get_element_values(i, res_dof);
+      // Compute the solution information
+      QSpace sol;
+      Basis::template interp(sol_dof, sol);
 
+      // Set the residual
+      QSpace res;
+
+      // Compute the weak coefficients at all quadrature points
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
-        // Extract the Jacobian of the element transformation
-        typename PDE::FiniteElementGeometry geo;
-        GeoBasis::template interp<Quadrature>(j, geo_dof, geo);
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
+        // Transform to the local coordinate system
+        typename PDE::FiniteElementSpace& sref = sol.get(j);
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+
+        // Get the Jacobian transformation
+        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
 
         // Compute the inverse of the transformation
         A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
@@ -198,31 +181,29 @@ class FiniteElement {
         T detJ;
         A2D::MatDet(J, detJ);
 
-        // Interpolate the data to the quadrature point
-        typename PDE::DataSpace qdata;
-        DataBasis::template interp<Quadrature>(j, data_dof, qdata);
-
-        // Interpolate the solution vector using the basis
-        typename PDE::FiniteElementSpace sref;
-        Basis::template interp<Quadrature>(j, sol_dof, sref);
-
-        // Transform to the local coordinate system
+        // Transform the solution the physical element
         typename PDE::FiniteElementSpace s;
         sref.transform(detJ, J, Jinv, s);
 
         // Compute the coefficients for the weak form of the PDE
-        typename PDE::FiniteElementSpace coef;
         double weight = Quadrature::get_weight(j);
 
-        PDE::weak_coef(weight * detJ, qdata, geo, s, coef);
+        // Evaluate the weak form coefficients
+        typename PDE::FiniteElementSpace coef;
+        pde.weak(weight * detJ, data.get(j), gref, s, coef);
 
         // Compute the coefficients in the reference element
-        typename PDE::FiniteElementSpace cref;
+        typename PDE::FiniteElementSpace& cref = res.get(j);
         coef.rtransform(detJ, J, Jinv, cref);
-
-        // Add the contributions back to the residual
-        Basis::template add<Quadrature>(j, cref, res_dof);
       }
+
+      // Get residual for the element
+      typename ElemVec::FEDof res_dof(i, elem_res);
+      elem_res.get_element_values(i, res_dof);
+
+      // Add the residual from the quadrature points back to the finite-element
+      // mesh
+      Basis::template add(res, res_dof);
 
       elem_res.add_element_values(i, res_dof);
     }
@@ -231,9 +212,9 @@ class FiniteElement {
   /*
     Compute y = y + J * x
   */
-  void add_jacobian_vector_product(DataElemVec& elem_data, GeoElemVec& elem_geo,
-                                   ElemVec& elem_sol, ElemVec& elem_xvec,
-                                   ElemVec& elem_yvec) {
+  void add_jacobian_vector_product(PDE& pde, DataElemVec& elem_data,
+                                   GeoElemVec& elem_geo, ElemVec& elem_sol,
+                                   ElemVec& elem_xvec, ElemVec& elem_yvec) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -242,26 +223,45 @@ class FiniteElement {
       typename DataElemVec::FEDof data_dof(i, elem_data);
       elem_data.get_element_values(i, data_dof);
 
+      // Interpolate the data
+      QDataSpace data;
+      DataBasis::template interp(data_dof, data);
+
       // Get the geometry values
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       elem_geo.get_element_values(i, geo_dof);
 
+      // Interpolate the geometric data for all quadrature points
+      QGeoSpace geo;
+      GeoBasis::template interp(geo_dof, geo);
+
       // Get the degrees of freedom for the element
       typename ElemVec::FEDof sol_dof(i, elem_sol);
       elem_sol.get_element_values(i, sol_dof);
+
+      // Compute the solution information
+      QSpace sol;
+      Basis::template interp(sol_dof, sol);
 
       // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
       elem_xvec.get_element_values(i, x_dof);
 
-      // Set up values for the output vector
-      typename ElemVec::FEDof y_dof(i, elem_yvec);
+      // Compute the solution information
+      QSpace xsol;
+      Basis::template interp(x_dof, xsol);
+
+      // Set the residual
+      QSpace ysol;
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
-        // Extract the Jacobian of the element transformation
-        typename PDE::FiniteElementGeometry geo;
-        GeoBasis::template interp<Quadrature>(j, geo_dof, geo);
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
+        // Transform to the local coordinate system
+        typename PDE::FiniteElementSpace& sref = sol.get(j);
+        typename PDE::FiniteElementSpace& xref = xsol.get(j);
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+
+        // Get the Jacobian transformation
+        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
 
         // Compute the inverse of the transformation
         A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
@@ -271,127 +271,124 @@ class FiniteElement {
         T detJ;
         A2D::MatDet(J, detJ);
 
-        // Interpolate the data to the quadrature point
-        typename PDE::DataSpace qdata;
-        DataBasis::template interp<Quadrature>(j, data_dof, qdata);
-
-        // Interpolate the solution vector using the basis
-        typename PDE::FiniteElementSpace sref;
-        Basis::template interp<Quadrature>(j, sol_dof, sref);
-
-        // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace s;
+        // Transform the solution the physical element
+        typename PDE::FiniteElementSpace x, s;
         sref.transform(detJ, J, Jinv, s);
-
-        // Initialize the Jacobian-vector product functor
-        double weight = Quadrature::get_weight(j);
-        typename PDE::JacVecProduct jvp(weight * detJ, qdata, geo, s);
-
-        // Interpolate the x-dof
-        typename PDE::FiniteElementSpace xref, x;
-        Basis::template interp<Quadrature>(j, x_dof, xref);
-
         xref.transform(detJ, J, Jinv, x);
 
+        // Compute the coefficients for the weak form of the PDE
+        double weight = Quadrature::get_weight(j);
+
+        // Evaluate the weak form coefficients
+        typename PDE::FiniteElementSpace coef;
+        typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
+                                        s);
+
         // Compute the Jacobian-vector product
-        typename PDE::FiniteElementSpace y, yref;
+        typename PDE::FiniteElementSpace y;
         jvp(x, y);
 
         // Transform to back to the reference element
+        typename PDE::FiniteElementSpace& yref = ysol.get(j);
         y.rtransform(detJ, J, Jinv, yref);
-
-        // Add the contributions back to the residual
-        Basis::template add<Quadrature>(j, yref, y_dof);
       }
+      // Get residual for the element
+      typename ElemVec::FEDof y_dof(i, elem_yvec);
+      elem_yvec.get_element_values(i, y_dof);
+
+      // Add the values from the quadrature points back into the finite-element
+      // problem
+      Basis::template add(ysol, y_dof);
 
       elem_yvec.add_element_values(i, y_dof);
     }
   }
 
-  template <class ElemMat>
-  void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
-                    ElemVec& elem_sol, ElemMat& elem_mat) {
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  // template <class ElemMat>
+  // void add_jacobian(DataElemVec& elem_data, GeoElemVec& elem_geo,
+  //                   ElemVec& elem_sol, ElemMat& elem_mat) {
+  //   const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
+  //   const A2D::index_t num_elements = elem_geo.get_num_elements();
+  //   const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element
-      typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
+  //   for (A2D::index_t i = 0; i < num_elements; i++) {
+  //     // Get the data for the element
+  //     typename DataElemVec::FEDof data_dof(i, elem_data);
+  //     elem_data.get_element_values(i, data_dof);
 
-      // Get the geometry values
-      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
+  //     // Get the geometry values
+  //     typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+  //     elem_geo.get_element_values(i, geo_dof);
 
-      // Get the degrees of freedom for the element
-      typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+  //     // Get the degrees of freedom for the element
+  //     typename ElemVec::FEDof sol_dof(i, elem_sol);
+  //     elem_sol.get_element_values(i, sol_dof);
 
-      // Set up values for the element matrix
-      typename ElemMat::FEMat element_mat(i, elem_mat);
-      // A2D::Mat<T, Basis::ndof, Basis::ndof> element_mat;
+  //     // Set up values for the element matrix
+  //     typename ElemMat::FEMat element_mat(i, elem_mat);
+  //     // A2D::Mat<T, Basis::ndof, Basis::ndof> element_mat;
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
-        // Extract the Jacobian of the element transformation
-        typename PDE::FiniteElementGeometry geo;
-        GeoBasis::template interp<Quadrature>(j, geo_dof, geo);
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
+  //     for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+  //       // Extract the Jacobian of the element transformation
+  //       typename PDE::FiniteElementGeometry geo;
+  //       GeoBasis::template interp<Quadrature>(j, geo_dof, geo);
+  //       A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template
+  //       get<0>()).get_grad();
 
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
+  //       // Compute the inverse of the transformation
+  //       A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
+  //       A2D::MatInverse(J, Jinv);
 
-        // Compute the determinant of the Jacobian matrix
-        T detJ;
-        A2D::MatDet(J, detJ);
+  //       // Compute the determinant of the Jacobian matrix
+  //       T detJ;
+  //       A2D::MatDet(J, detJ);
 
-        // Interpolate the data to the quadrature point
-        typename PDE::DataSpace qdata;
-        DataBasis::template interp<Quadrature>(j, data_dof, qdata);
+  //       // Interpolate the data to the quadrature point
+  //       typename PDE::DataSpace qdata;
+  //       DataBasis::template interp<Quadrature>(j, data_dof, qdata);
 
-        // Interpolate the solution vector using the basis
-        typename PDE::FiniteElementSpace sref;
-        Basis::template interp<Quadrature>(j, sol_dof, sref);
+  //       // Interpolate the solution vector using the basis
+  //       typename PDE::FiniteElementSpace sref;
+  //       Basis::template interp<Quadrature>(j, sol_dof, sref);
 
-        // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+  //       // Transform to the local coordinate system
+  //       typename PDE::FiniteElementSpace s;
+  //       sref.transform(detJ, J, Jinv, s);
 
-        // Initialize the Jacobian-vector product functor
-        double weight = Quadrature::get_weight(j);
-        typename PDE::JacVecProduct jvp(weight * detJ, qdata, geo, s);
+  //       // Initialize the Jacobian-vector product functor
+  //       double weight = Quadrature::get_weight(j);
+  //       typename PDE::JacVecProduct jvp(weight * detJ, qdata, geo, s);
 
-        // Fill in the entries of the Jacobian matrix
-        typename PDE::QMatType jac;
+  //       // Fill in the entries of the Jacobian matrix
+  //       typename PDE::QMatType jac;
 
-        // Temporary vectors
-        typename PDE::FiniteElementSpace pref, p, Jp;
+  //       // Temporary vectors
+  //       typename PDE::FiniteElementSpace pref, p, Jp;
 
-        for (A2D::index_t k = 0; k < ncomp; k++) {
-          // Set the value into the matrix
-          pref.zero();
-          pref[k] = T(1.0);
-          pref.transform(detJ, J, Jinv, p);
+  //       for (A2D::index_t k = 0; k < ncomp; k++) {
+  //         // Set the value into the matrix
+  //         pref.zero();
+  //         pref[k] = T(1.0);
+  //         pref.transform(detJ, J, Jinv, p);
 
-          // Compute the Jacobian-vector product
-          jvp(p, Jp);
+  //         // Compute the Jacobian-vector product
+  //         jvp(p, Jp);
 
-          // Transform to back to the reference element
-          Jp.rtransform(detJ, J, Jinv, pref);
+  //         // Transform to back to the reference element
+  //         Jp.rtransform(detJ, J, Jinv, pref);
 
-          for (A2D::index_t m = 0; m < ncomp; m++) {
-            jac(m, k) = pref[m];
-          }
-        }
+  //         for (A2D::index_t m = 0; m < ncomp; m++) {
+  //           jac(m, k) = pref[m];
+  //         }
+  //       }
 
-        // Add the results of the matrix-vector product to the
-        Basis::template add_outer<Quadrature>(j, jac, element_mat);
-      }
+  //       // Add the results of the matrix-vector product to the
+  //       Basis::template add_outer<Quadrature>(j, jac, element_mat);
+  //     }
 
-      elem_mat.add_element_values(i, element_mat);
-    }
-  }
+  //     elem_mat.add_element_values(i, element_mat);
+  //   }
+  // }
 };
 
 }  // namespace A2D

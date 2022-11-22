@@ -240,136 +240,173 @@ class QHdivHexBasis {
     }
   }
 
-  template <class Quadrature, index_t offset, class SolnType>
-  static void interp(index_t n, const SolnType sol, HdivSpace<T, dim>& out) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  /**
+   * @brief Interpolate over all quadrature points on the element
+   *
+   * @tparam space The finite element space index
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType
+   * @param sol The solution array
+   * @param out The finite element space object at all quadrature points
+   */
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void interp(const SolnType sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+      // Get the quadrature point
+      double pt[dim];
+      Quadrature::get_point(q, pt);
 
-    Vec<T, dim>& u = out.get_value();
-    T& div = out.get_div();
+      FiniteElementSpace& s = out.get(q);
+      HdivSpace<T, dim>& hdiv = s.template get<space>();
+      Vec<T, dim>& u = hdiv.get_value();
+      T& div = hdiv.get_div();
 
-    u.zero();
-    div = 0.0;
+      u.zero();
+      div = 0.0;
 
-    const double* knots = get_qhdiv_knots<degree>();
+      const double* knots = get_qhdiv_knots<degree>();
 
-    // Evaluate the basis functions
-    double dx[order];
-    double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(pt[0], n1, dx);
-    lagrange_basis<order - 1>(knots, pt[1], n2);
-    lagrange_basis<order - 1>(knots, pt[2], n3);
+      // Evaluate the basis functions
+      double dx[order];
+      double n1[order], n2[order], n3[order];
+      lagrange_basis<order>(pt[0], n1, dx);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
-    n1[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n1[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    index_t node = offset;
-    for (index_t j3 = 0; j3 < order - 1; j3++) {
-      for (index_t j2 = 0; j2 < order - 1; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++, node++) {
-          u(0) += n1[j1] * n2[j2] * n3[j3] * sol[node];
-          div += dx[j1] * n2[j2] * n3[j3] * sol[node];
+      index_t node = offset;
+      for (index_t j3 = 0; j3 < order - 1; j3++) {
+        for (index_t j2 = 0; j2 < order - 1; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++, node++) {
+            u(0) += n1[j1] * n2[j2] * n3[j3] * sol[node];
+            div += dx[j1] * n2[j2] * n3[j3] * sol[node];
+          }
         }
       }
-    }
 
-    lagrange_basis<order - 1>(knots, pt[0], n1);
-    lagrange_basis<order>(pt[1], n2, dx);
-    lagrange_basis<order - 1>(knots, pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order>(pt[1], n2, dx);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
-    n2[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n2[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    for (index_t j3 = 0; j3 < order - 1; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
-          u(1) += n1[j1] * n2[j2] * n3[j3] * sol[node];
-          div += n1[j1] * dx[j2] * n3[j3] * sol[node];
+      for (index_t j3 = 0; j3 < order - 1; j3++) {
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
+            u(1) += n1[j1] * n2[j2] * n3[j3] * sol[node];
+            div += n1[j1] * dx[j2] * n3[j3] * sol[node];
+          }
         }
       }
-    }
 
-    lagrange_basis<order - 1>(knots, pt[0], n1);
-    lagrange_basis<order - 1>(knots, pt[1], n2);
-    lagrange_basis<order>(pt[2], n3, dx);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order>(pt[2], n3, dx);
 
-    // Flip the first basis function on the negative face
-    n3[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n3[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order - 1; j2++) {
-        for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
-          u(2) += n1[j1] * n2[j2] * n3[j3] * sol[node];
-          div += n1[j1] * n2[j2] * dx[j3] * sol[node];
+      for (index_t j3 = 0; j3 < order; j3++) {
+        for (index_t j2 = 0; j2 < order - 1; j2++) {
+          for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
+            u(2) += n1[j1] * n2[j2] * n3[j3] * sol[node];
+            div += n1[j1] * n2[j2] * dx[j3] * sol[node];
+          }
         }
       }
     }
   }
 
-  template <class Quadrature, index_t offset, class SolnType>
-  static void add(index_t n, const HdivSpace<T, dim>& in, SolnType res) {
-    double pt[dim];
-    Quadrature::get_point(n, pt);
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam space The finite element space index
+   * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
+  template <index_t space, class Quadrature, class FiniteElementSpace,
+            index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType res) {
+    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+      // Get the quadrature point
+      double pt[dim];
+      Quadrature::get_point(q, pt);
 
-    const Vec<T, dim>& u = in.get_value();
-    const T& div = in.get_div();
+      const FiniteElementSpace& s = in.get(q);
+      const HdivSpace<T, dim>& hdiv = s.template get<space>();
+      const Vec<T, dim>& u = hdiv.get_value();
+      const T& div = hdiv.get_div();
 
-    const double* knots = get_qhdiv_knots<degree>();
+      const double* knots = get_qhdiv_knots<degree>();
 
-    // Evaluate the basis functions
-    double dx[order];
-    double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(pt[0], n1, dx);
-    lagrange_basis<order - 1>(knots, pt[1], n2);
-    lagrange_basis<order - 1>(knots, pt[2], n3);
+      // Evaluate the basis functions
+      double dx[order];
+      double n1[order], n2[order], n3[order];
+      lagrange_basis<order>(pt[0], n1, dx);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
-    n1[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n1[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    index_t node = offset;
-    for (index_t j3 = 0; j3 < order - 1; j3++) {
-      for (index_t j2 = 0; j2 < order - 1; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++, node++) {
-          res[node] += n1[j1] * n2[j2] * n3[j3] * u(0);
-          res[node] += dx[j1] * n2[j2] * n3[j3] * div;
+      index_t node = offset;
+      for (index_t j3 = 0; j3 < order - 1; j3++) {
+        for (index_t j2 = 0; j2 < order - 1; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++, node++) {
+            res[node] += n1[j1] * n2[j2] * n3[j3] * u(0);
+            res[node] += dx[j1] * n2[j2] * n3[j3] * div;
+          }
         }
       }
-    }
 
-    lagrange_basis<order - 1>(knots, pt[0], n1);
-    lagrange_basis<order>(pt[1], n2, dx);
-    lagrange_basis<order - 1>(knots, pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order>(pt[1], n2, dx);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
-    n2[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n2[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    for (index_t j3 = 0; j3 < order - 1; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
-          res[node] += n1[j1] * n2[j2] * n3[j3] * u(1);
-          res[node] += n1[j1] * dx[j2] * n3[j3] * div;
+      for (index_t j3 = 0; j3 < order - 1; j3++) {
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
+            res[node] += n1[j1] * n2[j2] * n3[j3] * u(1);
+            res[node] += n1[j1] * dx[j2] * n3[j3] * div;
+          }
         }
       }
-    }
 
-    lagrange_basis<order - 1>(knots, pt[0], n1);
-    lagrange_basis<order - 1>(knots, pt[1], n2);
-    lagrange_basis<order>(pt[2], n3, dx);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order>(pt[2], n3, dx);
 
-    // Flip the first basis function on the negative face
-    n3[0] *= -1.0;
-    dx[0] *= -1.0;
+      // Flip the first basis function on the negative face
+      n3[0] *= -1.0;
+      dx[0] *= -1.0;
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order - 1; j2++) {
-        for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
-          res[node] += n1[j1] * n2[j2] * n3[j3] * u(2);
-          res[node] += n1[j1] * n2[j2] * dx[j3] * div;
+      for (index_t j3 = 0; j3 < order; j3++) {
+        for (index_t j2 = 0; j2 < order - 1; j2++) {
+          for (index_t j1 = 0; j1 < order - 1; j1++, node++) {
+            res[node] += n1[j1] * n2[j2] * n3[j3] * u(2);
+            res[node] += n1[j1] * n2[j2] * dx[j3] * div;
+          }
         }
       }
     }

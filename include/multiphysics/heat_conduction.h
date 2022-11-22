@@ -36,10 +36,10 @@ class HeatConduction {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION static void weak_coef(T wdetJ, const DataSpace& data,
-                                            const FiniteElementGeometry& geo,
-                                            const FiniteElementSpace& s,
-                                            FiniteElementSpace& coef) {
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
     // Field objects for solution functions
     const A2D::Vec<T, dim>& tx = s.template get<0>().get_grad();
     A2D::Vec<T, dim>& cx = coef.template get<0>().get_grad();
@@ -63,7 +63,8 @@ class HeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const HeatConduction<T, D>& pde, T wdetJ,
+                                      const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ), kappa(data[0]) {}
@@ -91,7 +92,7 @@ class HeatConduction {
   The governing equations for the problem are
 
   q / kappa + grad(t) = 0        (heat flux)
-  div(kappa * q) - f = 0         (conservation of energy)
+  div(q) - f = 0                 (conservation of energy)
 
   Multiplying the first and second equations by the test functions qb and tb,
   respectively, and integrating over the domain gives
@@ -109,7 +110,7 @@ class HeatConduction {
 
   Then (grad(t), qb) = - (t, div(qb)) so
 
-  (q / kappa, qb) + (grad(t), qb) + (div(q), tb) = (f, tb)
+  (q / kappa, qb) - (t, div(qb)) + (div(q), tb) = (f, tb)
 
   The weak coefficients must be provided by the function "weak".
 */
@@ -145,10 +146,10 @@ class MixedHeatConduction {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION static void weak_coef(T wdetJ, const DataSpace& data,
-                                            const FiniteElementGeometry& geo,
-                                            const FiniteElementSpace& s,
-                                            FiniteElementSpace& coef) {
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
     // Field objects for solution functions
     const A2D::Vec<T, dim>& q = s.template get<0>().get_value();
     const T& div = s.template get<0>().get_div();
@@ -181,7 +182,8 @@ class MixedHeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(T wdetJ, const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const MixedHeatConduction<T, D>& pde,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ), kappa(data[0]) {}

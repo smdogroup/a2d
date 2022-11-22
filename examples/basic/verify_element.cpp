@@ -43,7 +43,7 @@ void main_body() {
   constexpr index_t dim = 3;
   constexpr index_t geo_degree = 1;  // use quadratic element for the mesh
   constexpr index_t degree = 2;      // use quadratic element for "physics"
-  constexpr index_t nsample_per_dim = 20;
+  constexpr index_t nsample_per_dim = 10;
 
   // Set up type aliases
   using T = double;
@@ -53,7 +53,7 @@ void main_body() {
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
   using PDE = ElementTesterPDE<T, dim>;
 
-  const index_t nx = 3, ny = 1, nz = 1;  // number of elements in each dimension
+  const index_t nx = 2, ny = 2, nz = 2;  // number of elements in each dimension
   const index_t nelems = nx * ny * nz;
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   auto node_num = [](index_t i, index_t j, index_t k) {

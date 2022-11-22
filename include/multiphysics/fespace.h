@@ -291,7 +291,7 @@ class HdivSpace {
       s.u(1) = (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2)) / detJ;
       s.u(2) = (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2)) / detJ;
     }
-    s.div = detJ * div;
+    s.div = div / detJ;
   }
 
   // Transform derivatives from the physical to the refernece space
@@ -305,7 +305,7 @@ class HdivSpace {
       s.u(1) = (J(0, 1) * u(0) + J(1, 1) * u(1) + J(2, 1) * u(2)) / detJ;
       s.u(2) = (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2)) / detJ;
     }
-    s.div = detJ * div;
+    s.div = div / detJ;
   }
 
  private:
@@ -522,6 +522,25 @@ class FESpace {
       zero_<index + 1, Remain...>();
     }
   }
+};
+
+/**
+ * @brief A collection of finite-element space objects associated with the
+ * quadrature points in an element
+ *
+ * @tparam Quadrature The Quadrature object
+ * @tparam FiniteElementSpace The FESpace object
+ */
+template <class Quadrature, class FiniteElementSpace>
+class QptSpace {
+ public:
+  FiniteElementSpace& get(const index_t index) { return space[index]; }
+  const FiniteElementSpace& get(const index_t index) const {
+    return space[index];
+  }
+
+ private:
+  FiniteElementSpace space[Quadrature::num_quad_points];
 };
 
 }  // namespace A2D

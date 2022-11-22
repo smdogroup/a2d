@@ -47,8 +47,8 @@ class ToVTK {
 
     if (spatial_dim != 2 and spatial_dim != 3) {
       char msg[256];
-      std::sprintf(msg, "Invalid spatial_dim, got %d, expect 2 or 3",
-                   spatial_dim);
+      std::snprintf(msg, sizeof(msg),
+                    "Invalid spatial_dim, got %d, expect 2 or 3", spatial_dim);
       throw std::runtime_error(msg);
     }
 
@@ -123,9 +123,10 @@ class ToVTK {
     // Check input
     if (sol_vec.extent(0) != nnodes) {
       char msg[256];
-      std::sprintf(msg,
-                   "First dimension of sol_vec (%d) does not match nnodes (%d)",
-                   (int)sol_vec.extent(0), nnodes);
+      std::snprintf(
+          msg, sizeof(msg),
+          "First dimension of sol_vec (%d) does not match nnodes (%d)",
+          (int)sol_vec.extent(0), nnodes);
       throw std::runtime_error(msg);
     }
 
@@ -209,7 +210,8 @@ class ReadVTK {
     // If file doesn't exist, exit
     if (!std::filesystem::exists(vtk_name)) {
       char msg[256];
-      std::sprintf(msg, "file %s does not exists!", vtk_name.c_str());
+      std::snprintf(msg, sizeof(msg), "file %s does not exists!",
+                    vtk_name.c_str());
       throw std::runtime_error(msg);
     }
 

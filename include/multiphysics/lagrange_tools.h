@@ -1149,189 +1149,187 @@ constexpr const double* get_gauss_lobatto_pts() {
   return NULL;
 }
 
+/**
+ * @brief Compute the Lagrange basis with the given knots
+ *
+ * @tparam order Number of points
+ * @param knots Knot points
+ * @param pt Point to compute the interpolant
+ * @param N Lagrange basis function values
+ */
 template <index_t order>
-constexpr const double* get_gauss_lobatto_pts() {
-  /**
-   * @brief Compute the Lagrange basis with the given knots
-   *
-   * @tparam order Number of points
-   * @param knots Knot points
-   * @param pt Point to compute the interpolant
-   * @param N Lagrange basis function values
-   */
-  template <index_t order>
-  void lagrange_basis(const double knots[], const double pt, double N[]) {
-    // Loop over the shape functions
-    for (int i = 0; i < order; i++) {
-      N[i] = 1.0;
-      for (int j = 0; j < order; j++) {
-        if (i != j) {
-          double d = 1.0 / (knots[i] - knots[j]);
-          N[i] *= (pt - knots[j]) * d;
-        }
-      }
-    }
-  }
-
-  /**
-   * @brief Compute the Lagrange basis with the given knots
-   *
-   * @tparam order Number of points
-   * @param knots Knot points
-   * @param pt Point to compute the interpolant
-   * @param N Lagrange basis function values
-   * @param N Derivative of the Lagrange basis function values
-   */
-  template <index_t order>
-  void lagrange_basis(const double knots[], const double pt, double N[],
-                      double Nx[]) {
-    // Loop over the shape function knot locations
-    for (int i = 0; i < order; i++) {
-      N[i] = 1.0;
-      Nx[i] = 0.0;
-
-      // Loop over each point again, except for the current control
-      // point, adding the contribution to the shape function
-      for (int j = 0; j < order; j++) {
-        if (i != j) {
-          double d = 1.0 / (knots[i] - knots[j]);
-          N[i] *= (pt - knots[j]) * d;
-
-          // Now add up the contribution to the derivative
-          for (int k = 0; k < order; k++) {
-            if (k != i && k != j) {
-              d *= (pt - knots[k]) / (knots[i] - knots[k]);
-            }
-          }
-
-          // Add the derivative contribution
-          Nx[i] += d;
-        }
-      }
-    }
-  }
-
-  /**
-   * @brief Evaluate the Bernstein shape functions at the given parametric point
-   *
-   * @tparam order the order of the polynomial
-   * @param u the parametric coordinate
-   * @param N the values of the shape functions at u
-   */
-  template <index_t order>
-  inline void bernstein_basis(const double u, double* N) {
-    double u1 = 0.5 * (1.0 - u);
-    double u2 = 0.5 * (u + 1.0);
-
-    N[0] = 1.0;
-    for (int j = 1; j < order; j++) {
-      double s = 0.0;
-      for (int k = 0; k < j; k++) {
-        double t = N[k];
-        N[k] = s + u1 * t;
-        s = u2 * t;
-      }
-      N[j] = s;
-    }
-  }
-
-  /**
-   * @brief Evaluate the shape functions and the derivative of the shape
-   * functions with respect to the parameter coordinate
-   *
-   * @tparam order the order of the polynomial
-   * @param u the parametric coordinate
-   * @param N the values of the shape functions at u
-   * @param Nd the derivative of the shape functions at u
-   */
-  template <index_t order>
-  inline void bernstein_shape_func_derivative(const double u, double* N,
-                                              double* Nd) {
-    double u1 = 0.5 * (1.0 - u);
-    double u2 = 0.5 * (u + 1.0);
-
-    // Compute the basis for the order-1 bernstein polynomial
-    N[0] = 1.0;
-    for (int j = 1; j < order - 1; j++) {
-      double s = 0.0;
-      for (int k = 0; k < j; k++) {
-        double t = N[k];
-        N[k] = s + u1 * t;
-        s = u2 * t;
-      }
-      N[j] = s;
-    }
-
-    // Add the contributions to the derivative
+void lagrange_basis(const double knots[], const double pt, double N[]) {
+  // Loop over the shape functions
+  for (int i = 0; i < order; i++) {
+    N[i] = 1.0;
     for (int j = 0; j < order; j++) {
-      Nd[j] = 0.0;
-      if (j > 0) {
-        Nd[j] += 0.5 * (order - 1) * N[j - 1];
-      }
-      if (j < order - 1) {
-        Nd[j] -= 0.5 * (order - 1) * N[j];
+      if (i != j) {
+        double d = 1.0 / (knots[i] - knots[j]);
+        N[i] *= (pt - knots[j]) * d;
       }
     }
+  }
+}
 
-    // Now compute the full order basis
-    bernstein_basis<order>(u, N);
+/**
+ * @brief Compute the Lagrange basis with the given knots
+ *
+ * @tparam order Number of points
+ * @param knots Knot points
+ * @param pt Point to compute the interpolant
+ * @param N Lagrange basis function values
+ * @param N Derivative of the Lagrange basis function values
+ */
+template <index_t order>
+void lagrange_basis(const double knots[], const double pt, double N[],
+                    double Nx[]) {
+  // Loop over the shape function knot locations
+  for (int i = 0; i < order; i++) {
+    N[i] = 1.0;
+    Nx[i] = 0.0;
+
+    // Loop over each point again, except for the current control
+    // point, adding the contribution to the shape function
+    for (int j = 0; j < order; j++) {
+      if (i != j) {
+        double d = 1.0 / (knots[i] - knots[j]);
+        N[i] *= (pt - knots[j]) * d;
+
+        // Now add up the contribution to the derivative
+        for (int k = 0; k < order; k++) {
+          if (k != i && k != j) {
+            d *= (pt - knots[k]) / (knots[i] - knots[k]);
+          }
+        }
+
+        // Add the derivative contribution
+        Nx[i] += d;
+      }
+    }
+  }
+}
+
+/**
+ * @brief Evaluate the Bernstein shape functions at the given parametric point
+ *
+ * @tparam order the order of the polynomial
+ * @param u the parametric coordinate
+ * @param N the values of the shape functions at u
+ */
+template <index_t order>
+inline void bernstein_basis(const double u, double* N) {
+  double u1 = 0.5 * (1.0 - u);
+  double u2 = 0.5 * (u + 1.0);
+
+  N[0] = 1.0;
+  for (int j = 1; j < order; j++) {
+    double s = 0.0;
+    for (int k = 0; k < j; k++) {
+      double t = N[k];
+      N[k] = s + u1 * t;
+      s = u2 * t;
+    }
+    N[j] = s;
+  }
+}
+
+/**
+ * @brief Evaluate the shape functions and the derivative of the shape
+ * functions with respect to the parameter coordinate
+ *
+ * @tparam order the order of the polynomial
+ * @param u the parametric coordinate
+ * @param N the values of the shape functions at u
+ * @param Nd the derivative of the shape functions at u
+ */
+template <index_t order>
+inline void bernstein_shape_func_derivative(const double u, double* N,
+                                            double* Nd) {
+  double u1 = 0.5 * (1.0 - u);
+  double u2 = 0.5 * (u + 1.0);
+
+  // Compute the basis for the order-1 bernstein polynomial
+  N[0] = 1.0;
+  for (int j = 1; j < order - 1; j++) {
+    double s = 0.0;
+    for (int k = 0; k < j; k++) {
+      double t = N[k];
+      N[k] = s + u1 * t;
+      s = u2 * t;
+    }
+    N[j] = s;
   }
 
-  template <index_t order>
-  void lagrange_basis(const double pt, double N[]) {
-    constexpr const double* knots = get_gauss_lobatto_pts<order>();
-    lagrange_basis<order>(knots, pt, N);
+  // Add the contributions to the derivative
+  for (int j = 0; j < order; j++) {
+    Nd[j] = 0.0;
+    if (j > 0) {
+      Nd[j] += 0.5 * (order - 1) * N[j - 1];
+    }
+    if (j < order - 1) {
+      Nd[j] -= 0.5 * (order - 1) * N[j];
+    }
   }
 
-  template <index_t order>
-  void lagrange_basis(const double pt, double N[], double Nx[]) {
-    constexpr const double* knots = get_gauss_lobatto_pts<order>();
-    lagrange_basis<order>(knots, pt, N, Nx);
-  }
+  // Now compute the full order basis
+  bernstein_basis<order>(u, N);
+}
 
-  template <>
-  void lagrange_basis<1u>(const double pt, double N[]) {
-    N[0] = 1.0;
-  }
+template <index_t order>
+void lagrange_basis(const double pt, double N[]) {
+  constexpr const double* knots = get_gauss_lobatto_pts<order>();
+  lagrange_basis<order>(knots, pt, N);
+}
 
-  template <>
-  void lagrange_basis<2u>(const double pt, double N[]) {
-    N[0] = 0.5 * (1.0 - pt);
-    N[1] = 0.5 * (1.0 + pt);
-  }
+template <index_t order>
+void lagrange_basis(const double pt, double N[], double Nx[]) {
+  constexpr const double* knots = get_gauss_lobatto_pts<order>();
+  lagrange_basis<order>(knots, pt, N, Nx);
+}
 
-  template <>
-  void lagrange_basis<3u>(const double pt, double N[]) {
-    N[0] = -0.5 * pt * (1.0 - pt);
-    N[1] = (1.0 - pt) * (1.0 + pt);
-    N[2] = 0.5 * (1.0 + pt) * pt;
-  }
+template <>
+void lagrange_basis<1u>(const double pt, double N[]) {
+  N[0] = 1.0;
+}
 
-  template <>
-  void lagrange_basis<1u>(const double pt, double N[], double Nx[]) {
-    N[0] = 1.0;
-    Nx[0] = 0.0;
-  }
+template <>
+void lagrange_basis<2u>(const double pt, double N[]) {
+  N[0] = 0.5 * (1.0 - pt);
+  N[1] = 0.5 * (1.0 + pt);
+}
 
-  template <>
-  void lagrange_basis<2u>(const double pt, double N[], double Nx[]) {
-    N[0] = 0.5 * (1.0 - pt);
-    N[1] = 0.5 * (1.0 + pt);
+template <>
+void lagrange_basis<3u>(const double pt, double N[]) {
+  N[0] = -0.5 * pt * (1.0 - pt);
+  N[1] = (1.0 - pt) * (1.0 + pt);
+  N[2] = 0.5 * (1.0 + pt) * pt;
+}
 
-    Nx[0] = -0.5;
-    Nx[1] = 0.5;
-  }
+template <>
+void lagrange_basis<1u>(const double pt, double N[], double Nx[]) {
+  N[0] = 1.0;
+  Nx[0] = 0.0;
+}
 
-  template <>
-  void lagrange_basis<3u>(const double pt, double N[], double Nx[]) {
-    N[0] = -0.5 * pt * (1.0 - pt);
-    N[1] = (1.0 - pt) * (1.0 + pt);
-    N[2] = 0.5 * (1.0 + pt) * pt;
+template <>
+void lagrange_basis<2u>(const double pt, double N[], double Nx[]) {
+  N[0] = 0.5 * (1.0 - pt);
+  N[1] = 0.5 * (1.0 + pt);
 
-    Nx[0] = -0.5 + pt;
-    Nx[1] = -2.0 * pt;
-    Nx[2] = 0.5 + pt;
-  }
+  Nx[0] = -0.5;
+  Nx[1] = 0.5;
+}
+
+template <>
+void lagrange_basis<3u>(const double pt, double N[], double Nx[]) {
+  N[0] = -0.5 * pt * (1.0 - pt);
+  N[1] = (1.0 - pt) * (1.0 + pt);
+  N[2] = 0.5 * (1.0 + pt) * pt;
+
+  Nx[0] = -0.5 + pt;
+  Nx[1] = -2.0 * pt;
+  Nx[2] = 0.5 + pt;
+}
 
 }  // namespace A2D
 

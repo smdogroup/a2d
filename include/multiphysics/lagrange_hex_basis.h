@@ -520,11 +520,14 @@ class LagrangeL2HexBasis {
         u.zero();
       }
 
+      // Get the quadrature knot locations
+      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
       // Evaluate the basis functions
       double n1[order], n2[order], n3[order];
-      lagrange_basis<order>(pt[0], n1);
-      lagrange_basis<order>(pt[1], n2);
-      lagrange_basis<order>(pt[2], n3);
+      lagrange_basis<order>(knots, pt[0], n1);
+      lagrange_basis<order>(knots, pt[1], n2);
+      lagrange_basis<order>(knots, pt[2], n3);
 
       for (index_t j3 = 0; j3 < order; j3++) {
         for (index_t j2 = 0; j2 < order; j2++) {
@@ -558,11 +561,14 @@ class LagrangeL2HexBasis {
       const L2Space<T, C, dim>& l2 = s.template get<space>();
       const typename L2Space<T, C, dim>::VarType u = l2.get_value();
 
+      // Get the quadrature knot locations
+      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
       // Evaluate the basis functions
       double n1[order], n2[order], n3[order];
-      lagrange_basis<order>(pt[0], n1);
-      lagrange_basis<order>(pt[1], n2);
-      lagrange_basis<order>(pt[2], n3);
+      lagrange_basis<order>(knots, pt[0], n1);
+      lagrange_basis<order>(knots, pt[1], n2);
+      lagrange_basis<order>(knots, pt[2], n3);
 
       for (index_t j3 = 0; j3 < order; j3++) {
         for (index_t j2 = 0; j2 < order; j2++) {
@@ -600,11 +606,14 @@ class LagrangeL2HexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
+    // Get the quadrature knot locations
+    constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
     // Evaluate the basis functions
     double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(pt[0], n1);
-    lagrange_basis<order>(pt[1], n2);
-    lagrange_basis<order>(pt[2], n3);
+    lagrange_basis<order>(knots, pt[0], n1);
+    lagrange_basis<order>(knots, pt[1], n2);
+    lagrange_basis<order>(knots, pt[2], n3);
 
     for (index_t j3 = 0; j3 < order; j3++) {
       for (index_t j2 = 0; j2 < order; j2++) {

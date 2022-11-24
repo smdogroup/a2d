@@ -348,6 +348,9 @@ class FiniteElement {
       QSpace sol;
       Basis::template interp(sol_dof, sol);
 
+      // Initialize the element matrix
+      typename ElemMat::FEMat element_mat(i, elem_mat);
+
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace& sref = sol.get(j);
@@ -367,7 +370,6 @@ class FiniteElement {
         // Transform the solution the physical element
         typename PDE::FiniteElementSpace x, s;
         sref.transform(detJ, J, Jinv, s);
-        xref.transform(detJ, J, Jinv, x);
 
         // Allocate the Jacobian-vector product functor
         double weight = Quadrature::get_weight(j);

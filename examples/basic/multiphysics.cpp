@@ -19,17 +19,32 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const index_t dim = 3;
-  const index_t degree = 2;
-  const index_t geo_degree = 1;
   using T = double;
   using ET = ElementTypes;
-
   using PDE = MixedPoisson<T, dim>;
+
+  const index_t degree = 4;
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
                         LagrangeL2HexBasis<T, 1, degree - 1>>;
+  using DataElemVec = ElementVector_Serial<T, DataBasis>;
+  using GeoElemVec = ElementVector_Serial<T, GeoBasis>;
+  using ElemVec = ElementVector_Serial<T, Basis>;
+  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+
+  const index_t low_degree = 1;
+  using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
+  using LOrderDataBasis = FEBasis<T>;
+  using LOrderGeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, low_degree>>;
+  using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
+                              LagrangeL2HexBasis<T, 1, low_degree - 1>>;
+  using LOrderDataElemVec = ElementVector_Serial<T, LOrderDataBasis>;
+  using LOrderGeoElemVec = ElementVector_Serial<T, LOrderGeoBasis>;
+  using LOrderElemVec = ElementVector_Serial<T, LOrderBasis>;
+  using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
+                                 LOrderGeoBasis, LOrderBasis>;
 
   std::cout << "Mixed Poisson\n";
   MixedPoisson<std::complex<T>, dim> poisson;
@@ -47,12 +62,8 @@ int main(int argc, char *argv[]) {
   MixedHeatConduction<std::complex<T>, dim> mixed_heat_conduction;
   TestPDEImplementation<std::complex<T>>(mixed_heat_conduction);
 
-  constexpr bool use_parallel_elemvec = false;
-  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
-                           use_parallel_elemvec>;
-
   // Number of elements in each dimension
-  const int nx = 3, ny = 3, nz = 3;
+  const int nx = 2, ny = 2, nz = 2;
   auto node_num = [](int i, int j, int k) {
     return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
   };
@@ -109,6 +120,14 @@ int main(int argc, char *argv[]) {
   ElementMesh<GeoBasis> geomesh(conn);
   ElementMesh<DataBasis> datamesh(conn);
 
+  HexProjection<degree, Basis, LOrderBasis> basis_proj;
+  HexProjection<degree, GeoBasis, LOrderGeoBasis> geo_proj;
+  HexProjection<degree, DataBasis, LOrderDataBasis> data_proj;
+
+  ElementMesh<LOrderBasis> lorder_mesh(mesh, basis_proj);
+  ElementMesh<LOrderGeoBasis> lorder_geomesh(geomesh, geo_proj);
+  ElementMesh<LOrderDataBasis> lorder_datamesh(datamesh, data_proj);
+
   // Set boundary conditions based on the vertex indices and finite-element
   // space
   index_t basis_select1[2] = {1, 0};
@@ -126,11 +145,11 @@ int main(int argc, char *argv[]) {
   std::cout << "Number of degrees of freedom:  " << mesh.get_num_dof()
             << std::endl;
 
-  const index_t *bcs_index;
-  std::cout << "Number of boundary conditions: " << bcs1.get_bcs(&bcs_index)
-            << std::endl;
-  std::cout << "Number of boundary conditions: " << bcs2.get_bcs(&bcs_index)
-            << std::endl;
+  // const index_t *bcs_index;
+  // std::cout << "Number of boundary conditions: " << bcs1.get_bcs(&bcs_index)
+  //           << std::endl;
+  // std::cout << "Number of boundary conditions: " << bcs2.get_bcs(&bcs_index)
+  //           << std::endl;
 
   PDE pde;
 
@@ -140,28 +159,30 @@ int main(int argc, char *argv[]) {
   SolutionVector<T> global_geo(geomesh.get_num_dof());
   SolutionVector<T> global_data(datamesh.get_num_dof());
 
-  FE::DataElemVec elem_data(datamesh, global_data);
-  FE::GeoElemVec elem_geo(geomesh, global_geo);
-  FE::ElemVec elem_sol(mesh, global_U);
-  FE::ElemVec elem_res(mesh, global_res);
+  DataElemVec elem_data(datamesh, global_data);
+  GeoElemVec elem_geo(geomesh, global_geo);
+  ElemVec elem_sol(mesh, global_U);
+  ElemVec elem_res(mesh, global_res);
 
   // Set the global geo values
   for (int k = 0, e = 0; k < nz; k++) {
     for (int j = 0; j < ny; j++) {
       for (int i = 0; i < nx; i++, e++) {
         // Get the geometry values
-        typename FE::GeoElemVec::FEDof geo_dof(e, elem_geo);
+        typename GeoElemVec::FEDof geo_dof(e, elem_geo);
 
-        for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
-          index_t node = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                  j + ET::HEX_VERTS_CART[ii][1],
-                                  k + ET::HEX_VERTS_CART[ii][2]);
+        for (int ii = 0; ii < GeoBasis::ndof; ii++) {
+          double pt[3];
+          GeoBasis::get_dof_point(ii, pt);
 
-          // Set the entity DOF
-          index_t basis = 0;
-          index_t orient = 0;
-          GeoBasis::set_entity_dof(basis, ET::VERTEX, ii, orient,
-                                   &Xloc[3 * node], geo_dof);
+          // Interpolate to find the basis
+          if (ii % 3 == 0) {
+            geo_dof[ii] = 1;
+          } else if (ii % 3 == 1) {
+            geo_dof[ii] = 2;
+          } else if (ii % 3 == 2) {
+            geo_dof[ii] = 3;
+          }
         }
 
         elem_geo.set_element_values(e, geo_dof);
@@ -171,8 +192,8 @@ int main(int argc, char *argv[]) {
 
   SolutionVector<T> global_x(mesh.get_num_dof());
   SolutionVector<T> global_y(mesh.get_num_dof());
-  FE::ElemVec elem_x(mesh, global_x);
-  FE::ElemVec elem_y(mesh, global_y);
+  ElemVec elem_x(mesh, global_x);
+  ElemVec elem_y(mesh, global_y);
 
   // Create the finite-element model
   FE fe;
@@ -185,8 +206,8 @@ int main(int argc, char *argv[]) {
   fe.add_jacobian_vector_product(pde, elem_data, elem_geo, elem_sol, elem_x,
                                  elem_y);
 
-  // std::cout << "create_block_matrix" << std::endl;
-  // auto mat = mesh.create_block_matrix<T, 1>();
+  std::cout << "create_block_matrix" << std::endl;
+  auto mat = lorder_mesh.create_block_matrix<T, 1>();
   // BSRMat<index_t, T, 1, 1> &mat_ref = *mat;
 
   // std::cout << "initialize element matrix" << std::endl;
@@ -280,7 +301,7 @@ int main(int argc, char *argv[]) {
   }
   entity_vals[2] = 1.0;
 
-  typename FE::ElemVec::FEDof sol_dof(0, elem_sol);
+  typename ElemVec::FEDof sol_dof(0, elem_sol);
   elem_sol.get_element_values(0, sol_dof);
 
   // Set the entity DOF
@@ -292,7 +313,7 @@ int main(int argc, char *argv[]) {
 
   for (index_t n = 0, counter = 0; n < nhex; n++) {
     // Get the geometry values
-    typename FE::GeoElemVec::FEDof geo_dof(n, elem_geo);
+    typename GeoElemVec::FEDof geo_dof(n, elem_geo);
     elem_geo.get_element_values(n, geo_dof);
 
     // Interpolate the geometric data for all quadrature points
@@ -302,7 +323,7 @@ int main(int argc, char *argv[]) {
     GeoBasis::template interp(geo_dof, geo);
 
     // Get the degrees of freedom for the element
-    typename FE::ElemVec::FEDof sol_dof(n, elem_sol);
+    typename ElemVec::FEDof sol_dof(n, elem_sol);
     elem_sol.get_element_values(n, sol_dof);
 
     // Compute the solution information

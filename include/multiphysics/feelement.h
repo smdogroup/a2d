@@ -113,7 +113,7 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
 }
 
 template <typename T, class PDE, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis, bool use_parallel_elemvec = false>
+          class GeoBasis, class Basis>
 class FiniteElement {
  public:
   // Quadrature point object for the data space
@@ -125,30 +125,21 @@ class FiniteElement {
   // Quadrature point object for the finite-element space
   using QSpace = QptSpace<Quadrature, typename PDE::FiniteElementSpace>;
 
-  using DataElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, DataBasis>,
-                                A2D::ElementVector_Serial<T, DataBasis>>::type;
-  using GeoElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, GeoBasis>,
-                                A2D::ElementVector_Serial<T, GeoBasis>>::type;
-  using ElemVec =
-      typename std::conditional<use_parallel_elemvec,
-                                A2D::ElementVector_Parallel<T, Basis>,
-                                A2D::ElementVector_Serial<T, Basis>>::type;
-
   FiniteElement() {}
 
   /**
    * @brief Add the residuals for the finite-element problem
    *
+   * @tparam DataElemVec Element vector class for the data
+   * @tparam GeoElemVec Element vector class for the geometry
+   * @tparam ElemVec Element vector class for the solution/residual
    * @param pde Instance of the PDE
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
   void add_residual(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
                     ElemVec& elem_sol, ElemVec& elem_res) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
@@ -219,6 +210,9 @@ class FiniteElement {
   /**
    * @brief Compute the matrix-free Jacobian-vector product y = y + J * x
    *
+   * @tparam DataElemVec Element vector class for the data
+   * @tparam GeoElemVec Element vector class for the geometry
+   * @tparam ElemVec Element vector class for the solution/residual
    * @param pde Instance of the PDE
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
@@ -226,6 +220,7 @@ class FiniteElement {
    * @param elem_xvec Element solution vector for storing x-components
    * @param elem_yvec Output element solution vector storing y-components
    */
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
   void add_jacobian_vector_product(PDE& pde, DataElemVec& elem_data,
                                    GeoElemVec& elem_geo, ElemVec& elem_sol,
                                    ElemVec& elem_xvec, ElemVec& elem_yvec) {
@@ -315,6 +310,9 @@ class FiniteElement {
    * WARNING: This is intended only for the lowest order elements, ie. p = 1. It
    * scales O(p^9) so it is unsuitable for high-order elements!
    *
+   * @tparam DataElemVec Element vector class for the data
+   * @tparam GeoElemVec Element vector class for the geometry
+   * @tparam ElemVec Element vector class for the solution/residual
    * @tparam ElemMat The element matrix
    * @param pde The PDE instance
    * @param elem_data Element vector for the data
@@ -322,7 +320,7 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_mat Element matrix output
    */
-  template <class ElemMat>
+  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
   void add_jacobian(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
                     ElemVec& elem_sol, ElemMat& elem_mat) {
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;

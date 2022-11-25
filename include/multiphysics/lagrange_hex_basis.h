@@ -21,6 +21,8 @@ class LagrangeH1HexBasis {
   // Number of components
   static const index_t ncomp = H1Space<T, C, dim>::ncomp;
 
+  static constexpr BasisType get_basis_type() { return H1; }
+
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
    *
@@ -137,7 +139,7 @@ class LagrangeH1HexBasis {
 
     index_t n = index / C;
     pt[0] = pts[n % order];
-    pt[1] = pts[(n % order * order) / order];
+    pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
 
@@ -406,6 +408,8 @@ class LagrangeL2HexBasis {
   // Number of components
   static const index_t ncomp = L2Space<T, C, dim>::ncomp;
 
+  static constexpr BasisType get_basis_type() { return L2; }
+
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and
    * volume
@@ -493,11 +497,11 @@ class LagrangeL2HexBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];
-    pt[1] = pts[(n % order * order) / order];
+    pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
 

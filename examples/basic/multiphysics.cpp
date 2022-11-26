@@ -62,70 +62,81 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
   }
 }
 
-template <index_t degree, class GeoBasis, class Basis, class PDE,
-          class GeoElemVec, class ElemVec>
-void write_hex_to_vtk(PDE &pde, GeoElemVec &elem_geo, ElemVec &elem_sol) {
+template <index_t outputs, index_t degree, typename T, class DataBasis,
+          class GeoBasis, class Basis, class PDE, class DataElemVec,
+          class GeoElemVec, class ElemVec, class FunctorType>
+void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
+                      ElemVec &elem_sol, const FunctorType &func) {
   using ET = ElementTypes;
+  const index_t nex = degree;
+  using QuadPts = HexGaussLobattoQuadrature<nex + 1>;
 
   const index_t nhex = elem_sol.get_num_elements();
-  const index_t nex = degree + 1;
   index_t nvtk_elems = nhex * nex * nex * nex;
   index_t nvtk_nodes = nhex * (nex + 1) * (nex + 1) * (nex + 1);
 
   auto vtk_node_num = [](index_t i, index_t j, index_t k) {
-    return i + j * (nex + 1) + k * (nex + 1) * (nex + 1);
+    return i + (nex + 1) * (j + (nex + 1) * k);
   };
 
   MultiArrayNew<int *[8]> vtk_conn("vtk_elems", nvtk_elems);
-  MultiArrayNew<double *[3]> vtk_nodes("vtk_nodes", nvtk_nodes);
-  MultiArrayNew<double *> vtk_solt("vtk_nodes", nvtk_nodes);
-  MultiArrayNew<double *> vtk_solqx("vtk_nodes", nvtk_nodes);
-  MultiArrayNew<double *> vtk_solqy("vtk_nodes", nvtk_nodes);
-  MultiArrayNew<double *> vtk_solqz("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<T *[3]> vtk_nodes("vtk_nodes", nvtk_nodes);
+  MultiArrayNew<T *[outputs]> vtk_outputs("vtk_outputs", nvtk_nodes);
 
   for (index_t n = 0, counter = 0; n < nhex; n++) {
+    // Get the data values
+    typename DataElemVec::FEDof data_dof(n, elem_data);
+    elem_data.get_element_values(n, data_dof);
+    QptSpace<QuadPts, typename PDE::DataSpace> data;
+    DataBasis::template interp(data_dof, data);
+
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(n, elem_geo);
     elem_geo.get_element_values(n, geo_dof);
-
-    // Interpolate the geometric data for all quadrature points
-    QptSpace<HexGaussLobattoQuadrature<nex + 1>,
-             typename PDE::FiniteElementGeometry>
-        geo;
+    QptSpace<QuadPts, typename PDE::FiniteElementGeometry> geo;
     GeoBasis::template interp(geo_dof, geo);
 
     // Get the degrees of freedom for the element
     typename ElemVec::FEDof sol_dof(n, elem_sol);
     elem_sol.get_element_values(n, sol_dof);
-
-    // Compute the solution information
-    QptSpace<HexGaussLobattoQuadrature<nex + 1>,
-             typename PDE::FiniteElementSpace>
-        sol;
+    QptSpace<QuadPts, typename PDE::FiniteElementSpace> sol;
     Basis::template interp(sol_dof, sol);
 
-    for (index_t index = 0, k = 0; k < nex + 1; k++) {
-      for (index_t j = 0; j < nex + 1; j++) {
-        for (index_t i = 0; i < nex + 1; i++, index++) {
-          index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
-          index_t node = off + vtk_node_num(i, j, k);
+    const index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
 
-          typename PDE::FiniteElementGeometry g = geo.get(index);
-          auto X = g.template get<0>().get_value();
+    for (index_t k = 0; k < nex + 1; k++) {
+      for (index_t j = 0; j < nex + 1; j++) {
+        for (index_t i = 0; i < nex + 1; i++) {
+          const index_t index = vtk_node_num(i, j, k);
+          const index_t node = off + index;
+
+          typename PDE::FiniteElementSpace &sref = sol.get(index);
+          typename PDE::FiniteElementGeometry &gref = geo.get(index);
+
+          // Get the Jacobian transformation
+          A2D::Mat<T, PDE::dim, PDE::dim> &J =
+              gref.template get<0>().get_grad();
+
+          // Compute the inverse of the transformation
+          A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
+          A2D::MatInverse(J, Jinv);
+
+          // Compute the determinant of the Jacobian matrix
+          T detJ;
+          A2D::MatDet(J, detJ);
+
+          // Transform the solution the physical element
+          typename PDE::FiniteElementSpace x, s;
+          sref.transform(detJ, J, Jinv, s);
+
+          auto X = gref.template get<0>().get_value();
           vtk_nodes(node, 0) = X(0);
           vtk_nodes(node, 1) = X(1);
           vtk_nodes(node, 2) = X(2);
 
-          typename PDE::FiniteElementSpace s = sol.get(index);
-          // auto sigma = s.template get<0>().get_value();
-          // auto u = s.template get<1>().get_value();
-
-          auto u = s.template get<0>().get_value();
-          auto sigma = s.template get<0>().get_grad();
-          vtk_solt(node) = u;
-          vtk_solqx(node) = sigma(0);
-          vtk_solqy(node) = sigma(1);
-          vtk_solqz(node) = sigma(2);
+          for (index_t kk = 0; kk < outputs; kk++) {
+            vtk_outputs(node, kk) = func(kk, data.get(index), gref, s);
+          }
         }
       }
     }
@@ -148,10 +159,16 @@ void write_hex_to_vtk(PDE &pde, GeoElemVec &elem_geo, ElemVec &elem_sol) {
 
   ToVTK vtk(vtk_conn, vtk_nodes);
   vtk.write_mesh();
-  vtk.write_sol("t", vtk_solt);
-  vtk.write_sol("qx", vtk_solqx);
-  vtk.write_sol("qy", vtk_solqy);
-  vtk.write_sol("qz", vtk_solqz);
+
+  MultiArrayNew<T *> vtk_vec("vtk_vec", nvtk_nodes);
+  for (index_t i = 0; i < outputs; i++) {
+    for (index_t j = 0; j < nvtk_nodes; j++) {
+      vtk_vec(j) = vtk_outputs(j, i);
+    }
+    char name[256];
+    std::snprintf(name, sizeof(name), "solution%d", i + 1);
+    vtk.write_sol(name, vtk_vec);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -404,7 +421,13 @@ int main(int argc, char *argv[]) {
     global_U[i] = x(i, 0);
   }
 
-  write_hex_to_vtk<degree, GeoBasis, Basis>(pde, elem_geo, elem_sol);
+  write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
+      pde, elem_data, elem_geo, elem_sol,
+      [](index_t k, typename PDE::DataSpace &data,
+         typename PDE::FiniteElementGeometry &geo,
+         typename PDE::FiniteElementSpace &sol) {
+        return sol.template get<0>().get_value();
+      });
 
   // Kokkos::finalize();
 

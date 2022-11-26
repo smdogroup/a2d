@@ -122,6 +122,34 @@ class BSRMat {
     }
   }
 
+  // Convert to a dense matrix
+  void to_dense(index_t *m, index_t *n, T **A_) {
+    index_t m = M * nrows;
+    index_t n = N * ncols;
+    index_t size = m * n;
+
+    T *A = new T[size];
+    std::fill(A, A + size, T(0.0));
+
+    for (index_t i = 0; i < nrows; i++) {
+      for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
+        index_t j = cols[jp];
+
+        for (index_t ii = 0; ii < M; ii++) {
+          const index_t irow = M * i + ii;
+          for (index_t jj = 0; jj < N; jj++) {
+            const index_t jcol = N * j + jj;
+            A[n * irow + jcol] = Avals(jp, ii, jj);
+          }
+        }
+      }
+    }
+
+    *A_ = A;
+    *m_ = m;
+    *n_ = n;
+  }
+
   // Array type
   using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 

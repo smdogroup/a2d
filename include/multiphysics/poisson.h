@@ -5,9 +5,12 @@
 #include "a2dmatops3d.h"
 #include "multiphysics/fespace.h"
 
-/*
-  Mixed Poisson problem
-*/
+/**
+ * @brief Regular Poisson problem
+ *
+ * @tparam T Scalar type for the calculation
+ * @tparam D Dimension of the problem
+ */
 template <typename T, A2D::index_t D>
 class Poisson {
  public:
@@ -55,12 +58,14 @@ class Poisson {
   }
 
   /**
-   * @brief Construct a JacVecProduct functor
+   * @brief Construct the JacVecProduct functor
    *
    * This functor computes a Jacobian-vector product of the weak form
    *
+   * @param pde The PDE object for this class
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
    * @param s The solution at the quadrature point
    */
   class JacVecProduct {
@@ -90,9 +95,12 @@ class Poisson {
   };
 };
 
-/*
-  Mixed Poisson problem
-*/
+/**
+ * @brief Mixed Poisson problem discretization
+ *
+ * @tparam T Scalar type for the calculation
+ * @tparam D Dimension of the problem
+ */
 template <typename T, A2D::index_t D>
 class MixedPoisson {
  public:

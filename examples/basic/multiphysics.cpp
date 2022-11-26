@@ -175,6 +175,9 @@ int main(int argc, char *argv[]) {
   using ElemVec = ElementVector_Serial<T, Basis>;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
+  // Matrix-free operator for the problem
+  using MatFree = MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+
   const index_t low_degree = 1;
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
@@ -276,13 +279,13 @@ int main(int argc, char *argv[]) {
 
   // Set boundary conditions based on the vertex indices and finite-element
   // space
-  index_t basis_select1[2] = {1, 0};
+  index_t basis_select1[2] = {0};
   BoundaryCondition<Basis> bcs1(conn, mesh, basis_select1, (ny + 1) * (nz + 1),
                                 boundary1_verts);
 
   // Set boundary conditions based on the vertex indices and finite-element
   // space
-  index_t basis_select2[2] = {0, 1};
+  index_t basis_select2[2] = {0};
   BoundaryCondition<Basis> bcs2(conn, mesh, basis_select2, (ny + 1) * (nz + 1),
                                 boundary2_verts);
 
@@ -320,6 +323,7 @@ int main(int argc, char *argv[]) {
 
   // Create the finite-element model
   FE fe;
+  MatFree matfree;
 
   // Add the residual
   elem_res.init_zero_values();
@@ -328,6 +332,13 @@ int main(int argc, char *argv[]) {
 
   fe.add_jacobian_vector_product(pde, elem_data, elem_geo, elem_sol, elem_x,
                                  elem_y);
+
+  // Initialize the matrix-free data
+  matfree.initialize(pde, elem_data, elem_geo, elem_sol);
+
+  elem_y.init_zero_values();
+  matfree.add_jacobian_vector_product(elem_x, elem_y);
+  elem_y.add_values();
 
   LOrderFE lorder_fe;
 
@@ -379,12 +390,6 @@ int main(int argc, char *argv[]) {
   BSRMatAmg<index_t, T, 1, 1> amg(num_levels, omega, epsilon, mat, B,
                                   print_info);
 
-  // BSRMat<index_t, T, 1, 1> *factor = BSRMatFactorSymbolic(*mat);
-  // BSRMatCopy(*mat, *factor);
-  // BSRMatFactor(*factor);
-
-  std::cout << "nnz = " << mat->nnz << std::endl;
-
   MultiArrayNew<T *[1]> x("x", global_U.get_num_dof());
   MultiArrayNew<T *[1]> rhs("rhs", global_U.get_num_dof());
 
@@ -394,8 +399,6 @@ int main(int argc, char *argv[]) {
 
   amg.cg(rhs, x, 5);
 
-  //  BSRMatApplyFactor(*factor, rhs, x);
-
   // Copy the solution to the solution vector
   for (index_t i = 0; i < global_U.get_num_dof(); i++) {
     global_U[i] = x(i, 0);
@@ -403,7 +406,6 @@ int main(int argc, char *argv[]) {
 
   write_hex_to_vtk<degree, GeoBasis, Basis>(pde, elem_geo, elem_sol);
 
-  // * /
   // Kokkos::finalize();
 
   return (0);

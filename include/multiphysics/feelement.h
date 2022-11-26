@@ -112,6 +112,70 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
   }
 }
 
+/**
+ * @brief Get the coordinates associated with the locations of each of the
+ * degrees of freedom
+ *
+ * This code returns the x, y and z coordinates in separate solution-size
+ * vectors
+ *
+ * @tparam T The solution type
+ * @tparam GeoBasis Geometry basis type
+ * @tparam Basis Solution basis type
+ */
+template <typename T, class PDE, class GeoBasis, class Basis>
+class DOFCoordinates {
+ public:
+  // Set the quadrature point
+  class DOFQuadrature {
+   public:
+    static const bool is_tensor_product = false;
+    static const index_t num_quad_points = Basis::ndof;
+    static index_t get_num_points() { return num_quad_points; }
+    static void get_point(const index_t dof, double pt[]) {
+      Basis::get_dof_point(dof, pt);
+    }
+  };
+
+  // Quadrature point object for the geometry
+  using QGeoSpace =
+      QptSpace<DOFQuadrature, typename PDE::FiniteElementGeometry>;
+
+  template <class GeoElemVec, class ElemVec>
+  void get_dof_coordinates(GeoElemVec& elem_geo, ElemVec& elem_x,
+                           ElemVec& elem_y, ElemVec& elem_z) {
+    const A2D::index_t num_elements = elem_geo.get_num_elements();
+
+    for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Get the geometry values and interpolate them at all quadrature points
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      elem_geo.get_element_values(i, geo_dof);
+      QGeoSpace geo;
+      GeoBasis::template interp(geo_dof, geo);
+
+      // Get the degrees of freedom for the element and interpolate the solution
+      typename ElemVec::FEDof x_dof(i, elem_x);
+      typename ElemVec::FEDof y_dof(i, elem_y);
+      typename ElemVec::FEDof z_dof(i, elem_z);
+
+      // Compute the weak coefficients at all quadrature points
+      for (A2D::index_t j = 0; j < Basis::ndof; j++) {
+        // Get the solution/geometry in the reference domain
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        A2D::Vec<T, PDE::dim>& X = gref.template get<0>().get_value();
+
+        x_dof[j] = X(0);
+        y_dof[j] = X(1);
+        z_dof[j] = X(2);
+      }
+
+      elem_x.set_element_values(i, x_dof);
+      elem_y.set_element_values(i, y_dof);
+      elem_z.set_element_values(i, z_dof);
+    }
+  }
+};
+
 template <typename T, class PDE, class Quadrature, class DataBasis,
           class GeoBasis, class Basis>
 class FiniteElement {

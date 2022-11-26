@@ -15,6 +15,38 @@
 
 using namespace A2D;
 
+//   static void compute_null_space(NodeArray& X, NullSpaceArray& B) {
+//     A2D::BLAS::zero(B);
+//     if (SPATIAL_DIM == 3) {
+//       for (I i = 0; i < B.extent(0); i++) {
+//         B(i, 0, 0) = 1.0;
+//         B(i, 1, 1) = 1.0;
+//         B(i, 2, 2) = 1.0;
+
+//         // Rotation about the x-axis
+//         B(i, 1, 3) = X(i, 2);
+//         B(i, 2, 3) = -X(i, 1);
+
+//         // Rotation about the y-axis
+//         B(i, 0, 4) = X(i, 2);
+//         B(i, 2, 4) = -X(i, 0);
+
+//         // Rotation about the z-axis
+//         B(i, 0, 5) = X(i, 1);
+//         B(i, 1, 5) = -X(i, 0);
+//       }
+//     } else {
+//       for (I i = 0; i < B.extent(0); i++) {
+//         B(i, 0, 0) = 1.0;
+//         B(i, 1, 1) = 1.0;
+
+//         // Rotation about the z-axis
+//         B(i, 0, 2) = X(i, 1);
+//         B(i, 1, 2) = -X(i, 0);
+//       }
+//     }
+//   }
+
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
                             GeoElemVec &elem_geo) {
@@ -333,10 +365,21 @@ int main(int argc, char *argv[]) {
   // Set the geometry from the node locations
   set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
 
-  SolutionVector<T> global_x(mesh.get_num_dof());
-  SolutionVector<T> global_y(mesh.get_num_dof());
-  ElemVec elem_x(mesh, global_x);
-  ElemVec elem_y(mesh, global_y);
+  SolutionVector<T> x(mesh.get_num_dof());
+  SolutionVector<T> y(mesh.get_num_dof());
+  SolutionVector<T> z(mesh.get_num_dof());
+
+  ElemVec elem_x(mesh, x);
+  ElemVec elem_y(mesh, y);
+  ElemVec elem_z(mesh, z);
+
+  DOFCoordinates<T, PDE, GeoBasis, Basis> coords;
+  coords.get_dof_coordinates(elem_geo, elem_x, elem_y, elem_z);
+
+  SolutionVector<T> global_xvec(mesh.get_num_dof());
+  SolutionVector<T> global_yvec(mesh.get_num_dof());
+  ElemVec elem_xvec(mesh, global_xvec);
+  ElemVec elem_yvec(mesh, global_yvec);
 
   // Create the finite-element model
   FE fe;
@@ -347,15 +390,15 @@ int main(int argc, char *argv[]) {
   fe.add_residual(pde, elem_data, elem_geo, elem_sol, elem_res);
   elem_res.add_values();
 
-  fe.add_jacobian_vector_product(pde, elem_data, elem_geo, elem_sol, elem_x,
-                                 elem_y);
+  fe.add_jacobian_vector_product(pde, elem_data, elem_geo, elem_sol, elem_xvec,
+                                 elem_yvec);
 
   // Initialize the matrix-free data
   matfree.initialize(pde, elem_data, elem_geo, elem_sol);
 
-  elem_y.init_zero_values();
-  matfree.add_jacobian_vector_product(elem_x, elem_y);
-  elem_y.add_values();
+  elem_yvec.init_zero_values();
+  matfree.add_jacobian_vector_product(elem_xvec, elem_yvec);
+  elem_yvec.add_values();
 
   LOrderFE lorder_fe;
 
@@ -380,13 +423,6 @@ int main(int argc, char *argv[]) {
   index_t nbcs1 = bcs1.get_bcs(&bc_dofs1);
   mat->zero_rows(nbcs1, bc_dofs1);
 
-  // const index_t *bc_dofs2;
-  // index_t nbcs2 = bcs1.get_bcs(&bc_dofs2);
-  index_t nbcs2 = 1;
-  index_t bc_dofs2[] = {global_x.get_num_dof() - 1};
-
-  mat->zero_rows(nbcs2, bc_dofs2);
-
   MultiArrayNew<T *[1][1]> B("B", global_U.get_num_dof());
   for (index_t i = 0; i < global_U.get_num_dof(); i++) {
     B(i, 0, 0) = 1.0;
@@ -396,10 +432,6 @@ int main(int argc, char *argv[]) {
     B(bc_dofs1[i], 0, 0) = 0.0;
   }
 
-  for (index_t i = 0; i < nbcs2; i++) {
-    B(bc_dofs2[i], 0, 0) = 0.0;
-  }
-
   index_t num_levels = 3;
   double omega = 3.0 / 4.0;
   double epsilon = 0.0;
@@ -407,18 +439,18 @@ int main(int argc, char *argv[]) {
   BSRMatAmg<index_t, T, 1, 1> amg(num_levels, omega, epsilon, mat, B,
                                   print_info);
 
-  MultiArrayNew<T *[1]> x("x", global_U.get_num_dof());
+  MultiArrayNew<T *[1]> xvec("x", global_U.get_num_dof());
   MultiArrayNew<T *[1]> rhs("rhs", global_U.get_num_dof());
 
   for (index_t i = 0; i < nbcs1; i++) {
     rhs(bc_dofs1[i], 0) = 1.0;
   }
 
-  amg.cg(rhs, x, 5);
+  amg.cg(rhs, xvec, 5);
 
   // Copy the solution to the solution vector
   for (index_t i = 0; i < global_U.get_num_dof(); i++) {
-    global_U[i] = x(i, 0);
+    global_U[i] = xvec(i, 0);
   }
 
   write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(

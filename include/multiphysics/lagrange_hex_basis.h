@@ -184,23 +184,38 @@ class LagrangeH1HexBasis {
 
             FiniteElementSpace& s = out.get(qindex);
             H1Space<T, C, dim>& h1 = s.template get<space>();
-            Vec<T, C>& u = h1.get_value();
-            Mat<T, C, dim>& grad = h1.get_grad();
+            typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+            typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-            u.zero();
+            if constexpr (C == 1) {
+              u = 0.0;
+            } else {
+              u.zero();
+            }
             grad.zero();
 
             for (index_t j2 = 0; j2 < order; j2++) {
               for (index_t j1 = 0; j1 < order; j1++) {
                 for (index_t j0 = 0; j0 < order; j0++) {
-                  for (index_t i = 0; i < C; i++) {
+                  if constexpr (C == 1) {
                     const T val =
-                        sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+                        sol[offset + (j0 + order * (j1 + order * j2))];
 
-                    u(i) += n0[j0] * n1[j1] * n2[j2] * val;
-                    grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
-                    grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
-                    grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                    u += n0[j0] * n1[j1] * n2[j2] * val;
+                    grad(0) += d0[j0] * n1[j1] * n2[j2] * val;
+                    grad(1) += n0[j0] * d1[j1] * n2[j2] * val;
+                    grad(2) += n0[j0] * n1[j1] * d2[j2] * val;
+                  } else {
+                    for (index_t i = 0; i < C; i++) {
+                      const T val =
+                          sol[offset + C * (j0 + order * (j1 + order * j2)) +
+                              i];
+
+                      u(i) += n0[j0] * n1[j1] * n2[j2] * val;
+                      grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
+                      grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
+                      grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                    }
                   }
                 }
               }
@@ -224,23 +239,36 @@ class LagrangeH1HexBasis {
 
         FiniteElementSpace& s = out.get(q);
         H1Space<T, C, dim>& h1 = s.template get<space>();
-        Vec<T, C>& u = h1.get_value();
-        Mat<T, C, dim>& grad = h1.get_grad();
+        typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+        typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-        u.zero();
+        if constexpr (C == 1) {
+          u = 0.0;
+        } else {
+          u.zero();
+        }
         grad.zero();
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
             for (index_t j0 = 0; j0 < order; j0++) {
-              for (index_t i = 0; i < C; i++) {
-                const T val =
-                    sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+              if constexpr (C == 1) {
+                const T val = sol[offset + (j0 + order * (j1 + order * j2))];
 
-                u(i) += n0[j0] * n1[j1] * n2[j2] * val;
-                grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
-                grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
-                grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                u += n0[j0] * n1[j1] * n2[j2] * val;
+                grad(0) += d0[j0] * n1[j1] * n2[j2] * val;
+                grad(1) += n0[j0] * d1[j1] * n2[j2] * val;
+                grad(2) += n0[j0] * n1[j1] * d2[j2] * val;
+              } else {
+                for (index_t i = 0; i < C; i++) {
+                  const T val =
+                      sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+
+                  u(i) += n0[j0] * n1[j1] * n2[j2] * val;
+                  grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
+                  grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
+                  grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                }
               }
             }
           }
@@ -291,19 +319,26 @@ class LagrangeH1HexBasis {
 
             const FiniteElementSpace& s = in.get(qindex);
             const H1Space<T, C, dim>& h1 = s.template get<space>();
-
-            const Vec<T, C>& u = h1.get_value();
-            const Mat<T, C, dim>& grad = h1.get_grad();
+            const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+            const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
             for (index_t j2 = 0; j2 < order; j2++) {
               for (index_t j1 = 0; j1 < order; j1++) {
                 for (index_t j0 = 0; j0 < order; j0++) {
-                  for (index_t i = 0; i < C; i++) {
-                    res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
-                        n0[j0] * n1[j1] * n2[j2] * u(i) +
-                        d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
-                        n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
-                        n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                  if constexpr (C == 1) {
+                    res[offset + (j0 + order * (j1 + order * j2))] +=
+                        n0[j0] * n1[j1] * n2[j2] * u +
+                        d0[j0] * n1[j1] * n2[j2] * grad(0) +
+                        n0[j0] * d1[j1] * n2[j2] * grad(1) +
+                        n0[j0] * n1[j1] * d2[j2] * grad(2);
+                  } else {
+                    for (index_t i = 0; i < C; i++) {
+                      res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
+                          n0[j0] * n1[j1] * n2[j2] * u(i) +
+                          d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
+                          n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
+                          n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                    }
                   }
                 }
               }
@@ -327,19 +362,26 @@ class LagrangeH1HexBasis {
 
         const FiniteElementSpace& s = in.get(q);
         const H1Space<T, C, dim>& h1 = s.template get<space>();
-
-        const Vec<T, C>& u = h1.get_value();
-        const Mat<T, C, dim>& grad = h1.get_grad();
+        const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+        const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
             for (index_t j0 = 0; j0 < order; j0++) {
-              for (index_t i = 0; i < C; i++) {
-                res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
-                    n0[j0] * n1[j1] * n2[j2] * u(i) +
-                    d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
-                    n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
-                    n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+              if constexpr (C == 1) {
+                res[offset + (j0 + order * (j1 + order * j2))] +=
+                    n0[j0] * n1[j1] * n2[j2] * u +
+                    d0[j0] * n1[j1] * n2[j2] * grad(0) +
+                    n0[j0] * d1[j1] * n2[j2] * grad(1) +
+                    n0[j0] * n1[j1] * d2[j2] * grad(2);
+              } else {
+                for (index_t i = 0; i < C; i++) {
+                  res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
+                      n0[j0] * n1[j1] * n2[j2] * u(i) +
+                      d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
+                      n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
+                      n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                }
               }
             }
           }

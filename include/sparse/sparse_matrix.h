@@ -17,6 +17,8 @@ namespace A2D {
 template <typename I, typename T, index_t M, index_t N>
 class BSRMat {
  public:
+  static constexpr index_t NO_INDEX = std::numeric_limits<I>::max();
+
   /**
    * @brief Constructor
    *
@@ -71,17 +73,17 @@ class BSRMat {
    * @param col block column index
    * @return I* address of the block column index
    */
-  I *find_column_index(I row, I col) {
+  I find_column_index(I row, I col) {
     I jp_start = rowp[row];
     I jp_end = rowp[row + 1];
 
     for (I jp = jp_start; jp < jp_end; jp++) {
       if (cols[jp] == col) {
-        return &cols[jp];
+        return jp;
       }
     }
 
-    return nullptr;
+    return NO_INDEX;
   }
 
   template <class Mat>
@@ -95,10 +97,8 @@ class BSRMat {
         index_t block_col = j[jj] / N;
         index_t eq_col = j[jj] % N;
 
-        index_t *col_ptr = find_column_index(block_row, block_col);
-        if (col_ptr) {
-          index_t jp = col_ptr - cols.data();
-
+        index_t jp = find_column_index(block_row, block_col);
+        if (jp != NO_INDEX) {
           Avals(jp, eq_row, eq_col) += mat(ii, jj);
         }
       }

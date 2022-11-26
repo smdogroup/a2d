@@ -674,10 +674,8 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       I j = A.cols[jp];
 
-      I* col_ptr = At->find_column_index(j, i);  // Find At(j, i)
-      if (col_ptr) {
-        I kp = col_ptr - At->cols.data();
-
+      I kp = At->find_column_index(j, i);  // Find At(j, i)
+      if (kp != BSRMat<I, T, M, N>::NO_INDEX) {
         for (I k1 = 0; k1 < M; k1++) {
           for (I k2 = 0; k2 < N; k2++) {
             At->Avals(kp, k2, k1) = A.Avals(jp, k1, k2);

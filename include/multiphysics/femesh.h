@@ -955,9 +955,9 @@ class HexProjection {
   }
 
   void get_projection_index(index_t n, index_t index[]) {
-    const index_t i = n % order;
-    const index_t j = (n % (order * order)) / order;
-    const index_t k = n / (order * order);
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
 
     if constexpr (Basis::nbasis > 0) {
       get_projection_index_<0>(i, j, k, index);
@@ -965,9 +965,9 @@ class HexProjection {
   }
 
   void get_projection_signs(index_t n, int signs[]) {
-    const index_t i = n % order;
-    const index_t j = (n % (order * order)) / order;
-    const index_t k = n / (order * order);
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
 
     if constexpr (Basis::nbasis > 0) {
       get_projection_signs_<0>(i, j, k, signs);
@@ -1336,18 +1336,15 @@ class ElementMesh {
 
         // Index into the high-order element
         index_t index[ndof_per_element];
-        proj.get_projection_index(j, index);
+        proj.get_projection_index(i, index);
 
         // Sign - indicating any orientation flip
         int signs[ndof_per_element];
-        proj.get_projection_signs(j, signs);
+        proj.get_projection_signs(i, signs);
 
         for (index_t k = 0; k < ndof_per_element; k++) {
           element_sign[ndof_per_element * elem + k] =
-              signs[k] * horder_signs[k];
-          if (index[k] >= HOrderBasis::ndof) {
-            std::cout << "Mistake here!" << std::endl;
-          }
+              signs[k] * horder_signs[index[k]];
           element_dof[ndof_per_element * elem + k] = horder_dof[index[k]];
         }
       }

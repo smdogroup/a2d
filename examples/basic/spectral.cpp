@@ -32,7 +32,8 @@ void dggev_(const char *jobvl, const char *jobvr, int *N, double *A, int *lda,
  * @param B The B matrix
  * @param eigvals The eigenvalues of the problem
  */
-void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals) {
+void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals,
+                         bool write = false) {
   int N = n;
 
   double *alphar = new double[n];
@@ -47,9 +48,11 @@ void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals) {
 
   const double eps = 1e-12;
   for (int i = 0; i < n; i++) {
-    // std::cout << std::setw(12) << alphar[i] / beta[i] << " " << std::setw(12)
-    //           << alphar[i] << "  " << std::setw(12) << alphai[i] << " "
-    //           << std::setw(12) << beta[i] << std::endl;
+    if (write) {
+      std::cout << std::setw(12) << alphar[i] / beta[i] << " " << std::setw(12)
+                << alphar[i] << "  " << std::setw(12) << alphai[i] << " "
+                << std::setw(12) << beta[i] << std::endl;
+    }
 
     if (beta[i] > eps || beta[i] < -eps) {
       eigvals[i] = alphar[i] / beta[i];
@@ -151,31 +154,42 @@ int main(int argc, char *argv[]) {
   GeoElemVec elem_geo(geomesh, geo);
   ElemVec elem_sol(mesh, sol);
 
+  // Set the geometry from the node locations
+  set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
+
   LOrderDataElemVec lorder_elem_data(lorder_datamesh, data);
   LOrderGeoElemVec lorder_elem_geo(lorder_geomesh, geo);
   LOrderElemVec lorder_elem_sol(lorder_mesh, sol);
-
-  // Set the geometry from the node locations
-  set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
 
   // Create the finite-element model
   FE fe;
   LOrderFE lorder_fe;
   PDE pde;
 
-  index_t nrows;
-  std::vector<index_t> rowp, cols;
+  const index_t block_size = 1;
+  using BSRMatType = BSRMat<index_t, T, block_size, block_size>;
 
-  mesh.create_block_csr<1>(nrows, rowp, cols);
-  BSRMat<index_t, T, 1, 1> horder_mat(nrows, nrows, cols.size(), rowp, cols);
-  ElementMat_Serial<T, Basis, BSRMat<index_t, T, 1, 1>> elem_mat(mesh,
-                                                                 horder_mat);
+  index_t nrows = mesh.get_num_dof();
+  std::vector<index_t> rowp(nrows + 1), cols(nrows * nrows);
+
+  // mesh.create_block_csr<block_size>(nrows, rowp, cols);
+  index_t nnz = nrows * nrows;
+  for (index_t i = 0; i < nrows; i++) {
+    rowp[i] = i * nrows;
+    for (index_t j = 0; j < nrows; j++) {
+      cols[rowp[i] + j] = j;
+    }
+  }
+  rowp[nrows] = nrows * nrows;
+
+  BSRMatType horder_mat(nrows, nrows, rowp[nrows], rowp, cols);
+  ElementMat_Serial<T, Basis, BSRMatType> elem_mat(mesh, horder_mat);
   fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
 
-  lorder_mesh.create_block_csr<1>(nrows, rowp, cols);
-  BSRMat<index_t, T, 1, 1> lorder_mat(nrows, nrows, cols.size(), rowp, cols);
-  ElementMat_Serial<T, LOrderBasis, BSRMat<index_t, T, 1, 1>> lorder_elem_mat(
-      lorder_mesh, lorder_mat);
+  lorder_mesh.create_block_csr<block_size>(nrows, rowp, cols);
+  BSRMatType lorder_mat(nrows, nrows, rowp[nrows], rowp, cols);
+  ElementMat_Serial<T, LOrderBasis, BSRMatType> lorder_elem_mat(lorder_mesh,
+                                                                lorder_mat);
   lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
                          lorder_elem_sol, lorder_elem_mat);
 
@@ -205,6 +219,10 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  std::cout << "dof:         " << mesh.get_num_dof() << std::endl;
+  std::cout << "dof:         " << (degree + 1) * (degree + 1) * (degree + 1)
+            << std::endl;
+  std::cout << "degree:      " << degree << std::endl;
   std::cout << "eig_min:     " << eig_min << std::endl;
   std::cout << "eig_max:     " << eig_max << std::endl;
   std::cout << "eig_min_abs: " << eig_min_abs << std::endl;

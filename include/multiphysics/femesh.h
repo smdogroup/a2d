@@ -1408,6 +1408,7 @@ class ElementMesh {
 
     // Find the number of nodes referenced by other nodes
     rowp.resize(nrows + 1);
+    std::fill(rowp.begin(), rowp.end(), 0);
 
     typename std::set<std::pair<index_t, index_t>>::iterator it;
     for (it = node_set.begin(); it != node_set.end(); it++) {

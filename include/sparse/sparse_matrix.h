@@ -123,15 +123,15 @@ class BSRMat {
   }
 
   // Convert to a dense matrix
-  void to_dense(index_t *m, index_t *n, T **A_) {
-    index_t m = M * nrows;
-    index_t n = N * ncols;
+  void to_dense(index_t *m_, index_t *n_, T **A_) {
+    index_t m = M * nbrows;
+    index_t n = N * nbcols;
     index_t size = m * n;
 
     T *A = new T[size];
     std::fill(A, A + size, T(0.0));
 
-    for (index_t i = 0; i < nrows; i++) {
+    for (index_t i = 0; i < nbrows; i++) {
       for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
         index_t j = cols[jp];
 

@@ -1377,8 +1377,9 @@ class ElementMesh {
     *signs = &element_sign[ndof_per_element * elem];
   }
 
-  template <typename T, index_t M>
-  std::shared_ptr<BSRMat<index_t, T, M, M>> create_block_matrix() {
+  template <index_t M>
+  void create_block_csr(index_t& nrows, std::vector<index_t>& rowp,
+                        std::vector<index_t>& cols) {
     std::set<std::pair<index_t, index_t>> node_set;
 
     for (index_t i = 0; i < nelems; i++) {
@@ -1400,13 +1401,13 @@ class ElementMesh {
       }
     }
 
-    index_t nrows = num_dof / M;
+    nrows = num_dof / M;
     if (num_dof % M > 0) {
       nrows += 1;
     }
 
     // Find the number of nodes referenced by other nodes
-    std::vector<index_t> rowp(nrows + 1);
+    rowp.resize(nrows + 1);
 
     typename std::set<std::pair<index_t, index_t>>::iterator it;
     for (it = node_set.begin(); it != node_set.end(); it++) {
@@ -1420,7 +1421,7 @@ class ElementMesh {
     }
 
     index_t nnz = rowp[nrows];
-    std::vector<index_t> cols(nnz);
+    cols.resize(nnz);
 
     for (it = node_set.begin(); it != node_set.end(); it++) {
       cols[rowp[it->first]] = it->second;
@@ -1435,9 +1436,6 @@ class ElementMesh {
 
     // Sort the cols array
     SortCSRData(nrows, rowp, cols);
-
-    return std::make_shared<BSRMat<index_t, T, M, M>>(nrows, nrows, nnz, rowp,
-                                                      cols);
   }
 
  private:

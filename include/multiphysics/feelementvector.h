@@ -198,8 +198,10 @@ class ElementMat_Serial {
   // implementation)
   class FEMat {
    public:
+    static const index_t size = Basis::ndof * Basis::ndof;
+
     FEMat(index_t elem, ElementMat_Serial<T, Basis, MatType>& elem_mat) {
-      std::fill(A, A + Basis::ndof * Basis::ndof, T(0.0));
+      std::fill(A, A + size, T(0.0));
     }
 
     /**
@@ -212,7 +214,7 @@ class ElementMat_Serial {
 
    private:
     // Variables for all the basis functions
-    T A[Basis::ndof * Basis::ndof];
+    T A[size];
   };
 
   /**

@@ -48,3 +48,4 @@ target_link_libraries(toy_readvtk    OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_tetramesh  OpenMP::OpenMP_CXX LAPACK::LAPACK)
 
 add_subdirectory(rigid_body)
+add_subdirectory(paropt)

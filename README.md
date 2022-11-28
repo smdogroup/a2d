@@ -43,20 +43,28 @@ documentation](https://github.com/kokkos/kokkos-kernels/wiki/Building).
 ## Build examples, python bindings and tests
 
 Build system [CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html) is used.
-To build all examples and python binding, execute the following commands in
-this directory:
+A2D requires CMAKE_BUILD_TYPE to be set explicitly to either Debug or Release.
+It is recommended to use out-of-source builds and separate different build types.
+For example, to build all examples and python binding with **debug** flags, do:
 
 ```
-mkdir build
-cd build
-cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
+mkdir build-debug
+cd build-debug
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
+make -j <nproc>
+````
+To build all examples and python binding with **optimization** flags, do:
+```
+mkdir build-release
+cd build-release
+cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
 make -j <nproc>
 ````
 
-To install python extensions (copy binaries from ```./build``` to ```./a2d```),
+To install python extensions (copy binaries from ```./build_<BUILD_TYPE>``` to ```./a2d```),
 execute
 ```
-cd build
+cd build_<BUILD_TYPE>
 cmake --install .
 ```
 
@@ -70,7 +78,7 @@ To see a full list of CMake options and their values for the current build, exec
 ```
 ccmake .
 ```
-in ```build``` folder.
+in ```build_<BUILD_TYPE>``` folder.
 
 
 ## Testing
@@ -79,7 +87,7 @@ Test](https://google.github.io/googletest/primer.html) framework, which is
 automatically downloaded when building tests.
 
 To run unit tests, need to `cmake` with `-DA2D_BUILD_UNIT_TESTS=ON`. After build, execute
-```cd build/tests && ctest```.
+```cd build_<BUILD_TYPE>/tests && ctest```.
 
 ## Coding style
 ```clangFormat``` is used as the auto-formatter, with style ```Google```. If you would

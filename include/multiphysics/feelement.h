@@ -332,7 +332,6 @@ class FiniteElement {
 
       // Add the derivative of the data back to the data space
       typename DataElemVec::FEDof deriv_dof(i, elem_deriv);
-      elem_deriv.get_element_values(i, deriv_dof);
       Basis::template add(deriv, deriv_dof);
       elem_deriv.add_element_values(i, deriv_dof);
     }
@@ -422,7 +421,6 @@ class FiniteElement {
 
       // Add the derivative of the data back to the data space
       typename DataElemVec::FEDof deriv_dof(i, elem_deriv);
-      elem_deriv.get_element_values(i, deriv_dof);
       Basis::template add(deriv, deriv_dof);
       elem_deriv.add_element_values(i, deriv_dof);
     }
@@ -502,7 +500,6 @@ class FiniteElement {
       // Add the residual from the quadrature points back to the finite-element
       // mesh
       typename ElemVec::FEDof res_dof(i, elem_res);
-      elem_res.get_element_values(i, res_dof);
       Basis::template add(res, res_dof);
       elem_res.add_element_values(i, res_dof);
     }
@@ -592,14 +589,10 @@ class FiniteElement {
         y.rtransform(detJ, J, Jinv, yref);
       }
 
-      // Get output-vector for the element
-      typename ElemVec::FEDof y_dof(i, elem_yvec);
-      elem_yvec.get_element_values(i, y_dof);
-
       // Add the values from the quadrature points back into the finite-element
       // problem
+      typename ElemVec::FEDof y_dof(i, elem_yvec);
       Basis::template add(ysol, y_dof);
-
       elem_yvec.add_element_values(i, y_dof);
     }
   }
@@ -866,7 +859,6 @@ class MatrixFree {
 
       // Add to the output-vector for the element
       typename ElemVec::FEDof y_dof(i, elem_yvec);
-      elem_yvec.get_element_values(i, y_dof);
       Basis::template add(ysol, y_dof);
       elem_yvec.add_element_values(i, y_dof);
     }

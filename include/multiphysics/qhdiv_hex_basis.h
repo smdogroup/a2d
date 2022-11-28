@@ -7,11 +7,6 @@
 
 namespace A2D {
 
-template <index_t degree>
-constexpr const double* get_qhdiv_knots() {
-  return get_gauss_quadrature_pts<degree>();
-}
-
 template <typename T, index_t degree>
 class QHdivHexBasis {
  public:
@@ -25,6 +20,8 @@ class QHdivHexBasis {
 
   // Number of components
   static const index_t ncomp = HdivSpace<T, dim>::ncomp;
+
+  static constexpr BasisType get_basis_type() { return HDIV; }
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -220,7 +217,7 @@ class QHdivHexBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    const double* knots = get_qhdiv_knots<degree>();
+    const double* knots = get_gauss_quadrature_pts<degree>();
     constexpr const double* pts = get_gauss_lobatto_pts<order>();
 
     if (index < order * (order - 1) * (order - 1)) {
@@ -268,7 +265,7 @@ class QHdivHexBasis {
       u.zero();
       div = 0.0;
 
-      const double* knots = get_qhdiv_knots<degree>();
+      const double* knots = get_gauss_quadrature_pts<degree>();
 
       // Evaluate the basis functions
       double dx[order];
@@ -353,7 +350,7 @@ class QHdivHexBasis {
       const Vec<T, dim>& u = hdiv.get_value();
       const T& div = hdiv.get_div();
 
-      const double* knots = get_qhdiv_knots<degree>();
+      const double* knots = get_gauss_quadrature_pts<degree>();
 
       // Evaluate the basis functions
       double dx[order];
@@ -430,7 +427,7 @@ class QHdivHexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    const double* knots = get_qhdiv_knots<degree>();
+    const double* knots = get_gauss_quadrature_pts<degree>();
 
     // Evaluate the basis functions
     double dx[order];

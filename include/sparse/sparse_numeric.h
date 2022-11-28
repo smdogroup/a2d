@@ -66,11 +66,9 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
 
       for (I j2 = 0; j2 < conn.extent(1); j2++) {
         I col = conn(i, j2);
-        I *col_ptr = A.find_column_index(row, col);
+        I jp = A.find_column_index(row, col);
 
-        if (col_ptr) {
-          I jp = col_ptr - A.cols.data();
-
+        if (jp != BSRMat<I, T, M, M>::NO_INDEX) {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < M; k2++) {
               A.Avals(jp, k1, k2) += jac(i, j1, j2, k1, k2);
@@ -237,10 +235,8 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
       for (; jp < jp_end; jp++) {
         I jdest = dest.iperm[src.cols[jp]];
 
-        I *col_ptr = dest.find_column_index(idest, jdest);
-        if (col_ptr) {
-          I kp = col_ptr - dest.cols.data();
-
+        I kp = dest.find_column_index(idest, jdest);
+        if (kp != BSRMat<I, T, M, N>::NO_INDEX) {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < N; k2++) {
               dest.Avals(kp, k1, k2) = src.Avals(jp, k1, k2);
@@ -543,10 +539,8 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
   D->nnz = 0;
   D->rowp[0] = 0;
   for (I i = 0; i < nrows; i++) {
-    I *col_ptr = A.find_column_index(i, i);
-    if (col_ptr) {
-      I jp = col_ptr - A.cols.data();
-
+    I jp = A.find_column_index(i, i);
+    if (jp != BSRMat<I, T, M, M>::NO_INDEX) {
       // Copy the values
       for (I k1 = 0; k1 < M; k1++) {
         for (I k2 = 0; k2 < M; k2++) {

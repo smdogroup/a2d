@@ -130,11 +130,11 @@ class L2Space {
 
 template <typename T, index_t C, index_t D>
 class H1Space {
+ public:
   using VarType = typename std::conditional<C == 1, T, Vec<T, C>>::type;
   using GradType =
       typename std::conditional<C == 1, Vec<T, D>, Mat<T, C, D>>::type;
 
- public:
   H1Space() { zero(); }
 
   // Number of solution components

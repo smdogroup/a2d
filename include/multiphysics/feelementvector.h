@@ -64,7 +64,7 @@ class ElementVector_Serial {
   // implementation)
   class FEDof {
    public:
-    FEDof(index_t elem, ElementVector_Serial& elem_vec) {
+    FEDof(index_t elem, ElementVector_Serial<T, Basis>& elem_vec) {
       std::fill(dof, dof + Basis::ndof, T(0.0));
     }
 
@@ -112,7 +112,6 @@ class ElementVector_Serial {
    * @param elem the element index
    * @param dof the object that stores a reference to the degrees of freedom
    */
-  // Get values for this element from the vector
   void get_element_values(index_t elem, FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
       get_element_values_<0>(elem, dof);
@@ -128,7 +127,6 @@ class ElementVector_Serial {
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
-  // Add values for this element to the vector
   void add_element_values(index_t elem, const FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
       add_element_values_<0>(elem, dof);
@@ -144,7 +142,6 @@ class ElementVector_Serial {
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
-  // Add values for this element to the vector
   void set_element_values(index_t elem, const FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
       set_element_values_<0>(elem, dof);
@@ -201,9 +198,9 @@ class ElementMat_Serial {
   // implementation)
   class FEMat {
    public:
-    FEMat(index_t elem, ElementMat_Serial& elem_mat) {
-      std::fill(A, A + Basis::ndof * Basis::ndof, T(0.0));
-    }
+    static const index_t size = Basis::ndof * Basis::ndof;
+
+    FEMat(index_t elem, ElementMat_Serial<T, Basis, MatType>& elem_mat) : A(size, T(0.0)) {}
 
     /**
      * @brief Get a reference to the underlying element data
@@ -215,7 +212,7 @@ class ElementMat_Serial {
 
    private:
     // Variables for all the basis functions
-    T A[Basis::ndof * Basis::ndof];
+    std::vector<T> A;
   };
 
   /**
@@ -232,7 +229,6 @@ class ElementMat_Serial {
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
-  // Add values for this element to the vector
   void add_element_values(index_t elem, FEMat& elem_mat) {
     index_t dof[Basis::ndof];
     int sign[Basis::ndof];

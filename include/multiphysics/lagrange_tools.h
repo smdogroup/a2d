@@ -1015,7 +1015,9 @@ const double GaussLobattoQuadWts32[] = {
 
 template <index_t order>
 constexpr const double* get_gauss_lobatto_wts() {
-  if (order == 2) {
+  if (order == 1) {
+    return GaussQuadWts1;
+  } else if (order == 2) {
     return GaussLobattoQuadWts2;
   } else if (order == 3) {
     return GaussLobattoQuadWts3;
@@ -1083,7 +1085,9 @@ constexpr const double* get_gauss_lobatto_wts() {
 
 template <index_t order>
 constexpr const double* get_gauss_lobatto_pts() {
-  if (order == 2) {
+  if (order == 1) {
+    return GaussQuadPts1;
+  } else if (order == 2) {
     return GaussLobattoQuadPts2;
   } else if (order == 3) {
     return GaussLobattoQuadPts3;

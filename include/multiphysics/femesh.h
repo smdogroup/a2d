@@ -945,6 +945,172 @@ class MeshConnectivity3D {
   index_t* pyrmd_edges;
 };
 
+template <index_t degree, class HOrderBasis, class Basis>
+class HexProjection {
+ public:
+  static const index_t order = degree + 1;
+
+  index_t get_num_projection_elements() const {
+    return (order - 1) * (order - 1) * (order - 1);
+  }
+
+  void get_projection_index(index_t n, index_t index[]) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    if constexpr (Basis::nbasis > 0) {
+      get_projection_index_<0>(i, j, k, index);
+    }
+  }
+
+  void get_projection_signs(index_t n, int signs[]) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    if constexpr (Basis::nbasis > 0) {
+      get_projection_signs_<0>(i, j, k, signs);
+    }
+  }
+
+ private:
+  template <index_t basis>
+  void get_projection_index_(index_t i, index_t j, index_t k, index_t index[]) {
+    if (Basis::template get_basis_type<basis>() == H1) {
+      get_h1_index<basis>(i, j, k, index);
+    } else if (Basis::template get_basis_type<basis>() == HCURL) {
+    } else if (Basis::template get_basis_type<basis>() == HDIV) {
+      get_hdiv_index<basis>(i, j, k, index);
+    } else if (Basis::template get_basis_type<basis>() == L2) {
+      get_l2_index<basis>(i, j, k, index);
+    }
+
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_projection_index_<basis + 1>(i, j, k, index);
+    }
+  }
+  template <index_t basis>
+  void get_projection_signs_(index_t i, index_t j, index_t k, int signs[]) {
+    if (Basis::template get_basis_type<basis>() == H1) {
+      get_h1_signs<basis>(i, j, k, signs);
+    } else if (Basis::template get_basis_type<basis>() == HCURL) {
+    } else if (Basis::template get_basis_type<basis>() == HDIV) {
+      get_hdiv_signs<basis>(i, j, k, signs);
+    } else if (Basis::template get_basis_type<basis>() == L2) {
+      get_l2_signs<basis>(i, j, k, signs);
+    }
+
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_projection_signs_<basis + 1>(i, j, k, signs);
+    }
+  }
+
+  template <index_t basis>
+  void get_h1_index(const index_t i, const index_t j, const index_t k,
+                    index_t dof[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    for (index_t kk = 0; kk < 2; kk++) {
+      for (index_t jj = 0; jj < 2; jj++) {
+        for (index_t ii = 0; ii < 2; ii++) {
+          for (index_t n = 0; n < stride; n++) {
+            dof[lo_offset + n + stride * (ii + 2 * (jj + 2 * kk))] =
+                ho_offset + n +
+                stride * ((i + ii) + order * ((j + jj) + order * (k + kk)));
+          }
+        }
+      }
+    }
+  }
+
+  template <index_t basis>
+  void get_hdiv_index(const index_t i, const index_t j, const index_t k,
+                      index_t dof[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    dof[lo_offset] = ho_offset + i + order * (j + (order - 1) * k);
+    dof[lo_offset + 1] = ho_offset + i + 1 + order * (j + (order - 1) * k);
+
+    dof[lo_offset + 2] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
+                         order * (order - 1) * (order - 1);
+    dof[lo_offset + 3] = ho_offset + i +
+                         (order - 1) * (j + 1 + (order - 1) * k) +
+                         order * (order - 1) * (order - 1);
+
+    dof[lo_offset + 4] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
+                         2 * order * (order - 1) * (order - 1);
+    dof[lo_offset + 5] = ho_offset + i +
+                         (order - 1) * (j + (order - 1) * (k + 1)) +
+                         2 * order * (order - 1) * (order - 1);
+  }
+
+  template <index_t basis>
+  void get_l2_index(const index_t i, const index_t j, const index_t k,
+                    index_t dof[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    for (index_t n = 0; n < stride; n++) {
+      dof[lo_offset + n] =
+          ho_offset + n + stride * (i + (order - 1) * (j + (order - 1) * k));
+    }
+  }
+
+  template <index_t basis>
+  void get_h1_signs(const index_t i, const index_t j, const index_t k,
+                    int signs[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    for (index_t n = 0; n < 8 * stride; n++) {
+      signs[lo_offset + n] = 1;
+    }
+  }
+
+  template <index_t basis>
+  void get_hdiv_signs(const index_t i, const index_t j, const index_t k,
+                      int signs[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+
+    if (i == 0) {
+      signs[lo_offset] = 1;
+    } else {
+      signs[lo_offset] = -1;
+    }
+    signs[lo_offset + 1] = 1;
+
+    if (j == 0) {
+      signs[lo_offset + 2] = 1;
+    } else {
+      signs[lo_offset + 2] = -1;
+    }
+    signs[lo_offset + 3] = 1;
+
+    if (k == 0) {
+      signs[lo_offset + 4] = 1;
+    } else {
+      signs[lo_offset + 4] = -1;
+    }
+    signs[lo_offset + 5] = 1;
+  }
+
+  template <index_t basis>
+  void get_l2_signs(const index_t i, const index_t j, const index_t k,
+                    int signs[]) {
+    const index_t stride = Basis::template get_basis_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    for (index_t n = 0; n < stride; n++) {
+      signs[lo_offset + n] = 1;
+    }
+  }
+};
+
 /*
   ElementMesh - Map from an element to the global to element local degrees
   of freedom
@@ -954,7 +1120,11 @@ class ElementMesh {
  public:
   using ET = ElementTypes;
 
+  /// @brief  Constant expression indicating an un-ordered node
   static constexpr index_t NO_INDEX = std::numeric_limits<index_t>::max();
+
+  // Number of degrees of freedom for each element
+  static const index_t ndof_per_element = Basis::ndof;
 
   ElementMesh(MeshConnectivity3D& conn)
       : nelems(conn.get_num_elements()), num_dof(0) {
@@ -1145,10 +1315,44 @@ class ElementMesh {
     num_dof = dof_counter;
   }
 
+  template <class HOrderBasis, class ElemProj>
+  ElementMesh(ElementMesh<HOrderBasis>& mesh, ElemProj& proj)
+      : nelems(proj.get_num_projection_elements() * mesh.get_num_elements()),
+        num_dof(mesh.get_num_dof()) {
+    element_dof = new index_t[nelems * ndof_per_element];
+    element_sign = new int[nelems * ndof_per_element];
+
+    // Loop over all the high-order elements and generate the low-order
+    // representation
+    for (index_t j = 0; j < mesh.get_num_elements(); j++) {
+      // Get the signs associated wtih the high-order mesh
+      const index_t* horder_dof;
+      const int* horder_signs;
+      mesh.get_element_dof(j, &horder_dof);
+      mesh.get_element_signs(j, &horder_signs);
+
+      for (index_t i = 0; i < proj.get_num_projection_elements(); i++) {
+        index_t elem = i + j * proj.get_num_projection_elements();
+
+        // Index into the high-order element
+        index_t index[ndof_per_element];
+        proj.get_projection_index(i, index);
+
+        // Sign - indicating any orientation flip
+        int signs[ndof_per_element];
+        proj.get_projection_signs(i, signs);
+
+        for (index_t k = 0; k < ndof_per_element; k++) {
+          element_sign[ndof_per_element * elem + k] =
+              signs[k] * horder_signs[index[k]];
+          element_dof[ndof_per_element * elem + k] = horder_dof[index[k]];
+        }
+      }
+    }
+  }
+
   index_t get_num_elements() { return nelems; }
   index_t get_num_dof() { return num_dof; }
-
-  static const index_t ndof_per_element = Basis::ndof;
 
   template <index_t basis>
   int get_global_dof_sign(index_t elem, index_t index) {
@@ -1168,8 +1372,14 @@ class ElementMesh {
     *dof = &element_dof[ndof_per_element * elem];
   }
 
-  template <typename T, index_t M>
-  std::shared_ptr<BSRMat<index_t, T, M, M>> create_block_matrix() {
+  // Get the signs associated with the degrees of freedom
+  void get_element_signs(const index_t elem, const int* signs[]) {
+    *signs = &element_sign[ndof_per_element * elem];
+  }
+
+  template <index_t M>
+  void create_block_csr(index_t& nrows, std::vector<index_t>& rowp,
+                        std::vector<index_t>& cols) {
     std::set<std::pair<index_t, index_t>> node_set;
 
     for (index_t i = 0; i < nelems; i++) {
@@ -1191,13 +1401,14 @@ class ElementMesh {
       }
     }
 
-    index_t nrows = num_dof / M;
+    nrows = num_dof / M;
     if (num_dof % M > 0) {
       nrows += 1;
     }
 
     // Find the number of nodes referenced by other nodes
-    std::vector<index_t> rowp(nrows + 1);
+    rowp.resize(nrows + 1);
+    std::fill(rowp.begin(), rowp.end(), 0);
 
     typename std::set<std::pair<index_t, index_t>>::iterator it;
     for (it = node_set.begin(); it != node_set.end(); it++) {
@@ -1211,7 +1422,7 @@ class ElementMesh {
     }
 
     index_t nnz = rowp[nrows];
-    std::vector<index_t> cols(nnz);
+    cols.resize(nnz);
 
     for (it = node_set.begin(); it != node_set.end(); it++) {
       cols[rowp[it->first]] = it->second;
@@ -1226,9 +1437,6 @@ class ElementMesh {
 
     // Sort the cols array
     SortCSRData(nrows, rowp, cols);
-
-    return std::make_shared<BSRMat<index_t, T, M, M>>(nrows, nrows, nnz, rowp,
-                                                      cols);
   }
 
  private:
@@ -1304,7 +1512,7 @@ class BoundaryCondition {
 
       // Scan over the edges
       const index_t* elem_edges;
-      index_t ne = conn.get_element_faces(elem, &elem_edges);
+      index_t ne = conn.get_element_edges(elem, &elem_edges);
       for (index_t e = 0; e < ne; e++) {
         if (edge_labels[elem_edges[e]] != MeshConnectivity3D::NO_LABEL) {
           for (index_t basis = 0; basis < Basis::nbasis; basis++) {

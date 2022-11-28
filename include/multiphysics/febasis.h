@@ -1,13 +1,17 @@
 #ifndef A2D_FE_BASIS_H
 #define A2D_FE_BASIS_H
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
 #include "a2dobjs.h"
 #include "multiphysics/feelementtypes.h"
 #include "multiphysics/fespace.h"
 
 namespace A2D {
+
+/**
+ * @brief The type of basis function that a given basis class implements
+ *
+ */
+enum BasisType { H1, HCURL, HDIV, L2 };
 
 /*
   The Basis class type is a class with all const static member data and
@@ -20,17 +24,17 @@ namespace A2D {
   2. static const ncomp: The number of components in the function space output.
 
   3. static function interp: This function evaluates a function space object at
-  a quadrature point. This function computes both values and derivatives that
-  may be used in the weak form of the governing equations. This can be written
-  as
+  all the quadrature points. The interpolation computes both values and any
+  spatial derivatives that may be used in the weak form of the governing
+  equations. This can be written as
 
   u = N(pt) * dof
 
   where u may be the solution as well as the derivatives of the solution, the
-  divergence or curl. Here pt is a quadrature point in the reference element
-  space.
+  divergence or curl. Here pt is a vector of the quadrature points in the
+  reference element space.
 
-  4 .static function add: This function adds the residual contribution from the
+  4. static function add: This function adds the residual contribution from the
   corresponding function space object to the degrees of freedom. This can be
   written as
 
@@ -185,8 +189,8 @@ class FEBasis {
   }
 
   /**
-   * @brief Get the cumulative number of degrees of associated with the basis
-   * before the given basis
+   * @brief Get the cumulative number of degrees of freedom before the given
+   * basis index
    */
   template <index_t index>
   static constexpr index_t get_dof_offset() {
@@ -194,7 +198,8 @@ class FEBasis {
   }
 
   /**
-   * @brief Get the basis offset
+   * @brief Get the basis_size offset - the cumulative size of the basis
+   * function matrix up to the given basis index
    */
   template <index_t index>
   static constexpr index_t get_basis_size_offset() {
@@ -207,6 +212,30 @@ class FEBasis {
   template <index_t index>
   static constexpr index_t get_comp_offset() {
     return get_comp_offset_<0, index, Basis...>();
+  }
+
+  /**
+   * @brief Get the basis function type
+   */
+  template <index_t index>
+  static constexpr BasisType get_basis_type() {
+    if constexpr (nbasis == 0) {
+      return H1;
+    } else {
+      return get_basis_type_<0, index, Basis...>();
+    }
+  }
+
+  /**
+   * @brief Get the stride for a given basis
+   */
+  template <index_t index>
+  static constexpr index_t get_basis_stride() {
+    if constexpr (nbasis == 0) {
+      return 0;
+    } else {
+      return get_basis_stride_<0, index, Basis...>();
+    }
   }
 
   /**
@@ -542,14 +571,14 @@ class FEBasis {
     for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       for (index_t istride = 0; istride < First::stride; istride++, idof++) {
         // Compute the values in a row vector values = N_{i}^{T} * jac
+        const index_t offset =
+            istride * First::ncomp_per_stride + get_comp_offset<index>();
+
         T values[ncomp];
         for (index_t jcomp = 0; jcomp < ncomp; jcomp++) {
           values[jcomp] = 0.0;
-
-          const index_t offset =
-              istride * First::ncomp_per_stride + get_comp_offset<index>();
           for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
-            values[jcomp] += jac(icomp + offset, jcomp) * N[icomp];
+            values[jcomp] += N[icomp] * jac(icomp + offset, jcomp);
           }
         }
 
@@ -666,6 +695,30 @@ class FEBasis {
       return First::get_dof_point(index, pt);
     } else if constexpr (sizeof...(Remain) > 0) {
       get_dof_point_<r + 1, Remain...>(index - get_ndof<r>(), pt);
+    }
+  }
+
+  template <index_t r, index_t index, class First, class... Remain>
+  static constexpr BasisType get_basis_type_() {
+    if (r == index) {
+      return First::get_basis_type();
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      return First::get_basis_type();
+    } else {
+      return get_basis_type_<r + 1, index, Remain...>();
+    }
+  }
+
+  template <index_t r, index_t index, class First, class... Remain>
+  static constexpr index_t get_basis_stride_() {
+    if (r == index) {
+      return First::stride;
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      return First::stride;
+    } else {
+      return get_basis_stride_<r + 1, index, Remain...>();
     }
   }
 };

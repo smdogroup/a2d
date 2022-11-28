@@ -1,6 +1,8 @@
 #ifndef A2D_FE_ELEMENT_TYPES_H
 #define A2D_FE_ELEMENT_TYPES_H
 
+#include "a2dobjs.h"
+
 namespace A2D {
 
 class ElementTypes {

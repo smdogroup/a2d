@@ -64,7 +64,7 @@ class ElementVector_Serial {
   // implementation)
   class FEDof {
    public:
-    FEDof(index_t elem, ElementVector_Serial& elem_vec) {
+    FEDof(index_t elem, ElementVector_Serial<T, Basis>& elem_vec) {
       std::fill(dof, dof + Basis::ndof, T(0.0));
     }
 
@@ -189,143 +189,6 @@ class ElementVector_Serial {
   SolutionVector<T>& vec;
 };
 
-/**
- * @brief Provide a low-order element implementation of the mesh on top
- *
- */
-// template <typename T, class Basis, index_t degree>
-// class ElementVector_LowOrder {
-//  public:
-//   ElementVector_LowOrder(ElementVector_Serial<T, Basis>& evec) : evec(evec) {}
-
-//   // Required DOF container object (different for each element vector
-//   // implementation)
-//   class FEDof {
-//    public:
-//     FEDof(index_t elem, ElementVector_Serial& elem_vec) {
-//       std::fill(dof, dof + Basis::ndof, T(0.0));
-//     }
-
-//     /**
-//      * @brief Get a reference to the underlying element data
-//      *
-//      * @return A reference to the degree of freedom
-//      */
-//     T& operator[](const index_t index) { return dof[index]; }
-//     const T& operator[](const index_t index) const { return dof[index]; }
-
-//    private:
-//     // Variables for all the basis functions
-//     T dof[Basis::ndof];
-//   };
-
-//   /**
-//    * @brief Get the number of elements
-//    */
-//   index_t get_num_elements() const { degree* degree* degree* evec.get_num_elements(); }
-
-//   /**
-//    * @brief Initialize the element vector values
-//    *
-//    * This function may be called once before element values are accessed.
-//    */
-//   void init_values() {}
-//   /**
-//    * @brief Initialize any local element vector values to zero
-//    *
-//    * This function may be called before element values are added.
-//    */
-//   void init_zero_values() {}
-
-//   /**
-//    * @brief Finish adding values to the element vector
-//    *
-//    * Add any values from the element vector into the source vector.
-//    */
-//   void add_values() {}
-
-//   /**
-//    * @brief Get the element values from the object and store them in the FEDof
-//    *
-//    * @param elem the element index
-//    * @param dof the object that stores a reference to the degrees of freedom
-//    */
-//   void get_element_values(index_t elem, FEDof& dof) {
-//     if constexpr (Basis::nbasis > 0) {
-//       get_element_values_<0>(elem, dof);
-//     }
-//   }
-
-//   /**
-//    * @brief Add the degree of freedom values to the element vector
-//    *
-//    * @param elem the element index
-//    * @param dof the FEDof object that stores a reference to the degrees of
-//    * freedom
-//    *
-//    * If FEDof contains a pointer to data, this function may do nothing
-//    */
-//   void add_element_values(index_t elem, const FEDof& dof) {
-//     if constexpr (Basis::nbasis > 0) {
-//       add_element_values_<0>(elem, dof);
-//     }
-//   }
-
-//   /**
-//    * @brief Set the degree of freedom values to the element vector
-//    *
-//    * @param elem the element index
-//    * @param dof the FEDof object that stores a reference to the degrees of
-//    * freedom
-//    *
-//    * If FEDof contains a pointer to data, this function may do nothing
-//    */
-//   void set_element_values(index_t elem, const FEDof& dof) {
-//     if constexpr (Basis::nbasis > 0) {
-//       set_element_values_<0>(elem, dof);
-//     }
-//   }
-
-//  private:
-//   template <index_t basis>
-//   void get_element_values_(index_t elem, FEDof& dof) {
-//     for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-//       const int sign = mesh.template get_global_dof_sign<basis>(elem, i);
-//       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
-//       dof[i + Basis::template get_dof_offset<basis>()] = sign * vec[dof_index];
-//     }
-//     if constexpr (basis + 1 < Basis::nbasis) {
-//       get_element_values_<basis + 1>(elem, dof);
-//     }
-//   }
-
-//   template <index_t basis>
-//   void add_element_values_(index_t elem, const FEDof& dof) {
-//     for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-//       const int sign = mesh.template get_global_dof_sign<basis>(elem, i);
-//       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
-//       vec[dof_index] += sign * dof[i + Basis::template get_dof_offset<basis>()];
-//     }
-//     if constexpr (basis + 1 < Basis::nbasis) {
-//       add_element_values_<basis + 1>(elem, dof);
-//     }
-//   }
-
-//   template <index_t basis>
-//   void set_element_values_(index_t elem, const FEDof& dof) {
-//     for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
-//       const int sign = mesh.template get_global_dof_sign<basis>(elem, i);
-//       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
-//       vec[dof_index] = sign * dof[i + Basis::template get_dof_offset<basis>()];
-//     }
-//     if constexpr (basis + 1 < Basis::nbasis) {
-//       set_element_values_<basis + 1>(elem, dof);
-//     }
-//   }
-
-//   ElementVector_Serial<T, Basis>& evec;
-// };
-
 template <typename T, class Basis, class MatType>
 class ElementMat_Serial {
  public:
@@ -335,9 +198,9 @@ class ElementMat_Serial {
   // implementation)
   class FEMat {
    public:
-    FEMat(index_t elem, ElementMat_Serial& elem_mat) {
-      std::fill(A, A + Basis::ndof * Basis::ndof, T(0.0));
-    }
+    static const index_t size = Basis::ndof * Basis::ndof;
+
+    FEMat(index_t elem, ElementMat_Serial<T, Basis, MatType>& elem_mat) : A(size, T(0.0)) {}
 
     /**
      * @brief Get a reference to the underlying element data
@@ -349,7 +212,7 @@ class ElementMat_Serial {
 
    private:
     // Variables for all the basis functions
-    T A[Basis::ndof * Basis::ndof];
+    std::vector<T> A;
   };
 
   /**
@@ -366,7 +229,6 @@ class ElementMat_Serial {
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
-  // Add values for this element to the vector
   void add_element_values(index_t elem, FEMat& elem_mat) {
     index_t dof[Basis::ndof];
     int sign[Basis::ndof];

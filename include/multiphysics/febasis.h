@@ -571,14 +571,14 @@ class FEBasis {
     for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       for (index_t istride = 0; istride < First::stride; istride++, idof++) {
         // Compute the values in a row vector values = N_{i}^{T} * jac
+        const index_t offset =
+            istride * First::ncomp_per_stride + get_comp_offset<index>();
+
         T values[ncomp];
         for (index_t jcomp = 0; jcomp < ncomp; jcomp++) {
           values[jcomp] = 0.0;
-
-          const index_t offset =
-              istride * First::ncomp_per_stride + get_comp_offset<index>();
           for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
-            values[jcomp] += jac(icomp + offset, jcomp) * N[icomp];
+            values[jcomp] += N[icomp] * jac(icomp + offset, jcomp);
           }
         }
 

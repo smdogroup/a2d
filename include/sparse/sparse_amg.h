@@ -260,6 +260,7 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
 
   // Spectral estimate using Arnoldi
   T rho = BSRMatArnoldiSpectralRadius(*DinvA);
+
   if (rho_) {
     *rho_ = rho;
   }
@@ -509,7 +510,9 @@ class BSRMatAmg {
     This uses the variant of PCG from the paper "Inexact Preconditioned
     Conjugate Gradient Method with Inner-Outer Iteration" by Golub and Ye.
   */
-  bool cg(MultiArrayNew<T* [M]>& b0, MultiArrayNew<T* [M]>& xk, I monitor = 0,
+  bool cg(const std::function<void(MultiArrayNew<T* [M]>&,
+                                   MultiArrayNew<T* [M]>&)>& mat_vec,
+          MultiArrayNew<T* [M]>& b0, MultiArrayNew<T* [M]>& xk, I monitor = 0,
           I max_iters = 500, double rtol = 1e-8, double atol = 1e-30,
           I iters_per_reset = 100) {
     Timer timer("BSRMatAmg::cg()");
@@ -528,8 +531,9 @@ class BSRMatAmg {
 
     for (I reset = 0, iter = 0; iter < max_iters; reset++) {
       if (reset > 0) {
-        A2D::BLAS::copy(R, b0);       // R = b0
-        BSRMatVecMultSub(*A, xk, R);  // R = b0 - A * xk
+        A2D::BLAS::copy(R, b0);          // R = b0
+        mat_vec(xk, work);               // work = A * xk
+        A2D::BLAS::axpy(R, -1.0, work);  // R = b0 - A * xk
       }
 
       if (monitor && reset == 0) {
@@ -548,7 +552,7 @@ class BSRMatAmg {
         T rz = A2D::BLAS::dot(R, Z);
 
         for (I i = 0; i < iters_per_reset && iter < max_iters; i++, iter++) {
-          BSRMatVecMult(*A, P, work);              // work = A * P
+          mat_vec(P, work);                        // work = A * P
           T alpha = rz / A2D::BLAS::dot(work, P);  // alpha = (R, Z)/(A * P, P)
           A2D::BLAS::axpy(xk, alpha, P);           // x = x + alpha * P
           A2D::BLAS::axpy(R, -alpha, work);        // R' = R - alpha * A * P

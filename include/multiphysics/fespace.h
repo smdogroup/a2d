@@ -222,6 +222,7 @@ class H1Space {
     // = tr((s.grad * Jinv^{T})^{T} * dot{grad})
     s.u = u;
 
+    // s.grad = grad * Jinv^{T}
     if constexpr (C == 1) {
       for (index_t i = 0; i < dim; i++) {
         s.grad(i) = 0.0;
@@ -230,7 +231,16 @@ class H1Space {
         }
       }
     } else {
-      MatMatMult<T, false, true>(grad, Jinv, s.grad);
+      for (index_t i = 0; i < C; i++) {
+        for (index_t j = 0; j < dim; j++) {
+          s.grad(i, j) = 0.0;
+
+          for (index_t k = 0; k < dim; k++) {
+            s.grad(i, j) += grad(i, k) * Jinv(j, k);
+          }
+        }
+      }
+      // MatMatMult<T, false, true>(grad, Jinv, s.grad);
     }
   }
 

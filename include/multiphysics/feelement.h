@@ -667,13 +667,13 @@ class FiniteElement {
         A2D::MatDet(J, detJ);
 
         // Transform the solution the physical element
-        typename PDE::FiniteElementSpace x, s;
+        typename PDE::FiniteElementSpace s;
         sref.transform(detJ, J, Jinv, s);
 
-        // Allocate the Jacobian-vector product functor
-        double weight = Quadrature::get_weight(j);
-        typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
-                                        s);
+        // // Allocate the Jacobian-vector product functor
+        // double weight = Quadrature::get_weight(j);
+        // typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j),
+        // gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
         typename PDE::QMatType jac;
@@ -686,6 +686,11 @@ class FiniteElement {
           pref.zero();
           pref[k] = T(1.0);
           pref.transform(detJ, J, Jinv, p);
+
+          // Allocate the Jacobian-vector product functor
+          double weight = Quadrature::get_weight(j);
+          typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
+                                          s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -790,13 +795,13 @@ class MatrixFree {
         typename PDE::FiniteElementSpace x, s;
         sref.transform(detJ, J, Jinv, s);
 
-        // Allocate the Jacobian-vector product functor
-        double weight = Quadrature::get_weight(j);
-        typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
-                                        s);
+        // // Allocate the Jacobian-vector product functor
+        // double weight = Quadrature::get_weight(j);
+        // typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j),
+        // gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDE::QMatType jac = qmat[i].get(j);
+        typename PDE::QMatType& jac = qmat[i].get(j);
 
         // Temporary vectors
         typename PDE::FiniteElementSpace pref, p, Jp;
@@ -806,6 +811,11 @@ class MatrixFree {
           pref.zero();
           pref[k] = T(1.0);
           pref.transform(detJ, J, Jinv, p);
+
+          // Allocate the Jacobian-vector product functor
+          double weight = Quadrature::get_weight(j);
+          typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
+                                          s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -843,7 +853,7 @@ class MatrixFree {
         typename PDE::FiniteElementSpace& xref = xsol.get(j);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDE::QMatType jac = qmat[i].get(j);
+        typename PDE::QMatType& jac = qmat[i].get(j);
 
         // Matrix-vector product at the quadrature point
         yref.zero();

@@ -1512,7 +1512,7 @@ class BoundaryCondition {
 
       // Scan over the edges
       const index_t* elem_edges;
-      index_t ne = conn.get_element_faces(elem, &elem_edges);
+      index_t ne = conn.get_element_edges(elem, &elem_edges);
       for (index_t e = 0; e < ne; e++) {
         if (edge_labels[elem_edges[e]] != MeshConnectivity3D::NO_LABEL) {
           for (index_t basis = 0; basis < Basis::nbasis; basis++) {

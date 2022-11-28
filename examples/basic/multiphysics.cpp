@@ -15,38 +15,6 @@
 
 using namespace A2D;
 
-//   static void compute_null_space(NodeArray& X, NullSpaceArray& B) {
-//     A2D::BLAS::zero(B);
-//     if (SPATIAL_DIM == 3) {
-//       for (I i = 0; i < B.extent(0); i++) {
-//         B(i, 0, 0) = 1.0;
-//         B(i, 1, 1) = 1.0;
-//         B(i, 2, 2) = 1.0;
-
-//         // Rotation about the x-axis
-//         B(i, 1, 3) = X(i, 2);
-//         B(i, 2, 3) = -X(i, 1);
-
-//         // Rotation about the y-axis
-//         B(i, 0, 4) = X(i, 2);
-//         B(i, 2, 4) = -X(i, 0);
-
-//         // Rotation about the z-axis
-//         B(i, 0, 5) = X(i, 1);
-//         B(i, 1, 5) = -X(i, 0);
-//       }
-//     } else {
-//       for (I i = 0; i < B.extent(0); i++) {
-//         B(i, 0, 0) = 1.0;
-//         B(i, 1, 1) = 1.0;
-
-//         // Rotation about the z-axis
-//         B(i, 0, 2) = X(i, 1);
-//         B(i, 1, 2) = -X(i, 0);
-//       }
-//     }
-//   }
-
 int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
@@ -92,8 +60,9 @@ int main(int argc, char *argv[]) {
   MixedPoisson<std::complex<T>, dim> mixed_poisson;
   TestPDEImplementation<std::complex<T>>(mixed_poisson);
 
-  std::cout << "Nonlinear elasticity\n";
-  NonlinearElasticity<std::complex<T>, dim> elasticity;
+  std::cout << "Topology linear elasticity\n";
+  T E = 70e3, nu = 0.3, q = 5.0;
+  TopoLinearElasticity<std::complex<T>, dim> elasticity(E, nu, q);
   TestPDEImplementation<std::complex<T>>(elasticity);
 
   std::cout << "Heat conduction\n";
@@ -148,13 +117,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int boundary2_verts[(ny + 1) * (nz + 1)];
-  for (int k = 0, index = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++, index++) {
-      boundary2_verts[index] = node_num(nx, j, k);
-    }
-  }
-
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
 
@@ -173,25 +135,13 @@ int main(int argc, char *argv[]) {
   // Set boundary conditions based on the vertex indices and finite-element
   // space
   index_t basis_select1[2] = {0};
-  BoundaryCondition<Basis> bcs1(conn, mesh, basis_select1, (ny + 1) * (nz + 1),
-                                boundary1_verts);
-
-  // Set boundary conditions based on the vertex indices and finite-element
-  // space
-  index_t basis_select2[2] = {0};
-  BoundaryCondition<Basis> bcs2(conn, mesh, basis_select2, (ny + 1) * (nz + 1),
-                                boundary2_verts);
+  BoundaryCondition<Basis> bcs(conn, mesh, basis_select1, (ny + 1) * (nz + 1),
+                               boundary1_verts);
 
   std::cout << "Number of elements:            " << conn.get_num_elements()
             << std::endl;
   std::cout << "Number of degrees of freedom:  " << mesh.get_num_dof()
             << std::endl;
-
-  // const index_t *bcs_index;
-  // std::cout << "Number of boundary conditions: " << bcs1.get_bcs(&bcs_index)
-  //           << std::endl;
-  // std::cout << "Number of boundary conditions: " << bcs2.get_bcs(&bcs_index)
-  //           << std::endl;
 
   PDE pde;
 
@@ -212,7 +162,6 @@ int main(int argc, char *argv[]) {
   SolutionVector<T> x(mesh.get_num_dof());
   SolutionVector<T> y(mesh.get_num_dof());
   SolutionVector<T> z(mesh.get_num_dof());
-
   ElemVec elem_x(mesh, x);
   ElemVec elem_y(mesh, y);
   ElemVec elem_z(mesh, z);
@@ -267,7 +216,7 @@ int main(int argc, char *argv[]) {
                          lorder_elem_sol, elem_mat);
 
   const index_t *bc_dofs1;
-  index_t nbcs1 = bcs1.get_bcs(&bc_dofs1);
+  index_t nbcs1 = bcs.get_bcs(&bc_dofs1);
   mat->zero_rows(nbcs1, bc_dofs1);
 
   MultiArrayNew<T *[1][1]> B("B", global_U.get_num_dof());

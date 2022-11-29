@@ -633,8 +633,8 @@ class FEBasis {
   }
 
   template <class Mat, index_t index>
-  static void add_outer_row_(const index_t idof, const T values[],
-                             const double N[], Mat& mat) {}
+  static void add_outer_row_(const index_t idof, const double N[],
+                             const T values[], Mat& mat) {}
 
   template <index_t r, class First, class... Remain>
   static index_t get_entity_ndof(index_t basis, ET::ElementEntity entity,

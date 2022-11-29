@@ -259,7 +259,7 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   // T rho = BSRMatGershgorinSpectralEstimate(*DinvA);
 
   // Spectral estimate using Arnoldi
-  T rho = BSRMatArnoldiSpectralRadius(*DinvA);
+  T rho = BSRMatArnoldiSpectralRadius(*DinvA, 30u);
 
   if (rho_) {
     *rho_ = rho;

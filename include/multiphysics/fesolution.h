@@ -13,7 +13,7 @@ namespace A2D {
 template <typename T>
 class SolutionVector {
  public:
-  SolutionVector(A2D::index_t ndof) : ndof(ndof), x(ndof) {}
+  SolutionVector(A2D::index_t ndof) : ndof(ndof), x(ndof, T(0.0)) {}
   T& operator[](A2D::index_t index) { return x[index]; }
   const T& operator[](A2D::index_t index) const { return x[index]; }
 

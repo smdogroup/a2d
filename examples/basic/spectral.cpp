@@ -83,6 +83,8 @@ int main(int argc, char *argv[]) {
   // using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
   //                             LagrangeL2HexBasis<T, 1, low_degree - 1>>;
 
+  using BasisVecType = A2D::SolutionVector<T>;
+
   using PDE = Poisson<T, dim>;
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
   using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>;
@@ -90,17 +92,20 @@ int main(int argc, char *argv[]) {
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
-  using DataElemVec = ElementVector_Serial<T, DataBasis>;
-  using GeoElemVec = ElementVector_Serial<T, GeoBasis>;
-  using ElemVec = ElementVector_Serial<T, Basis>;
+  using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
+  using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
+  using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
   using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
   using LOrderGeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, low_degree>>;
-  using LOrderDataElemVec = ElementVector_Serial<T, LOrderDataBasis>;
-  using LOrderGeoElemVec = ElementVector_Serial<T, LOrderGeoBasis>;
-  using LOrderElemVec = ElementVector_Serial<T, LOrderBasis>;
+  using LOrderDataElemVec =
+      A2D::ElementVector_Serial<T, LOrderDataBasis, BasisVecType>;
+  using LOrderGeoElemVec =
+      A2D::ElementVector_Serial<T, LOrderGeoBasis, BasisVecType>;
+  using LOrderElemVec = A2D::ElementVector_Serial<T, LOrderBasis, BasisVecType>;
+
   using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                  LOrderGeoBasis, LOrderBasis>;
 
@@ -238,8 +243,6 @@ int main(int argc, char *argv[]) {
   //        typename PDE::FiniteElementSpace &sol) {
   //       return sol.template get<0>().get_value();
   //     });
-
-  // Kokkos::finalize();
 
   return (0);
 }

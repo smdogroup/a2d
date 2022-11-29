@@ -255,11 +255,85 @@ class FiniteElement {
         // Compute the coefficients for the weak form of the PDE
         double weight = Quadrature::get_weight(j);
         typename PDE::FiniteElementSpace coef;
-        value += pde.integrand(weight * detJ, data.get(j), gref, s, coef);
+        value += pde.integrand(weight * detJ, data.get(j), gref, s);
       }
     }
 
     return value;
+  }
+
+  /**
+   * @brief Compute the maximum value of a quantity at any quadrature point
+   *
+   * @tparam DataElemVec Element vector class for the data
+   * @tparam GeoElemVec Element vector class for the geometry
+   * @tparam ElemVec Element vector class for the solution/residual
+   * @param pde Instance of the PDE
+   * @param elem_data Element vector for the data
+   * @param elem_geo Element vector for the geometry
+   * @param elem_sol Element solution vector
+   * @return The maximum value over the domain
+   */
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  T max(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
+        ElemVec& elem_sol) {
+    const A2D::index_t num_elements = elem_geo.get_num_elements();
+    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+
+    // Need to make this more robust?
+    T max_value = -1e20;
+
+    for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Get the data for the element and interpolate it
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      elem_data.get_element_values(i, data_dof);
+      QDataSpace data;
+      DataBasis::template interp(data_dof, data);
+
+      // Get the geometry values and interpolate them at all quadrature points
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      elem_geo.get_element_values(i, geo_dof);
+      QGeoSpace geo;
+      GeoBasis::template interp(geo_dof, geo);
+
+      // Get the degrees of freedom for the element and interpolate the solution
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+      elem_sol.get_element_values(i, sol_dof);
+      QSpace sol;
+      Basis::template interp(sol_dof, sol);
+
+      // Compute the weak coefficients at all quadrature points
+      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+        // Get the solution/geometry in the reference domain
+        typename PDE::FiniteElementSpace& sref = sol.get(j);
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+
+        // Get the Jacobian transformation
+        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
+
+        // Compute the inverse of the transformation
+        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
+        A2D::MatInverse(J, Jinv);
+
+        // Compute the determinant of the Jacobian matrix
+        T detJ;
+        A2D::MatDet(J, detJ);
+
+        // Transform the solution the physical element
+        typename PDE::FiniteElementSpace s;
+        sref.transform(detJ, J, Jinv, s);
+
+        // Compute the coefficients for the weak form of the PDE
+        double weight = Quadrature::get_weight(j);
+        typename PDE::FiniteElementSpace coef;
+        T value = pde.max(data.get(j), gref, s);
+        if (std::real(value) > std::real(max_value)) {
+          max_value = value;
+        }
+      }
+    }
+
+    return max_value;
   }
 
   /**
@@ -269,16 +343,18 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
+   * @tparam DataDerivElemVec Element vector class for the derivative
    * @param pde Instance of the PDE
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_deriv Output derivative of the functional w.r.t. data
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class DataDerivElemVec>
   void add_data_derivative(PDE& pde, DataElemVec& elem_data,
                            GeoElemVec& elem_geo, ElemVec& elem_sol,
-                           DataElemVec& elem_deriv) {
+                           DataDerivElemVec& elem_deriv) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -331,8 +407,8 @@ class FiniteElement {
       }
 
       // Add the derivative of the data back to the data space
-      typename DataElemVec::FEDof deriv_dof(i, elem_deriv);
-      Basis::template add(deriv, deriv_dof);
+      typename DataDerivElemVec::FEDof deriv_dof(i, elem_deriv);
+      DataBasis::template add(deriv, deriv_dof);
       elem_deriv.add_element_values(i, deriv_dof);
     }
   }
@@ -343,7 +419,9 @@ class FiniteElement {
    *
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
-   * @tparam ElemVec Element vector class for the solution/residual
+   * @tparam ElemVec Element vector class for the solution
+   * @tparam ElemAdjVec Element vector class for the adjoint
+   * @tparam DataDerivElemVec Element vector class for the derivative
    * @param pde Instance of the PDE
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
@@ -351,12 +429,13 @@ class FiniteElement {
    * @param elem_adj Element adjoint vector
    * @param elem_deriv Data derivative
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemAdjVec, class DataDerivElemVec>
   void add_adjoint_residual_data_derivative(PDE& pde, DataElemVec& elem_data,
                                             GeoElemVec& elem_geo,
                                             ElemVec& elem_sol,
-                                            ElemVec& elem_adj,
-                                            DataElemVec& elem_deriv) {
+                                            ElemAdjVec& elem_adj,
+                                            DataDerivElemVec& elem_deriv) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -380,7 +459,7 @@ class FiniteElement {
       Basis::template interp(sol_dof, sol);
 
       // Set up the values for the adjoint vector input
-      typename ElemVec::FEDof adj_dof(i, elem_adj);
+      typename ElemAdjVec::FEDof adj_dof(i, elem_adj);
       elem_adj.get_element_values(i, adj_dof);
       QSpace adj;
       Basis::template interp(adj_dof, adj);
@@ -420,8 +499,8 @@ class FiniteElement {
       }
 
       // Add the derivative of the data back to the data space
-      typename DataElemVec::FEDof deriv_dof(i, elem_deriv);
-      Basis::template add(deriv, deriv_dof);
+      typename DataDerivElemVec::FEDof deriv_dof(i, elem_deriv);
+      DataBasis::template add(deriv, deriv_dof);
       elem_deriv.add_element_values(i, deriv_dof);
     }
   }
@@ -431,16 +510,18 @@ class FiniteElement {
    *
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
-   * @tparam ElemVec Element vector class for the solution/residual
+   * @tparam ElemVec Element vector class for the solution
+   * @tparam ElemResVec Element vector class for the residual
    * @param pde Instance of the PDE
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemResVec>
   void add_residual(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-                    ElemVec& elem_sol, ElemVec& elem_res) {
+                    ElemVec& elem_sol, ElemResVec& elem_res) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 

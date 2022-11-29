@@ -256,6 +256,10 @@ class ElementTypes {
                                                   {0, 1, 5, 4}, {3, 7, 6, 2},
                                                   {0, 3, 2, 1}, {4, 5, 6, 7}};
 
+  static constexpr index_t HEX_FACE_EDGES[][4] = {{8, 6, 10, 4}, {5, 11, 7, 9},
+                                                  {0, 9, 2, 8},  {1, 10, 3, 11},
+                                                  {4, 1, 5, 0},  {2, 7, 3, 6}};
+
   // Cartesian coordinates of the vertices in the reference element
   static constexpr index_t HEX_VERTS_CART[][3] = {
       {0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},

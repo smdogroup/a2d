@@ -5,6 +5,8 @@
 #include "a2dmatops3d.h"
 #include "multiphysics/fespace.h"
 
+namespace A2D {
+
 /**
  * @brief Regular Poisson problem
  *
@@ -213,5 +215,7 @@ class MixedPoisson {
     T wdetJ;
   };
 };
+
+}  // namespace A2D
 
 #endif  // A2D_POISSON_H

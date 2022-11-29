@@ -576,37 +576,41 @@ int main(int argc, char *argv[]) {
   topo.reset_geometry();
 
   int ndvs = topo.get_num_design_vars();
-
-  // Create a perturbed set of design variables
-  double dh = 1e-30;
   std::vector<T> x(ndvs, T(1.0));
-  std::vector<T> dfdx(ndvs, 0.0);
   std::vector<T> px(ndvs);
-  for (A2D::index_t i = 0; i < ndvs; i++) {
-    px[i] = -0.25 + 1.0 * (i % 3);
-    x[i] = 1.0 + dh * px[i] * T(0.0, 1.0);
+
+  double dh = 1e-30;
+  if constexpr (std::is_same<T, std::complex<double>>::value == true) {
+    // Create a perturbed set of design variables
+    for (A2D::index_t i = 0; i < ndvs; i++) {
+      px[i] = -0.25 + 1.0 * (i % 3);
+      x[i] = 1.0 + dh * px[i] * T(0.0, 1.0);
+    }
   }
 
+  // Set the design variables
   topo.set_design_vars(x);
 
   // Solve the problem
   topo.solve();
 
+  std::vector<T> dfdx(ndvs, 0.0);
   T aggregation = topo.eval_aggregation(design_stress, ks_penalty);
   topo.add_aggregation_gradient(design_stress, ks_penalty, dfdx);
   std::cout << "Aggregation value = " << aggregation << std::endl;
 
-  double fd = imag(aggregation) / dh;
-  T ans = 0.0;
-  for (A2D::index_t i = 0; i < ndvs; i++) {
-    ans += dfdx[i] * px[i];
+  if constexpr (std::is_same<T, std::complex<double>>::value == true) {
+    double fd = imag(aggregation) / dh;
+    T ans = 0.0;
+    for (A2D::index_t i = 0; i < ndvs; i++) {
+      ans += dfdx[i] * px[i];
+    }
+
+    std::cout << std::setw(15) << "Complex-step" << std::setw(15) << "Adjoint"
+              << std::setw(15) << "Relative error" << std::endl;
+    std::cout << std::setw(15) << fd << std::setw(15) << std::real(ans)
+              << std::setw(15) << (fd - std::real(ans)) / fd << std::endl;
   }
-
-  std::cout << std::setw(15) << "Complex-step" << std::setw(15) << "Adjoint"
-            << std::setw(15) << "Relative error" << std::endl;
-
-  std::cout << std::setw(15) << fd << std::setw(15) << std::real(ans)
-            << std::setw(15) << (fd - std::real(ans)) / fd << std::endl;
 
   // Write the problem to a vtk file
   topo.tovtk("filename.vtk");

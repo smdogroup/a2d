@@ -163,61 +163,88 @@ class LagrangeH1HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
-      for (index_t q2 = 0; q2 < q2dim; q2++) {
-        double n2[order], d2[order];
-        const double pt2 = Quadrature::get_tensor_point(2, q2);
-        lagrange_basis<order>(pt2, n2, d2);
+      for (index_t i = 0; i < C; i++) {
+        // Interpolate along the 0-direction
+        T u0[order * order * q0dim];
+        T u0x[order * order * q0dim];
+        for (index_t q0 = 0; q0 < q0dim; q0++) {
+          double n0[order], d0[order];
+          const double pt0 = Quadrature::get_tensor_point(0, q0);
+          lagrange_basis<order>(pt0, n0, d0);
 
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val(0.0), derx(0.0);
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                val += n0[j0] * sol[offset + C * node + i];
+                derx += d0[j0] * sol[offset + C * node + i];
+              }
+
+              u0[j1 + order * (j2 + order * q0)] = val;
+              u0x[j1 + order * (j2 + order * q0)] = derx;
+            }
+          }
+        }
+
+        // Interpolate along the 1-direction
+        T u1[order * q0dim * q1dim];
+        T u1x[order * q0dim * q1dim];
+        T u1y[order * q0dim * q1dim];
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
           lagrange_basis<order>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
-            // Evaluate the basis functions
-            double n0[order], d0[order];
-            const double pt0 = Quadrature::get_tensor_point(0, q0);
-            lagrange_basis<order>(pt0, n0, d0);
-
-            // Get the quadrature point index
-            const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
-
-            FiniteElementSpace& s = out.get(qindex);
-            H1Space<T, C, dim>& h1 = s.template get<space>();
-            typename H1Space<T, C, dim>::VarType& u = h1.get_value();
-            typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
-
-            if constexpr (C == 1) {
-              u = 0.0;
-            } else {
-              u.zero();
-            }
-            grad.zero();
-
             for (index_t j2 = 0; j2 < order; j2++) {
+              T val(0.0), derx(0.0), dery(0.0);
               for (index_t j1 = 0; j1 < order; j1++) {
-                for (index_t j0 = 0; j0 < order; j0++) {
-                  if constexpr (C == 1) {
-                    const T val =
-                        sol[offset + (j0 + order * (j1 + order * j2))];
+                val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+                derx += n1[j1] * u0x[j1 + order * (j2 + order * q0)];
+                dery += d1[j1] * u0[j1 + order * (j2 + order * q0)];
+              }
 
-                    u += n0[j0] * n1[j1] * n2[j2] * val;
-                    grad(0) += d0[j0] * n1[j1] * n2[j2] * val;
-                    grad(1) += n0[j0] * d1[j1] * n2[j2] * val;
-                    grad(2) += n0[j0] * n1[j1] * d2[j2] * val;
-                  } else {
-                    for (index_t i = 0; i < C; i++) {
-                      const T val =
-                          sol[offset + C * (j0 + order * (j1 + order * j2)) +
-                              i];
+              u1[j2 + order * (q0 + q0dim * q1)] = val;
+              u1x[j2 + order * (q0 + q0dim * q1)] = derx;
+              u1y[j2 + order * (q0 + q0dim * q1)] = dery;
+            }
+          }
+        }
 
-                      u(i) += n0[j0] * n1[j1] * n2[j2] * val;
-                      grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
-                      grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
-                      grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
-                    }
-                  }
-                }
+        // Interpolate along the 2-direction
+        for (index_t q2 = 0; q2 < q2dim; q2++) {
+          double n2[order], d2[order];
+          const double pt2 = Quadrature::get_tensor_point(2, q2);
+          lagrange_basis<order>(pt2, n2, d2);
+
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              T val(0.0), derx(0.0), dery(0.0), derz(0.0);
+              for (index_t j2 = 0; j2 < order; j2++) {
+                val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+                derx += n2[j2] * u1x[j2 + order * (q0 + q0dim * q1)];
+                dery += n2[j2] * u1y[j2 + order * (q0 + q0dim * q1)];
+                derz += d2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+              }
+
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              FiniteElementSpace& s = out.get(qindex);
+              H1Space<T, C, dim>& h1 = s.template get<space>();
+              typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+              typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
+
+              if constexpr (C == 1) {
+                u = val;
+                grad(0) = derx;
+                grad(1) = dery;
+                grad(2) = derz;
+
+              } else {
+                u(i) = val;
+                grad(i, 0) = derx;
+                grad(i, 1) = dery;
+                grad(i, 2) = derz;
               }
             }
           }
@@ -306,53 +333,88 @@ class LagrangeH1HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
-      for (index_t q2 = 0; q2 < q2dim; q2++) {
-        double n2[order], d2[order];
-        const double pt2 = Quadrature::get_tensor_point(2, q2);
-        lagrange_basis<order>(pt2, n2, d2);
+      for (index_t i = 0; i < C; i++) {
+        // Interpolate along the 2-direction
+        T u1[order * q0dim * q1dim];
+        T u1x[order * q0dim * q1dim];
+        T u1y[order * q0dim * q1dim];
+        std::fill(u1, u1 + order * q0dim * q1dim, T(0.0));
+        std::fill(u1x, u1x + order * q0dim * q1dim, T(0.0));
+        std::fill(u1y, u1y + order * q0dim * q1dim, T(0.0));
 
+        for (index_t q2 = 0; q2 < q2dim; q2++) {
+          double n2[order], d2[order];
+          const double pt2 = Quadrature::get_tensor_point(2, q2);
+          lagrange_basis<order>(pt2, n2, d2);
+
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+
+              const FiniteElementSpace& s = in.get(qindex);
+              const H1Space<T, C, dim>& h1 = s.template get<space>();
+              const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+              const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
+
+              T val, derx, dery, derz;
+              if constexpr (C == 1) {
+                val = u;
+                derx = grad(0);
+                dery = grad(1);
+                derz = grad(2);
+              } else {
+                val = u(i);
+                derx = grad(i, 0);
+                dery = grad(i, 1);
+                derz = grad(i, 2);
+              }
+              for (index_t j2 = 0; j2 < order; j2++) {
+                u1[j2 + order * (q0 + q0dim * q1)] +=
+                    n2[j2] * val + d2[j2] * derz;
+                u1x[j2 + order * (q0 + q0dim * q1)] += n2[j2] * derx;
+                u1y[j2 + order * (q0 + q0dim * q1)] += n2[j2] * dery;
+              }
+            }
+          }
+        }
+
+        T u0[order * order * q0dim];
+        T u0x[order * order * q0dim];
+        std::fill(u0, u0 + order * order * q0dim, T(0.0));
+        std::fill(u0x, u0x + order * order * q0dim, T(0.0));
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
           lagrange_basis<order>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
-            // Evaluate the basis functions
-            double n0[order], d0[order];
-            const double pt0 = Quadrature::get_tensor_point(0, q0);
-            lagrange_basis<order>(pt0, n0, d0);
-
-            // Get the quadrature point index
-            const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
-
-            const FiniteElementSpace& s = in.get(qindex);
-            const H1Space<T, C, dim>& h1 = s.template get<space>();
-            const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
-            const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
-
             for (index_t j2 = 0; j2 < order; j2++) {
-              for (index_t j1 = 0; j1 < order; j1++) {
-                double n1n2 = n1[j1] * n2[j2];
-                double d1n2 = d1[j1] * n2[j2];
-                double n1d2 = n1[j1] * d2[j2];
-                for (index_t j0 = 0; j0 < order; j0++) {
-                  const index_t node = j0 + order * (j1 + order * j2);
-                  double N = n0[j0] * n1n2;
-                  double dx = d0[j0] * n1n2;
-                  double dy = n0[j0] * d1n2;
-                  double dz = n0[j0] * n1d2;
+              T val = u1[j2 + order * (q0 + q0dim * q1)];
+              T derx = u1x[j2 + order * (q0 + q0dim * q1)];
+              T dery = u1y[j2 + order * (q0 + q0dim * q1)];
 
-                  if constexpr (C == 1) {
-                    res[offset + node] +=
-                        N * u + dx * grad(0) + dy * grad(1) + dz * grad(2);
-                  } else {
-                    for (index_t i = 0; i < C; i++) {
-                      res[offset + C * node + i] += N * u(i) + dx * grad(i, 0) +
-                                                    dy * grad(i, 1) +
-                                                    dz * grad(i, 2);
-                    }
-                  }
-                }
+              for (index_t j1 = 0; j1 < order; j1++) {
+                u0[j1 + order * (j2 + order * q0)] += n1[j1] * val;
+                u0x[j1 + order * (j2 + order * q0)] += n1[j1] * derx;
+                u0[j1 + order * (j2 + order * q0)] += d1[j1] * dery;
+              }
+            }
+          }
+        }
+
+        for (index_t q0 = 0; q0 < q0dim; q0++) {
+          double n0[order], d0[order];
+          const double pt0 = Quadrature::get_tensor_point(0, q0);
+          lagrange_basis<order>(pt0, n0, d0);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val = u0[j1 + order * (j2 + order * q0)];
+              T derx = u0x[j1 + order * (j2 + order * q0)];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
               }
             }
           }
@@ -571,42 +633,116 @@ class LagrangeL2HexBasis {
             index_t offset, class SolnType>
   static void interp(const SolnType& sol,
                      QptSpace<Quadrature, FiniteElementSpace>& out) {
-    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
-      // Get the quadrature point
-      double pt[dim];
-      Quadrature::get_point(q, pt);
+    if constexpr (Quadrature::is_tensor_product) {
+      const index_t q0dim = Quadrature::tensor_dim0;
+      const index_t q1dim = Quadrature::tensor_dim1;
+      const index_t q2dim = Quadrature::tensor_dim2;
 
-      FiniteElementSpace& s = out.get(q);
-      L2Space<T, C, dim>& l2 = s.template get<space>();
-      typename L2Space<T, C, dim>::VarType& u = l2.get_value();
+      for (index_t i = 0; i < C; i++) {
+        // Interpolate along the 0-direction
+        T u0[order * order * q0dim];
+        for (index_t q0 = 0; q0 < q0dim; q0++) {
+          double n0[order];
+          const double pt0 = Quadrature::get_tensor_point(0, q0);
+          lagrange_basis<order>(pt0, n0);
 
-      if constexpr (C == 1) {
-        u = 0.0;
-      } else {
-        u.zero();
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val(0.0);
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                val += n0[j0] * sol[offset + C * node + i];
+              }
+
+              u0[j1 + order * (j2 + order * q0)] = val;
+            }
+          }
+        }
+
+        // Interpolate along the 1-direction
+        T u1[order * q0dim * q1dim];
+        for (index_t q1 = 0; q1 < q1dim; q1++) {
+          double n1[order];
+          const double pt1 = Quadrature::get_tensor_point(1, q1);
+          lagrange_basis<order>(pt1, n1);
+
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            for (index_t j2 = 0; j2 < order; j2++) {
+              T val(0.0), derx(0.0), dery(0.0);
+              for (index_t j1 = 0; j1 < order; j1++) {
+                val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+              }
+
+              u1[j2 + order * (q0 + q0dim * q1)] = val;
+            }
+          }
+        }
+
+        // Interpolate along the 2-direction
+        for (index_t q2 = 0; q2 < q2dim; q2++) {
+          double n2[order];
+          const double pt2 = Quadrature::get_tensor_point(2, q2);
+          lagrange_basis<order>(pt2, n2);
+
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              T val(0.0);
+              for (index_t j2 = 0; j2 < order; j2++) {
+                val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+              }
+
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              FiniteElementSpace& s = out.get(qindex);
+              L2Space<T, C, dim>& l2 = s.template get<space>();
+              typename L2Space<T, C, dim>::VarType& u = l2.get_value();
+
+              if constexpr (C == 1) {
+                u = val;
+              } else {
+                u(i) = val;
+              }
+            }
+          }
+        }
       }
+    } else {
+      for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+        // Get the quadrature point
+        double pt[dim];
+        Quadrature::get_point(q, pt);
 
-      // Get the quadrature knot locations
-      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+        FiniteElementSpace& s = out.get(q);
+        L2Space<T, C, dim>& l2 = s.template get<space>();
+        typename L2Space<T, C, dim>::VarType& u = l2.get_value();
 
-      // Evaluate the basis functions
-      double n0[order], n1[order], n2[order];
-      lagrange_basis<order>(knots, pt[0], n0);
-      lagrange_basis<order>(knots, pt[1], n1);
-      lagrange_basis<order>(knots, pt[2], n2);
+        if constexpr (C == 1) {
+          u = 0.0;
+        } else {
+          u.zero();
+        }
 
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          double n1n2 = n1[j1] * n2[j2];
-          for (index_t j0 = 0; j0 < order; j0++) {
-            const index_t node = j0 + order * (j1 + order * j2);
-            double n0n1n2 = n0[j0] * n1n2;
+        // Get the quadrature knot locations
+        constexpr const double* knots = get_gauss_quadrature_pts<order>();
 
-            if constexpr (C == 1) {
-              u += n0n1n2 * sol[offset + node];
-            } else {
-              for (index_t i = 0; i < C; i++) {
-                u(i) += n0n1n2 * sol[offset + C * node + i];
+        // Evaluate the basis functions
+        double n0[order], n1[order], n2[order];
+        lagrange_basis<order>(knots, pt[0], n0);
+        lagrange_basis<order>(knots, pt[1], n1);
+        lagrange_basis<order>(knots, pt[2], n2);
+
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            double n1n2 = n1[j1] * n2[j2];
+            for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * (j1 + order * j2);
+              double n0n1n2 = n0[j0] * n1n2;
+
+              if constexpr (C == 1) {
+                u += n0n1n2 * sol[offset + node];
+              } else {
+                for (index_t i = 0; i < C; i++) {
+                  u(i) += n0n1n2 * sol[offset + C * node + i];
+                }
               }
             }
           }
@@ -619,36 +755,109 @@ class LagrangeL2HexBasis {
             index_t offset, class SolnType>
   static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
                   SolnType& res) {
-    for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
-      // Get the quadrature point
-      double pt[dim];
-      Quadrature::get_point(q, pt);
+    if constexpr (Quadrature::is_tensor_product) {
+      const index_t q0dim = Quadrature::tensor_dim0;
+      const index_t q1dim = Quadrature::tensor_dim1;
+      const index_t q2dim = Quadrature::tensor_dim2;
 
-      const FiniteElementSpace& s = in.get(q);
-      const L2Space<T, C, dim>& l2 = s.template get<space>();
-      const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
+      for (index_t i = 0; i < C; i++) {
+        // Interpolate along the 2-direction
+        T u1[order * q0dim * q1dim];
+        std::fill(u1, u1 + order * q0dim * q1dim, T(0.0));
 
-      // Get the quadrature knot locations
-      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+        for (index_t q2 = 0; q2 < q2dim; q2++) {
+          double n2[order];
+          const double pt2 = Quadrature::get_tensor_point(2, q2);
+          lagrange_basis<order>(pt2, n2);
 
-      // Evaluate the basis functions
-      double n0[order], n1[order], n2[order];
-      lagrange_basis<order>(knots, pt[0], n0);
-      lagrange_basis<order>(knots, pt[1], n1);
-      lagrange_basis<order>(knots, pt[2], n2);
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
 
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          double n1n2 = n1[j1] * n2[j2];
-          for (index_t j0 = 0; j0 < order; j0++) {
-            const index_t node = j0 + order * (j1 + order * j2);
-            double n0n1n2 = n0[j0] * n1n2;
+              const FiniteElementSpace& s = in.get(qindex);
+              const L2Space<T, C, dim>& l2 = s.template get<space>();
+              const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
 
-            if constexpr (C == 1) {
-              res[offset + node] += n0n1n2 * u;
-            } else {
-              for (index_t i = 0; i < C; i++) {
-                res[offset + C * node + i] += n0n1n2 * u(i);
+              T val;
+              if constexpr (C == 1) {
+                val = u;
+              } else {
+                val = u(i);
+              }
+              for (index_t j2 = 0; j2 < order; j2++) {
+                u1[j2 + order * (q0 + q0dim * q1)] += n2[j2] * val;
+              }
+            }
+          }
+        }
+
+        T u0[order * order * q0dim];
+        std::fill(u0, u0 + order * order * q0dim, T(0.0));
+        for (index_t q1 = 0; q1 < q1dim; q1++) {
+          double n1[order];
+          const double pt1 = Quadrature::get_tensor_point(1, q1);
+          lagrange_basis<order>(pt1, n1);
+
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            for (index_t j2 = 0; j2 < order; j2++) {
+              T val = u1[j2 + order * (q0 + q0dim * q1)];
+
+              for (index_t j1 = 0; j1 < order; j1++) {
+                u0[j1 + order * (j2 + order * q0)] += n1[j1] * val;
+              }
+            }
+          }
+        }
+
+        for (index_t q0 = 0; q0 < q0dim; q0++) {
+          double n0[order], d0[order];
+          const double pt0 = Quadrature::get_tensor_point(0, q0);
+          lagrange_basis<order>(pt0, n0, d0);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val = u0[j1 + order * (j2 + order * q0)];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                res[offset + C * node + i] += n0[j0] * val;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
+        // Get the quadrature point
+        double pt[dim];
+        Quadrature::get_point(q, pt);
+
+        const FiniteElementSpace& s = in.get(q);
+        const L2Space<T, C, dim>& l2 = s.template get<space>();
+        const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
+
+        // Get the quadrature knot locations
+        constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
+        // Evaluate the basis functions
+        double n0[order], n1[order], n2[order];
+        lagrange_basis<order>(knots, pt[0], n0);
+        lagrange_basis<order>(knots, pt[1], n1);
+        lagrange_basis<order>(knots, pt[2], n2);
+
+        for (index_t j2 = 0; j2 < order; j2++) {
+          for (index_t j1 = 0; j1 < order; j1++) {
+            double n1n2 = n1[j1] * n2[j2];
+            for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * (j1 + order * j2);
+              double n0n1n2 = n0[j0] * n1n2;
+
+              if constexpr (C == 1) {
+                res[offset + node] += n0n1n2 * u;
+              } else {
+                for (index_t i = 0; i < C; i++) {
+                  res[offset + C * node + i] += n0n1n2 * u(i);
+                }
               }
             }
           }

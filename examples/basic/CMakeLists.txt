@@ -6,7 +6,6 @@ configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d.vtk.in tetra_3d.vtk C
 
 # Add targets
 add_executable(test_feelement test_feelement.cpp)
-add_executable(multiphysics multiphysics.cpp)
 add_executable(verify_element verify_element.cpp)
 add_executable(topology topology.cpp)
 add_executable(spectral spectral.cpp)
@@ -42,7 +41,6 @@ target_link_libraries(multiphysics   OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(verify_element OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(topology       OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(spectral       OpenMP::OpenMP_CXX LAPACK::LAPACK)
-target_link_libraries(multiphysics   OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(elasticity     OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(test_grad_hess OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(test_numeric   OpenMP::OpenMP_CXX LAPACK::LAPACK)

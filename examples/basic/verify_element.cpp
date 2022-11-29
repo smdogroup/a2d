@@ -133,8 +133,8 @@ void main_body() {
   }
 
   // Allocate an inplace element view
-  using ElemVec = ElementVector_Serial<T, Basis>;
-  using GeoElemVec = ElementVector_Serial<T, GeoBasis>;
+  using ElemVec = ElementVector_Serial<T, Basis, SolutionVector<T>>;
+  using GeoElemVec = ElementVector_Serial<T, GeoBasis, SolutionVector<T>>;
   ElemVec elemvec(mesh, sol);
   GeoElemVec geoelemvec(geomesh, sol_X);
 

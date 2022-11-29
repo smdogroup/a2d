@@ -251,23 +251,31 @@ class LagrangeH1HexBasis {
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
+            double n1n2 = n1[j1] * n2[j2];
+            double d1n2 = d1[j1] * n2[j2];
+            double n1d2 = n1[j1] * d2[j2];
             for (index_t j0 = 0; j0 < order; j0++) {
-              if constexpr (C == 1) {
-                const T val = sol[offset + (j0 + order * (j1 + order * j2))];
+              const index_t node = j0 + order * (j1 + order * j2);
+              double N = n0[j0] * n1n2;
+              double dx = d0[j0] * n1n2;
+              double dy = n0[j0] * d1n2;
+              double dz = n0[j0] * n1d2;
 
-                u += n0[j0] * n1[j1] * n2[j2] * val;
-                grad(0) += d0[j0] * n1[j1] * n2[j2] * val;
-                grad(1) += n0[j0] * d1[j1] * n2[j2] * val;
-                grad(2) += n0[j0] * n1[j1] * d2[j2] * val;
+              if constexpr (C == 1) {
+                const T val = sol[offset + node];
+
+                u += N * val;
+                grad(0) += dx * val;
+                grad(1) += dy * val;
+                grad(2) += dz * val;
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  const T val =
-                      sol[offset + C * (j0 + order * (j1 + order * j2)) + i];
+                  const T val = sol[offset + C * node + i];
 
-                  u(i) += n0[j0] * n1[j1] * n2[j2] * val;
-                  grad(i, 0) += d0[j0] * n1[j1] * n2[j2] * val;
-                  grad(i, 1) += n0[j0] * d1[j1] * n2[j2] * val;
-                  grad(i, 2) += n0[j0] * n1[j1] * d2[j2] * val;
+                  u(i) += N * val;
+                  grad(i, 0) += dx * val;
+                  grad(i, 1) += dy * val;
+                  grad(i, 2) += dz * val;
                 }
               }
             }
@@ -324,20 +332,24 @@ class LagrangeH1HexBasis {
 
             for (index_t j2 = 0; j2 < order; j2++) {
               for (index_t j1 = 0; j1 < order; j1++) {
+                double n1n2 = n1[j1] * n2[j2];
+                double d1n2 = d1[j1] * n2[j2];
+                double n1d2 = n1[j1] * d2[j2];
                 for (index_t j0 = 0; j0 < order; j0++) {
+                  const index_t node = j0 + order * (j1 + order * j2);
+                  double N = n0[j0] * n1n2;
+                  double dx = d0[j0] * n1n2;
+                  double dy = n0[j0] * d1n2;
+                  double dz = n0[j0] * n1d2;
+
                   if constexpr (C == 1) {
-                    res[offset + (j0 + order * (j1 + order * j2))] +=
-                        n0[j0] * n1[j1] * n2[j2] * u +
-                        d0[j0] * n1[j1] * n2[j2] * grad(0) +
-                        n0[j0] * d1[j1] * n2[j2] * grad(1) +
-                        n0[j0] * n1[j1] * d2[j2] * grad(2);
+                    res[offset + node] +=
+                        N * u + dx * grad(0) + dy * grad(1) + dz * grad(2);
                   } else {
                     for (index_t i = 0; i < C; i++) {
-                      res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
-                          n0[j0] * n1[j1] * n2[j2] * u(i) +
-                          d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
-                          n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
-                          n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                      res[offset + C * node + i] += N * u(i) + dx * grad(i, 0) +
+                                                    dy * grad(i, 1) +
+                                                    dz * grad(i, 2);
                     }
                   }
                 }
@@ -367,20 +379,24 @@ class LagrangeH1HexBasis {
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
+            double n1n2 = n1[j1] * n2[j2];
+            double d1n2 = d1[j1] * n2[j2];
+            double n1d2 = n1[j1] * d2[j2];
             for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * (j1 + order * j2);
+              double N = n0[j0] * n1n2;
+              double dx = d0[j0] * n1n2;
+              double dy = n0[j0] * d1n2;
+              double dz = n0[j0] * n1d2;
+
               if constexpr (C == 1) {
-                res[offset + (j0 + order * (j1 + order * j2))] +=
-                    n0[j0] * n1[j1] * n2[j2] * u +
-                    d0[j0] * n1[j1] * n2[j2] * grad(0) +
-                    n0[j0] * d1[j1] * n2[j2] * grad(1) +
-                    n0[j0] * n1[j1] * d2[j2] * grad(2);
+                res[offset + node] +=
+                    N * u + dx * grad(0) + dy * grad(1) + dz * grad(2);
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  res[offset + C * (j0 + order * (j1 + order * j2)) + i] +=
-                      n0[j0] * n1[j1] * n2[j2] * u(i) +
-                      d0[j0] * n1[j1] * n2[j2] * grad(i, 0) +
-                      n0[j0] * d1[j1] * n2[j2] * grad(i, 1) +
-                      n0[j0] * n1[j1] * d2[j2] * grad(i, 2);
+                  res[offset + C * node + i] += N * u(i) + dx * grad(i, 0) +
+                                                dy * grad(i, 1) +
+                                                dz * grad(i, 2);
                 }
               }
             }
@@ -416,20 +432,24 @@ class LagrangeH1HexBasis {
     Quadrature::get_point(n, pt);
 
     // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    double d1[order], d2[order], d3[order];
-    lagrange_basis<order>(pt[0], n1, d1);
-    lagrange_basis<order>(pt[1], n2, d2);
-    lagrange_basis<order>(pt[2], n3, d3);
+    double n0[order], n1[order], n2[order];
+    double d0[order], d1[order], d2[order];
+    lagrange_basis<order>(pt[0], n0, d0);
+    lagrange_basis<order>(pt[1], n1, d1);
+    lagrange_basis<order>(pt[2], n2, d2);
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          const index_t node = j1 + order * (j2 + order * j3);
-          N[(dim + 1) * node] = n1[j1] * n2[j2] * n3[j3];
-          N[(dim + 1) * node + 1] = d1[j1] * n2[j2] * n3[j3];
-          N[(dim + 1) * node + 2] = n1[j1] * d2[j2] * n3[j3];
-          N[(dim + 1) * node + 3] = n1[j1] * n2[j2] * d3[j3];
+    for (index_t j2 = 0; j2 < order; j2++) {
+      for (index_t j1 = 0; j1 < order; j1++) {
+        double n1n2 = n1[j1] * n2[j2];
+        double d1n2 = d1[j1] * n2[j2];
+        double n1d2 = n1[j1] * d2[j2];
+
+        for (index_t j0 = 0; j0 < order; j0++) {
+          const index_t node = j0 + order * (j1 + order * j2);
+          N[(dim + 1) * node] = n0[j0] * n1n2;
+          N[(dim + 1) * node + 1] = d0[j0] * n1n2;
+          N[(dim + 1) * node + 2] = n0[j0] * d1n2;
+          N[(dim + 1) * node + 3] = n0[j0] * n1d2;
         }
       }
     }
@@ -570,22 +590,23 @@ class LagrangeL2HexBasis {
       constexpr const double* knots = get_gauss_quadrature_pts<order>();
 
       // Evaluate the basis functions
-      double n1[order], n2[order], n3[order];
-      lagrange_basis<order>(knots, pt[0], n1);
-      lagrange_basis<order>(knots, pt[1], n2);
-      lagrange_basis<order>(knots, pt[2], n3);
+      double n0[order], n1[order], n2[order];
+      lagrange_basis<order>(knots, pt[0], n0);
+      lagrange_basis<order>(knots, pt[1], n1);
+      lagrange_basis<order>(knots, pt[2], n2);
 
-      for (index_t j3 = 0; j3 < order; j3++) {
-        for (index_t j2 = 0; j2 < order; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+      for (index_t j2 = 0; j2 < order; j2++) {
+        for (index_t j1 = 0; j1 < order; j1++) {
+          double n1n2 = n1[j1] * n2[j2];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            const index_t node = j0 + order * (j1 + order * j2);
+            double n0n1n2 = n0[j0] * n1n2;
+
             if constexpr (C == 1) {
-              u += n1[j1] * n2[j2] * n3[j3] *
-                   sol[offset + C * (j1 + j2 * order + j3 * order * order)];
+              u += n0n1n2 * sol[offset + node];
             } else {
               for (index_t i = 0; i < C; i++) {
-                u(i) += n1[j1] * n2[j2] * n3[j3] *
-                        sol[offset +
-                            C * (j1 + j2 * order + j3 * order * order) + i];
+                u(i) += n0n1n2 * sol[offset + C * node + i];
               }
             }
           }
@@ -611,21 +632,23 @@ class LagrangeL2HexBasis {
       constexpr const double* knots = get_gauss_quadrature_pts<order>();
 
       // Evaluate the basis functions
-      double n1[order], n2[order], n3[order];
-      lagrange_basis<order>(knots, pt[0], n1);
-      lagrange_basis<order>(knots, pt[1], n2);
-      lagrange_basis<order>(knots, pt[2], n3);
+      double n0[order], n1[order], n2[order];
+      lagrange_basis<order>(knots, pt[0], n0);
+      lagrange_basis<order>(knots, pt[1], n1);
+      lagrange_basis<order>(knots, pt[2], n2);
 
-      for (index_t j3 = 0; j3 < order; j3++) {
-        for (index_t j2 = 0; j2 < order; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+      for (index_t j2 = 0; j2 < order; j2++) {
+        for (index_t j1 = 0; j1 < order; j1++) {
+          double n1n2 = n1[j1] * n2[j2];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            const index_t node = j0 + order * (j1 + order * j2);
+            double n0n1n2 = n0[j0] * n1n2;
+
             if constexpr (C == 1) {
-              res[offset + j1 + order * (j2 + order * j3)] +=
-                  n1[j1] * n2[j2] * n3[j3] * u;
+              res[offset + node] += n0n1n2 * u;
             } else {
               for (index_t i = 0; i < C; i++) {
-                res[offset + C * (j1 + order * (j2 + order * j3)) + i] +=
-                    n1[j1] * n2[j2] * n3[j3] * u(i);
+                res[offset + C * node + i] += n0n1n2 * u(i);
               }
             }
           }
@@ -656,16 +679,17 @@ class LagrangeL2HexBasis {
     constexpr const double* knots = get_gauss_quadrature_pts<order>();
 
     // Evaluate the basis functions
-    double n1[order], n2[order], n3[order];
-    lagrange_basis<order>(knots, pt[0], n1);
-    lagrange_basis<order>(knots, pt[1], n2);
-    lagrange_basis<order>(knots, pt[2], n3);
+    double n0[order], n1[order], n2[order];
+    lagrange_basis<order>(knots, pt[0], n0);
+    lagrange_basis<order>(knots, pt[1], n1);
+    lagrange_basis<order>(knots, pt[2], n2);
 
-    for (index_t j3 = 0; j3 < order; j3++) {
-      for (index_t j2 = 0; j2 < order; j2++) {
-        for (index_t j1 = 0; j1 < order; j1++) {
-          const index_t node = j1 + order * (j2 + order * j3);
-          N[node] = n1[j1] * n2[j2] * n3[j3];
+    for (index_t j2 = 0; j2 < order; j2++) {
+      for (index_t j1 = 0; j1 < order; j1++) {
+        double n1n2 = n1[j1] * n2[j2];
+        for (index_t j0 = 0; j0 < order; j0++) {
+          const index_t node = j0 + order * (j1 + order * j2);
+          N[node] = n1[j0] * n1n2;
         }
       }
     }

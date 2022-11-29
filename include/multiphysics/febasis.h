@@ -230,11 +230,25 @@ class FEBasis {
    * @brief Get the stride for a given basis
    */
   template <index_t index>
-  static constexpr index_t get_basis_stride() {
+  static constexpr index_t get_stride() {
     if constexpr (nbasis == 0) {
       return 0;
     } else {
-      return get_basis_stride_<0, index, Basis...>();
+      return get_stride_<0, index, Basis...>();
+    }
+  }
+
+  /**
+   * @brief Get the stride of the given basis index
+   *
+   * @param basis
+   * @return index_t
+   */
+  static index_t get_stride(index_t basis) {
+    if constexpr (nbasis == 0) {
+      return 0;
+    } else {
+      return get_stride_<0, Basis...>(basis);
     }
   }
 
@@ -571,14 +585,14 @@ class FEBasis {
     for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       for (index_t istride = 0; istride < First::stride; istride++, idof++) {
         // Compute the values in a row vector values = N_{i}^{T} * jac
+        const index_t offset =
+            istride * First::ncomp_per_stride + get_comp_offset<index>();
+
         T values[ncomp];
         for (index_t jcomp = 0; jcomp < ncomp; jcomp++) {
           values[jcomp] = 0.0;
-
-          const index_t offset =
-              istride * First::ncomp_per_stride + get_comp_offset<index>();
           for (index_t icomp = 0; icomp < First::ncomp_per_stride; icomp++) {
-            values[jcomp] += jac(icomp + offset, jcomp) * N[icomp];
+            values[jcomp] += N[icomp] * jac(icomp + offset, jcomp);
           }
         }
 
@@ -619,8 +633,8 @@ class FEBasis {
   }
 
   template <class Mat, index_t index>
-  static void add_outer_row_(const index_t idof, const T values[],
-                             const double N[], Mat& mat) {}
+  static void add_outer_row_(const index_t idof, const double N[],
+                             const T values[], Mat& mat) {}
 
   template <index_t r, class First, class... Remain>
   static index_t get_entity_ndof(index_t basis, ET::ElementEntity entity,
@@ -711,14 +725,26 @@ class FEBasis {
   }
 
   template <index_t r, index_t index, class First, class... Remain>
-  static constexpr index_t get_basis_stride_() {
+  static constexpr index_t get_stride_() {
     if (r == index) {
       return First::stride;
     }
     if constexpr (sizeof...(Remain) == 0) {
       return First::stride;
     } else {
-      return get_basis_stride_<r + 1, index, Remain...>();
+      return get_stride_<r + 1, index, Remain...>();
+    }
+  }
+
+  template <index_t index, class First, class... Remain>
+  static index_t get_stride_(const index_t basis) {
+    if (index == basis) {
+      return First::stride;
+    }
+    if constexpr (sizeof...(Remain) == 0) {
+      return 0;
+    } else {
+      return get_stride_<index + 1, Remain...>();
     }
   }
 };

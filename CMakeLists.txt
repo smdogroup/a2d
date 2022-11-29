@@ -6,6 +6,19 @@ project(A2D LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Make sure a build type is set explicitly
+if(NOT CMAKE_BUILD_TYPE)
+  message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set explicitly: cmake ... -DCMAKE_BUILD_TYPE={Release,Debug}")
+endif()
+
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  message("This is a Debug build.")
+ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
+  message("This is a Release build.")
+ELSE()
+  message(FATAL_ERROR "Unknown build type CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}, should be Release or Debug")
+ENDIF()
+
 # Set paths
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(KOKKOS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos)
@@ -18,12 +31,9 @@ option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA"
 option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
 
-# Set global compiler flags
-# add_compile_options(
-#   -O3 -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
-#   )
+# Set warning flags
 add_compile_options(
-  -g -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
+  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   )
 
 # Require Lapack and OpenMP

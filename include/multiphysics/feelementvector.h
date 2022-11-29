@@ -52,19 +52,30 @@ namespace A2D {
   empty function if the values are stored directly.
 */
 
+// Fix for std::complex numbers
+template <class T>
+constexpr std::complex<T> operator*(const std::complex<T>& lhs, const int& rhs) {
+  return std::complex<T>(lhs.real() * rhs, lhs.imag() * rhs);
+}
+
+template <class T>
+constexpr std::complex<T> operator*(const int& lhs, const std::complex<T>& rhs) {
+  return std::complex<T>(rhs.real() * lhs, rhs.imag() * lhs);
+}
+
 /*
   In-place element vector implementation
 */
-template <typename T, class Basis>
+template <typename T, class Basis, class VecType>
 class ElementVector_Serial {
  public:
-  ElementVector_Serial(ElementMesh<Basis>& mesh, SolutionVector<T>& vec) : mesh(mesh), vec(vec) {}
+  ElementVector_Serial(ElementMesh<Basis>& mesh, VecType& vec) : mesh(mesh), vec(vec) {}
 
   // Required DOF container object (different for each element vector
   // implementation)
   class FEDof {
    public:
-    FEDof(index_t elem, ElementVector_Serial<T, Basis>& elem_vec) {
+    FEDof(index_t elem, ElementVector_Serial<T, Basis, VecType>& elem_vec) {
       std::fill(dof, dof + Basis::ndof, T(0.0));
     }
 
@@ -186,7 +197,7 @@ class ElementVector_Serial {
   }
 
   ElementMesh<Basis>& mesh;
-  SolutionVector<T>& vec;
+  VecType& vec;
 };
 
 template <typename T, class Basis, class MatType>

@@ -250,7 +250,7 @@ class QHdivHexBasis {
    */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
-  static void interp(const SolnType sol,
+  static void interp(const SolnType& sol,
                      QptSpace<Quadrature, FiniteElementSpace>& out) {
     for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
       // Get the quadrature point
@@ -339,7 +339,7 @@ class QHdivHexBasis {
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
   static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
-                  SolnType res) {
+                  SolnType& res) {
     for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
       // Get the quadrature point
       double pt[dim];

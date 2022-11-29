@@ -56,6 +56,11 @@ class MeshConnectivity3D {
     wedge_edges = NULL;
     pyrmd_edges = NULL;
 
+    // Set to NULL all the boundary info
+    num_boundary_faces = 0;
+    boundary_faces = NULL;
+    boundary_labels = NULL;
+
     // Count the total number of elements
     nelems = ntets + nhex + nwedge + npyrmd;
 
@@ -76,6 +81,30 @@ class MeshConnectivity3D {
     init_vert_element_data();
     init_face_data();
     init_edge_data();
+
+    // Count up all the faces that are on the boundary
+    num_boundary_faces = 0;
+    for (index_t face = 0; face < nfaces; face++) {
+      index_t e1, e2;
+      get_face_elements(face, &e1, &e2);
+      if (e1 == NO_LABEL || e2 == NO_LABEL) {
+        num_boundary_faces++;
+      }
+    }
+
+    // Set the boundary labels - 0 for anything on the boundary
+    num_boundary_labels = 1;
+    boundary_faces = new index_t[num_boundary_faces];
+    boundary_labels = new index_t[num_boundary_faces];
+    for (index_t face = 0, count = 0; face < nfaces; face++) {
+      index_t e1, e2;
+      get_face_elements(face, &e1, &e2);
+      if (e1 == NO_LABEL || e2 == NO_LABEL) {
+        boundary_faces[count] = face;
+        boundary_labels[count] = 0;
+        count++;
+      }
+    }
   }
   ~MeshConnectivity3D() {
     if (tet_verts) {
@@ -129,6 +158,107 @@ class MeshConnectivity3D {
     if (pyrmd_edges) {
       delete[] pyrmd_edges;
     }
+
+    if (boundary_faces) {
+      delete[] boundary_faces;
+    }
+    if (boundary_labels) {
+      delete[] boundary_labels;
+    }
+  }
+
+  /**
+   * @brief Get the boundary faces and labels
+   *
+   * @param boundary_faces_ Array of the boundary faces
+   * @param boundary_labels_ Array of the boundary labels
+   * @return The number of boundary faces
+   */
+  index_t get_boundary_faces(const index_t* boundary_faces_[],
+                             const index_t* boundary_labels_[]) {
+    if (boundary_faces_) {
+      *boundary_faces_ = boundary_faces;
+    }
+    if (boundary_labels_) {
+      *boundary_labels_ = boundary_labels;
+    }
+    return num_boundary_faces;
+  }
+
+  /**
+   * @brief Get the number of boundary labels
+   *
+   * @return index_t The number of boundary labels
+   */
+  index_t get_num_boundary_labels() { return num_boundary_labels; }
+
+  /**
+   * @brief Add a boundary label from the vertices
+   *
+   * Any boundary face with all nodes that touch the given set of vertices is
+   * labeled
+   *
+   * @return index_t
+   */
+  template <typename IdxType>
+  index_t add_boundary_label_from_verts(index_t nv, const IdxType vert_list[]) {
+    index_t* vert_labels = new index_t[nverts];
+    std::fill(vert_labels, vert_labels + nverts, 0);
+
+    index_t count = 0;
+
+    // Apply a specific label to all the verts that touch the given set of nodes
+    const index_t VERT_LABEL = 1;
+    for (index_t i = 0; i < nv; i++) {
+      if (vert_list[i] >= 0 && vert_list[i] < nverts) {
+        vert_labels[vert_list[i]] = VERT_LABEL;
+      }
+    }
+
+    for (index_t i = 0; i < num_boundary_faces; i++) {
+      index_t face = boundary_faces[i];
+
+      // Get the element corresponding to the face
+      index_t elem, e2;
+      get_face_elements(face, &elem, &e2);
+
+      // Find the face index for the the boundary face;
+      index_t face_index = 0;
+      const index_t* faces;
+      index_t nf = get_element_faces(elem, &faces);
+      for (index_t j = 0; j < nf; j++) {
+        if (faces[j] == face) {
+          face_index = j;
+          break;
+        }
+      }
+
+      // Check if all the vertices are labeled or not
+      index_t v[4];
+      index_t nv = get_element_face_verts(elem, face_index, v);
+      bool labeled = true;
+      for (index_t k = 0; k < nv; k++) {
+        if (vert_labels[v[k]] != VERT_LABEL) {
+          labeled = false;
+        }
+      }
+
+      if (labeled) {
+        boundary_labels[i] = num_boundary_labels;
+        count++;
+      }
+    }
+
+    delete[] vert_labels;
+
+    // Return the label that was applied to the faces
+    if (count > 0) {
+      num_boundary_labels++;
+      return num_boundary_labels - 1;
+    }
+
+    // No faces were found
+    return NO_LABEL;
   }
 
   // Get global element counts
@@ -279,6 +409,199 @@ class MeshConnectivity3D {
             pyrmd_verts[ET::PYRMD_VERTS * elem + ET::PYRMD_QUAD_FACE_VERTS[3]];
         return 4;
       }
+    }
+    return 0;
+  }
+
+  /**
+   * @brief Get the indices of the face in its local order
+   *
+   * @param elem The element index
+   * @param f The local face index
+   * @param verts The vertices
+   * @return The number of vertices
+   */
+  index_t get_element_face_vert_indices(index_t elem, index_t f,
+                                        index_t verts[]) {
+    if (elem < ntets) {
+      verts[1] = ET::TET_FACE_VERTS[f][1];
+      verts[2] = ET::TET_FACE_VERTS[f][2];
+      verts[0] = ET::TET_FACE_VERTS[f][0];
+      return 3;
+    } else if (elem < ntets + nhex) {
+      elem = elem - ntets;
+      verts[0] = ET::HEX_FACE_VERTS[f][0];
+      verts[1] = ET::HEX_FACE_VERTS[f][1];
+      verts[2] = ET::HEX_FACE_VERTS[f][2];
+      verts[3] = ET::HEX_FACE_VERTS[f][3];
+      return 4;
+    } else if (elem < ntets + nhex + nwedge) {
+      elem = elem - ntets - nhex;
+
+      if (f < ET::WEDGE_TRI_FACES) {
+        verts[0] = ET::WEDGE_TRI_FACE_VERTS[f][0];
+        verts[1] = ET::WEDGE_TRI_FACE_VERTS[f][1];
+        verts[2] = ET::WEDGE_TRI_FACE_VERTS[f][2];
+        return 3;
+      } else {
+        verts[0] = ET::WEDGE_QUAD_FACE_VERTS[f - ET::WEDGE_TRI_FACES][0];
+        verts[1] = ET::WEDGE_QUAD_FACE_VERTS[f - ET::WEDGE_TRI_FACES][1];
+        verts[2] = ET::WEDGE_QUAD_FACE_VERTS[f - ET::WEDGE_TRI_FACES][2];
+        verts[3] = ET::WEDGE_QUAD_FACE_VERTS[f - ET::WEDGE_TRI_FACES][3];
+        return 4;
+      }
+    } else if (elem < ntets + nhex + nwedge + npyrmd) {
+      elem = elem - ntets - nhex - nwedge;
+
+      if (f < ET::PYRMD_TRI_FACES) {
+        verts[0] = ET::PYRMD_TRI_FACE_VERTS[f][0];
+        verts[1] = ET::PYRMD_TRI_FACE_VERTS[f][1];
+        verts[2] = ET::PYRMD_TRI_FACE_VERTS[f][2];
+        return 3;
+      } else {
+        verts[0] = ET::PYRMD_QUAD_FACE_VERTS[0];
+        verts[1] = ET::PYRMD_QUAD_FACE_VERTS[1];
+        verts[2] = ET::PYRMD_QUAD_FACE_VERTS[2];
+        verts[3] = ET::PYRMD_QUAD_FACE_VERTS[3];
+        return 4;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * @brief Get the edges of the face in its local order
+   *
+   * @param elem The element index
+   * @param f The local face index
+   * @param edges The edges
+   * @return The number of vertices
+   */
+  index_t get_element_face_edges(index_t elem, index_t f, index_t edges[]) {
+    if (elem < ntets) {
+      // edges[1] = tet_edges[ET::TET_EDGES * elem + ET::TET_FACE_EDGES[f][1]];
+      // edges[2] = tet_edges[ET::TET_EDGES * elem + ET::TET_FACE_EDGES[f][2]];
+      // edges[0] = tet_edges[ET::TET_EDGES * elem + ET::TET_FACE_EDGES[f][0]];
+      // return 3;
+    } else if (elem < ntets + nhex) {
+      elem = elem - ntets;
+      edges[0] = hex_edges[ET::HEX_EDGES * elem + ET::HEX_FACE_EDGES[f][0]];
+      edges[1] = hex_edges[ET::HEX_EDGES * elem + ET::HEX_FACE_EDGES[f][1]];
+      edges[2] = hex_edges[ET::HEX_EDGES * elem + ET::HEX_FACE_EDGES[f][2]];
+      edges[3] = hex_edges[ET::HEX_EDGES * elem + ET::HEX_FACE_EDGES[f][3]];
+      return 4;
+    } else if (elem < ntets + nhex + nwedge) {
+      // elem = elem - ntets - nhex;
+
+      // if (f < ET::WEDGE_TRI_FACES) {
+      //   edges[0] = wedge_edges[ET::WEDGE_EDGES * elem +
+      //                          ET::WEDGE_TRI_FACE_EDGES[f][0]];
+      //   edges[1] = wedge_edges[ET::WEDGE_EDGES * elem +
+      //                          ET::WEDGE_TRI_FACE_EDGES[f][1]];
+      //   edges[2] = wedge_edges[ET::WEDGE_EDGES * elem +
+      //                          ET::WEDGE_TRI_FACE_EDGES[f][2]];
+      //   return 3;
+      // } else {
+      //   edges[0] =
+      //       wedge_edges[ET::WEDGE_EDGES * elem +
+      //                   ET::WEDGE_QUAD_FACE_EDGES[f -
+      //                   ET::WEDGE_TRI_FACES][0]];
+      //   edges[1] =
+      //       wedge_edges[ET::WEDGE_EDGES * elem +
+      //                   ET::WEDGE_QUAD_FACE_EDGES[f -
+      //                   ET::WEDGE_TRI_FACES][1]];
+      //   edges[2] =
+      //       wedge_edges[ET::WEDGE_EDGES * elem +
+      //                   ET::WEDGE_QUAD_FACE_EDGES[f -
+      //                   ET::WEDGE_TRI_FACES][2]];
+      //   edges[3] =
+      //       wedge_edges[ET::WEDGE_EDGES * elem +
+      //                   ET::WEDGE_QUAD_FACE_EDGES[f -
+      //                   ET::WEDGE_TRI_FACES][3]];
+      //   return 4;
+      // }
+    } else if (elem < ntets + nhex + nwedge + npyrmd) {
+      // elem = elem - ntets - nhex - nwedge;
+
+      // if (f < ET::PYRMD_TRI_FACES) {
+      //   edges[0] = pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //                          ET::PYRMD_TRI_FACE_EDGES[f][0]];
+      //   edges[1] = pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //                          ET::PYRMD_TRI_FACE_EDGES[f][1]];
+      //   edges[2] = pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //                          ET::PYRMD_TRI_FACE_EDGES[f][2]];
+      //   return 3;
+      // } else {
+      //   edges[0] =
+      //       pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //       ET::PYRMD_QUAD_FACE_EDGES[0]];
+      //   edges[1] =
+      //       pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //       ET::PYRMD_QUAD_FACE_EDGES[1]];
+      //   edges[2] =
+      //       pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //       ET::PYRMD_QUAD_FACE_EDGES[2]];
+      //   edges[3] =
+      //       pyrmd_edges[ET::PYRMD_EDGES * elem +
+      //       ET::PYRMD_QUAD_FACE_EDGES[3]];
+      //   return 4;
+      // }
+    }
+    return 0;
+  }
+
+  /**
+   * @brief Get the indices of the face in its local order
+   *
+   * @param elem The element index
+   * @param f The local face index
+   * @param edges The vertices
+   * @return The number of vertices
+   */
+  index_t get_element_face_edge_indices(index_t elem, index_t f,
+                                        index_t edges[]) {
+    if (elem < ntets) {
+      // edges[1] = ET::TET_FACE_EDGES[f][1];
+      // edges[2] = ET::TET_FACE_EDGES[f][2];
+      // edges[0] = ET::TET_FACE_EDGES[f][0];
+      // return 3;
+    } else if (elem < ntets + nhex) {
+      elem = elem - ntets;
+      edges[0] = ET::HEX_FACE_EDGES[f][0];
+      edges[1] = ET::HEX_FACE_EDGES[f][1];
+      edges[2] = ET::HEX_FACE_EDGES[f][2];
+      edges[3] = ET::HEX_FACE_EDGES[f][3];
+      return 4;
+    } else if (elem < ntets + nhex + nwedge) {
+      // elem = elem - ntets - nhex;
+
+      // if (f < ET::WEDGE_TRI_FACES) {
+      //   edges[0] = ET::WEDGE_TRI_FACE_EDGES[f][0];
+      //   edges[1] = ET::WEDGE_TRI_FACE_EDGES[f][1];
+      //   edges[2] = ET::WEDGE_TRI_FACE_EDGES[f][2];
+      //   return 3;
+      // } else {
+      //   edges[0] = ET::WEDGE_QUAD_FACE_EDGES[f - ET::WEDGE_TRI_FACES][0];
+      //   edges[1] = ET::WEDGE_QUAD_FACE_EDGES[f - ET::WEDGE_TRI_FACES][1];
+      //   edges[2] = ET::WEDGE_QUAD_FACE_EDGES[f - ET::WEDGE_TRI_FACES][2];
+      //   edges[3] = ET::WEDGE_QUAD_FACE_EDGES[f - ET::WEDGE_TRI_FACES][3];
+      //   return 4;
+      // }
+    } else if (elem < ntets + nhex + nwedge + npyrmd) {
+      // elem = elem - ntets - nhex - nwedge;
+
+      // if (f < ET::PYRMD_TRI_FACES) {
+      //   edges[0] = ET::PYRMD_TRI_FACE_EDGES[f][0];
+      //   edges[1] = ET::PYRMD_TRI_FACE_EDGES[f][1];
+      //   edges[2] = ET::PYRMD_TRI_FACE_EDGES[f][2];
+      //   return 3;
+      // } else {
+      //   edges[0] = ET::PYRMD_QUAD_FACE_EDGES[0];
+      //   edges[1] = ET::PYRMD_QUAD_FACE_EDGES[1];
+      //   edges[2] = ET::PYRMD_QUAD_FACE_EDGES[2];
+      //   edges[3] = ET::PYRMD_QUAD_FACE_EDGES[3];
+      //   return 4;
+      // }
     }
     return 0;
   }
@@ -943,172 +1266,106 @@ class MeshConnectivity3D {
   index_t* hex_edges;
   index_t* wedge_edges;
   index_t* pyrmd_edges;
+
+  // Boundary labels for faces that touch a boundary
+  index_t num_boundary_labels;
+  index_t num_boundary_faces;
+  index_t* boundary_faces;
+  index_t* boundary_labels;
 };
 
-template <index_t degree, class HOrderBasis, class Basis>
-class HexProjection {
+/**
+ * @brief This class provides a mapping between any boundary labels and
+ * associated boundary conditions
+ */
+class DirichletBCInfo {
  public:
-  static const index_t order = degree + 1;
+  static const index_t MAX_FIXED_FIELDS = 31;
 
-  index_t get_num_projection_elements() const {
-    return (order - 1) * (order - 1) * (order - 1);
+  DirichletBCInfo() {}
+
+  /**
+   * @brief Add a boundary condition
+   *
+   * @param label The label for the boundary condition in the connectivity
+   * @param basis Index of the basis functions in the FEBasis object
+   */
+  void add_boundary_condition(index_t label, index_t basis = 0) {
+    index_t info = 0;
+    for (index_t i = 0; i < MAX_FIXED_FIELDS; i++) {
+      info |= 1 << i;
+    }
+    data.push_back(std::make_tuple(label, basis, info));
   }
 
-  void get_projection_index(index_t n, index_t index[]) {
-    const index_t i = n % degree;
-    const index_t j = (n % (degree * degree)) / degree;
-    const index_t k = n / (degree * degree);
-
-    if constexpr (Basis::nbasis > 0) {
-      get_projection_index_<0>(i, j, k, index);
+  /**
+   * @brief Add a boundary condition that fixes only the specified subset of dof
+   *
+   * @param label The label for the boundary condition in the connectivity
+   * @param basis Index of the basis functions in the FEBasis object
+   */
+  void add_boundary_condition(index_t label, index_t basis, index_t nfixed,
+                              const index_t fixed[]) {
+    index_t info = 0;
+    for (index_t i = 0; i < nfixed; i++) {
+      info |= 1 << fixed[i];
     }
+    data.push_back(std::make_tuple(label, basis, info));
   }
 
-  void get_projection_signs(index_t n, int signs[]) {
-    const index_t i = n % degree;
-    const index_t j = (n % (degree * degree)) / degree;
-    const index_t k = n / (degree * degree);
-
-    if constexpr (Basis::nbasis > 0) {
-      get_projection_signs_<0>(i, j, k, signs);
+  /**
+   * @brief Search if a boundary condition is active for the specified label
+   *
+   * @param label The label index
+   * @return True if the label is used, false otherwise
+   */
+  bool active_for_label(index_t label) {
+    for (index_t i = 0; i < data.size(); i++) {
+      if (label == std::get<0>(data[i])) {
+        return true;
+      }
     }
+    return false;
+  }
+
+  /**
+   * @brief Search if a boundary condition is active for the specified label and
+   * basis pair
+   *
+   * @param label The label index
+   * @param basis The basis index
+   * @return True if the label is used, false otherwise
+   */
+  bool active_for_basis(index_t label, index_t basis) {
+    for (index_t i = 0; i < data.size(); i++) {
+      if (label == std::get<0>(data[i]) && basis == std::get<1>(data[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @brief Search if a boundary condition is active for the specified label and
+   * basis pair
+   *
+   * @param label The label index
+   * @param basis The basis index
+   * @param dof The dof index
+   * @return True if the label is used, false otherwise
+   */
+  bool active_for_dof(index_t label, index_t basis, index_t dof) {
+    for (index_t i = 0; i < data.size(); i++) {
+      if (label == std::get<0>(data[i]) && basis == std::get<1>(data[i]) &&
+          ((1 << dof) & std::get<2>(data[i]))) {
+        return true;
+      }
+    }
+    return false;
   }
 
  private:
-  template <index_t basis>
-  void get_projection_index_(index_t i, index_t j, index_t k, index_t index[]) {
-    if (Basis::template get_basis_type<basis>() == H1) {
-      get_h1_index<basis>(i, j, k, index);
-    } else if (Basis::template get_basis_type<basis>() == HCURL) {
-    } else if (Basis::template get_basis_type<basis>() == HDIV) {
-      get_hdiv_index<basis>(i, j, k, index);
-    } else if (Basis::template get_basis_type<basis>() == L2) {
-      get_l2_index<basis>(i, j, k, index);
-    }
-
-    if constexpr (basis + 1 < Basis::nbasis) {
-      get_projection_index_<basis + 1>(i, j, k, index);
-    }
-  }
-  template <index_t basis>
-  void get_projection_signs_(index_t i, index_t j, index_t k, int signs[]) {
-    if (Basis::template get_basis_type<basis>() == H1) {
-      get_h1_signs<basis>(i, j, k, signs);
-    } else if (Basis::template get_basis_type<basis>() == HCURL) {
-    } else if (Basis::template get_basis_type<basis>() == HDIV) {
-      get_hdiv_signs<basis>(i, j, k, signs);
-    } else if (Basis::template get_basis_type<basis>() == L2) {
-      get_l2_signs<basis>(i, j, k, signs);
-    }
-
-    if constexpr (basis + 1 < Basis::nbasis) {
-      get_projection_signs_<basis + 1>(i, j, k, signs);
-    }
-  }
-
-  template <index_t basis>
-  void get_h1_index(const index_t i, const index_t j, const index_t k,
-                    index_t dof[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    for (index_t kk = 0; kk < 2; kk++) {
-      for (index_t jj = 0; jj < 2; jj++) {
-        for (index_t ii = 0; ii < 2; ii++) {
-          for (index_t n = 0; n < stride; n++) {
-            dof[lo_offset + n + stride * (ii + 2 * (jj + 2 * kk))] =
-                ho_offset + n +
-                stride * ((i + ii) + order * ((j + jj) + order * (k + kk)));
-          }
-        }
-      }
-    }
-  }
-
-  template <index_t basis>
-  void get_hdiv_index(const index_t i, const index_t j, const index_t k,
-                      index_t dof[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    dof[lo_offset] = ho_offset + i + order * (j + (order - 1) * k);
-    dof[lo_offset + 1] = ho_offset + i + 1 + order * (j + (order - 1) * k);
-
-    dof[lo_offset + 2] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
-                         order * (order - 1) * (order - 1);
-    dof[lo_offset + 3] = ho_offset + i +
-                         (order - 1) * (j + 1 + (order - 1) * k) +
-                         order * (order - 1) * (order - 1);
-
-    dof[lo_offset + 4] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
-                         2 * order * (order - 1) * (order - 1);
-    dof[lo_offset + 5] = ho_offset + i +
-                         (order - 1) * (j + (order - 1) * (k + 1)) +
-                         2 * order * (order - 1) * (order - 1);
-  }
-
-  template <index_t basis>
-  void get_l2_index(const index_t i, const index_t j, const index_t k,
-                    index_t dof[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    for (index_t n = 0; n < stride; n++) {
-      dof[lo_offset + n] =
-          ho_offset + n + stride * (i + (order - 1) * (j + (order - 1) * k));
-    }
-  }
-
-  template <index_t basis>
-  void get_h1_signs(const index_t i, const index_t j, const index_t k,
-                    int signs[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    for (index_t n = 0; n < 8 * stride; n++) {
-      signs[lo_offset + n] = 1;
-    }
-  }
-
-  template <index_t basis>
-  void get_hdiv_signs(const index_t i, const index_t j, const index_t k,
-                      int signs[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-
-    if (i == 0) {
-      signs[lo_offset] = 1;
-    } else {
-      signs[lo_offset] = -1;
-    }
-    signs[lo_offset + 1] = 1;
-
-    if (j == 0) {
-      signs[lo_offset + 2] = 1;
-    } else {
-      signs[lo_offset + 2] = -1;
-    }
-    signs[lo_offset + 3] = 1;
-
-    if (k == 0) {
-      signs[lo_offset + 4] = 1;
-    } else {
-      signs[lo_offset + 4] = -1;
-    }
-    signs[lo_offset + 5] = 1;
-  }
-
-  template <index_t basis>
-  void get_l2_signs(const index_t i, const index_t j, const index_t k,
-                    int signs[]) {
-    const index_t stride = Basis::template get_basis_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    for (index_t n = 0; n < stride; n++) {
-      signs[lo_offset + n] = 1;
-    }
-  }
+  std::vector<std::tuple<index_t, index_t, index_t>> data;
 };
 
 /*
@@ -1449,7 +1706,7 @@ class ElementMesh {
 };
 
 template <class Basis>
-class BoundaryCondition {
+class DirichletBCs {
  public:
   // Use the definitions from the element types
   using ET = ElementTypes;
@@ -1461,101 +1718,124 @@ class BoundaryCondition {
    *
    * @param conn The connectivity
    * @param mesh The mesh object with the ordered degrees of freedom
-   * @param basis_select The degrees of freedom indices selected for each basis
-   * @param ndof Output number of degrees of freedom
-   * @param dof Output degrees of freedom
    */
-  template <typename IdxType>
-  BoundaryCondition(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh,
-                    const index_t basis_select[], index_t nv,
-                    const IdxType verts[]) {
-    index_t nelems = conn.get_num_elements();
-    index_t nverts = conn.get_num_verts();
-    index_t nedges = conn.get_num_edges();
-    index_t nfaces = conn.get_num_faces();
-    index_t* vert_labels = new index_t[nverts];
-    index_t* edge_labels = new index_t[nedges];
-    index_t* face_labels = new index_t[nfaces];
-
-    conn.get_labels_from_verts(nv, verts, vert_labels, edge_labels,
-                               face_labels);
+  DirichletBCs(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh,
+               DirichletBCInfo& bcinfo) {
+    const index_t* boundary_faces;
+    const index_t* boundary_labels;
+    index_t num_boundary_faces =
+        conn.get_boundary_faces(&boundary_faces, &boundary_labels);
 
     index_t num_dof = mesh.get_num_dof();
     index_t boundary_dof_counter = 0;
+    index_t* dof_flags = new index_t[num_dof];
     index_t* boundary_dof = new index_t[num_dof];
 
-    for (index_t elem = 0; elem < nelems; elem++) {
-      index_t dof[Basis::ndof];
-      const index_t* elem_dof;
-      mesh.get_element_dof(elem, &elem_dof);
+    const index_t NO_LABEL = 1;
+    std::fill(dof_flags, dof_flags + num_dof, NO_LABEL);
 
-      // Scan over the faces
-      const index_t* elem_faces;
-      index_t nf = conn.get_element_faces(elem, &elem_faces);
-      for (index_t f = 0; f < nf; f++) {
-        if (face_labels[elem_faces[f]] != MeshConnectivity3D::NO_LABEL) {
-          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
-            if (basis_select[basis]) {
-              index_t nface_dof = Basis::get_entity_ndof(basis, ET::FACE, f);
-              Basis::get_entity_dof(basis, ET::FACE, f, elem_dof, dof);
+    // Loop over all the boundaries
+    for (index_t boundary_face = 0; boundary_face < num_boundary_faces;
+         boundary_face++) {
+      index_t face = boundary_faces[boundary_face];
+      index_t label = boundary_labels[boundary_face];
 
-              for (index_t k = 0; k < nface_dof; k++) {
+      // Find the edges and
+      if (bcinfo.active_for_label(label)) {
+        // Find the element for this face
+        index_t elem, e2;
+        conn.get_face_elements(face, &elem, &e2);
+
+        // Get the degrees of freedom for this element
+        const index_t* elem_dof;
+        mesh.get_element_dof(elem, &elem_dof);
+
+        // Array of dof that may be extracted
+        index_t dof[Basis::ndof];
+
+        // Find the face index for the active face
+        index_t face_index = 0;
+        const index_t* faces;
+        index_t nf = conn.get_element_faces(elem, &faces);
+        for (index_t i = 0; i < nf; i++) {
+          if (faces[i] == face) {
+            face_index = i;
+            break;
+          }
+        }
+
+        for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+          if (bcinfo.active_for_basis(label, basis)) {
+            index_t nface_dof =
+                Basis::get_entity_ndof(basis, ET::FACE, face_index);
+            Basis::get_entity_dof(basis, ET::FACE, face_index, elem_dof, dof);
+
+            for (index_t k = 0; k < nface_dof; k++) {
+              bool active = bcinfo.active_for_dof(label, basis,
+                                                  k % Basis::get_stride(basis));
+
+              if (active && dof_flags[dof[k]] == NO_LABEL) {
+                dof_flags[dof[k]] = 0;
+
                 boundary_dof[boundary_dof_counter] = dof[k];
                 boundary_dof_counter++;
               }
             }
-          }
 
-          face_labels[elem_faces[f]] = MeshConnectivity3D::NO_LABEL;
-        }
-      }
+            // Set the boundary conditions on the element face edges and verts
+            index_t e[4];
+            int ne = conn.get_element_face_edge_indices(elem, face_index, e);
 
-      // Scan over the edges
-      const index_t* elem_edges;
-      index_t ne = conn.get_element_faces(elem, &elem_edges);
-      for (index_t e = 0; e < ne; e++) {
-        if (edge_labels[elem_edges[e]] != MeshConnectivity3D::NO_LABEL) {
-          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
-            if (basis_select[basis]) {
-              index_t nedge_dof = Basis::get_entity_ndof(basis, ET::EDGE, e);
-              Basis::get_entity_dof(basis, ET::EDGE, e, elem_dof, dof);
+            for (index_t j = 0; j < ne; j++) {
+              index_t edge_index = e[j];
+
+              index_t nedge_dof =
+                  Basis::get_entity_ndof(basis, ET::EDGE, edge_index);
+              Basis::get_entity_dof(basis, ET::EDGE, edge_index, elem_dof, dof);
 
               for (index_t k = 0; k < nedge_dof; k++) {
-                boundary_dof[boundary_dof_counter] = dof[k];
-                boundary_dof_counter++;
+                bool active = bcinfo.active_for_dof(
+                    label, basis, k % Basis::get_stride(basis));
+
+                if (active && dof_flags[dof[k]] == NO_LABEL) {
+                  dof_flags[dof[k]] = 0;
+
+                  boundary_dof[boundary_dof_counter] = dof[k];
+                  boundary_dof_counter++;
+                }
               }
             }
-          }
 
-          edge_labels[elem_edges[e]] = MeshConnectivity3D::NO_LABEL;
-        }
-      }
+            // Get the vertices associated with the face
+            index_t v[4];
+            index_t nv =
+                conn.get_element_face_vert_indices(elem, face_index, v);
 
-      // Scan over the vertices
-      const index_t* elem_verts;
-      index_t nv = conn.get_element_verts(elem, &elem_verts);
-      for (index_t v = 0; v < nv; v++) {
-        if (vert_labels[elem_verts[v]] != MeshConnectivity3D::NO_LABEL) {
-          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
-            if (basis_select[basis]) {
-              index_t nvert_dof = Basis::get_entity_ndof(basis, ET::VERTEX, v);
-              Basis::get_entity_dof(basis, ET::VERTEX, v, elem_dof, dof);
+            for (index_t j = 0; j < nv; j++) {
+              index_t vert_index = v[j];
+
+              index_t nvert_dof =
+                  Basis::get_entity_ndof(basis, ET::VERTEX, vert_index);
+              Basis::get_entity_dof(basis, ET::VERTEX, vert_index, elem_dof,
+                                    dof);
 
               for (index_t k = 0; k < nvert_dof; k++) {
-                boundary_dof[boundary_dof_counter] = dof[k];
-                boundary_dof_counter++;
+                bool active = bcinfo.active_for_dof(
+                    label, basis, k % Basis::get_stride(basis));
+                if (active && dof_flags[dof[k]] == NO_LABEL) {
+                  dof_flags[dof[k]] = 0;
+
+                  boundary_dof[boundary_dof_counter] = dof[k];
+                  boundary_dof_counter++;
+                }
               }
             }
           }
-
-          vert_labels[elem_verts[v]] = MeshConnectivity3D::NO_LABEL;
         }
       }
     }
 
-    delete[] vert_labels;
-    delete[] edge_labels;
-    delete[] face_labels;
+    delete[] dof_flags;
 
     ndof = boundary_dof_counter;
     dof = new index_t[ndof];
@@ -1584,6 +1864,172 @@ class BoundaryCondition {
  private:
   index_t ndof;
   index_t* dof;
+};
+
+template <index_t degree, class HOrderBasis, class Basis>
+class HexProjection {
+ public:
+  static const index_t order = degree + 1;
+
+  index_t get_num_projection_elements() const {
+    return (order - 1) * (order - 1) * (order - 1);
+  }
+
+  void get_projection_index(index_t n, index_t index[]) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    if constexpr (Basis::nbasis > 0) {
+      get_projection_index_<0>(i, j, k, index);
+    }
+  }
+
+  void get_projection_signs(index_t n, int signs[]) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    if constexpr (Basis::nbasis > 0) {
+      get_projection_signs_<0>(i, j, k, signs);
+    }
+  }
+
+ private:
+  template <index_t basis>
+  void get_projection_index_(index_t i, index_t j, index_t k, index_t index[]) {
+    if (Basis::template get_basis_type<basis>() == H1) {
+      get_h1_index<basis>(i, j, k, index);
+    } else if (Basis::template get_basis_type<basis>() == HCURL) {
+    } else if (Basis::template get_basis_type<basis>() == HDIV) {
+      get_hdiv_index<basis>(i, j, k, index);
+    } else if (Basis::template get_basis_type<basis>() == L2) {
+      get_l2_index<basis>(i, j, k, index);
+    }
+
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_projection_index_<basis + 1>(i, j, k, index);
+    }
+  }
+  template <index_t basis>
+  void get_projection_signs_(index_t i, index_t j, index_t k, int signs[]) {
+    if (Basis::template get_basis_type<basis>() == H1) {
+      get_h1_signs<basis>(i, j, k, signs);
+    } else if (Basis::template get_basis_type<basis>() == HCURL) {
+    } else if (Basis::template get_basis_type<basis>() == HDIV) {
+      get_hdiv_signs<basis>(i, j, k, signs);
+    } else if (Basis::template get_basis_type<basis>() == L2) {
+      get_l2_signs<basis>(i, j, k, signs);
+    }
+
+    if constexpr (basis + 1 < Basis::nbasis) {
+      get_projection_signs_<basis + 1>(i, j, k, signs);
+    }
+  }
+
+  template <index_t basis>
+  void get_h1_index(const index_t i, const index_t j, const index_t k,
+                    index_t dof[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    for (index_t kk = 0; kk < 2; kk++) {
+      for (index_t jj = 0; jj < 2; jj++) {
+        for (index_t ii = 0; ii < 2; ii++) {
+          for (index_t n = 0; n < stride; n++) {
+            dof[lo_offset + n + stride * (ii + 2 * (jj + 2 * kk))] =
+                ho_offset + n +
+                stride * ((i + ii) + order * ((j + jj) + order * (k + kk)));
+          }
+        }
+      }
+    }
+  }
+
+  template <index_t basis>
+  void get_hdiv_index(const index_t i, const index_t j, const index_t k,
+                      index_t dof[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    dof[lo_offset] = ho_offset + i + order * (j + (order - 1) * k);
+    dof[lo_offset + 1] = ho_offset + i + 1 + order * (j + (order - 1) * k);
+
+    dof[lo_offset + 2] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
+                         order * (order - 1) * (order - 1);
+    dof[lo_offset + 3] = ho_offset + i +
+                         (order - 1) * (j + 1 + (order - 1) * k) +
+                         order * (order - 1) * (order - 1);
+
+    dof[lo_offset + 4] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
+                         2 * order * (order - 1) * (order - 1);
+    dof[lo_offset + 5] = ho_offset + i +
+                         (order - 1) * (j + (order - 1) * (k + 1)) +
+                         2 * order * (order - 1) * (order - 1);
+  }
+
+  template <index_t basis>
+  void get_l2_index(const index_t i, const index_t j, const index_t k,
+                    index_t dof[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
+
+    for (index_t n = 0; n < stride; n++) {
+      dof[lo_offset + n] =
+          ho_offset + n + stride * (i + (order - 1) * (j + (order - 1) * k));
+    }
+  }
+
+  template <index_t basis>
+  void get_h1_signs(const index_t i, const index_t j, const index_t k,
+                    int signs[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    for (index_t n = 0; n < 8 * stride; n++) {
+      signs[lo_offset + n] = 1;
+    }
+  }
+
+  template <index_t basis>
+  void get_hdiv_signs(const index_t i, const index_t j, const index_t k,
+                      int signs[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+
+    if (i == 0) {
+      signs[lo_offset] = 1;
+    } else {
+      signs[lo_offset] = -1;
+    }
+    signs[lo_offset + 1] = 1;
+
+    if (j == 0) {
+      signs[lo_offset + 2] = 1;
+    } else {
+      signs[lo_offset + 2] = -1;
+    }
+    signs[lo_offset + 3] = 1;
+
+    if (k == 0) {
+      signs[lo_offset + 4] = 1;
+    } else {
+      signs[lo_offset + 4] = -1;
+    }
+    signs[lo_offset + 5] = 1;
+  }
+
+  template <index_t basis>
+  void get_l2_signs(const index_t i, const index_t j, const index_t k,
+                    int signs[]) {
+    const index_t stride = Basis::template get_stride<basis>();
+    const index_t lo_offset = Basis::template get_dof_offset<basis>();
+    for (index_t n = 0; n < stride; n++) {
+      signs[lo_offset + n] = 1;
+    }
+  }
 };
 
 }  // namespace A2D

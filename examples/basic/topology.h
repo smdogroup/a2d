@@ -1,5 +1,5 @@
-#ifndef EXAMPLE_TOPOLOGY
-#define EXAMPLE_TOPOLOGY
+#ifndef EXAMPLE_TOPOLOGY_H
+#define EXAMPLE_TOPOLOGY_H
 
 #include <iostream>
 #include <memory>
@@ -273,6 +273,34 @@ class TopoOpt {
     for (A2D::index_t i = 0; i < datamesh.get_num_dof(); i++) {
       data[i] = xvec[i];
     }
+  }
+
+  /**
+   * @brief Evaluate the compliance
+   */
+  T eval_compliance() {
+    A2D::Timer timer("TopoOpt::eval_compliance()");
+    return fe.integrate(pde, elem_data, elem_geo, elem_sol);
+  }
+
+  /**
+   * @brief Evaluate the compliance gradient
+   *
+   */
+  template <class VecType>
+  void add_compliance_gradient(VecType &dfdx) {
+    A2D::Timer timer("TopoOpt::add_compliance_gradient()");
+    A2D::ElementVector_Serial<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
+
+    A2D::SolutionVector<T> adjoint(mesh.get_num_dof());
+    for (A2D::index_t i = 0; i < adjoint.get_num_dof(); i++) {
+      adjoint[i] = -0.5 * sol[i];
+    }
+    A2D::ElementVector_Serial<T, Basis, A2D::SolutionVector<T>> elem_adjoint(
+        mesh, adjoint);
+
+    fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
+                                            elem_adjoint, elem_dfdx);
   }
 
   /**

@@ -1,6 +1,7 @@
 #ifndef A2D_HEX_TOOLS_H
 #define A2D_HEX_TOOLS_H
 
+#include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 
 namespace A2D {
@@ -57,6 +58,7 @@ template <index_t outputs, index_t degree, typename T, class DataBasis,
           class GeoElemVec, class ElemVec, class FunctorType>
 void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
                       ElemVec &elem_sol, const FunctorType &func) {
+  Timer timer("write_hex_to_vtk()");
   using ET = ElementTypes;
   const index_t nex = degree;
   using QuadPts = HexGaussLobattoQuadrature<nex + 1>;

@@ -11,6 +11,7 @@
 #include "multiphysics/femesh.h"
 #include "multiphysics/fesolution.h"
 #include "sparse/sparse_matrix.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -25,6 +26,7 @@ namespace A2D {
  */
 template <typename T, class PDE>
 void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
+  Timer timer("TestPDEImplementation()");
   typename PDE::DataSpace data;
   typename PDE::FiniteElementGeometry geo;
   typename PDE::FiniteElementSpace s, sref;
@@ -698,6 +700,7 @@ class FiniteElement {
   template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
   void add_jacobian(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
                     ElemVec& elem_sol, ElemMat& elem_mat) {
+    Timer timer("FiniteElement::add_jacobian()");
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
@@ -818,6 +821,7 @@ class MatrixFree {
   template <class DataElemVec, class GeoElemVec, class ElemVec>
   void initialize(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
                   ElemVec& elem_sol) {
+    Timer timer("MatrixFree::initialize()");
     // Re-size the vector as needed
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     if (qmat.size() != num_elements) {
@@ -907,11 +911,14 @@ class MatrixFree {
 
   template <class ElemVec>
   void add_jacobian_vector_product(ElemVec& elem_xvec, ElemVec& elem_yvec) {
+    Timer timer("MatrixFree::add_jacobian_vector_product");
     const A2D::index_t num_elements = qmat.size();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Kokkos::parallel_for(
+      //     num_elements, A2D_LAMBDA(index_t i) {
       // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
       elem_xvec.get_element_values(i, x_dof);

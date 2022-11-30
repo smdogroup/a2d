@@ -270,6 +270,32 @@ class TopoOpt {
   }
 
   /**
+   * @brief Evaluate the compliance
+   */
+  T eval_compliance() {
+    return fe.integrate(pde, elem_data, elem_geo, elem_sol);
+  }
+
+  /**
+   * @brief Evaluate the compliance gradient
+   *
+   */
+  template <class VecType>
+  void add_compliance_gradient(VecType &dfdx) {
+    A2D::ElementVector_Serial<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
+
+    A2D::SolutionVector<T> adjoint(mesh.get_num_dof());
+    for (A2D::index_t i = 0; i < adjoint.get_num_dof(); i++) {
+      adjoint[i] = -0.5 * sol[i];
+    }
+    A2D::ElementVector_Serial<T, Basis, A2D::SolutionVector<T>> elem_adjoint(
+        mesh, adjoint);
+
+    fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
+                                            elem_adjoint, elem_dfdx);
+  }
+
+  /**
    * @brief Evaluate the volume
    *
    * @return The volume of the parametrized topology
@@ -594,18 +620,39 @@ int main(int argc, char *argv[]) {
   // Solve the problem
   topo.solve();
 
+  std::vector<T> dcdx(ndvs, 0.0);
+  T compliance = topo.eval_compliance();
+  topo.add_compliance_gradient(dcdx);
+  std::cout << "Compliance value = " << compliance << std::endl;
+
   std::vector<T> dfdx(ndvs, 0.0);
   T aggregation = topo.eval_aggregation(design_stress, ks_penalty);
   topo.add_aggregation_gradient(design_stress, ks_penalty, dfdx);
   std::cout << "Aggregation value = " << aggregation << std::endl;
 
   if constexpr (std::is_same<T, std::complex<double>>::value == true) {
-    double fd = imag(aggregation) / dh;
-    T ans = 0.0;
+    double fd;
+    T ans;
+
+    fd = imag(compliance) / dh;
+    ans = 0.0;
+    for (A2D::index_t i = 0; i < ndvs; i++) {
+      ans += dcdx[i] * px[i];
+    }
+
+    std::cout << "Compliance gradient check" << std::endl;
+    std::cout << std::setw(15) << "Complex-step" << std::setw(15) << "Adjoint"
+              << std::setw(15) << "Relative error" << std::endl;
+    std::cout << std::setw(15) << fd << std::setw(15) << std::real(ans)
+              << std::setw(15) << (fd - std::real(ans)) / fd << std::endl;
+
+    fd = imag(aggregation) / dh;
+    ans = 0.0;
     for (A2D::index_t i = 0; i < ndvs; i++) {
       ans += dfdx[i] * px[i];
     }
 
+    std::cout << "Aggregation gradient check" << std::endl;
     std::cout << std::setw(15) << "Complex-step" << std::setw(15) << "Adjoint"
               << std::setw(15) << "Relative error" << std::endl;
     std::cout << std::setw(15) << fd << std::setw(15) << std::real(ans)

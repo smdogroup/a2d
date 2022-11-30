@@ -18,10 +18,13 @@ void test_febasis() {
   const A2D::index_t degree = 2;
   const A2D::index_t dim = 3;
 
-  using Quadrature = A2D::HexGaussQuadrature<degree + 1>;
+  using Quadrature = A2D::HexGaussQuadrature<degree + 3>;
   using Space =
-      A2D::FESpace<T, dim, A2D::HdivSpace<T, dim>, A2D::H1Space<T, dim, dim>>;
+      A2D::FESpace<T, dim, A2D::HdivSpace<T, dim>, A2D::L2Space<T, 3, dim>,
+                   A2D::L2Space<T, 1, dim>, A2D::H1Space<T, dim, dim>>;
   using Basis = A2D::FEBasis<T, A2D::QHdivHexBasis<T, degree>,
+                             A2D::LagrangeL2HexBasis<T, 3, degree>,
+                             A2D::LagrangeL2HexBasis<T, 1, degree>,
                              A2D::LagrangeH1HexBasis<T, dim, degree>>;
   const A2D::index_t ncomp = Space::ncomp;
   using MatType = A2D::Mat<T, Basis::ndof, Basis::ndof>;

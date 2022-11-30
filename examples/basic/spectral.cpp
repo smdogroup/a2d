@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   using T = double;
   using ET = ElementTypes;
 
-  const index_t degree = 10;
+  const index_t degree = 8;
   const index_t low_degree = 1;
 
   // using PDE = MixedPoisson<T, dim>;

@@ -40,6 +40,37 @@ class TopoLinearElasticity {
   T q;        // The RAMP penalty parameter
 
   /**
+   * @brief Find the integral of the compliance over the entire domain
+   *
+   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& s) {
+    T rho = data[0];
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+
+    // Get the constitutive data at the points
+    T mu = penalty * mu0;
+    T lambda = penalty * lambda0;
+
+    // Extract the solution
+    A2D::Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
+
+    // The Green-Langrange strain terms
+    A2D::SymmMat<T, dim> E;
+
+    T output;
+    A2D::MatLinearGreenStrain(Ux, E);
+    A2D::SymmIsotropicEnergy(mu, lambda, E, output);
+
+    return wdetJ * output;
+  }
+
+  /**
    * @brief Evaluate the weak form coefficients for linear elasticity
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian

@@ -1,118 +1,184 @@
+#include "ParOptOptimizer.h"
 #include "topology.h"
 #include "utils/a2dvtk.h"
 
-int main(int argc, char *argv[]) {
-  using I = A2D::index_t;
-  using T = double;
+using I = A2D::index_t;
+using T = ParOptScalar;
+constexpr int DEGREE = 6;
 
-  A2D::Timer timer("main()");
-  Kokkos::initialize();
+class TopOptProb : public ParOptProblem {
+ public:
+  TopOptProb(MPI_Comm comm, int nvars, int ncon, int nineq, T domain_vol,
+             T volume_frac, TopoOpt<T, DEGREE> &topo)
+      : ParOptProblem(comm, nvars, ncon, nineq, 0, 0),
+        comm(comm),
+        nvars(nvars),
+        ncon(ncon),
+        nineq(nineq),
+        domain_vol(domain_vol),
+        volume_frac(volume_frac),
+        topo(topo) {}
 
-  std::cout << "Topology linear elasticity\n";
-  A2D::TopoLinearElasticity<T, 3> elasticity(70e3, 0.3, 5.0);
-  A2D::TestPDEImplementation<T>(elasticity);
+  void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
+    T *x, *lb, *ub;
+    xvec->getArray(&x);
+    lbvec->getArray(&lb);
+    ubvec->getArray(&ub);
 
+    // Set the design variable bounds
+    for (int i = 0; i < nvars; i++) {
+      x[i] = 0.95;
+      lb[i] = 1e-3;
+      ub[i] = 1.0;
+    }
+  }
+
+  // Note: constraints > 0
+  int evalObjCon(ParOptVec *xvec, T *fobj, T *cons) {
+    // Set design variables by paropt
+    T *x;
+    xvec->getArray(&x);
+    topo.set_design_vars(x);
+
+    topo.solve();
+
+    // Evaluate objective
+    *fobj = topo.eval_compliance();
+
+    // Evaluate constraints
+    cons[0] = volume_frac * topo.eval_volume() / domain_vol - 1.0;
+
+    std::printf("evalObjCon()\n");
+    for (int i = 0; i < 3; i++) {
+      std::printf("x[%2d] = %20.10e\n", i, x[i]);
+    }
+
+    std::printf("obj: %20.10f\n", *fobj);
+    std::printf("con: %20.10f\n", cons[0]);
+
+    return 0;
+  }
+
+  int evalObjConGradient(ParOptVec *xvec, ParOptVec *gvec, ParOptVec **Ac) {
+    T *x, *g, *c;
+
+    // Set design variables
+    xvec->getArray(&x);
+
+    // topo.set_design_vars(x);
+    // topo.solve();
+
+    // Evaluate objective gradient
+    gvec->zeroEntries();
+    gvec->getArray(&g);
+
+    topo.add_compliance_gradient(g);
+
+    // Evaluate constraint gradient
+    Ac[0]->zeroEntries();
+    Ac[0]->getArray(&c);
+    topo.add_volume_gradient(c);
+
+    // Scale the volume constraint
+    for (int i = 0; i < nvars; i++) {
+      c[i] = volume_frac * c[i] / domain_vol;
+    }
+
+    std::printf("evalObjConGradient()\n");
+    for (int i = 0; i < 3; i++) {
+      std::printf("x[%2d] = %20.10e\n", i, x[i]);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      std::printf("g[%2d] = %20.10e\n", i, g[i]);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      std::printf("c[%2d] = %20.10e\n", i, c[i]);
+    }
+    return 0;
+  }
+
+ private:
+  MPI_Comm comm;
+  int nvars;
+  int ncon;
+  int nineq;
+  T domain_vol;
+  T volume_frac;
+  TopoOpt<T, DEGREE> topo;
+};
+
+void main_body() {
+  // Load connectivity and vertex coordinates from vtk
   A2D::ReadVTK3D<I, T> readvtk("3d_hex_twisted.vtk");
   T *Xloc = readvtk.get_Xloc();
   I nverts = readvtk.get_nverts();
   I nhex = readvtk.get_nhex();
   I *hex = readvtk.get_hex();
-
   I ntets = 0, nwedge = 0, npyrmd = 0;
   I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
+
+  // Construct connectivity
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 
+  // Extract boundary vertices
   std::vector<int> ids{100, 101};
-  auto verts = readvtk.get_verts_given_cell_entity_id(ids);
+  std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
 
-  A2D::index_t end_label =
-      conn.add_boundary_label_from_verts(verts.size(), verts.data());
-
-  A2D::ToVTK3D tovtk3d(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
-                       pyrmd, Xloc, "output.vtk");
-
-#if 0
-  // Number of elements in each dimension
-  const int nx = 8, ny = 4, nz = 4;
-  auto node_num = [](int i, int j, int k) {
-    return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
-  };
-
-  // Number of edges
-  const int nverts = (nx + 1) * (ny + 1) * (nz + 1);
-  int ntets = 0, nwedge = 0, npyrmd = 0;
-  const int nhex = nx * ny * nz;
-
-  int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
-  int hex[8 * nhex];
-
-  using ET = A2D::ElementTypes;
-
-  for (int k = 0, e = 0; k < nz; k++) {
-    for (int j = 0; j < ny; j++) {
-      for (int i = 0; i < nx; i++, e++) {
-        for (int ii = 0; ii < ET::HEX_VERTS; ii++) {
-          hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                     j + ET::HEX_VERTS_CART[ii][1],
-                                     k + ET::HEX_VERTS_CART[ii][2]);
-        }
-      }
-    }
-  }
-
-  double Xloc[3 * nverts];
-  for (int k = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++) {
-      for (int i = 0; i < nx + 1; i++) {
-        Xloc[3 * node_num(i, j, k)] = (2.0 * i) / nx;
-        Xloc[3 * node_num(i, j, k) + 1] = (1.0 * j) / ny;
-        Xloc[3 * node_num(i, j, k) + 2] = (1.0 * k) / nz;
-      }
-    }
-  }
-
-  // Constrain the nodes at either end of the block
-  const int num_boundary_verts = 2 * (ny + 1) * (nz + 1);
-  int boundary_verts[num_boundary_verts];
-  for (int k = 0, index = 0; k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++, index++) {
-      boundary_verts[index] = node_num(0, j, k);
-    }
-  }
-
-  for (int k = 0, index = (ny + 1) * (nz + 1); k < nz + 1; k++) {
-    for (int j = 0; j < ny + 1; j++, index++) {
-      boundary_verts[index] = node_num(nx, j, k);
-    }
-  }
-
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
-
-  A2D::index_t end_label =
-      conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
-#endif
-
+  // Set up boundary condition information
   A2D::index_t basis = 0;
   A2D::DirichletBCInfo bcinfo;
-  bcinfo.add_boundary_condition(end_label, basis);
+  bcinfo.add_boundary_condition(
+      conn.add_boundary_label_from_verts(verts.size(), verts.data()), basis);
 
-  // Create the finite-element model
-  const A2D::index_t degree = 6;
+  // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3, q = 5.0;
-  T design_stress = 200.0, ks_penalty = 50.0;
-  TopoOpt<T, degree> topo(conn, bcinfo, E, nu, q);
-
-  // Set the geometry from the node locations
+  TopoOpt<T, DEGREE> topo(conn, bcinfo, E, nu, q);
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoOpt<T, degree>::GeoBasis>(nhex, hex, Xloc,
+  A2D::set_geo_from_hex_nodes<TopoOpt<T, DEGREE>::GeoBasis>(nhex, hex, Xloc,
                                                             elem_geo);
   topo.reset_geometry();
+
+  // Initialize the optimization object
+  int nvars = topo.get_num_design_vars();
+  int ncon = 1;
+  int nineq = 1;
+  topo.set_design_vars(std::vector<T>(nvars, T(1.0)));
+  T domain_vol = topo.eval_volume();
+  T volume_frac = 0.4;
+  TopOptProb prob(MPI_COMM_WORLD, nvars, ncon, nineq, domain_vol, volume_frac,
+                  topo);
+
+  prob.checkGradients(1e-3);
+
+  // Everything's fine here, but not within checkGradients()
+  topo.set_design_vars(std::vector<T>(nvars, 0.951));
   topo.solve();
+  topo.solve();
+  topo.solve();
+  T obj = topo.eval_compliance();
+  std::vector<T> g(nvars, 0.0);
+  topo.add_compliance_gradient(g);
+
+  std::printf("Outside TopOptProb:\n");
+  std::printf("obj: %20.10f\n", obj);
+  for (int i = 0; i < 3; i++) {
+    std::printf("g[%2d] = %20.10e\n", i, g[i]);
+  }
 
   // Write the problem to a vtk file
   topo.tovtk("filename.vtk");
+  return;
+}
 
+int main(int argc, char *argv[]) {
+  A2D::Timer timer("main()");
+  MPI_Init(&argc, &argv);
+  Kokkos::initialize();
+  { main_body(); }
+  Kokkos::finalize();
+  MPI_Finalize();
   return 0;
 }

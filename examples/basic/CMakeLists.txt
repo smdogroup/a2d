@@ -1,6 +1,13 @@
 # include A2D headers
 include_directories(${A2D_ROOT_DIR}/include)
 
+# Set up paropt library and dependencies
+find_package(MPI REQUIRED)
+link_directories($ENV{HOME}/git/paropt/lib)
+link_directories($ENV{HOME}/git/paropt/lib)
+include_directories(${MPI_INCLUDE_PATH})
+include_directories($ENV{HOME}/git/paropt/src)
+
 # Copy over file
 configure_file(${CMAKE_SOURCE_DIR}/examples/basic/tetra_3d.vtk.in tetra_3d.vtk COPYONLY)
 
@@ -52,6 +59,8 @@ target_link_libraries(toy_helmholtz  OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_profiler   OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_readvtk    OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_tetramesh  OpenMP::OpenMP_CXX LAPACK::LAPACK)
+
+target_link_libraries(topology_opt paropt MPI::MPI_CXX)
 
 add_subdirectory(rigid_body)
 add_subdirectory(paropt)

@@ -143,13 +143,9 @@ int main(int argc, char *argv[]) {
   ElementMesh<GeoBasis> geomesh(conn);
   ElementMesh<DataBasis> datamesh(conn);
 
-  HexProjection<degree, Basis, LOrderBasis> basis_proj;
-  HexProjection<degree, GeoBasis, LOrderGeoBasis> geo_proj;
-  HexProjection<degree, DataBasis, LOrderDataBasis> data_proj;
-
-  ElementMesh<LOrderBasis> lorder_mesh(mesh, basis_proj);
-  ElementMesh<LOrderGeoBasis> lorder_geomesh(geomesh, geo_proj);
-  ElementMesh<LOrderDataBasis> lorder_datamesh(datamesh, data_proj);
+  ElementMesh<LOrderBasis> lorder_mesh(mesh);
+  ElementMesh<LOrderGeoBasis> lorder_geomesh(geomesh);
+  ElementMesh<LOrderDataBasis> lorder_datamesh(datamesh);
 
   SolutionVector<T> sol(mesh.get_num_dof());
   SolutionVector<T> geo(geomesh.get_num_dof());

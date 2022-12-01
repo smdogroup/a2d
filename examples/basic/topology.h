@@ -90,9 +90,9 @@ class TopoOpt {
         bcs(conn, mesh, bcinfo),
 
         // Project the meshes onto the low-order meshes
-        lorder_mesh(mesh, basis_proj),
-        lorder_geomesh(geomesh, geo_proj),
-        lorder_datamesh(datamesh, data_proj),
+        lorder_mesh(mesh),
+        lorder_geomesh(geomesh),
+        lorder_datamesh(datamesh),
 
         // Solution, geometry and data vectors
         sol(mesh.get_num_dof()),
@@ -499,10 +499,6 @@ class TopoOpt {
   A2D::ElementMesh<DataBasis> datamesh;
 
   A2D::DirichletBCs<Basis> bcs;
-
-  A2D::HexProjection<degree, Basis, LOrderBasis> basis_proj;
-  A2D::HexProjection<degree, GeoBasis, LOrderGeoBasis> geo_proj;
-  A2D::HexProjection<degree, DataBasis, LOrderDataBasis> data_proj;
 
   A2D::ElementMesh<LOrderBasis> lorder_mesh;
   A2D::ElementMesh<LOrderGeoBasis> lorder_geomesh;

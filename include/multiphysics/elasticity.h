@@ -35,8 +35,8 @@ class TopoLinearElasticity {
   using QMatType = A2D::SymmMat<T, ncomp>;
 
   // Data for the element
-  T mu0;      // First Lame parameter
-  T lambda0;  // Second Lame parameter
+  T mu0;      // Second Lame parameter
+  T lambda0;  // First Lame parameter
   T q;        // The RAMP penalty parameter
 
   /**
@@ -294,6 +294,63 @@ class TopoVolume {
     dfdx.zero();
     dfdx[0] = wdetJ;
   }
+};
+
+template <typename T, A2D::index_t D>
+class TopoBodyForce {
+ public:
+  // Number of dimensions
+  static const A2D::index_t dim = D;
+
+  // Number of data dimensions
+  static const A2D::index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+
+  // Finite element space
+  using FiniteElementSpace =
+      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+
+  TopoBodyForce(T q) : q(q) {}
+
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    T rho = data[0];
+    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+
+    // Hard-code a body force along +y direction
+    A2D::Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
+    Ub(1) = -wdetJ * penalty;
+  }
+
+  class AdjVecProduct {
+   public:
+    A2D_INLINE_FUNCTION AdjVecProduct(const TopoBodyForce<T, dim>& pde, T wdetJ,
+                                      const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
+                                      const FiniteElementSpace& s)
+        : q(pde.q), rho(data[0]), wdetJ(wdetJ) {}
+
+    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& psi,
+                                        DataSpace& dfdx) {
+      const A2D::Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
+      T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
+      dfdx[0] -= wdetJ * dpdrho * Uadj(1);
+    }
+
+   private:
+    T q, rho, wdetJ;
+  };
+
+ private:
+  T q;  // RAMP parameter
 };
 
 /*

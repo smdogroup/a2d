@@ -25,6 +25,7 @@ class TopoOpt {
   static const A2D::index_t dim = 3;
   static const A2D::index_t data_dim = 1;
   using PDE = A2D::TopoLinearElasticity<T, dim>;
+  using BodyForce = A2D::TopoBodyForce<T, dim>;
 
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
@@ -40,7 +41,9 @@ class TopoOpt {
   using DataElemVec = ElementVector<T, DataBasis, BasisVecType>;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
-  using FE = A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  template <class PDEType>
+  using FE =
+      A2D::FiniteElement<T, PDEType, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Matrix-free operator for the problem
   using MatFree =
@@ -110,6 +113,7 @@ class TopoOpt {
         lorder_elem_sol(lorder_mesh, sol),
 
         pde(E, nu, q),
+        bodyforce(q),
         B("B", sol.get_num_dof() / block_size) {
     // Initialize the data
     for (A2D::index_t i = 0; i < data.get_num_dof(); i++) {
@@ -225,30 +229,33 @@ class TopoOpt {
     A2D::index_t num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
-    bool print_info = true;
+    bool print_info = false;
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
     A2D::index_t size = sol.get_num_dof() / block_size;
     A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-    A2D::MultiArrayNew<T *[block_size]> force_vec("force_vec", size);
+    A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
-    // Set a constant right-hand-side
-    for (A2D::index_t i = 0; i < force_vec.extent(0); i++) {
-      for (A2D::index_t j = 0; j < force_vec.extent(1); j++) {
-        force_vec(i, j) = 1.0;
-      }
+    A2D::SolutionVector<T> res(mesh.get_num_dof());
+    ElemVec elem_res(mesh, res);
+    sol.zero();
+    fe.add_residual(pde, elem_data, elem_geo, elem_sol, elem_res);
+    feb.add_residual(bodyforce, elem_data, elem_geo, elem_sol, elem_res);
+
+    for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
+      rhs_vec(i / block_size, i % block_size) = -res[i];
     }
 
     // Zero out the boundary conditions
     for (A2D::index_t i = 0; i < nbcs; i++) {
       A2D::index_t dof = bc_dofs[i];
-      force_vec(dof / block_size, dof % block_size) = 0.0;
+      rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
     // Solve the problem
-    // amg.applyFactor(force_vec, sol_vec);
-    amg.cg(mat_vec, force_vec, sol_vec, 5, 100);
+    // amg.applyFactor(rhs_vec, sol_vec);
+    amg.cg(mat_vec, rhs_vec, sol_vec, 0, 100);
 
     // Record the solution
     for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
@@ -302,6 +309,11 @@ class TopoOpt {
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
                                             elem_adjoint, elem_dfdx);
+    for (A2D::index_t i = 0; i < adjoint.get_num_dof(); i++) {
+      adjoint[i] = -sol[i];
+    }
+    feb.add_adjoint_residual_data_derivative(bodyforce, elem_data, elem_geo,
+                                             elem_sol, elem_adjoint, elem_dfdx);
   }
 
   /**
@@ -464,7 +476,7 @@ class TopoOpt {
     }
 
     // Solve the problem
-    // amg.applyFactor(force_vec, sol_vec);
+    // amg.applyFactor(rhs_vec, sol_vec);
     amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
 
     // Record the solution back into the right-hand-side vector
@@ -474,6 +486,8 @@ class TopoOpt {
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
                                             elem_dfdu, elem_dfdx);
+    feb.add_adjoint_residual_data_derivative(bodyforce, elem_data, elem_geo,
+                                             elem_sol, elem_dfdu, elem_dfdx);
   }
 
   void tovtk(const std::string filename) {
@@ -517,7 +531,9 @@ class TopoOpt {
   LOrderElemVec lorder_elem_sol;
 
   PDE pde;
-  FE fe;
+  BodyForce bodyforce;
+  FE<PDE> fe;
+  FE<BodyForce> feb;
   LOrderFE lorder_fe;
   MatFree matfree;
 

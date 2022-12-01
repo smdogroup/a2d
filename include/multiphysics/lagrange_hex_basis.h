@@ -21,7 +21,11 @@ class LagrangeH1HexBasis {
   // Number of components
   static const index_t ncomp = H1Space<T, C, dim>::ncomp;
 
+  // Get the type of basis class implemented
   static constexpr BasisType get_basis_type() { return H1; }
+
+  // Define the equivalent low-order basis class if any
+  using LOrderBasis = LagrangeH1HexBasis<T, C, 1>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -128,8 +132,68 @@ class LagrangeH1HexBasis {
   }
 
   /**
-   * @brief Get the parametric point location associated with the given degree
-   * of freedom
+   * @brief Get the number of low order elements defined by this basis
+   */
+  constexpr static index_t get_num_lorder_elements() {
+    return degree * degree * degree;
+  }
+
+  /**
+   * @brief Get the low order degrees of freedom associated with this element
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @tparam HOrderDof High-order dof array type
+   * @tparam LOrderDof Low-order dof array type
+   * @param n Index of the low order element to be projected
+   * @param hdof High-order dof input
+   * @param ldof Low-order dof output
+   */
+  template <index_t horder_offset, index_t lorder_offset, class HOrderDof,
+            class LOrderDof>
+  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
+                             LOrderDof& ldof) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    for (index_t kk = 0; kk < 2; kk++) {
+      for (index_t jj = 0; jj < 2; jj++) {
+        for (index_t ii = 0; ii < 2; ii++) {
+          const index_t lnode = ii + 2 * (jj + 2 * kk);
+          const index_t hnode =
+              (i + ii) + order * ((j + jj) + order * (k + kk));
+
+          for (index_t p = 0; p < C; p++) {
+            ldof[lorder_offset + C * lnode + p] =
+                hdof[horder_offset + C * hnode + p];
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Get the low-order signs relative to the high-order degrees of
+   * freedom
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @param n Index of the low order element to be projected
+   * @param horder_signs The signs for the high-order degrees of freedom
+   * @param signs The signs relative to the high-order element
+   */
+  template <index_t horder_offset, index_t lorder_offset>
+  static void get_lorder_signs(const index_t n, const int horder_signs[],
+                               int signs[]) {
+    for (index_t p = 0; p < 8 * C; p++) {
+      signs[lorder_offset + p] = 1;
+    }
+  }
+
+  /**
+   * @brief Get the parametric point location associated with the given
+   * degree of freedom
    *
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
@@ -532,7 +596,11 @@ class LagrangeL2HexBasis {
   // Number of components
   static const index_t ncomp = L2Space<T, C, dim>::ncomp;
 
+  // Get the type of basis class implemented
   static constexpr BasisType get_basis_type() { return L2; }
+
+  // Define the equivalent low-order basis class if any
+  using LOrderBasis = LagrangeL2HexBasis<T, C, 0>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and
@@ -611,6 +679,57 @@ class LagrangeL2HexBasis {
       sgns[i] = 1;
     }
     set_entity_dof<offset>(entity, index, orient, sgns, signs);
+  }
+
+  /**
+   * @brief Get the number of low order elements defined by this basis
+   */
+  constexpr static index_t get_num_lorder_elements() {
+    return order * order * order;
+  }
+
+  /**
+   * @brief Get the low order degrees of freedom associated with this element
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @tparam HOrderDof High-order dof array type
+   * @tparam LOrderDof Low-order dof array type
+   * @param n Index of the low order element to be projected
+   * @param hdof High-order dof input
+   * @param ldof Low-order dof output
+   */
+  template <index_t horder_offset, index_t lorder_offset, class HOrderDof,
+            class LOrderDof>
+  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
+                             LOrderDof& ldof) {
+    const index_t i = n % order;
+    const index_t j = (n % (order * order)) / order;
+    const index_t k = n / (order * order);
+
+    const index_t hnode = i + order * (j + order * k);
+
+    for (index_t p = 0; p < C; p++) {
+      ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
+    }
+  }
+
+  /**
+   * @brief Get the low-order signs relative to the high-order degrees of
+   * freedom
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @param n Index of the low order element to be projected
+   * @param horder_signs The signs for the high-order degrees of freedom
+   * @param signs The signs relative to the high-order element
+   */
+  template <index_t horder_offset, index_t lorder_offset>
+  static void get_lorder_signs(const index_t n, const int horder_signs[],
+                               int signs[]) {
+    for (index_t p = 0; p < C; p++) {
+      signs[lorder_offset + p] = 1;
+    }
   }
 
   /**

@@ -21,7 +21,11 @@ class QHdivHexBasis {
   // Number of components
   static const index_t ncomp = HdivSpace<T, dim>::ncomp;
 
+  // Get the type of basis class implemented
   static constexpr BasisType get_basis_type() { return HDIV; }
+
+  // Define the equivalent low-order basis class if any
+  using LOrderBasis = QHdivHexBasis<T, 1>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -207,6 +211,106 @@ class QHdivHexBasis {
     }
 
     set_entity_dof<offset>(entity, index, orient, sgns, signs);
+  }
+
+  /**
+   * @brief Get the number of low order elements defined by this basis
+   */
+  constexpr static index_t get_num_lorder_elements() {
+    return degree * degree * degree;
+  }
+
+  /**
+   * @brief Get the low order degrees of freedom associated with this element
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @tparam HOrderDof High-order dof array type
+   * @tparam LOrderDof Low-order dof array type
+   * @param n Index of the low order element to be projected
+   * @param hdof High-order dof input
+   * @param ldof Low-order dof output
+   */
+  template <index_t horder_offset, index_t lorder_offset, class HOrderDof,
+            class LOrderDof>
+  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
+                             LOrderDof& ldof) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    // 0-direction
+    ldof[lorder_offset] =
+        hdof[horder_offset + i + order * (j + (order - 1) * k)];
+    ldof[lorder_offset + 1] =
+        hdof[horder_offset + i + 1 + order * (j + (order - 1) * k)];
+
+    // 1-direction
+    ldof[lorder_offset + 2] =
+        hdof[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+             order * (order - 1) * (order - 1)];
+    ldof[lorder_offset + 3] =
+        hdof[horder_offset + i + (order - 1) * (j + 1 + (order - 1) * k) +
+             order * (order - 1) * (order - 1)];
+
+    // 2-direction
+    ldof[lorder_offset + 4] =
+        hdof[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+             2 * order * (order - 1) * (order - 1)];
+    ldof[lorder_offset + 5] =
+        hdof[horder_offset + i + (order - 1) * (j + (order - 1) * (k + 1)) +
+             2 * order * (order - 1) * (order - 1)];
+  }
+
+  /**
+   * @brief Get the low-order signs relative to the high-order degrees of
+   * freedom
+   *
+   * @tparam horder_offset Offset into the high-order dof
+   * @tparam lorder_offset Offset into the low-order dof
+   * @param n Index of the low order element to be projected
+   * @param horder_signs The signs for the high-order degrees of freedom
+   * @param signs The signs relative to the high-order element
+   */
+  template <index_t horder_offset, index_t lorder_offset>
+  static void get_lorder_signs(const index_t n, const int horder_signs[],
+                               int signs[]) {
+    const index_t i = n % degree;
+    const index_t j = (n % (degree * degree)) / degree;
+    const index_t k = n / (degree * degree);
+
+    // 0-direction
+    signs[lorder_offset] =
+        horder_signs[horder_offset + i + order * (j + (order - 1) * k)];
+    if (i > 0) {
+      signs[lorder_offset] *= -1;
+    }
+    signs[lorder_offset + 1] =
+        horder_signs[horder_offset + i + 1 + order * (j + (order - 1) * k)];
+
+    // 1-direction
+    signs[lorder_offset + 2] =
+        horder_signs[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+                     order * (order - 1) * (order - 1)];
+    if (j > 0) {
+      signs[lorder_offset + 2] *= -1;
+    }
+    signs[lorder_offset + 3] =
+        horder_signs[horder_offset + i +
+                     (order - 1) * (j + 1 + (order - 1) * k) +
+                     order * (order - 1) * (order - 1)];
+
+    // 2-direction
+    signs[lorder_offset + 4] =
+        horder_signs[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+                     2 * order * (order - 1) * (order - 1)];
+    if (k > 0) {
+      signs[lorder_offset + 4] *= -1;
+    }
+    signs[lorder_offset + 5] =
+        horder_signs[horder_offset + i +
+                     (order - 1) * (j + (order - 1) * (k + 1)) +
+                     2 * order * (order - 1) * (order - 1)];
   }
 
   /**

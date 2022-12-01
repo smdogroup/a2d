@@ -1574,9 +1574,10 @@ class ElementMesh {
     num_dof = dof_counter;
   }
 
-  template <class HOrderBasis, class ElemProj>
-  ElementMesh(ElementMesh<HOrderBasis>& mesh, ElemProj& proj)
-      : nelems(proj.get_num_projection_elements() * mesh.get_num_elements()),
+  template <class HOrderBasis>
+  ElementMesh(ElementMesh<HOrderBasis>& mesh)
+      : nelems(HOrderBasis::get_num_lorder_elements() *
+               mesh.get_num_elements()),
         num_dof(mesh.get_num_dof()) {
     element_dof = new index_t[nelems * ndof_per_element];
     element_sign = new int[nelems * ndof_per_element];
@@ -1590,22 +1591,16 @@ class ElementMesh {
       mesh.get_element_dof(j, &horder_dof);
       mesh.get_element_signs(j, &horder_signs);
 
-      for (index_t i = 0; i < proj.get_num_projection_elements(); i++) {
-        index_t elem = i + j * proj.get_num_projection_elements();
+      for (index_t i = 0; i < HOrderBasis::get_num_lorder_elements(); i++) {
+        index_t elem = i + j * HOrderBasis::get_num_lorder_elements();
 
         // Index into the high-order element
-        index_t index[ndof_per_element];
-        proj.get_projection_index(i, index);
+        index_t* lorder_dof = &element_dof[ndof_per_element * elem];
+        HOrderBasis::get_lorder_dof(i, horder_dof, lorder_dof);
 
-        // Sign - indicating any orientation flip
-        int signs[ndof_per_element];
-        proj.get_projection_signs(i, signs);
-
-        for (index_t k = 0; k < ndof_per_element; k++) {
-          element_sign[ndof_per_element * elem + k] =
-              signs[k] * horder_signs[index[k]];
-          element_dof[ndof_per_element * elem + k] = horder_dof[index[k]];
-        }
+        // Signs indicating any orientation flip
+        int* lorder_signs = &element_sign[ndof_per_element * elem];
+        HOrderBasis::get_lorder_signs(i, horder_signs, lorder_signs);
       }
     }
   }
@@ -1866,172 +1861,6 @@ class DirichletBCs {
  private:
   index_t ndof;
   index_t* dof;
-};
-
-template <index_t degree, class HOrderBasis, class Basis>
-class HexProjection {
- public:
-  static const index_t order = degree + 1;
-
-  index_t get_num_projection_elements() const {
-    return (order - 1) * (order - 1) * (order - 1);
-  }
-
-  void get_projection_index(index_t n, index_t index[]) {
-    const index_t i = n % degree;
-    const index_t j = (n % (degree * degree)) / degree;
-    const index_t k = n / (degree * degree);
-
-    if constexpr (Basis::nbasis > 0) {
-      get_projection_index_<0>(i, j, k, index);
-    }
-  }
-
-  void get_projection_signs(index_t n, int signs[]) {
-    const index_t i = n % degree;
-    const index_t j = (n % (degree * degree)) / degree;
-    const index_t k = n / (degree * degree);
-
-    if constexpr (Basis::nbasis > 0) {
-      get_projection_signs_<0>(i, j, k, signs);
-    }
-  }
-
- private:
-  template <index_t basis>
-  void get_projection_index_(index_t i, index_t j, index_t k, index_t index[]) {
-    if (Basis::template get_basis_type<basis>() == H1) {
-      get_h1_index<basis>(i, j, k, index);
-    } else if (Basis::template get_basis_type<basis>() == HCURL) {
-    } else if (Basis::template get_basis_type<basis>() == HDIV) {
-      get_hdiv_index<basis>(i, j, k, index);
-    } else if (Basis::template get_basis_type<basis>() == L2) {
-      get_l2_index<basis>(i, j, k, index);
-    }
-
-    if constexpr (basis + 1 < Basis::nbasis) {
-      get_projection_index_<basis + 1>(i, j, k, index);
-    }
-  }
-  template <index_t basis>
-  void get_projection_signs_(index_t i, index_t j, index_t k, int signs[]) {
-    if (Basis::template get_basis_type<basis>() == H1) {
-      get_h1_signs<basis>(i, j, k, signs);
-    } else if (Basis::template get_basis_type<basis>() == HCURL) {
-    } else if (Basis::template get_basis_type<basis>() == HDIV) {
-      get_hdiv_signs<basis>(i, j, k, signs);
-    } else if (Basis::template get_basis_type<basis>() == L2) {
-      get_l2_signs<basis>(i, j, k, signs);
-    }
-
-    if constexpr (basis + 1 < Basis::nbasis) {
-      get_projection_signs_<basis + 1>(i, j, k, signs);
-    }
-  }
-
-  template <index_t basis>
-  void get_h1_index(const index_t i, const index_t j, const index_t k,
-                    index_t dof[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    for (index_t kk = 0; kk < 2; kk++) {
-      for (index_t jj = 0; jj < 2; jj++) {
-        for (index_t ii = 0; ii < 2; ii++) {
-          for (index_t n = 0; n < stride; n++) {
-            dof[lo_offset + n + stride * (ii + 2 * (jj + 2 * kk))] =
-                ho_offset + n +
-                stride * ((i + ii) + order * ((j + jj) + order * (k + kk)));
-          }
-        }
-      }
-    }
-  }
-
-  template <index_t basis>
-  void get_hdiv_index(const index_t i, const index_t j, const index_t k,
-                      index_t dof[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    dof[lo_offset] = ho_offset + i + order * (j + (order - 1) * k);
-    dof[lo_offset + 1] = ho_offset + i + 1 + order * (j + (order - 1) * k);
-
-    dof[lo_offset + 2] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
-                         order * (order - 1) * (order - 1);
-    dof[lo_offset + 3] = ho_offset + i +
-                         (order - 1) * (j + 1 + (order - 1) * k) +
-                         order * (order - 1) * (order - 1);
-
-    dof[lo_offset + 4] = ho_offset + i + (order - 1) * (j + (order - 1) * k) +
-                         2 * order * (order - 1) * (order - 1);
-    dof[lo_offset + 5] = ho_offset + i +
-                         (order - 1) * (j + (order - 1) * (k + 1)) +
-                         2 * order * (order - 1) * (order - 1);
-  }
-
-  template <index_t basis>
-  void get_l2_index(const index_t i, const index_t j, const index_t k,
-                    index_t dof[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    const index_t ho_offset = HOrderBasis::template get_dof_offset<basis>();
-
-    for (index_t n = 0; n < stride; n++) {
-      dof[lo_offset + n] =
-          ho_offset + n + stride * (i + (order - 1) * (j + (order - 1) * k));
-    }
-  }
-
-  template <index_t basis>
-  void get_h1_signs(const index_t i, const index_t j, const index_t k,
-                    int signs[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    for (index_t n = 0; n < 8 * stride; n++) {
-      signs[lo_offset + n] = 1;
-    }
-  }
-
-  template <index_t basis>
-  void get_hdiv_signs(const index_t i, const index_t j, const index_t k,
-                      int signs[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-
-    if (i == 0) {
-      signs[lo_offset] = 1;
-    } else {
-      signs[lo_offset] = -1;
-    }
-    signs[lo_offset + 1] = 1;
-
-    if (j == 0) {
-      signs[lo_offset + 2] = 1;
-    } else {
-      signs[lo_offset + 2] = -1;
-    }
-    signs[lo_offset + 3] = 1;
-
-    if (k == 0) {
-      signs[lo_offset + 4] = 1;
-    } else {
-      signs[lo_offset + 4] = -1;
-    }
-    signs[lo_offset + 5] = 1;
-  }
-
-  template <index_t basis>
-  void get_l2_signs(const index_t i, const index_t j, const index_t k,
-                    int signs[]) {
-    const index_t stride = Basis::template get_stride<basis>();
-    const index_t lo_offset = Basis::template get_dof_offset<basis>();
-    for (index_t n = 0; n < stride; n++) {
-      signs[lo_offset + n] = 1;
-    }
-  }
 };
 
 }  // namespace A2D

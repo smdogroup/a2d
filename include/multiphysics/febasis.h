@@ -414,8 +414,52 @@ class FEBasis {
   }
 
   /**
-   * @brief Get the parametric point location associated with the given degree
-   * of freedom
+   * @brief Get the number of low-order elements
+   */
+  constexpr static index_t get_num_lorder_elements() {
+    if constexpr (sizeof...(Basis) == 0) {
+      return 0;
+    } else {
+      return get_num_lorder_elements_<Basis...>();
+    }
+  }
+
+  /**
+   * @brief Get the degrees of freedom from an array associated with the
+   * high-order dof
+   *
+   * @tparam HOrderDof High-order degree of freedom array type
+   * @tparam LOrderDof Low-order degree of freedom array type
+   * @param n Index of the low-order element
+   * @param hdof High-order array input
+   * @param ldof Low-order array output
+   */
+  template <class HOrderDof, class LOrderDof>
+  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
+                             LOrderDof& ldof) {
+    if constexpr (sizeof...(Basis) > 0) {
+      get_lorder_dof_<0, 0, HOrderDof, LOrderDof, Basis...>(n, hdof, ldof);
+    }
+  }
+
+  /**
+   * @brief Get the low order degree of freedom signs relative to the high-order
+   * ones
+   *
+   * @param n Index of the low-order element
+   * @param horder_signs The signs from the high-order element
+   * @param lorder_signs The output signs for the low-order element
+   */
+  static void get_lorder_signs(const index_t n, const int horder_signs[],
+                               int lorder_signs[]) {
+    if constexpr (sizeof...(Basis) > 0) {
+      get_lorder_signs_<0, 0, Basis...>(n, horder_signs, lorder_signs);
+    }
+  }
+
+  /**
+   * @brief Get the parametric point location associated with the given
+   * degree of freedom
    *
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
@@ -745,6 +789,45 @@ class FEBasis {
       return 0;
     } else {
       return get_stride_<index + 1, Remain...>();
+    }
+  }
+
+  /**
+   * @brief Get the number of low-order elements
+   */
+  template <class First, class... Remain>
+  constexpr static index_t get_num_lorder_elements_() {
+    if constexpr (sizeof...(Remain) == 0) {
+      return First::get_num_lorder_elements();
+    } else {
+      constexpr index_t size = get_num_lorder_elements_<Remain...>();
+      static_assert(size == First::get_num_lorder_elements(),
+                    "Number of low-order elements is not compatible");
+      return size;
+    }
+  }
+
+  template <index_t hoffset, index_t loffset, class HOrderDof, class LOrderDof,
+            class First, class... Remain>
+  static void get_lorder_dof_(const index_t n, const HOrderDof& hdof,
+                              LOrderDof& ldof) {
+    First::template get_lorder_dof<hoffset, loffset, HOrderDof, LOrderDof>(
+        n, hdof, ldof);
+    if constexpr (sizeof...(Remain) > 0) {
+      get_lorder_dof_<hoffset + First::ndof, loffset + First::LOrderBasis::ndof,
+                      HOrderDof, LOrderDof, Remain...>(n, hdof, ldof);
+    }
+  }
+
+  template <index_t loffset, index_t hoffset, class First, class... Remain>
+  static void get_lorder_signs_(const index_t n, const int horder_signs[],
+                                int lorder_signs[]) {
+    First::template get_lorder_signs<hoffset, loffset>(n, horder_signs,
+                                                       lorder_signs);
+    if constexpr (sizeof...(Remain) > 0) {
+      get_lorder_signs_<hoffset + First::ndof,
+                        loffset + First::LOrderBasis::ndof, Remain...>(
+          n, horder_signs, lorder_signs);
     }
   }
 };

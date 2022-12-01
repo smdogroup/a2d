@@ -17,7 +17,8 @@ class TopOptProb : public ParOptProblem {
         nineq(nineq),
         domain_vol(domain_vol),
         volume_frac(volume_frac),
-        topo(topo) {}
+        topo(topo),
+        opt_iter(0) {}
 
   void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
     T *x, *lb, *ub;
@@ -46,15 +47,14 @@ class TopOptProb : public ParOptProblem {
     *fobj = topo.eval_compliance();
 
     // Evaluate constraints
-    cons[0] = volume_frac * topo.eval_volume() / domain_vol - 1.0;
+    cons[0] = 1.0 - volume_frac * topo.eval_volume() / domain_vol;
 
-    std::printf("evalObjCon()\n");
-    for (int i = 0; i < 3; i++) {
-      std::printf("x[%2d] = %20.10e\n", i, x[i]);
-    }
+    // Write design to vtk
+    char name[256];
+    std::snprintf(name, sizeof(name), "result_%d.vtk", opt_iter);
+    topo.tovtk(name);
 
-    std::printf("obj: %20.10f\n", *fobj);
-    std::printf("con: %20.10f\n", cons[0]);
+    opt_iter++;
 
     return 0;
   }
@@ -81,21 +81,9 @@ class TopOptProb : public ParOptProblem {
 
     // Scale the volume constraint
     for (int i = 0; i < nvars; i++) {
-      c[i] = volume_frac * c[i] / domain_vol;
+      c[i] = -volume_frac * c[i] / domain_vol;
     }
 
-    std::printf("evalObjConGradient()\n");
-    for (int i = 0; i < 3; i++) {
-      std::printf("x[%2d] = %20.10e\n", i, x[i]);
-    }
-
-    for (int i = 0; i < 3; i++) {
-      std::printf("g[%2d] = %20.10e\n", i, g[i]);
-    }
-
-    for (int i = 0; i < 3; i++) {
-      std::printf("c[%2d] = %20.10e\n", i, c[i]);
-    }
     return 0;
   }
 
@@ -106,7 +94,8 @@ class TopOptProb : public ParOptProblem {
   int nineq;
   T domain_vol;
   T volume_frac;
-  TopoOpt<T, DEGREE> topo;
+  TopoOpt<T, DEGREE> &topo;
+  int opt_iter;
 };
 
 void main_body() {
@@ -148,28 +137,41 @@ void main_body() {
   topo.set_design_vars(std::vector<T>(nvars, T(1.0)));
   T domain_vol = topo.eval_volume();
   T volume_frac = 0.4;
-  TopOptProb prob(MPI_COMM_WORLD, nvars, ncon, nineq, domain_vol, volume_frac,
-                  topo);
+  TopOptProb *prob = new TopOptProb(MPI_COMM_WORLD, nvars, ncon, nineq,
+                                    domain_vol, volume_frac, topo);
+  prob->incref();
 
-  prob.checkGradients(1e-3);
+  // Sanity check
+  // prob->checkGradients(1e-6);
 
-  // Everything's fine here, but not within checkGradients()
-  topo.set_design_vars(std::vector<T>(nvars, 0.951));
-  topo.solve();
-  topo.solve();
-  topo.solve();
-  T obj = topo.eval_compliance();
-  std::vector<T> g(nvars, 0.0);
-  topo.add_compliance_gradient(g);
+  // Define paropt optimizer
+  ParOptOptions *options = new ParOptOptions;
+  options->incref();
+  ParOptOptimizer::addDefaultOptions(options);
 
-  std::printf("Outside TopOptProb:\n");
-  std::printf("obj: %20.10f\n", obj);
-  for (int i = 0; i < 3; i++) {
-    std::printf("g[%2d] = %20.10e\n", i, g[i]);
-  }
+  options->setOption("algorithm", "mma");
+  options->setOption("mma_asymptote_contract", 0.7);
+  options->setOption("mma_asymptote_relax", 1.2);
+  options->setOption("mma_bound_relax", 0);
+  options->setOption("mma_delta_regularization", 1e-05);
+  options->setOption("mma_eps_regularization", 0.001);
+  options->setOption("mma_infeas_tol", 1e-05);
+  options->setOption("mma_init_asymptote_offset", 0.25);
+  options->setOption("mma_l1_tol", 1e-06);
+  options->setOption("mma_linfty_tol", 1e-06);
+  options->setOption("mma_max_asymptote_offset", 10);
+  options->setOption("mma_max_iterations", 50);
+  options->setOption("mma_min_asymptote_offset", 0.01);
+  options->setOption("mma_use_constraint_linearization", true);
 
-  // Write the problem to a vtk file
-  topo.tovtk("filename.vtk");
+  ParOptOptimizer *opt = new ParOptOptimizer(prob, options);
+  opt->incref();
+  opt->optimize();
+
+  // Delete objects
+  prob->decref();
+  options->incref();
+  opt->decref();
   return;
 }
 

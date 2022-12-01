@@ -76,10 +76,11 @@ template <class ConnArray, class NodeArray>
 class ToVTK {
  public:
   ToVTK(const ConnArray& conn, const NodeArray& X,
-        const int _vtk_elem_type = -1, const char vtk_name[] = "result.vtk")
+        const int _vtk_elem_type = -1,
+        const std::string vtk_name = "result.vtk")
       : conn(conn), X(X), vtk_elem_type(_vtk_elem_type) {
     // Open file and destroy old contents
-    fp = std::fopen(vtk_name, "w+");
+    fp = std::fopen(vtk_name.c_str(), "w+");
 
     // Get dimensions
     nnodes = X.extent(0);

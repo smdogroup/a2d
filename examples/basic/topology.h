@@ -4,6 +4,7 @@
 #include <iostream>
 #include <memory>
 #include <random>
+#include <string>
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
@@ -475,14 +476,18 @@ class TopoOpt {
                                             elem_dfdu, elem_dfdx);
   }
 
-  void tovtk(const char *filename) {
-    A2D::write_hex_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol,
+  void tovtk(const std::string filename) {
+    A2D::write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
+        pde, elem_data, elem_geo, elem_sol, filename,
         [](A2D::index_t k, typename PDE::DataSpace &d,
            typename PDE::FiniteElementGeometry &g,
            typename PDE::FiniteElementSpace &s) {
-          auto u = (s.template get<0>()).get_value();
-          return u(k);
+          if (k == 3) {
+            return (d.template get<0>()).get_value();
+          } else {
+            auto u = (s.template get<0>()).get_value();
+            return u(k);
+          }
         });
   }
 

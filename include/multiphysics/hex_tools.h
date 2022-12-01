@@ -1,6 +1,8 @@
 #ifndef A2D_HEX_TOOLS_H
 #define A2D_HEX_TOOLS_H
 
+#include <string>
+
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 
@@ -57,7 +59,8 @@ template <index_t outputs, index_t degree, typename T, class DataBasis,
           class GeoBasis, class Basis, class PDE, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>
 void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
-                      ElemVec &elem_sol, const FunctorType &func) {
+                      ElemVec &elem_sol, const std::string filename,
+                      const FunctorType &func) {
   Timer timer("write_hex_to_vtk()");
   using ET = ElementTypes;
   const index_t nex = degree;
@@ -149,7 +152,7 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
     }
   }
 
-  ToVTK vtk(vtk_conn, vtk_nodes);
+  ToVTK vtk(vtk_conn, vtk_nodes, -1, filename);
   vtk.write_mesh();
 
   MultiArrayNew<T *> vtk_vec("vtk_vec", nvtk_nodes);

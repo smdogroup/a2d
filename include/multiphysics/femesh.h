@@ -10,6 +10,7 @@
 #include "multiphysics/feelementtypes.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_symbolic.h"
+#include "utils/a2dprofiler.h"
 
 namespace A2D {
 
@@ -32,6 +33,7 @@ class MeshConnectivity3D {
         nhex(nhex),
         nwedge(nwedge),
         npyrmd(npyrmd) {
+    Timer timer("MeshConnectivity3D");
     // Allocate space for the element -> vert connectivity
     tet_verts = new index_t[ET::TET_VERTS * ntets];
     hex_verts = new index_t[ET::HEX_VERTS * nhex];

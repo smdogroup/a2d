@@ -30,7 +30,6 @@ struct COO {
 */
 template <typename I, class ArrayType>
 void SortCSRData(I nrows, ArrayType& rowp, ArrayType& cols) {
-  Timer t("SortCSRData()");
   // Sort the cols array
   I* it1;
   I* it2 = cols.data();

@@ -40,6 +40,24 @@ struct VTKID {
   static constexpr int QUADRATIC_HEXAAHEDRON = 25;
 };
 
+struct VTK_NVERTS {
+  static constexpr int VERTEX = 1;
+  static constexpr int LINE = 2;
+  static constexpr int TRIANGLE = 3;
+  static constexpr int PIXEL = 4;
+  static constexpr int QUAD = 4;
+  static constexpr int TETRA = 4;
+  static constexpr int VOXEL = 8;
+  static constexpr int HEXAHEDRON = 8;
+  static constexpr int WEDGE = 6;
+  static constexpr int PYRAMID = 5;
+  static constexpr int QUADRATIC_EDGE = 3;
+  static constexpr int QUADRATIC_TRIANGLE = 6;
+  static constexpr int QUADRATIC_QUAD = 8;
+  static constexpr int QUADRATIC_TETRA = 10;
+  static constexpr int QUADRATIC_HEXAAHEDRON = 20;
+};
+
 void write_real_val(std::FILE* fp, double val) {
   std::fprintf(fp, "%-20.15f", val);
 }
@@ -58,10 +76,11 @@ template <class ConnArray, class NodeArray>
 class ToVTK {
  public:
   ToVTK(const ConnArray& conn, const NodeArray& X,
-        const int _vtk_elem_type = -1, const char vtk_name[] = "result.vtk")
+        const int _vtk_elem_type = -1,
+        const std::string vtk_name = "result.vtk")
       : conn(conn), X(X), vtk_elem_type(_vtk_elem_type) {
     // Open file and destroy old contents
-    fp = std::fopen(vtk_name, "w+");
+    fp = std::fopen(vtk_name.c_str(), "w+");
 
     // Get dimensions
     nnodes = X.extent(0);
@@ -255,8 +274,248 @@ class ToVTK3D {
 };
 
 /**
- * @brief
- *
+ * @brief Given a VTK, extract information that MeshConnectivity3D needs.
+ */
+template <typename I, typename T>
+class ReadVTK3D {
+ public:
+  ReadVTK3D(const std::string& vtk_name)
+      : vtk_name(vtk_name),
+        ntri(0),
+        nquad(0),
+        nverts(0),
+        ntets(0),
+        nhex(0),
+        nwedge(0),
+        npyramid(0) {
+    // If file doesn't exist, exit
+    if (!std::filesystem::exists(vtk_name)) {
+      char msg[256];
+      std::snprintf(msg, sizeof(msg), "file %s does not exists!",
+                    vtk_name.c_str());
+      throw std::runtime_error(msg);
+    }
+
+    // Scan through the vtk file and save the information.
+    // Note that vtk might contain element types that we don't support here,
+    // we'll trim out those later.
+    I nelems = 0;
+    std::string dummy;  // store string to be discarded
+
+    std::ifstream ifs(vtk_name);
+
+    // Get number of points from vtk
+    goto_line_with_str(ifs, "POINTS") >> dummy >> nverts;
+
+    // Allocate and populate nodal location array
+    Xloc.reserve(nverts * SPATIAL_DIM);
+    std::string line;
+    for (int i = 0; i < nverts; i++) {
+      std::getline(ifs, line);
+      std::istringstream iss(line);
+      for (int j = 0; j < SPATIAL_DIM; j++) {
+        iss >> Xloc[SPATIAL_DIM * i + j];
+      }
+    }
+
+    // Get number of all types of elements (including those that aren't
+    // supported)
+    goto_line_with_str(ifs, "CELLS") >> dummy >> nelems;
+
+    // Populate connectivities for supported element types only.
+    // Supported types are tet, hex, wedge, pyramid
+    I nelems_celltype = 0, nelems_cellid = 0;
+
+    std::ifstream ifs_celltype(vtk_name);
+    std::ifstream ifs_cellid(vtk_name);
+    goto_line_with_str(ifs_celltype, "CELL_TYPES") >> dummy >> nelems_celltype;
+    goto_line_with_str(ifs_cellid, "CELL_DATA") >> dummy >> nelems_cellid;
+    goto_line_with_str(ifs_cellid, "CellEntityIds");
+    goto_line_with_str(ifs_cellid, "LOOKUP_TABLE");
+
+    assert(nelems == nelems_celltype);
+    assert(nelems == nelems_cellid);
+
+    std::string line_celltype;
+    std::string line_cellid;
+
+    int cell_type = 0;
+    int cell_id = 0;
+
+    // Loop over all elements
+    for (int i = 0; i < nelems; i++) {
+      // Get element type
+      std::getline(ifs_celltype, line_celltype);
+      std::istringstream(line_celltype) >> cell_type;
+
+      // Get element entity id
+      std::getline(ifs_cellid, line_cellid);
+      std::istringstream(line_cellid) >> cell_id;
+
+      // Get element connectivity
+      std::getline(ifs, line);
+
+      // Populate cell id vectors and connectivity
+      switch (cell_type) {
+        case VTKID::TRIANGLE:
+          id_tri.push_back(cell_id);
+          insert_verts_to_conn(line, conn_tri);
+          ntri++;
+          break;
+        case VTKID::QUAD:
+          id_quad.push_back(cell_id);
+          insert_verts_to_conn(line, conn_quad);
+          nquad++;
+          break;
+        case VTKID::TETRA:
+          id_tet.push_back(cell_id);
+          insert_verts_to_conn(line, conn_tet);
+          ntets++;
+          break;
+        case VTKID::HEXAHEDRON:
+          id_hex.push_back(cell_id);
+          insert_verts_to_conn(line, conn_hex);
+          nhex++;
+          break;
+        case VTKID::WEDGE:
+          id_wedge.push_back(cell_id);
+          insert_verts_to_conn(line, conn_wedge);
+          nwedge++;
+          break;
+        case VTKID::PYRAMID:
+          id_pyramid.push_back(cell_id);
+          insert_verts_to_conn(line, conn_pyramid);
+          npyramid++;
+          break;
+      }
+    }
+  }
+
+  /**
+   * @brief Get vertex indices given cell entity id.
+   *
+   * In the given VTK, each cell is assigned an entity id, which is used to
+   * group cells in the same physical group (e.g. boundary, etc.). Such id
+   * labels are associated to cells, hence they need to be converted to vertex
+   * indices for A2D to use.
+   */
+  std::vector<I> get_verts_given_cell_entity_id(const std::vector<int> id) {
+    std::set<I> verts;
+    insert_verts_to_set(VTK_NVERTS::TRIANGLE, id, verts, id_tri, conn_tri);
+    insert_verts_to_set(VTK_NVERTS::QUAD, id, verts, id_quad, conn_quad);
+    insert_verts_to_set(VTK_NVERTS::TETRA, id, verts, id_tet, conn_tet);
+    insert_verts_to_set(VTK_NVERTS::HEXAHEDRON, id, verts, id_hex, conn_hex);
+    insert_verts_to_set(VTK_NVERTS::WEDGE, id, verts, id_wedge, conn_wedge);
+    insert_verts_to_set(VTK_NVERTS::PYRAMID, id, verts, id_pyramid,
+                        conn_pyramid);
+    std::shared_ptr<I[]> data(new I[verts.size()]);
+    return std::vector<I>(verts.begin(), verts.end());
+  }
+
+  // Get number of vertices for each element type
+  I get_nverts() { return nverts; }
+  I get_ntri() { return ntri; }
+  I get_nquad() { return nquad; }
+  I get_ntets() { return ntets; }
+  I get_nhex() { return nhex; }
+  I get_nwedge() { return nwedge; }
+  I get_npyrmd() { return npyramid; }
+
+  // Get connectivity data for each element type
+  I* get_tri() { return conn_tri.data(); }
+  I* get_quad() { return conn_quad.data(); }
+  I* get_tets() { return conn_tet.data(); }
+  I* get_hex() { return conn_hex.data(); }
+  I* get_wedge() { return conn_wedge.data(); }
+  I* get_pyrmd() { return conn_pyramid.data(); }
+
+  // Get nodal locations of vertices
+  T* get_Xloc() { return Xloc.data(); }
+
+ private:
+  /**
+   * @brief Insert vertex indices of a given element type to a given set based
+   * on the cell id.
+   *
+   * @param id cell ids
+   * @param nverts_per_cell number of vertices per cell of this type
+   * @param verts the set
+   * @param id_vec id vector of this cell type
+   * @param conn_vec connectivity vector of this cell type
+   */
+  void insert_verts_to_set(const int nverts_per_cell, const std::vector<int> id,
+                           std::set<I>& verts, std::vector<int>& id_vec,
+                           std::vector<I>& conn_vec) {
+    for (int i = 0; i < id_vec.size(); i++) {
+      if (std::count(id.begin(), id.end(), id_vec[i])) {
+        for (int j = 0; j < nverts_per_cell; j++) {
+          verts.insert(conn_vec[i * nverts_per_cell + j]);
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Insert the vertices of a given cell to corresponding connectivity
+   */
+  void insert_verts_to_conn(std::string& conn_line, std::vector<I>& conn) {
+    int elem_nverts;
+    std::istringstream conn_iss = std::istringstream(conn_line) >> elem_nverts;
+    I vert_idx;
+    for (int i = 0; i < elem_nverts; i++) {
+      conn_iss >> vert_idx;
+      conn.push_back(vert_idx);
+    }
+    return;
+  }
+
+  /**
+   * @brief Find the first line that contains given string.
+   *
+   * This function search through the input text until hitting the first
+   * line that contains the given string. Upon returning, the file handle
+   * points to the next line.
+   *
+   * @param file the file input stream
+   * @param str string to be matched
+   * @return a std::istringstream type that can be used to extract data from
+   *         the matching line. Usage: ret >> x >> y >> z ...
+   */
+  std::istringstream goto_line_with_str(std::ifstream& file,
+                                        const std::string str) {
+    std::string line;
+    while (std::getline(file, line)) {
+      if (line.find(str) != std::string::npos) {
+        return std::istringstream(line);
+      }
+    }
+    char msg[256];
+    std::snprintf(msg, sizeof(msg),
+                  "\n[%s:%d]file %s does not contain given string %s!",
+                  __FILE__, __LINE__, vtk_name.c_str(), str.c_str());
+    throw std::runtime_error(msg);
+  }
+
+  index_t static constexpr SPATIAL_DIM = 3;
+  std::string vtk_name;
+  int ntri, nquad;
+  int nverts, ntets, nhex, nwedge, npyramid;
+
+  // Connectivity lists for 3d mesh cells
+  std::vector<I> conn_tet, conn_hex, conn_wedge, conn_pyramid;
+  std::vector<int> id_tet, id_hex, id_wedge, id_pyramid;
+
+  // Connectivity lists for 2d mesh cells
+  std::vector<I> conn_tri, conn_quad;
+  std::vector<int> id_tri, id_quad;
+
+  // Location coordinates for vertices
+  std::vector<T> Xloc;
+};
+
+/**
+ * @brief Generate a vtk containing a vector field in scattered data format.
+ * No mesh contained.
  */
 class VectorFieldToVTK {
  public:

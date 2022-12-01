@@ -282,19 +282,19 @@ class ElementMat_Serial {
    global to local dof population is done in parallel, local to global dof add
    is done by atomic operation to resolve write conflicts.
  */
-template <typename T, class Basis>
+template <typename T, class Basis, class VecType>
 class ElementVector_Parallel {
  public:
   using ElemVecArray_t = MultiArrayNew<T * [Basis::ndof]>;
 
-  ElementVector_Parallel(ElementMesh<Basis>& mesh, SolutionVector<T>& vec)
+  ElementVector_Parallel(ElementMesh<Basis>& mesh, VecType& vec)
       : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", mesh.get_num_elements()) {}
 
   // Required DOF container object (different for each element vector
   // implementation)
   class FEDof {
    public:
-    FEDof(index_t elem, ElementVector_Parallel& elem_vec)
+    FEDof(index_t elem, ElementVector_Parallel<T, Basis, VecType>& elem_vec)
         : elem(elem), elem_vec_array(elem_vec.elem_vec_array) {}
 
     T& operator[](const int index) { return elem_vec_array(elem, index); }
@@ -344,6 +344,11 @@ class ElementVector_Parallel {
    */
   void add_element_values(index_t elem, const FEDof& dof) {}
 
+  /**
+   * @brief Does nothing for this parallel implementation
+   */
+  void set_element_values(index_t elem, const FEDof& dof) {}
+
  private:
   /**
    * @brief Populate local dof for a single element
@@ -385,7 +390,7 @@ class ElementVector_Parallel {
   }
 
   ElementMesh<Basis>& mesh;
-  SolutionVector<T>& vec;
+  VecType& vec;
   ElemVecArray_t elem_vec_array;  // The heavy-weight storage
 };
 

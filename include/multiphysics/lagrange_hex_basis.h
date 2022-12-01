@@ -208,6 +208,29 @@ class LagrangeH1HexBasis {
   }
 
   /**
+   * @brief Interpolate over all quadrature points using
+   *
+   * This function just calls the interpolation  the basis functions are
+   * interpolated
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType The solution vector type for the dof
+   * @param geo The geometry object
+   * @param sol The solution array
+   * @param out The finite element space object at all quadrature points
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void interp(const QptGeoSpace& geo, const SolnType& sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    interp<space, Quadrature, FiniteElementSpace, offset, SolnType>(sol, out);
+  }
+
+  /**
    * @brief Interpolate over all quadrature points on the element
    *
    * @tparam space The finite element space index
@@ -374,6 +397,26 @@ class LagrangeH1HexBasis {
         }
       }
     }
+  }
+
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType& res) {
+    add<space, Quadrature, FiniteElementSpace, offset, SolnType>(in, res);
   }
 
   /**
@@ -748,6 +791,40 @@ class LagrangeL2HexBasis {
     pt[2] = pts[n / (order * order)];
   }
 
+  /**
+   * @brief Interpolate over all quadrature points using
+   *
+   * This function just calls the interpolation  the basis functions are
+   * interpolated
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType The solution vector type for the dof
+   * @param geo The geometry object
+   * @param sol The solution array
+   * @param out The finite element space object at all quadrature points
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void interp(const QptGeoSpace& geo, const SolnType& sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    interp<space, Quadrature, FiniteElementSpace, offset, SolnType>(sol, out);
+  }
+
+  /**
+   * @brief Interpolate over all quadrature points on the element
+   *
+   * @tparam space The finite element space index
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType
+   * @param sol The solution array
+   * @param out The finite element space object at all quadrature points
+   */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
   static void interp(const SolnType& sol,
@@ -757,13 +834,16 @@ class LagrangeL2HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
+      // Get the quadrature knot locations
+      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 0-direction
         T u0[order * order * q0dim];
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(pt0, n0);
+          lagrange_basis<order>(knots, pt0, n0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
@@ -783,11 +863,11 @@ class LagrangeL2HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1);
+          lagrange_basis<order>(knots, pt1, n1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
-              T val(0.0), derx(0.0), dery(0.0);
+              T val(0.0);
               for (index_t j1 = 0; j1 < order; j1++) {
                 val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
               }
@@ -801,7 +881,7 @@ class LagrangeL2HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(pt2, n2);
+          lagrange_basis<order>(knots, pt2, n2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -870,6 +950,38 @@ class LagrangeL2HexBasis {
     }
   }
 
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType& res) {
+    add<space, Quadrature, FiniteElementSpace, offset, SolnType>(in, res);
+  }
+
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam space The finite element space index
+   * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
   static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
@@ -879,6 +991,9 @@ class LagrangeL2HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
+      // Get the quadrature knot locations
+      constexpr const double* knots = get_gauss_quadrature_pts<order>();
+
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
         T u1[order * q0dim * q1dim];
@@ -887,7 +1002,7 @@ class LagrangeL2HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(pt2, n2);
+          lagrange_basis<order>(knots, pt2, n2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -915,7 +1030,7 @@ class LagrangeL2HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1);
+          lagrange_basis<order>(knots, pt1, n1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
@@ -929,9 +1044,9 @@ class LagrangeL2HexBasis {
         }
 
         for (index_t q0 = 0; q0 < q0dim; q0++) {
-          double n0[order], d0[order];
+          double n0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(pt0, n0, d0);
+          lagrange_basis<order>(knots, pt0, n0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {

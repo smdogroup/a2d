@@ -342,6 +342,29 @@ class QHdivHexBasis {
   }
 
   /**
+   * @brief Interpolate over all quadrature points using
+   *
+   * This function just calls the interpolation  the basis functions are
+   * interpolated
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature scheme
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Offset index into the solution degrees of freedom
+   * @tparam SolnType The solution vector type for the dof
+   * @param geo The geometry object
+   * @param sol The solution array
+   * @param out The finite element space object at all quadrature points
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void interp(const QptGeoSpace& geo, const SolnType& sol,
+                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+    interp<space, Quadrature, FiniteElementSpace, offset, SolnType>(sol, out);
+  }
+
+  /**
    * @brief Interpolate over all quadrature points on the element
    *
    * @tparam space The finite element space index
@@ -426,6 +449,26 @@ class QHdivHexBasis {
         }
       }
     }
+  }
+
+  /**
+   * @brief Add the derivative contained in the solution space to the output
+   * residual object
+   *
+   * @tparam space The finite element space index
+   * @tparam QptGeoSpace Geometry object (not used for this basis)
+   * @tparam Quadrature The quadrature object
+   * @tparam FiniteElementSpace The finite element space object
+   * @tparam offset Degree of freedom offset into the array
+   * @tparam SolnType Solution array type
+   * @param in The finite element space output object
+   * @param res The residual array - same shape as the solution array
+   */
+  template <index_t space, class QptGeoSpace, class Quadrature,
+            class FiniteElementSpace, index_t offset, class SolnType>
+  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
+                  SolnType& res) {
+    add<space, Quadrature, FiniteElementSpace, offset, SolnType>(in, res);
   }
 
   /**

@@ -1379,12 +1379,20 @@ class ElementMesh {
  public:
   using ET = ElementTypes;
 
-  /// @brief  Constant expression indicating an un-ordered node
+  /// @brief  Constant expression indicating an un-ordered dof
   static constexpr index_t NO_INDEX = std::numeric_limits<index_t>::max();
 
   // Number of degrees of freedom for each element
   static const index_t ndof_per_element = Basis::ndof;
 
+  /**
+   * @brief Construct a new Element Mesh object
+   *
+   * Order the degrees of freedom associated with the finite-element basis
+   * across the entire mesh
+   *
+   * @param conn The mesh connectivity
+   */
   ElementMesh(MeshConnectivity3D& conn)
       : nelems(conn.get_num_elements()), num_dof(0) {
     // Count up the number of degrees of freedom
@@ -1574,6 +1582,91 @@ class ElementMesh {
     num_dof = dof_counter;
   }
 
+  /**
+   * @brief Create a new ElementMesh object
+   *
+   * Take the degrees of freedom for only thoes surface elements with the
+   * specified label
+   *
+   */
+  // template <class VolumeBasis>
+  // ElementMesh(index_t label, ElementMesh<VolumeBasis>& mesh)
+  //     : nelems(mesh.get_num_surfaces_with_label(label)) {
+  //   element_dof = new index_t[nelems * ndof_per_element];
+  //   element_sign = new int[nelems * ndof_per_element];
+
+  //   for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+  //     for (index_t counter = nelems; counter > 0; counter--) {
+  //       index_t elem = stack[counter - 1];
+
+  //       index_t* elem_dof = &element_dof[elem * ndof_per_element];
+  //       int* elem_sign = &element_sign[elem * ndof_per_element];
+
+  //       // The volume DOF are always owned by the element - no need to check
+  //       // for the element that owns them
+  //       index_t ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
+
+  //       for (index_t i = 0; i < ndof; i++, dof_counter++) {
+  //         dof[i] = dof_counter;
+  //       }
+  //       Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
+  //       Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
+
+  //       // Order the faces
+  //       const index_t* faces;
+  //       index_t nf = conn.get_element_faces(elem, &faces);
+  //       for (index_t index = 0; index < nf; index++) {
+  //         index_t face = faces[index];
+  //         index_t orient = 0;
+  //         if (face_owners[face] == NO_INDEX || face_owners[face] == elem) {
+  //           face_owners[face] = elem;
+
+  //           ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
+  //           for (index_t i = 0; i < ndof; i++, dof_counter++) {
+  //             dof[i] = dof_counter;
+  //           }
+  //         } else {
+  //           index_t owner_elem = face_owners[face];
+  //           const index_t* owner_faces;
+  //           index_t nf_owner = conn.get_element_faces(owner_elem,
+  //           &owner_faces);
+
+  //           for (index_t i = 0; i < nf_owner; i++) {
+  //             if (owner_faces[i] == face) {
+  //               index_t ref[4], verts[4];
+  //               index_t nverts =
+  //                   conn.get_element_face_verts(owner_elem, i, ref);
+  //               conn.get_element_face_verts(elem, index, verts);
+
+  //               Basis::get_entity_dof(
+  //                   basis, ET::FACE, i,
+  //                   &element_dof[owner_elem * ndof_per_element], dof);
+
+  //               if (nverts == 4) {
+  //                 orient = ET::get_quad_face_orientation(ref, verts);
+  //               }
+  //               break;
+  //             }
+  //           }
+  //         }
+
+  //         Basis::set_entity_dof(basis, ET::FACE, index, orient, dof,
+  //         elem_dof); Basis::set_entity_signs(basis, ET::FACE, index, orient,
+  //         elem_sign);
+  //       }
+  //     }
+  //   }
+  // }
+
+  /**
+   * @brief Construct a new Element Mesh object
+   *
+   * This element mesh is automatically created from a high-order element
+   * discretization
+   *
+   * @tparam HOrderBasis The high-order finite-element basis
+   * @param mesh The mesh class created for the high-order basis
+   */
   template <class HOrderBasis>
   ElementMesh(ElementMesh<HOrderBasis>& mesh)
       : nelems(HOrderBasis::get_num_lorder_elements() *

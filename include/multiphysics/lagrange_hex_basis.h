@@ -992,9 +992,6 @@ class LagrangeL2HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
-      // Get the quadrature knot locations
-      constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
         T u1[order * q0dim * q1dim];
@@ -1115,9 +1112,6 @@ class LagrangeL2HexBasis {
   static void basis(index_t n, BasisType N) {
     double pt[dim];
     Quadrature::get_point(n, pt);
-
-    // Get the quadrature knot locations
-    constexpr const double* knots = get_gauss_quadrature_pts<order>();
 
     // Evaluate the basis functions
     double n0[order], n1[order], n2[order];

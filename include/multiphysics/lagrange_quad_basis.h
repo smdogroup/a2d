@@ -26,7 +26,7 @@ class LagrangeH1QuadBasis {
   static constexpr BasisType get_basis_type() { return H1; }
 
   // Define the equivalent low-order basis class if any
-  using LOrderBasis = LagrangeH1HexBasis<T, C, 1, interp_type>;
+  using LOrderBasis = LagrangeH1QuadBasis<T, C, 1, interp_type>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -184,7 +184,8 @@ class LagrangeH1QuadBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    // Get the quadrature knot locations
+    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];

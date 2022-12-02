@@ -1247,8 +1247,7 @@ inline void bernstein_basis(const double u, double* N) {
  * @param Nd the derivative of the shape functions at u
  */
 template <index_t order>
-inline void bernstein_shape_func_derivative(const double u, double* N,
-                                            double* Nd) {
+inline void bernstein_basis(const double u, double* N, double* Nd) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -1333,6 +1332,59 @@ void lagrange_basis<3u>(const double pt, double N[], double Nx[]) {
   Nx[0] = -0.5 + pt;
   Nx[1] = -2.0 * pt;
   Nx[2] = 0.5 + pt;
+}
+
+/**
+ * @brief Interpolation type
+ *
+ * GLL interpolation: Interpolate from the Gauss-Legendre-Lobatto nodes
+ *
+ * Gauss interpolation: Interpolate from the Gauss quadrature points using
+ * Lagrange interpolation
+ *
+ * Berntein: Interpolate with berstein polynomials
+ */
+enum InterpolationType {
+  GLL_INTERPOLATION,
+  GAUSS_INTERPOLATION,
+  BERNSTEIN_INTERPOLATION
+};
+
+template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
+inline void interpolation_basis(const double pt, double N[]) {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_lobatto_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_quadrature_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
+  } else {  // interp_type == BERNSTEIN_INTERPOLATION
+    bernstein_basis<order>(pt, N);
+  }
+}
+
+template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
+inline void interpolation_basis(const double pt, double N[], double Nx[]) {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_lobatto_pts<order>();
+    lagrange_basis<order>(knots, pt, N, Nx);
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_quadrature_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
+  } else {  // interp_type == BERNSTEIN_INTERPOLATION
+    bernstein_basis<order>(pt, N, Nx);
+  }
+}
+
+template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
+constexpr const double* get_interpolation_pts() {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    return get_gauss_lobatto_pts<order>();
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    return get_gauss_quadrature_pts<order>();
+  } else {  // interp_type == BERNSTEIN_INTERPOLATION
+    return get_gauss_lobatto_pts<order>();
+  }
 }
 
 }  // namespace A2D

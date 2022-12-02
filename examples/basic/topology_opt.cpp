@@ -151,6 +151,7 @@ void main_body(int argc, char *argv[]) {
 
   // Sanity check
   prob->checkGradients(1e-6);
+  exit(0);
 
   // Define paropt optimizer
   ParOptOptions *options = new ParOptOptions;

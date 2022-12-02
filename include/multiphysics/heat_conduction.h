@@ -5,6 +5,16 @@ namespace A2D {
 
 /*
   Heat conduction problem
+
+  The governing equation is
+
+  -k∆u = g in Ω
+  u = u0 on ∂Ω
+
+  The weak form is
+
+  ∫ k ∇u ∇v dΩ = ∫gv dΩ for test function v
+
 */
 template <typename T, index_t D>
 class HeatConduction {
@@ -16,7 +26,7 @@ class HeatConduction {
   static const A2D::index_t data_dim = 1;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::H1Space<T, data_dim, dim>> DataSpace;
+  typedef A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>> DataSpace;
 
   // Finite element space
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>> FiniteElementSpace;
@@ -28,7 +38,8 @@ class HeatConduction {
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
   /**
-   * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
+   * @brief Evaluate the derivatives of the weak form w.r.t. test function
+   * components
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param dobj The data at the quadrature point
@@ -43,6 +54,8 @@ class HeatConduction {
     // Field objects for solution functions
     const A2D::Vec<T, dim>& tx = s.template get<0>().get_grad();
     A2D::Vec<T, dim>& cx = coef.template get<0>().get_grad();
+    T& c = coef.template get<0>().get_value();
+    c = wdetJ * 1.0;  // Hard-code a constant heat source here
 
     // Set the thermal conductivity coefficient
     T kappa = data[0];
@@ -124,7 +137,7 @@ class MixedHeatConduction {
   static const A2D::index_t data_dim = 1;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::H1Space<T, data_dim, dim>> DataSpace;
+  typedef A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>> DataSpace;
 
   // Finite element space
   typedef A2D::FESpace<T, dim, A2D::HdivSpace<T, dim>, A2D::L2Space<T, 1, dim>>

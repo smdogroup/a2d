@@ -245,7 +245,7 @@ class TopoLinearElasticity {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, A2D::index_t D>
+template <typename T, A2D::index_t C, A2D::index_t D>
 class TopoVolume {
  public:
   // Number of dimensions
@@ -263,7 +263,7 @@ class TopoVolume {
 
   // Finite element space
   using FiniteElementSpace =
-      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+      typename TopoLinearElasticity<T, C>::FiniteElementSpace;
 
   /**
    * @brief Compute the integrand for this functional

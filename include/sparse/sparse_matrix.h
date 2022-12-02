@@ -1,6 +1,8 @@
 #ifndef A2D_SPARSE_MATRIX_H
 #define A2D_SPARSE_MATRIX_H
 
+#include <string>
+
 #include "a2dobjs.h"
 #include "array.h"
 
@@ -150,6 +152,36 @@ class BSRMat {
     *n_ = n;
   }
 
+  // Write the sparse matrix in the mtx format
+  void write_mtx(const std::string mtx_name = "matrix.mtx") {
+    // Open file and destroy old contents, if any
+    std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
+
+    // Write header
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+
+    // Write M, N and nnz
+    std::fprintf(fp, "%d %d %d\n", nbrows * M, nbcols * N, nnz * M * N);
+
+    // Write entries
+    for (index_t i = 0; i < nbrows; i++) {
+      for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
+        index_t j = cols[jp];  // (i, j) is the block index pair
+
+        for (index_t ii = 0; ii < M; ii++) {
+          const index_t irow = M * i + ii + 1;  // convert to 1-based index
+          for (index_t jj = 0; jj < N; jj++) {
+            // (irow, jcol) is the entry coo
+            const index_t jcol = N * j + jj + 1;  // convert to 1-based index
+            std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, Avals(jp, ii, jj));
+          }
+        }
+      }
+    }
+    std::fclose(fp);
+    return;
+  }
+
   // Array type
   using IdxArray1D_t = A2D::MultiArrayNew<I *>;
 
@@ -163,7 +195,8 @@ class BSRMat {
   IdxArray1D_t rowp;  // length: nbrows + 1
   IdxArray1D_t cols;  // length: nnz = rowp[nbrows]
 
-  // Pointer to the diagonal block, this is not allocated until factorization
+  // Pointer to the diagonal block, this is not allocated until
+  // factorization
   IdxArray1D_t diag;  // length: nbrows
 
   // permutation perm[new var] = old var
@@ -175,9 +208,9 @@ class BSRMat {
   IdxArray1D_t iperm;
 
   // When coloring is used, its ordering is stored in the permutation array
-  I num_colors;  // Number of colors
-  IdxArray1D_t
-      color_count;  // Number of nodes with this color, not allocated by default
+  I num_colors;              // Number of colors
+  IdxArray1D_t color_count;  // Number of nodes with this color, not
+                             // allocated by default
 
   // MultiArray data - length: nnz
   MultiArrayNew<T *[M][N]> Avals;

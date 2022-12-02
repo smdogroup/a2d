@@ -32,7 +32,7 @@ class TopoLinearElasticity {
   using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::VolumeMapping<T, dim>;
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   // The type of matrix used to store data at each quadrature point
   static const A2D::index_t ncomp = FiniteElementSpace::ncomp;
@@ -545,6 +545,60 @@ class TopoVonMisesAggregation {
     T scale = wdetJ * vm * ks_exp / (failure_index_integral);
 
     dfdx[0] = scale * dpenalty;
+  }
+};
+
+template <typename T, A2D::index_t D>
+class TopoSurfaceTraction {
+ public:
+  TopoSurfaceTraction(T tx_[]) {
+    for (A2D::index_t i = 0; i < dim; i++) {
+      tx[i] = tx_[i];
+    }
+  }
+
+  // Number of dimensions
+  static const A2D::index_t dim = D;
+
+  // Number of data dimensions
+  static const A2D::index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+
+  // Finite element space
+  using FiniteElementSpace =
+      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = SurfaceMapping<T, dim>;
+
+  // Surface traction values
+  T tx[dim];
+
+  /**
+   * @brief Evaluate the weak form coefficients for linear elasticity
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The trial solution
+   * @param coef Output weak form coefficients of the test space
+   */
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    // Extract the solution
+    A2D::Mat<T, dim, dim> U = (coef.template get<0>()).get_value();
+
+    for (index_t i = 0; i < dim; i++) {
+      U(i) = wdetJ * tx[i];
+    }
   }
 };
 

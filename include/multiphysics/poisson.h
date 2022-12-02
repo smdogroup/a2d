@@ -24,19 +24,19 @@ class Poisson {
   static const A2D::index_t data_dim = 0;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim> DataSpace;
+  using DataSpace = A2D::FESpace<T, data_dim>;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>> FiniteElementSpace;
+  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>>;
 
   // Space for the element geometry - parametrized by H1 in 2D
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+  using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
 
   // The type of matrix used to store data at each quadrature point
-  typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+  using QMatType = A2D::SymmMat<T, FiniteElementSpace::ncomp>;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::VolumeMapping<T, dim>;
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
@@ -130,7 +130,7 @@ class MixedPoisson {
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::VolumeMapping<T, dim>;
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity

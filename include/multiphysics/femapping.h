@@ -12,10 +12,10 @@ namespace A2D {
  *
  */
 template <typename T, index_t dim>
-class VolumeMapping {
+class InteriorMapping {
  public:
   template <class FiniteElementGeometry>
-  VolumeMapping(const FiniteElementGeometry& geo, T& detJ)
+  InteriorMapping(const FiniteElementGeometry& geo, T& detJ)
       : J(geo.template get<0>().get_grad()), detJ(detJ) {
     // Compute the inverse of the transformation
     A2D::MatInverse(J, Jinv);
@@ -44,14 +44,14 @@ class VolumeMapping {
  * @brief 3D surface transformation
  *
  */
-template <typename T>
-class SurfaceTransform3D {
+template <typename T, index_t D>
+class SurfaceMapping {
  public:
-  static const index_t dim3 = 3;
-  static const index_t dim2 = 2;
+  static const index_t dim = D;
+  static const index_t dim_surf = D - 1;
 
   template <class FiniteElementGeometry>
-  SurfaceTransform3D(const FiniteElementGeometry& geo, T& detJ)
+  SurfaceMapping(const FiniteElementGeometry& geo, T& detJ)
       : Jxi(geo.template get<0>().get_grad()), detJ(detJ) {
     // // Find the nA = (Area) * normal direction
     // // A2D::Vec<T, dim3> x0, x1, nA;
@@ -100,13 +100,13 @@ class SurfaceTransform3D {
 
  private:
   // The Jacobian transform is a 3 x 2
-  const A2D::Mat<T, dim3, dim2>& Jxi;
+  const A2D::Mat<T, dim, dim_surf>& Jxi;
 
   // Determinant of the Jacobian transformation
   T& detJ;
 
   // J with the normal direction added
-  A2D::Mat<T, dim3, dim3> J, Jinv;
+  A2D::Mat<T, dim, dim> J, Jinv;
 };
 
 }  // namespace A2D

@@ -28,7 +28,7 @@ class HeatConduction {
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::VolumeMapping<T, dim>;
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
@@ -140,7 +140,7 @@ class MixedHeatConduction {
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::VolumeMapping<T, dim>;
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear

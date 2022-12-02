@@ -195,6 +195,23 @@ class MeshConnectivity3D {
   index_t get_num_boundary_labels() { return num_boundary_labels; }
 
   /**
+   * @brief Count up the number of boundary faces with the given label
+   *
+   * @param label The label index
+   * @return The number
+   */
+  index_t get_num_boundary_faces_with_label(const index_t label) {
+    index_t count = 0;
+    for (index_t i = 0; i < num_boundary_faces; i++) {
+      if (boundary_labels[i] == label) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
+  /**
    * @brief Add a boundary label from the vertices
    *
    * Any boundary face with all nodes that touch the given set of vertices is
@@ -1583,80 +1600,136 @@ class ElementMesh {
   }
 
   /**
-   * @brief Create a new ElementMesh object
+   * @brief Construct a new ElementMesh object
    *
    * Take the degrees of freedom for only thoes surface elements with the
    * specified label
    *
+   * @tparam InteriorBasis FEBasis type used in the interior
+   * @param label Surface label index
+   * @param conn The mesh connectivity information associated with the mesh
+   * @param mesh Mesh object generated with the InteriorBasis
    */
-  // template <class VolumeBasis>
-  // ElementMesh(index_t label, ElementMesh<VolumeBasis>& mesh)
-  //     : nelems(mesh.get_num_surfaces_with_label(label)) {
-  //   element_dof = new index_t[nelems * ndof_per_element];
-  //   element_sign = new int[nelems * ndof_per_element];
+  template <class InteriorBasis>
+  ElementMesh(const index_t label, MeshConnectivity3D& conn,
+              ElementMesh<InteriorBasis>& mesh)
+      : nelems(mesh.get_num_boundary_faces_with_label(label)) {
+    element_dof = new index_t[nelems * ndof_per_element];
+    element_sign = new int[nelems * ndof_per_element];
 
-  //   for (index_t basis = 0; basis < Basis::nbasis; basis++) {
-  //     for (index_t counter = nelems; counter > 0; counter--) {
-  //       index_t elem = stack[counter - 1];
+    // Get the number of boundary faces
+    const index_t* boundary_faces;
+    const index_t* boundary_labels;
+    index_t num_boundary_faces =
+        mesh.get_boundary_faces(&boundary_faces, &boundary_labels);
 
-  //       index_t* elem_dof = &element_dof[elem * ndof_per_element];
-  //       int* elem_sign = &element_sign[elem * ndof_per_element];
+    for (index_t i = 0, elem_count = 0; i < num_boundary_faces; i++) {
+      if (boundary_labels[i] == label) {
+        index_t face = boundary_faces[i];
 
-  //       // The volume DOF are always owned by the element - no need to check
-  //       // for the element that owns them
-  //       index_t ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
+        // Get the element adjacent to the boundary face (e2 can be ignored)
+        index_t elem, e2;
+        conn.get_face_elements(face, &elem, &e2);
 
-  //       for (index_t i = 0; i < ndof; i++, dof_counter++) {
-  //         dof[i] = dof_counter;
-  //       }
-  //       Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
-  //       Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
+        // Find the face index for the element
+        index_t face_index = 0;
+        const index_t* faces;
+        index_t nf = conn.get_element_faces(elem, &faces);
+        for (index_t index = 0; index < nf; index++) {
+          if (face == faces[index]) {
+            face_index = index;
+          }
+        }
 
-  //       // Order the faces
-  //       const index_t* faces;
-  //       index_t nf = conn.get_element_faces(elem, &faces);
-  //       for (index_t index = 0; index < nf; index++) {
-  //         index_t face = faces[index];
-  //         index_t orient = 0;
-  //         if (face_owners[face] == NO_INDEX || face_owners[face] == elem) {
-  //           face_owners[face] = elem;
+        // Get the signs associated wtih the original mesh
+        const index_t* dof;
+        const int* signs;
+        mesh.get_element_dof(elem, &dof);
+        mesh.get_element_signs(elem, &signs);
 
-  //           ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
-  //           for (index_t i = 0; i < ndof; i++, dof_counter++) {
-  //             dof[i] = dof_counter;
-  //           }
-  //         } else {
-  //           index_t owner_elem = face_owners[face];
-  //           const index_t* owner_faces;
-  //           index_t nf_owner = conn.get_element_faces(owner_elem,
-  //           &owner_faces);
+        // Set pointers for the entity dof
+        index_t* surf_dof = &element_dof[elem_count * ndof_per_element];
+        int* surf_signs = &element_sign[elem_count * ndof_per_element];
 
-  //           for (index_t i = 0; i < nf_owner; i++) {
-  //             if (owner_faces[i] == face) {
-  //               index_t ref[4], verts[4];
-  //               index_t nverts =
-  //                   conn.get_element_face_verts(owner_elem, i, ref);
-  //               conn.get_element_face_verts(elem, index, verts);
+        // The degree of freedom indices for each entity
+        index_t entity_dof[InteriorBasis::ndof];
 
-  //               Basis::get_entity_dof(
-  //                   basis, ET::FACE, i,
-  //                   &element_dof[owner_elem * ndof_per_element], dof);
+        // Set the vertices associated with the face
+        index_t v[4];
+        index_t nv = conn.get_element_face_vert_indices(elem, face_index, v);
+        for (index_t j = 0; j < nv; j++) {
+          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+            index_t vert_index = v[j];
 
-  //               if (nverts == 4) {
-  //                 orient = ET::get_quad_face_orientation(ref, verts);
-  //               }
-  //               break;
-  //             }
-  //           }
-  //         }
+            // Get the vertex dof from the interior element
+            InteriorBasis::get_entity_dof(basis, ET::VERTEX, vert_index, dof,
+                                          entity_dof);
 
-  //         Basis::set_entity_dof(basis, ET::FACE, index, orient, dof,
-  //         elem_dof); Basis::set_entity_signs(basis, ET::FACE, index, orient,
-  //         elem_sign);
-  //       }
-  //     }
-  //   }
-  // }
+            index_t surf_vert_index = j;
+            index_t orient = 0;
+
+            // Set the same vertex index on the corresponding surface
+            Basis::set_entity_dof(basis, ET::VERTEX, surf_vert_index, orient,
+                                  entity_dof, surf_dof);
+            Basis::set_entity_signs(basis, ET::VERTEX, surf_vert_index, orient,
+                                    surf_signs);
+          }
+        }
+
+        // Set the edges associated with the face
+        index_t e[4];
+        index_t ne = conn.get_element_face_edge_indices(elem, face_index, e);
+        for (index_t j = 0; j < ne; j++) {
+          for (index_t basis = 0; basis < Basis::nbasis; basis++) {
+            index_t edge_index = e[j];
+
+            // Get the vertex dof from the interior element
+            InteriorBasis::get_entity_dof(basis, ET::EDGE, edge_index, dof,
+                                          entity_dof);
+
+            // Get the edge orientation relative to the face
+            index_t orient = 0;
+
+            // Get the element edge vertices
+            index_t verts[2];
+            conn.get_element_edge_verts(elem, edge_index, verts);
+
+            // Need to do some magic here to get the edge orientation....
+            //
+            //
+            //
+            //
+            //
+
+            // Get the index of the edge on the face
+            index_t surf_edge_index = j;
+
+            // Set the same edge on the corresponding surface
+            Basis::set_entity_dof(basis, ET::EDGE, surf_edge_index, orient,
+                                  entity_dof, surf_dof);
+            Basis::set_entity_signs(basis, ET::EDGE, surf_edge_index, orient,
+                                    surf_signs);
+          }
+        }
+
+        // Loop over all the boundary faces
+        for (index_t basis = 0; basis < InteriorBasis::nbasis; basis++) {
+          // Get the degrees of freeom from the element
+          index_t orient = 0;
+          InteriorBasis::get_entity_dof(basis, ET::FACE, face_index, dof,
+                                        entity_dof);
+
+          // Set the degrees of freedom - the face element has the same
+          // orientation as its interior owner
+          Basis::set_entity_dof(basis, ET::FACE, 0, orient, entity_dof,
+                                surf_dof);
+          Basis::set_entity_signs(basis, ET::EDGE, 0, orient, surf_signs);
+        }
+
+        elem_count++;
+      }
+    }
+  }
 
   /**
    * @brief Construct a new Element Mesh object

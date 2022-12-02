@@ -6,7 +6,6 @@
 #include <random>
 #include <type_traits>
 
-#include "multiphysics/febase.h"
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fesolution.h"
@@ -14,105 +13,6 @@
 #include "utils/a2dprofiler.h"
 
 namespace A2D {
-
-/**
- * @brief Test the implementation of the PDE to check if the derivatives are
- * consistent with the weak form.
- *
- * @tparam T Solution type
- * @tparam PDE Type of PDE object to test
- * @param pde Instance of the PDE object to test
- * @param dh Finite-difference or complex-step step size
- */
-template <typename T, class PDE>
-void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
-  Timer timer("TestPDEImplementation()");
-  typename PDE::DataSpace data;
-  typename PDE::FiniteElementGeometry geo;
-  typename PDE::FiniteElementSpace s, sref;
-  typename PDE::FiniteElementSpace p, pref;
-  typename PDE::FiniteElementSpace coef, cref, cref0;
-  typename PDE::FiniteElementSpace Jp, Jpref;
-
-  // Generate random data
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_real_distribution<> distr(-1.0, 1.0);
-
-  // Set random values for the data
-  if constexpr (PDE::DataSpace::ncomp > 0) {
-    for (index_t i = 0; i < PDE::DataSpace::ncomp; i++) {
-      data[i] = distr(gen);
-    }
-  }
-
-  // Set random values for the geometry
-  for (index_t i = 0; i < PDE::FiniteElementGeometry::ncomp; i++) {
-    geo[i] = distr(gen);
-  }
-
-  // Set the random values
-  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-    sref[i] = distr(gen);
-    pref[i] = distr(gen);
-  }
-
-  A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
-  A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-  A2D::MatInverse(J, Jinv);
-
-  T detJ;
-  A2D::MatDet(J, detJ);
-
-  // Compute the coefficients
-  sref.transform(detJ, J, Jinv, s);
-  pde.weak(detJ, data, geo, s, coef);
-  coef.rtransform(detJ, J, Jinv, cref0);
-
-  if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-      sref[i] = sref[i] + dh * pref[i] * std::complex<double>(0.0, 1.0);
-    }
-  } else {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-      sref[i] = sref[i] + dh * pref[i];
-    }
-  }
-
-  // Compute the coefficients
-  sref.transform(detJ, J, Jinv, s);
-  pde.weak(detJ, data, geo, s, coef);
-  coef.rtransform(detJ, J, Jinv, cref);
-
-  // Compute the Jacobian-vector product
-  typename PDE::JacVecProduct jvp(pde, detJ, data, geo, s);
-
-  // Compute the Jacobian-vector product
-  pref.transform(detJ, J, Jinv, p);
-  jvp(p, Jp);
-  Jp.rtransform(detJ, J, Jinv, Jpref);
-
-  // Compute the finite-difference value
-  typename PDE::FiniteElementSpace fd;
-
-  if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-      fd[i] = std::imag(cref[i]) / dh;
-    }
-  } else {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-      fd[i] = (cref[i] - cref0[i]) / dh;
-    }
-  }
-
-  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
-    std::cout << "fd[" << std::setw(2) << i << "]: " << std::setw(12)
-              << std::real(fd[i]) << " Jpref[" << std::setw(2) << i
-              << "]: " << std::setw(12) << std::real(Jpref[i]) << " err["
-              << std::setw(2) << i << "]: " << std::setw(12)
-              << std::real((fd[i] - Jpref[i]) / fd[i]) << std::endl;
-  }
-}
 
 /**
  * @brief Get the coordinates associated with the locations of each of the
@@ -239,20 +139,13 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+        transform.transform(sref, s);
 
         // Compute the coefficients for the weak form of the PDE
         double weight = Quadrature::get_weight(j);
@@ -310,20 +203,13 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+        transform.transform(sref, s);
 
         // Compute the coefficients for the weak form of the PDE
         double weight = Quadrature::get_weight(j);
@@ -388,20 +274,13 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+        transform.transform(sref, s);
 
         // Compute the coefficients for the weak form of the PDE
         double weight = Quadrature::get_weight(j);
@@ -476,21 +355,14 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& aref = adj.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s, a;
-        sref.transform(detJ, J, Jinv, s);
-        aref.transform(detJ, J, Jinv, a);
+        transform.transform(sref, s);
+        transform.transform(aref, a);
 
         // Allocate the Jacobian-adjoint product functor
         double weight = Quadrature::get_weight(j);
@@ -555,20 +427,13 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+        transform.transform(sref, s);
 
         // Compute the coefficients for the weak form of the PDE
         double weight = Quadrature::get_weight(j);
@@ -577,7 +442,7 @@ class FiniteElement {
 
         // Transform the coefficents back to the reference element
         typename PDE::FiniteElementSpace& cref = res.get(j);
-        coef.rtransform(detJ, J, Jinv, cref);
+        transform.rtransform(coef, cref);
       }
 
       // Add the residual from the quadrature points back to the finite-element
@@ -642,21 +507,14 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& xref = xsol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace x, s;
-        sref.transform(detJ, J, Jinv, s);
-        xref.transform(detJ, J, Jinv, x);
+        transform.transform(sref, s);
+        transform.transform(xref, x);
 
         // Allocate the Jacobian-vector product functor
         double weight = Quadrature::get_weight(j);
@@ -669,7 +527,7 @@ class FiniteElement {
 
         // Transform to back to the reference element
         typename PDE::FiniteElementSpace& yref = ysol.get(j);
-        y.rtransform(detJ, J, Jinv, yref);
+        transform.rtransform(y, yref);
       }
 
       // Add the values from the quadrature points back into the finite-element
@@ -732,20 +590,13 @@ class FiniteElement {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
-        // Transform the solution the physical element
+        // Transform from the reference element to the physical space
         typename PDE::FiniteElementSpace s;
-        sref.transform(detJ, J, Jinv, s);
+        transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
@@ -762,7 +613,7 @@ class FiniteElement {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
-          pref.transform(detJ, J, Jinv, p);
+          transform.transform(pref, p);
 
           // Allocate the Jacobian-vector product functor
           double weight = Quadrature::get_weight(j);
@@ -773,7 +624,7 @@ class FiniteElement {
           jvp(p, Jp);
 
           // Transform to back to the reference element
-          Jp.rtransform(detJ, J, Jinv, pref);
+          transform.rtransform(Jp, pref);
 
           for (A2D::index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
@@ -955,6 +806,105 @@ class MatrixFree {
  private:
   std::vector<QMatSpace> qmat;
 };
+
+/**
+ * @brief Test the implementation of the PDE to check if the derivatives are
+ * consistent with the weak form.
+ *
+ * @tparam T Solution type
+ * @tparam PDE Type of PDE object to test
+ * @param pde Instance of the PDE object to test
+ * @param dh Finite-difference or complex-step step size
+ */
+template <typename T, class PDE>
+void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
+  Timer timer("TestPDEImplementation()");
+  typename PDE::DataSpace data;
+  typename PDE::FiniteElementGeometry geo;
+  typename PDE::FiniteElementSpace s, sref;
+  typename PDE::FiniteElementSpace p, pref;
+  typename PDE::FiniteElementSpace coef, cref, cref0;
+  typename PDE::FiniteElementSpace Jp, Jpref;
+
+  // Generate random data
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_real_distribution<> distr(-1.0, 1.0);
+
+  // Set random values for the data
+  if constexpr (PDE::DataSpace::ncomp > 0) {
+    for (index_t i = 0; i < PDE::DataSpace::ncomp; i++) {
+      data[i] = distr(gen);
+    }
+  }
+
+  // Set random values for the geometry
+  for (index_t i = 0; i < PDE::FiniteElementGeometry::ncomp; i++) {
+    geo[i] = distr(gen);
+  }
+
+  // Set the random values
+  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    sref[i] = distr(gen);
+    pref[i] = distr(gen);
+  }
+
+  A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
+  A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
+  A2D::MatInverse(J, Jinv);
+
+  T detJ;
+  A2D::MatDet(J, detJ);
+
+  // Compute the coefficients
+  sref.transform(detJ, J, Jinv, s);
+  pde.weak(detJ, data, geo, s, coef);
+  coef.rtransform(detJ, J, Jinv, cref0);
+
+  if constexpr (std::is_same<T, std::complex<double>>::value) {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      sref[i] = sref[i] + dh * pref[i] * std::complex<double>(0.0, 1.0);
+    }
+  } else {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      sref[i] = sref[i] + dh * pref[i];
+    }
+  }
+
+  // Compute the coefficients
+  sref.transform(detJ, J, Jinv, s);
+  pde.weak(detJ, data, geo, s, coef);
+  coef.rtransform(detJ, J, Jinv, cref);
+
+  // Compute the Jacobian-vector product
+  typename PDE::JacVecProduct jvp(pde, detJ, data, geo, s);
+
+  // Compute the Jacobian-vector product
+  pref.transform(detJ, J, Jinv, p);
+  jvp(p, Jp);
+  Jp.rtransform(detJ, J, Jinv, Jpref);
+
+  // Compute the finite-difference value
+  typename PDE::FiniteElementSpace fd;
+
+  if constexpr (std::is_same<T, std::complex<double>>::value) {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      fd[i] = std::imag(cref[i]) / dh;
+    }
+  } else {
+    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+      fd[i] = (cref[i] - cref0[i]) / dh;
+    }
+  }
+
+  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    std::cout << "fd[" << std::setw(2) << i << "]: " << std::setw(12)
+              << std::real(fd[i]) << " Jpref[" << std::setw(2) << i
+              << "]: " << std::setw(12) << std::real(Jpref[i]) << " err["
+              << std::setw(2) << i << "]: " << std::setw(12)
+              << std::real((fd[i] - Jpref[i]) / fd[i]) << std::endl;
+  }
+}
 
 }  // namespace A2D
 

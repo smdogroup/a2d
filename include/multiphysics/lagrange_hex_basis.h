@@ -12,7 +12,7 @@ class LagrangeH1HexBasis {
  public:
   using ET = ElementTypes;
 
-  static const index_t dim = 3;             // Spatial dimension
+  static const index_t dim = 3;             // Parametric dimension
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
   static const index_t ndof =

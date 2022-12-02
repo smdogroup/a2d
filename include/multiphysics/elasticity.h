@@ -3,6 +3,7 @@
 
 #include "a2dmatops2d.h"
 #include "a2dmatops3d.h"
+#include "multiphysics/femapping.h"
 #include "multiphysics/fespace.h"
 
 namespace A2D {
@@ -29,6 +30,9 @@ class TopoLinearElasticity {
 
   // Finite element space
   using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::VolumeMapping<T, dim>;
 
   // The type of matrix used to store data at each quadrature point
   static const A2D::index_t ncomp = FiniteElementSpace::ncomp;
@@ -265,6 +269,9 @@ class TopoVolume {
   using FiniteElementSpace =
       typename TopoLinearElasticity<T, D>::FiniteElementSpace;
 
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = typename TopoLinearElasticity<T, D>::SolutionMapping;
+
   /**
    * @brief Compute the integrand for this functional
    *
@@ -327,6 +334,9 @@ class TopoVonMisesAggregation {
   // Finite element space
   using FiniteElementSpace =
       typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = typename TopoLinearElasticity<T, D>::SolutionMapping;
 
   // Material parameters
   T mu;

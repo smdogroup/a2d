@@ -709,20 +709,13 @@ class MatrixFree {
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
 
-        // Get the Jacobian transformation
-        A2D::Mat<T, PDE::dim, PDE::dim>& J = gref.template get<0>().get_grad();
-
-        // Compute the inverse of the transformation
-        A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-        A2D::MatInverse(J, Jinv);
-
-        // Compute the determinant of the Jacobian matrix
+        // Initialize the transform object
         T detJ;
-        A2D::MatDet(J, detJ);
+        typename PDE::SolutionMapping transform(gref, detJ);
 
         // Transform the solution the physical element
-        typename PDE::FiniteElementSpace x, s;
-        sref.transform(detJ, J, Jinv, s);
+        typename PDE::FiniteElementSpace s;
+        transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
@@ -739,7 +732,7 @@ class MatrixFree {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
-          pref.transform(detJ, J, Jinv, p);
+          transform.transform(pref, p);
 
           // Allocate the Jacobian-vector product functor
           double weight = Quadrature::get_weight(j);
@@ -750,7 +743,7 @@ class MatrixFree {
           jvp(p, Jp);
 
           // Transform to back to the reference element
-          Jp.rtransform(detJ, J, Jinv, pref);
+          transform.rtransform(Jp, pref);
 
           for (A2D::index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
@@ -849,17 +842,14 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
     pref[i] = distr(gen);
   }
 
-  A2D::Mat<T, PDE::dim, PDE::dim>& J = (geo.template get<0>()).get_grad();
-  A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-  A2D::MatInverse(J, Jinv);
-
+  // Initialize the transform object
   T detJ;
-  A2D::MatDet(J, detJ);
+  typename PDE::SolutionMapping transform(geo, detJ);
 
   // Compute the coefficients
-  sref.transform(detJ, J, Jinv, s);
+  transform.transform(sref, s);
   pde.weak(detJ, data, geo, s, coef);
-  coef.rtransform(detJ, J, Jinv, cref0);
+  transform.rtransform(coef, cref0);
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
     for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
@@ -872,17 +862,17 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
   }
 
   // Compute the coefficients
-  sref.transform(detJ, J, Jinv, s);
+  transform.transform(sref, s);
   pde.weak(detJ, data, geo, s, coef);
-  coef.rtransform(detJ, J, Jinv, cref);
+  transform.rtransform(coef, cref);
 
   // Compute the Jacobian-vector product
   typename PDE::JacVecProduct jvp(pde, detJ, data, geo, s);
 
   // Compute the Jacobian-vector product
-  pref.transform(detJ, J, Jinv, p);
+  transform.transform(pref, p);
   jvp(p, Jp);
-  Jp.rtransform(detJ, J, Jinv, Jpref);
+  transform.rtransform(Jp, Jpref);
 
   // Compute the finite-difference value
   typename PDE::FiniteElementSpace fd;

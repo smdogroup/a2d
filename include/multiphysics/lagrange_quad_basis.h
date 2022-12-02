@@ -7,7 +7,8 @@
 
 namespace A2D {
 
-template <typename T, index_t C, index_t degree>
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
 class LagrangeH1QuadBasis {
  public:
   using ET = ElementTypes;
@@ -25,7 +26,7 @@ class LagrangeH1QuadBasis {
   static constexpr BasisType get_basis_type() { return H1; }
 
   // Define the equivalent low-order basis class if any
-  using LOrderBasis = LagrangeH1HexBasis<T, C, 1>;
+  using LOrderBasis = LagrangeH1QuadBasis<T, C, 1, interp_type>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -183,7 +184,8 @@ class LagrangeH1QuadBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    // Get the quadrature knot locations
+    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];
@@ -239,6 +241,7 @@ class LagrangeH1QuadBasis {
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order], d0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
+          interpolation_basis<order, interp_type>(pt0, n0, d0);
           lagrange_basis<order>(pt0, n0, d0);
 
           for (index_t j1 = 0; j1 < order; j1++) {
@@ -258,7 +261,7 @@ class LagrangeH1QuadBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1, d1);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             T val(0.0), derx(0.0), dery(0.0);
@@ -296,8 +299,8 @@ class LagrangeH1QuadBasis {
         // Evaluate the basis functions
         double n0[order], d0[order];
         double n1[order], d1[order];
-        lagrange_basis<order>(pt[0], n0, d0);
-        lagrange_basis<order>(pt[1], n1, d1);
+        interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        interpolation_basis<order, interp_type>(pt[1], n1, d1);
 
         FiniteElementSpace& s = out.get(q);
         H1Space<T, C, dim>& h1 = s.template get<space>();
@@ -388,7 +391,7 @@ class LagrangeH1QuadBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1, d1);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             const index_t qindex = Quadrature::get_tensor_index(q0, q1);
@@ -419,7 +422,7 @@ class LagrangeH1QuadBasis {
       for (index_t q0 = 0; q0 < q0dim; q0++) {
         double n0[order], d0[order];
         const double pt0 = Quadrature::get_tensor_point(0, q0);
-        lagrange_basis<order>(pt0, n0, d0);
+        interpolation_basis<order, interp_type>(pt[0], n0, d0);
 
         for (index_t j1 = 0; j1 < order; j1++) {
           T val = u0[j1 + order * q0];
@@ -440,8 +443,8 @@ class LagrangeH1QuadBasis {
         // Evaluate the basis functions
         double n0[order], d0[order];
         double n1[order], d1[order];
-        lagrange_basis<order>(pt[0], n0, d0);
-        lagrange_basis<order>(pt[1], n1, d1);
+        interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        interpolation_basis<order, interp_type>(pt[1], n1, d1);
 
         const FiniteElementSpace& s = in.get(q);
         const H1Space<T, C, dim>& h1 = s.template get<space>();
@@ -497,8 +500,8 @@ class LagrangeH1QuadBasis {
     // Evaluate the basis functions
     double n0[order], n1[order];
     double d0[order], d1[order];
-    lagrange_basis<order>(pt[0], n0, d0);
-    lagrange_basis<order>(pt[1], n1, d1);
+    interpolation_basis<order, interp_type>(pt[0], n0, d0);
+    interpolation_basis<order, interp_type>(pt[1], n1, d1);
 
     for (index_t j1 = 0; j1 < order; j1++) {
       for (index_t j0 = 0; j0 < order; j0++) {

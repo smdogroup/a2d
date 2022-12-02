@@ -193,6 +193,303 @@ class ElementTypes {
   }
 
   /**
+   * @brief Get the local node index (without offset) for a node on an element
+   * with nx and ny nodes along the local directions
+   *
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @param i Index along the x-direction
+   * @param j Index along the y-direction
+   */
+  template <index_t nx, index_t ny>
+  static int get_quad_node(const int i, const int j) {
+    return i + nx * j;
+  }
+
+  /**
+   * @brief Get the edge length between the verties v1 and v2
+   *
+   * This only works if the verties are connected by a single edge
+   *
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @param v0 First vertex
+   * @param v1 Second vertex
+   * @return The number of nodes along the edge
+   */
+  template <index_t nx, index_t ny>
+  static index_t get_quad_edge_length(const index_t v0, const index_t v1) {
+    if (QUAD_VERTS_CART[v0][0] != QUAD_VERTS_CART[v1][0]) {
+      return nx;
+    }
+    { return ny; }
+  }
+
+  /**
+   * @brief Get the degrees of freedom associated with the vertex
+   *
+   * @tparam offset Offset into the global degree of freedom array
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam ElemDof Element degrees of freedom array type
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @param v Vertex index
+   * @param element Element degree of freedom array
+   * @param entity Entity degree of freedom array
+   */
+  template <index_t offset, index_t ndof, index_t nx, index_t ny, class ElemDof,
+            class EntityDof>
+  static void get_quad_vert_dof(index_t v, const ElemDof& element,
+                                EntityDof& entity) {
+    const index_t node = get_quad_node<nx, ny>(
+        (nx - 1) * QUAD_VERTS_CART[v][0], (ny - 1) * QUAD_VERTS_CART[v][1]);
+
+    const index_t start = offset + ndof * node;
+    for (index_t i = 0; i < ndof; i++) {
+      entity[i] = element[start + i];
+    }
+  }
+
+  /**
+   * @brief Get the degrees of freedom associated with the vertex
+   *
+   * @tparam offset Offset into the global degree of freedom array
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @tparam ElemDof Element degrees of freedom array type
+   * @param v Vertex index
+   * @param entity Entity degree of freedom array
+   * @param element Element degree of freedom array
+   */
+  template <index_t offset, index_t ndof, index_t nx, index_t ny,
+            class EntityDof, class ElemDof>
+  static void set_quad_vert_dof(index_t v, const EntityDof& entity,
+                                ElemDof& element) {
+    const index_t node = get_quad_node<nx, ny>(
+        (nx - 1) * QUAD_VERTS_CART[v][0], (ny - 1) * QUAD_VERTS_CART[v][1]);
+
+    const index_t start = offset + ndof * node;
+    for (index_t i = 0; i < ndof; i++) {
+      element[start + i] = entity[i];
+    }
+  }
+
+  /**
+   * @brief Get the degrees of freedom from the edge
+   *
+   * @tparam offset Offset into the element dof array
+   * @tparam ends Include the end points of the edge or not
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam ElemDof Element degrees of freedom array type
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @param e Edge index
+   * @param element Element degrees of freedom
+   * @param entity Entity degrees of freedom
+   */
+  template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
+            class ElemDof, class EntityDof>
+  static void get_quad_edge_dof(const index_t e, const ElemDof& element,
+                                EntityDof& entity) {
+    // Get the first and last vertices on the edge
+    const index_t v0 = QUAD_EDGE_VERTS[e][0];
+    const index_t v1 = QUAD_EDGE_VERTS[e][1];
+
+    // Get the starting index on the element
+    const index_t start = get_quad_node<nx, ny>(
+        (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
+
+    // Find the number of nodes along the u-edge
+    const index_t nu = get_quad_edge_length<nx, ny>(v0, v1);
+
+    // Get the increment
+    const int incr =
+        get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
+                              QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
+
+    if constexpr (ends) {
+      index_t index = start;
+      for (index_t u = 0; u < nu; u++, index += incr) {
+        const index_t entity_index = ndof * u;
+        const index_t elem_index = offset + ndof * index;
+
+        for (index_t i = 0; i < ndof; i++) {
+          entity[entity_index + i] = element[elem_index + i];
+        }
+      }
+    } else {
+      index_t index = start + incr;
+      for (index_t u = 1; u < nu - 1; u++, index += incr) {
+        const index_t entity_index = ndof * (u - 1);
+        const index_t elem_index = offset + ndof * index;
+
+        for (index_t i = 0; i < ndof; i++) {
+          entity[entity_index + i] = element[elem_index + i];
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Set the degrees of freedom from the edge
+   *
+   * The orient argument indicates whether the edges have the same orientation
+   * (orient = 0) or opposite orientations (orient = 1)
+   *
+   * @tparam offset Offset into the element dof array
+   * @tparam ends Include the end points of the edge or not
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam ElemDof Element degrees of freedom array type
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @param e Edge index
+   * @param orient Relative orientation between edges
+   * @param element Element degrees of freedom
+   * @param entity Entity degrees of freedom
+   */
+  template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
+            class EntityDof, class ElemDof>
+  static void set_quad_edge_dof(const index_t e, const index_t orient,
+                                const EntityDof& entity, ElemDof& element) {
+    // Get the first and last vertices on the edge
+    const index_t v0 = QUAD_EDGE_VERTS[e][orient];
+    const index_t v1 = QUAD_EDGE_VERTS[e][(orient + 1) % 2];
+
+    // Get the starting index on the element
+    const index_t start = get_quad_node<nx, ny>(
+        (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
+
+    // Find the number of nodes along the u-edge
+    const index_t nu = get_quad_edge_length<nx, ny>(v0, v1);
+
+    // Get the increment
+    const int incr =
+        get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
+                              QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
+
+    if constexpr (ends) {
+      index_t index = start;
+      for (index_t u = 0; u < nu; u++, index += incr) {
+        const index_t entity_index = ndof * u;
+        const index_t elem_index = offset + ndof * index;
+
+        for (index_t i = 0; i < ndof; i++) {
+          element[elem_index + i] = entity[entity_index + i];
+        }
+      }
+    } else {
+      index_t index = start + incr;
+      for (index_t u = 1; u < nu - 1; u++, index += incr) {
+        const index_t entity_index = ndof * (u - 1);
+        const index_t elem_index = offset + ndof * index;
+
+        for (index_t i = 0; i < ndof; i++) {
+          element[elem_index + i] = entity[entity_index + i];
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Get the degrees of freedom from the quad face
+   *
+   * @tparam offset Offset into the element dof array
+   * @tparam ends Include the end points of the edge or not
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam ElemDof Element degrees of freedom array type
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @param f Face index
+   * @param element Element degrees of freedmo
+   * @param entity Entity degrees of freedom
+   */
+  template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
+            index_t nz, class ElemDof, class EntityDof>
+  static void get_quad_face_dof(const ElemDof& element, EntityDof& entity) {
+    if constexpr (ends) {
+      for (index_t v = 0; v < ny; v++) {
+        for (index_t u = 0; u < nx; u++) {
+          const index_t entity_index = ndof * get_quad_node<nx, ny>(u, v);
+          const index_t elem_index = offset + entity_index;
+
+          for (index_t i = 0; i < ndof; i++) {
+            entity[entity_index + i] = element[elem_index + i];
+          }
+        }
+      }
+    } else {
+      for (index_t v = 1; v < ny - 1; v++) {
+        for (index_t u = 1; u < nx - 1; u++) {
+          const index_t entity_index =
+              ndof * get_quad_node<nx - 2, ny - 2>(u - 1, v - 1);
+          const index_t elem_index =
+              offset + ndof * get_quad_node<nx, ny>(u, v);
+
+          for (index_t i = 0; i < ndof; i++) {
+            entity[entity_index + i] = element[elem_index + i];
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Set the degrees of freeom from the face into the element
+   *
+   * @tparam offset Offset into the element dof array
+   * @tparam ends Include the end points of the edge or not
+   * @tparam ndof The nuber of degrees of freedom at each node
+   * @tparam nx Number of nodes along the x-direction
+   * @tparam ny Number of nodes along the y-direction
+   * @tparam ElemDof Element degrees of freedom array type
+   * @tparam EntityDof Entity degrees of freedom array type
+   * @param f Face index
+   * @param orient Relative orientation between faces
+   * @param element Element degrees of freedmo
+   * @param entity Entity degrees of freedom
+   */
+  template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
+            index_t nz, class EntityDof, class ElemDof>
+  static void set_quad_face_dof(const index_t orient, const EntityDof& entity,
+                                ElemDof& element) {
+    if constexpr (ends) {
+      for (index_t v = 0; v < ny; v++) {
+        for (index_t u = 0; u < nx; u++) {
+          const index_t entity_index =
+              ndof * get_index_on_quad_ref_element(orient, nx, ny, u, v);
+
+          const index_t index = get_quad_node<nx, ny>(u, v);
+          const index_t elem_index = offset + ndof * index;
+
+          for (index_t i = 0; i < ndof; i++) {
+            element[elem_index + i] = entity[entity_index + i];
+          }
+        }
+      }
+    } else {
+      for (index_t v = 1; v < ny - 1; v++) {
+        for (index_t u = 1; u < nx - 1; u++) {
+          const index_t entity_index =
+              ndof * get_index_on_quad_ref_element(orient, nx - 2, ny - 2,
+                                                   u - 1, v - 1);
+          const index_t index = get_quad_node<nx, ny>(u, v);
+          const index_t elem_index = offset + ndof * index;
+
+          for (index_t i = 0; i < ndof; i++) {
+            element[elem_index + i] = entity[entity_index + i];
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * @brief Tetrahedral properties
    * The vertices of the tetrahedral element are
    *

@@ -27,6 +27,9 @@ class HeatConduction {
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
    *
@@ -135,6 +138,9 @@ class MixedHeatConduction {
 
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear

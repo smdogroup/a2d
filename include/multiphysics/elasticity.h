@@ -594,7 +594,7 @@ class TopoSurfaceTraction {
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
     // Extract the solution
-    A2D::Mat<T, dim, dim> U = (coef.template get<0>()).get_value();
+    A2D::Mat<T, dim, dim>& U = (coef.template get<0>()).get_value();
 
     for (index_t i = 0; i < dim; i++) {
       U(i) = wdetJ * tx[i];

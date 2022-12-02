@@ -53,39 +53,38 @@ class SurfaceMapping {
   template <class FiniteElementGeometry>
   SurfaceMapping(const FiniteElementGeometry& geo, T& detJ)
       : Jxi(geo.template get<0>().get_grad()), detJ(detJ) {
-    // // Find the nA = (Area) * normal direction
-    // // A2D::Vec<T, dim3> x0, x1, nA;
-    // x0(0) = Jxi(0, 0);
-    // x0(1) = Jxi(1, 0);
-    // x0(2) = Jxi(2, 0);
+    // Find the nA = (Area) * normal direction
+    A2D::Vec<T, dim> x, y, nA;
+    x(0) = Jxi(0, 0);
+    x(1) = Jxi(1, 0);
+    x(2) = Jxi(2, 0);
 
-    // x1(0) = Jxi(0, 1);
-    // x1(1) = Jxi(1, 1);
-    // x1(2) = Jxi(2, 1);
-    // A2D::Vec3Cross(x1, x2, nA);
+    y(0) = Jxi(0, 1);
+    y(1) = Jxi(1, 1);
+    y(2) = Jxi(2, 1);
 
-    // // Normalize the vector so we just have the normal
-    // A2D::Vec<T, dim3> n;
-    // A2D::Vec3Normalize(nA, n);
+    nA(0) = x(1) * y(2) - x(2) * y(1);
+    nA(1) = x(2) * y(0) - x(0) * y(2);
+    nA(2) = x(0) * y(1) - x(1) * y(0);
 
-    // // Now initialize the Jacobian transformation
-    // J(0, 0) = Jxi(0, 0);
-    // J(1, 0) = Jxi(1, 0);
-    // J(2, 0) = Jxi(2, 0);
+    detJ = std::sqrt(nA(0) * nA(0) + nA(1) * nA(1) + nA(2) * nA(2));
 
-    // J(0, 1) = Jxi(0, 1);
-    // J(1, 1) = Jxi(1, 1);
-    // J(2, 1) = Jxi(2, 1);
+    // Now initialize the Jacobian transformation
+    J(0, 0) = Jxi(0, 0);
+    J(1, 0) = Jxi(1, 0);
+    J(2, 0) = Jxi(2, 0);
 
-    // J(0, 2) = n(0);
-    // J(1, 2) = n(1);
-    // J(2, 2) = n(2);
+    J(0, 1) = Jxi(0, 1);
+    J(1, 1) = Jxi(1, 1);
+    J(2, 1) = Jxi(2, 1);
+
+    T invA = 1.0 / detJ;
+    J(0, 2) = invA * nA(0);
+    J(1, 2) = invA * nA(1);
+    J(2, 2) = invA * nA(2);
 
     // Compute the inverse of the transformation
     A2D::MatInverse(J, Jinv);
-
-    // Compute the determinant of the Jacobian matrix
-    A2D::MatDet(J, detJ);
   }
 
   template <class FiniteElementSpace>

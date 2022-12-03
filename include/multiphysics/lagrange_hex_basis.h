@@ -7,12 +7,13 @@
 
 namespace A2D {
 
-template <typename T, index_t C, index_t degree>
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
 class LagrangeH1HexBasis {
  public:
   using ET = ElementTypes;
 
-  static const index_t dim = 3;             // Spatial dimension
+  static const index_t dim = 3;             // Parametric dimension
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
   static const index_t ndof =
@@ -25,7 +26,7 @@ class LagrangeH1HexBasis {
   static constexpr BasisType get_basis_type() { return H1; }
 
   // Define the equivalent low-order basis class if any
-  using LOrderBasis = LagrangeH1HexBasis<T, C, 1>;
+  using LOrderBasis = LagrangeH1HexBasis<T, C, 1, interp_type>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and volume
@@ -195,11 +196,15 @@ class LagrangeH1HexBasis {
    * @brief Get the parametric point location associated with the given
    * degree of freedom
    *
+   * This code assumes we're using GLL interpolation. That is not necessarily
+   * the case. Generalize this?
+   *
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    // Get the quadrature knot locations
+    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];
@@ -257,7 +262,7 @@ class LagrangeH1HexBasis {
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order], d0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(pt0, n0, d0);
+          interpolation_basis<order, interp_type>(pt0, n0, d0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
@@ -281,7 +286,7 @@ class LagrangeH1HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1, d1);
+          interpolation_basis<order, interp_type>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
@@ -303,7 +308,7 @@ class LagrangeH1HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order], d2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(pt2, n2, d2);
+          interpolation_basis<order, interp_type>(pt2, n2, d2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -347,9 +352,9 @@ class LagrangeH1HexBasis {
         double n0[order], d0[order];
         double n1[order], d1[order];
         double n2[order], d2[order];
-        lagrange_basis<order>(pt[0], n0, d0);
-        lagrange_basis<order>(pt[1], n1, d1);
-        lagrange_basis<order>(pt[2], n2, d2);
+        interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        interpolation_basis<order, interp_type>(pt[1], n1, d1);
+        interpolation_basis<order, interp_type>(pt[2], n2, d2);
 
         FiniteElementSpace& s = out.get(q);
         H1Space<T, C, dim>& h1 = s.template get<space>();
@@ -452,7 +457,7 @@ class LagrangeH1HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order], d2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(pt2, n2, d2);
+          interpolation_basis<order, interp_type>(pt2, n2, d2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -492,7 +497,7 @@ class LagrangeH1HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(pt1, n1, d1);
+          interpolation_basis<order, interp_type>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
@@ -512,7 +517,7 @@ class LagrangeH1HexBasis {
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order], d0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(pt0, n0, d0);
+          interpolation_basis<order, interp_type>(pt0, n0, d0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
@@ -537,9 +542,9 @@ class LagrangeH1HexBasis {
         double n0[order], d0[order];
         double n1[order], d1[order];
         double n2[order], d2[order];
-        lagrange_basis<order>(pt[0], n0, d0);
-        lagrange_basis<order>(pt[1], n1, d1);
-        lagrange_basis<order>(pt[2], n2, d2);
+        interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        interpolation_basis<order, interp_type>(pt[1], n1, d1);
+        interpolation_basis<order, interp_type>(pt[2], n2, d2);
 
         const FiniteElementSpace& s = in.get(q);
         const H1Space<T, C, dim>& h1 = s.template get<space>();
@@ -603,9 +608,9 @@ class LagrangeH1HexBasis {
     // Evaluate the basis functions
     double n0[order], n1[order], n2[order];
     double d0[order], d1[order], d2[order];
-    lagrange_basis<order>(pt[0], n0, d0);
-    lagrange_basis<order>(pt[1], n1, d1);
-    lagrange_basis<order>(pt[2], n2, d2);
+    interpolation_basis<order, interp_type>(pt[0], n0, d0);
+    interpolation_basis<order, interp_type>(pt[1], n1, d1);
+    interpolation_basis<order, interp_type>(pt[2], n2, d2);
 
     for (index_t j2 = 0; j2 < order; j2++) {
       for (index_t j1 = 0; j1 < order; j1++) {
@@ -625,7 +630,8 @@ class LagrangeH1HexBasis {
   }
 };
 
-template <typename T, index_t C, index_t degree>
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GAUSS_INTERPOLATION>
 class LagrangeL2HexBasis {
  public:
   using ET = ElementTypes;
@@ -643,7 +649,7 @@ class LagrangeL2HexBasis {
   static constexpr BasisType get_basis_type() { return L2; }
 
   // Define the equivalent low-order basis class if any
-  using LOrderBasis = LagrangeL2HexBasis<T, C, 0>;
+  using LOrderBasis = LagrangeL2HexBasis<T, C, 0, interp_type>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and
@@ -783,7 +789,8 @@ class LagrangeL2HexBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    // Get the quadrature knot locations
+    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];
@@ -834,16 +841,13 @@ class LagrangeL2HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
-      // Get the quadrature knot locations
-      constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 0-direction
         T u0[order * order * q0dim];
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(knots, pt0, n0);
+          interpolation_basis<order, interp_type>(pt0, n0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
@@ -863,7 +867,7 @@ class LagrangeL2HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(knots, pt1, n1);
+          interpolation_basis<order, interp_type>(pt1, n1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
@@ -881,7 +885,7 @@ class LagrangeL2HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(knots, pt2, n2);
+          interpolation_basis<order, interp_type>(pt2, n2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -920,14 +924,11 @@ class LagrangeL2HexBasis {
           u.zero();
         }
 
-        // Get the quadrature knot locations
-        constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
         // Evaluate the basis functions
         double n0[order], n1[order], n2[order];
-        lagrange_basis<order>(knots, pt[0], n0);
-        lagrange_basis<order>(knots, pt[1], n1);
-        lagrange_basis<order>(knots, pt[2], n2);
+        interpolation_basis<order, interp_type>(pt[0], n0);
+        interpolation_basis<order, interp_type>(pt[1], n1);
+        interpolation_basis<order, interp_type>(pt[2], n2);
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
@@ -991,9 +992,6 @@ class LagrangeL2HexBasis {
       const index_t q1dim = Quadrature::tensor_dim1;
       const index_t q2dim = Quadrature::tensor_dim2;
 
-      // Get the quadrature knot locations
-      constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
         T u1[order * q0dim * q1dim];
@@ -1002,7 +1000,7 @@ class LagrangeL2HexBasis {
         for (index_t q2 = 0; q2 < q2dim; q2++) {
           double n2[order];
           const double pt2 = Quadrature::get_tensor_point(2, q2);
-          lagrange_basis<order>(knots, pt2, n2);
+          interpolation_basis<order, interp_type>(pt2, n2);
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
@@ -1030,7 +1028,7 @@ class LagrangeL2HexBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          lagrange_basis<order>(knots, pt1, n1);
+          interpolation_basis<order, interp_type>(pt1, n1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             for (index_t j2 = 0; j2 < order; j2++) {
@@ -1046,7 +1044,7 @@ class LagrangeL2HexBasis {
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
-          lagrange_basis<order>(knots, pt0, n0);
+          interpolation_basis<order, interp_type>(pt0, n0);
 
           for (index_t j2 = 0; j2 < order; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
@@ -1070,14 +1068,11 @@ class LagrangeL2HexBasis {
         const L2Space<T, C, dim>& l2 = s.template get<space>();
         const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
 
-        // Get the quadrature knot locations
-        constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
         // Evaluate the basis functions
         double n0[order], n1[order], n2[order];
-        lagrange_basis<order>(knots, pt[0], n0);
-        lagrange_basis<order>(knots, pt[1], n1);
-        lagrange_basis<order>(knots, pt[2], n2);
+        interpolation_basis<order, interp_type>(pt[0], n0);
+        interpolation_basis<order, interp_type>(pt[1], n1);
+        interpolation_basis<order, interp_type>(pt[2], n2);
 
         for (index_t j2 = 0; j2 < order; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
@@ -1118,14 +1113,11 @@ class LagrangeL2HexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    // Get the quadrature knot locations
-    constexpr const double* knots = get_gauss_quadrature_pts<order>();
-
     // Evaluate the basis functions
     double n0[order], n1[order], n2[order];
-    lagrange_basis<order>(knots, pt[0], n0);
-    lagrange_basis<order>(knots, pt[1], n1);
-    lagrange_basis<order>(knots, pt[2], n2);
+    interpolation_basis<order, interp_type>(pt[0], n0);
+    interpolation_basis<order, interp_type>(pt[1], n1);
+    interpolation_basis<order, interp_type>(pt[2], n2);
 
     for (index_t j2 = 0; j2 < order; j2++) {
       for (index_t j1 = 0; j1 < order; j1++) {

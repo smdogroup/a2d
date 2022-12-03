@@ -214,7 +214,7 @@ class H1Space {
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const Mat<T, D, D>& J,
-                  const Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) {
+                  const Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) const {
     // dot{s.grad} = dot{grad} Jinv =>
     // tr(bar{s.grad}^{T} * dot{s.grad})
     // = tr(bar{s.grad}^{T} * dot{grad} * Jinv)
@@ -472,7 +472,7 @@ class FESpace {
     physical element to the reference element
   */
   void rtransform(const T& detJ, const Mat<T, D, D>& J,
-                  const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                  const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) const {
     rtransform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
@@ -494,11 +494,13 @@ class FESpace {
 
   template <index_t index>
   void rtransform_(const T& detJ, const Mat<T, D, D>& J,
-                   const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {}
+                   const Mat<T, D, D>& Jinv,
+                   FESpace<T, D, Spaces...>& s) const {}
 
   template <index_t index, class First, class... Remain>
   void rtransform_(const T& detJ, const Mat<T, D, D>& J,
-                   const Mat<T, D, D>& Jinv, FESpace<T, D, Spaces...>& s) {
+                   const Mat<T, D, D>& Jinv,
+                   FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).rtransform(detJ, J, Jinv, std::get<index>(s.u));
     rtransform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }

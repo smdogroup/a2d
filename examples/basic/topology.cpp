@@ -3,8 +3,13 @@
 int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
+  const A2D::index_t dim = 3;
+  const A2D::index_t degree = 4;
+  const A2D::index_t filter_degree = 2;
+
   std::cout << "Topology linear elasticity\n";
-  A2D::TopoLinearElasticity<std::complex<double>, 3> elasticity(70e3, 0.3, 5.0);
+  A2D::TopoLinearElasticity<std::complex<double>, dim> elasticity(70e3, 0.3,
+                                                                  5.0);
   A2D::TestPDEImplementation<std::complex<double>>(elasticity);
 
   using T = std::complex<double>;
@@ -74,15 +79,14 @@ int main(int argc, char *argv[]) {
   bcinfo.add_boundary_condition(end_label, basis);
 
   // Create the finite-element model
-  const A2D::index_t degree = 6;
   T E = 70.0e3, nu = 0.3, q = 5.0;
   T design_stress = 200.0, ks_penalty = 50.0;
-  TopoOpt<T, degree> topo(conn, bcinfo, E, nu, q);
+  TopoOpt<T, degree, filter_degree> topo(conn, bcinfo, E, nu, q);
 
   // Set the geometry from the node locations
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoOpt<T, degree>::GeoBasis>(nhex, hex, Xloc,
-                                                            elem_geo);
+  A2D::set_geo_from_hex_nodes<TopoOpt<T, degree, filter_degree>::GeoBasis>(
+      nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 
   int ndvs = topo.get_num_design_vars();
@@ -104,6 +108,11 @@ int main(int argc, char *argv[]) {
   // Solve the problem
   topo.solve();
 
+  std::vector<T> dVdx(ndvs, 0.0);
+  T volume = topo.eval_volume();
+  topo.add_volume_gradient(dVdx);
+  std::cout << "Volume value = " << volume << std::endl;
+
   std::vector<T> dcdx(ndvs, 0.0);
   T compliance = topo.eval_compliance();
   topo.add_compliance_gradient(dcdx);
@@ -117,6 +126,18 @@ int main(int argc, char *argv[]) {
   if constexpr (std::is_same<T, std::complex<double>>::value == true) {
     double fd;
     T ans;
+
+    fd = imag(volume) / dh;
+    ans = 0.0;
+    for (A2D::index_t i = 0; i < ndvs; i++) {
+      ans += dVdx[i] * px[i];
+    }
+
+    std::cout << "Volume gradient check" << std::endl;
+    std::cout << std::setw(15) << "Complex-step" << std::setw(15) << "Adjoint"
+              << std::setw(15) << "Relative error" << std::endl;
+    std::cout << std::setw(15) << fd << std::setw(15) << std::real(ans)
+              << std::setw(15) << (fd - std::real(ans)) / fd << std::endl;
 
     fd = imag(compliance) / dh;
     ans = 0.0;

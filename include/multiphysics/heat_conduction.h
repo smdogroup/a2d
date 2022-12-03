@@ -1,6 +1,8 @@
 #ifndef A2D_HEAT_CONDUCTION_H
 #define A2D_HEAT_CONDUCTION_H
 
+#include "multiphysics/femapping.h"
+
 namespace A2D {
 
 /*
@@ -19,6 +21,9 @@ namespace A2D {
 template <typename T, index_t D>
 class HeatConduction {
  public:
+  HeatConduction(T kappa, T q, T heat_source)
+      : kappa(kappa), q(q), heat_source(heat_source) {}
+
   // Spatial dimension
   static const A2D::index_t dim = D;
 
@@ -40,6 +45,25 @@ class HeatConduction {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
+  // Data for the element
+  T kappa;        // Thermal conductivity
+  T q;            // The RAMP penalty parameter
+  T heat_source;  // the constant heat source term
+
+  /**
+   * @brief Find the integral of the thermal compliance over the entire domain
+   *
+   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& s) {
+    return wdetJ * (s.template get<0>()).get_value() * heat_source;
+  }
+
   /**
    * @brief Evaluate the derivatives of the weak form w.r.t. test function
    * components
@@ -58,13 +82,14 @@ class HeatConduction {
     const A2D::Vec<T, dim>& tx = s.template get<0>().get_grad();
     A2D::Vec<T, dim>& cx = coef.template get<0>().get_grad();
     T& c = coef.template get<0>().get_value();
-    c = wdetJ * 1.0;  // Hard-code a constant heat source here
+    c = -wdetJ * heat_source;  // Add a constant heat source here
 
     // Set the thermal conductivity coefficient
-    T kappa = data[0];
+    T rho = data[0];
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
     for (index_t k = 0; k < dim; k++) {
-      cx(k) = wdetJ * kappa * tx(k);
+      cx(k) = wdetJ * kappa * penalty * rho * tx(k);
     }
   }
 
@@ -83,7 +108,10 @@ class HeatConduction {
                                       const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
-        : wdetJ(wdetJ), kappa(data[0]) {}
+        : wdetJ(wdetJ),
+          kappa(pde.kappa),
+          rho(data[0]),
+          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
@@ -92,13 +120,54 @@ class HeatConduction {
       A2D::Vec<T, dim>& cx = Jp.template get<0>().get_grad();
 
       for (index_t k = 0; k < dim; k++) {
-        cx(k) = wdetJ * kappa * tx(k);
+        cx(k) = wdetJ * kappa * penalty * rho * tx(k);
       }
     }
 
    private:
     T wdetJ;
     T kappa;
+    T rho;
+    T penalty;
+  };
+
+  /**
+   * @brief Construct a JacVecProduct functor
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param s The solution at the quadrature point
+   */
+  class AdjVecProduct {
+   public:
+    A2D_INLINE_FUNCTION AdjVecProduct(const HeatConduction<T, D>& pde, T wdetJ,
+                                      const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
+                                      const FiniteElementSpace& s)
+        : wdetJ(wdetJ),
+          kappa(pde.kappa),
+          rho(data[0]),
+          q(pde.q),
+          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))) {}
+
+    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+                                        DataSpace& dfdx) {
+      T denom = (1.0 + q * (1.0 - rho));
+      T dpdrho = q / (denom * denom);
+
+      const A2D::Vec<T, dim>& psi = p.template get<0>().get_grad();
+
+      for (index_t k = 0; k < dim; k++) {
+        dfdx[0] += wdetJ * kappa * (dpdrho * rho + penalty) * psi(k);
+      }
+    }
+
+   private:
+    T wdetJ;
+    T kappa;
+    T rho;
+    T q;
+    T penalty;
   };
 };
 
@@ -152,7 +221,8 @@ class MixedHeatConduction {
   // The type of matrix used to store data at each quadrature point
   typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
-  // Mapping of the solution from the reference element to the physical element
+  // Mapping of the solution from the reference element to the physical
+  // element
   using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   /**

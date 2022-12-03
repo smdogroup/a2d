@@ -249,7 +249,7 @@ class TopoLinearElasticity {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, A2D::index_t C, A2D::index_t D>
+template <typename T, A2D::index_t C, A2D::index_t D, class PDE>
 class TopoVolume {
  public:
   // Number of dimensions
@@ -259,18 +259,16 @@ class TopoVolume {
   static const A2D::index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+  using DataSpace = typename PDE::DataSpace;
 
   // Space for the element geometry
-  using FiniteElementGeometry =
-      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+  using FiniteElementGeometry = typename PDE::FiniteElementGeometry;
 
   // Finite element space
-  using FiniteElementSpace =
-      typename TopoLinearElasticity<T, C>::FiniteElementSpace;
+  using FiniteElementSpace = typename PDE::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = typename TopoLinearElasticity<T, D>::SolutionMapping;
+  using SolutionMapping = typename PDE::SolutionMapping;
 
   /**
    * @brief Compute the integrand for this functional
@@ -322,6 +320,9 @@ class TopoBodyForce {
   // Finite element space
   using FiniteElementSpace =
       typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   TopoBodyForce(T q) : q(q) {}
 

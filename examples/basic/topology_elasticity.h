@@ -1,5 +1,5 @@
-#ifndef EXAMPLE_TOPOLOGY_H
-#define EXAMPLE_TOPOLOGY_H
+#ifndef TOPOLOGY_ELASTICITY_H
+#define TOPOLOGY_ELASTICITY_H
 
 #include <iostream>
 #include <memory>
@@ -11,74 +11,98 @@
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hex_basis.h"
-#include "multiphysics/poisson.h"
-#include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 
+/**
+ * @brief Performs topology optimization related analyses.
+ *
+ * @tparam T
+ * @tparam degree
+ */
 template <typename T, A2D::index_t degree>
-class TopoOpt {
+class TopoAnalysis {
  public:
-  static const A2D::index_t dim = 3;
-  static const A2D::index_t data_dim = 1;
-  using PDE = A2D::TopoLinearElasticity<T, dim>;
-  using BodyForce = A2D::TopoBodyForce<T, dim>;
-
+  // Alias templates
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
+
+  // Basic types
+  using I = A2D::index_t;
+
+  // Magic integers
+  static constexpr I spatial_dim = 3;  // spatial dimension
+  static constexpr I var_dim = 3;      // dimension of the PDE solution variable
+  static constexpr I data_dim = 1;     // dimension of material data
+  static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
+  static constexpr I block_size = var_dim;  // block size for BSR matrix
 
   // The type of solution vector to use
   using BasisVecType = A2D::SolutionVector<T>;
 
+  // Quadrature, basis and element views for original mesh
   using Quadrature = A2D::HexGaussQuadrature<degree + 1>;
   using DataBasis =
       A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, degree - 1>>;
-  using GeoBasis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, dim, degree>>;
-  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, dim, degree>>;
+  using GeoBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
+  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
   using DataElemVec = ElementVector<T, DataBasis, BasisVecType>;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
-  template <class PDEType>
-  using FE =
-      A2D::FiniteElement<T, PDEType, Quadrature, DataBasis, GeoBasis, Basis>;
 
-  // Matrix-free operator for the problem
-  using MatFree =
-      A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
-
-  static const A2D::index_t low_degree = 1;
+  // Quadrature, basis and element views for low order preconditioner mesh
   using LOrderQuadrature = A2D::HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis =
       A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, low_degree - 1>>;
   using LOrderGeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, dim, low_degree>>;
+      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
   using LOrderBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, dim, low_degree>>;
+      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, low_degree>>;
   using LOrderDataElemVec = ElementVector<T, LOrderDataBasis, BasisVecType>;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
+
+  // Block compressed row sparse matrix
+  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
+
+  /* Problem specific types */
+
+  // Problem PDE
+  using PDE = A2D::TopoLinearElasticity<T, spatial_dim>;
+  using BodyForce = A2D::TopoBodyForce<T, spatial_dim>;
+
+  // Finite element functional
+  using FE_PDE =
+      A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_BodyForce =
+      A2D::FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
+
+  // Finite element functional for low order preconditioner mesh
   using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                       LOrderGeoBasis, LOrderBasis>;
 
-  // Block-size for the finite-element problem
-  static const A2D::index_t block_size = 3;
-  static const A2D::index_t null_size = 6;
-  using BSRMatType = A2D::BSRMat<A2D::index_t, T, block_size, block_size>;
-  using BSRMatAmgType = A2D::BSRMatAmg<A2D::index_t, T, block_size, null_size>;
+  // Matrix-free operator
+  using MatFree =
+      A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+
+  // Algebraic multigrid solver
+  static constexpr I null_size = 6;
+  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
 
   // Functional definitions
-  using VolumeFunctional =
-      A2D::FiniteElement<T, A2D::TopoVolume<T, dim, dim>, Quadrature, DataBasis,
-                         GeoBasis, Basis>;
-  using AggregationFunctional =
-      A2D::FiniteElement<T, A2D::TopoVonMisesAggregation<T, dim>, Quadrature,
-                         DataBasis, GeoBasis, Basis>;
+  using VolumePDE = A2D::TopoVolume<T, var_dim, spatial_dim, PDE>;
 
-  TopoOpt(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo, T E,
-          T nu, T q)
+  using VolumeFunctional =
+      A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using AggregationFunctional =
+      A2D::FiniteElement<T, A2D::TopoVonMisesAggregation<T, spatial_dim>,
+                         Quadrature, DataBasis, GeoBasis, Basis>;
+
+  TopoAnalysis(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo, T E,
+               T nu, T q)
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -115,13 +139,13 @@ class TopoOpt {
         bodyforce(q),
         B("B", sol.get_num_dof() / block_size) {
     // Initialize the data
-    for (A2D::index_t i = 0; i < data.get_num_dof(); i++) {
+    for (I i = 0; i < data.get_num_dof(); i++) {
       data[i] = 1.0;
     }
 
     // Create the matrix for the low-order mesh
-    A2D::index_t nrows;
-    std::vector<A2D::index_t> rowp, cols;
+    I nrows;
+    std::vector<I> rowp, cols;
     lorder_mesh.template create_block_csr<block_size>(nrows, rowp, cols);
 
     // Create the shared pointer
@@ -143,7 +167,7 @@ class TopoOpt {
     coords.get_dof_coordinates(elem_geo, elem_x, elem_y, elem_z);
 
     // Initialize the near null-space to an appropriate vector
-    for (A2D::index_t i = 0; i < B.extent(0); i++) {
+    for (I i = 0; i < B.extent(0); i++) {
       B(i, 0, 0) = 1.0;
       B(i, 1, 1) = 1.0;
       B(i, 2, 2) = 1.0;
@@ -162,11 +186,11 @@ class TopoOpt {
     }
 
     // Zero out the boundary conditions
-    const A2D::index_t *bc_dofs;
-    A2D::index_t nbcs = bcs.get_bcs(&bc_dofs);
-    for (A2D::index_t i = 0; i < nbcs; i++) {
-      A2D::index_t dof = bc_dofs[i];
-      for (A2D::index_t j = 0; j < null_size; j++) {
+    const I *bc_dofs;
+    I nbcs = bcs.get_bcs(&bc_dofs);
+    for (I i = 0; i < nbcs; i++) {
+      I dof = bc_dofs[i];
+      for (I j = 0; j < null_size; j++) {
         B(dof / block_size, dof % block_size, j) = 0.0;
       }
     }
@@ -187,8 +211,8 @@ class TopoOpt {
                            lorder_elem_sol, elem_mat);
 
     // Apply the boundary conditions
-    const A2D::index_t *bc_dofs;
-    A2D::index_t nbcs = bcs.get_bcs(&bc_dofs);
+    const I *bc_dofs;
+    I nbcs = bcs.get_bcs(&bc_dofs);
     mat->zero_rows(nbcs, bc_dofs);
 
     // Initialize the matrix-free data
@@ -204,20 +228,20 @@ class TopoOpt {
                        A2D::MultiArrayNew<T *[block_size]> &out) -> void {
       xvec.zero();
       yvec.zero();
-      for (A2D::index_t i = 0; i < xvec.get_num_dof(); i++) {
+      for (I i = 0; i < xvec.get_num_dof(); i++) {
         xvec[i] = in(i / block_size, i % block_size);
       }
       matfree.add_jacobian_vector_product(elem_xvec, elem_yvec);
 
-      for (A2D::index_t i = 0; i < yvec.get_num_dof(); i++) {
+      for (I i = 0; i < yvec.get_num_dof(); i++) {
         out(i / block_size, i % block_size) = yvec[i];
       }
 
       // Set the boundary conditions as equal to the inputs
-      const A2D::index_t *bc_dofs;
-      A2D::index_t nbcs = bcs.get_bcs(&bc_dofs);
-      for (A2D::index_t i = 0; i < nbcs; i++) {
-        A2D::index_t dof = bc_dofs[i];
+      const I *bc_dofs;
+      I nbcs = bcs.get_bcs(&bc_dofs);
+      for (I i = 0; i < nbcs; i++) {
+        I dof = bc_dofs[i];
 
         out(dof / block_size, dof % block_size) =
             in(dof / block_size, dof % block_size);
@@ -225,14 +249,14 @@ class TopoOpt {
     };
 
     // Allocate the solver - we should add some of these as solver options
-    A2D::index_t num_levels = 3;
+    I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
-    A2D::index_t size = sol.get_num_dof() / block_size;
+    I size = sol.get_num_dof() / block_size;
     A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
     A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
@@ -242,13 +266,13 @@ class TopoOpt {
     fe.add_residual(pde, elem_data, elem_geo, elem_sol, elem_res);
     feb.add_residual(bodyforce, elem_data, elem_geo, elem_sol, elem_res);
 
-    for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
+    for (I i = 0; i < sol.get_num_dof(); i++) {
       rhs_vec(i / block_size, i % block_size) = -res[i];
     }
 
     // Zero out the boundary conditions
-    for (A2D::index_t i = 0; i < nbcs; i++) {
-      A2D::index_t dof = bc_dofs[i];
+    for (I i = 0; i < nbcs; i++) {
+      I dof = bc_dofs[i];
       rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
@@ -258,7 +282,7 @@ class TopoOpt {
     mat->write_mtx("topology_opt.mtx");
 
     // Record the solution
-    for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
+    for (I i = 0; i < sol.get_num_dof(); i++) {
       sol[i] = sol_vec(i / block_size, i % block_size);
     }
   }
@@ -268,7 +292,7 @@ class TopoOpt {
    *
    * @return The number of design variables
    */
-  A2D::index_t get_num_design_vars() { return datamesh.get_num_dof(); }
+  I get_num_design_vars() { return datamesh.get_num_dof(); }
 
   /**
    * @brief Set the design variable values into the topology
@@ -278,7 +302,7 @@ class TopoOpt {
    */
   template <class VecType>
   void set_design_vars(const VecType &xvec) {
-    for (A2D::index_t i = 0; i < datamesh.get_num_dof(); i++) {
+    for (I i = 0; i < datamesh.get_num_dof(); i++) {
       data[i] = xvec[i];
     }
   }
@@ -301,7 +325,7 @@ class TopoOpt {
     A2D::ElementVector_Serial<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
 
     A2D::SolutionVector<T> adjoint(mesh.get_num_dof());
-    for (A2D::index_t i = 0; i < adjoint.get_num_dof(); i++) {
+    for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -0.5 * sol[i];
     }
     A2D::ElementVector_Serial<T, Basis, A2D::SolutionVector<T>> elem_adjoint(
@@ -309,7 +333,7 @@ class TopoOpt {
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
                                             elem_adjoint, elem_dfdx);
-    for (A2D::index_t i = 0; i < adjoint.get_num_dof(); i++) {
+    for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -sol[i];
     }
     feb.add_adjoint_residual_data_derivative(bodyforce, elem_data, elem_geo,
@@ -324,7 +348,7 @@ class TopoOpt {
   T eval_volume() {
     A2D::Timer timer("TopoOpt::eval_volume()");
     VolumeFunctional functional;
-    A2D::TopoVolume<T, dim, dim> volume;
+    VolumePDE volume;
     T vol = functional.integrate(volume, elem_data, elem_geo, elem_sol);
 
     return vol;
@@ -340,7 +364,7 @@ class TopoOpt {
   void add_volume_gradient(VecType &dfdx) {
     A2D::Timer timer("TopoOpt::add_volume_gradient()");
     VolumeFunctional functional;
-    A2D::TopoVolume<T, dim, dim> volume;
+    VolumePDE volume;
 
     // Create the element-view for the derivative
     ElementVector<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
@@ -359,8 +383,8 @@ class TopoOpt {
   T eval_aggregation(T design_stress, T ks_penalty) {
     A2D::Timer timer("TopoOpt::eval_aggregation()");
     AggregationFunctional functional;
-    A2D::TopoVonMisesAggregation<T, dim> aggregation(E, nu, q, design_stress,
-                                                     ks_penalty);
+    A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
+        E, nu, q, design_stress, ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
     aggregation.set_max_failure_index(max_value);
@@ -383,8 +407,8 @@ class TopoOpt {
   void add_aggregation_gradient(T design_stress, T ks_penalty, VecType &dfdx) {
     A2D::Timer timer("TopoOpt::add_aggregation_gradient()");
     AggregationFunctional functional;
-    A2D::TopoVonMisesAggregation<T, dim> aggregation(E, nu, q, design_stress,
-                                                     ks_penalty);
+    A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
+        E, nu, q, design_stress, ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
     aggregation.set_max_failure_index(max_value);
@@ -415,8 +439,8 @@ class TopoOpt {
                            lorder_elem_sol, elem_mat);
 
     // Apply the boundary conditions
-    const A2D::index_t *bc_dofs;
-    A2D::index_t nbcs = bcs.get_bcs(&bc_dofs);
+    const I *bc_dofs;
+    I nbcs = bcs.get_bcs(&bc_dofs);
     mat->zero_rows(nbcs, bc_dofs);
 
     // Initialize the matrix-free data
@@ -432,20 +456,20 @@ class TopoOpt {
                        A2D::MultiArrayNew<T *[block_size]> &out) -> void {
       xvec.zero();
       yvec.zero();
-      for (A2D::index_t i = 0; i < xvec.get_num_dof(); i++) {
+      for (I i = 0; i < xvec.get_num_dof(); i++) {
         xvec[i] = in(i / block_size, i % block_size);
       }
       matfree.add_jacobian_vector_product(elem_xvec, elem_yvec);
 
-      for (A2D::index_t i = 0; i < yvec.get_num_dof(); i++) {
+      for (I i = 0; i < yvec.get_num_dof(); i++) {
         out(i / block_size, i % block_size) = yvec[i];
       }
 
       // Set the boundary conditions as equal to the inputs
-      const A2D::index_t *bc_dofs;
-      A2D::index_t nbcs = bcs.get_bcs(&bc_dofs);
-      for (A2D::index_t i = 0; i < nbcs; i++) {
-        A2D::index_t dof = bc_dofs[i];
+      const I *bc_dofs;
+      I nbcs = bcs.get_bcs(&bc_dofs);
+      for (I i = 0; i < nbcs; i++) {
+        I dof = bc_dofs[i];
 
         out(dof / block_size, dof % block_size) =
             in(dof / block_size, dof % block_size);
@@ -453,25 +477,25 @@ class TopoOpt {
     };
 
     // Allocate the solver - we should add some of these as solver options
-    A2D::index_t num_levels = 3;
+    I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = true;
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
-    A2D::index_t size = sol.get_num_dof() / block_size;
+    I size = sol.get_num_dof() / block_size;
     A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
     A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
     // Set the right-hand-side
-    for (A2D::index_t i = 0; i < dfdu.get_num_dof(); i++) {
+    for (I i = 0; i < dfdu.get_num_dof(); i++) {
       rhs_vec(i / block_size, i % block_size) = -dfdu[i];
     }
 
     // Zero out the boundary conditions
-    for (A2D::index_t i = 0; i < nbcs; i++) {
-      A2D::index_t dof = bc_dofs[i];
+    for (I i = 0; i < nbcs; i++) {
+      I dof = bc_dofs[i];
       rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
@@ -480,7 +504,7 @@ class TopoOpt {
     amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
 
     // Record the solution back into the right-hand-side vector
-    for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
+    for (I i = 0; i < sol.get_num_dof(); i++) {
       dfdu[i] = sol_vec(i / block_size, i % block_size);
     }
 
@@ -493,7 +517,7 @@ class TopoOpt {
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
-        [](A2D::index_t k, typename PDE::DataSpace &d,
+        [](I k, typename PDE::DataSpace &d,
            typename PDE::FiniteElementGeometry &g,
            typename PDE::FiniteElementSpace &s) {
           if (k == 3) {
@@ -532,8 +556,10 @@ class TopoOpt {
 
   PDE pde;
   BodyForce bodyforce;
-  FE<PDE> fe;
-  FE<BodyForce> feb;
+
+  FE_PDE fe;
+  FE_BodyForce feb;
+
   LOrderFE lorder_fe;
   MatFree matfree;
 

@@ -1,106 +1,13 @@
-#include "ParOptOptimizer.h"
-#include "topology.h"
+#include "topology_elasticity.h"
+
+#include "topology_paropt_prob.h"
 #include "utils/a2dvtk.h"
 
 using I = A2D::index_t;
 using T = ParOptScalar;
-constexpr int DEGREE = 3;
-
-class TopOptProb : public ParOptProblem {
- public:
-  TopOptProb(MPI_Comm comm, int nvars, int ncon, int nineq, T ref_comp,
-             T domain_vol, T volume_frac, TopoOpt<T, DEGREE> &topo)
-      : ParOptProblem(comm, nvars, ncon, nineq, 0, 0),
-        comm(comm),
-        nvars(nvars),
-        ncon(ncon),
-        nineq(nineq),
-        ref_comp(ref_comp),
-        domain_vol(domain_vol),
-        volume_frac(volume_frac),
-        topo(topo),
-        opt_iter(0) {}
-
-  void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
-    T *x, *lb, *ub;
-    xvec->getArray(&x);
-    lbvec->getArray(&lb);
-    ubvec->getArray(&ub);
-
-    // Set the design variable bounds
-    for (int i = 0; i < nvars; i++) {
-      x[i] = 0.95;
-      lb[i] = 1e-3;
-      ub[i] = 1.0;
-    }
-  }
-
-  // Note: constraints > 0
-  int evalObjCon(ParOptVec *xvec, T *fobj, T *cons) {
-    // Set design variables by paropt
-    T *x;
-    xvec->getArray(&x);
-    topo.set_design_vars(x);
-
-    topo.solve();
-
-    // Evaluate objective
-    *fobj = topo.eval_compliance() / ref_comp;
-
-    // Evaluate constraints
-    cons[0] = volume_frac - topo.eval_volume() / domain_vol;
-
-    // Write design to vtk
-    char name[256];
-    std::snprintf(name, sizeof(name), "result_%d.vtk", opt_iter);
-    topo.tovtk(name);
-
-    opt_iter++;
-
-    std::printf("[%2d]obj: %20.10e, con: %20.10e\n", opt_iter, *fobj, cons[0]);
-
-    return 0;
-  }
-
-  int evalObjConGradient(ParOptVec *xvec, ParOptVec *gvec, ParOptVec **Ac) {
-    T *x, *g, *c;
-
-    // Set design variables
-    xvec->getArray(&x);
-
-    // Evaluate objective gradient
-    gvec->zeroEntries();
-    gvec->getArray(&g);
-
-    topo.add_compliance_gradient(g);
-
-    // Evaluate constraint gradient
-    Ac[0]->zeroEntries();
-    Ac[0]->getArray(&c);
-    topo.add_volume_gradient(c);
-
-    // Scale gradients
-    for (int i = 0; i < nvars; i++) {
-      g[i] = g[i] / ref_comp;
-      c[i] = -c[i] / domain_vol;
-    }
-
-    return 0;
-  }
-
- private:
-  MPI_Comm comm;
-  int nvars;
-  int ncon;
-  int nineq;
-  T ref_comp;
-  T domain_vol;
-  T volume_frac;
-  TopoOpt<T, DEGREE> &topo;
-  int opt_iter;
-};
 
 void main_body(int argc, char *argv[]) {
+  constexpr int degree = 3;
   // Load connectivity and vertex coordinates from vtk
   std::string vtk_name = "3d_hex.vtk";
   if (argc > 1) {
@@ -130,10 +37,10 @@ void main_body(int argc, char *argv[]) {
 
   // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3, q = 5.0;
-  TopoOpt<T, DEGREE> topo(conn, bcinfo, E, nu, q);
+  TopoAnalysis<T, degree> topo(conn, bcinfo, E, nu, q);
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoOpt<T, DEGREE>::GeoBasis>(nhex, hex, Xloc,
-                                                            elem_geo);
+  A2D::set_geo_from_hex_nodes<TopoAnalysis<T, degree>::GeoBasis>(
+      nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 
   // Initialize the optimization object
@@ -145,8 +52,9 @@ void main_body(int argc, char *argv[]) {
   T ref_comp = topo.eval_compliance();
   T domain_vol = topo.eval_volume();
   T volume_frac = 0.4;
-  TopOptProb *prob = new TopOptProb(MPI_COMM_WORLD, nvars, ncon, nineq,
-                                    ref_comp, domain_vol, volume_frac, topo);
+  TopOptProb<degree> *prob =
+      new TopOptProb<degree>(MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
+                             domain_vol, volume_frac, topo);
   prob->incref();
 
   // Sanity check

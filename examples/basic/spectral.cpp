@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   using PDE = Poisson<T, dim>;
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
-  using LOrderBasis = Basis::LOrderBasis;
+  using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
 
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;

@@ -95,7 +95,8 @@ class TopoElasticityAnalysis {
   using FilterQuadrature = A2D::HexGaussQuadrature<degree>;
 
   // Use a continuous H1 space for the filter
-  using FilterSpace = A2D::FESpace<T, dim, A2D::H1Space<T, data_dim, dim>>;
+  using FilterSpace =
+      A2D::FESpace<T, spatial_dim, A2D::H1Space<T, data_dim, spatial_dim>>;
 
   // Use Bernstein points for the design vector on a lower-order mesh
   using FilterBasis =
@@ -115,7 +116,8 @@ class TopoElasticityAnalysis {
                          Quadrature, DataBasis, GeoBasis, Basis>;
 
   TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
-                         A2D::DirichletBCInfo &bcinfo, T E, T nu, T q)
+                         A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
+                         bool verbose)
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -154,7 +156,8 @@ class TopoElasticityAnalysis {
         pde(E, nu, q),
         bodyforce(q),
 
-        B("B", sol.get_num_dof() / block_size) {
+        B("B", sol.get_num_dof() / block_size),
+        verbose(verbose) {
     // Initialize the data
     for (I i = 0; i < data.get_num_dof(); i++) {
       data[i] = 1.0;
@@ -294,7 +297,11 @@ class TopoElasticityAnalysis {
     }
 
     // Solve the problem
-    amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
+    I monitor = 0;
+    if (verbose) {
+      monitor = 5;
+    }
+    amg.cg(mat_vec, rhs_vec, sol_vec, monitor, 100);
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -405,11 +412,10 @@ class TopoElasticityAnalysis {
     for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -0.5 * sol[i];
     }
-    ElementVector<T, Basis, BasisVecType> elem_adjoint(mesh, adjoint);
+    ElemVec elem_adjoint(mesh, adjoint);
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
                                             elem_adjoint, elem_dfdrho);
-    filter_add(elem_dfdrho, dfdx);
 
     for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -sol[i];
@@ -582,7 +588,11 @@ class TopoElasticityAnalysis {
     }
 
     // Solve the problem
-    amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
+    I monitor = 0;
+    if (verbose) {
+      monitor = 5;
+    }
+    amg.cg(mat_vec, rhs_vec, sol_vec, monitor, 100);
 
     // Record the solution back into the right-hand-side vector
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -655,6 +665,9 @@ class TopoElasticityAnalysis {
 
   // System matrix
   std::shared_ptr<BSRMatType> mat;
+
+  // If we print detailed info to stdout
+  bool verbose;
 };
 
 #endif

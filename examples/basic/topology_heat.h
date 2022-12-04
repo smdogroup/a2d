@@ -20,7 +20,7 @@
 /**
  * @brief Performs heat conduction analysis for topology optimization.
  */
-template <typename T, A2D::index_t degree>
+template <typename T, A2D::index_t degree, A2D::index_t filter_degree>
 class TopoHeatAnalysis {
  public:
   // Alias templates
@@ -89,6 +89,23 @@ class TopoHeatAnalysis {
   static constexpr I null_size = 1;
   using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
 
+  // Filter information
+  // Use the Gauss quadrature points here so that the filter can be evaluated at
+  // the Gauss points for the DataBasis
+  using FilterQuadrature = A2D::HexGaussQuadrature<degree>;
+
+  // Use a continuous H1 space for the filter
+  using FilterSpace =
+      A2D::FESpace<T, spatial_dim, A2D::H1Space<T, data_dim, spatial_dim>>;
+
+  // Use Bernstein points for the design vector on a lower-order mesh
+  using FilterBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, data_dim, filter_degree,
+                                              A2D::BERNSTEIN_INTERPOLATION>>;
+
+  // The design variable element mesh
+  using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
+
   // Functional definitions
   using VolumePDE = A2D::TopoVolume<T, var_dim, spatial_dim, PDE>;
 
@@ -107,6 +124,7 @@ class TopoHeatAnalysis {
         mesh(conn),
         geomesh(conn),
         datamesh(conn),
+        filtermesh(conn),
 
         bcs(conn, mesh, bcinfo),
 
@@ -119,11 +137,13 @@ class TopoHeatAnalysis {
         sol(mesh.get_num_dof()),
         geo(geomesh.get_num_dof()),
         data(datamesh.get_num_dof()),
+        filter_data(filtermesh.get_num_dof()),
 
         // Element-level views of the solution geometry and data
         elem_data(datamesh, data),
         elem_geo(geomesh, geo),
         elem_sol(mesh, sol),
+        elem_filter_data(filtermesh, filter_data),
 
         // Low-order views of the solution geometry and data
         lorder_elem_data(lorder_datamesh, data),
@@ -255,19 +275,74 @@ class TopoHeatAnalysis {
   }
 
   /**
-   * @brief Get solution state variable
+   * @brief Interpolate to the data space from the design variables
    */
-  A2D::SolutionVector<T> &get_sol() { return sol; }
+  template <class VecType>
+  void filter_interp(const VecType &xvec) {
+    // Copy the design variables to the filter data
+    for (A2D::index_t i = 0; i < filtermesh.get_num_dof(); i++) {
+      filter_data[i] = xvec[i];
+    }
+
+    // Loop over the elements and interpolate the values to the refined data
+    // mesh
+    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+    for (A2D::index_t i = 0; i < num_elements; i++) {
+      // Interpolate the data from the Bernstein filter
+      typename FilterElemVec::FEDof filter_dof(i, elem_filter_data);
+      elem_filter_data.get_element_values(i, filter_dof);
+
+      // Interpolate from the filter degrees of freedom to the high-order
+      // quadrature points
+      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
+      FilterBasis::template interp(filter_dof, qdata);
+
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+
+      // Set the data values into the data space for the high-order GLL mesh
+      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+        data_dof[j] = qdata.get(j)[0];
+      }
+
+      elem_data.set_element_values(i, data_dof);
+    }
+  }
+
+  /**
+   * @brief Add the values back to the design variable vector
+   */
+  template <class VecType, class DataDerivElemVec>
+  void filter_add(DataDerivElemVec &elem_dfdx, VecType &dfdx) {
+    ElementVector<T, FilterBasis, VecType> filter_dfdx(filtermesh, dfdx);
+
+    // Loop over the elements and interpolate the values to the refined data
+    // mesh
+    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+    for (A2D::index_t i = 0; i < num_elements; i++) {
+      typename DataDerivElemVec::FEDof data_dof(i, elem_dfdx);
+      elem_dfdx.get_element_values(i, data_dof);
+
+      // Set the data values into the data space for the high-order GLL mesh
+      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
+      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+        qdata.get(j)[0] = data_dof[j];
+      }
+
+      // Add the derivative from the Bernstein filter
+      typename ElementVector<T, FilterBasis, VecType>::FEDof filter_dof(
+          i, filter_dfdx);
+      FilterBasis::template add(qdata, filter_dof);
+      filter_dfdx.add_element_values(i, filter_dof);
+    }
+  }
 
   /**
    * @brief Get the number of design variables
-   *
-   * @return The number of design variables
    */
-  I get_num_design_vars() { return datamesh.get_num_dof(); }
+  I get_num_design_vars() { return filtermesh.get_num_dof(); }
 
   /**
-   * @brief Get the number of state variables
+   * @brief Get the number of degrees of freedom
    */
   I get_num_dofs() { return mesh.get_num_dof(); }
 
@@ -279,9 +354,7 @@ class TopoHeatAnalysis {
    */
   template <class VecType>
   void set_design_vars(const VecType &xvec) {
-    for (I i = 0; i < datamesh.get_num_dof(); i++) {
-      data[i] = xvec[i];
-    }
+    filter_interp(xvec);
   }
 
   /**
@@ -299,17 +372,18 @@ class TopoHeatAnalysis {
   template <class VecType>
   void add_compliance_gradient(VecType &dfdx) {
     A2D::Timer timer("TopoHeatAnalysis::add_compliance_gradient()");
-    A2D::ElementVector_Serial<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
+    BasisVecType dfdrho(datamesh.get_num_dof());
+    DataElemVec elem_dfdrho(datamesh, dfdrho);
 
-    A2D::SolutionVector<T> adjoint(mesh.get_num_dof());
+    BasisVecType adjoint(mesh.get_num_dof());
     for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -sol[i];
     }
-    A2D::ElementVector_Serial<T, Basis, A2D::SolutionVector<T>> elem_adjoint(
-        mesh, adjoint);
+    ElemVec elem_adjoint(mesh, adjoint);
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
-                                            elem_adjoint, elem_dfdx);
+                                            elem_adjoint, elem_dfdrho);
+    filter_add(elem_dfdrho, dfdx);
   }
 
   /**
@@ -339,10 +413,12 @@ class TopoHeatAnalysis {
     VolumePDE volume;
 
     // Create the element-view for the derivative
-    ElementVector<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
-
+    BasisVecType dfdrho(datamesh.get_num_dof());
+    DataElemVec elem_dfdrho(datamesh, dfdrho);
     functional.add_data_derivative(volume, elem_data, elem_geo, elem_sol,
-                                   elem_dfdx);
+                                   elem_dfdrho);
+
+    filter_add(elem_dfdrho, dfdx);
   }
 
   void tovtk(const std::string filename) {
@@ -365,6 +441,7 @@ class TopoHeatAnalysis {
   A2D::ElementMesh<Basis> mesh;
   A2D::ElementMesh<GeoBasis> geomesh;
   A2D::ElementMesh<DataBasis> datamesh;
+  A2D::ElementMesh<FilterBasis> filtermesh;
 
   A2D::DirichletBCs<Basis> bcs;
 
@@ -375,10 +452,12 @@ class TopoHeatAnalysis {
   A2D::SolutionVector<T> sol;
   A2D::SolutionVector<T> geo;
   A2D::SolutionVector<T> data;
+  A2D::SolutionVector<T> filter_data;
 
   DataElemVec elem_data;
   GeoElemVec elem_geo;
   ElemVec elem_sol;
+  FilterElemVec elem_filter_data;
 
   LOrderDataElemVec lorder_elem_data;
   LOrderGeoElemVec lorder_elem_geo;

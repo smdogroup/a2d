@@ -1,19 +1,31 @@
 #include "topology_elasticity.h"
 
 #include "topology_paropt_prob.h"
-#include "utils/a2dvtk.h"
+#include "utils/a2dparser.h"
 
 using I = A2D::index_t;
 using T = ParOptScalar;
 
 void main_body(int argc, char *argv[]) {
-  constexpr int degree = 3;
+  constexpr int degree = 4;
+  constexpr int filter_degree = 2;
 
-  // Load connectivity and vertex coordinates from vtk
-  std::string vtk_name = "3d_hex.vtk";
-  if (argc > 1) {
-    vtk_name = argv[1];
+  // Set up cmd arguments and defaults
+  ArgumentParser parser(argc, argv);
+  std::string vtk_name =
+      parser.parse_option("--vtk", std::string("3d_hex.vtk"));
+  std::string prefix = parser.parse_option("--prefix", std::string("results"));
+  int maxit = parser.parse_option("--maxit", 100);
+  double ramp_q = parser.parse_option("--ramp_q", 5.0);
+  bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
+  bool verbose = parser.parse_option("--verbose");
+  parser.help_info();
+
+  // Set up result directory
+  if (!std::filesystem::is_directory(prefix)) {
+    std::filesystem::create_directory(prefix);
   }
+
   A2D::ReadVTK3D<I, T> readvtk(vtk_name);
   T *Xloc = readvtk.get_Xloc();
   I nverts = readvtk.get_nverts();
@@ -37,10 +49,12 @@ void main_body(int argc, char *argv[]) {
       conn.add_boundary_label_from_verts(verts.size(), verts.data()), basis);
 
   // Initialize the analysis instance
-  T E = 70.0e3, nu = 0.3, q = 5.0;
-  TopoElasticityAnalysis<T, degree> topo(conn, bcinfo, E, nu, q);
+  T E = 70.0e3, nu = 0.3;
+  TopoElasticityAnalysis<T, degree, filter_degree> topo(conn, bcinfo, E, nu,
+                                                        ramp_q, verbose);
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoElasticityAnalysis<T, degree>::GeoBasis>(
+  A2D::set_geo_from_hex_nodes<
+      TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 
@@ -53,14 +67,16 @@ void main_body(int argc, char *argv[]) {
   T ref_comp = topo.eval_compliance();
   T domain_vol = topo.eval_volume();
   T volume_frac = 0.4;
-  printf("domain volume: %20.12e\n", domain_vol);
-  TopOptProb<TopoElasticityAnalysis<T, degree>> *prob =
-      new TopOptProb(MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp, domain_vol,
-                     volume_frac, topo);
+  TopOptProb<TopoElasticityAnalysis<T, degree, filter_degree>> *prob =
+      new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
+                     domain_vol, volume_frac, topo, verbose);
   prob->incref();
 
   // Sanity check
-  prob->checkGradients(1e-6);
+  if (check_grad_and_exit) {
+    prob->checkGradients(1e-6);
+    return;
+  }
 
   // Define paropt optimizer
   ParOptOptions *options = new ParOptOptions;
@@ -78,7 +94,7 @@ void main_body(int argc, char *argv[]) {
   options->setOption("mma_l1_tol", 1e-06);
   options->setOption("mma_linfty_tol", 1e-06);
   options->setOption("mma_max_asymptote_offset", 10);
-  options->setOption("mma_max_iterations", 200);
+  options->setOption("mma_max_iterations", maxit);
   options->setOption("mma_min_asymptote_offset", 0.01);
   options->setOption("mma_use_constraint_linearization", true);
 

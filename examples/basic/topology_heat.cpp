@@ -1,7 +1,5 @@
 #include "topology_heat.h"
 
-#include <typeinfo>
-
 #include "topology_paropt_prob.h"
 #include "utils/a2dparser.h"
 
@@ -9,7 +7,8 @@ using I = A2D::index_t;
 using T = ParOptScalar;
 
 void main_body(int argc, char *argv[]) {
-  constexpr int degree = 1;
+  constexpr int degree = 2;
+  constexpr int filter_degree = 1;
 
   // Set up cmd arguments and defaults
   ArgumentParser parser(argc, argv);
@@ -20,7 +19,7 @@ void main_body(int argc, char *argv[]) {
   double bc_temp = parser.parse_option("--bc_temp", 0.0);
   double heat_source = parser.parse_option("--heat_source", 1.0);
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
-  bool check_grad = parser.parse_option("--check_grad");
+  bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
   parser.help_info();
 
@@ -53,11 +52,12 @@ void main_body(int argc, char *argv[]) {
 
   // Initialize the analysis instance
   T kappa = 1.0;
-  TopoHeatAnalysis<T, degree> topo(conn, bcinfo, kappa, heat_source, bc_temp,
-                                   ramp_q, verbose);
+  TopoHeatAnalysis<T, degree, filter_degree> topo(
+      conn, bcinfo, kappa, heat_source, bc_temp, ramp_q, verbose);
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoHeatAnalysis<T, degree>::GeoBasis>(
-      nhex, hex, Xloc, elem_geo);
+  A2D::set_geo_from_hex_nodes<
+      TopoHeatAnalysis<T, degree, filter_degree>::GeoBasis>(nhex, hex, Xloc,
+                                                            elem_geo);
   topo.reset_geometry();
 
   // Get problem size
@@ -76,14 +76,15 @@ void main_body(int argc, char *argv[]) {
   T ref_hcomp = topo.eval_compliance();
   T domain_vol = topo.eval_volume();
   T volume_frac = 0.4;
-  TopOptProb<TopoHeatAnalysis<T, degree>> *prob =
+  TopOptProb<TopoHeatAnalysis<T, degree, filter_degree>> *prob =
       new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_hcomp,
                      domain_vol, volume_frac, topo, verbose);
   prob->incref();
 
   // Sanity check
-  if (check_grad) {
+  if (check_grad_and_exit) {
     prob->checkGradients(1e-6);
+    return;
   }
 
   // Define optimizer and options

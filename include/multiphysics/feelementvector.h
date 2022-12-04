@@ -64,6 +64,25 @@ constexpr std::complex<T> operator*(const int& lhs, const std::complex<T>& rhs) 
 }
 
 /*
+  Element vector implementation for empty values - does nothing
+*/
+class EmptyElementVector {
+ public:
+  EmptyElementVector() {}
+  class FEDof {
+   public:
+    FEDof(index_t elem, EmptyElementVector& elem_vec) {}
+  };
+  index_t get_num_elements() const { return 0; }
+  void init_values() {}
+  void init_zero_values() {}
+  void add_values() {}
+  void get_element_values(index_t elem, FEDof& dof) {}
+  void add_element_values(index_t elem, const FEDof& dof) {}
+  void set_element_values(index_t elem, const FEDof& dof) {}
+};
+
+/*
   In-place element vector implementation
 */
 template <typename T, class Basis, class VecType>

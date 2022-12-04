@@ -1613,7 +1613,7 @@ class ElementMesh {
   template <class InteriorBasis>
   ElementMesh(const index_t label, MeshConnectivity3D& conn,
               ElementMesh<InteriorBasis>& mesh)
-      : nelems(mesh.get_num_boundary_faces_with_label(label)) {
+      : nelems(conn.get_num_boundary_faces_with_label(label)) {
     element_dof = new index_t[nelems * ndof_per_element];
     element_sign = new int[nelems * ndof_per_element];
 
@@ -1621,7 +1621,7 @@ class ElementMesh {
     const index_t* boundary_faces;
     const index_t* boundary_labels;
     index_t num_boundary_faces =
-        mesh.get_boundary_faces(&boundary_faces, &boundary_labels);
+        conn.get_boundary_faces(&boundary_faces, &boundary_labels);
 
     for (index_t i = 0, elem_count = 0; i < num_boundary_faces; i++) {
       if (boundary_labels[i] == label) {
@@ -1690,17 +1690,6 @@ class ElementMesh {
             // Get the edge orientation relative to the face
             index_t orient = 0;
 
-            // Get the element edge vertices
-            index_t verts[2];
-            conn.get_element_edge_verts(elem, edge_index, verts);
-
-            // Need to do some magic here to get the edge orientation....
-            //
-            //
-            //
-            //
-            //
-
             // Get the index of the edge on the face
             index_t surf_edge_index = j;
 
@@ -1723,7 +1712,7 @@ class ElementMesh {
           // orientation as its interior owner
           Basis::set_entity_dof(basis, ET::FACE, 0, orient, entity_dof,
                                 surf_dof);
-          Basis::set_entity_signs(basis, ET::EDGE, 0, orient, surf_signs);
+          Basis::set_entity_signs(basis, ET::FACE, 0, orient, surf_signs);
         }
 
         elem_count++;

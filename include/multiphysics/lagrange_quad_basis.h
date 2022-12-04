@@ -70,7 +70,7 @@ class LagrangeH1QuadBasis {
     } else if (entity == ET::FACE) {
       const bool endp = false;
       ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof, EntityDof>(
-          index, element_dof, entity_dof);
+          element_dof, entity_dof);
     }
   }
 
@@ -98,7 +98,7 @@ class LagrangeH1QuadBasis {
     } else if (entity == ET::FACE) {
       const bool endp = false;
       ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof, ElemDof>(
-          index, orient, entity_dof, element_dof);
+          orient, entity_dof, element_dof);
     }
   }
 
@@ -261,14 +261,14 @@ class LagrangeH1QuadBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+          interpolation_basis<order, interp_type>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             T val(0.0), derx(0.0), dery(0.0);
             for (index_t j1 = 0; j1 < order; j1++) {
               val += n1[j1] * u0[j1 + order * q0];
-              derx += n1[j2] * u0x[j1 + order * q0];
-              dery += d1[j2] * u0[j1 + order * q0];
+              derx += n1[j1] * u0x[j1 + order * q0];
+              dery += d1[j1] * u0[j1 + order * q0];
             }
 
             const index_t qindex = Quadrature::get_tensor_index(q0, q1);
@@ -316,7 +316,7 @@ class LagrangeH1QuadBasis {
 
         for (index_t j1 = 0; j1 < order; j1++) {
           for (index_t j0 = 0; j0 < order; j0++) {
-            const index_t node = j0 + order * (j1 + order * j2);
+            const index_t node = j0 + order * j1;
             double N = n0[j0] * n1[j1];
             double dx = d0[j0] * n1[j1];
             double dy = n0[j0] * d1[j1];
@@ -391,7 +391,7 @@ class LagrangeH1QuadBasis {
         for (index_t q1 = 0; q1 < q1dim; q1++) {
           double n1[order], d1[order];
           const double pt1 = Quadrature::get_tensor_point(1, q1);
-          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+          interpolation_basis<order, interp_type>(pt1, n1, d1);
 
           for (index_t q0 = 0; q0 < q0dim; q0++) {
             const index_t qindex = Quadrature::get_tensor_index(q0, q1);
@@ -417,20 +417,20 @@ class LagrangeH1QuadBasis {
             }
           }
         }
-      }
 
-      for (index_t q0 = 0; q0 < q0dim; q0++) {
-        double n0[order], d0[order];
-        const double pt0 = Quadrature::get_tensor_point(0, q0);
-        interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        for (index_t q0 = 0; q0 < q0dim; q0++) {
+          double n0[order], d0[order];
+          const double pt0 = Quadrature::get_tensor_point(0, q0);
+          interpolation_basis<order, interp_type>(pt0, n0, d0);
 
-        for (index_t j1 = 0; j1 < order; j1++) {
-          T val = u0[j1 + order * q0];
-          T derx = u0x[j1 + order * q0];
+          for (index_t j1 = 0; j1 < order; j1++) {
+            T val = u0[j1 + order * q0];
+            T derx = u0x[j1 + order * q0];
 
-          for (index_t j0 = 0; j0 < order; j0++) {
-            const index_t node = j0 + order * j1;
-            res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
+            for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * j1;
+              res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
+            }
           }
         }
       }
@@ -453,7 +453,7 @@ class LagrangeH1QuadBasis {
 
         for (index_t j1 = 0; j1 < order; j1++) {
           for (index_t j0 = 0; j0 < order; j0++) {
-            const index_t node = j0 + order * (j1 + order * j2);
+            const index_t node = j0 + order * j1;
             double N = n0[j0] * n1[j1];
             double dx = d0[j0] * n1[j1];
             double dy = n0[j0] * d1[j1];

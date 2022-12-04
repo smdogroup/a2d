@@ -56,28 +56,28 @@ class ElementTypes {
    *
    * The vertices of the quadrilateral element are
    *
-   *           (2)
+   *           (1)
    *      3 ----------- 2
    *      |             |
-   *      |             | (1)
-   *  (3) |             |
+   *      |             | (3)
+   *  (2) |             |
    *      |             |
    *      0 ----------- 1
    *            (0)
    *
    *  The edges of the quadrilateral are
    *  (0)  0 -> 1
-   *  (1)  1 -> 2
-   *  (2)  2 -> 3
-   *  (3)  3 -> 0
+   *  (1)  3 -> 2
+   *  (2)  0 -> 3
+   *  (3)  1 -> 2
    */
   static const index_t QUAD_VERTS = 4;
   static const index_t QUAD_EDGES = 4;
   static constexpr index_t QUAD_EDGE_VERTS[][2] = {
-      {0, 1}, {1, 2}, {2, 3}, {3, 0}};
+      {0, 1}, {3, 2}, {0, 3}, {1, 2}};
 
   static constexpr index_t QUAD_VERTS_CART[][2] = {
-      {0, 0}, {1, 0}, {1, 1}, {1, 0}};
+      {0, 0}, {1, 0}, {1, 1}, {0, 1}};
 
   static const index_t NUM_QUAD_FACE_ORIENTATIONS = 8;
   static constexpr index_t QUAD_FACE_ORIENTATIONS[][4] = {
@@ -221,8 +221,9 @@ class ElementTypes {
   static index_t get_quad_edge_length(const index_t v0, const index_t v1) {
     if (QUAD_VERTS_CART[v0][0] != QUAD_VERTS_CART[v1][0]) {
       return nx;
+    } else {
+      return ny;
     }
-    { return ny; }
   }
 
   /**
@@ -455,7 +456,7 @@ class ElementTypes {
    * @param entity Entity degrees of freedom
    */
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
-            index_t nz, class EntityDof, class ElemDof>
+            class EntityDof, class ElemDof>
   static void set_quad_face_dof(const index_t orient, const EntityDof& entity,
                                 ElemDof& element) {
     if constexpr (ends) {
@@ -553,9 +554,9 @@ class ElementTypes {
                                                   {0, 1, 5, 4}, {3, 7, 6, 2},
                                                   {0, 3, 2, 1}, {4, 5, 6, 7}};
 
-  static constexpr index_t HEX_FACE_EDGES[][4] = {{8, 6, 10, 4}, {5, 11, 7, 9},
-                                                  {0, 9, 2, 8},  {1, 10, 3, 11},
-                                                  {4, 1, 5, 0},  {2, 7, 3, 6}};
+  static constexpr index_t HEX_FACE_EDGES[][4] = {{8, 10, 4, 6}, {5, 7, 9, 11},
+                                                  {0, 2, 8, 9},  {1, 3, 11, 10},
+                                                  {4, 5, 0, 1},  {2, 3, 6, 7}};
 
   // Cartesian coordinates of the vertices in the reference element
   static constexpr index_t HEX_VERTS_CART[][3] = {
@@ -750,9 +751,7 @@ class ElementTypes {
         (nz - 1) * HEX_VERTS_CART[v0][2]);
 
     // Find the number of nodes along the u-edge
-    const index_t nu = nx * (HEX_VERTS_CART[v1][0] - HEX_VERTS_CART[v0][0]) +
-                       ny * (HEX_VERTS_CART[v1][1] - HEX_VERTS_CART[v0][1]) +
-                       nz * (HEX_VERTS_CART[v1][2] - HEX_VERTS_CART[v0][2]);
+    const index_t nu = get_hex_edge_length<nx, ny, nz>(v0, v1);
 
     // Get the increment
     const int incr =

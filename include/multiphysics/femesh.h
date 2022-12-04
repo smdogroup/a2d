@@ -1613,7 +1613,7 @@ class ElementMesh {
   template <class InteriorBasis>
   ElementMesh(const index_t label, MeshConnectivity3D& conn,
               ElementMesh<InteriorBasis>& mesh)
-      : nelems(mesh.get_num_boundary_faces_with_label(label)) {
+      : nelems(conn.get_num_boundary_faces_with_label(label)) {
     element_dof = new index_t[nelems * ndof_per_element];
     element_sign = new int[nelems * ndof_per_element];
 
@@ -1621,7 +1621,7 @@ class ElementMesh {
     const index_t* boundary_faces;
     const index_t* boundary_labels;
     index_t num_boundary_faces =
-        mesh.get_boundary_faces(&boundary_faces, &boundary_labels);
+        conn.get_boundary_faces(&boundary_faces, &boundary_labels);
 
     for (index_t i = 0, elem_count = 0; i < num_boundary_faces; i++) {
       if (boundary_labels[i] == label) {

@@ -455,7 +455,7 @@ class ElementTypes {
    * @param entity Entity degrees of freedom
    */
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
-            index_t nz, class EntityDof, class ElemDof>
+            class EntityDof, class ElemDof>
   static void set_quad_face_dof(const index_t orient, const EntityDof& entity,
                                 ElemDof& element) {
     if constexpr (ends) {

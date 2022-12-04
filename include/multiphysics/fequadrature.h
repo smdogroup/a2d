@@ -23,6 +23,66 @@ class TriQuadrature3 {
 };
 
 template <index_t order>
+class QuadGaussQuadrature {
+ public:
+  /// @brief  Is this a tensor product implementation
+  static const bool is_tensor_product = true;
+
+  /// @brief The total number of quadrature points
+  static const index_t num_quad_points = order * order;
+
+  /// @brief Number of points along each direction
+  static const index_t tensor_dim0 = order;
+  static const index_t tensor_dim1 = order;
+
+  /**
+   * @brief Get the quadrature point along the given dimension
+   *
+   * @param dim Dimension 0 or 1
+   * @param pt The point along the direction
+   * @return The quadrature point along the direction
+   */
+  static double get_tensor_point(const index_t dim, const index_t pt) {
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    return pts[pt];
+  }
+
+  /**
+   * @brief Get the quadrature weight along the given dimension
+   *
+   * @param dim Dimension 0, 1 or 2
+   * @param pt The point along the direction
+   * @return The weight factor along the direction
+   */
+  static double get_tensor_weight(const index_t dim, const index_t pt) {
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[pt];
+  }
+
+  /**
+   * @brief Get the quadrature point index
+   *
+   * @param q0 Quadrature index along 0-direction
+   * @param q1 Quadrature index along 1-direction
+   * @return The quadrature index
+   */
+  static index_t get_tensor_index(const index_t q0, const index_t q1) {
+    return q0 + order * q1;
+  }
+
+  static index_t get_num_points() { return order * order; }
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[n / order];
+  }
+  static double get_weight(const index_t n) {
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n % order] * wts[n / order];
+  }
+};
+
+template <index_t order>
 class HexGaussQuadrature {
  public:
   /// @brief  Is this a tensor product implementation
@@ -84,6 +144,66 @@ class HexGaussQuadrature {
     constexpr const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];
+  }
+};
+
+template <index_t order>
+class QuadaussLobattoQuadrature {
+ public:
+  /// @brief  Is this a tensor product implementation
+  static const bool is_tensor_product = true;
+
+  /// @brief The total number of quadrature points
+  static const index_t num_quad_points = order * order;
+
+  /// @brief Number of points along each direction
+  static const index_t tensor_dim0 = order;
+  static const index_t tensor_dim1 = order;
+
+  /**
+   * @brief Get the quadrature point along the given dimension
+   *
+   * @param dim Dimension 0 or 1
+   * @param pt The point along the direction
+   * @return The quadrature point along the direction
+   */
+  static double get_tensor_point(const index_t dim, const index_t pt) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    return pts[pt];
+  }
+
+  /**
+   * @brief Get the quadrature weight along the given dimension
+   *
+   * @param dim Dimension 0 or 1
+   * @param pt The point along the direction
+   * @return The weight factor along the direction
+   */
+  static double get_tensor_weight(const index_t dim, const index_t pt) {
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[pt];
+  }
+
+  /**
+   * @brief Get the quadrature point index
+   *
+   * @param q0 Quadrature index along 0-direction
+   * @param q1 Quadrature index along 1-direction
+   * @return The quadrature index
+   */
+  static index_t get_tensor_index(const index_t q0, const index_t q1) {
+    return q0 + order * q1;
+  }
+
+  static index_t get_num_points() { return order * order * order; }
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[n / order];
+  }
+  static double get_weight(const index_t n) {
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[n % order] * wts[n / order];
   }
 };
 

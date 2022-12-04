@@ -14,6 +14,7 @@
 #include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_quad_basis.h"
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
@@ -25,6 +26,7 @@ class TopoOpt {
   static const A2D::index_t dim = 3;
   static const A2D::index_t data_dim = 1;
   using PDE = A2D::TopoLinearElasticity<T, dim>;
+  using TractionPDE = A2D::TopoSurfaceTraction<T, dim>;
 
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
@@ -40,11 +42,29 @@ class TopoOpt {
   using DataElemVec = ElementVector<T, DataBasis, BasisVecType>;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
+
+  // High-order finite-element problem
   using FE = A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
-  // Matrix-free operator for the problem
+  // High-order matrix-free operator for the problem
   using MatFree =
       A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+
+  // High-order surface traction
+  using TractionQuadrature = A2D::QuadGaussQuadrature<degree + 1>;
+  using TractionDataBasis = A2D::FEBasis<T>;
+  using TractionGeoBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, dim, degree>>;
+  using TractionBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, dim, degree>>;
+  using TractionDataElemVec = ElementVector<T, TractionDataBasis, BasisVecType>;
+  using TractionGeoElemVec = ElementVector<T, TractionGeoBasis, BasisVecType>;
+  using TractionElemVec = ElementVector<T, TractionBasis, BasisVecType>;
+
+  // High-order traction class
+  using Traction =
+      A2D::FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
+                         TractionGeoBasis, TractionBasis>;
 
   static const A2D::index_t low_degree = 1;
   using LOrderQuadrature = A2D::HexGaussQuadrature<low_degree + 1>;
@@ -92,7 +112,7 @@ class TopoOpt {
                          DataBasis, GeoBasis, Basis>;
 
   TopoOpt(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo, T E,
-          T nu, T q)
+          T nu, T q, A2D::index_t label, const T tx[])
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -104,6 +124,10 @@ class TopoOpt {
         datamesh(conn),
         filtermesh(conn),
 
+        traction_mesh(label, conn, mesh),
+        traction_geomesh(label, conn, geomesh),
+
+        // Boundary conditions
         bcs(conn, mesh, bcinfo),
 
         // Project the meshes onto the low-order meshes
@@ -123,12 +147,17 @@ class TopoOpt {
         elem_data(datamesh, data),
         elem_filter_data(filtermesh, filter_data),
 
+        // Element view of the traction class
+        elem_traction_sol(traction_mesh, sol),
+        elem_traction_geo(traction_geomesh, geo),
+
         // Low-order views of the solution geometry and data
         lorder_elem_sol(lorder_mesh, sol),
         lorder_elem_geo(lorder_geomesh, geo),
         lorder_elem_data(lorder_datamesh, data),
 
         pde(E, nu, q),
+        traction_pde(tx),
         B("B", sol.get_num_dof() / block_size) {
     // Initialize the data
     for (A2D::index_t i = 0; i < data.get_num_dof(); i++) {
@@ -250,24 +279,33 @@ class TopoOpt {
     // Create the solution and right-hand-side vectors
     A2D::index_t size = sol.get_num_dof() / block_size;
     A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-    A2D::MultiArrayNew<T *[block_size]> force_vec("force_vec", size);
+    A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
-    // Set a constant right-hand-side
-    for (A2D::index_t i = 0; i < force_vec.extent(0); i++) {
-      for (A2D::index_t j = 0; j < force_vec.extent(1); j++) {
-        force_vec(i, j) = 1.0;
-      }
+    // Zero the solution
+    sol.zero();
+
+    // No data associated with the traction class
+    A2D::EmptyElementVector elem_traction_data;
+
+    // Assemble the force contribution
+    A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
+    TractionElemVec elem_traction_res(traction_mesh, traction_res);
+    traction.add_residual(traction_pde, elem_traction_data, elem_traction_geo,
+                          elem_traction_sol, elem_traction_res);
+
+    // Set the right-hand-side
+    for (A2D::index_t i = 0; i < traction_res.get_num_dof(); i++) {
+      rhs_vec(i / block_size, i % block_size) = -traction_res[i];
     }
 
     // Zero out the boundary conditions
     for (A2D::index_t i = 0; i < nbcs; i++) {
       A2D::index_t dof = bc_dofs[i];
-      force_vec(dof / block_size, dof % block_size) = 0.0;
+      rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
     // Solve the problem
-    // amg.applyFactor(force_vec, sol_vec);
-    amg.cg(mat_vec, force_vec, sol_vec, 5, 100);
+    amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
 
     // Record the solution
     for (A2D::index_t i = 0; i < sol.get_num_dof(); i++) {
@@ -584,6 +622,8 @@ class TopoOpt {
   A2D::ElementMesh<GeoBasis> geomesh;
   A2D::ElementMesh<DataBasis> datamesh;
   A2D::ElementMesh<FilterBasis> filtermesh;
+  A2D::ElementMesh<TractionBasis> traction_mesh;
+  A2D::ElementMesh<TractionGeoBasis> traction_geomesh;
 
   A2D::DirichletBCs<Basis> bcs;
 
@@ -600,15 +640,19 @@ class TopoOpt {
   GeoElemVec elem_geo;
   DataElemVec elem_data;
   FilterElemVec elem_filter_data;
+  TractionElemVec elem_traction_sol;
+  TractionGeoElemVec elem_traction_geo;
 
   LOrderElemVec lorder_elem_sol;
   LOrderGeoElemVec lorder_elem_geo;
   LOrderDataElemVec lorder_elem_data;
 
   PDE pde;
+  TractionPDE traction_pde;
   FE fe;
   LOrderFE lorder_fe;
   MatFree matfree;
+  Traction traction;
 
   // The near null-space to an appropriate vector
   A2D::MultiArrayNew<T *[block_size][null_size]> B;

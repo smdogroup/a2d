@@ -1,15 +1,18 @@
 #ifndef TOPOLOGY_PAROPT_PROB_H
 #define TOPOLOGY_PAROPT_PROB_H
 
+#include <string>
+
 #include "ParOptOptimizer.h"
 
-template <A2D::index_t degree>
+template <class Analysis>
 class TopOptProb : public ParOptProblem {
  public:
-  TopOptProb(MPI_Comm comm, int nvars, int ncon, int nineq,
+  TopOptProb(std::string prefix, MPI_Comm comm, int nvars, int ncon, int nineq,
              ParOptScalar ref_comp, ParOptScalar domain_vol,
-             ParOptScalar volume_frac, TopoAnalysis<ParOptScalar, degree> &topo)
+             ParOptScalar volume_frac, Analysis &topo, bool verbose)
       : ParOptProblem(comm, nvars, ncon, nineq, 0, 0),
+        prefix(prefix),
         comm(comm),
         nvars(nvars),
         ncon(ncon),
@@ -18,7 +21,8 @@ class TopOptProb : public ParOptProblem {
         domain_vol(domain_vol),
         volume_frac(volume_frac),
         topo(topo),
-        opt_iter(0) {}
+        opt_iter(0),
+        verbose(verbose) {}
 
   void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
     ParOptScalar *x, *lb, *ub;
@@ -39,24 +43,27 @@ class TopOptProb : public ParOptProblem {
     // Set design variables by paropt
     ParOptScalar *x;
     xvec->getArray(&x);
-    topo.set_design_vars(x);
 
+    topo.set_design_vars(x);
     topo.solve();
 
     // Evaluate objective
     *fobj = topo.eval_compliance() / ref_comp;
 
-    // Evaluate constraidegree
-    cons[0] = volume_frac - topo.eval_volume() / domain_vol;
+    // Evaluate constraint
+    ParOptScalar vol = topo.eval_volume();
+    cons[0] = volume_frac - vol / domain_vol;
 
     // Write design to vtk
-    char name[256];
-    std::snprintf(name, sizeof(name), "result_%d.vtk", opt_iter);
-    topo.tovtk(name);
+    char vtk_name[256];
+    std::snprintf(vtk_name, sizeof(vtk_name), "result_%d.vtk", opt_iter);
+    std::filesystem::path path =
+        std::filesystem::path(prefix) / std::filesystem::path(vtk_name);
+    topo.tovtk(path);
 
     opt_iter++;
 
-    std::printf("[%2d]obj: %20.10e, con: %20.10e\n", opt_iter, *fobj, cons[0]);
+    std::printf("[%2d] obj: %20.10e, con: %20.10e\n", opt_iter, *fobj, cons[0]);
 
     return 0;
   }
@@ -88,6 +95,7 @@ class TopOptProb : public ParOptProblem {
   }
 
  private:
+  std::string prefix;
   MPI_Comm comm;
   int nvars;
   int ncon;
@@ -95,8 +103,9 @@ class TopOptProb : public ParOptProblem {
   ParOptScalar ref_comp;
   ParOptScalar domain_vol;
   ParOptScalar volume_frac;
-  TopoAnalysis<ParOptScalar, degree> &topo;
+  Analysis &topo;
   int opt_iter;
+  bool verbose;
 };
 
 #endif

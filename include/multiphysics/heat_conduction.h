@@ -148,17 +148,18 @@ class HeatConduction {
           kappa(pde.kappa),
           rho(data[0]),
           q(pde.q),
-          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))) {}
+          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))),
+          tx(s.template get<0>().get_grad()) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         DataSpace& dfdx) {
       T denom = (1.0 + q * (1.0 - rho));
-      T dpdrho = q / (denom * denom);
+      T dprhodrho = (q + 1.0) / (denom * denom);
 
       const A2D::Vec<T, dim>& psi = p.template get<0>().get_grad();
 
       for (index_t k = 0; k < dim; k++) {
-        dfdx[0] += wdetJ * kappa * (dpdrho * rho + penalty) * psi(k);
+        dfdx[0] += wdetJ * kappa * dprhodrho * tx(k) * psi(k);
       }
     }
 
@@ -168,7 +169,47 @@ class HeatConduction {
     T rho;
     T q;
     T penalty;
+    const A2D::Vec<T, dim>& tx;
   };
+};
+
+/**
+ * @brief Compute the right-hand-side of the adjoint equation for thermal
+ * compliance function.
+ */
+template <typename T, A2D::index_t D>
+class AdjRHS {
+ public:
+  // Number of dimensions
+  static const A2D::index_t dim = D;
+
+  // Number of data dimensions
+  static const A2D::index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = typename HeatConduction<T, D>::DataSpace;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename HeatConduction<T, D>::FiniteElementGeometry;
+
+  // Finite element space
+  using FiniteElementSpace = typename HeatConduction<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+
+  T heat_source;
+
+  AdjRHS(T heat_source) : heat_source(heat_source) {}
+
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    T& c = coef.template get<0>().get_value();
+    c = -wdetJ * heat_source;
+  }
 };
 
 /*

@@ -8,6 +8,7 @@ using T = ParOptScalar;
 
 void main_body(int argc, char *argv[]) {
   constexpr int degree = 3;
+
   // Load connectivity and vertex coordinates from vtk
   std::string vtk_name = "3d_hex.vtk";
   if (argc > 1) {
@@ -37,9 +38,9 @@ void main_body(int argc, char *argv[]) {
 
   // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3, q = 5.0;
-  TopoAnalysis<T, degree> topo(conn, bcinfo, E, nu, q);
+  TopoElasticityAnalysis<T, degree> topo(conn, bcinfo, E, nu, q);
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoAnalysis<T, degree>::GeoBasis>(
+  A2D::set_geo_from_hex_nodes<TopoElasticityAnalysis<T, degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 
@@ -52,14 +53,14 @@ void main_body(int argc, char *argv[]) {
   T ref_comp = topo.eval_compliance();
   T domain_vol = topo.eval_volume();
   T volume_frac = 0.4;
-  TopOptProb<degree> *prob =
-      new TopOptProb<degree>(MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
-                             domain_vol, volume_frac, topo);
+  printf("domain volume: %20.12e\n", domain_vol);
+  TopOptProb<TopoElasticityAnalysis<T, degree>> *prob =
+      new TopOptProb(MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp, domain_vol,
+                     volume_frac, topo);
   prob->incref();
 
   // Sanity check
   prob->checkGradients(1e-6);
-  exit(0);
 
   // Define paropt optimizer
   ParOptOptions *options = new ParOptOptions;

@@ -17,13 +17,10 @@
 #include "utils/a2dprofiler.h"
 
 /**
- * @brief Performs topology optimization related analyses.
- *
- * @tparam T
- * @tparam degree
+ * @brief Performs elasticity analysis for topology optimization.
  */
 template <typename T, A2D::index_t degree>
-class TopoAnalysis {
+class TopoElasticityAnalysis {
  public:
   // Alias templates
   template <class... Args>
@@ -101,8 +98,8 @@ class TopoAnalysis {
       A2D::FiniteElement<T, A2D::TopoVonMisesAggregation<T, spatial_dim>,
                          Quadrature, DataBasis, GeoBasis, Basis>;
 
-  TopoAnalysis(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo, T E,
-               T nu, T q)
+  TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
+                         A2D::DirichletBCInfo &bcinfo, T E, T nu, T q)
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -137,6 +134,7 @@ class TopoAnalysis {
 
         pde(E, nu, q),
         bodyforce(q),
+
         B("B", sol.get_num_dof() / block_size) {
     // Initialize the data
     for (I i = 0; i < data.get_num_dof(); i++) {
@@ -201,7 +199,7 @@ class TopoAnalysis {
    *
    */
   void solve() {
-    A2D::Timer timer("TopoOpt::solve()");
+    A2D::Timer timer("TopoElasticityAnalysis::solve()");
     // Create a view of the low-order element matrix
     A2D::ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh,
                                                                 *mat);
@@ -277,9 +275,7 @@ class TopoAnalysis {
     }
 
     // Solve the problem
-    // amg.applyFactor(rhs_vec, sol_vec);
-    amg.cg(mat_vec, rhs_vec, sol_vec, 0, 100);
-    mat->write_mtx("topology_opt.mtx");
+    amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -311,7 +307,7 @@ class TopoAnalysis {
    * @brief Evaluate the compliance
    */
   T eval_compliance() {
-    A2D::Timer timer("TopoOpt::eval_compliance()");
+    A2D::Timer timer("TopoElasticityAnalysis::eval_compliance()");
     return fe.integrate(pde, elem_data, elem_geo, elem_sol);
   }
 
@@ -321,7 +317,7 @@ class TopoAnalysis {
    */
   template <class VecType>
   void add_compliance_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoOpt::add_compliance_gradient()");
+    A2D::Timer timer("TopoElasticityAnalysis::add_compliance_gradient()");
     A2D::ElementVector_Serial<T, DataBasis, VecType> elem_dfdx(datamesh, dfdx);
 
     A2D::SolutionVector<T> adjoint(mesh.get_num_dof());
@@ -346,7 +342,7 @@ class TopoAnalysis {
    * @return The volume of the parametrized topology
    */
   T eval_volume() {
-    A2D::Timer timer("TopoOpt::eval_volume()");
+    A2D::Timer timer("TopoElasticityAnalysis::eval_volume()");
     VolumeFunctional functional;
     VolumePDE volume;
     T vol = functional.integrate(volume, elem_data, elem_geo, elem_sol);
@@ -362,7 +358,7 @@ class TopoAnalysis {
    */
   template <class VecType>
   void add_volume_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoOpt::add_volume_gradient()");
+    A2D::Timer timer("TopoElasticityAnalysis::add_volume_gradient()");
     VolumeFunctional functional;
     VolumePDE volume;
 
@@ -381,7 +377,7 @@ class TopoAnalysis {
    * @return The aggregation functional value
    */
   T eval_aggregation(T design_stress, T ks_penalty) {
-    A2D::Timer timer("TopoOpt::eval_aggregation()");
+    A2D::Timer timer("TopoElasticityAnalysis::eval_aggregation()");
     AggregationFunctional functional;
     A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
         E, nu, q, design_stress, ks_penalty);
@@ -405,7 +401,7 @@ class TopoAnalysis {
    */
   template <class VecType>
   void add_aggregation_gradient(T design_stress, T ks_penalty, VecType &dfdx) {
-    A2D::Timer timer("TopoOpt::add_aggregation_gradient()");
+    A2D::Timer timer("TopoElasticityAnalysis::add_aggregation_gradient()");
     AggregationFunctional functional;
     A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
         E, nu, q, design_stress, ks_penalty);
@@ -500,7 +496,6 @@ class TopoAnalysis {
     }
 
     // Solve the problem
-    // amg.applyFactor(rhs_vec, sol_vec);
     amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
 
     // Record the solution back into the right-hand-side vector

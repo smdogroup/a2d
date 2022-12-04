@@ -148,7 +148,7 @@ class HexGaussQuadrature {
 };
 
 template <index_t order>
-class QuadaussLobattoQuadrature {
+class QuadGaussLobattoQuadrature {
  public:
   /// @brief  Is this a tensor product implementation
   static const bool is_tensor_product = true;

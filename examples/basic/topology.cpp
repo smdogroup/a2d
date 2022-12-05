@@ -1,4 +1,4 @@
-#include "topology.h"
+#include "topology_elasticity.h"
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize();
@@ -97,12 +97,14 @@ int main(int argc, char *argv[]) {
   // Create the finite-element model
   T E = 70.0e3, nu = 0.3, q = 5.0;
   T design_stress = 200.0, ks_penalty = 50.0;
-  TopoOpt<T, degree, filter_degree> topo(conn, bcinfo, E, nu, q, traction_label,
-                                         t);
+  bool verbose = true;
+  TopoElasticityAnalysis<T, degree, filter_degree> topo(
+      conn, bcinfo, E, nu, q, traction_label, t, verbose);
 
   // Set the geometry from the node locations
   auto elem_geo = topo.get_geometry();
-  A2D::set_geo_from_hex_nodes<TopoOpt<T, degree, filter_degree>::GeoBasis>(
+  A2D::set_geo_from_hex_nodes<
+      TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 

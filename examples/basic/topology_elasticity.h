@@ -643,8 +643,6 @@ class TopoElasticityAnalysis {
 
     fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
                                             elem_dfdu, elem_dfdrho);
-    filter_add(elem_dfdrho, dfdx);
-
     feb.add_adjoint_residual_data_derivative(bodyforce, elem_data, elem_geo,
                                              elem_sol, elem_dfdu, elem_dfdrho);
     filter_add(elem_dfdrho, dfdx);

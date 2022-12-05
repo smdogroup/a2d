@@ -5,35 +5,15 @@
 
 using I = A2D::index_t;
 using T = ParOptScalar;
-using fspath = fspath;
+using fspath = std::filesystem::path;
 
-void main_body(int argc, char *argv[]) {
-  constexpr int degree = 2;
-  constexpr int filter_degree = 1;
-
-  // Set up cmd arguments and defaults
-  A2D::ArgumentParser parser(argc, argv);
-  std::string vtk_name =
-      parser.parse_option("--vtk", std::string("3d_hex.vtk"));
-  std::string prefix = parser.parse_option("--prefix", std::string("results"));
-  int maxit = parser.parse_option("--maxit", 200);
-  int vtk_freq = parser.parse_option("--vtk_freq", 10);
-  double ramp_q = parser.parse_option("--ramp_q", 5.0);
-  bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
-  bool verbose = parser.parse_option("--verbose");
-  int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
-  int cg_it = parser.parse_option("--cg_it", 100);
-  double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
-  double cg_atol = parser.parse_option("--cg_atol", 1e-30);
-  parser.help_info();
-
-  // Set up result directory
-  if (!std::filesystem::is_directory(prefix)) {
-    std::filesystem::create_directory(prefix);
-  }
-
-  // Save cmd arguments to txt
-  A2D::save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
+template <int degree>
+void main_body(std::string vtk_name, std::string prefix, int maxit,
+               int vtk_freq, double ramp_q, bool check_grad_and_exit,
+               bool verbose, int amg_nlevels, int cg_it, double cg_rtol,
+               double cg_atol) {
+  // Set the lower order degree for the Bernstein polynomial
+  constexpr int filter_degree = degree - 1;
 
   // Set up profiler
   A2D::TIMER_OUTPUT_FILE = fspath(prefix) / fspath("profile.log");
@@ -52,16 +32,22 @@ void main_body(int argc, char *argv[]) {
                                npyrmd, pyrmd);
 
   // Find bc vertices
-  std::vector<int> ids{100,
-                       101};  // fixed both left and right faces of the domain
+  std::vector<int> ids{100};  // Fix the left surface of domain
   std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
   I bc_label = conn.add_boundary_label_from_verts(verts.size(), verts.data());
 
   // Find traction vertices
   T lower[3], upper[3];
+  T fraction = 0.2;
   readvtk.get_bounds(lower, upper);
-  std::vector<I> traction_verts = readvtk.get_verts_within_box(
-      lower[0], upper[0], upper[1], upper[1], lower[2], upper[2]);
+  T xmin = upper[0];
+  T xmax = upper[0];
+  T ymin = lower[1];
+  T ymax = lower[1] + fraction * (upper[1] - lower[1]);
+  T zmin = lower[2];
+  T zmax = upper[2];
+  std::vector<I> traction_verts =
+      readvtk.get_verts_within_box(xmin, xmax, ymin, ymax, zmin, zmax);
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
 
@@ -95,12 +81,19 @@ void main_body(int argc, char *argv[]) {
       cg_it, cg_rtol, cg_atol);
   auto elem_geo = topo.get_geometry();
   A2D::set_geo_from_hex_nodes<
-      TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
+      typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
 
-  // Initialize the optimization object
+  // Get problem size
   int nvars = topo.get_num_design_vars();
+  int ndof = topo.get_num_dofs();
+
+  // Print info
+  std::printf("number of design variables:   %d\n", nvars);
+  std::printf("number of degrees of freedom: %d\n", ndof);
+
+  // Initialize the optimization object
   int ncon = 1;
   int nineq = 1;
   topo.set_design_vars(std::vector<T>(nvars, T(1.0)));
@@ -174,10 +167,94 @@ void main_body(int argc, char *argv[]) {
 }
 
 int main(int argc, char *argv[]) {
-  A2D::Timer timer("main()");
   MPI_Init(&argc, &argv);
   Kokkos::initialize();
-  { main_body(argc, argv); }
+  {
+    // Initialize argument parser
+    A2D::ArgumentParser parser(argc, argv);
+
+    // Set up cmd arguments and defaults
+    int degree = parser.parse_option("--degree", 1);
+    std::string vtk_name =
+        parser.parse_option("--vtk", std::string("3d_hex.vtk"));
+    std::string prefix =
+        parser.parse_option("--prefix", std::string("results"));
+    int maxit = parser.parse_option("--maxit", 200);
+    int vtk_freq = parser.parse_option("--vtk_freq", 10);
+    double ramp_q = parser.parse_option("--ramp_q", 5.0);
+    bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
+    bool verbose = parser.parse_option("--verbose");
+    int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
+    int cg_it = parser.parse_option("--cg_it", 100);
+    double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
+    double cg_atol = parser.parse_option("--cg_atol", 1e-30);
+
+    // Print info with invoked with -h or --help
+    parser.help_info();
+
+    // Set up result directory
+    if (!std::filesystem::is_directory(prefix)) {
+      std::filesystem::create_directory(prefix);
+    }
+
+    // Save cmd arguments to txt
+    A2D::save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
+
+    // Execute
+    switch (degree) {
+      case 1:
+        main_body<1>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 2:
+        main_body<2>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 3:
+        main_body<3>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 4:
+        main_body<4>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 5:
+        main_body<5>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 6:
+        main_body<6>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 7:
+        main_body<7>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      case 8:
+        main_body<8>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
+                     cg_atol);
+        break;
+
+      default:
+        std::printf("Specified degree (%d) is not precompiled.\n", degree);
+        break;
+    }
+  }
   Kokkos::finalize();
   MPI_Finalize();
   return 0;

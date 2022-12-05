@@ -453,6 +453,11 @@ class TopoElasticityAnalysis {
   A2D::index_t get_num_design_vars() { return filtermesh.get_num_dof(); }
 
   /**
+   * @brief Get the number of degrees of freedom
+   */
+  I get_num_dofs() { return mesh.get_num_dof(); }
+
+  /**
    * @brief Set the design variable values into the topology
    *
    * @tparam VecType The type of design vector

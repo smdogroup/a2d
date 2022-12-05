@@ -39,8 +39,8 @@ class TopoLinearElasticity {
   using QMatType = A2D::SymmMat<T, ncomp>;
 
   // Data for the element
-  T mu0;      // First Lame parameter
-  T lambda0;  // Second Lame parameter
+  T mu0;      // Second Lame parameter
+  T lambda0;  // First Lame parameter
   T q;        // The RAMP penalty parameter
 
   /**
@@ -249,7 +249,7 @@ class TopoLinearElasticity {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, A2D::index_t D>
+template <typename T, A2D::index_t C, A2D::index_t D, class PDE>
 class TopoVolume {
  public:
   // Number of dimensions
@@ -259,18 +259,16 @@ class TopoVolume {
   static const A2D::index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+  using DataSpace = typename PDE::DataSpace;
 
   // Space for the element geometry
-  using FiniteElementGeometry =
-      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+  using FiniteElementGeometry = typename PDE::FiniteElementGeometry;
 
   // Finite element space
-  using FiniteElementSpace =
-      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+  using FiniteElementSpace = typename PDE::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = typename TopoLinearElasticity<T, D>::SolutionMapping;
+  using SolutionMapping = typename PDE::SolutionMapping;
 
   /**
    * @brief Compute the integrand for this functional
@@ -301,6 +299,81 @@ class TopoVolume {
     dfdx.zero();
     dfdx[0] = wdetJ;
   }
+};
+
+template <typename T, A2D::index_t D>
+class TopoBodyForce {
+ public:
+  // Number of dimensions
+  static const A2D::index_t dim = D;
+
+  // Number of data dimensions
+  static const A2D::index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+
+  // Finite element space
+  using FiniteElementSpace =
+      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+
+  TopoBodyForce(T q, const T tx_[]) : q(q) {
+    for (index_t i = 0; i < dim; i++) {
+      tx[i] = tx_[i];
+    }
+  }
+
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    T rho = data[0];
+    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+
+    // Add body force components
+    A2D::Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
+    for (index_t i = 0; i < dim; i++) {
+      Ub(i) = wdetJ * penalty * tx[i];
+    }
+  }
+
+  class AdjVecProduct {
+   public:
+    A2D_INLINE_FUNCTION AdjVecProduct(const TopoBodyForce<T, dim>& pde, T wdetJ,
+                                      const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
+                                      const FiniteElementSpace& s)
+        : q(pde.q), rho(data[0]), wdetJ(wdetJ) {
+      for (index_t i = 0; i < dim; i++) {
+        tx[i] = pde.tx[i];
+      }
+    }
+
+    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& psi,
+                                        DataSpace& dfdx) {
+      const A2D::Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
+      T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
+
+      for (index_t i = 0; i < dim; i++) {
+        dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
+      }
+    }
+
+   private:
+    T q, rho, wdetJ;
+    T tx[dim];
+  };
+
+ private:
+  T q;        // RAMP parameter
+  T tx[dim];  // body force values
 };
 
 /*

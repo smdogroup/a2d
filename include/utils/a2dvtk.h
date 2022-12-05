@@ -287,7 +287,9 @@ class ReadVTK3D {
         ntets(0),
         nhex(0),
         nwedge(0),
-        npyramid(0) {
+        npyramid(0),
+        xyz_lower{1e20, 1e20, 1e20},
+        xyz_upper{-1e20, -1e20, -1e20} {
     // If file doesn't exist, exit
     if (!std::filesystem::exists(vtk_name)) {
       char msg[256];
@@ -307,14 +309,22 @@ class ReadVTK3D {
     // Get number of points from vtk
     goto_line_with_str(ifs, "POINTS") >> dummy >> nverts;
 
-    // Allocate and populate nodal location array
+    // Allocate and populate nodal location array, and record domain bounds
+    T coord;
     Xloc.reserve(nverts * SPATIAL_DIM);
     std::string line;
     for (int i = 0; i < nverts; i++) {
       std::getline(ifs, line);
       std::istringstream iss(line);
       for (int j = 0; j < SPATIAL_DIM; j++) {
-        iss >> Xloc[SPATIAL_DIM * i + j];
+        iss >> coord;
+        Xloc[SPATIAL_DIM * i + j] = coord;
+        if (coord > xyz_upper[j]) {
+          xyz_upper[j] = coord;
+        }
+        if (coord < xyz_lower[j]) {
+          xyz_lower[j] = coord;
+        }
       }
     }
 
@@ -396,8 +406,8 @@ class ReadVTK3D {
    *
    * In the given VTK, each cell is assigned an entity id, which is used to
    * group cells in the same physical group (e.g. boundary, etc.). Such id
-   * labels are associated to cells, hence they need to be converted to vertex
-   * indices for A2D to use.
+   * labels are associated to cells, hence they need to be converted to
+   * vertex indices for A2D to use.
    */
   std::vector<I> get_verts_given_cell_entity_id(const std::vector<int> id) {
     std::set<I> verts;
@@ -410,6 +420,31 @@ class ReadVTK3D {
                         conn_pyramid);
     std::shared_ptr<I[]> data(new I[verts.size()]);
     return std::vector<I>(verts.begin(), verts.end());
+  }
+
+  /**
+   * @brief Get the vertex indices of those lie within the given box.
+   *
+   * This is handy to specify bc nodes directly in A2D.
+   */
+  std::vector<I> get_verts_within_box(double xmin, double xmax, double ymin,
+                                      double ymax, double zmin, double zmax,
+                                      double tol = 1e-6) {
+    std::vector<I> verts;
+    double x, y, z;
+    for (I i = 0; i < nverts; i++) {
+      x = Xloc[3 * i];
+      y = Xloc[3 * i + 1];
+      z = Xloc[3 * i + 2];
+      if (x > xmin - tol && x < xmax + tol) {
+        if (y > ymin - tol && y < ymax + tol) {
+          if (z > zmin - tol && z < zmax + tol) {
+            verts.push_back(i);
+          }
+        }
+      }
+    }
+    return verts;
   }
 
   // Get number of vertices for each element type
@@ -431,11 +466,17 @@ class ReadVTK3D {
 
   // Get nodal locations of vertices
   T* get_Xloc() { return Xloc.data(); }
+  void get_bounds(T* lower, T* upper) {
+    for (int i = 0; i < SPATIAL_DIM; i++) {
+      lower[i] = xyz_lower[i];
+      upper[i] = xyz_upper[i];
+    }
+  }
 
  private:
   /**
-   * @brief Insert vertex indices of a given element type to a given set based
-   * on the cell id.
+   * @brief Insert vertex indices of a given element type to a given set
+   * based on the cell id.
    *
    * @param id cell ids
    * @param nverts_per_cell number of vertices per cell of this type
@@ -456,7 +497,8 @@ class ReadVTK3D {
   }
 
   /**
-   * @brief Insert the vertices of a given cell to corresponding connectivity
+   * @brief Insert the vertices of a given cell to corresponding
+   * connectivity
    */
   void insert_verts_to_conn(std::string& conn_line, std::vector<I>& conn) {
     int elem_nverts;
@@ -511,6 +553,9 @@ class ReadVTK3D {
 
   // Location coordinates for vertices
   std::vector<T> Xloc;
+
+  // Domain bounds
+  T xyz_lower[3], xyz_upper[3];
 };
 
 /**
@@ -520,8 +565,8 @@ class ReadVTK3D {
 class VectorFieldToVTK {
  public:
   VectorFieldToVTK(index_t nverts, double* xloc, double* vec,
-                   const char vtk_name[] = "vector_field.vtk") {
-    fp = std::fopen(vtk_name, "w");
+                   const std::string vtk_name = "vector_field.vtk") {
+    fp = std::fopen(vtk_name.c_str(), "w");
 
     // Write header
     std::fprintf(fp, "# vtk DataFile Version 3.0\n");

@@ -820,6 +820,11 @@ extern void dgeev_(const char *JOBVL, const char *JOBVR, int *N, double *A,
 */
 template <typename I, typename T, index_t M>
 T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
+  // Adjust size if matrix is small
+  if (A.nbcols * M < size) {
+    size = A.nbcols * M;
+  }
+
   // Allocate the Upper Hessenberg matrix of shape (size + 1, size)
   double H[size * (size + 1)];
   std::fill(H, H + size * (size + 1), 0.0);
@@ -846,7 +851,7 @@ T BSRMatArnoldiSpectralRadius(BSRMat<I, T, M, M> &A, I size = 15) {
 
     // Orthogonalize against the existing subspace
     for (I j = 0; j <= i; j++) {
-      I index = j + i * size;  // row-major index for entry H(j, i)
+      I index = i + j * size;  // row-major index for entry H(j, i)
       H[index] = A2D::RealPart(A2D::BLAS::dot(W[i + 1], W[j]));
       A2D::BLAS::axpy(W[i + 1], -H[index], W[j]);
     }

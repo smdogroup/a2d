@@ -10,7 +10,8 @@ class TopOptProb : public ParOptProblem {
  public:
   TopOptProb(std::string prefix, MPI_Comm comm, int nvars, int ncon, int nineq,
              ParOptScalar ref_comp, ParOptScalar domain_vol,
-             ParOptScalar volume_frac, Analysis &topo, bool verbose)
+             ParOptScalar volume_frac, Analysis &topo, bool verbose,
+             int vtk_freq)
       : ParOptProblem(comm, nvars, ncon, nineq, 0, 0),
         prefix(prefix),
         comm(comm),
@@ -22,7 +23,8 @@ class TopOptProb : public ParOptProblem {
         volume_frac(volume_frac),
         topo(topo),
         opt_iter(0),
-        verbose(verbose) {}
+        verbose(verbose),
+        vtk_freq(vtk_freq) {}
 
   void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
     ParOptScalar *x, *lb, *ub;
@@ -55,11 +57,13 @@ class TopOptProb : public ParOptProblem {
     cons[0] = volume_frac - vol / domain_vol;
 
     // Write design to vtk
-    char vtk_name[256];
-    std::snprintf(vtk_name, sizeof(vtk_name), "result_%d.vtk", opt_iter);
-    std::filesystem::path path =
-        std::filesystem::path(prefix) / std::filesystem::path(vtk_name);
-    topo.tovtk(path);
+    if (opt_iter % vtk_freq == 0) {
+      char vtk_name[256];
+      std::snprintf(vtk_name, sizeof(vtk_name), "result_%d.vtk", opt_iter);
+      std::filesystem::path path =
+          std::filesystem::path(prefix) / std::filesystem::path(vtk_name);
+      topo.tovtk(path);
+    }
 
     opt_iter++;
 
@@ -106,6 +110,7 @@ class TopOptProb : public ParOptProblem {
   Analysis &topo;
   int opt_iter;
   bool verbose;
+  int vtk_freq;
 };
 
 #endif

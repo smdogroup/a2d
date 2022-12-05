@@ -239,6 +239,9 @@ class TopoHeatAnalysis {
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
+    if (verbose) {
+      print_info = true;
+    }
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
@@ -621,7 +624,7 @@ void test_heat_analysis(int argc, char *argv[]) {
   A2D::index_t num_levels = 3;
   double omega = 4.0 / 3.0;
   double epsilon = 0.0;
-  bool print_info = false;
+  bool print_info = true;
   const int null_size = 1;
   A2D::MultiArrayNew<T *[block_size][null_size]> B(
       "B", sol.get_num_dof() / block_size);

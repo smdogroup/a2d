@@ -7,15 +7,16 @@ using I = A2D::index_t;
 using T = ParOptScalar;
 
 void main_body(int argc, char *argv[]) {
-  constexpr int degree = 2;
-  constexpr int filter_degree = 1;
+  constexpr int degree = 5;
+  constexpr int filter_degree = 4;
 
   // Set up cmd arguments and defaults
   ArgumentParser parser(argc, argv);
   std::string vtk_name =
       parser.parse_option("--vtk", std::string("3d_hex_1000.vtk"));
   std::string prefix = parser.parse_option("--prefix", std::string("results"));
-  int maxit = parser.parse_option("--maxit", 100);
+  int maxit = parser.parse_option("--maxit", 200);
+  int vtk_freq = parser.parse_option("--vtk_freq", 10);
   double bc_temp = parser.parse_option("--bc_temp", 0.0);
   double heat_source = parser.parse_option("--heat_source", 1.0);
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
@@ -28,6 +29,12 @@ void main_body(int argc, char *argv[]) {
     std::filesystem::create_directory(prefix);
   }
 
+  // Set up profiler
+  A2D::TIMER_OUTPUT_FILE =
+      std::filesystem::path(prefix) / std::filesystem::path("profile.log");
+  A2D::Timer timer("main_body()");
+
+  // Read in vtk
   A2D::ReadVTK3D<I, T> readvtk(vtk_name);
   T *Xloc = readvtk.get_Xloc();
   I nverts = readvtk.get_nverts();
@@ -40,9 +47,48 @@ void main_body(int argc, char *argv[]) {
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 
-  // Extract boundary vertices
-  std::vector<int> ids{100};
-  std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
+  // // Extract boundary vertices
+  // std::vector<int> ids{100};
+  // std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
+
+  // Set up bc region
+  T lower[3], upper[3];
+  readvtk.get_bounds(lower, upper);
+  T ratio = 0.4;
+  T tol = 1e-6;
+  T xmin = lower[0];
+  T xmax = lower[0];
+  T ymin = lower[1] + (1.0 - ratio) / 2 * (upper[1] - lower[1]);
+  T ymax = lower[1] + (1.0 + ratio) / 2 * (upper[1] - lower[1]);
+  T zmin = lower[2] + (1.0 - ratio) / 2 * (upper[2] - lower[2]);
+  T zmax = lower[2] + (1.0 + ratio) / 2 * (upper[2] - lower[2]);
+
+  std::cout << "lower[0]: " << lower[0] << " ";
+  std::cout << "lower[1]: " << lower[1] << " ";
+  std::cout << "lower[2]: " << lower[2] << " ";
+  std::cout << "upper[0]: " << upper[0] << " ";
+  std::cout << "upper[1]: " << upper[1] << " ";
+  std::cout << "upper[2]: " << upper[2] << "\n";
+
+  std::cout << "xmin: " << xmin << " ";
+  std::cout << "ymin: " << ymin << " ";
+  std::cout << "zmin: " << zmin << " ";
+  std::cout << "xmax: " << xmax << " ";
+  std::cout << "ymax: " << ymax << " ";
+  std::cout << "zmax: " << zmax << "\n";
+  std::vector<I> verts =
+      readvtk.get_verts_within_box(xmin, xmax, ymin, ymax, zmin, zmax);
+
+  // Write bc verts to vtk for debugging purpose
+  std::vector<T> labels(3 * nverts, 0.0);
+  for (auto it = verts.begin(); it != verts.end(); it++) {
+    labels[3 * (*it)] = 1.0;
+  }
+  {
+    A2D::VectorFieldToVTK fieldtovtk(
+        nverts, Xloc, labels.data(),
+        std::filesystem::path(prefix) / std::filesystem::path("bc_verts.vtk"));
+  }
 
   // Set up boundary condition information
   A2D::index_t basis = 0;
@@ -78,7 +124,7 @@ void main_body(int argc, char *argv[]) {
   T volume_frac = 0.4;
   TopOptProb<TopoHeatAnalysis<T, degree, filter_degree>> *prob =
       new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_hcomp,
-                     domain_vol, volume_frac, topo, verbose);
+                     domain_vol, volume_frac, topo, verbose, vtk_freq);
   prob->incref();
 
   // Sanity check
@@ -92,20 +138,17 @@ void main_body(int argc, char *argv[]) {
   options->incref();
   ParOptOptimizer::addDefaultOptions(options);
 
+  std::string out_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.out");
+  std::string tr_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.tr");
+  std::string mma_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.mma");
   options->setOption("algorithm", "mma");
-  options->setOption("mma_asymptote_contract", 0.7);
-  options->setOption("mma_asymptote_relax", 1.2);
-  options->setOption("mma_bound_relax", 0);
-  options->setOption("mma_delta_regularization", 1e-05);
-  options->setOption("mma_eps_regularization", 0.001);
-  options->setOption("mma_infeas_tol", 1e-05);
-  options->setOption("mma_init_asymptote_offset", 0.25);
-  options->setOption("mma_l1_tol", 1e-06);
-  options->setOption("mma_linfty_tol", 1e-06);
-  options->setOption("mma_max_asymptote_offset", 10);
   options->setOption("mma_max_iterations", maxit);
-  options->setOption("mma_min_asymptote_offset", 0.01);
-  options->setOption("mma_use_constraint_linearization", true);
+  options->setOption("output_file", out_path.c_str());
+  options->setOption("tr_output_file", tr_path.c_str());
+  options->setOption("mma_output_file", mma_path.c_str());
 
   ParOptOptimizer *opt = new ParOptOptimizer(prob, options);
   opt->incref();
@@ -118,8 +161,44 @@ void main_body(int argc, char *argv[]) {
   return;
 }
 
+void test_find_bc_verts(int argc, char *argv[]) {
+  ArgumentParser parser(argc, argv);
+  std::string vtk_name =
+      parser.parse_option("--vtk", std::string("3d_hex_1000.vtk"));
+  parser.help_info();
+
+  // Read in vtk
+  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
+  T *Xloc = readvtk.get_Xloc();
+  I nverts = readvtk.get_nverts();
+  I nhex = readvtk.get_nhex();
+  I *hex = readvtk.get_hex();
+  I ntets = 0, nwedge = 0, npyrmd = 0;
+  I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
+
+  // Set up bc region
+  T lower[3], upper[3];
+  readvtk.get_bounds(lower, upper);
+  T ratio = 0.5;
+  T tol = 1e-6;
+  T xmin = lower[0] - tol;
+  T xmax = lower[0] + tol;
+  T ymin = lower[1] + (1.0 - ratio) / 2 * (upper[1] - lower[1]) + lower[1];
+  T ymax = lower[1] + (1.0 + ratio) / 2 * (upper[1] - lower[1]) + lower[1];
+  T zmin = lower[2] + (1.0 - ratio) / 2 * (upper[2] - lower[2]) + lower[2];
+  T zmax = lower[2] + (1.0 + ratio) / 2 * (upper[2] - lower[2]) + lower[2];
+  std::vector<I> verts =
+      readvtk.get_verts_within_box(xmin, xmax, ymin, ymax, zmin, zmax);
+
+  std::vector<T> labels(3 * nverts, 0.0);
+  for (auto it = verts.begin(); it != verts.end(); it++) {
+    labels[3 * (*it)] = 1.0;
+  }
+  A2D::VectorFieldToVTK fieldtovtk(nverts, Xloc, labels.data());
+  return;
+}
+
 int main(int argc, char *argv[]) {
-  A2D::Timer timer("main()");
   MPI_Init(&argc, &argv);
   Kokkos::initialize();
   {
@@ -127,6 +206,7 @@ int main(int argc, char *argv[]) {
     // A2D::HeatConduction<double, 3> heat(kappa, q, heat_source);
     // A2D::TestPDEImplementation<double>(heat);
     // test_heat_analysis(argc, argv);
+    // test_find_bc_verts(argc, argv);
     main_body(argc, argv);
   }
   Kokkos::finalize();

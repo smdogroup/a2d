@@ -15,7 +15,7 @@ void main_body(int argc, char *argv[]) {
   std::string vtk_name =
       parser.parse_option("--vtk", std::string("3d_hex.vtk"));
   std::string prefix = parser.parse_option("--prefix", std::string("results"));
-  int maxit = parser.parse_option("--maxit", 100);
+  int maxit = parser.parse_option("--maxit", 200);
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
   bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
@@ -25,6 +25,11 @@ void main_body(int argc, char *argv[]) {
   if (!std::filesystem::is_directory(prefix)) {
     std::filesystem::create_directory(prefix);
   }
+
+  // Set up profiler
+  A2D::TIMER_OUTPUT_FILE =
+      std::filesystem::path(prefix) / std::filesystem::path("profile.log");
+  A2D::Timer timer("main_body()");
 
   A2D::ReadVTK3D<I, T> readvtk(vtk_name);
   T *Xloc = readvtk.get_Xloc();
@@ -83,20 +88,17 @@ void main_body(int argc, char *argv[]) {
   options->incref();
   ParOptOptimizer::addDefaultOptions(options);
 
+  std::string out_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.out");
+  std::string tr_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.tr");
+  std::string mma_path =
+      std::filesystem::path(prefix) / std::filesystem::path("paropt.mma");
   options->setOption("algorithm", "mma");
-  options->setOption("mma_asymptote_contract", 0.7);
-  options->setOption("mma_asymptote_relax", 1.2);
-  options->setOption("mma_bound_relax", 0);
-  options->setOption("mma_delta_regularization", 1e-05);
-  options->setOption("mma_eps_regularization", 0.001);
-  options->setOption("mma_infeas_tol", 1e-05);
-  options->setOption("mma_init_asymptote_offset", 0.25);
-  options->setOption("mma_l1_tol", 1e-06);
-  options->setOption("mma_linfty_tol", 1e-06);
-  options->setOption("mma_max_asymptote_offset", 10);
   options->setOption("mma_max_iterations", maxit);
-  options->setOption("mma_min_asymptote_offset", 0.01);
-  options->setOption("mma_use_constraint_linearization", true);
+  options->setOption("output_file", out_path.c_str());
+  options->setOption("tr_output_file", tr_path.c_str());
+  options->setOption("mma_output_file", mma_path.c_str());
 
   // options->setOption("algorithm", "tr");
   // options->setOption("output_level", 0);

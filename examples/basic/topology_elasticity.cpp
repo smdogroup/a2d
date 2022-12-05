@@ -16,6 +16,7 @@ void main_body(int argc, char *argv[]) {
       parser.parse_option("--vtk", std::string("3d_hex.vtk"));
   std::string prefix = parser.parse_option("--prefix", std::string("results"));
   int maxit = parser.parse_option("--maxit", 200);
+  int vtk_freq = parser.parse_option("--vtk_freq", 10);
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
   bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
@@ -43,20 +44,45 @@ void main_body(int argc, char *argv[]) {
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 
-  // Extract boundary vertices
+  // Find bc vertices
   std::vector<int> ids{100, 101};
   std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
+  I bc_label = conn.add_boundary_label_from_verts(verts.size(), verts.data());
+
+  // Find traction vertices
+  T lower[3], upper[3];
+  readvtk.get_bounds(lower, upper);
+  std::vector<I> traction_verts = readvtk.get_verts_within_box(
+      lower[0], upper[0], upper[1], upper[1], lower[2], upper[2]);
+  I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
+                                                        traction_verts.data());
+
+  // Set traction components
+  T t[3];
+  t[0] = t[1] = 0.0;
+  t[2] = -1.0;
+
+  // Write traction verts to vtk for debugging purpose
+  std::vector<T> labels(3 * nverts, 0.0);
+  for (auto it = verts.begin(); it != verts.end(); it++) {
+    labels[3 * (*it)] = 1.0;
+  }
+  {
+    A2D::VectorFieldToVTK fieldtovtk(
+        nverts, Xloc, labels.data(),
+        std::filesystem::path(prefix) /
+            std::filesystem::path("traction_verts.vtk"));
+  }
 
   // Set up boundary condition information
   A2D::index_t basis = 0;
   A2D::DirichletBCInfo bcinfo;
-  bcinfo.add_boundary_condition(
-      conn.add_boundary_label_from_verts(verts.size(), verts.data()), basis);
+  bcinfo.add_boundary_condition(bc_label, basis);
 
   // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3;
-  TopoElasticityAnalysis<T, degree, filter_degree> topo(conn, bcinfo, E, nu,
-                                                        ramp_q, verbose);
+  TopoElasticityAnalysis<T, degree, filter_degree> topo(
+      conn, bcinfo, E, nu, ramp_q, traction_label, t, verbose);
   auto elem_geo = topo.get_geometry();
   A2D::set_geo_from_hex_nodes<
       TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
@@ -74,7 +100,7 @@ void main_body(int argc, char *argv[]) {
   T volume_frac = 0.4;
   TopOptProb<TopoElasticityAnalysis<T, degree, filter_degree>> *prob =
       new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
-                     domain_vol, volume_frac, topo, verbose);
+                     domain_vol, volume_frac, topo, verbose, vtk_freq);
   prob->incref();
 
   // Sanity check

@@ -68,20 +68,37 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  const int num_surface_verts = (nx + 1) * (ny + 1);
+  int surface_verts[num_surface_verts];
+  for (int j = 0, index = 0; j < ny + 1; j++) {
+    for (int i = 0; i < nx + 1; i++, index++) {
+      surface_verts[index] = node_num(i, j, nz);
+    }
+  }
+
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 
-  A2D::index_t end_label =
+  A2D::index_t bc_label =
       conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
+
+  A2D::index_t traction_label =
+      conn.add_boundary_label_from_verts(num_surface_verts, surface_verts);
 
   A2D::index_t basis = 0;
   A2D::DirichletBCInfo bcinfo;
-  bcinfo.add_boundary_condition(end_label, basis);
+  bcinfo.add_boundary_condition(bc_label, basis);
+
+  // Set the traction components
+  T t[3];
+  t[0] = t[1] = 0.0;
+  t[2] = -1.0;
 
   // Create the finite-element model
   T E = 70.0e3, nu = 0.3, q = 5.0;
   T design_stress = 200.0, ks_penalty = 50.0;
-  TopoOpt<T, degree, filter_degree> topo(conn, bcinfo, E, nu, q);
+  TopoOpt<T, degree, filter_degree> topo(conn, bcinfo, E, nu, q, traction_label,
+                                         t);
 
   // Set the geometry from the node locations
   auto elem_geo = topo.get_geometry();

@@ -13,6 +13,9 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_quad_basis.h"
+#include "multiphysics/poisson.h"
+#include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 
@@ -62,6 +65,17 @@ class TopoElasticityAnalysis {
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
+  // Quadrature, basis and element views for high-order surface traction
+  using TractionQuadrature = A2D::QuadGaussQuadrature<degree + 1>;
+  using TractionDataBasis = A2D::FEBasis<T>;
+  using TractionGeoBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using TractionBasis =
+      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using TractionDataElemVec = ElementVector<T, TractionDataBasis, BasisVecType>;
+  using TractionGeoElemVec = ElementVector<T, TractionGeoBasis, BasisVecType>;
+  using TractionElemVec = ElementVector<T, TractionBasis, BasisVecType>;
+
   // Block compressed row sparse matrix
   using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
 
@@ -70,12 +84,16 @@ class TopoElasticityAnalysis {
   // Problem PDE
   using PDE = A2D::TopoLinearElasticity<T, spatial_dim>;
   using BodyForce = A2D::TopoBodyForce<T, spatial_dim>;
+  using TractionPDE = A2D::TopoSurfaceTraction<T, spatial_dim>;
 
   // Finite element functional
   using FE_PDE =
       A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_BodyForce =
       A2D::FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_Traction =
+      A2D::FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
+                         TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
   using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
@@ -117,6 +135,7 @@ class TopoElasticityAnalysis {
 
   TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
                          A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
+                         A2D::index_t label, const T tx[],
                          bool verbose)
       :  // Material parameters and penalization
         E(E),
@@ -129,6 +148,10 @@ class TopoElasticityAnalysis {
         datamesh(conn),
         filtermesh(conn),
 
+        traction_mesh(label, conn, mesh),
+        traction_geomesh(label, conn, geomesh),
+
+        // Boundary conditions
         bcs(conn, mesh, bcinfo),
 
         // Project the meshes onto the low-order meshes
@@ -148,6 +171,10 @@ class TopoElasticityAnalysis {
         elem_data(datamesh, data),
         elem_filter_data(filtermesh, filter_data),
 
+        // Element view of the traction class
+        elem_traction_sol(traction_mesh, sol),
+        elem_traction_geo(traction_geomesh, geo),
+
         // Low-order views of the solution geometry and data
         lorder_elem_sol(lorder_mesh, sol),
         lorder_elem_geo(lorder_geomesh, geo),
@@ -155,6 +182,7 @@ class TopoElasticityAnalysis {
 
         pde(E, nu, q),
         bodyforce(q),
+        traction_pde(tx),
 
         B("B", sol.get_num_dof() / block_size),
         verbose(verbose) {
@@ -280,19 +308,33 @@ class TopoElasticityAnalysis {
     A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
     A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
+    // Zero the solution
+    sol.zero();
+
+    // No data associated with the traction class
+    A2D::EmptyElementVector elem_traction_data;
+
+    // Assemble the force contribution
+    A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
+    TractionElemVec elem_traction_res(traction_mesh, traction_res);
+    traction.add_residual(traction_pde, elem_traction_data, elem_traction_geo,
+                          elem_traction_sol, elem_traction_res);
+
+    // Assemble the body force contribution
+    // sol.zero(); // TODO: needed again?
     A2D::SolutionVector<T> res(mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
-    sol.zero();
-    fe.add_residual(pde, elem_data, elem_geo, elem_sol, elem_res);
     feb.add_residual(bodyforce, elem_data, elem_geo, elem_sol, elem_res);
 
+    // Set the right-hand-side
     for (I i = 0; i < sol.get_num_dof(); i++) {
+      rhs_vec(i / block_size, i % block_size) = -traction_res[i];
       rhs_vec(i / block_size, i % block_size) = -res[i];
     }
 
     // Zero out the boundary conditions
-    for (I i = 0; i < nbcs; i++) {
-      I dof = bc_dofs[i];
+    for (A2D::index_t i = 0; i < nbcs; i++) {
+      A2D::index_t dof = bc_dofs[i];
       rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
@@ -630,6 +672,8 @@ class TopoElasticityAnalysis {
   A2D::ElementMesh<GeoBasis> geomesh;
   A2D::ElementMesh<DataBasis> datamesh;
   A2D::ElementMesh<FilterBasis> filtermesh;
+  A2D::ElementMesh<TractionBasis> traction_mesh;
+  A2D::ElementMesh<TractionGeoBasis> traction_geomesh;
 
   A2D::DirichletBCs<Basis> bcs;
 
@@ -646,6 +690,8 @@ class TopoElasticityAnalysis {
   GeoElemVec elem_geo;
   DataElemVec elem_data;
   FilterElemVec elem_filter_data;
+  TractionElemVec elem_traction_sol;
+  TractionGeoElemVec elem_traction_geo;
 
   LOrderElemVec lorder_elem_sol;
   LOrderGeoElemVec lorder_elem_geo;
@@ -653,9 +699,11 @@ class TopoElasticityAnalysis {
 
   PDE pde;
   BodyForce bodyforce;
+  TractionPDE traction_pde;
 
   FE_PDE fe;
   FE_BodyForce feb;
+  FE_Traction traction;
 
   LOrderFE lorder_fe;
   MatFree matfree;

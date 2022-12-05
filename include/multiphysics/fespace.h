@@ -208,7 +208,16 @@ class H1Space {
         }
       }
     } else {
-      MatMatMult(grad, Jinv, s.grad);
+      for (index_t i = 0; i < C; i++) {
+        for (index_t j = 0; j < dim; j++) {
+          s.grad(i, j) = 0.0;
+
+          for (index_t k = 0; k < dim; k++) {
+            s.grad(i, j) += grad(i, k) * Jinv(k, j);
+          }
+        }
+      }
+      // MatMatMult(grad, Jinv, s.grad);
     }
   }
 

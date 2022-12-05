@@ -133,10 +133,27 @@ class TopoElasticityAnalysis {
       A2D::FiniteElement<T, A2D::TopoVonMisesAggregation<T, spatial_dim>,
                          Quadrature, DataBasis, GeoBasis, Basis>;
 
+  /**
+   * @brief The elasticity topology analysis class.
+   *
+   * @param conn mesh connectivity
+   * @param bcinfo boundary condition information
+   * @param E Young's modulus
+   * @param nu Poisson's ratio
+   * @param q RAMP penalization parameter
+   * @param bodyforce_tx the body force components
+   * @param traction_label label of nodes to which the traction force is applied
+   * @param traction_tx traction force components
+   * @param verbose if executed verbosely
+   * @param cg_it max number of iterations for conjugate gradient linear solver
+   * @param cg_rtol relative error tolerance for conjugate gradient solver
+   * @param cg_atol absolute error tolerance for conjugate gradient solver
+   */
   TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
                          A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
-                         A2D::index_t label, const T tx[],
-                         bool verbose)
+                         const T bodyforce_tx[], A2D::index_t traction_label,
+                         const T traction_tx[], bool verbose, int cg_it,
+                         double cg_rtol, double cg_atol)
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -148,8 +165,8 @@ class TopoElasticityAnalysis {
         datamesh(conn),
         filtermesh(conn),
 
-        traction_mesh(label, conn, mesh),
-        traction_geomesh(label, conn, geomesh),
+        traction_mesh(traction_label, conn, mesh),
+        traction_geomesh(traction_label, conn, geomesh),
 
         // Boundary conditions
         bcs(conn, mesh, bcinfo),
@@ -181,11 +198,14 @@ class TopoElasticityAnalysis {
         lorder_elem_data(lorder_datamesh, data),
 
         pde(E, nu, q),
-        bodyforce(q),
-        traction_pde(tx),
+        bodyforce(q, bodyforce_tx),
+        traction_pde(traction_tx),
 
         B("B", sol.get_num_dof() / block_size),
-        verbose(verbose) {
+        verbose(verbose),
+        cg_it(cg_it),
+        cg_rtol(cg_rtol),
+        cg_atol(cg_atol) {
     // Initialize the data
     for (I i = 0; i < data.get_num_dof(); i++) {
       data[i] = 1.0;
@@ -301,6 +321,9 @@ class TopoElasticityAnalysis {
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
+    if (verbose) {
+      print_info = true;
+    }
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
@@ -343,7 +366,16 @@ class TopoElasticityAnalysis {
     if (verbose) {
       monitor = 5;
     }
-    amg.cg(mat_vec, rhs_vec, sol_vec, monitor, 100);
+    bool succ =
+        amg.cg(mat_vec, rhs_vec, sol_vec, monitor, cg_it, cg_rtol, cg_atol);
+    if (!succ) {
+      char msg[256];
+      std::snprintf(msg, sizeof(msg),
+                    "%s:%d: CG failed to converge after %d iterations given "
+                    "rtol=%.1e, atol=%.1e",
+                    __FILE__, __LINE__, cg_it, cg_rtol, cg_atol);
+      throw std::runtime_error(msg);
+    }
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -610,7 +642,10 @@ class TopoElasticityAnalysis {
     I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
-    bool print_info = true;
+    bool print_info = false;
+    if (verbose) {
+      print_info = true;
+    }
     BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
@@ -634,7 +669,11 @@ class TopoElasticityAnalysis {
     if (verbose) {
       monitor = 5;
     }
-    amg.cg(mat_vec, rhs_vec, sol_vec, monitor, 100);
+    bool succ =
+        amg.cg(mat_vec, rhs_vec, sol_vec, monitor, cg_it, cg_rtol, cg_atol);
+    if (!succ) {
+      throw std::runtime_error("CG failed to converge!");
+    }
 
     // Record the solution back into the right-hand-side vector
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -714,6 +753,10 @@ class TopoElasticityAnalysis {
 
   // If we print detailed info to stdout
   bool verbose;
+
+  // CG settings
+  int cg_it;
+  double cg_rtol, cg_atol;
 };
 
 #endif

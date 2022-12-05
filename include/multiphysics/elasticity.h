@@ -324,7 +324,11 @@ class TopoBodyForce {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
-  TopoBodyForce(T q) : q(q) {}
+  TopoBodyForce(T q, const T tx_[]) : q(q) {
+    for (index_t i = 0; i < dim; i++) {
+      tx[i] = tx_[i];
+    }
+  }
 
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
@@ -333,9 +337,11 @@ class TopoBodyForce {
     T rho = data[0];
     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
 
-    // Hard-code a body force along +y direction
+    // Add body force components
     A2D::Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
-    Ub(1) = -wdetJ * penalty;
+    for (index_t i = 0; i < dim; i++) {
+      Ub(i) = wdetJ * penalty * tx[i];
+    }
   }
 
   class AdjVecProduct {
@@ -344,21 +350,30 @@ class TopoBodyForce {
                                       const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
-        : q(pde.q), rho(data[0]), wdetJ(wdetJ) {}
+        : q(pde.q), rho(data[0]), wdetJ(wdetJ) {
+      for (index_t i = 0; i < dim; i++) {
+        tx[i] = pde.tx[i];
+      }
+    }
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& psi,
                                         DataSpace& dfdx) {
       const A2D::Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
       T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
-      dfdx[0] -= wdetJ * dpdrho * Uadj(1);
+
+      for (index_t i = 0; i < dim; i++) {
+        dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
+      }
     }
 
    private:
     T q, rho, wdetJ;
+    T tx[dim];
   };
 
  private:
-  T q;  // RAMP parameter
+  T q;        // RAMP parameter
+  T tx[dim];  // body force values
 };
 
 /*

@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace A2D {
+
 /**
  * @brief Parse command line arguments.
  *
@@ -44,7 +46,7 @@ class ArgumentParser {
     // Add to help info
     char info[256];
     if constexpr (std::is_same<ValType, double>::value) {
-      std::snprintf(info, sizeof(info), "%s [%.3f] ", option.c_str(),
+      std::snprintf(info, sizeof(info), "%s [%.2e] ", option.c_str(),
                     default_val);
     } else if constexpr (std::is_same<ValType, int>::value) {
       std::snprintf(info, sizeof(info), "%s [%d] ", option.c_str(),
@@ -114,4 +116,20 @@ class ArgumentParser {
   std::string help;
 };
 
+/**
+ * @brief Helper function: save the command line arguments to a txt file
+ *
+ * @param argc number of arguments
+ * @param argv arguments
+ * @param txt_path the txt path
+ */
+void save_cmd(int argc, char* argv[], const std::string txt_path) {
+  std::FILE* cmd_fp = std::fopen(txt_path.c_str(), "w+");
+  for (int i = 0; i < argc; i++) {
+    std::fprintf(cmd_fp, "%s ", argv[i]);
+  }
+  std::fclose(cmd_fp);
+}
+
+}  // namespace A2D
 #endif

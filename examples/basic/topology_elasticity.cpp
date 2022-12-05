@@ -5,13 +5,14 @@
 
 using I = A2D::index_t;
 using T = ParOptScalar;
+using fspath = std::filesystem::path;
 
 void main_body(int argc, char *argv[]) {
-  constexpr int degree = 4;
-  constexpr int filter_degree = 2;
+  constexpr int degree = 2;
+  constexpr int filter_degree = 1;
 
   // Set up cmd arguments and defaults
-  ArgumentParser parser(argc, argv);
+  A2D::ArgumentParser parser(argc, argv);
   std::string vtk_name =
       parser.parse_option("--vtk", std::string("3d_hex.vtk"));
   std::string prefix = parser.parse_option("--prefix", std::string("results"));
@@ -20,12 +21,18 @@ void main_body(int argc, char *argv[]) {
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
   bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
+  int cg_it = parser.parse_option("--cg_it", 100);
+  double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
+  double cg_atol = parser.parse_option("--cg_atol", 1e-30);
   parser.help_info();
 
   // Set up result directory
   if (!std::filesystem::is_directory(prefix)) {
     std::filesystem::create_directory(prefix);
   }
+
+  // Save cmd arguments to txt
+  A2D::save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
 
   // Set up profiler
   A2D::TIMER_OUTPUT_FILE =
@@ -45,7 +52,8 @@ void main_body(int argc, char *argv[]) {
                                npyrmd, pyrmd);
 
   // Find bc vertices
-  std::vector<int> ids{100, 101};
+  std::vector<int> ids{100,
+                       101};  // fixed both left and right faces of the domain
   std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
   I bc_label = conn.add_boundary_label_from_verts(verts.size(), verts.data());
 
@@ -57,21 +65,23 @@ void main_body(int argc, char *argv[]) {
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
 
-  // Set traction components
-  T t[3];
-  t[0] = t[1] = 0.0;
-  t[2] = -1.0;
+  // Set traction components and body force components
+  T t[3] = {0.0, -1.0, 0.0};
+  T tb[3] = {0.0, 0.0, 0.0};
 
   // Write traction verts to vtk for debugging purpose
   std::vector<T> labels(3 * nverts, 0.0);
   for (auto it = verts.begin(); it != verts.end(); it++) {
-    labels[3 * (*it)] = 1.0;
+    labels[3 * (*it)] = 1.0;  // bc verts
+  }
+  for (auto it = traction_verts.begin(); it != traction_verts.end(); it++) {
+    labels[3 * (*it) + 1] = 1.0;  // traction verts
   }
   {
     A2D::VectorFieldToVTK fieldtovtk(
         nverts, Xloc, labels.data(),
         std::filesystem::path(prefix) /
-            std::filesystem::path("traction_verts.vtk"));
+            std::filesystem::path("bc_traction_verts.vtk"));
   }
 
   // Set up boundary condition information
@@ -82,7 +92,8 @@ void main_body(int argc, char *argv[]) {
   // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3;
   TopoElasticityAnalysis<T, degree, filter_degree> topo(
-      conn, bcinfo, E, nu, ramp_q, traction_label, t, verbose);
+      conn, bcinfo, E, nu, ramp_q, tb, traction_label, t, verbose, cg_it,
+      cg_rtol, cg_atol);
   auto elem_geo = topo.get_geometry();
   A2D::set_geo_from_hex_nodes<
       TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(

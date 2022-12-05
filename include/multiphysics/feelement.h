@@ -755,7 +755,6 @@ class MatrixFree {
 
   template <class ElemVec>
   void add_jacobian_vector_product(ElemVec& elem_xvec, ElemVec& elem_yvec) {
-    Timer timer("MatrixFree::add_jacobian_vector_product");
     const A2D::index_t num_elements = qmat.size();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;

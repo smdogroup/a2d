@@ -20,6 +20,7 @@ class SolutionVector {
   index_t get_num_dof() const { return ndof; }
 
   void zero() { std::fill(x.begin(), x.end(), T(0.0)); }
+  void fill(T val) { std::fill(x.begin(), x.end(), val); }
 
  private:
   const A2D::index_t ndof;

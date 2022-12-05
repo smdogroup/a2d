@@ -344,15 +344,13 @@ class TopoElasticityAnalysis {
                           elem_traction_sol, elem_traction_res);
 
     // Assemble the body force contribution
-    // sol.zero(); // TODO: needed again?
     A2D::SolutionVector<T> res(mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
     feb.add_residual(bodyforce, elem_data, elem_geo, elem_sol, elem_res);
 
     // Set the right-hand-side
     for (I i = 0; i < sol.get_num_dof(); i++) {
-      rhs_vec(i / block_size, i % block_size) = -traction_res[i];
-      rhs_vec(i / block_size, i % block_size) = -res[i];
+      rhs_vec(i / block_size, i % block_size) = -traction_res[i] - res[i];
     }
 
     // Zero out the boundary conditions

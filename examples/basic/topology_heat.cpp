@@ -5,13 +5,14 @@
 
 using I = A2D::index_t;
 using T = ParOptScalar;
+using fspath = std::filesystem::path;
 
 void main_body(int argc, char *argv[]) {
   constexpr int degree = 5;
   constexpr int filter_degree = 4;
 
   // Set up cmd arguments and defaults
-  ArgumentParser parser(argc, argv);
+  A2D::ArgumentParser parser(argc, argv);
   std::string vtk_name =
       parser.parse_option("--vtk", std::string("3d_hex_1000.vtk"));
   std::string prefix = parser.parse_option("--prefix", std::string("results"));
@@ -19,9 +20,14 @@ void main_body(int argc, char *argv[]) {
   int vtk_freq = parser.parse_option("--vtk_freq", 10);
   double bc_temp = parser.parse_option("--bc_temp", 0.0);
   double heat_source = parser.parse_option("--heat_source", 1.0);
+  double ratio = parser.parse_option("--ratio", 0.4);
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
   bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
+  int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
+  int cg_it = parser.parse_option("--cg_it", 100);
+  double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
+  double cg_atol = parser.parse_option("--cg_atol", 1e-30);
   parser.help_info();
 
   // Set up result directory
@@ -30,8 +36,7 @@ void main_body(int argc, char *argv[]) {
   }
 
   // Set up profiler
-  A2D::TIMER_OUTPUT_FILE =
-      std::filesystem::path(prefix) / std::filesystem::path("profile.log");
+  A2D::TIMER_OUTPUT_FILE = fspath(prefix) / fspath("profile.log");
   A2D::Timer timer("main_body()");
 
   // Read in vtk
@@ -47,14 +52,9 @@ void main_body(int argc, char *argv[]) {
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 
-  // // Extract boundary vertices
-  // std::vector<int> ids{100};
-  // std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
-
   // Set up bc region
   T lower[3], upper[3];
   readvtk.get_bounds(lower, upper);
-  T ratio = 0.4;
   T tol = 1e-6;
   T xmin = lower[0];
   T xmax = lower[0];
@@ -71,9 +71,8 @@ void main_body(int argc, char *argv[]) {
     labels[3 * (*it)] = 1.0;
   }
   {
-    A2D::VectorFieldToVTK fieldtovtk(
-        nverts, Xloc, labels.data(),
-        std::filesystem::path(prefix) / std::filesystem::path("bc_verts.vtk"));
+    A2D::VectorFieldToVTK fieldtovtk(nverts, Xloc, labels.data(),
+                                     fspath(prefix) / fspath("bc_verts.vtk"));
   }
 
   // Set up boundary condition information
@@ -85,7 +84,8 @@ void main_body(int argc, char *argv[]) {
   // Initialize the analysis instance
   T kappa = 1.0;
   TopoHeatAnalysis<T, degree, filter_degree> topo(
-      conn, bcinfo, kappa, heat_source, bc_temp, ramp_q, verbose);
+      conn, bcinfo, kappa, heat_source, bc_temp, ramp_q, verbose, amg_nlevels,
+      cg_it, cg_rtol, cg_atol);
   auto elem_geo = topo.get_geometry();
   A2D::set_geo_from_hex_nodes<
       TopoHeatAnalysis<T, degree, filter_degree>::GeoBasis>(nhex, hex, Xloc,
@@ -124,12 +124,9 @@ void main_body(int argc, char *argv[]) {
   options->incref();
   ParOptOptimizer::addDefaultOptions(options);
 
-  std::string out_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.out");
-  std::string tr_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.tr");
-  std::string mma_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.mma");
+  std::string out_path = fspath(prefix) / fspath("paropt.out");
+  std::string tr_path = fspath(prefix) / fspath("paropt.tr");
+  std::string mma_path = fspath(prefix) / fspath("paropt.mma");
   options->setOption("algorithm", "mma");
   options->setOption("mma_max_iterations", maxit);
   options->setOption("output_file", out_path.c_str());

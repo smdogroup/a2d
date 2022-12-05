@@ -93,17 +93,17 @@ int main(int argc, char *argv[]) {
   T t[3] = {0.2, -0.3, 0.5};
 
   // Set the body force components
-  T tb[3] = {0.0, 0.0, 0.0};
+  T tb[3] = {0.1, 0.1, -0.2};
 
   // Create the finite-element model
   T E = 70.0e3, nu = 0.3, q = 5.0;
   T design_stress = 200.0, ks_penalty = 50.0;
   bool verbose = true;
-  int cg_it = 100;
+  int amg_nlevels = 3, cg_it = 100;
   double cg_rtol = 1e-8, cg_atol = 1e-30;
   TopoElasticityAnalysis<T, degree, filter_degree> topo(
-      conn, bcinfo, E, nu, q, tb, traction_label, t, verbose, cg_it, cg_rtol,
-      cg_atol);
+      conn, bcinfo, E, nu, q, tb, traction_label, t, verbose, amg_nlevels,
+      cg_it, cg_rtol, cg_atol);
 
   // Set the geometry from the node locations
   auto elem_geo = topo.get_geometry();

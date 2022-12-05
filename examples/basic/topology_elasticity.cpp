@@ -5,7 +5,7 @@
 
 using I = A2D::index_t;
 using T = ParOptScalar;
-using fspath = std::filesystem::path;
+using fspath = fspath;
 
 void main_body(int argc, char *argv[]) {
   constexpr int degree = 2;
@@ -21,6 +21,7 @@ void main_body(int argc, char *argv[]) {
   double ramp_q = parser.parse_option("--ramp_q", 5.0);
   bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
   bool verbose = parser.parse_option("--verbose");
+  int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
   int cg_it = parser.parse_option("--cg_it", 100);
   double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
   double cg_atol = parser.parse_option("--cg_atol", 1e-30);
@@ -35,8 +36,7 @@ void main_body(int argc, char *argv[]) {
   A2D::save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
 
   // Set up profiler
-  A2D::TIMER_OUTPUT_FILE =
-      std::filesystem::path(prefix) / std::filesystem::path("profile.log");
+  A2D::TIMER_OUTPUT_FILE = fspath(prefix) / fspath("profile.log");
   A2D::Timer timer("main_body()");
 
   A2D::ReadVTK3D<I, T> readvtk(vtk_name);
@@ -80,8 +80,7 @@ void main_body(int argc, char *argv[]) {
   {
     A2D::VectorFieldToVTK fieldtovtk(
         nverts, Xloc, labels.data(),
-        std::filesystem::path(prefix) /
-            std::filesystem::path("bc_traction_verts.vtk"));
+        fspath(prefix) / fspath("bc_traction_verts.vtk"));
   }
 
   // Set up boundary condition information
@@ -92,8 +91,8 @@ void main_body(int argc, char *argv[]) {
   // Initialize the analysis instance
   T E = 70.0e3, nu = 0.3;
   TopoElasticityAnalysis<T, degree, filter_degree> topo(
-      conn, bcinfo, E, nu, ramp_q, tb, traction_label, t, verbose, cg_it,
-      cg_rtol, cg_atol);
+      conn, bcinfo, E, nu, ramp_q, tb, traction_label, t, verbose, amg_nlevels,
+      cg_it, cg_rtol, cg_atol);
   auto elem_geo = topo.get_geometry();
   A2D::set_geo_from_hex_nodes<
       TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
@@ -125,12 +124,9 @@ void main_body(int argc, char *argv[]) {
   options->incref();
   ParOptOptimizer::addDefaultOptions(options);
 
-  std::string out_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.out");
-  std::string tr_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.tr");
-  std::string mma_path =
-      std::filesystem::path(prefix) / std::filesystem::path("paropt.mma");
+  std::string out_path = fspath(prefix) / fspath("paropt.out");
+  std::string tr_path = fspath(prefix) / fspath("paropt.tr");
+  std::string mma_path = fspath(prefix) / fspath("paropt.mma");
   options->setOption("algorithm", "mma");
   options->setOption("mma_max_iterations", maxit);
   options->setOption("output_file", out_path.c_str());

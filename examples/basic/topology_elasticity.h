@@ -145,6 +145,7 @@ class TopoElasticityAnalysis {
    * @param traction_label label of nodes to which the traction force is applied
    * @param traction_tx traction force components
    * @param verbose if executed verbosely
+   * @param amg_nlevels number of algebraic multi-grid levels
    * @param cg_it max number of iterations for conjugate gradient linear solver
    * @param cg_rtol relative error tolerance for conjugate gradient solver
    * @param cg_atol absolute error tolerance for conjugate gradient solver
@@ -152,8 +153,9 @@ class TopoElasticityAnalysis {
   TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
                          A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
                          const T bodyforce_tx[], A2D::index_t traction_label,
-                         const T traction_tx[], bool verbose, int cg_it,
-                         double cg_rtol, double cg_atol)
+                         const T traction_tx[], bool verbose, int amg_nlevels,
+                         int cg_it, double cg_rtol,
+                         double cg_atol)
       :  // Material parameters and penalization
         E(E),
         nu(nu),
@@ -203,6 +205,7 @@ class TopoElasticityAnalysis {
 
         B("B", sol.get_num_dof() / block_size),
         verbose(verbose),
+        amg_nlevels(amg_nlevels),
         cg_it(cg_it),
         cg_rtol(cg_rtol),
         cg_atol(cg_atol) {
@@ -317,14 +320,13 @@ class TopoElasticityAnalysis {
     };
 
     // Allocate the solver - we should add some of these as solver options
-    I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
     if (verbose) {
       print_info = true;
     }
-    BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
+    BSRMatAmgType amg(amg_nlevels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
@@ -637,14 +639,13 @@ class TopoElasticityAnalysis {
     };
 
     // Allocate the solver - we should add some of these as solver options
-    I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
     if (verbose) {
       print_info = true;
     }
-    BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
+    BSRMatAmgType amg(amg_nlevels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
@@ -751,6 +752,9 @@ class TopoElasticityAnalysis {
 
   // If we print detailed info to stdout
   bool verbose;
+
+  // AMG settings
+  int amg_nlevels;
 
   // CG settings
   int cg_it;

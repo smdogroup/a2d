@@ -112,8 +112,25 @@ class TopoHeatAnalysis {
   using VolumeFunctional =
       A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
+  /**
+   * @brief The heat conduction topology analysis class.
+   *
+   * @param conn mesh connectivity
+   * @param bcinfo boundary condition information
+   * @param kappa heat conduction coefficient
+   * @param heat_source source term value
+   * @param bc_temp boundary temperature
+   * @param q RAMP parameter
+   * @param verbose if execute verbosely
+   * @param amg_nlevels number of algebraic multi-grid levels
+   * @param cg_it max number of iterations for conjugate gradient linear solver
+   * @param cg_rtol relative error tolerance for conjugate gradient solver
+   * @param cg_atol absolute error tolerance for conjugate gradient solver
+   */
   TopoHeatAnalysis(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo,
-                   T kappa, T heat_source, T bc_temp, T q, bool verbose)
+                   T kappa, T heat_source, T bc_temp, T q, bool verbose,
+                   int amg_nlevels, int cg_it, double cg_rtol,
+                   double cg_atol)
       :  // Material parameters and penalization
         kappa(kappa),
         heat_source(heat_source),
@@ -155,7 +172,11 @@ class TopoHeatAnalysis {
 
         B("B", sol.get_num_dof() / block_size),
 
-        verbose(verbose) {
+        verbose(verbose),
+        amg_nlevels(amg_nlevels),
+        cg_it(cg_it),
+        cg_rtol(cg_rtol),
+        cg_atol(cg_atol) {
     // Initialize the data
     for (I i = 0; i < data.get_num_dof(); i++) {
       data[i] = 1.0;
@@ -235,14 +256,13 @@ class TopoHeatAnalysis {
     };
 
     // Allocate the solver - we should add some of these as solver options
-    I num_levels = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;
     if (verbose) {
       print_info = true;
     }
-    BSRMatAmgType amg(num_levels, omega, epsilon, mat, B, print_info);
+    BSRMatAmgType amg(amg_nlevels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
@@ -269,7 +289,17 @@ class TopoHeatAnalysis {
     if (verbose) {
       monitor = 5;
     }
-    amg.cg(mat_vec, rhs_vec, sol_vec, monitor, 100);
+
+    bool succ =
+        amg.cg(mat_vec, rhs_vec, sol_vec, monitor, cg_it, cg_rtol, cg_atol);
+    if (!succ) {
+      char msg[256];
+      std::snprintf(msg, sizeof(msg),
+                    "%s:%d: CG failed to converge after %d iterations given "
+                    "rtol=%.1e, atol=%.1e",
+                    __FILE__, __LINE__, cg_it, cg_rtol, cg_atol);
+      throw std::runtime_error(msg);
+    }
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -483,6 +513,13 @@ class TopoHeatAnalysis {
 
   // If we print detailed info to stdout
   bool verbose;
+
+  // AMG settings
+  int amg_nlevels;
+
+  // CG settings
+  int cg_it;
+  double cg_rtol, cg_atol;
 };
 
 void test_heat_analysis(int argc, char *argv[]) {

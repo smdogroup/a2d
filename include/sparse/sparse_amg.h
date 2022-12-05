@@ -559,7 +559,7 @@ class BSRMatAmg {
 
           T res_norm = A2D::BLAS::norm(R);
 
-          if ((iter + 1) % monitor == 0) {
+          if (monitor && (iter + 1) % monitor == 0) {
             std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter + 1,
                         A2D::fmt(res_norm));
           }

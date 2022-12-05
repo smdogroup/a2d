@@ -62,20 +62,6 @@ void main_body(int argc, char *argv[]) {
   T ymax = lower[1] + (1.0 + ratio) / 2 * (upper[1] - lower[1]);
   T zmin = lower[2] + (1.0 - ratio) / 2 * (upper[2] - lower[2]);
   T zmax = lower[2] + (1.0 + ratio) / 2 * (upper[2] - lower[2]);
-
-  std::cout << "lower[0]: " << lower[0] << " ";
-  std::cout << "lower[1]: " << lower[1] << " ";
-  std::cout << "lower[2]: " << lower[2] << " ";
-  std::cout << "upper[0]: " << upper[0] << " ";
-  std::cout << "upper[1]: " << upper[1] << " ";
-  std::cout << "upper[2]: " << upper[2] << "\n";
-
-  std::cout << "xmin: " << xmin << " ";
-  std::cout << "ymin: " << ymin << " ";
-  std::cout << "zmin: " << zmin << " ";
-  std::cout << "xmax: " << xmax << " ";
-  std::cout << "ymax: " << ymax << " ";
-  std::cout << "zmax: " << zmax << "\n";
   std::vector<I> verts =
       readvtk.get_verts_within_box(xmin, xmax, ymin, ymax, zmin, zmax);
 
@@ -158,43 +144,6 @@ void main_body(int argc, char *argv[]) {
   prob->decref();
   options->incref();
   opt->decref();
-  return;
-}
-
-void test_find_bc_verts(int argc, char *argv[]) {
-  ArgumentParser parser(argc, argv);
-  std::string vtk_name =
-      parser.parse_option("--vtk", std::string("3d_hex_1000.vtk"));
-  parser.help_info();
-
-  // Read in vtk
-  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
-  T *Xloc = readvtk.get_Xloc();
-  I nverts = readvtk.get_nverts();
-  I nhex = readvtk.get_nhex();
-  I *hex = readvtk.get_hex();
-  I ntets = 0, nwedge = 0, npyrmd = 0;
-  I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
-
-  // Set up bc region
-  T lower[3], upper[3];
-  readvtk.get_bounds(lower, upper);
-  T ratio = 0.5;
-  T tol = 1e-6;
-  T xmin = lower[0] - tol;
-  T xmax = lower[0] + tol;
-  T ymin = lower[1] + (1.0 - ratio) / 2 * (upper[1] - lower[1]) + lower[1];
-  T ymax = lower[1] + (1.0 + ratio) / 2 * (upper[1] - lower[1]) + lower[1];
-  T zmin = lower[2] + (1.0 - ratio) / 2 * (upper[2] - lower[2]) + lower[2];
-  T zmax = lower[2] + (1.0 + ratio) / 2 * (upper[2] - lower[2]) + lower[2];
-  std::vector<I> verts =
-      readvtk.get_verts_within_box(xmin, xmax, ymin, ymax, zmin, zmax);
-
-  std::vector<T> labels(3 * nverts, 0.0);
-  for (auto it = verts.begin(); it != verts.end(); it++) {
-    labels[3 * (*it)] = 1.0;
-  }
-  A2D::VectorFieldToVTK fieldtovtk(nverts, Xloc, labels.data());
   return;
 }
 

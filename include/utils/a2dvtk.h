@@ -502,7 +502,8 @@ class ReadVTK3D {
    */
   void insert_verts_to_conn(std::string& conn_line, std::vector<I>& conn) {
     int elem_nverts;
-    std::istringstream conn_iss = std::istringstream(conn_line) >> elem_nverts;
+    std::istringstream conn_iss = std::istringstream(conn_line);
+    conn_iss >> elem_nverts;  // get number of vertices
     I vert_idx;
     for (int i = 0; i < elem_nverts; i++) {
       conn_iss >> vert_idx;

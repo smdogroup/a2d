@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
     A2D::ArgumentParser parser(argc, argv);
 
     // Set up cmd arguments and defaults
-    int degree = parser.parse_option("--degree", 1);
+    int degree = parser.parse_option("--degree", 2);
     std::string vtk_name =
         parser.parse_option("--vtk", std::string("3d_hex.vtk"));
     std::string prefix =
@@ -202,12 +202,6 @@ int main(int argc, char *argv[]) {
 
     // Execute
     switch (degree) {
-      case 1:
-        main_body<1>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
-                     check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
-                     cg_atol);
-        break;
-
       case 2:
         main_body<2>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,

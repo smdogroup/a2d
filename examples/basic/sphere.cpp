@@ -14,93 +14,111 @@
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 
-template <class GeoBasis, typename T, class GeoElemVec>
+template <A2D::index_t nx, class GeoBasis, typename T, class GeoElemVec>
 void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
   using ET = A2D::ElementTypes;
 
-  double a = alpha * R;
+  T a = alpha * R;
+  T len = 2.0 * a / nx;
+  T ulen = 2.0 / nx;
 
   T Xloc[3 * ET::HEX_VERTS];
   for (A2D::index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
-    double u = 1.0 * ET::HEX_VERTS_CART[ii][0];
-    double v = 1.0 * ET::HEX_VERTS_CART[ii][1];
-    double w = 1.0 * ET::HEX_VERTS_CART[ii][2];
+    T u = 1.0 * ET::HEX_VERTS_CART[ii][0];
+    T v = 1.0 * ET::HEX_VERTS_CART[ii][1];
+    T w = 1.0 * ET::HEX_VERTS_CART[ii][2];
 
     Xloc[3 * ii] = (2.0 * u - 1.0) * a;
     Xloc[3 * ii + 1] = (2.0 * v - 1.0) * a;
     Xloc[3 * ii + 2] = (2.0 * w - 1.0) * a;
   }
 
-  // Get the geometry values
-  typename GeoElemVec::FEDof geo_dof(0, elem_geo);
+  for (A2D::index_t k = 0; k < nx; k++) {
+    for (A2D::index_t j = 0; j < nx; j++) {
+      for (A2D::index_t i = 0; i < nx; i++) {
+        A2D::index_t elem = i + nx * (j + nx * k);
+        typename GeoElemVec::FEDof geo_dof(elem, elem_geo);
 
-  for (A2D::index_t ii = 0; ii < GeoBasis::ndof; ii++) {
-    double pt[3];
-    GeoBasis::get_dof_point(ii, pt);
+        for (A2D::index_t ii = 0; ii < GeoBasis::ndof; ii++) {
+          double pt[3];
+          GeoBasis::get_dof_point(ii, pt);
 
-    T x = pt[0] * a;
-    T y = pt[1] * a;
-    T z = pt[2] * a;
+          T x = (0.5 * pt[0] + 0.5) * len + i * len - a;
+          T y = (0.5 * pt[1] + 0.5) * len + j * len - a;
+          T z = (0.5 * pt[2] + 0.5) * len + k * len - a;
 
-    // Interpolate to find the basis
-    if (ii % 3 == 0) {
-      geo_dof[ii] = x;
-    } else if (ii % 3 == 1) {
-      geo_dof[ii] = y;
-    } else if (ii % 3 == 2) {
-      geo_dof[ii] = z;
+          // Interpolate to find the basis
+          if (ii % 3 == 0) {
+            geo_dof[ii] = x;
+          } else if (ii % 3 == 1) {
+            geo_dof[ii] = y;
+          } else if (ii % 3 == 2) {
+            geo_dof[ii] = z;
+          }
+        }
+
+        elem_geo.set_element_values(elem, geo_dof);
+      }
     }
   }
 
-  elem_geo.set_element_values(0, geo_dof);
-
   // We know the 2-direction will be radial...
   for (A2D::index_t face = 0; face < ET::HEX_FACES; face++) {
-    // Get the geometry values
-    typename GeoElemVec::FEDof geo_dof(face + 1, elem_geo);
+    for (A2D::index_t k = 0; k < nx; k++) {
+      for (A2D::index_t j = 0; j < nx; j++) {
+        for (A2D::index_t i = 0; i < nx; i++) {
+          A2D::index_t elem = i + nx * (j + nx * k) + (face + 1) * nx * nx * nx;
+          typename GeoElemVec::FEDof geo_dof(elem, elem_geo);
 
-    for (A2D::index_t ii = 0; ii < GeoBasis::ndof; ii++) {
-      double pt[3];
-      GeoBasis::get_dof_point(ii, pt);
+          for (A2D::index_t ii = 0; ii < GeoBasis::ndof; ii++) {
+            double pt[3];
+            GeoBasis::get_dof_point(ii, pt);
 
-      double N[4];
-      N[0] = 0.25 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      N[1] = 0.25 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      N[2] = 0.25 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      N[3] = 0.25 * (1.0 - pt[0]) * (1.0 + pt[1]);
+            T u = ulen * (0.5 * pt[0] + 0.5) + ulen * i - 1.0;
+            T v = ulen * (0.5 * pt[1] + 0.5) + ulen * j - 1.0;
+            T w = ulen * (0.5 * pt[2] + 0.5) + ulen * k - 1.0;
 
-      // Find the x-y-z coordinate on the surface
-      T x0 = 0.0;
-      T y0 = 0.0;
-      T z0 = 0.0;
+            T N[4];
+            N[0] = 0.25 * (1.0 - u) * (1.0 - v);
+            N[1] = 0.25 * (1.0 + u) * (1.0 - v);
+            N[2] = 0.25 * (1.0 + u) * (1.0 + v);
+            N[3] = 0.25 * (1.0 - u) * (1.0 + v);
 
-      for (A2D::index_t i = 0; i < 4; i++) {
-        x0 += N[i] * Xloc[3 * ET::HEX_FACE_VERTS[face][i]];
-        y0 += N[i] * Xloc[3 * ET::HEX_FACE_VERTS[face][i] + 1];
-        z0 += N[i] * Xloc[3 * ET::HEX_FACE_VERTS[face][i] + 2];
-      }
-      T norm = std::sqrt(x0 * x0 + y0 * y0 + z0 * z0);
+            // Find the x-y-z coordinate on the surface
+            T x0 = 0.0;
+            T y0 = 0.0;
+            T z0 = 0.0;
 
-      T x1 = x0 * R / norm;
-      T y1 = y0 * R / norm;
-      T z1 = z0 * R / norm;
+            for (A2D::index_t jj = 0; jj < 4; jj++) {
+              x0 += N[jj] * Xloc[3 * ET::HEX_FACE_VERTS[face][jj]];
+              y0 += N[jj] * Xloc[3 * ET::HEX_FACE_VERTS[face][jj] + 1];
+              z0 += N[jj] * Xloc[3 * ET::HEX_FACE_VERTS[face][jj] + 2];
+            }
+            T norm = std::sqrt(x0 * x0 + y0 * y0 + z0 * z0);
 
-      // Project
-      T x = 0.5 * (1.0 - pt[2]) * x0 + 0.5 * (1.0 + pt[2]) * x1;
-      T y = 0.5 * (1.0 - pt[2]) * y0 + 0.5 * (1.0 + pt[2]) * y1;
-      T z = 0.5 * (1.0 - pt[2]) * z0 + 0.5 * (1.0 + pt[2]) * z1;
+            T x1 = x0 * R / norm;
+            T y1 = y0 * R / norm;
+            T z1 = z0 * R / norm;
 
-      // Interpolate to find the basis
-      if (ii % 3 == 0) {
-        geo_dof[ii] = x;
-      } else if (ii % 3 == 1) {
-        geo_dof[ii] = y;
-      } else if (ii % 3 == 2) {
-        geo_dof[ii] = z;
+            // Project
+            T x = 0.5 * (1.0 - w) * x0 + 0.5 * (1.0 + w) * x1;
+            T y = 0.5 * (1.0 - w) * y0 + 0.5 * (1.0 + w) * y1;
+            T z = 0.5 * (1.0 - w) * z0 + 0.5 * (1.0 + w) * z1;
+
+            // Interpolate to find the basis
+            if (ii % 3 == 0) {
+              geo_dof[ii] = x;
+            } else if (ii % 3 == 1) {
+              geo_dof[ii] = y;
+            } else if (ii % 3 == 2) {
+              geo_dof[ii] = z;
+            }
+          }
+
+          elem_geo.set_element_values(elem, geo_dof);
+        }
       }
     }
-
-    elem_geo.set_element_values(face + 1, geo_dof);
   }
 }
 
@@ -446,8 +464,8 @@ class PoissonSphere {
     double R = 1.0;
     PoissonForSphereError<T, spatial_dim> error(R);
     A2D::FiniteElement<T, PoissonForSphereError<T, spatial_dim>,
-                       A2D::HexGaussQuadrature<degree + 5>, DataBasis, GeoBasis,
-                       Basis>
+                       A2D::HexGaussQuadrature<degree + 10>, DataBasis,
+                       GeoBasis, Basis>
         functional;
 
     T err = functional.integrate(error, elem_data, elem_geo, elem_sol);
@@ -506,8 +524,8 @@ class PoissonSphere {
   bool verbose;
 };
 
-template <A2D::index_t degree>
-void find_spherical_error() {
+template <A2D::index_t nx, A2D::index_t degree>
+void find_spherical_error(bool write_sphere = false) {
   using ET = A2D::ElementTypes;
   using T = double;
 
@@ -539,8 +557,35 @@ void find_spherical_error() {
 
   int ntets = 0, nwedge = 0, npyrmd = 0;
   int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
+  A2D::MeshConnectivity3D conn_coarse(nverts, ntets, tets, nhex, hex, nwedge,
+                                      wedge, npyrmd, pyrmd);
+
+  // Set up a fake basis that will never be evaluated to create the mesh from
+  // the spherical elements
+  using FakeBasis =
+      A2D::FEBasis<double, A2D::LagrangeH1HexBasis<double, 1, nx>>;
+  using FakeLOrderBasis = A2D::FEBasis<
+      double, typename A2D::LagrangeH1HexBasis<double, 1, nx>::LOrderBasis>;
+  A2D::ElementMesh<FakeBasis> fake_mesh(conn_coarse);
+
+  // Extract the low-order element connectivity
+  A2D::ElementMesh<FakeLOrderBasis> lorder_mesh(fake_mesh);
+
+  int nverts_refine = lorder_mesh.get_num_dof();
+  const int coord_to_hex[] = {0, 1, 3, 2, 4, 5, 7, 6};
+
+  int nhex_refine = lorder_mesh.get_num_elements();
+  int* hex_refine = new int[8 * nhex_refine];
+  for (int i = 0; i < nhex_refine; i++) {
+    for (int j = 0; j < 8; j++) {
+      hex_refine[8 * i + coord_to_hex[j]] =
+          lorder_mesh.template get_global_dof<0>(i, j);
+    }
+  }
+
+  // Create the full mesh connectivity
+  A2D::MeshConnectivity3D conn(nverts_refine, ntets, tets, nhex_refine,
+                               hex_refine, nwedge, wedge, npyrmd, pyrmd);
 
   // Set the label for the entire surface
   A2D::index_t bc_label = 0;
@@ -562,8 +607,8 @@ void find_spherical_error() {
 
   // Set the geometry from the node locations
   auto elem_geo = sphere.get_geometry();
-  set_geo_spherical<typename PoissonSphere<T, degree>::GeoBasis>(alpha, R,
-                                                                 elem_geo);
+  set_geo_spherical<nx, typename PoissonSphere<T, degree>::GeoBasis>(alpha, R,
+                                                                     elem_geo);
   sphere.reset_geometry();
 
   // Solve the spherical problem
@@ -571,31 +616,93 @@ void find_spherical_error() {
 
   T error = sphere.compute_solution_error();
 
-  if (degree == 1) {
-    std::cout << std::setw(10) << "p" << std::setw(10) << "ndof"
-              << std::setw(25) << "error" << std::endl;
+  if (nx == 1 && degree == 1) {
+    std::cout << std::setw(10) << "p" << std::setw(10) << "nx" << std::setw(10)
+              << "ndof" << std::setw(25) << "error" << std::endl;
   }
   A2D::index_t ndof = sphere.get_num_dof();
-  std::cout << std::setw(10) << degree << std::setw(10) << ndof << std::setw(25)
-            << std::setprecision(16) << error << std::endl;
+  std::cout << std::setw(10) << degree << std::setw(10) << nx << std::setw(10)
+            << ndof << std::setw(25) << std::setprecision(16) << error
+            << std::endl;
 
-  // sphere.tovtk("filename.vtk");
+  if (write_sphere) {
+    sphere.tovtk("filename.vtk");
+  }
 }
 
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
 
-  find_spherical_error<1>();
-  find_spherical_error<2>();
-  find_spherical_error<4>();
-  find_spherical_error<6>();
-  find_spherical_error<8>();
-  find_spherical_error<10>();
-  find_spherical_error<12>();
-  find_spherical_error<14>();
-  find_spherical_error<16>();
-  find_spherical_error<18>();
-  find_spherical_error<20>();
+  find_spherical_error<1, 1>();
+  find_spherical_error<2, 1>();
+  find_spherical_error<3, 1>();
+  find_spherical_error<4, 1>();
+  find_spherical_error<5, 1>();
+  find_spherical_error<6, 1>();
+  find_spherical_error<7, 1>();
+  find_spherical_error<8, 1>();
+  find_spherical_error<9, 1>();
+  find_spherical_error<10, 1>();
+  find_spherical_error<11, 1>();
+  find_spherical_error<12, 1>();
+  find_spherical_error<13, 1>();
+  find_spherical_error<14, 1>();
+  find_spherical_error<15, 1>();
+  find_spherical_error<16, 1>();
+  find_spherical_error<17, 1>();
+  find_spherical_error<18, 1>();
+  find_spherical_error<19, 1>();
+  find_spherical_error<20, 1>();
+  find_spherical_error<21, 1>();
+  find_spherical_error<22, 1>();
+  find_spherical_error<23, 1>();
+  find_spherical_error<24, 1>();
+  find_spherical_error<25, 1>();
+  find_spherical_error<26, 1>();
+  find_spherical_error<27, 1>();
+  find_spherical_error<28, 1>();
+  find_spherical_error<29, 1>();
+  find_spherical_error<30, 1>();
+
+  find_spherical_error<1, 2>();
+  find_spherical_error<2, 2>();
+  find_spherical_error<3, 2>();
+  find_spherical_error<4, 2>();
+  find_spherical_error<5, 2>();
+  find_spherical_error<6, 2>();
+  find_spherical_error<7, 2>();
+  find_spherical_error<8, 2>();
+  find_spherical_error<9, 2>();
+  find_spherical_error<10, 2>();
+  find_spherical_error<11, 2>();
+  find_spherical_error<12, 2>();
+  find_spherical_error<13, 2>();
+  find_spherical_error<14, 2>();
+  find_spherical_error<15, 2>();
+
+  find_spherical_error<1, 4>();
+  find_spherical_error<2, 4>();
+  find_spherical_error<3, 4>();
+  find_spherical_error<4, 4>();
+  find_spherical_error<5, 4>();
+  find_spherical_error<6, 4>();
+  find_spherical_error<7, 4>();
+  find_spherical_error<8, 4>();
+
+  find_spherical_error<1, 6>();
+  find_spherical_error<2, 6>();
+  find_spherical_error<3, 6>();
+  find_spherical_error<4, 6>();
+  find_spherical_error<5, 6>();
+
+  find_spherical_error<1, 8>();
+  find_spherical_error<2, 8>();
+  find_spherical_error<3, 8>();
+  find_spherical_error<4, 8>();
+
+  find_spherical_error<1, 10>();
+  find_spherical_error<2, 10>();
+  find_spherical_error<3, 10>(true);
 
   return 0;
 }

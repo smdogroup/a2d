@@ -9,9 +9,9 @@ using fspath = std::filesystem::path;
 
 template <int degree>
 void main_body(std::string vtk_name, std::string prefix, int maxit,
-               int vtk_freq, double ramp_q, bool check_grad_and_exit,
-               bool verbose, int amg_nlevels, int cg_it, double cg_rtol,
-               double cg_atol) {
+               int vtk_freq, double bc_fraction, double ramp_q,
+               bool check_grad_and_exit, bool verbose, int amg_nlevels,
+               int cg_it, double cg_rtol, double cg_atol) {
   // Set the lower order degree for the Bernstein polynomial
   constexpr int filter_degree = degree - 1;
 
@@ -38,12 +38,11 @@ void main_body(std::string vtk_name, std::string prefix, int maxit,
 
   // Find traction vertices
   T lower[3], upper[3];
-  T fraction = 0.2;
   readvtk.get_bounds(lower, upper);
   T xmin = upper[0];
   T xmax = upper[0];
   T ymin = lower[1];
-  T ymax = lower[1] + fraction * (upper[1] - lower[1]);
+  T ymax = lower[1] + bc_fraction * (upper[1] - lower[1]);
   T zmin = lower[2];
   T zmax = upper[2];
   std::vector<I> traction_verts =
@@ -90,6 +89,9 @@ void main_body(std::string vtk_name, std::string prefix, int maxit,
   int ndof = topo.get_num_dofs();
 
   // Print info
+  std::printf("basis degree:                 %d\n", degree);
+  std::printf("number of mesh elements:      %d\n",
+              ntets + nhex + nwedge + npyrmd);
   std::printf("number of design variables:   %d\n", nvars);
   std::printf("number of degrees of freedom: %d\n", ndof);
 
@@ -179,13 +181,14 @@ int main(int argc, char *argv[]) {
         parser.parse_option("--vtk", std::string("3d_hex.vtk"));
     std::string prefix =
         parser.parse_option("--prefix", std::string("results"));
-    int maxit = parser.parse_option("--maxit", 200);
+    int maxit = parser.parse_option("--maxit", 400);
     int vtk_freq = parser.parse_option("--vtk_freq", 10);
+    double bc_fraction = parser.parse_option("--bc_fraction", 0.2);
     double ramp_q = parser.parse_option("--ramp_q", 5.0);
     bool check_grad_and_exit = parser.parse_option("--check_grad_and_exit");
     bool verbose = parser.parse_option("--verbose");
     int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
-    int cg_it = parser.parse_option("--cg_it", 100);
+    int cg_it = parser.parse_option("--cg_it", 300);
     double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
     double cg_atol = parser.parse_option("--cg_atol", 1e-30);
 
@@ -203,43 +206,43 @@ int main(int argc, char *argv[]) {
     // Execute
     switch (degree) {
       case 2:
-        main_body<2>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<2>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 3:
-        main_body<3>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<3>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 4:
-        main_body<4>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<4>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 5:
-        main_body<5>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<5>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 6:
-        main_body<6>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<6>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 7:
-        main_body<7>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<7>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;
 
       case 8:
-        main_body<8>(vtk_name, prefix, maxit, vtk_freq, ramp_q,
+        main_body<8>(vtk_name, prefix, maxit, vtk_freq, bc_fraction, ramp_q,
                      check_grad_and_exit, verbose, amg_nlevels, cg_it, cg_rtol,
                      cg_atol);
         break;

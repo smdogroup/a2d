@@ -611,19 +611,25 @@ void find_spherical_error(bool write_sphere = false) {
                                                                      elem_geo);
   sphere.reset_geometry();
 
+  // Find best p and nx to give similar dof at the end
+  // std::printf("degree: %2d, nx: %2d, ndof: %10d\n", degree, nx,
+  //             sphere.get_num_dof());
+  // return;
+
   // Solve the spherical problem
+  Kokkos::Timer timer;
   sphere.solve();
+  double elapsed_time = timer.seconds();
 
   T error = sphere.compute_solution_error();
 
   if (nx == 1 && degree == 1) {
-    std::cout << std::setw(10) << "p" << std::setw(10) << "nx" << std::setw(10)
-              << "ndof" << std::setw(25) << "error" << std::endl;
+    std::printf("%10s%10s%10s%20s%25s\n", "p", "nx", "ndof", "elapsed_time(s)",
+                "error");
   }
   A2D::index_t ndof = sphere.get_num_dof();
-  std::cout << std::setw(10) << degree << std::setw(10) << nx << std::setw(10)
-            << ndof << std::setw(25) << std::setprecision(16) << error
-            << std::endl;
+  std::printf("%10d%10d%10d%20.5e%25.15e\n", degree, nx, ndof, elapsed_time,
+              error);
 
   if (write_sphere) {
     sphere.tovtk("filename.vtk");
@@ -634,75 +640,54 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize();
 
   find_spherical_error<1, 1>();
-  find_spherical_error<2, 1>();
-  find_spherical_error<3, 1>();
-  find_spherical_error<4, 1>();
   find_spherical_error<5, 1>();
-  find_spherical_error<6, 1>();
-  find_spherical_error<7, 1>();
-  find_spherical_error<8, 1>();
-  find_spherical_error<9, 1>();
   find_spherical_error<10, 1>();
-  find_spherical_error<11, 1>();
-  find_spherical_error<12, 1>();
-  find_spherical_error<13, 1>();
-  find_spherical_error<14, 1>();
   find_spherical_error<15, 1>();
-  find_spherical_error<16, 1>();
-  find_spherical_error<17, 1>();
-  find_spherical_error<18, 1>();
-  find_spherical_error<19, 1>();
   find_spherical_error<20, 1>();
-  find_spherical_error<21, 1>();
-  find_spherical_error<22, 1>();
-  find_spherical_error<23, 1>();
-  find_spherical_error<24, 1>();
   find_spherical_error<25, 1>();
-  find_spherical_error<26, 1>();
-  find_spherical_error<27, 1>();
-  find_spherical_error<28, 1>();
-  find_spherical_error<29, 1>();
   find_spherical_error<30, 1>();
+  find_spherical_error<35, 1>();
+  find_spherical_error<40, 1>();
+  find_spherical_error<45, 1>();
+  find_spherical_error<50, 1>();
+  find_spherical_error<54, 1>();
 
   find_spherical_error<1, 2>();
-  find_spherical_error<2, 2>();
-  find_spherical_error<3, 2>();
   find_spherical_error<4, 2>();
-  find_spherical_error<5, 2>();
-  find_spherical_error<6, 2>();
-  find_spherical_error<7, 2>();
   find_spherical_error<8, 2>();
-  find_spherical_error<9, 2>();
-  find_spherical_error<10, 2>();
-  find_spherical_error<11, 2>();
   find_spherical_error<12, 2>();
-  find_spherical_error<13, 2>();
-  find_spherical_error<14, 2>();
-  find_spherical_error<15, 2>();
+  find_spherical_error<16, 2>();
+  find_spherical_error<20, 2>();
+  find_spherical_error<24, 2>();
+  find_spherical_error<27, 2>();
 
   find_spherical_error<1, 4>();
-  find_spherical_error<2, 4>();
   find_spherical_error<3, 4>();
-  find_spherical_error<4, 4>();
   find_spherical_error<5, 4>();
-  find_spherical_error<6, 4>();
   find_spherical_error<7, 4>();
-  find_spherical_error<8, 4>();
+  find_spherical_error<9, 4>();
+  find_spherical_error<11, 4>();
+  find_spherical_error<13, 4>();
 
   find_spherical_error<1, 6>();
-  find_spherical_error<2, 6>();
   find_spherical_error<3, 6>();
-  find_spherical_error<4, 6>();
   find_spherical_error<5, 6>();
+  find_spherical_error<7, 6>();
+  find_spherical_error<9, 6>();
 
   find_spherical_error<1, 8>();
   find_spherical_error<2, 8>();
   find_spherical_error<3, 8>();
   find_spherical_error<4, 8>();
+  find_spherical_error<5, 8>();
+  find_spherical_error<6, 8>();
+  find_spherical_error<7, 8>();
 
   find_spherical_error<1, 10>();
   find_spherical_error<2, 10>();
-  find_spherical_error<3, 10>(true);
+  find_spherical_error<3, 10>();
+  find_spherical_error<4, 10>();
+  find_spherical_error<5, 10>(true);
 
   return 0;
 }

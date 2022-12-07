@@ -35,7 +35,7 @@ void verts_to_vtk(I nverts, std::vector<I> &bc_verts,
 template <int degree, int filter_degree>
 std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
 generate_analysis_from_vtk(std::string prefix, std::string vtk_name,
-                           double bc_fraction, int amg_nlevels, int cg_it,
+                           double vtk_bc_fraction, int amg_nlevels, int cg_it,
                            double cg_rtol, double cg_atol, bool verbose,
                            int maxit, int vtk_freq, double ramp_q,
                            bool check_grad_and_exit) {
@@ -63,7 +63,7 @@ generate_analysis_from_vtk(std::string prefix, std::string vtk_name,
   T xmin = upper[0];
   T xmax = upper[0];
   T ymin = lower[1];
-  T ymax = lower[1] + bc_fraction * (upper[1] - lower[1]);
+  T ymax = lower[1] + vtk_bc_fraction * (upper[1] - lower[1]);
   T zmin = lower[2];
   T zmax = upper[2];
   std::vector<I> traction_verts = A2D::get_verts_within_box(
@@ -77,8 +77,6 @@ generate_analysis_from_vtk(std::string prefix, std::string vtk_name,
   // Set traction components and body force components
   T tx_traction[3] = {0.0, -1.0, 0.0};
   T tx_body[3] = {0.0, 0.0, 0.0};
-  T tx_torque[3] = {0.0, 0.0, 0.0};
-  T x0_torque[3] = {0.0, 0.0, 0.0};
 
   // Set up boundary condition information
   A2D::DirichletBCInfo bcinfo;
@@ -89,7 +87,7 @@ generate_analysis_from_vtk(std::string prefix, std::string vtk_name,
   std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis =
       std::make_shared<TopoElasticityAnalysis<T, degree, filter_degree>>(
           conn, bcinfo, E, nu, ramp_q, tx_body, traction_label, tx_traction,
-          x0_torque, tx_torque, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
+          nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
 
   auto elem_geo = analysis->get_geometry();
   A2D::set_geo_from_hex_nodes<
@@ -265,7 +263,9 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
 template <int degree>
 void main_body(std::string prefix, std::string domain, std::string vtk_name,
-               double bc_fraction, int amg_nlevels, int cg_it, double cg_rtol,
+               double vtk_bc_fraction, double cy_rout, double cy_rin,
+               double cy_height, int cy_nelems_c, int cy_nelems_r,
+               int cy_nelems_h, int amg_nlevels, int cg_it, double cg_rtol,
                double cg_atol, bool verbose, int maxit, int vtk_freq,
                double ramp_q, bool check_grad_and_exit) {
   // Set the lower order degree for the Bernstein polynomial
@@ -280,19 +280,13 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
 
   if (domain == "vtk") {
     analysis = generate_analysis_from_vtk<degree, filter_degree>(
-        prefix, vtk_name, bc_fraction, amg_nlevels, cg_it, cg_rtol, cg_atol,
+        prefix, vtk_name, vtk_bc_fraction, amg_nlevels, cg_it, cg_rtol, cg_atol,
         verbose, maxit, vtk_freq, ramp_q, check_grad_and_exit);
   } else if (domain == "cylinder") {
-    double rout = 1.0;
-    double rin = 0.5;
-    double height = 2.0;
-    int nelems_c = 4;
-    int nelems_r = 4;
-    int nelems_h = 4;
     analysis = generate_analysis_cylinder<degree, filter_degree>(
-        prefix, rout, rin, height, nelems_c, nelems_r, nelems_h, amg_nlevels,
-        cg_it, cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
-        check_grad_and_exit);
+        prefix, cy_rout, cy_rin, cy_height, cy_nelems_c, cy_nelems_r,
+        cy_nelems_h, amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+        vtk_freq, ramp_q, check_grad_and_exit);
   } else {
     std::printf("Invalid domain: %s!\n", domain.c_str());
     exit(-1);
@@ -417,7 +411,17 @@ int main(int argc, char *argv[]) {
     std::string domain = parser.parse_option("--domain", std::string("vtk"));
     std::string vtk_name =
         parser.parse_option("--vtk", std::string("3d_hex.vtk"));
-    double bc_fraction = parser.parse_option("--bc_fraction", 0.2);
+
+    // - Domain specific settings - vtk
+    double vtk_bc_fraction = parser.parse_option("--vtk_bc_fraction", 0.2);
+
+    // - Domain specific settings - cylinder
+    double cy_rout = parser.parse_option("--cy_rout", 1.0);
+    double cy_rin = parser.parse_option("--cy_rin", 0.5);
+    double cy_height = parser.parse_option("--cy_height", 2.0);
+    int cy_nelems_c = parser.parse_option("--cy_nelems_c", 4);
+    int cy_nelems_r = parser.parse_option("--cy_nelems_r", 4);
+    int cy_nelems_h = parser.parse_option("--cy_nelems_h", 4);
 
     // - Linear solver settings
     int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
@@ -450,27 +454,10 @@ int main(int argc, char *argv[]) {
     // Execute
     switch (degree) {
       case 2:
-        main_body<2>(prefix, domain, vtk_name, bc_fraction, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
-                     check_grad_and_exit);
-        break;
-
-      case 3:
-        main_body<3>(prefix, domain, vtk_name, bc_fraction, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
-                     check_grad_and_exit);
-        break;
-
-      case 4:
-        main_body<4>(prefix, domain, vtk_name, bc_fraction, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
-                     check_grad_and_exit);
-        break;
-
-      case 5:
-        main_body<5>(prefix, domain, vtk_name, bc_fraction, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
-                     check_grad_and_exit);
+        main_body<2>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
+                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       default:

@@ -218,18 +218,13 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
                pyrmd, Xloc.data(),
                fspath(prefix) / fspath("cylinder_low_order_mesh.vtk"));
 
-  // Find bc vertices
-  std::vector<I> bc_verts = A2D::get_verts_within_box(
-      nverts, Xloc.data(), -rout, rout, -rout, rout, 0.0, 0.0);
-  I bc_label =
-      conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
-
-  // Find traction vertices
+  // Set points to apply bc and traction
   double dtheta =
       pi / 15.0;  // angle within witch to apply torque around the circumference
-
-  std::vector<I> traction_verts;
   std::vector<double> thetas = {0.0, 0.5 * pi, pi, 1.5 * pi};
+
+  // Find traction vertices
+  std::vector<I> traction_verts;
   for (double theta : thetas) {
     std::vector<I> tor_v = A2D::get_verts_cylindrical_coords(
         nverts, Xloc.data(), theta, theta + dtheta, rin, rout, height, height,
@@ -238,6 +233,17 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
   }
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
+
+  // Find bc vertices - use same pattern as traction vertices
+  std::vector<I> bc_verts;
+  for (double theta : thetas) {
+    std::vector<I> bc_v = A2D::get_verts_cylindrical_coords(
+        nverts, Xloc.data(), theta, theta + dtheta, rin, rout, 0.0, 0.0, 1e-3);
+    bc_verts.insert(bc_verts.end(), bc_v.begin(), bc_v.end());
+  }
+
+  I bc_label =
+      conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
 
   // Save bc/traction verts to vtk
   verts_to_vtk(nverts, bc_verts, traction_verts, Xloc.data(), prefix);

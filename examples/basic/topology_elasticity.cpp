@@ -241,7 +241,6 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
   // Save bc/traction verts to vtk
   verts_to_vtk(nverts, bc_verts, traction_verts, Xloc.data(), prefix);
-  exit(0);
 
   // Set traction components and body force components
   T tx_traction[3] = {0.0, 0.0, 0.0};

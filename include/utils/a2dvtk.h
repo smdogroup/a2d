@@ -830,10 +830,10 @@ std::vector<I> get_verts_cylindrical_coords(I nverts, double* Xloc,
     z = Xloc[3 * i + 2];
 
     r = std::sqrt(x * x + y * y);
-    if (y > 0) {
-      theta = std::acos(x / r);
+    if (y < 0) {
+      theta = 2.0 * pi - std::acos(x / r);
     } else {
-      theta = 2 * pi - std::acos(x / r);
+      theta = std::acos(x / r);
     }
 
     if (theta > theta_min - tol && theta < theta_max + tol) {

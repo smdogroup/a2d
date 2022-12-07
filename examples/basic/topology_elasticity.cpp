@@ -226,29 +226,22 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
   // Find traction vertices
   double dtheta =
-      pi / 6.0;  // angle within witch to apply torque around the circumference
-  std::vector<I> tor_verts_1 = A2D::get_verts_cylindrical_coords(
-      nverts, Xloc.data(), 0.0, dtheta, rin, rout, height, height);
-  std::vector<I> tor_verts_2 = A2D::get_verts_cylindrical_coords(
-      nverts, Xloc.data(), 2.0 * pi / 3.0, 2.0 * pi / 3.0 + dtheta, rin, rout,
-      height, height);
-  std::vector<I> tor_verts_3 = A2D::get_verts_cylindrical_coords(
-      nverts, Xloc.data(), 4.0 * pi / 3.0, 4.0 * pi / 3.0 + dtheta, rin, rout,
-      height, height);
+      pi / 12.0;  // angle within witch to apply torque around the circumference
 
   std::vector<I> traction_verts;
-  traction_verts.insert(traction_verts.end(), tor_verts_1.begin(),
-                        tor_verts_1.end());
-  traction_verts.insert(traction_verts.end(), tor_verts_2.begin(),
-                        tor_verts_2.end());
-  traction_verts.insert(traction_verts.end(), tor_verts_3.begin(),
-                        tor_verts_3.end());
-
+  std::vector<double> thetas = {0.0, 2.0 / 3.0 * pi, 4.0 / 3.0 * pi};
+  for (double theta : thetas) {
+    std::vector<I> tor_v = A2D::get_verts_cylindrical_coords(
+        nverts, Xloc.data(), theta, theta + dtheta, rin, rout, height, height,
+        1e-3);
+    traction_verts.insert(traction_verts.end(), tor_v.begin(), tor_v.end());
+  }
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
 
   // Save bc/traction verts to vtk
   verts_to_vtk(nverts, bc_verts, traction_verts, Xloc.data(), prefix);
+  exit(0);
 
   // Set traction components and body force components
   T tx_traction[3] = {0.0, 0.0, 0.0};

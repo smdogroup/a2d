@@ -226,10 +226,12 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
   // Find traction vertices
   double dtheta =
-      pi / 12.0;  // angle within witch to apply torque around the circumference
+      pi / 30.0;  // angle within witch to apply torque around the circumference
 
   std::vector<I> traction_verts;
-  std::vector<double> thetas = {0.0, 2.0 / 3.0 * pi, 4.0 / 3.0 * pi};
+  std::vector<double> thetas = {
+      0.0, pi / 4.0,       pi * 2.0 / 4.0, pi * 3.0 / 4.0,
+      pi,  pi * 5.0 / 4.0, pi * 6.0 / 4.0, pi * 7.0 / 4.0};
   for (double theta : thetas) {
     std::vector<I> tor_v = A2D::get_verts_cylindrical_coords(
         nverts, Xloc.data(), theta, theta + dtheta, rin, rout, height, height,

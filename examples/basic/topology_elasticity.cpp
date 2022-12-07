@@ -266,8 +266,8 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
                double vtk_bc_fraction, double cy_rout, double cy_rin,
                double cy_height, int cy_nelems_c, int cy_nelems_r,
                int cy_nelems_h, int amg_nlevels, int cg_it, double cg_rtol,
-               double cg_atol, bool verbose, int maxit, int vtk_freq,
-               double ramp_q, bool check_grad_and_exit) {
+               double cg_atol, bool verbose, std::string optimizer, int maxit,
+               int vtk_freq, double ramp_q, bool check_grad_and_exit) {
   // Set the lower order degree for the Bernstein polynomial
   constexpr int filter_degree = degree - 1;
 
@@ -330,40 +330,43 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   std::string out_path = fspath(prefix) / fspath("paropt.out");
   std::string tr_path = fspath(prefix) / fspath("paropt.tr");
   std::string mma_path = fspath(prefix) / fspath("paropt.mma");
-  options->setOption("algorithm", "mma");
-  options->setOption("mma_max_iterations", maxit);
   options->setOption("output_file", out_path.c_str());
   options->setOption("tr_output_file", tr_path.c_str());
   options->setOption("mma_output_file", mma_path.c_str());
 
-  // options->setOption("algorithm", "tr");
-  // options->setOption("output_level", 0);
-  // options->setOption("norm_type", "l1");
-  // options->setOption("tr_init_size", 0.05);
-  // options->setOption("tr_min_size", 1e-3);
-  // options->setOption("tr_max_size", 1.0);
-  // options->setOption("tr_eta", 0.25);
-  // options->setOption("tr_infeas_tol", 1e-6);
-  // options->setOption("tr_l1_tol", 0.0);
-  // options->setOption("tr_linfty_tol", 0.0);
-  // options->setOption("tr_adaptive_gamma_update", true);
-  // options->setOption("tr_accept_step_strategy", "penalty_method");
-  // options->setOption("filter_sufficient_reduction", true);
-  // options->setOption("filter_has_feas_restore_phase", true);
-  // options->setOption("tr_use_soc", false);
-  // options->setOption("tr_max_iterations", 100);
-  // options->setOption("penalty_gamma", 50.0);
-  // options->setOption("qn_subspace_size", 5);
-  // options->setOption("qn_type", "bfgs");
-  // options->setOption("qn_diag_type", "yty_over_yts");
-  // options->setOption("abs_res_tol", 1e-8);
-  // options->setOption("starting_point_strategy", "affine_step");
-  // options->setOption("barrier_strategy", "mehrotra_predictor_corrector");
-  // options->setOption("tr_steering_barrier_strategy",
-  //                    "mehrotra_predictor_corrector");
-  // options->setOption("tr_steering_starting_point_strategy", "affine_step");
-  // options->setOption("use_line_search", false);
-  // options->setOption("max_major_iters", 20);
+  if (optimizer == "mma") {
+    options->setOption("algorithm", "mma");
+    options->setOption("mma_max_iterations", maxit);
+  } else if (optimizer == "tr") {
+    options->setOption("algorithm", "tr");
+    options->setOption("output_level", 0);
+    options->setOption("norm_type", "l1");
+    options->setOption("tr_init_size", 0.05);
+    options->setOption("tr_min_size", 1e-3);
+    options->setOption("tr_max_size", 1.0);
+    options->setOption("tr_eta", 0.25);
+    options->setOption("tr_infeas_tol", 1e-6);
+    options->setOption("tr_l1_tol", 0.0);
+    options->setOption("tr_linfty_tol", 0.0);
+    options->setOption("tr_adaptive_gamma_update", true);
+    options->setOption("tr_accept_step_strategy", "penalty_method");
+    options->setOption("filter_sufficient_reduction", true);
+    options->setOption("filter_has_feas_restore_phase", true);
+    options->setOption("tr_use_soc", false);
+    options->setOption("tr_max_iterations", maxit);
+    options->setOption("penalty_gamma", 50.0);
+    options->setOption("qn_subspace_size", 5);
+    options->setOption("qn_type", "bfgs");
+    options->setOption("qn_diag_type", "yty_over_yts");
+    options->setOption("abs_res_tol", 1e-8);
+    options->setOption("starting_point_strategy", "affine_step");
+    options->setOption("barrier_strategy", "mehrotra_predictor_corrector");
+    options->setOption("tr_steering_barrier_strategy",
+                       "mehrotra_predictor_corrector");
+    options->setOption("tr_steering_starting_point_strategy", "affine_step");
+    options->setOption("use_line_search", false);
+    options->setOption("max_major_iters", 20);
+  }
 
   ParOptOptimizer *opt = new ParOptOptimizer(prob, options);
   opt->incref();
@@ -431,6 +434,8 @@ int main(int argc, char *argv[]) {
     bool verbose = parser.parse_option("--verbose");
 
     // - Optimization settings
+    std::string optimizer =
+        parser.parse_option("--optimizer", std::string("mma"));
     int maxit = parser.parse_option("--maxit", 400);
     int vtk_freq = parser.parse_option("--vtk_freq", 10);
     double ramp_q = parser.parse_option("--ramp_q", 5.0);
@@ -442,6 +447,8 @@ int main(int argc, char *argv[]) {
     // Check values
     std::vector<std::string> valid_domains = {"vtk", "cylinder"};
     assert_option_in(domain, valid_domains);
+    std::vector<std::string> valid_opt = {"mma", "tr"};
+    assert_option_in(optimizer, valid_opt);
 
     // Set up result directory
     if (!std::filesystem::is_directory(prefix)) {
@@ -456,36 +463,36 @@ int main(int argc, char *argv[]) {
       case 2:
         main_body<2>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 3:
         main_body<3>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 4:
         main_body<4>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 5:
         main_body<5>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 6:
         main_body<6>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       default:

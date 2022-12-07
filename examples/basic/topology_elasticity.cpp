@@ -235,7 +235,7 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
   // Set traction components and body force components
   T tx_traction[3] = {0.0, 0.0, 0.0};
-  T tx_body[3] = {0.0, 0.0, 1.0};
+  T tx_body[3] = {0.0, 0.0, 0.0};
   T tx_torque[3] = {0.0, 0.0, 1.0};
   T x0_torque[3] = {0.0, 0.0, height};
 

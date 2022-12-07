@@ -337,6 +337,18 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   if (optimizer == "mma") {
     options->setOption("algorithm", "mma");
     options->setOption("mma_max_iterations", maxit);
+    options->setOption("mma_asymptote_contract", 0.7);
+    options->setOption("mma_asymptote_relax", 1.2);
+    options->setOption("mma_bound_relax", 0);
+    options->setOption("mma_delta_regularization", 1e-05);
+    options->setOption("mma_eps_regularization", 0.001);
+    options->setOption("mma_infeas_tol", 1e-05);
+    options->setOption("mma_init_asymptote_offset", 0.25);
+    options->setOption("mma_l1_tol", 1e-06);
+    options->setOption("mma_linfty_tol", 1e-06);
+    options->setOption("mma_max_asymptote_offset", 10);
+    options->setOption("mma_min_asymptote_offset", 0.01);
+    options->setOption("mma_use_constraint_linearization", true);
   } else if (optimizer == "tr") {
     options->setOption("algorithm", "tr");
     options->setOption("output_level", 0);

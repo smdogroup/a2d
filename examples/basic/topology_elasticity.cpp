@@ -266,8 +266,9 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
                double vtk_bc_fraction, double cy_rout, double cy_rin,
                double cy_height, int cy_nelems_c, int cy_nelems_r,
                int cy_nelems_h, int amg_nlevels, int cg_it, double cg_rtol,
-               double cg_atol, bool verbose, std::string optimizer, int maxit,
-               int vtk_freq, double ramp_q, bool check_grad_and_exit) {
+               double cg_atol, bool verbose, std::string optimizer,
+               double vol_frac, int maxit, int vtk_freq, double ramp_q,
+               bool check_grad_and_exit) {
   // Set the lower order degree for the Bernstein polynomial
   constexpr int filter_degree = degree - 1;
 
@@ -310,10 +311,9 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   analysis->solve();
   T ref_comp = analysis->eval_compliance();
   T domain_vol = analysis->eval_volume();
-  T volume_frac = 0.4;
   TopOptProb<TopoElasticityAnalysis<T, degree, filter_degree>> *prob =
       new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
-                     domain_vol, volume_frac, *analysis, verbose, vtk_freq);
+                     domain_vol, vol_frac, *analysis, verbose, vtk_freq);
   prob->incref();
 
   // Sanity check
@@ -347,7 +347,6 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
     options->setOption("mma_l1_tol", 1e-06);
     options->setOption("mma_linfty_tol", 1e-06);
     options->setOption("mma_max_asymptote_offset", 10);
-    options->setOption("mma_min_asymptote_offset", 0.01);
     options->setOption("mma_use_constraint_linearization", true);
   } else if (optimizer == "tr") {
     options->setOption("algorithm", "tr");
@@ -448,6 +447,7 @@ int main(int argc, char *argv[]) {
     // - Optimization settings
     std::string optimizer =
         parser.parse_option("--optimizer", std::string("mma"));
+    double vol_frac = parser.parse_option("--vol_frac", 0.4);
     int maxit = parser.parse_option("--maxit", 400);
     int vtk_freq = parser.parse_option("--vtk_freq", 10);
     double ramp_q = parser.parse_option("--ramp_q", 5.0);
@@ -476,35 +476,35 @@ int main(int argc, char *argv[]) {
         main_body<2>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 3:
         main_body<3>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 4:
         main_body<4>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 5:
         main_body<5>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 6:
         main_body<6>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
                      cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     maxit, vtk_freq, ramp_q, check_grad_and_exit);
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       default:

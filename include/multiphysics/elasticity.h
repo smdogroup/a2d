@@ -621,11 +621,110 @@ class TopoVonMisesAggregation {
   }
 };
 
+/**
+ * @brief Apply surface traction and/or surface torque.
+ */
 template <typename T, A2D::index_t D>
 class TopoSurfaceTraction {
  public:
-  TopoSurfaceTraction(const T tx_[]) {
+  TopoSurfaceTraction(const T tx_[], const T torx_[] = nullptr,
+                      const T x0_[] = nullptr) {
+    has_traction = false;
+    has_torque = false;
+
     for (A2D::index_t i = 0; i < dim; i++) {
+      if (tx_) {
+        tx[i] = tx_[i];
+        has_traction = true;
+      }
+      if (torx_ && x0_) {
+        torx[i] = torx_[i];
+        x0[i] = x0_[i];
+        has_torque = true;
+      }
+    }
+  }
+
+  // Number of dimensions
+  static const A2D::index_t dim = D;
+
+  // Number of data dimensions
+  static const A2D::index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = A2D::FESpace<T, dim>;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+
+  // Finite element space
+  using FiniteElementSpace =
+      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::SurfaceMapping<T, dim>;
+
+  T tx[dim];    // surface traction vector
+  T torx[dim];  // surface  torque vector
+  T x0[dim];    // torque origin
+  bool has_traction;
+  bool has_torque;
+
+  /**
+   * @brief Evaluate the weak form coefficients for linear elasticity
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The trial solution
+   * @param coef Output weak form coefficients of the test space
+   */
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    // Extract the solution
+    A2D::Vec<T, dim>& U = (coef.template get<0>()).get_value();
+
+    for (index_t i = 0; i < dim; i++) {
+      U(i) = 0.0;
+    }
+
+    if (has_traction) {
+      for (index_t i = 0; i < dim; i++) {
+        U(i) -= wdetJ * tx[i];
+      }
+    }
+
+    if (has_torque) {
+      // Extract location
+      const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
+
+      // Extract the solution
+      A2D::Vec<T, dim>& U = (coef.template get<0>()).get_value();
+
+      // Force at this point is (x - x0) cross torque
+      U(0) -= wdetJ * ((x(1) - x0[1]) * tx[2] - (x(2) - x0[2]) * tx[1]);
+      U(1) -= wdetJ * ((x(2) - x0[2]) * tx[0] - (x(0) - x0[0]) * tx[2]);
+      U(2) -= wdetJ * ((x(0) - x0[0]) * tx[1] - (x(1) - x0[1]) * tx[0]);
+    }
+  }
+};
+
+#if 0
+/**
+ * @brief Apply a torque to a surface, given origin, torque density and area
+ *
+ * @tparam T
+ * @tparam D
+ */
+template <typename T, A2D::index_t D>
+class TopoSurfaceTorque {
+ public:
+  TopoSurfaceTorque(const T x0_[], const T tx_[]) {
+    for (A2D::index_t i = 0; i < dim; i++) {
+      x0[i] = x0_[i];
       tx[i] = tx_[i];
     }
   }
@@ -650,8 +749,8 @@ class TopoSurfaceTraction {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::SurfaceMapping<T, dim>;
 
-  // Surface traction values
-  T tx[dim];
+  T tx[dim];  // torque vector
+  T x0[dim];  // torque origin
 
   /**
    * @brief Evaluate the weak form coefficients for linear elasticity
@@ -666,14 +765,19 @@ class TopoSurfaceTraction {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
+    // Extract location
+    const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
+
     // Extract the solution
     A2D::Vec<T, dim>& U = (coef.template get<0>()).get_value();
 
-    for (index_t i = 0; i < dim; i++) {
-      U(i) = -wdetJ * tx[i];
-    }
+    // Force at this point is (x - x0) cross torque
+    U(0) = -wdetJ * ((x(1) - x0[1]) * tx[2] - (x(2) - x0[2]) * tx[1]);
+    U(1) = -wdetJ * ((x(2) - x0[2]) * tx[0] - (x(0) - x0[0]) * tx[2]);
+    U(2) = -wdetJ * ((x(0) - x0[0]) * tx[1] - (x(1) - x0[1]) * tx[0]);
   }
 };
+#endif
 
 }  // namespace A2D
 

@@ -208,9 +208,10 @@ class ToVTK3D {
   using ET = ElementTypes;
   ToVTK3D(index_t nverts, index_t ntets, index_t* tets, index_t nhex,
           index_t* hex, index_t nwedge, index_t* wedge, index_t npyrmd,
-          index_t* pyrmd, double* xloc, const char vtk_name[] = "result.vtk") {
+          index_t* pyrmd, double* xloc,
+          const std::string vtk_name = "result.vtk") {
     // Open file and destroy old contents
-    fp = std::fopen(vtk_name, "w");
+    fp = std::fopen(vtk_name.c_str(), "w");
 
     // Write header
     std::fprintf(fp, "# vtk DataFile Version 3.0\n");
@@ -420,31 +421,6 @@ class ReadVTK3D {
                         conn_pyramid);
     std::shared_ptr<I[]> data(new I[verts.size()]);
     return std::vector<I>(verts.begin(), verts.end());
-  }
-
-  /**
-   * @brief Get the vertex indices of those lie within the given box.
-   *
-   * This is handy to specify bc nodes directly in A2D.
-   */
-  std::vector<I> get_verts_within_box(double xmin, double xmax, double ymin,
-                                      double ymax, double zmin, double zmax,
-                                      double tol = 1e-6) {
-    std::vector<I> verts;
-    double x, y, z;
-    for (I i = 0; i < nverts; i++) {
-      x = Xloc[3 * i];
-      y = Xloc[3 * i + 1];
-      z = Xloc[3 * i + 2];
-      if (x > xmin - tol && x < xmax + tol) {
-        if (y > ymin - tol && y < ymax + tol) {
-          if (z > zmin - tol && z < zmax + tol) {
-            verts.push_back(i);
-          }
-        }
-      }
-    }
-    return verts;
   }
 
   // Get number of vertices for each element type
@@ -803,6 +779,34 @@ class ReadVTK {
   T domain_upper[spatial_dim];  // largest nodal coordinates
   T domain_sizes[spatial_dim];  // domain length in each direction
 };
+
+/**
+ * @brief Helper function: get the vertex indices of those lie within the given
+ * box.
+ *
+ * This is handy to specify bc nodes directly in A2D.
+ */
+template <typename I>
+std::vector<I> get_verts_within_box(I nverts, double* Xloc, double xmin,
+                                    double xmax, double ymin, double ymax,
+                                    double zmin, double zmax,
+                                    double tol = 1e-6) {
+  std::vector<I> verts;
+  double x, y, z;
+  for (I i = 0; i < nverts; i++) {
+    x = Xloc[3 * i];
+    y = Xloc[3 * i + 1];
+    z = Xloc[3 * i + 2];
+    if (x > xmin - tol && x < xmax + tol) {
+      if (y > ymin - tol && y < ymax + tol) {
+        if (z > zmin - tol && z < zmax + tol) {
+          verts.push_back(i);
+        }
+      }
+    }
+  }
+  return verts;
+}
 
 }  // namespace A2D
 

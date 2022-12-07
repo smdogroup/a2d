@@ -236,8 +236,7 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
       nverts, Xloc.data(), 4.0 * pi / 3.0, 4.0 * pi / 3.0 + dtheta, rin, rout,
       height, height);
 
-  std::vector<I> traction_verts(tor_verts_1.size() + tor_verts_2.size());
-
+  std::vector<I> traction_verts;
   traction_verts.insert(traction_verts.end(), tor_verts_1.begin(),
                         tor_verts_1.end());
   traction_verts.insert(traction_verts.end(), tor_verts_2.begin(),

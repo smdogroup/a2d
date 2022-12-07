@@ -460,6 +460,34 @@ int main(int argc, char *argv[]) {
                      vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
+      case 3:
+        main_body<3>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
+                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
+        break;
+
+      case 4:
+        main_body<4>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
+                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
+        break;
+
+      case 5:
+        main_body<5>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
+                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
+        break;
+
+      case 6:
+        main_body<6>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
+                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
+        break;
+
       default:
         std::printf("Specified degree (%d) is not precompiled.\n", degree);
         break;

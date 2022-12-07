@@ -225,8 +225,26 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
       conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
 
   // Find traction vertices
-  std::vector<I> traction_verts = A2D::get_verts_within_box(
-      nverts, Xloc.data(), -rout, rout, -rout, rout, height, height);
+  double dtheta =
+      pi / 6.0;  // angle within witch to apply torque around the circumference
+  std::vector<I> tor_verts_1 = A2D::get_verts_cylindrical_coords(
+      nverts, Xloc.data(), 0.0, dtheta, rin, rout, height, height);
+  std::vector<I> tor_verts_2 = A2D::get_verts_cylindrical_coords(
+      nverts, Xloc.data(), 2.0 * pi / 3.0, 2.0 * pi / 3.0 + dtheta, rin, rout,
+      height, height);
+  std::vector<I> tor_verts_3 = A2D::get_verts_cylindrical_coords(
+      nverts, Xloc.data(), 4.0 * pi / 3.0, 4.0 * pi / 3.0 + dtheta, rin, rout,
+      height, height);
+
+  std::vector<I> traction_verts(tor_verts_1.size() + tor_verts_2.size());
+
+  traction_verts.insert(traction_verts.end(), tor_verts_1.begin(),
+                        tor_verts_1.end());
+  traction_verts.insert(traction_verts.end(), tor_verts_2.begin(),
+                        tor_verts_2.end());
+  traction_verts.insert(traction_verts.end(), tor_verts_3.begin(),
+                        tor_verts_3.end());
+
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
 

@@ -808,6 +808,45 @@ std::vector<I> get_verts_within_box(I nverts, double* Xloc, double xmin,
   return verts;
 }
 
+/**
+ * @brief Helper function: get the vertex indices of those lie within the space
+ * specified by the cylindrical coordinate bonuds.
+ *
+ * This is handy to specify bc nodes directly in A2D.
+ */
+template <typename I>
+std::vector<I> get_verts_cylindrical_coords(I nverts, double* Xloc,
+                                            double theta_min, double theta_max,
+                                            double rmin, double rmax,
+                                            double zmin, double zmax,
+                                            double tol = 1e-6) {
+  constexpr double pi = 3.141592653589793238462643383279502884;
+  std::vector<I> verts;
+  double x, y, z;
+  double theta, r;
+  for (I i = 0; i < nverts; i++) {
+    x = Xloc[3 * i];
+    y = Xloc[3 * i + 1];
+    z = Xloc[3 * i + 2];
+
+    r = std::sqrt(x * x + y * y);
+    if (y > 0) {
+      theta = std::acos(x / r);
+    } else {
+      theta = 2 * pi - std::acos(x / r);
+    }
+
+    if (theta > theta_min - tol && theta < theta_max + tol) {
+      if (r > rmin - tol && r < rmax + tol) {
+        if (z > zmin - tol && z < zmax + tol) {
+          verts.push_back(i);
+        }
+      }
+    }
+  }
+  return verts;
+}
+
 }  // namespace A2D
 
 #endif  // A2D_VTK_H

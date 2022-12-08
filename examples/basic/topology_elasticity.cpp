@@ -327,8 +327,9 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   T ref_comp = analysis->eval_compliance();
   T domain_vol = analysis->eval_volume();
   TopOptProb<TopoElasticityAnalysis<T, degree, filter_degree>> *prob =
-      new TopOptProb(prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp,
-                     domain_vol, vol_frac, *analysis, verbose, vtk_freq);
+      new TopOptProb<TopoElasticityAnalysis<T, degree, filter_degree>>(
+          prefix, MPI_COMM_WORLD, nvars, ncon, nineq, ref_comp, domain_vol,
+          vol_frac, *analysis, verbose, vtk_freq);
   prob->incref();
 
   // Sanity check

@@ -77,17 +77,17 @@ int main(int argc, char *argv[]) {
   const index_t degree = 8;
   const index_t low_degree = 1;
 
-  // using PDE = MixedPoisson<T, dim>;
-  // using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
-  //                       LagrangeL2HexBasis<T, 1, degree - 1>>;
-  // using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
-  //                             LagrangeL2HexBasis<T, 1, low_degree - 1>>;
-
   using BasisVecType = A2D::SolutionVector<T>;
 
-  using PDE = Poisson<T, dim>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
-  using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
+  using PDE = MixedPoisson<T, dim>;
+  using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
+                        LagrangeL2HexBasis<T, 1, degree - 1>>;
+  using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
+                              LagrangeL2HexBasis<T, 1, low_degree - 1>>;
+
+  // using PDE = Poisson<T, dim>;
+  // using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
+  // using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
 
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;

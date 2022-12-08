@@ -247,10 +247,10 @@ class QHdivHexBasis {
 
     // 1-direction
     ldof[lorder_offset + 2] =
-        hdof[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+        hdof[horder_offset + i + (order - 1) * (j + order * k) +
              order * (order - 1) * (order - 1)];
     ldof[lorder_offset + 3] =
-        hdof[horder_offset + i + (order - 1) * (j + 1 + (order - 1) * k) +
+        hdof[horder_offset + i + (order - 1) * (j + 1 + order * k) +
              order * (order - 1) * (order - 1)];
 
     // 2-direction
@@ -290,14 +290,13 @@ class QHdivHexBasis {
 
     // 1-direction
     signs[lorder_offset + 2] =
-        horder_signs[horder_offset + i + (order - 1) * (j + (order - 1) * k) +
+        horder_signs[horder_offset + i + (order - 1) * (j + order * k) +
                      order * (order - 1) * (order - 1)];
     if (j > 0) {
       signs[lorder_offset + 2] *= -1;
     }
     signs[lorder_offset + 3] =
-        horder_signs[horder_offset + i +
-                     (order - 1) * (j + 1 + (order - 1) * k) +
+        horder_signs[horder_offset + i + (order - 1) * (j + 1 + order * k) +
                      order * (order - 1) * (order - 1)];
 
     // 2-direction
@@ -334,7 +333,7 @@ class QHdivHexBasis {
       pt[1] = pts[(index % ((order - 1) * order)) / (order - 1)];
       pt[2] = knots[index / ((order - 1) * order)];
     } else {
-      index = index - order * (order - 1) * (order - 1);
+      index = index - 2 * order * (order - 1) * (order - 1);
       pt[0] = knots[index % (order - 1)];
       pt[1] = knots[(index % ((order - 1) * (order - 1))) / (order - 1)];
       pt[2] = pts[index / ((order - 1) * (order - 1))];

@@ -1593,6 +1593,8 @@ class ElementMesh {
           Basis::set_entity_signs(basis, ET::VERTEX, index, orient, elem_sign);
         }
       }
+
+      num_dof_offset[basis] = dof_counter;
     }
 
     // Set the number of degrees of freedom
@@ -1737,6 +1739,10 @@ class ElementMesh {
     element_dof = new index_t[nelems * ndof_per_element];
     element_sign = new int[nelems * ndof_per_element];
 
+    for (index_t i = 0; i < Basis::nbasis; i++) {
+      num_dof_offset[i] = mesh.get_num_cumulative_dof(i);
+    }
+
     // Loop over all the high-order elements and generate the low-order
     // representation
     for (index_t j = 0; j < mesh.get_num_elements(); j++) {
@@ -1762,6 +1768,9 @@ class ElementMesh {
 
   index_t get_num_elements() { return nelems; }
   index_t get_num_dof() { return num_dof; }
+  index_t get_num_cumulative_dof(index_t basis) {
+    return num_dof_offset[basis];
+  }
 
   template <index_t basis>
   int get_global_dof_sign(index_t elem, index_t index) {
@@ -1786,17 +1795,20 @@ class ElementMesh {
     *signs = &element_sign[ndof_per_element * elem];
   }
 
-  template <index_t M>
+  template <index_t M, index_t basis_offset = Basis::nbasis>
   void create_block_csr(index_t& nrows, std::vector<index_t>& rowp,
                         std::vector<index_t>& cols) {
     std::set<std::pair<index_t, index_t>> node_set;
 
+    const constexpr index_t ndof_per_elem =
+        Basis::template get_dof_offset<basis_offset>();
+
     for (index_t i = 0; i < nelems; i++) {
       index_t dof_reduced[Basis::ndof];
       index_t n = 0;
-      for (index_t j1 = 0; j1 < Basis::ndof; j1++, n++) {
+      for (index_t j1 = 0; j1 < ndof_per_elem; j1++, n++) {
         index_t row = element_dof[i * Basis::ndof + j1] / M;
-        while (j1 + 1 < Basis::ndof &&
+        while (j1 + 1 < ndof_per_elem &&
                row == (element_dof[i * Basis::ndof + j1 + 1] / M)) {
           j1++;
         }
@@ -1810,8 +1822,8 @@ class ElementMesh {
       }
     }
 
-    nrows = num_dof / M;
-    if (num_dof % M > 0) {
+    nrows = num_dof_offset[basis_offset - 1] / M;
+    if (nrows % M > 0) {
       nrows += 1;
     }
 
@@ -1849,8 +1861,10 @@ class ElementMesh {
   }
 
  private:
-  index_t nelems;   // Total number of elements
-  index_t num_dof;  // Total number of degrees of freedom
+  index_t nelems;                         // Total number of elements
+  index_t num_dof;                        // Total number of degrees of freedom
+  index_t num_dof_offset[Basis::nbasis];  // Cumulative number of degrees of
+                                          // freedom each basis
 
   // Store the degrees of freedom for each element and the element sign
   index_t* element_dof;
@@ -1999,7 +2013,7 @@ class DirichletBCs {
     delete[] boundary_dof;
   }
 
-  index_t get_bcs(const index_t* bcs[]) {
+  index_t get_bcs(const index_t* bcs[]) const {
     if (bcs) {
       *bcs = dof;
     }

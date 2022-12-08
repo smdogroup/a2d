@@ -447,11 +447,11 @@ int main(int argc, char *argv[]) {
 
     // - Domain specific settings - cylinder
     double cy_rout = parser.parse_option("--cy_rout", 1.0);
-    double cy_rin = parser.parse_option("--cy_rin", 0.5);
-    double cy_height = parser.parse_option("--cy_height", 2.0);
-    int cy_nelems_c = parser.parse_option("--cy_nelems_c", 4);
-    int cy_nelems_r = parser.parse_option("--cy_nelems_r", 4);
-    int cy_nelems_h = parser.parse_option("--cy_nelems_h", 4);
+    double cy_rin = parser.parse_option("--cy_rin", 0.8);
+    double cy_height = parser.parse_option("--cy_height", 4.0);
+    int cy_nelems_c = parser.parse_option("--cy_nelems_c", 32);
+    int cy_nelems_r = parser.parse_option("--cy_nelems_r", 1);
+    int cy_nelems_h = parser.parse_option("--cy_nelems_h", 20);
 
     // - Linear solver settings
     int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
@@ -463,7 +463,7 @@ int main(int argc, char *argv[]) {
     // - Optimization settings
     std::string optimizer =
         parser.parse_option("--optimizer", std::string("mma"));
-    double vol_frac = parser.parse_option("--vol_frac", 0.4);
+    double vol_frac = parser.parse_option("--vol_frac", 0.3);
     int maxit = parser.parse_option("--maxit", 400);
     int vtk_freq = parser.parse_option("--vtk_freq", 10);
     double ramp_q = parser.parse_option("--ramp_q", 5.0);

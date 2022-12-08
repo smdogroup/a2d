@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ParOptOptimizer.h"
+#include "utils/a2dprofiler.h"
 
 template <class Analysis>
 class TopOptProb : public ParOptProblem {
@@ -42,6 +43,7 @@ class TopOptProb : public ParOptProblem {
 
   // Note: constraints > 0
   int evalObjCon(ParOptVec *xvec, ParOptScalar *fobj, ParOptScalar *cons) {
+    A2D::Timer timer("TopOptProb::evalObjCon()");
     // Set design variables by paropt
     ParOptScalar *x;
     xvec->getArray(&x);
@@ -73,6 +75,7 @@ class TopOptProb : public ParOptProblem {
   }
 
   int evalObjConGradient(ParOptVec *xvec, ParOptVec *gvec, ParOptVec **Ac) {
+    A2D::Timer timer("TopOptProb::evalObjConGradient()");
     ParOptScalar *x, *g, *c;
 
     // Set design variables

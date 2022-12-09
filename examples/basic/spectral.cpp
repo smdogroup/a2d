@@ -109,10 +109,12 @@ int main(int argc, char *argv[]) {
   using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                  LOrderGeoBasis, LOrderBasis>;
 
-  // Number of elements in each dimension
+  // Create mesh for a single element
+
+  // - Number of elements in each dimension
   auto node_num = [](int i, int j, int k) { return i + 2 * (j + 2 * k); };
 
-  // Number of edges
+  // - Number of edges
   const int nverts = 8;
   int ntets = 0, nwedge = 0, npyrmd = 0;
   const int nhex = 1;
@@ -120,11 +122,13 @@ int main(int argc, char *argv[]) {
   int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
   int hex[8];
 
+  // - Connectivity
   for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
     hex[ii] = node_num(ET::HEX_VERTS_CART[ii][0], ET::HEX_VERTS_CART[ii][1],
                        ET::HEX_VERTS_CART[ii][2]);
   }
 
+  // - Nodal location
   double Xloc[3 * 8];
   for (int k = 0; k < 2; k++) {
     for (int j = 0; j < 2; j++) {
@@ -136,6 +140,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // Save element to vtk
+  A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
+               Xloc, "spectral_element.vtk");
+
+  // Build element connectivity that A2D needs
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
 

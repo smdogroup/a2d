@@ -261,9 +261,9 @@ template <int degree, int filter_degree>
 std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
 create_analysis_cylinder(std::string prefix, double rout, double rin,
                          double height, int nelems_c, int nelems_r,
-                         int nelems_h, int amg_nlevels, int cg_it,
-                         double cg_rtol, double cg_atol, bool verbose,
-                         int maxit, int vtk_freq, double ramp_q,
+                         int nelems_h, double cy_denom, int amg_nlevels,
+                         int cg_it, double cg_rtol, double cg_atol,
+                         bool verbose, int maxit, int vtk_freq, double ramp_q,
                          bool check_grad_and_exit) {
   // constants
   constexpr double pi = 3.141592653589793238462643383279502884;
@@ -321,7 +321,8 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
 
   // Set points to apply bc and traction
   double dtheta =
-      pi / 15.0;  // angle within witch to apply torque around the circumference
+      pi /
+      cy_denom;  // angle within witch to apply torque around the circumference
   std::vector<double> thetas = {0.0, 0.5 * pi, pi, 1.5 * pi};
 
   // Find traction vertices
@@ -382,10 +383,10 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
                double vb_traction_frac, int b_nx, int b_ny, int b_nz,
                double b_lx, double b_ly, double b_lz, double cy_rout,
                double cy_rin, double cy_height, int cy_nelems_c,
-               int cy_nelems_r, int cy_nelems_h, int amg_nlevels, int cg_it,
-               double cg_rtol, double cg_atol, bool verbose,
-               std::string optimizer, double vol_frac, int maxit, int vtk_freq,
-               double ramp_q, bool check_grad_and_exit) {
+               int cy_nelems_r, int cy_nelems_h, double cy_denom,
+               int amg_nlevels, int cg_it, double cg_rtol, double cg_atol,
+               bool verbose, std::string optimizer, double vol_frac, int maxit,
+               int vtk_freq, double ramp_q, bool check_grad_and_exit) {
   // Set the lower order degree for the Bernstein polynomial
   constexpr int filter_degree = degree - 1;
 
@@ -408,8 +409,8 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   } else if (domain == "cylinder") {
     analysis = create_analysis_cylinder<degree, filter_degree>(
         prefix, cy_rout, cy_rin, cy_height, cy_nelems_c, cy_nelems_r,
-        cy_nelems_h, amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
-        vtk_freq, ramp_q, check_grad_and_exit);
+        cy_nelems_h, cy_denom, amg_nlevels, cg_it, cg_rtol, cg_atol, verbose,
+        maxit, vtk_freq, ramp_q, check_grad_and_exit);
   } else {
     std::printf("Invalid domain: %s!\n", domain.c_str());
     exit(-1);
@@ -565,6 +566,7 @@ int main(int argc, char *argv[]) {
     int cy_nelems_c = parser.parse_option("--cy_nelems_c", 32);
     int cy_nelems_r = parser.parse_option("--cy_nelems_r", 1);
     int cy_nelems_h = parser.parse_option("--cy_nelems_h", 20);
+    double cy_denom = parser.parse_option("--cy_denom", 15.0);
 
     // - Linear solver settings
     int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
@@ -604,73 +606,73 @@ int main(int argc, char *argv[]) {
       case 2:
         main_body<2>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 3:
         main_body<3>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 4:
         main_body<4>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 5:
         main_body<5>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 6:
         main_body<6>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 7:
         main_body<7>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 8:
         main_body<8>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 9:
         main_body<9>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                     vtk_freq, ramp_q, check_grad_and_exit);
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 10:
         main_body<10>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
                       b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
-                      cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
-                      cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
-                      vtk_freq, ramp_q, check_grad_and_exit);
+                      cy_nelems_c, cy_nelems_r, cy_nelems_h, cy_denom,
+                      amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
+                      vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       default:

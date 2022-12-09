@@ -90,11 +90,11 @@ class MixedHelmholtz {
     }
 
     const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    T f = 1.0 - r;
+    T r0 = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
+    T f = 1.0 - r0;
 
     // Use f = 1.0 for now...
-    v_val = -wdetJ * (u_val + r * sigma_div + f);
+    v_val = -wdetJ * (u_val + r * sigma_div - f);
     tau_div = -r * wdetJ * u_val;
   }
 
@@ -170,14 +170,26 @@ class HelmholtzForSphereError {
     T u = (s.template get<1>()).get_value();
 
     // Compute the right-hand-side
-    const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    if (std::real(r) == 0) {
-      r = 1e-15;
+    const A2D::Vec<T, dim>& xpt = (geo.template get<0>()).get_value();
+    T x = std::sqrt(xpt(0) * xpt(0) + xpt(1) * xpt(1) + xpt(2) * xpt(2));
+    if (std::real(x) == 0) {
+      x = 1e-15;
     }
-    T inv = 0.5 / r;
-    T u0 = -inv * (2.0 * r * r - 2.0 * r - std::exp(1.0 - r) -
-                   4.0 * std::exp(r) + std::exp(r + 1.0) + 4.0);
+    // T inv = 0.5 / r;
+    // T u0 = -inv * (2.0 * r * r - 2.0 * r - std::exp(1.0 - r) -
+    //                4.0 * std::exp(r) + std::exp(r + 1.0) + 4.0);
+
+    // y(x) = (e^(-32 x) (-33 e^(32 x) (512 x^2 - 512 x + 1) - 31 e^(32 (x + 2))
+    // (512 x^2 - 512 x + 1) + 33 e^(64 x) + 511 e^(64 x + 32) + 31 e^64 - 511
+    // e^32))/(512 (33 + 31 e^64) x)
+
+    T u0 = (std::exp(-32.0 * x) *
+            (-33.0 * std::exp(32 * x) * (512.0 * x * x - 512.0 * x + 1.0) -
+             31.0 * std::exp(32 * (x + 2)) * (512.0 * x * x - 512.0 * x + 1.0) +
+             33.0 * std::exp(64 * x) + 511 * std::exp(64 * x + 32) +
+             31.0 * std::exp(64.0) - 511 * std::exp(32.0))) /
+           (512.0 * (33.0 + 31.0 * std::exp(64.0) * x));
+
     T err = (u - u0);
 
     return wdetJ * err * err;
@@ -482,8 +494,8 @@ class HelmholtzSphere {
     }
 
     // Solve the problem
-    I monitor = 10;
-    const I gmres_size = 30;
+    I monitor = 0;
+    const I gmres_size = 50;
     I nrestart = 10;
     bool succ = A2D::fgmres<T, block_size, gmres_size>(
         mat_vec,
@@ -495,15 +507,16 @@ class HelmholtzSphere {
     if (!succ) {
       char msg[256];
       std::snprintf(msg, sizeof(msg),
-                    "%s:%d: CG failed to converge after %d iterations given "
+                    "%s:%d: GMRES failed to converge after %d iterations given "
                     "rtol=%.1e, atol=%.1e",
                     __FILE__, __LINE__, cg_it, cg_rtol, cg_atol);
+      std::cout << msg << std::endl;
       // throw std::runtime_error(msg);
     }
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
-      sol[i] = -sol_vec(i / block_size, i % block_size);
+      sol[i] = sol_vec(i / block_size, i % block_size);
     }
   }
 
@@ -646,7 +659,7 @@ void find_spherical_error(bool write_sphere = false) {
   double cg_rtol = 1e-14;
   double cg_atol = 1e-30;
 
-  double r = 0.05;  /// 1.0;  // Set r = 1.0 for the error computation
+  double r = 1.0 / 32.0;  // Set r = 1.0 for the error computation
   HelmholtzSphere<T, degree> sphere(r, conn, bcinfo, amg_nlevels, cg_it,
                                     cg_rtol, cg_atol);
 
@@ -678,21 +691,56 @@ void find_spherical_error(bool write_sphere = false) {
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
 
-  // find_spherical_error<2, 2>();
-  // find_spherical_error<3, 2>();
-  // find_spherical_error<4, 2>();
-  // find_spherical_error<5, 2>();
-  // find_spherical_error<6, 2>(true);
+  find_spherical_error<2, 1>();
+  find_spherical_error<3, 1>();
+  find_spherical_error<4, 1>();
+  find_spherical_error<5, 1>();
+  find_spherical_error<6, 1>();
+  find_spherical_error<7, 1>();
+  find_spherical_error<8, 1>();
+  find_spherical_error<9, 1>();
+  find_spherical_error<10, 1>();
+  find_spherical_error<11, 1>();
+  find_spherical_error<12, 1>();
+  find_spherical_error<13, 1>();
+  find_spherical_error<14, 1>();
+  find_spherical_error<15, 1>();
+  find_spherical_error<16, 1>();
+  find_spherical_error<17, 1>();
+  find_spherical_error<18, 1>();
+  find_spherical_error<19, 1>();
+  find_spherical_error<20, 1>();
 
+  find_spherical_error<1, 2>();
+  find_spherical_error<2, 2>();
+  find_spherical_error<3, 2>();
+  find_spherical_error<4, 2>();
+  find_spherical_error<5, 2>();
+  find_spherical_error<6, 2>();
+  find_spherical_error<7, 2>();
+  find_spherical_error<8, 2>();
+  find_spherical_error<9, 2>();
+  find_spherical_error<10, 2>();
+
+  find_spherical_error<1, 3>();
   find_spherical_error<2, 3>();
   find_spherical_error<3, 3>();
   find_spherical_error<4, 3>();
   find_spherical_error<5, 3>();
   find_spherical_error<6, 3>();
+  find_spherical_error<7, 3>();
 
-  // find_spherical_error<2, 4>(true);
-  // find_spherical_error<3, 4>();
-  // find_spherical_error<4, 4>();
+  find_spherical_error<1, 4>();
+  find_spherical_error<2, 4>();
+  find_spherical_error<3, 4>();
+  find_spherical_error<4, 4>();
+  find_spherical_error<5, 4>(true);
+
+  // find_spherical_error<1, 5>();
+  // find_spherical_error<2, 5>();
+  // find_spherical_error<3, 5>();
+  // find_spherical_error<4, 5>();
+
   // find_spherical_error<5, 4>();
   // find_spherical_error<6, 4>(true);
 

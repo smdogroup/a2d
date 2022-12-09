@@ -631,7 +631,7 @@ class QHdivHexBasis {
           N[4 * node] = 0.0;
           N[4 * node + 1] = 0.0;
           N[4 * node + 2] = n1[j1] * n2[j2] * n3[j3];
-          N[4 * node + 3] = n1[j1] * dx[j2] * n3[j3];
+          N[4 * node + 3] = n1[j1] * n2[j2] * dx[j3];
         }
       }
     }

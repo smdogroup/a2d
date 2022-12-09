@@ -239,7 +239,7 @@ class StaticCondensationMat {
     I amg_nlevel = 3;
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
-    bool print_info = true;
+    bool print_info = false;
     amg = std::make_shared<BSRMatAmgType>(amg_nlevel, omega, epsilon, mat,
                                           bnull, print_info);
   }

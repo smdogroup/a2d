@@ -159,17 +159,14 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
                     int amg_nlevels, int cg_it, double cg_rtol, double cg_atol,
                     bool verbose, int maxit, int vtk_freq, double ramp_q,
                     bool check_grad_and_exit) {
-  I nverts = (b_nx + 1) * (b_ny + 1) * (b_nz + 1);
-  I nhex = b_nx * b_ny * b_nz;
-
   // helper functor
   auto node_num = [&](int i, int j, int k) {
     return i + j * (b_nx + 1) + k * (b_nx + 1) * (b_ny + 1);
   };
 
   // Compute number of vertices and hex elements
-  nverts = (b_nx + 1) * (b_ny + 1) * (b_nz + 1);
-  nhex = b_nx * b_ny * b_nz;
+  I nverts = (b_nx + 1) * (b_ny + 1) * (b_nz + 1);
+  I nhex = b_nx * b_ny * b_nz;
 
   // Allocate temporary arrays
   I hex[8 * nhex];

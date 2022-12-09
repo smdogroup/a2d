@@ -380,6 +380,11 @@ class TopoHeatAnalysis {
   I get_num_dofs() { return mesh.get_num_dof(); }
 
   /**
+   * @brief Get the number of finite elements
+   */
+  I get_num_elements() { return mesh.get_num_elements(); }
+
+  /**
    * @brief Set the design variable values into the topology
    *
    * @tparam VecType The type of design vector

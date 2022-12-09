@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
@@ -12,6 +13,7 @@
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
+#include "utils/a2dvtk.h"
 
 using namespace A2D;
 
@@ -67,15 +69,14 @@ void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals,
   delete[] work;
 }
 
-int main(int argc, char *argv[]) {
-  Kokkos::initialize();
-
+template <int degree>
+void main_body(std::string type, int ar = 1) {
   const index_t dim = 3;
+  using I = index_t;
   using T = double;
   using ET = ElementTypes;
 
-  const index_t degree = 8;
-  const index_t low_degree = 1;
+  constexpr int low_degree = 1;
 
   // using PDE = MixedPoisson<T, dim>;
   // using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
@@ -109,35 +110,54 @@ int main(int argc, char *argv[]) {
   using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                  LOrderGeoBasis, LOrderBasis>;
 
-  // Create mesh for a single element
+  /** Create mesh for a single element
+   *        7 --------------- 6
+   *       / |              / |
+   *      /  |             /  |
+   *     /   |            /   |
+   *    4 -------------- 5    |
+   *    |    |           |    |
+   *    |    3 ----------|--- 2
+   *    |   /            |   /
+   *    |  /             |  /
+   *    | /              | /
+   *    0 -------------- 1
+   */
 
   // - Number of elements in each dimension
-  auto node_num = [](int i, int j, int k) { return i + 2 * (j + 2 * k); };
+  auto node_num = [](I i, I j, I k) { return i + 2 * (j + 2 * k); };
 
   // - Number of edges
-  const int nverts = 8;
-  int ntets = 0, nwedge = 0, npyrmd = 0;
-  const int nhex = 1;
+  const I nverts = 8;
+  I ntets = 0, nwedge = 0, npyrmd = 0;
+  const I nhex = 1;
 
-  int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
-  int hex[8];
-
-  // - Connectivity
-  for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
-    hex[ii] = node_num(ET::HEX_VERTS_CART[ii][0], ET::HEX_VERTS_CART[ii][1],
-                       ET::HEX_VERTS_CART[ii][2]);
-  }
+  I *tets = NULL, *wedge = NULL, *pyrmd = NULL;
+  I hex[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // - Nodal location
   double Xloc[3 * 8];
-  for (int k = 0; k < 2; k++) {
-    for (int j = 0; j < 2; j++) {
-      for (int i = 0; i < 2; i++) {
-        Xloc[3 * node_num(i, j, k)] = (1.0 * i);
-        Xloc[3 * node_num(i, j, k) + 1] = (1.0 * j);
-        Xloc[3 * node_num(i, j, k) + 2] = (1.0 * k);
-      }
-    }
+
+  if (type == "box") {
+    Xloc[0] = 0.0, Xloc[1] = 0.0, Xloc[2] = 0.0;          // pt0
+    Xloc[3] = ar * 1.0, Xloc[4] = 0.0, Xloc[5] = 0.0;     // pt1
+    Xloc[6] = ar * 1.0, Xloc[7] = 1.0, Xloc[8] = 0.0;     // pt2
+    Xloc[9] = 0.0, Xloc[10] = 1.0, Xloc[11] = 0.0;        // pt3
+    Xloc[12] = 0.0, Xloc[13] = 0.0, Xloc[14] = 1.0;       // pt4
+    Xloc[15] = ar * 1.0, Xloc[16] = 0.0, Xloc[17] = 1.0;  // pt5
+    Xloc[18] = ar * 1.0, Xloc[19] = 1.0, Xloc[20] = 1.0;  // pt6
+    Xloc[21] = 0.0, Xloc[22] = 1.0, Xloc[23] = 1.0;       // pt7
+
+  } else {
+    double h = 1.0;
+    Xloc[0] = 0.5 - 0.5 / ar, Xloc[1] = 0.0, Xloc[2] = 0.0;    // pt0
+    Xloc[3] = 0.5 + 0.5 / ar, Xloc[4] = 0.0, Xloc[5] = 0.0;    // pt1
+    Xloc[6] = 0.5 + 0.5 / ar, Xloc[7] = 1.0, Xloc[8] = 0.0;    // pt2
+    Xloc[9] = 0.5 - 0.5 / ar, Xloc[10] = 1.0, Xloc[11] = 0.0;  // pt3
+    Xloc[12] = 0.0, Xloc[13] = 0.5 - 0.5 / ar, Xloc[14] = h;   // pt4
+    Xloc[15] = 1.0, Xloc[16] = 0.5 - 0.5 / ar, Xloc[17] = h;   // pt5
+    Xloc[18] = 1.0, Xloc[19] = 0.5 + 0.5 / ar, Xloc[20] = h;   // pt6
+    Xloc[21] = 0.0, Xloc[22] = 0.5 + 0.5 / ar, Xloc[23] = h;   // pt7
   }
 
   // Save element to vtk
@@ -215,7 +235,7 @@ int main(int argc, char *argv[]) {
   double eig_max = -1e20;
   double eig_min_abs = 1e20;
 
-  for (int i = 0; i < n; i++) {
+  for (I i = 0; i < n; i++) {
     if (eigvals[i] != 0.0) {
       if (std::fabs(eigvals[i]) < eig_min_abs) {
         eig_min_abs = std::fabs(eigvals[i]);
@@ -229,13 +249,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "dof:         " << mesh.get_num_dof() << std::endl;
-  std::cout << "dof:         " << (degree + 1) * (degree + 1) * (degree + 1)
-            << std::endl;
-  std::cout << "degree:      " << degree << std::endl;
-  std::cout << "eig_min:     " << eig_min << std::endl;
-  std::cout << "eig_max:     " << eig_max << std::endl;
-  std::cout << "eig_min_abs: " << eig_min_abs << std::endl;
+  int dof = mesh.get_num_dof();
+  double cond = std::fabs(eig_max) / std::fabs(eig_min);
+
+  if (degree == 1 && ar == 1) {
+    std::printf("%10s%10s%10s%15s%15s%15s\n", "degree", "AR", "dof", "eig_min",
+                "eig_max", "cond");
+  }
+  std::printf("%10d%10d%10d%15.5e%15.5e%15.5e\n", degree, ar, dof, eig_min,
+              eig_max, cond);
 
   delete[] Ap;
   delete[] Ah;
@@ -248,6 +270,26 @@ int main(int argc, char *argv[]) {
   //        typename PDE::FiniteElementSpace &sol) {
   //       return sol.template get<0>().get_value();
   //     });
+}
 
-  return (0);
+int main(int argc, char *argv[]) {
+  Kokkos::initialize();
+  {
+    int ar[] = {1, 2, 4, 8, 16, 32};
+    std::string type = "box";
+
+    for (auto a : ar) {
+      main_body<1>(type, a);
+      main_body<2>(type, a);
+      main_body<3>(type, a);
+      main_body<4>(type, a);
+      main_body<5>(type, a);
+      main_body<6>(type, a);
+      main_body<7>(type, a);
+      main_body<8>(type, a);
+      main_body<9>(type, a);
+      main_body<10>(type, a);
+    }
+  }
+  Kokkos::finalize();
 }

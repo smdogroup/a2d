@@ -30,74 +30,8 @@ void verts_to_vtk(I nverts, std::vector<I> &bc_verts,
 }
 
 /**
- * @brief Generate the analysis object based on vtk mesh input
+ * @brief Helper function, set high order mesh for cylinder problem instance
  */
-template <int degree, int filter_degree>
-std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
-generate_analysis_from_vtk(std::string prefix, std::string vtk_name,
-                           double vtk_bc_fraction, int amg_nlevels, int cg_it,
-                           double cg_rtol, double cg_atol, bool verbose,
-                           int maxit, int vtk_freq, double ramp_q,
-                           bool check_grad_and_exit) {
-  // Load vtk
-  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
-  T *Xloc = readvtk.get_Xloc();
-  I nverts = readvtk.get_nverts();
-  I nhex = readvtk.get_nhex();
-  I *hex = readvtk.get_hex();
-  I ntets = 0, nwedge = 0, npyrmd = 0;
-  I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
-
-  // Construct connectivity
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
-
-  // Find bc vertices
-  std::vector<int> ids{100};  // Fix the left surface of domain
-  std::vector<I> verts = readvtk.get_verts_given_cell_entity_id(ids);
-  I bc_label = conn.add_boundary_label_from_verts(verts.size(), verts.data());
-
-  // Find traction vertices
-  T lower[3], upper[3];
-  readvtk.get_bounds(lower, upper);
-  T xmin = upper[0];
-  T xmax = upper[0];
-  T ymin = lower[1];
-  T ymax = lower[1] + vtk_bc_fraction * (upper[1] - lower[1]);
-  T zmin = lower[2];
-  T zmax = upper[2];
-  std::vector<I> traction_verts = A2D::get_verts_within_box(
-      nverts, Xloc, xmin, xmax, ymin, ymax, zmin, zmax);
-  I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
-                                                        traction_verts.data());
-
-  // Save bc/traction verts to vtk
-  verts_to_vtk(nverts, verts, traction_verts, Xloc, prefix);
-
-  // Set traction components and body force components
-  T tx_traction[3] = {0.0, -1.0, 0.0};
-  T tx_body[3] = {0.0, 0.0, 0.0};
-
-  // Set up boundary condition information
-  A2D::DirichletBCInfo bcinfo;
-  bcinfo.add_boundary_condition(bc_label);
-
-  // Initialize the analysis instance
-  T E = 70.0e3, nu = 0.3;
-  std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis =
-      std::make_shared<TopoElasticityAnalysis<T, degree, filter_degree>>(
-          conn, bcinfo, E, nu, ramp_q, tx_body, traction_label, tx_traction,
-          nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
-
-  auto elem_geo = analysis->get_geometry();
-  A2D::set_geo_from_hex_nodes<
-      typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
-      nhex, hex, Xloc, elem_geo);
-  analysis->reset_geometry();
-
-  return analysis;
-}
-
 template <class GeoBasis, class GeoElemVec>
 void set_geo_cylindrical(int nhex, double rout, double rin, double height,
                          int nelems_c, int nelems_r, int nelems_h,
@@ -147,6 +81,176 @@ void set_geo_cylindrical(int nhex, double rout, double rin, double height,
 }
 
 /**
+ * @brief Generate the analysis object based on vtk mesh input
+ */
+template <int degree, int filter_degree>
+std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
+create_analysis_vtk(std::string prefix, std::string vtk_name,
+                    double vb_traction_frac, int amg_nlevels, int cg_it,
+                    double cg_rtol, double cg_atol, bool verbose, int maxit,
+                    int vtk_freq, double ramp_q, bool check_grad_and_exit) {
+  // Load vtk
+  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
+  T *Xloc = readvtk.get_Xloc();
+  I nverts = readvtk.get_nverts();
+  I nhex = readvtk.get_nhex();
+  I *hex = readvtk.get_hex();
+  I ntets = 0, nwedge = 0, npyrmd = 0;
+  I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
+
+  // Construct connectivity
+  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
+                               npyrmd, pyrmd);
+
+  // Find bc vertices
+  std::vector<int> ids{100};  // Fix the left surface of domain
+  std::vector<I> bc_verts = readvtk.get_verts_given_cell_entity_id(ids);
+  I bc_label =
+      conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
+
+  // Find traction vertices
+  T lower[3], upper[3];
+  readvtk.get_bounds(lower, upper);
+  T xmin = upper[0];
+  T xmax = upper[0];
+  T ymin = lower[1];
+  T ymax = lower[1] + vb_traction_frac * (upper[1] - lower[1]);
+  T zmin = lower[2];
+  T zmax = upper[2];
+  std::vector<I> traction_verts = A2D::get_verts_within_box(
+      nverts, Xloc, xmin, xmax, ymin, ymax, zmin, zmax);
+  I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
+                                                        traction_verts.data());
+
+  // Save bc/traction verts to vtk
+  verts_to_vtk(nverts, bc_verts, traction_verts, Xloc, prefix);
+
+  // Set traction components and body force components
+  T tx_traction[3] = {0.0, -1.0, 0.0};
+  T tx_body[3] = {0.0, 0.0, 0.0};
+
+  // Set up boundary condition information
+  A2D::DirichletBCInfo bcinfo;
+  bcinfo.add_boundary_condition(bc_label);
+
+  // Initialize the analysis instance
+  T E = 70.0e3, nu = 0.3;
+  std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis =
+      std::make_shared<TopoElasticityAnalysis<T, degree, filter_degree>>(
+          conn, bcinfo, E, nu, ramp_q, tx_body, traction_label, tx_traction,
+          nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
+
+  auto elem_geo = analysis->get_geometry();
+  A2D::set_geo_from_hex_nodes<
+      typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
+      nhex, hex, Xloc, elem_geo);
+  analysis->reset_geometry();
+
+  return analysis;
+}
+
+/**
+ * @brief Create an analysis object with a cuboid domain
+ */
+template <int degree, int filter_degree>
+std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
+create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
+                    int b_ny, int b_nz, double b_lx, double b_ly, double b_lz,
+                    int amg_nlevels, int cg_it, double cg_rtol, double cg_atol,
+                    bool verbose, int maxit, int vtk_freq, double ramp_q,
+                    bool check_grad_and_exit) {
+  I nverts = (b_nx + 1) * (b_ny + 1) * (b_nz + 1);
+  I nhex = b_nx * b_ny * b_nz;
+
+  // helper functor
+  auto node_num = [&](int i, int j, int k) {
+    return i + j * (b_nx + 1) + k * (b_nx + 1) * (b_ny + 1);
+  };
+
+  // Compute number of vertices and hex elements
+  nverts = (b_nx + 1) * (b_ny + 1) * (b_nz + 1);
+  nhex = b_nx * b_ny * b_nz;
+
+  // Allocate temporary arrays
+  I hex[8 * nhex];
+  T Xloc[3 * nverts];
+
+  // Populate hex
+  using ET = A2D::ElementTypes;
+  for (int k = 0, e = 0; k < b_nz; k++) {
+    for (int j = 0; j < b_ny; j++) {
+      for (int i = 0; i < b_nx; i++, e++) {
+        for (int ii = 0; ii < ET::HEX_VERTS; ii++) {
+          hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
+                                     j + ET::HEX_VERTS_CART[ii][1],
+                                     k + ET::HEX_VERTS_CART[ii][2]);
+        }
+      }
+    }
+  }
+
+  // Populate Xloc
+  for (int k = 0; k < b_nz + 1; k++) {
+    for (int j = 0; j < b_ny + 1; j++) {
+      for (int i = 0; i < b_nx + 1; i++) {
+        Xloc[3 * node_num(i, j, k)] = (b_lx * i) / b_nx;
+        Xloc[3 * node_num(i, j, k) + 1] = (b_ly * j) / b_ny;
+        Xloc[3 * node_num(i, j, k) + 2] = (b_lz * k) / b_nz;
+      }
+    }
+  }
+
+  // Create A2D's connectivity object
+  I ntets = 0, nwedge = 0, npyrmd = 0;
+  I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
+  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
+                               npyrmd, pyrmd);
+
+  // Find bc verts
+  std::vector<I> bc_verts =
+      A2D::get_verts_within_box(nverts, Xloc, 0.0, 0.0, 0.0, b_ly, 0.0, b_lz);
+  I bc_label =
+      conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
+
+  // Find traction verts
+  std::vector<I> traction_verts = A2D::get_verts_within_box(
+      nverts, Xloc, b_lx, b_lx, 0.0, vb_traction_frac * b_ly, 0.0, b_lz);
+  I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
+                                                        traction_verts.data());
+
+  // Set traction components and body force components
+  T tx_traction[3] = {0.0, -1.0, 0.0};
+  T tx_body[3] = {0.0, 0.0, 0.0};
+
+  // Save bc/traction verts to vtk
+  verts_to_vtk(nverts, bc_verts, traction_verts, Xloc, prefix);
+
+  // Set up boundary condition information
+  A2D::DirichletBCInfo bcinfo;
+  bcinfo.add_boundary_condition(bc_label);
+
+  // Initialize the analysis instance
+  T E = 70.0e3, nu = 0.3;
+  std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis =
+      std::make_shared<TopoElasticityAnalysis<T, degree, filter_degree>>(
+          conn, bcinfo, E, nu, ramp_q, tx_body, traction_label, tx_traction,
+          nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
+
+  auto elem_geo = analysis->get_geometry();
+  A2D::set_geo_from_hex_nodes<
+      typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
+      nhex, hex, Xloc, elem_geo);
+  analysis->reset_geometry();
+
+  // Save mesh
+  A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
+               Xloc, fspath(prefix) / fspath("box_low_order_mesh.vtk"));
+  analysis->tovtk(fspath(prefix) / fspath("box_high_order_mesh.vtk"));
+
+  return analysis;
+}
+
+/**
  * @brief Create an analysis object with a hollow cylinder domain
  *
  * @param rout the outer radius
@@ -158,12 +262,12 @@ void set_geo_cylindrical(int nhex, double rout, double rin, double height,
  */
 template <int degree, int filter_degree>
 std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>>
-generate_analysis_cylinder(std::string prefix, double rout, double rin,
-                           double height, int nelems_c, int nelems_r,
-                           int nelems_h, int amg_nlevels, int cg_it,
-                           double cg_rtol, double cg_atol, bool verbose,
-                           int maxit, int vtk_freq, double ramp_q,
-                           bool check_grad_and_exit) {
+create_analysis_cylinder(std::string prefix, double rout, double rin,
+                         double height, int nelems_c, int nelems_r,
+                         int nelems_h, int amg_nlevels, int cg_it,
+                         double cg_rtol, double cg_atol, bool verbose,
+                         int maxit, int vtk_freq, double ramp_q,
+                         bool check_grad_and_exit) {
   // constants
   constexpr double pi = 3.141592653589793238462643383279502884;
   using ET = A2D::ElementTypes;
@@ -278,12 +382,13 @@ generate_analysis_cylinder(std::string prefix, double rout, double rin,
 
 template <int degree>
 void main_body(std::string prefix, std::string domain, std::string vtk_name,
-               double vtk_bc_fraction, double cy_rout, double cy_rin,
-               double cy_height, int cy_nelems_c, int cy_nelems_r,
-               int cy_nelems_h, int amg_nlevels, int cg_it, double cg_rtol,
-               double cg_atol, bool verbose, std::string optimizer,
-               double vol_frac, int maxit, int vtk_freq, double ramp_q,
-               bool check_grad_and_exit) {
+               double vb_traction_frac, int b_nx, int b_ny, int b_nz,
+               double b_lx, double b_ly, double b_lz, double cy_rout,
+               double cy_rin, double cy_height, int cy_nelems_c,
+               int cy_nelems_r, int cy_nelems_h, int amg_nlevels, int cg_it,
+               double cg_rtol, double cg_atol, bool verbose,
+               std::string optimizer, double vol_frac, int maxit, int vtk_freq,
+               double ramp_q, bool check_grad_and_exit) {
   // Set the lower order degree for the Bernstein polynomial
   constexpr int filter_degree = degree - 1;
 
@@ -295,11 +400,16 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis;
 
   if (domain == "vtk") {
-    analysis = generate_analysis_from_vtk<degree, filter_degree>(
-        prefix, vtk_name, vtk_bc_fraction, amg_nlevels, cg_it, cg_rtol, cg_atol,
-        verbose, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+    analysis = create_analysis_vtk<degree, filter_degree>(
+        prefix, vtk_name, vb_traction_frac, amg_nlevels, cg_it, cg_rtol,
+        cg_atol, verbose, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+  } else if (domain == "box") {
+    analysis = create_analysis_box<degree, filter_degree>(
+        prefix, vb_traction_frac, b_nx, b_ny, b_nz, b_lx, b_ly, b_lz,
+        amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit, vtk_freq, ramp_q,
+        check_grad_and_exit);
   } else if (domain == "cylinder") {
-    analysis = generate_analysis_cylinder<degree, filter_degree>(
+    analysis = create_analysis_cylinder<degree, filter_degree>(
         prefix, cy_rout, cy_rin, cy_height, cy_nelems_c, cy_nelems_r,
         cy_nelems_h, amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, maxit,
         vtk_freq, ramp_q, check_grad_and_exit);
@@ -442,8 +552,14 @@ int main(int argc, char *argv[]) {
     std::string vtk_name =
         parser.parse_option("--vtk", std::string("3d_hex.vtk"));
 
-    // - Domain specific settings - vtk
-    double vtk_bc_fraction = parser.parse_option("--vtk_bc_fraction", 0.2);
+    // - Domain specific settings - vtk or box
+    double vb_traction_frac = parser.parse_option("--vb_traction_frac", 0.2);
+    int b_nx = parser.parse_option("--b_nx", 10);
+    int b_ny = parser.parse_option("--b_ny", 5);
+    int b_nz = parser.parse_option("--b_nz", 3);
+    double b_lx = parser.parse_option("--b_lx", 1.0);
+    double b_ly = parser.parse_option("--b_ly", 0.5);
+    double b_lz = parser.parse_option("--b_lz", 0.3);
 
     // - Domain specific settings - cylinder
     double cy_rout = parser.parse_option("--cy_rout", 1.0);
@@ -455,7 +571,7 @@ int main(int argc, char *argv[]) {
 
     // - Linear solver settings
     int amg_nlevels = parser.parse_option("--amg_nlevels", 3);
-    int cg_it = parser.parse_option("--cg_it", 300);
+    int cg_it = parser.parse_option("--cg_it", 400);
     double cg_rtol = parser.parse_option("--cg_rtol", 1e-8);
     double cg_atol = parser.parse_option("--cg_atol", 1e-30);
     bool verbose = parser.parse_option("--verbose");
@@ -473,7 +589,7 @@ int main(int argc, char *argv[]) {
     parser.help_info();
 
     // Check values
-    std::vector<std::string> valid_domains = {"vtk", "cylinder"};
+    std::vector<std::string> valid_domains = {"box", "cylinder", "vtk"};
     assert_option_in(domain, valid_domains);
     std::vector<std::string> valid_opt = {"mma", "tr"};
     assert_option_in(optimizer, valid_opt);
@@ -489,59 +605,75 @@ int main(int argc, char *argv[]) {
     // Execute
     switch (degree) {
       case 2:
-        main_body<2>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<2>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 3:
-        main_body<3>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<3>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 4:
-        main_body<4>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<4>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 5:
-        main_body<5>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<5>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 6:
-        main_body<6>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<6>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 7:
-        main_body<7>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<7>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 8:
-        main_body<8>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<8>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       case 9:
-        main_body<9>(prefix, domain, vtk_name, vtk_bc_fraction, cy_rout, cy_rin,
-                     cy_height, cy_nelems_c, cy_nelems_r, cy_nelems_h,
-                     amg_nlevels, cg_it, cg_rtol, cg_atol, verbose, optimizer,
-                     vol_frac, maxit, vtk_freq, ramp_q, check_grad_and_exit);
+        main_body<9>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                     b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                     cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                     cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                     vtk_freq, ramp_q, check_grad_and_exit);
+        break;
+
+      case 10:
+        main_body<10>(prefix, domain, vtk_name, vb_traction_frac, b_nx, b_ny,
+                      b_nz, b_lx, b_ly, b_lz, cy_rout, cy_rin, cy_height,
+                      cy_nelems_c, cy_nelems_r, cy_nelems_h, amg_nlevels, cg_it,
+                      cg_rtol, cg_atol, verbose, optimizer, vol_frac, maxit,
+                      vtk_freq, ramp_q, check_grad_and_exit);
         break;
 
       default:

@@ -321,6 +321,19 @@ int main(int argc, char *argv[]) {
         main_body<9, PDE_TYPE::POISSON>(type, a, h);
         main_body<10, PDE_TYPE::POISSON>(type, a, h, true);
       }
+    } else {
+      for (auto a : ar) {
+        main_body<1, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<2, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<3, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<4, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<5, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<6, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<7, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<8, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<9, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<10, PDE_TYPE::ELASTICITY>(type, a, h, true);
+      }
     }
   }
   Kokkos::finalize();

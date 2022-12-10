@@ -131,5 +131,22 @@ void save_cmd(int argc, char* argv[], const std::string txt_path) {
   std::fclose(cmd_fp);
 }
 
+/**
+ * @brief Check if target equals one of valid_vals
+ */
+template <typename EntryType>
+void assert_option_in(std::string target, std::vector<EntryType> valid_vals) {
+  auto domain_it = std::find(valid_vals.begin(), valid_vals.end(), target);
+  if (domain_it == valid_vals.end()) {
+    std::printf("Agrument value %s is invalid! Valid options are: ",
+                target.c_str());
+    for (auto it = valid_vals.begin(); it != valid_vals.end(); it++) {
+      std::printf("%s, ", it->c_str());
+    }
+    std::printf("\b\b.\n");
+    exit(-1);
+  }
+}
+
 }  // namespace A2D
 #endif

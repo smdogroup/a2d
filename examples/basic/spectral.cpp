@@ -13,6 +13,7 @@
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
+#include "utils/a2dparser.h"
 #include "utils/a2dvtk.h"
 
 using namespace A2D;
@@ -69,30 +70,36 @@ void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals,
   delete[] work;
 }
 
-template <int degree>
-void main_body(std::string type, int ar = 1) {
-  const index_t dim = 3;
+enum class PDE_TYPE { POISSON, ELASTICITY };
+
+template <int degree, PDE_TYPE pde_type>
+void main_body(std::string type, int ar = 1, double h = 1.0,
+               bool write_vtk = false) {
   using I = index_t;
   using T = double;
   using ET = ElementTypes;
 
+  constexpr int spatial_dim = 3;
   constexpr int low_degree = 1;
 
-  // using PDE = MixedPoisson<T, dim>;
-  // using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
-  //                       LagrangeL2HexBasis<T, 1, degree - 1>>;
-  // using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
-  //                             LagrangeL2HexBasis<T, 1, low_degree - 1>>;
+  // Switch between poisson and elasticity
+  using PDE =
+      typename std::conditional<pde_type == PDE_TYPE::POISSON,
+                                Poisson<T, spatial_dim>,
+                                TopoLinearElasticity<T, spatial_dim>>::type;
+  using Basis = typename std::conditional<
+      pde_type == PDE_TYPE::POISSON,
+      FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
+      FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>>::type;
+  using LOrderBasis = typename std::conditional<
+      pde_type == PDE_TYPE::POISSON,
+      FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>,
+      FEBasis<T, LagrangeH1HexBasis<T, 3, low_degree>>>::type;
 
   using BasisVecType = A2D::SolutionVector<T>;
-
-  using PDE = Poisson<T, dim>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
-  using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
-
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
@@ -100,7 +107,8 @@ void main_body(std::string type, int ar = 1) {
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
-  using LOrderGeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, low_degree>>;
+  using LOrderGeoBasis =
+      FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
   using LOrderDataElemVec =
       A2D::ElementVector_Serial<T, LOrderDataBasis, BasisVecType>;
   using LOrderGeoElemVec =
@@ -111,6 +119,7 @@ void main_body(std::string type, int ar = 1) {
                                  LOrderGeoBasis, LOrderBasis>;
 
   /** Create mesh for a single element
+   *
    *        7 --------------- 6
    *       / |              / |
    *      /  |             /  |
@@ -148,8 +157,7 @@ void main_body(std::string type, int ar = 1) {
     Xloc[18] = ar * 1.0, Xloc[19] = 1.0, Xloc[20] = 1.0;  // pt6
     Xloc[21] = 0.0, Xloc[22] = 1.0, Xloc[23] = 1.0;       // pt7
 
-  } else {
-    double h = 1.0;
+  } else if (type == "distortion") {
     Xloc[0] = 0.5 - 0.5 / ar, Xloc[1] = 0.0, Xloc[2] = 0.0;    // pt0
     Xloc[3] = 0.5 + 0.5 / ar, Xloc[4] = 0.0, Xloc[5] = 0.0;    // pt1
     Xloc[6] = 0.5 + 0.5 / ar, Xloc[7] = 1.0, Xloc[8] = 0.0;    // pt2
@@ -158,11 +166,16 @@ void main_body(std::string type, int ar = 1) {
     Xloc[15] = 1.0, Xloc[16] = 0.5 - 0.5 / ar, Xloc[17] = h;   // pt5
     Xloc[18] = 1.0, Xloc[19] = 0.5 + 0.5 / ar, Xloc[20] = h;   // pt6
     Xloc[21] = 0.0, Xloc[22] = 0.5 + 0.5 / ar, Xloc[23] = h;   // pt7
+  } else {
+    std::printf("Invalid type %s\n", type.c_str());
+    exit(-1);
   }
 
   // Save element to vtk
-  A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
-               Xloc, "spectral_element.vtk");
+  if (write_vtk) {
+    A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
+                 Xloc, "spectral_element.vtk");
+  }
 
   // Build element connectivity that A2D needs
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
@@ -194,7 +207,12 @@ void main_body(std::string type, int ar = 1) {
   // Create the finite-element model
   FE fe;
   LOrderFE lorder_fe;
-  PDE pde;
+  std::shared_ptr<PDE> pde;
+  if constexpr (pde_type == PDE_TYPE::POISSON) {
+    pde = std::make_shared<PDE>();
+  } else {
+    pde = std::make_shared<PDE>(1.0, 0.3, 5.0);
+  }
 
   const index_t block_size = 1;
   using BSRMatType = BSRMat<index_t, T, block_size, block_size>;
@@ -214,13 +232,13 @@ void main_body(std::string type, int ar = 1) {
 
   BSRMatType horder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, Basis, BSRMatType> elem_mat(mesh, horder_mat);
-  fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+  fe.add_jacobian(*pde, elem_data, elem_geo, elem_sol, elem_mat);
 
-  lorder_mesh.create_block_csr<block_size>(nrows, rowp, cols);
+  lorder_mesh.template create_block_csr<block_size>(nrows, rowp, cols);
   BSRMatType lorder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, LOrderBasis, BSRMatType> lorder_elem_mat(lorder_mesh,
                                                                 lorder_mat);
-  lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
+  lorder_fe.add_jacobian(*pde, lorder_elem_data, lorder_elem_geo,
                          lorder_elem_sol, lorder_elem_mat);
 
   index_t n, m;
@@ -275,20 +293,34 @@ void main_body(std::string type, int ar = 1) {
 int main(int argc, char *argv[]) {
   Kokkos::initialize();
   {
-    int ar[] = {1, 2, 4, 8, 16, 32};
-    std::string type = "box";
+    // Get cmd arguments
+    ArgumentParser parser(argc, argv);
+    std::string type = parser.parse_option("--type", std::string("distortion"));
+    std::string pde = parser.parse_option("--pde", std::string("poisson"));
+    double h = parser.parse_option("--h", 1.0);
+    parser.help_info();
 
-    for (auto a : ar) {
-      main_body<1>(type, a);
-      main_body<2>(type, a);
-      main_body<3>(type, a);
-      main_body<4>(type, a);
-      main_body<5>(type, a);
-      main_body<6>(type, a);
-      main_body<7>(type, a);
-      main_body<8>(type, a);
-      main_body<9>(type, a);
-      main_body<10>(type, a);
+    // Check option validity
+    std::vector<std::string> valid_types = {"distortion", "box"};
+    assert_option_in(type, valid_types);
+    std::vector<std::string> valid_pdes = {"poisson", "elasticity"};
+    assert_option_in(pde, valid_pdes);
+
+    int ar[] = {1, 2, 4, 8, 16, 32};
+
+    if (pde == "poisson") {
+      for (auto a : ar) {
+        main_body<1, PDE_TYPE::POISSON>(type, a, h);
+        main_body<2, PDE_TYPE::POISSON>(type, a, h);
+        main_body<3, PDE_TYPE::POISSON>(type, a, h);
+        main_body<4, PDE_TYPE::POISSON>(type, a, h);
+        main_body<5, PDE_TYPE::POISSON>(type, a, h);
+        main_body<6, PDE_TYPE::POISSON>(type, a, h);
+        main_body<7, PDE_TYPE::POISSON>(type, a, h);
+        main_body<8, PDE_TYPE::POISSON>(type, a, h);
+        main_body<9, PDE_TYPE::POISSON>(type, a, h);
+        main_body<10, PDE_TYPE::POISSON>(type, a, h, true);
+      }
     }
   }
   Kokkos::finalize();

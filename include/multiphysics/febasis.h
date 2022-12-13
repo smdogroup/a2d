@@ -788,7 +788,7 @@ class FEBasis {
     if constexpr (sizeof...(Remain) == 0) {
       return 0;
     } else {
-      return get_stride_<index + 1, Remain...>();
+      return get_stride_<index + 1, Remain...>(basis);
     }
   }
 
@@ -819,7 +819,7 @@ class FEBasis {
     }
   }
 
-  template <index_t loffset, index_t hoffset, class First, class... Remain>
+  template <index_t hoffset, index_t loffset, class First, class... Remain>
   static void get_lorder_signs_(const index_t n, const int horder_signs[],
                                 int lorder_signs[]) {
     First::template get_lorder_signs<hoffset, loffset>(n, horder_signs,

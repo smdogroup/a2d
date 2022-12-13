@@ -83,20 +83,31 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   constexpr int low_degree = 1;
 
   // Switch between poisson and elasticity
-  using PDE =
-      typename std::conditional<pde_type == PDE_TYPE::POISSON,
-                                Poisson<T, spatial_dim>,
-                                TopoLinearElasticity<T, spatial_dim>>::type;
-  using Basis = typename std::conditional<
-      pde_type == PDE_TYPE::POISSON,
-      FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
-      FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>>::type;
-  using LOrderBasis = typename std::conditional<
-      pde_type == PDE_TYPE::POISSON,
-      FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>,
-      FEBasis<T, LagrangeH1HexBasis<T, 3, low_degree>>>::type;
+  // using PDE =
+  //     typename std::conditional<pde_type == PDE_TYPE::POISSON,
+  //                               Poisson<T, spatial_dim>,
+  //                               TopoLinearElasticity<T, spatial_dim>>::type;
+  // using Basis = typename std::conditional<
+  //     pde_type == PDE_TYPE::POISSON,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>>::type;
+  // using LOrderBasis = typename std::conditional<
+  //     pde_type == PDE_TYPE::POISSON,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 3, low_degree>>>::type;
 
   using BasisVecType = A2D::SolutionVector<T>;
+
+  using PDE = MixedPoisson<T, dim>;
+  using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
+                        LagrangeL2HexBasis<T, 1, degree - 1>>;
+  using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
+                              LagrangeL2HexBasis<T, 1, low_degree - 1>>;
+
+  // using PDE = Poisson<T, dim>;
+  // using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
+  // using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
+
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;

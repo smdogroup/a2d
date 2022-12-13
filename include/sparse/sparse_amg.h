@@ -486,7 +486,7 @@ class BSRMatAmg {
       BSRMatVecMultSub(*A, xk, R);
       T res_norm = A2D::BLAS::norm(R);
 
-      if ((iter + 1) % monitor == 0) {
+      if (monitor && (iter + 1) % monitor == 0) {
         std::printf("MG |A * x - b|[%3d]: %20.10e\n", iter + 1,
                     A2D::fmt(res_norm));
       }
@@ -835,6 +835,241 @@ class BSRMatAmg {
 
   BSRMatAmg<I, T, N, N>* next;
 };
+
+template <typename T, A2D::index_t M>
+bool conjugate_gradient(
+    const std::function<void(MultiArrayNew<T* [M]>&, MultiArrayNew<T* [M]>&)>&
+        mat_vec,
+    const std::function<void(MultiArrayNew<T* [M]>&, MultiArrayNew<T* [M]>&)>&
+        apply_factor,
+    MultiArrayNew<T* [M]>& b0, MultiArrayNew<T* [M]>& xk,
+    A2D::index_t monitor = 0, A2D::index_t max_iters = 500, double rtol = 1e-8,
+    double atol = 1e-30, A2D::index_t iters_per_reset = 100) {
+  Timer timer("conjugate_gradient");
+  // R, Z and P and work are temporary vectors
+  // R == the residual
+  auto b0_layout = b0.layout();
+  MultiArrayNew<T* [M]> R("R", b0_layout);
+  MultiArrayNew<T* [M]> Z("Z", b0_layout);
+  MultiArrayNew<T* [M]> P("P", b0_layout);
+  MultiArrayNew<T* [M]> work("work", b0_layout);
+
+  bool solve_flag = false;
+  A2D::BLAS::zero(xk);
+  A2D::BLAS::copy(R, b0);  // R = b0
+  T init_norm = A2D::BLAS::norm(R);
+
+  for (A2D::index_t reset = 0, iter = 0; iter < max_iters; reset++) {
+    if (reset > 0) {
+      A2D::BLAS::copy(R, b0);          // R = b0
+      mat_vec(xk, work);               // work = A * xk
+      A2D::BLAS::axpy(R, -1.0, work);  // R = b0 - A * xk
+    }
+
+    if (monitor && reset == 0) {
+      std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter, A2D::fmt(init_norm));
+    }
+
+    if (absfunc(init_norm) > atol) {
+      // Apply the preconditioner Z = M^{-1} R
+      apply_factor(R, Z);
+
+      // Set P = Z
+      A2D::BLAS::copy(P, Z);
+
+      // Compute rz = (R, Z)
+      T rz = A2D::BLAS::dot(R, Z);
+
+      for (A2D::index_t i = 0; i < iters_per_reset && iter < max_iters;
+           i++, iter++) {
+        mat_vec(P, work);                        // work = A * P
+        T alpha = rz / A2D::BLAS::dot(work, P);  // alpha = (R, Z)/(A * P, P)
+        A2D::BLAS::axpy(xk, alpha, P);           // x = x + alpha * P
+        A2D::BLAS::axpy(R, -alpha, work);        // R' = R - alpha * A * P
+
+        T res_norm = A2D::BLAS::norm(R);
+
+        if (monitor && (iter + 1) % monitor == 0) {
+          std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                      A2D::fmt(res_norm));
+        }
+
+        if (absfunc(res_norm) < atol ||
+            absfunc(res_norm) < rtol * absfunc(init_norm)) {
+          if (monitor && !((iter + 1) % monitor == 0)) {
+            std::printf("PCG |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                        A2D::fmt(res_norm));
+          }
+
+          solve_flag = true;
+          break;
+        }
+
+        apply_factor(R, work);                 // work = Z' = M^{-1} * R
+        T rz_new = A2D::BLAS::dot(R, work);    // rz_new = (R', Z')
+        T rz_old = A2D::BLAS::dot(R, Z);       // rz_old = (R', Z)
+        T beta = (rz_new - rz_old) / rz;       // beta = (R', Z' - Z)/(R, Z)
+        A2D::BLAS::axpby(P, 1.0, beta, work);  // P' = Z' + beta * P
+        A2D::BLAS::copy(Z, work);              // Z <- Z'
+        rz = rz_new;                           // rz <- (R', Z')
+      }
+    }
+
+    if (solve_flag) {
+      break;
+    }
+  }
+  return solve_flag;
+}
+
+template <typename T, A2D::index_t M, A2D::index_t gmres_size>
+bool fgmres(const std::function<void(MultiArrayNew<T* [M]>&,
+                                     MultiArrayNew<T* [M]>&)>& mat_vec,
+            const std::function<void(MultiArrayNew<T* [M]>&,
+                                     MultiArrayNew<T* [M]>&)>& apply_factor,
+            MultiArrayNew<T* [M]>& b0, MultiArrayNew<T* [M]>& x,
+            A2D::index_t monitor = 0, A2D::index_t max_restart = 10,
+            double rtol = 1e-8, double atol = 1e-30) {
+  // Initialize the subspaces
+  auto b0_layout = b0.layout();
+  MultiArrayNew<T* [M]> W[gmres_size + 1];
+  MultiArrayNew<T* [M]> Z[gmres_size];
+  for (A2D::index_t i = 0; i < gmres_size + 1; i++) {
+    W[i] = MultiArrayNew<T* [M]>("W", b0_layout);
+  }
+  for (A2D::index_t i = 0; i < gmres_size; i++) {
+    Z[i] = MultiArrayNew<T* [M]>("Z", b0_layout);
+  }
+
+  // Allocate and initialize data
+  A2D::index_t Hptr[gmres_size + 1];
+  Hptr[0] = 0;
+  for (A2D::index_t i = 0; i < gmres_size; i++) {
+    Hptr[i + 1] = Hptr[i] + i + 2;
+  }
+
+  // The Hessenberg matrix
+  const A2D::index_t hsize = 2 + ((gmres_size + 2) * (gmres_size + 1)) / 2;
+  T H[hsize];
+  T res[gmres_size + 1];  // The residual
+
+  // The unitary Q matrix in the QR factorixation of H
+  T Qsin[gmres_size], Qcos[gmres_size];
+
+  T init_norm = 0.0;
+  bool solve_flag = false;
+
+  for (A2D::index_t reset = 0, iter = 0; reset < max_restart + 1; reset++) {
+    // Compute the residual
+    if (reset == 0) {
+      A2D::BLAS::zero(x);
+      A2D::BLAS::copy(W[0], b0);  // W[0] = b0
+
+      init_norm = A2D::BLAS::norm(W[0]);  // The initial residual
+      res[0] = init_norm;
+      A2D::BLAS::scale(W[0], 1.0 / res[0]);  // W[0] = b/|| b ||
+    } else {
+      // If the initial guess is non-zero or restarting
+      mat_vec(x, W[0]);
+      A2D::BLAS::axpy(W[0], -1.0, b0);  // W[0] = A*x - b
+
+      res[0] = A2D::BLAS::norm(W[0]);
+      A2D::BLAS::scale(W[0], -1.0 / res[0]);  // W[0] = b/|| b ||
+    }
+
+    A2D::index_t niters = 0;  // Keep track of the size of the Hessenberg matrix
+
+    if (monitor && reset == 0) {
+      std::printf("GMRES |A * x - b|[%3d]: %20.10e\n", iter,
+                  A2D::fmt(init_norm));
+    }
+
+    if (std::fabs(std::real(res[0])) < atol) {
+      break;
+    }
+
+    for (A2D::index_t i = 0; i < gmres_size; i++, iter++) {
+      // Apply the preconditioner, Z[i] = M^{-1} W[i]
+      apply_factor(W[i], Z[i]);
+      mat_vec(Z[i], W[i + 1]);  // W[i+1] = A*Z[i] = A*M^{-1}*W[i]
+
+      // Build the orthogonal basis using MGS
+      // orthogonalize(&H[Hptr[i]], W[i + 1], W, i + 1);
+      for (A2D::index_t j = 0; j < i + 1; j++) {
+        H[Hptr[i] + j] = A2D::BLAS::dot(W[j], W[i + 1]);
+        A2D::BLAS::axpy(W[i + 1], -H[Hptr[i] + j], W[j]);
+      }
+
+      H[i + 1 + Hptr[i]] =
+          A2D::BLAS::norm(W[i + 1]);  // H[i+1,i] = || W[i+1] ||
+      A2D::BLAS::scale(
+          W[i + 1], 1.0 / H[i + 1 + Hptr[i]]);  // W[i+1] = W[i+1]/|| W[i+1] ||
+
+      // Apply the existing part of Q to the new components of
+      // the Hessenberg matrix
+      T h1, h2;
+      for (A2D::index_t k = 0; k < i; k++) {
+        h1 = H[k + Hptr[i]];
+        h2 = H[k + 1 + Hptr[i]];
+        H[k + Hptr[i]] = h1 * Qcos[k] + h2 * Qsin[k];
+        H[k + 1 + Hptr[i]] = -h1 * Qsin[k] + h2 * Qcos[k];
+      }
+
+      // Now, compute the rotation for the new column that was just added
+      h1 = H[i + Hptr[i]];
+      h2 = H[i + 1 + Hptr[i]];
+      T sq = std::sqrt(h1 * h1 + h2 * h2);
+
+      Qcos[i] = h1 / sq;
+      Qsin[i] = h2 / sq;
+      H[i + Hptr[i]] = h1 * Qcos[i] + h2 * Qsin[i];
+      H[i + 1 + Hptr[i]] = -h1 * Qsin[i] + h2 * Qcos[i];
+
+      // Update the residual
+      h1 = res[i];
+      res[i] = h1 * Qcos[i];
+      res[i + 1] = -h1 * Qsin[i];
+
+      if (monitor && (iter + 1) % monitor == 0) {
+        std::printf("GMRES |A * x - b|[%3d]: %20.10e\n", iter + 1,
+                    A2D::fmt(std::fabs(res[i + 1])));
+      }
+
+      niters++;
+
+      if (std::fabs(std::real(res[i + 1])) < atol ||
+          std::fabs(std::real(res[i + 1])) < rtol * std::real(init_norm)) {
+        // Set the solve flag
+        solve_flag = true;
+
+        break;
+      }
+    }
+
+    // Now, compute the solution - the linear combination of the
+    // Arnoldi vectors. H is upper triangular
+
+    // Compute the weights
+    for (A2D::index_t ip = niters; ip > 0; ip--) {
+      A2D::index_t i = ip - 1;
+      for (A2D::index_t j = i + 1; j < niters; j++) {  //
+        res[i] = res[i] - H[i + Hptr[j]] * res[j];
+      }
+      res[i] = res[i] / H[i + Hptr[i]];
+    }
+
+    // Compute the linear combination
+    for (A2D::index_t i = 0; i < niters; i++) {
+      A2D::BLAS::axpy(x, res[i], Z[i]);
+    }
+
+    if (solve_flag) {
+      break;
+    }
+  }
+
+  return solve_flag;
+}
 
 }  // namespace A2D
 

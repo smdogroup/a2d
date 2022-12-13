@@ -302,29 +302,31 @@ class HdivSpace {
   // Transform the values from the reference to the physical space
   void transform(const T& detJ, const Mat<T, dim, dim>& J,
                  const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
+    T inv = 1.0 / detJ;
     if (D == 2) {
-      s.u(0) = (J(0, 0) * u(0) + J(0, 1) * u(1)) / detJ;
-      s.u(1) = (J(1, 0) * u(0) + J(1, 1) * u(1)) / detJ;
+      s.u(0) = inv * (J(0, 0) * u(0) + J(0, 1) * u(1));
+      s.u(1) = inv * (J(1, 0) * u(0) + J(1, 1) * u(1));
     } else if (D == 3) {
-      s.u(0) = (J(0, 0) * u(0) + J(0, 1) * u(1) + J(0, 2) * u(2)) / detJ;
-      s.u(1) = (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2)) / detJ;
-      s.u(2) = (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2)) / detJ;
+      s.u(0) = inv * (J(0, 0) * u(0) + J(0, 1) * u(1) + J(0, 2) * u(2));
+      s.u(1) = inv * (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2));
+      s.u(2) = inv * (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2));
     }
-    s.div = div / detJ;
+    s.div = inv * div;
   }
 
   // Transform derivatives from the physical to the refernece space
   void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
                   const Mat<T, dim, dim>& Jinv, HdivSpace<T, D>& s) const {
+    T inv = 1.0 / detJ;
     if (D == 2) {
-      s.u(0) = (J(0, 0) * u(0) + J(1, 0) * u(1)) / detJ;
-      s.u(1) = (J(0, 1) * u(0) + J(1, 1) * u(1)) / detJ;
+      s.u(0) = inv * (J(0, 0) * u(0) + J(1, 0) * u(1));
+      s.u(1) = inv * (J(0, 1) * u(0) + J(1, 1) * u(1));
     } else if (D == 3) {
-      s.u(0) = (J(0, 0) * u(0) + J(1, 0) * u(1) + J(2, 0) * u(2)) / detJ;
-      s.u(1) = (J(0, 1) * u(0) + J(1, 1) * u(1) + J(2, 1) * u(2)) / detJ;
-      s.u(2) = (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2)) / detJ;
+      s.u(0) = inv * (J(0, 0) * u(0) + J(1, 0) * u(1) + J(2, 0) * u(2));
+      s.u(1) = inv * (J(0, 1) * u(0) + J(1, 1) * u(1) + J(2, 1) * u(2));
+      s.u(2) = inv * (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2));
     }
-    s.div = div / detJ;
+    s.div = inv * div;
   }
 
  private:

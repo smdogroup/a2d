@@ -108,21 +108,13 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
           typename PDE::FiniteElementSpace &sref = sol.get(index);
           typename PDE::FiniteElementGeometry &gref = geo.get(index);
 
-          // Get the Jacobian transformation
-          A2D::Mat<T, PDE::dim, PDE::dim> &J =
-              gref.template get<0>().get_grad();
-
-          // Compute the inverse of the transformation
-          A2D::Mat<T, PDE::dim, PDE::dim> Jinv;
-          A2D::MatInverse(J, Jinv);
-
-          // Compute the determinant of the Jacobian matrix
+          // Initialize the transform object
           T detJ;
-          A2D::MatDet(J, detJ);
+          typename PDE::SolutionMapping transform(gref, detJ);
 
           // Transform the solution the physical element
           typename PDE::FiniteElementSpace x, s;
-          sref.transform(detJ, J, Jinv, s);
+          transform.transform(sref, s);
 
           auto X = gref.template get<0>().get_value();
           vtk_nodes(node, 0) = X(0);

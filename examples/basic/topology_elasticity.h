@@ -141,9 +141,11 @@ class TopoElasticityAnalysis {
    * @param E Young's modulus
    * @param nu Poisson's ratio
    * @param q RAMP penalization parameter
-   * @param bodyforce_tx the body force components
+   * @param tx_bodyforce the body force components
    * @param traction_label label of nodes to which the traction force is applied
-   * @param traction_tx traction force components
+   * @param tx_traction traction force components
+   * @param x0_torque origin the torque vector is about
+   * @param tx_torque the torque vector
    * @param verbose if executed verbosely
    * @param amg_nlevels number of algebraic multi-grid levels
    * @param cg_it max number of iterations for conjugate gradient linear solver
@@ -152,8 +154,9 @@ class TopoElasticityAnalysis {
    */
   TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
                          A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
-                         const T bodyforce_tx[], A2D::index_t traction_label,
-                         const T traction_tx[], bool verbose, int amg_nlevels,
+                         const T tx_bodyforce[], A2D::index_t traction_label,
+                         const T tx_traction[], const T x0_torque[],
+                         const T tx_torque[], bool verbose, int amg_nlevels,
                          int cg_it, double cg_rtol,
                          double cg_atol)
       :  // Material parameters and penalization
@@ -200,8 +203,8 @@ class TopoElasticityAnalysis {
         lorder_elem_data(lorder_datamesh, data),
 
         pde(E, nu, q),
-        bodyforce(q, bodyforce_tx),
-        traction_pde(traction_tx),
+        bodyforce(q, tx_bodyforce),
+        traction_pde(tx_traction, tx_torque, x0_torque),
 
         B("B", sol.get_num_dof() / block_size),
         verbose(verbose),
@@ -451,6 +454,16 @@ class TopoElasticityAnalysis {
    * @return The number of design variables
    */
   A2D::index_t get_num_design_vars() { return filtermesh.get_num_dof(); }
+
+  /**
+   * @brief Get the number of degrees of freedom
+   */
+  I get_num_dofs() { return mesh.get_num_dof(); }
+
+  /**
+   * @brief Get the number of finite elements
+   */
+  I get_num_elements() { return mesh.get_num_elements(); }
 
   /**
    * @brief Set the design variable values into the topology

@@ -621,12 +621,27 @@ class TopoVonMisesAggregation {
   }
 };
 
+/**
+ * @brief Apply surface traction and/or surface torque.
+ */
 template <typename T, A2D::index_t D>
 class TopoSurfaceTraction {
  public:
-  TopoSurfaceTraction(const T tx_[]) {
+  TopoSurfaceTraction(const T tx_[], const T torx_[] = nullptr,
+                      const T x0_[] = nullptr) {
+    has_traction = false;
+    has_torque = false;
+
     for (A2D::index_t i = 0; i < dim; i++) {
-      tx[i] = tx_[i];
+      if (tx_) {
+        tx[i] = tx_[i];
+        has_traction = true;
+      }
+      if (torx_ && x0_) {
+        torx[i] = torx_[i];
+        x0[i] = x0_[i];
+        has_torque = true;
+      }
     }
   }
 
@@ -650,8 +665,11 @@ class TopoSurfaceTraction {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::SurfaceMapping<T, dim>;
 
-  // Surface traction values
-  T tx[dim];
+  T tx[dim];    // surface traction vector
+  T torx[dim];  // surface  torque vector
+  T x0[dim];    // torque origin
+  bool has_traction;
+  bool has_torque;
 
   /**
    * @brief Evaluate the weak form coefficients for linear elasticity
@@ -668,9 +686,24 @@ class TopoSurfaceTraction {
                                 FiniteElementSpace& coef) {
     // Extract the solution
     A2D::Vec<T, dim>& U = (coef.template get<0>()).get_value();
-
     for (index_t i = 0; i < dim; i++) {
-      U(i) = -wdetJ * tx[i];
+      U(i) = 0.0;
+    }
+
+    if (has_traction) {
+      for (index_t i = 0; i < dim; i++) {
+        U(i) -= wdetJ * tx[i];
+      }
+    }
+
+    if (has_torque) {
+      // Extract location
+      const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
+
+      // Force at this point is (x - x0) cross torque
+      U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) * torx[1]);
+      U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) - x0[0]) * torx[2]);
+      U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) - x0[1]) * torx[0]);
     }
   }
 };

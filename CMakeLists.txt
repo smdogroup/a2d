@@ -1,5 +1,5 @@
 # Specify cmake version needed
-cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 # Set project name, language and c++ std
 project(A2D LANGUAGES CXX)

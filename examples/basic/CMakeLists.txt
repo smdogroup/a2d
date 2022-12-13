@@ -71,8 +71,34 @@ target_link_libraries(toy_profiler          OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_readvtk           OpenMP::OpenMP_CXX LAPACK::LAPACK)
 target_link_libraries(toy_tetramesh         OpenMP::OpenMP_CXX LAPACK::LAPACK)
 
+# Link optimization applications to paropt and MPI
 target_link_libraries(topology_elasticity   paropt MPI::MPI_CXX)
 target_link_libraries(topology_heat         paropt MPI::MPI_CXX)
+
+# If using gcc and version < 9, need to explicitly link to filesystem
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9)
+        message("Using GCC ${CMAKE_CXX_COMPILER_VERSION} < 9.0.0, explicitly link to stdc++fs")
+        target_link_libraries(test_feelement        stdc++fs)
+        target_link_libraries(multiphysics          stdc++fs)
+        target_link_libraries(verify_L2element      stdc++fs)
+        target_link_libraries(topology              stdc++fs)
+        target_link_libraries(topology_elasticity   stdc++fs)
+        target_link_libraries(topology_heat         stdc++fs)
+        target_link_libraries(spectral              stdc++fs)
+        target_link_libraries(sphere                stdc++fs)
+        target_link_libraries(elasticity            stdc++fs)
+        target_link_libraries(test_grad_hess        stdc++fs)
+        target_link_libraries(test_numeric          stdc++fs)
+        target_link_libraries(toy_elasticity        stdc++fs)
+        target_link_libraries(toy_helmholtz         stdc++fs)
+        target_link_libraries(toy_profiler          stdc++fs)
+        target_link_libraries(toy_readvtk           stdc++fs)
+        target_link_libraries(toy_tetramesh         stdc++fs)
+    endif()
+endif()
+
+
 
 add_subdirectory(rigid_body)
 add_subdirectory(paropt)

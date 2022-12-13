@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <string>
 
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
@@ -12,6 +13,8 @@
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
+#include "utils/a2dparser.h"
+#include "utils/a2dvtk.h"
 
 using namespace A2D;
 
@@ -67,15 +70,31 @@ void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals,
   delete[] work;
 }
 
-int main(int argc, char *argv[]) {
-  Kokkos::initialize();
+enum class PDE_TYPE { POISSON, ELASTICITY };
 
-  const index_t dim = 3;
+template <int degree, PDE_TYPE pde_type>
+void main_body(std::string type, int ar = 1, double h = 1.0,
+               bool write_vtk = false) {
+  using I = index_t;
   using T = double;
   using ET = ElementTypes;
 
-  const index_t degree = 8;
-  const index_t low_degree = 1;
+  constexpr int spatial_dim = 3;
+  constexpr int low_degree = 1;
+
+  // Switch between poisson and elasticity
+  // using PDE =
+  //     typename std::conditional<pde_type == PDE_TYPE::POISSON,
+  //                               Poisson<T, spatial_dim>,
+  //                               TopoLinearElasticity<T, spatial_dim>>::type;
+  // using Basis = typename std::conditional<
+  //     pde_type == PDE_TYPE::POISSON,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>>::type;
+  // using LOrderBasis = typename std::conditional<
+  //     pde_type == PDE_TYPE::POISSON,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>,
+  //     FEBasis<T, LagrangeH1HexBasis<T, 3, low_degree>>>::type;
 
   using BasisVecType = A2D::SolutionVector<T>;
 
@@ -91,7 +110,7 @@ int main(int argc, char *argv[]) {
 
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
@@ -99,7 +118,8 @@ int main(int argc, char *argv[]) {
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
-  using LOrderGeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, low_degree>>;
+  using LOrderGeoBasis =
+      FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
   using LOrderDataElemVec =
       A2D::ElementVector_Serial<T, LOrderDataBasis, BasisVecType>;
   using LOrderGeoElemVec =
@@ -109,33 +129,66 @@ int main(int argc, char *argv[]) {
   using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                  LOrderGeoBasis, LOrderBasis>;
 
-  // Number of elements in each dimension
-  auto node_num = [](int i, int j, int k) { return i + 2 * (j + 2 * k); };
+  /** Create mesh for a single element
+   *
+   *        7 --------------- 6
+   *       / |              / |
+   *      /  |             /  |
+   *     /   |            /   |
+   *    4 -------------- 5    |
+   *    |    |           |    |
+   *    |    3 ----------|--- 2
+   *    |   /            |   /
+   *    |  /             |  /
+   *    | /              | /
+   *    0 -------------- 1
+   */
 
-  // Number of edges
-  const int nverts = 8;
-  int ntets = 0, nwedge = 0, npyrmd = 0;
-  const int nhex = 1;
+  // - Number of elements in each dimension
+  auto node_num = [](I i, I j, I k) { return i + 2 * (j + 2 * k); };
 
-  int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
-  int hex[8];
+  // - Number of edges
+  const I nverts = 8;
+  I ntets = 0, nwedge = 0, npyrmd = 0;
+  const I nhex = 1;
 
-  for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
-    hex[ii] = node_num(ET::HEX_VERTS_CART[ii][0], ET::HEX_VERTS_CART[ii][1],
-                       ET::HEX_VERTS_CART[ii][2]);
-  }
+  I *tets = NULL, *wedge = NULL, *pyrmd = NULL;
+  I hex[8] = {0, 1, 2, 3, 4, 5, 6, 7};
 
+  // - Nodal location
   double Xloc[3 * 8];
-  for (int k = 0; k < 2; k++) {
-    for (int j = 0; j < 2; j++) {
-      for (int i = 0; i < 2; i++) {
-        Xloc[3 * node_num(i, j, k)] = (1.0 * i);
-        Xloc[3 * node_num(i, j, k) + 1] = (1.0 * j);
-        Xloc[3 * node_num(i, j, k) + 2] = (1.0 * k);
-      }
-    }
+
+  if (type == "box") {
+    Xloc[0] = 0.0, Xloc[1] = 0.0, Xloc[2] = 0.0;          // pt0
+    Xloc[3] = ar * 1.0, Xloc[4] = 0.0, Xloc[5] = 0.0;     // pt1
+    Xloc[6] = ar * 1.0, Xloc[7] = 1.0, Xloc[8] = 0.0;     // pt2
+    Xloc[9] = 0.0, Xloc[10] = 1.0, Xloc[11] = 0.0;        // pt3
+    Xloc[12] = 0.0, Xloc[13] = 0.0, Xloc[14] = 1.0;       // pt4
+    Xloc[15] = ar * 1.0, Xloc[16] = 0.0, Xloc[17] = 1.0;  // pt5
+    Xloc[18] = ar * 1.0, Xloc[19] = 1.0, Xloc[20] = 1.0;  // pt6
+    Xloc[21] = 0.0, Xloc[22] = 1.0, Xloc[23] = 1.0;       // pt7
+
+  } else if (type == "distortion") {
+    Xloc[0] = 0.5 - 0.5 / ar, Xloc[1] = 0.0, Xloc[2] = 0.0;    // pt0
+    Xloc[3] = 0.5 + 0.5 / ar, Xloc[4] = 0.0, Xloc[5] = 0.0;    // pt1
+    Xloc[6] = 0.5 + 0.5 / ar, Xloc[7] = 1.0, Xloc[8] = 0.0;    // pt2
+    Xloc[9] = 0.5 - 0.5 / ar, Xloc[10] = 1.0, Xloc[11] = 0.0;  // pt3
+    Xloc[12] = 0.0, Xloc[13] = 0.5 - 0.5 / ar, Xloc[14] = h;   // pt4
+    Xloc[15] = 1.0, Xloc[16] = 0.5 - 0.5 / ar, Xloc[17] = h;   // pt5
+    Xloc[18] = 1.0, Xloc[19] = 0.5 + 0.5 / ar, Xloc[20] = h;   // pt6
+    Xloc[21] = 0.0, Xloc[22] = 0.5 + 0.5 / ar, Xloc[23] = h;   // pt7
+  } else {
+    std::printf("Invalid type %s\n", type.c_str());
+    exit(-1);
   }
 
+  // Save element to vtk
+  if (write_vtk) {
+    A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
+                 Xloc, "spectral_element.vtk");
+  }
+
+  // Build element connectivity that A2D needs
   MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
                           pyrmd);
 
@@ -165,7 +218,12 @@ int main(int argc, char *argv[]) {
   // Create the finite-element model
   FE fe;
   LOrderFE lorder_fe;
-  PDE pde;
+  std::shared_ptr<PDE> pde;
+  if constexpr (pde_type == PDE_TYPE::POISSON) {
+    pde = std::make_shared<PDE>();
+  } else {
+    pde = std::make_shared<PDE>(1.0, 0.3, 5.0);
+  }
 
   const index_t block_size = 1;
   using BSRMatType = BSRMat<index_t, T, block_size, block_size>;
@@ -185,13 +243,13 @@ int main(int argc, char *argv[]) {
 
   BSRMatType horder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, Basis, BSRMatType> elem_mat(mesh, horder_mat);
-  fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+  fe.add_jacobian(*pde, elem_data, elem_geo, elem_sol, elem_mat);
 
-  lorder_mesh.create_block_csr<block_size>(nrows, rowp, cols);
+  lorder_mesh.template create_block_csr<block_size>(nrows, rowp, cols);
   BSRMatType lorder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, LOrderBasis, BSRMatType> lorder_elem_mat(lorder_mesh,
                                                                 lorder_mat);
-  lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
+  lorder_fe.add_jacobian(*pde, lorder_elem_data, lorder_elem_geo,
                          lorder_elem_sol, lorder_elem_mat);
 
   index_t n, m;
@@ -206,7 +264,7 @@ int main(int argc, char *argv[]) {
   double eig_max = -1e20;
   double eig_min_abs = 1e20;
 
-  for (int i = 0; i < n; i++) {
+  for (I i = 0; i < n; i++) {
     if (eigvals[i] != 0.0) {
       if (std::fabs(eigvals[i]) < eig_min_abs) {
         eig_min_abs = std::fabs(eigvals[i]);
@@ -220,13 +278,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "dof:         " << mesh.get_num_dof() << std::endl;
-  std::cout << "dof:         " << (degree + 1) * (degree + 1) * (degree + 1)
-            << std::endl;
-  std::cout << "degree:      " << degree << std::endl;
-  std::cout << "eig_min:     " << eig_min << std::endl;
-  std::cout << "eig_max:     " << eig_max << std::endl;
-  std::cout << "eig_min_abs: " << eig_min_abs << std::endl;
+  int dof = mesh.get_num_dof();
+  double cond = std::fabs(eig_max) / std::fabs(eig_min);
+
+  if (degree == 1 && ar == 1) {
+    std::printf("%10s%10s%10s%15s%15s%15s\n", "degree", "AR", "dof", "eig_min",
+                "eig_max", "cond");
+  }
+  std::printf("%10d%10d%10d%15.5e%15.5e%15.5e\n", degree, ar, dof, eig_min,
+              eig_max, cond);
 
   delete[] Ap;
   delete[] Ah;
@@ -239,6 +299,53 @@ int main(int argc, char *argv[]) {
   //        typename PDE::FiniteElementSpace &sol) {
   //       return sol.template get<0>().get_value();
   //     });
+}
 
-  return (0);
+int main(int argc, char *argv[]) {
+  Kokkos::initialize();
+  {
+    // Get cmd arguments
+    ArgumentParser parser(argc, argv);
+    std::string type = parser.parse_option("--type", std::string("distortion"));
+    std::string pde = parser.parse_option("--pde", std::string("poisson"));
+    double h = parser.parse_option("--h", 1.0);
+    parser.help_info();
+
+    // Check option validity
+    std::vector<std::string> valid_types = {"distortion", "box"};
+    assert_option_in(type, valid_types);
+    std::vector<std::string> valid_pdes = {"poisson", "elasticity"};
+    assert_option_in(pde, valid_pdes);
+
+    int ar[] = {1, 2, 4, 8, 16, 32};
+
+    if (pde == "poisson") {
+      for (auto a : ar) {
+        main_body<1, PDE_TYPE::POISSON>(type, a, h);
+        main_body<2, PDE_TYPE::POISSON>(type, a, h);
+        main_body<3, PDE_TYPE::POISSON>(type, a, h);
+        main_body<4, PDE_TYPE::POISSON>(type, a, h);
+        main_body<5, PDE_TYPE::POISSON>(type, a, h);
+        main_body<6, PDE_TYPE::POISSON>(type, a, h);
+        main_body<7, PDE_TYPE::POISSON>(type, a, h);
+        main_body<8, PDE_TYPE::POISSON>(type, a, h);
+        main_body<9, PDE_TYPE::POISSON>(type, a, h);
+        main_body<10, PDE_TYPE::POISSON>(type, a, h, true);
+      }
+    } else {
+      for (auto a : ar) {
+        main_body<1, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<2, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<3, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<4, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<5, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<6, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<7, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<8, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<9, PDE_TYPE::ELASTICITY>(type, a, h);
+        main_body<10, PDE_TYPE::ELASTICITY>(type, a, h, true);
+      }
+    }
+  }
+  Kokkos::finalize();
 }

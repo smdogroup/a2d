@@ -391,7 +391,7 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   constexpr int filter_degree = degree - 1;
 
   // Set up profiler
-  A2D::TIMER_OUTPUT_FILE = fspath(prefix) / fspath("profile.log");
+  A2D::Timer::set_log_path(fspath(prefix) / fspath("profile.log"));
   A2D::Timer timer("main_body()");
 
   // Create mesh: either load vtk or generate by code

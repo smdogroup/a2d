@@ -23,7 +23,7 @@ using A2D_complex_t = std::complex<T>;
 #endif
 
 namespace A2D {
-typedef uint32_t index_t;
+using index_t = uint32_t;  // TODO: size_t may be a better choice here
 
 /**
  * @brief Check if a type is complex.

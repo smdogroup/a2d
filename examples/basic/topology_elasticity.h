@@ -322,7 +322,8 @@ class TopoElasticityAnalysis {
       }
     };
 
-    // Allocate the solver - we should add some of these as solver options
+    // Allocate the solver
+    // TODO: we should add some of these as solver options
     double omega = 4.0 / 3.0;
     double epsilon = 0.0;
     bool print_info = false;

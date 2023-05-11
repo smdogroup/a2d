@@ -1,6 +1,9 @@
 #include "topology_elasticity.h"
+#include "utils/a2dprofiler.h"
 
 int main(int argc, char *argv[]) {
+  A2D::Timer timer("main()");
+  A2D::Timer::set_threshold_ms(5.0);
   Kokkos::initialize();
 
   const A2D::index_t dim = 3;

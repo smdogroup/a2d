@@ -198,7 +198,6 @@ int main(int argc, char** argv) {
   model->zero_bcs(residual);
   solution->zero();
 
-
   // ================================================================
   // Apply the preconditioned conjugate gradient method.
   int num_levels = 3;

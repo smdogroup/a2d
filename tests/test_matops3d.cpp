@@ -9,10 +9,10 @@ typedef A2D::Mat<T, 3, 3> Mat;
 typedef A2D::SymmMat<T, 3> SMat;
 typedef A2D::ADMat<Mat> ADMat;
 typedef A2D::ADMat<SMat> ADSMat;
-typedef A2D::A2DMat<1, Mat> A2DMat;
-typedef A2D::A2DMat<1, SMat> A2DSMat;
+typedef A2D::A2DMat<Mat> A2DMat;
+typedef A2D::A2DMat<SMat> A2DSMat;
 typedef A2D::ADScalar<T> ADScalar;
-typedef A2D::A2DScalar<1, T> A2DScalar;
+typedef A2D::A2DScalar<T> A2DScalar;
 
 class ADExpressionTest : public ::testing::Test {
  protected:
@@ -109,22 +109,23 @@ class MatxMat : public ADExpressionTest {
 
 TEST_F(MatxMat, AB) {
   A2D::MatMatMult<T, false, false>(A, B, AB);
-  expect_mat_eq<3, 3, Mat>(AB, AB_data);
+  EXPECT_MAT_EQ(3, 3, AB, AB_data);
+  EXPECT_MAT_EQ(3, 3, AB, AB_data);
 }
 
 TEST_F(MatxMat, ATB) {
   A2D::MatMatMult<T, true, false>(A, B, ATB);
-  expect_mat_eq<3, 3, Mat>(ATB, ATB_data);
+  EXPECT_MAT_EQ(3, 3, ATB, ATB_data);
 }
 
 TEST_F(MatxMat, ABT) {
   A2D::MatMatMult<T, false, true>(A, B, ABT);
-  expect_mat_eq<3, 3, Mat>(ABT, ABT_data);
+  EXPECT_MAT_EQ(3, 3, ABT, ABT_data);
 }
 
 TEST_F(MatxMat, ATBT) {
   A2D::MatMatMult<T, true, true>(A, B, ATBT);
-  expect_mat_eq<3, 3, Mat>(ATBT, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, ATBT, ATBT_data);
 }
 
 // Test suite: C = AB, where A and B are both AD-able
@@ -199,18 +200,18 @@ TEST_F(ADMatxADMat, AB) {
   auto expr = A2D::MatMatMult<T, false, false>(A_, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(ADMatxADMat, ATB) {
@@ -225,18 +226,18 @@ TEST_F(ADMatxADMat, ATB) {
   auto expr = A2D::MatMatMult<T, true, false>(A_, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(ADMatxADMat, ABT) {
@@ -251,18 +252,18 @@ TEST_F(ADMatxADMat, ABT) {
   auto expr = A2D::MatMatMult<T, false, true>(A_, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(ADMatxADMat, ATBT) {
@@ -277,18 +278,18 @@ TEST_F(ADMatxADMat, ATBT) {
   auto expr = A2D::MatMatMult<T, true, true>(A_, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 // Test suite: C = AB, where A and B are both A2D-able
@@ -408,35 +409,35 @@ TEST_F(A2DMatxA2DMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, false>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<T, false, false>(A__, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      A__.Ap(i, j) = Ap(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out, 1e-8);
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out, 1e-8);
 }
 
 TEST_F(A2DMatxA2DMat, ATB) {
@@ -464,35 +465,35 @@ TEST_F(A2DMatxA2DMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, false>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<T, true, false>(A__, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      A__.Ap(i, j) = Ap(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out, 1e-8);
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out, 1e-8);
 }
 
 TEST_F(A2DMatxA2DMat, ABT) {
@@ -520,35 +521,35 @@ TEST_F(A2DMatxA2DMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, true>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<T, false, true>(A__, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      A__.Ap(i, j) = Ap(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out, 1e-8);
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out, 1e-8);
 }
 
 TEST_F(A2DMatxA2DMat, ATBT) {
@@ -576,35 +577,35 @@ TEST_F(A2DMatxA2DMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, true>(A__, B__, C__);
+  auto expr = A2D::MatMatMult<T, true, true>(A__, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      A__.Ap(i, j) = Ap(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out, 1e-8);
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out, 1e-8);
 }
 
 // Test suite: C = AB, where only A is AD-able
@@ -662,16 +663,16 @@ TEST_F(ADMatxMat, AB) {
   auto expr = A2D::MatMatMult<T, false, false>(A_, B, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
 }
 
 TEST_F(ADMatxMat, ATB) {
@@ -685,16 +686,16 @@ TEST_F(ADMatxMat, ATB) {
   auto expr = A2D::MatMatMult<T, true, false>(A_, B, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
 }
 
 TEST_F(ADMatxMat, ABT) {
@@ -708,16 +709,16 @@ TEST_F(ADMatxMat, ABT) {
   auto expr = A2D::MatMatMult<T, false, true>(A_, B, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
 }
 
 TEST_F(ADMatxMat, ATBT) {
@@ -731,16 +732,16 @@ TEST_F(ADMatxMat, ATBT) {
   auto expr = A2D::MatMatMult<T, true, true>(A_, B, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dA.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, dA_out);
+  EXPECT_MAT_EQ(3, 3, dA, dA_out);
 }
 
 // Test suite: C = AB, where only B is AD-able
@@ -798,16 +799,16 @@ TEST_F(MatxADMat, AB) {
   auto expr = A2D::MatMatMult<T, false, false>(A, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(MatxADMat, ATB) {
@@ -821,16 +822,16 @@ TEST_F(MatxADMat, ATB) {
   auto expr = A2D::MatMatMult<T, true, false>(A, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(MatxADMat, ABT) {
@@ -844,16 +845,16 @@ TEST_F(MatxADMat, ABT) {
   auto expr = A2D::MatMatMult<T, false, true>(A, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 TEST_F(MatxADMat, ATBT) {
@@ -867,16 +868,16 @@ TEST_F(MatxADMat, ATBT) {
   auto expr = A2D::MatMatMult<T, true, true>(A, B_, C_);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(dC, dC_out);
+  EXPECT_MAT_EQ(3, 3, dC, dC_out);
 
   // Check reverse AD results
   dB.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dB, dB_out);
+  EXPECT_MAT_EQ(3, 3, dB, dB_out);
 }
 
 // Test suite: C = AB, where only A is A2D-able
@@ -960,32 +961,32 @@ TEST_F(A2DMatxMat, AB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, false>(A__, B, C__);
+  auto expr = A2D::MatMatMult<T, false, false>(A__, B, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out);
 }
 
 TEST_F(A2DMatxMat, ATB) {
@@ -1009,32 +1010,32 @@ TEST_F(A2DMatxMat, ATB) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, false>(A__, B, C__);
+  auto expr = A2D::MatMatMult<T, true, false>(A__, B, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out);
 }
 
 TEST_F(A2DMatxMat, ABT) {
@@ -1058,32 +1059,32 @@ TEST_F(A2DMatxMat, ABT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, true>(A__, B, C__);
+  auto expr = A2D::MatMatMult<T, false, true>(A__, B, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out);
 }
 
 TEST_F(A2DMatxMat, ATBT) {
@@ -1107,32 +1108,32 @@ TEST_F(A2DMatxMat, ATBT) {
   // A2D data types
   A2DMat A__(A, Ab), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, true>(A__, B, C__);
+  auto expr = A2D::MatMatMult<T, true, true>(A__, B, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out);
 }
 
 // Test suite: C = AB, where only B is A2D-able
@@ -1216,32 +1217,32 @@ TEST_F(MatxA2DMat, AB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, false>(A, B__, C__);
+  auto expr = A2D::MatMatMult<T, false, false>(A, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, AB_data);
+  EXPECT_MAT_EQ(3, 3, C, AB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out);
 }
 
 TEST_F(MatxA2DMat, ATB) {
@@ -1265,32 +1266,32 @@ TEST_F(MatxA2DMat, ATB) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, false>(A, B__, C__);
+  auto expr = A2D::MatMatMult<T, true, false>(A, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATB_data);
+  EXPECT_MAT_EQ(3, 3, C, ATB_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out);
 }
 
 TEST_F(MatxA2DMat, ABT) {
@@ -1314,32 +1315,32 @@ TEST_F(MatxA2DMat, ABT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, false, true>(A, B__, C__);
+  auto expr = A2D::MatMatMult<T, false, true>(A, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ABT_data);
+  EXPECT_MAT_EQ(3, 3, C, ABT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out);
 }
 
 TEST_F(MatxA2DMat, ATBT) {
@@ -1363,32 +1364,32 @@ TEST_F(MatxA2DMat, ATBT) {
   // A2D data types
   A2DMat B__(B, Bb), C__(C, Cb);
 
-  auto expr = A2D::MatMatMult<1, T, true, true>(A, B__, C__);
+  auto expr = A2D::MatMatMult<T, true, true>(A, B__, C__);
 
   // Check expression result
-  expect_mat_eq<3, 3, Mat>(C, ATBT_data);
+  EXPECT_MAT_EQ(3, 3, C, ATBT_data);
 
   // Check forward AD result
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      B__.pvalue(0)(i, j) = Bp(i, j);
+      B__.Ap(i, j) = Bp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out);
 
   // Check reverse AD results
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Bb, Bb_out);
+  EXPECT_MAT_EQ(3, 3, Bb, Bb_out);
 
   // Check reverse A2D results
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(B__.hvalue(0), Bh_out);
+  EXPECT_MAT_EQ(3, 3, B__.Ah, Bh_out);
 }
 
 // Test suite: C = det(A)
@@ -1417,7 +1418,7 @@ TEST_F(DetA, A) {
   Mat A(A_data);
   T det;
   A2D::MatDet(A, det);
-  expect_val_eq(det, detA_data);
+  EXPECT_VAL_EQ(det, detA_data);
 }
 
 TEST_F(DetA, AD) {
@@ -1433,16 +1434,16 @@ TEST_F(DetA, AD) {
   auto expr = A2D::MatDet(A_, det);
 
   // Check expression result
-  expect_val_eq(det.value, detA_data);
+  EXPECT_VAL_EQ(det.value, detA_data);
 
   // Check forward AD result
   expr.forward();
-  expect_val_eq(det.bvalue, sb_out);
+  EXPECT_VAL_EQ(det.bvalue, sb_out);
 
   // Check reverse AD results
   dA.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(dA, Ab_out);
+  EXPECT_MAT_EQ(3, 3, dA, Ab_out);
 }
 
 TEST_F(DetA, A2D) {
@@ -1468,25 +1469,25 @@ TEST_F(DetA, A2D) {
   auto expr = A2D::MatDet(A__, s__);
 
   // Check expression result
-  expect_val_eq(s__.value, detA_data);
+  EXPECT_VAL_EQ(s__.value, detA_data);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_val_eq(s__.pvalue[0], sp_out);
+  EXPECT_VAL_EQ(s__.pvalue, sp_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out);
 
   // Check hreverse
-  s__.hvalue[0] = sh;
+  s__.hvalue = sh;
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out, 1e-8);
 }
 
 // Test suite: C = inv(A)
@@ -1520,7 +1521,7 @@ class InvA : public ADExpressionTest {
 TEST_F(InvA, A) {
   Mat A(A_data), invA;
   A2D::MatInverse(A, invA);
-  expect_mat_eq<3, 3, Mat>(invA, invA_data, 1e-14);
+  EXPECT_MAT_EQ(3, 3, invA, invA_data, 1e-14);
 }
 
 TEST_F(InvA, AD) {
@@ -1539,16 +1540,16 @@ TEST_F(InvA, AD) {
 
   // Check expression result
   auto expr = A2D::MatInverse(A_, invA_);
-  expect_mat_eq<3, 3, Mat>(invA, invA_data, 1e-14);
+  EXPECT_MAT_EQ(3, 3, invA, invA_data, 1e-14);
 
   // Check forward
   expr.forward();
-  expect_mat_eq<3, 3, Mat>(invAb, invAb_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, invAb, invAb_out, 1e-14);
 
   // Check reverse
   Ab.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out, 1e-12);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out, 1e-12);
 }
 
 TEST_F(InvA, A2D) {
@@ -1574,30 +1575,30 @@ TEST_F(InvA, A2D) {
   auto expr = A2D::MatInverse(A__, C__);
 
   // Check exprssion
-  expect_mat_eq<3, 3, Mat>(C, invA_data, 1e-14);
+  EXPECT_MAT_EQ(3, 3, C, invA_data, 1e-14);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      A__.pvalue(0)(i, j) = Ap(i, j);
+      A__.Ap(i, j) = Ap(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, Mat>(C__.pvalue(0), Cp_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, C__.Ap, Cp_out, 1e-14);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Ab, Ab_out, 1e-13);
+  EXPECT_MAT_EQ(3, 3, Ab, Ab_out, 1e-13);
 
   // Check hreverse
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      C__.hvalue(0)(i, j) = Ch(i, j);
+      C__.Ah(i, j) = Ch(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(A__.hvalue(0), Ah_out,
-                           1e-5);  // TODO: double-check this tolerance
+  EXPECT_MAT_EQ(3, 3, A__.Ah, Ah_out,
+                1e-5);  // TODO: double-check this tolerance
 }
 
 // Test suite: trace = tr(S)
@@ -1634,7 +1635,7 @@ TEST_F(SymmTraceSuite, A) {
 
   // Compute
   A2D::SymmTrace(S, trace);
-  expect_val_eq(trace, tr_out);
+  EXPECT_VAL_EQ(trace, tr_out);
 }
 
 TEST_F(SymmTraceSuite, AD) {
@@ -1654,11 +1655,11 @@ TEST_F(SymmTraceSuite, AD) {
   auto expr = A2D::SymmTrace(S_, trace_);
 
   // Check expression result
-  expect_val_eq(trace_.value, tr_out);
+  EXPECT_VAL_EQ(trace_.value, tr_out);
 
   // Check forward
   expr.forward();
-  expect_val_eq(trace_.bvalue, trb_out);
+  EXPECT_VAL_EQ(trace_.bvalue, trb_out);
 
   // print_mat<3, 3, SMat>(Sb);
   // print_mat<3, 3, SMat>(Eb);
@@ -1666,7 +1667,7 @@ TEST_F(SymmTraceSuite, AD) {
   // Check reverse
   Sb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
+  EXPECT_MAT_EQ(3, 3, Sb, Sb_out);
 }
 
 TEST_F(SymmTraceSuite, A2D) {
@@ -1692,25 +1693,25 @@ TEST_F(SymmTraceSuite, A2D) {
   auto expr = A2D::SymmTrace(S__, trace__);
 
   // Check expression
-  expect_val_eq(trace__.value, tr_out);
+  EXPECT_VAL_EQ(trace__.value, tr_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = i; j < 3; j++) {
-      S__.pvalue(0)(i, j) = Sp(i, j);
+      S__.Ap(i, j) = Sp(i, j);
     }
   }
   expr.hforward();
-  expect_val_eq(trace__.pvalue[0], trp_out);
+  EXPECT_VAL_EQ(trace__.pvalue, trp_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
+  EXPECT_MAT_EQ(3, 3, Sb, Sb_out);
 
   // Check hreverse
-  trace__.hvalue[0] = trh;
+  trace__.hvalue = trh;
   expr.hreverse();
-  expect_mat_eq<3, 3, SMat>(S__.hvalue(0), Sh_out);
+  EXPECT_MAT_EQ(3, 3, S__.Ah, Sh_out);
 }
 
 // Test suite: trace = tr(SE)
@@ -1758,7 +1759,7 @@ TEST_F(SymmMultTrace, A) {
 
   // Compute
   A2D::SymmSymmMultTrace(S, E, trace);
-  expect_val_eq(trace, trSE);
+  EXPECT_VAL_EQ(trace, trSE);
 }
 
 TEST_F(SymmMultTrace, AD) {
@@ -1781,11 +1782,11 @@ TEST_F(SymmMultTrace, AD) {
   auto expr = A2D::SymmSymmMultTrace(S_, E_, trace_);
 
   // Check expression result
-  expect_val_eq(trace_.value, trSE);
+  EXPECT_VAL_EQ(trace_.value, trSE);
 
   // Check forward
   expr.forward();
-  expect_val_eq(trace_.bvalue, Cb_out);
+  EXPECT_VAL_EQ(trace_.bvalue, Cb_out);
 
   // print_mat<3, 3, SMat>(Sb);
   // print_mat<3, 3, SMat>(Eb);
@@ -1794,8 +1795,8 @@ TEST_F(SymmMultTrace, AD) {
   Sb.zero();
   Eb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Sb, Sb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 }
 
 TEST_F(SymmMultTrace, A2D) {
@@ -1826,28 +1827,28 @@ TEST_F(SymmMultTrace, A2D) {
   auto expr = A2D::SymmSymmMultTrace(S__, E__, trace__);
 
   // Check expression
-  expect_val_eq(trace__.value, trSE);
+  EXPECT_VAL_EQ(trace__.value, trSE);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = i; j < 3; j++) {
-      S__.pvalue(0)(i, j) = Sp(i, j);
-      E__.pvalue(0)(i, j) = Ep(i, j);
+      S__.Ap(i, j) = Sp(i, j);
+      E__.Ap(i, j) = Ep(i, j);
     }
   }
   expr.hforward();
-  expect_val_eq(trace__.pvalue[0], sp_out);
+  EXPECT_VAL_EQ(trace__.pvalue, sp_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Sb, Sb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 
   // Check hreverse
-  trace__.hvalue[0] = sh;
+  trace__.hvalue = sh;
   expr.hreverse();
-  expect_mat_eq<3, 3, SMat>(S__.hvalue(0), Sh_out, 1e-9);
-  expect_mat_eq<3, 3, SMat>(E__.hvalue(0), Eh_out, 1e-9);
+  EXPECT_MAT_EQ(3, 3, S__.Ah, Sh_out, 1e-9);
+  EXPECT_MAT_EQ(3, 3, E__.Ah, Eh_out, 1e-9);
 }
 
 // Test suite: symmetric isotropic constitutive, S = 2*mu*E + lambda * tr(E) * I
@@ -1893,7 +1894,7 @@ TEST_F(SymmIsoConstitutive, A) {
 
   // Compute
   A2D::SymmIsotropicConstitutive(mu, lam, E, S);
-  expect_mat_eq<3, 3, SMat>(S, S_out);
+  EXPECT_MAT_EQ(3, 3, S, S_out);
 }
 
 TEST_F(SymmIsoConstitutive, AD) {
@@ -1914,16 +1915,16 @@ TEST_F(SymmIsoConstitutive, AD) {
   auto expr = A2D::SymmIsotropicConstitutive(mu, lam, E_, S_);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(S, S_out);
+  EXPECT_MAT_EQ(3, 3, S, S_out);
 
   // Check forward AD
   expr.forward();
-  expect_mat_eq<3, 3, SMat>(Sb, Sb_out);
+  EXPECT_MAT_EQ(3, 3, Sb, Sb_out);
 
   // Check reverse AD
   Eb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out, 1e-14);
 }
 
 TEST_F(SymmIsoConstitutive, A2D) {
@@ -1947,29 +1948,29 @@ TEST_F(SymmIsoConstitutive, A2D) {
   auto expr = A2D::SymmIsotropicConstitutive(mu, lam, E__, S__);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(S, S_out);
+  EXPECT_MAT_EQ(3, 3, S, S_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      E__.pvalue(0)(i, j) = Ep(i, j);
+      E__.Ap(i, j) = Ep(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, SMat>(S__.pvalue(0), Sp_out);
+  EXPECT_MAT_EQ(3, 3, S__.Ap, Sp_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 
   // Check hreverse
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      S__.hvalue(0)(i, j) = Sh(i, j);
+      S__.Ah(i, j) = Sh(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(E__.hvalue(0), Eh_out);
+  EXPECT_MAT_EQ(3, 3, E__.Ah, Eh_out);
 }
 
 // Test suite: symmetric isotropic energy w = f(E)
@@ -2032,7 +2033,7 @@ TEST_F(SymmIsoEnergy, A) {
 
   // Compute
   A2D::SymmIsotropicEnergy(mu, lam, E, w);
-  expect_val_eq(w, w_out);
+  EXPECT_VAL_EQ(w, w_out);
 }
 
 TEST_F(SymmIsoEnergy, AD_E_only) {
@@ -2053,16 +2054,16 @@ TEST_F(SymmIsoEnergy, AD_E_only) {
   auto expr = A2D::SymmIsotropicEnergy(mu, lam, E_, w_);
 
   // Check expression
-  expect_val_eq(w_.value, w_out);
+  EXPECT_VAL_EQ(w_.value, w_out);
 
   // Check forward
   expr.forward();
-  expect_val_eq(w_.bvalue, wb_out);
+  EXPECT_VAL_EQ(w_.bvalue, wb_out);
 
   // Check reverse
   Eb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 }
 
 TEST_F(SymmIsoEnergy, AD_E_mu_lam) {
@@ -2087,18 +2088,18 @@ TEST_F(SymmIsoEnergy, AD_E_mu_lam) {
   auto expr = A2D::SymmIsotropicEnergy(mu_, lam_, E_, w_);
 
   // Check expression
-  expect_val_eq(w_.value, w_out);
+  EXPECT_VAL_EQ(w_.value, w_out);
 
   // Check forward
   expr.forward();
-  expect_val_eq(w_.bvalue, wb_out);
+  EXPECT_VAL_EQ(w_.bvalue, wb_out);
 
   // Check reverse
   Eb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
-  expect_val_eq(mu_.bvalue, mub_out, 1e-14);
-  expect_val_eq(lam_.bvalue, lamb_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
+  EXPECT_VAL_EQ(mu_.bvalue, mub_out, 1e-14);
+  EXPECT_VAL_EQ(lam_.bvalue, lamb_out, 1e-14);
 }
 
 TEST_F(SymmIsoEnergy, A2D_E_only) {
@@ -2123,25 +2124,25 @@ TEST_F(SymmIsoEnergy, A2D_E_only) {
   auto expr = A2D::SymmIsotropicEnergy(mu, lam, E__, w__);
 
   // Check expression
-  expect_val_eq(w__.value, w_out);
+  EXPECT_VAL_EQ(w__.value, w_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      E__.pvalue(0)(i, j) = Ep(i, j);
+      E__.Ap(i, j) = Ep(i, j);
     }
   }
   expr.hforward();
-  expect_val_eq(w__.pvalue[0], wp_out);
+  EXPECT_VAL_EQ(w__.pvalue, wp_out);
 
   // Check hreverse
-  w__.hvalue[0] = wh;
+  w__.hvalue = wh;
   expr.hreverse();
-  expect_mat_eq<3, 3, SMat>(E__.hvalue(0), Eh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, E__.Ah, Eh_out, 1e-8);
 }
 
 TEST_F(SymmIsoEnergy, A2D_E_mu_lam) {
@@ -2177,31 +2178,31 @@ TEST_F(SymmIsoEnergy, A2D_E_mu_lam) {
   auto expr = A2D::SymmIsotropicEnergy(mu__, lam__, E__, w__);
 
   // Check expression
-  expect_val_eq(w__.value, w_out);
+  EXPECT_VAL_EQ(w__.value, w_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
-  expect_val_eq(mu__.bvalue, mub_out);
-  expect_val_eq(lam__.bvalue, lamb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
+  EXPECT_VAL_EQ(mu__.bvalue, mub_out);
+  EXPECT_VAL_EQ(lam__.bvalue, lamb_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      E__.pvalue(0)(i, j) = Ep(i, j);
+      E__.Ap(i, j) = Ep(i, j);
     }
   }
-  mu__.pvalue[0] = mup_in;
-  lam__.pvalue[0] = lamp_in;
+  mu__.pvalue = mup_in;
+  lam__.pvalue = lamp_in;
   expr.hforward();
-  expect_val_eq(w__.pvalue[0], wp_out);
+  EXPECT_VAL_EQ(w__.pvalue, wp_out);
 
   // Check hreverse
-  w__.hvalue[0] = wh_in;
+  w__.hvalue = wh_in;
   expr.hreverse();
-  expect_mat_eq<3, 3, SMat>(E__.hvalue(0), Eh_out, 1e-7);
-  expect_val_eq(mu__.hvalue[0], muh_out, 1e-7);
-  expect_val_eq(lam__.hvalue[0], lamh_out, 1e-7);
+  EXPECT_MAT_EQ(3, 3, E__.Ah, Eh_out, 1e-7);
+  EXPECT_VAL_EQ(mu__.hvalue, muh_out, 1e-7);
+  EXPECT_VAL_EQ(lam__.hvalue, lamh_out, 1e-7);
 }
 
 class GreenStrain : public ADExpressionTest {
@@ -2246,7 +2247,7 @@ TEST_F(GreenStrain, A) {
 
   // Compute
   A2D::MatGreenStrain(Ux, E);
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 }
 
 TEST_F(GreenStrain, AD) {
@@ -2268,16 +2269,16 @@ TEST_F(GreenStrain, AD) {
   auto expr = A2D::MatGreenStrain(Ux_, E_);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 
   // Check forward
   expr.forward();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 
   // Check reverse
   Uxb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Uxb, Uxb_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, Uxb, Uxb_out, 1e-14);
 }
 
 TEST_F(GreenStrain, A2D) {
@@ -2305,29 +2306,29 @@ TEST_F(GreenStrain, A2D) {
   auto expr = A2D::MatGreenStrain(Ux__, E__);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      Ux__.pvalue(0)(i, j) = Uxp(i, j);
+      Ux__.Ap(i, j) = Uxp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, SMat>(E__.pvalue(0), Ep_out);
+  EXPECT_MAT_EQ(3, 3, E__.Ap, Ep_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Uxb, Uxb_out);
+  EXPECT_MAT_EQ(3, 3, Uxb, Uxb_out);
 
   // Check hreverse
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      E__.hvalue(0)(i, j) = Eh(i, j);
+      E__.Ah(i, j) = Eh(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(Ux__.hvalue(0), Uxh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, Ux__.Ah, Uxh_out, 1e-8);
 }
 
 class LinearGreenStrain : public ADExpressionTest {
@@ -2372,7 +2373,7 @@ TEST_F(LinearGreenStrain, A) {
 
   // Compute
   A2D::MatLinearGreenStrain(Ux, E);
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 }
 
 TEST_F(LinearGreenStrain, AD) {
@@ -2394,16 +2395,16 @@ TEST_F(LinearGreenStrain, AD) {
   auto expr = A2D::MatLinearGreenStrain(Ux_, E_);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 
   // Check forward
   expr.forward();
-  expect_mat_eq<3, 3, SMat>(Eb, Eb_out);
+  EXPECT_MAT_EQ(3, 3, Eb, Eb_out);
 
   // Check reverse
   Uxb.zero();
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Uxb, Uxb_out, 1e-14);
+  EXPECT_MAT_EQ(3, 3, Uxb, Uxb_out, 1e-14);
 }
 
 TEST_F(LinearGreenStrain, A2D) {
@@ -2431,27 +2432,27 @@ TEST_F(LinearGreenStrain, A2D) {
   auto expr = A2D::MatLinearGreenStrain(Ux__, E__);
 
   // Check expression result
-  expect_mat_eq<3, 3, SMat>(E, E_out);
+  EXPECT_MAT_EQ(3, 3, E, E_out);
 
   // Check hforward
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      Ux__.pvalue(0)(i, j) = Uxp(i, j);
+      Ux__.Ap(i, j) = Uxp(i, j);
     }
   }
   expr.hforward();
-  expect_mat_eq<3, 3, SMat>(E__.pvalue(0), Ep_out);
+  EXPECT_MAT_EQ(3, 3, E__.Ap, Ep_out);
 
   // Check reverse
   expr.reverse();
-  expect_mat_eq<3, 3, Mat>(Uxb, Uxb_out);
+  EXPECT_MAT_EQ(3, 3, Uxb, Uxb_out);
 
   // Check hreverse
   for (I i = 0; i < 3; i++) {
     for (I j = 0; j < 3; j++) {
-      E__.hvalue(0)(i, j) = Eh(i, j);
+      E__.Ah(i, j) = Eh(i, j);
     }
   }
   expr.hreverse();
-  expect_mat_eq<3, 3, Mat>(Ux__.hvalue(0), Uxh_out, 1e-8);
+  EXPECT_MAT_EQ(3, 3, Ux__.Ah, Uxh_out, 1e-8);
 }

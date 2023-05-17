@@ -555,9 +555,14 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_mat Element matrix output
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
-  void add_jacobian(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-                    ElemVec& elem_sol, ElemMat& elem_mat) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class ElemMat>
+  void add_jacobian(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+                    ElemMat& elem_mat) {
+    // void add_jacobian(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
+    //                   ElemVec& elem_sol, ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = elem_geo.get_num_elements();

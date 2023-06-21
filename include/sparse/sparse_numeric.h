@@ -397,6 +397,8 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
     if (A.cols[jp] != i) {
       std::cerr << "BSRMatFactor: Failure in factorization of block row " << i
                 << " - No diagonal" << std::endl;
+      throw std::runtime_error(
+          "BSRMatFactor failed");  // TODO: maybe don't do this
     }
     diag[i] = jp;
 
@@ -406,6 +408,8 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
     if (fail) {
       std::cerr << "BSRMatFactor: Failure in factorization of block row " << i
                 << " local row " << fail << std::endl;
+      throw std::runtime_error(
+          "BSRMatFactor failed");  // TODO: maybe don't do this
     } else {
       for (I n = 0; n < M; n++) {
         for (I m = 0; m < M; m++) {
@@ -557,6 +561,9 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
           std::cerr << "BSRMatExtractBlockDiagonal: Failure in factorization "
                        "of block row "
                     << i << " local row " << fail << std::endl;
+          throw std::runtime_error(
+              "BSRMatExtractBlockDiagonal failed");  // TODO: maybe don't do
+                                                     // this
         } else {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < M; k2++) {

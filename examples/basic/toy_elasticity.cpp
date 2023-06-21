@@ -8,8 +8,8 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const A2D::index_t dim = 3;
-  const A2D::index_t degree = 4;
-  const A2D::index_t filter_degree = 2;
+  const A2D::index_t degree = 1;
+  const A2D::index_t filter_degree = 1;
 
   using T = double;
   A2D::TopoLinearElasticity<T, dim> elasticity(70e3, 0.3, 5.0);
@@ -62,13 +62,13 @@ int main(int argc, char *argv[]) {
   bcinfo.add_boundary_condition(bc_label);
 
   // Set the traction components
-  T t[3] = {0.0, 0.0, 0.0};
+  T t[3] = {1.0, 0.0, 0.0};
 
   // Set the body force components
   T tb[3] = {0.0, 0.0, 0.0};
 
   // Set the torque components
-  T tt[3] = {1.0, 0.0, 0.0};
+  T tt[3] = {0.0, 0.0, 0.0};
   T x0[3] = {0.0, 0.5, 0.5};
 
   // Create the finite-element model
@@ -96,7 +96,6 @@ int main(int argc, char *argv[]) {
       TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   topo.reset_geometry();
-
   std::vector<T> x(topo.get_num_design_vars(), T(1.0));
 
   // Set the design variables
@@ -104,6 +103,15 @@ int main(int argc, char *argv[]) {
 
   // Solve the problem
   topo.solve();
+
+  // Sensitivity analysis
+  auto dvdx = std::make_shared<A2D::MultiArrayNew<T *>>(
+      "dfdx", topo.get_num_design_vars());
+  T vol = topo.eval_volume();
+  topo.add_volume_gradient(*dvdx);
+
+  printf("v:      %20.10f\n", vol);
+  printf("|dvdx|: %20.10f\n", A2D::BLAS::norm(*dvdx));
 
   // Write the solution to a vtk file
   topo.tovtk("toy_elasticity.vtk");

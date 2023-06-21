@@ -257,7 +257,7 @@ class PoissonSphere {
   using GeoBasis =
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
-  using DataElemVec = A2D::EmptyElementVector;
+  using DataElemVec = A2D::ElemenetVector_Empty;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
 
@@ -268,7 +268,7 @@ class PoissonSphere {
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
   using LOrderBasis =
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, low_degree>>;
-  using LOrderDataElemVec = A2D::EmptyElementVector;
+  using LOrderDataElemVec = A2D::ElemenetVector_Empty;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 

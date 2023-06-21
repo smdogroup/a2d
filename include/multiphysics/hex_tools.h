@@ -3,14 +3,16 @@
 
 #include <string>
 
+#include "feelementvector.h"
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 
 namespace A2D {
 
-template <class GeoBasis, typename I, typename T, class GeoElemVec>
+template <class GeoBasis, typename I, typename T, class GeoElemVec,
+          ElemVecType evtype>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
-                            GeoElemVec &elem_geo) {
+                            ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
   for (int e = 0; e < nhex; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -51,7 +53,12 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
       }
     }
 
-    elem_geo.set_element_values(e, geo_dof);
+    if constexpr (evtype == ElemVecType::Serial) {
+      elem_geo.set_element_values(e, geo_dof);
+    }
+  }
+  if constexpr (evtype == ElemVecType::Parallel) {
+    elem_geo.set_values();
   }
 }
 

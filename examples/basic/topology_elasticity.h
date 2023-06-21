@@ -9,6 +9,7 @@
 #include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
+#include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
@@ -27,7 +28,9 @@ class TopoElasticityAnalysis {
  public:
   // Alias templates
   template <class... Args>
-  using ElementVector = A2D::ElementVector_Serial<Args...>;
+  using ElementVector = A2D::ElementVector_Parallel<Args...>;
+  using ElementVectorEmpty =
+      A2D::ElemenetVector_Empty<A2D::ElemVecType::Parallel>;
 
   // Basic types
   using I = A2D::index_t;
@@ -283,6 +286,7 @@ class TopoElasticityAnalysis {
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
+    mat->write_mtx("low_order_Jacobian.mtx");  // TODO: delete this
 
     // Apply the boundary conditions
     const I *bc_dofs;
@@ -341,7 +345,7 @@ class TopoElasticityAnalysis {
     sol.zero();
 
     // No data associated with the traction class
-    A2D::EmptyElementVector elem_traction_data;
+    ElementVectorEmpty elem_traction_data;
 
     // Assemble the force contribution
     A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
@@ -400,10 +404,19 @@ class TopoElasticityAnalysis {
     // Loop over the elements and interpolate the values to the refined data
     // mesh
     const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+
+    if constexpr (decltype(elem_filter_data)::evtype ==
+                  A2D::ElemVecType::Parallel) {
+      elem_filter_data.get_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
       // Interpolate the data from the Bernstein filter
       typename FilterElemVec::FEDof filter_dof(i, elem_filter_data);
-      elem_filter_data.get_element_values(i, filter_dof);
+      if constexpr (decltype(elem_filter_data)::evtype ==
+                    A2D::ElemVecType::Serial) {
+        elem_filter_data.get_element_values(i, filter_dof);
+      }
 
       // Interpolate from the filter degrees of freedom to the high-order
       // quadrature points
@@ -417,23 +430,36 @@ class TopoElasticityAnalysis {
         data_dof[j] = qdata.get(j)[0];
       }
 
-      elem_data.set_element_values(i, data_dof);
+      if constexpr (decltype(elem_data)::evtype == A2D::ElemVecType::Serial) {
+        elem_data.set_element_values(i, data_dof);
+      }
+    }
+    if constexpr (decltype(elem_data)::evtype == A2D::ElemVecType::Parallel) {
+      elem_data.set_values();
     }
   }
 
   /**
    * @brief Add the values back to the design variable vector
    */
-  template <class VecType, class DataDerivElemVec>
-  void filter_add(DataDerivElemVec &elem_dfdx, VecType &dfdx) {
+  template <A2D::ElemVecType evtype, class VecType, class DataDerivElemVec>
+  void filter_add(A2D::ElementVectorBase<evtype, DataDerivElemVec> &elem_dfdx,
+                  VecType &dfdx) {
     ElementVector<T, FilterBasis, VecType> filter_dfdx(filtermesh, dfdx);
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh
     const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+
+    if constexpr (evtype == A2D::ElemVecType::Parallel) {
+      elem_dfdx.get_values();
+      filter_dfdx.get_zero_values();
+    }
     for (A2D::index_t i = 0; i < num_elements; i++) {
       typename DataDerivElemVec::FEDof data_dof(i, elem_dfdx);
-      elem_dfdx.get_element_values(i, data_dof);
+      if constexpr (evtype == A2D::ElemVecType::Serial) {
+        elem_dfdx.get_element_values(i, data_dof);
+      }
 
       // Set the data values into the data space for the high-order GLL mesh
       A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
@@ -445,7 +471,12 @@ class TopoElasticityAnalysis {
       typename ElementVector<T, FilterBasis, VecType>::FEDof filter_dof(
           i, filter_dfdx);
       FilterBasis::template add(qdata, filter_dof);
-      filter_dfdx.add_element_values(i, filter_dof);
+      if constexpr (evtype == A2D::ElemVecType::Serial) {
+        filter_dfdx.add_element_values(i, filter_dof);
+      }
+    }
+    if constexpr (evtype == A2D::ElemVecType::Parallel) {
+      filter_dfdx.add_values();
     }
   }
 

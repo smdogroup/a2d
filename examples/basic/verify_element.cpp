@@ -2,6 +2,7 @@
 #include "a2dtypes.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
+#include "multiphysics/feelementmat.h"
 #include "multiphysics/feelementtypes.h"
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/fequadrature.h"

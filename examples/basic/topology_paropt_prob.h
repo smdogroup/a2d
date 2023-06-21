@@ -13,7 +13,7 @@ class TopOptProb : public ParOptProblem {
              ParOptScalar ref_comp, ParOptScalar domain_vol,
              ParOptScalar volume_frac, Analysis &topo, bool verbose,
              int vtk_freq)
-      : ParOptProblem(comm, nvars, ncon, nineq, 0, 0),
+      : ParOptProblem(comm),
         prefix(prefix),
         comm(comm),
         nvars(nvars),
@@ -25,7 +25,16 @@ class TopOptProb : public ParOptProblem {
         topo(topo),
         opt_iter(0),
         verbose(verbose),
-        vtk_freq(vtk_freq) {}
+        vtk_freq(vtk_freq) {
+    setProblemSizes(nvars, ncon, 0);
+    setNumInequalities(nineq, 0);
+  }
+
+  //! Create the quasi-def matrix associated with this problem
+  ParOptQuasiDefMat *createQuasiDefMat() {
+    int nwblock = 0;
+    return new ParOptQuasiDefBlockMat(this, nwblock);
+  }
 
   void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
     ParOptScalar *x, *lb, *ub;

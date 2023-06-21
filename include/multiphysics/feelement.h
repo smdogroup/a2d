@@ -437,7 +437,7 @@ class FiniteElement {
       }
     }
     if constexpr (evtype == ElemVecType::Parallel) {
-      elem_deriv.addvalues();
+      elem_deriv.add_values();
     }
   }
 

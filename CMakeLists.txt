@@ -26,7 +26,7 @@ set(KOKKOS_KERNELS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos-kernels)
 set(Kokkos_ROOT ${KOKKOS_INSTALL_DIR}) # for a2d cmake to find kokkos cmake
 
 # Set options
-option(A2D_BUILD_EXAMPLES_BASIC "Compile the a2d toy executables" ON)
+option(A2D_BUILD_EXAMPLES "Compile the a2d examples" ON)
 option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
 option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
 option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
@@ -78,8 +78,6 @@ if(A2D_BUILD_UNIT_TESTS)
 endif()
 
 # Build a2d examples
-if(A2D_BUILD_EXAMPLES_BASIC)
-  add_subdirectory(${A2D_ROOT_DIR}/examples/topology_optimization)
-  add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
-  add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
+if(A2D_BUILD_EXAMPLES)
+  add_subdirectory(${A2D_ROOT_DIR}/examples)
 endif()

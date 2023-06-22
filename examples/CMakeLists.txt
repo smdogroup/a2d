@@ -1,0 +1,6 @@
+add_subdirectory(hdiv)
+add_subdirectory(paropt)
+add_subdirectory(spectral)
+add_subdirectory(sphere)
+add_subdirectory(test_verify)
+add_subdirectory(topology_optimization)

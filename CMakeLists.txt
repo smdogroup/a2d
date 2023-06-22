@@ -79,6 +79,7 @@ endif()
 
 # Build a2d examples
 if(A2D_BUILD_EXAMPLES_BASIC)
+  add_subdirectory(${A2D_ROOT_DIR}/examples/topology_optimization)
   add_subdirectory(${A2D_ROOT_DIR}/examples/basic)
   add_subdirectory(${A2D_ROOT_DIR}/examples/kokkos)
 endif()

@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   A2D::TestPDEImplementation<std::complex<T>>(elasticity);
 
   std::cout << "Heat conduction\n";
-  A2D::HeatConduction<std::complex<T>, dim> heat_conduction;
+  A2D::HeatConduction<std::complex<T>, dim> heat_conduction(1.2, 3.4, 5.6);
   A2D::TestPDEImplementation<std::complex<T>>(heat_conduction);
 
   std::cout << "Mixed heat conduction\n";

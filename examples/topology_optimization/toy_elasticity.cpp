@@ -11,7 +11,8 @@ int main(int argc, char *argv[]) {
   const A2D::index_t degree = 1;
   const A2D::index_t filter_degree = 1;
 
-  using T = double;
+  // using T = double;
+  using T = A2D_complex_t<double>;
   A2D::TopoLinearElasticity<T, dim> elasticity(70e3, 0.3, 5.0);
 
   // Number of elements in each dimension
@@ -26,7 +27,7 @@ int main(int argc, char *argv[]) {
   int hex[8 * nhex];
   double Xloc[3 * nverts];
   A2D::MesherBrick3D mesher(nx, ny, nz, lx, ly, lz);
-  mesher.set_X_conn<int, T>(Xloc, hex);
+  mesher.set_X_conn<int, double>(Xloc, hex);
   A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
                                npyrmd, pyrmd);
 

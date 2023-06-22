@@ -312,6 +312,8 @@ class HelmholtzSphere {
   // Alias templates
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
+  using ElementVectorEmpty =
+      A2D::ElemenetVector_Empty<A2D::ElemVecType::Serial>;
 
   // Basic types
   using I = A2D::index_t;
@@ -342,7 +344,7 @@ class HelmholtzSphere {
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
                         LagrangeL2HexBasis<T, 1, degree - 1>>;
-  using DataElemVec = A2D::ElemenetVector_Empty;
+  using DataElemVec = ElementVectorEmpty;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
 
@@ -353,7 +355,7 @@ class HelmholtzSphere {
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
   using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
                               LagrangeL2HexBasis<T, 1, low_degree - 1>>;
-  using LOrderDataElemVec = A2D::ElemenetVector_Empty;
+  using LOrderDataElemVec = ElementVectorEmpty;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 

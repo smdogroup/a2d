@@ -3,6 +3,7 @@
 
 #include "array.h"
 #include "multiphysics/femesh.h"
+#include "utils/complex_math.h"
 
 namespace A2D {
 

@@ -1,25 +1,35 @@
-template <typename T, A2D::index_t D>
+#ifndef A2D_NONLINEAR_ELASTICITY
+#define A2D_NONLINEAR_ELASTICITY
+
+#include "a2dmatops2d.h"
+#include "a2dmatops3d.h"
+#include "multiphysics/femapping.h"
+#include "multiphysics/fespace.h"
+
+namespace A2D {
+
+template <typename T, index_t D>
 class NonlinearElasticity {
  public:
   NonlinearElasticity(T mu, T lambda) : mu(mu), lambda(lambda) {}
 
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 2;
+  static const index_t data_dim = 2;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::H1Space<T, data_dim, dim>> DataSpace;
+  typedef FESpace<T, data_dim, H1Space<T, data_dim, dim>> DataSpace;
 
   // Space for the element geometry
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+  typedef FESpace<T, dim, H1Space<T, dim, dim>> FiniteElementGeometry;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementSpace;
+  typedef FESpace<T, dim, H1Space<T, dim, dim>> FiniteElementSpace;
 
   // The type of matrix used to store data at each quadrature point
-  typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+  typedef SymmMat<T, FiniteElementSpace::ncomp> QMatType;
 
   /**
    * @brief Evaluate the weak form coefficients for nonlinear elasticity
@@ -40,19 +50,19 @@ class NonlinearElasticity {
     // Extract the trial solution gradient and the coefficient terms. Here
     // Uxb is the output computed as the derivative of the strain energy
     // w.r.t. Ux
-    A2D::Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
-    A2D::Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
+    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
+    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
 
     // The Green-Langrange strain terms
-    A2D::SymmMat<T, dim> E0, Eb;
-    A2D::ADMat<A2D::SymmMat<T, dim>> E(E0, Eb);
+    SymmMat<T, dim> E0, Eb;
+    ADMat<SymmMat<T, dim>> E(E0, Eb);
 
     // The strain energy output
-    A2D::ADScalar<T> output;
+    ADScalar<T> output;
 
-    auto strain = A2D::MatGreenStrain(Ux, E);
-    auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
+    auto strain = MatGreenStrain(Ux, E);
+    auto energy = SymmIsotropicEnergy(mu, lambda, E, output);
 
     // Seed the output value with the wdetJ
     output.bvalue = wdetJ;
@@ -110,13 +120,13 @@ class NonlinearElasticity {
 
    private:
     T mu, lambda;
-    A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymmMat<T, dim>> E;
-    A2D::A2DScalar<T> output;
+    A2DMat<Mat<T, dim, dim>> Ux;
+    A2DMat<SymmMat<T, dim>> E;
+    A2DScalar<T> output;
 
     // Declare types of the operators
-    decltype(A2D::MatGreenStrain(Ux, E)) strain;
-    decltype(A2D::SymmIsotropicEnergy(mu, lambda, E, output)) energy;
+    decltype(MatGreenStrain(Ux, E)) strain;
+    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
   };
 
   /**
@@ -165,13 +175,16 @@ class NonlinearElasticity {
     }
 
    private:
-    A2D::A2DScalar<T> mu, lambda;
-    A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymmMat<T, dim>> E;
-    A2D::A2DScalar<T> output;
+    A2DScalar<T> mu, lambda;
+    A2DMat<Mat<T, dim, dim>> Ux;
+    A2DMat<SymmMat<T, dim>> E;
+    A2DScalar<T> output;
 
     // Declare types of the operators
-    decltype(A2D::MatGreenStrain(Ux, E)) strain;
-    decltype(A2D::SymmIsotropicEnergy(mu, lambda, E, output)) energy;
+    decltype(MatGreenStrain(Ux, E)) strain;
+    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
   };
 };
+}  // namespace A2D
+
+#endif  // A2D_NONLINEAR_ELASTICITY

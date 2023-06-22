@@ -4,6 +4,7 @@
 
 #include "array.h"
 #include "multiphysics/femesh.h"
+#include "utils/complex_math.h"
 
 namespace A2D {
 
@@ -49,17 +50,6 @@ namespace A2D {
   Add values into the source vector from any local storage. This may be an
   empty function if the values are stored directly.
 */
-
-// Fix for std::complex numbers
-template <class T>
-constexpr std::complex<T> operator*(const std::complex<T>& lhs, const int& rhs) {
-  return std::complex<T>(lhs.real() * rhs, lhs.imag() * rhs);
-}
-
-template <class T>
-constexpr std::complex<T> operator*(const int& lhs, const std::complex<T>& rhs) {
-  return std::complex<T>(rhs.real() * lhs, rhs.imag() * lhs);
-}
 
 enum class ElemVecType { Serial, Parallel };
 

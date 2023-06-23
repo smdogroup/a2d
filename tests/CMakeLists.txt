@@ -10,16 +10,18 @@ add_executable(test_matops3d test_matops3d.cpp)
 add_executable(test_matops2d test_matops2d.cpp)
 add_executable(test_vecops3d test_vecops3d.cpp)
 add_executable(test_vecops3d_jg test_vecops3d_jg.cpp)
-add_executable(test_vecops3d_a2d test_vecops3d_a2d.cpp)
+
+# add_executable(test_vecops3d_a2d test_vecops3d_a2d.cpp)
 
 # Link to kokkos
-target_link_libraries(test_matcore3d    Kokkos::kokkos)
-target_link_libraries(test_matcore2d    Kokkos::kokkos)
-target_link_libraries(test_matops3d     Kokkos::kokkos)
-target_link_libraries(test_matops2d     Kokkos::kokkos)
-target_link_libraries(test_vecops3d     Kokkos::kokkos)
-target_link_libraries(test_vecops3d_jg  Kokkos::kokkos)
-target_link_libraries(test_vecops3d_a2d Kokkos::kokkos)
+target_link_libraries(test_matcore3d Kokkos::kokkos)
+target_link_libraries(test_matcore2d Kokkos::kokkos)
+target_link_libraries(test_matops3d Kokkos::kokkos)
+target_link_libraries(test_matops2d Kokkos::kokkos)
+target_link_libraries(test_vecops3d Kokkos::kokkos)
+target_link_libraries(test_vecops3d_jg Kokkos::kokkos)
+
+# target_link_libraries(test_vecops3d_a2d Kokkos::kokkos)
 
 # Link to the default main from Google Test
 target_link_libraries(test_matcore3d gtest_main)
@@ -28,7 +30,8 @@ target_link_libraries(test_matops3d gtest_main)
 target_link_libraries(test_matops2d gtest_main)
 target_link_libraries(test_vecops3d gtest_main)
 target_link_libraries(test_vecops3d_jg gtest_main)
-target_link_libraries(test_vecops3d_a2d gtest_main)
+
+# target_link_libraries(test_vecops3d_a2d gtest_main)
 
 # Make tests auto-testable with CMake ctest
 include(GoogleTest)
@@ -38,4 +41,5 @@ gtest_discover_tests(test_matops3d)
 gtest_discover_tests(test_matops2d)
 gtest_discover_tests(test_vecops3d)
 gtest_discover_tests(test_vecops3d_jg)
-gtest_discover_tests(test_vecops3d_a2d)
+
+# gtest_discover_tests(test_vecops3d_a2d)

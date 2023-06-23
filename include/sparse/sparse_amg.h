@@ -221,6 +221,9 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       } else {
         std::cerr << "BSRMatMakeTentativeProlongation: Zeroed column"
                   << std::endl;
+        throw std::runtime_error(
+            "BSRMatMakeTentativeProlongation: Zeroed column");  // TODO: maybe
+                                                                // don't do this
       }
 
       // Set the scale value

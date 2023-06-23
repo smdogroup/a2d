@@ -44,7 +44,7 @@ class StaticCondensationMat {
   using EMatType = A2D::Mat<T, bsize, csize>;
   using FMatType = A2D::Mat<T, csize, bsize>;
 
-  StaticCondensationMat(A2D::ElementMesh<Basis>& mesh)
+  StaticCondensationMat(A2D::ElementMesh<Basis> &mesh)
       : mesh(mesh),
         bnull("bnull", mesh.get_num_dof() / block_size),
         x("x", mesh.get_num_cumulative_dof(basis_offset - 1)),
@@ -75,7 +75,7 @@ class StaticCondensationMat {
     static const index_t size = bsize * bsize;
 
     FEMat(index_t elem,
-          StaticCondensationMat<T, block_size, basis_offset, Basis>& elem_mat)
+          StaticCondensationMat<T, block_size, basis_offset, Basis> &elem_mat)
         : B(elem_mat.get_bmat(elem)),
           C(elem_mat.get_cmat(elem)),
           E(elem_mat.get_emat(elem)),
@@ -91,7 +91,7 @@ class StaticCondensationMat {
      *
      * @return A reference to the degree of freedom
      */
-    T& operator()(const index_t i, const index_t j) {
+    T &operator()(const index_t i, const index_t j) {
       if (i < bsize) {
         if (j < bsize) {
           return B(i, j);
@@ -106,7 +106,7 @@ class StaticCondensationMat {
         }
       }
     }
-    const T& operator()(const index_t i, const index_t j) const {
+    const T &operator()(const index_t i, const index_t j) const {
       if (i < bsize) {
         if (j < bsize) {
           return B(i, j);
@@ -124,10 +124,10 @@ class StaticCondensationMat {
 
    private:
     // Variables for all the basis functions
-    BMatType& B;
-    CMatType& C;
-    EMatType& E;
-    FMatType& F;
+    BMatType &B;
+    CMatType &C;
+    EMatType &E;
+    FMatType &F;
   };
 
   /**
@@ -144,7 +144,7 @@ class StaticCondensationMat {
    *
    * If FEDof contains a pointer to data, this function may do nothing
    */
-  void add_element_values(index_t elem, FEMat& elem_mat) {
+  void add_element_values(index_t elem, FEMat &elem_mat) {
     I dof[Basis::ndof];
     int sign[Basis::ndof];
     if constexpr (Basis::nbasis > 0) {
@@ -161,10 +161,10 @@ class StaticCondensationMat {
 
   // Apply boundary conditions
   template <class BcBasisType>
-  void zero_bcs(const A2D::DirichletBCs<BcBasisType>& bcs) {
+  void zero_bcs(const A2D::DirichletBCs<BcBasisType> &bcs) {
     std::vector<I> is_bc(mesh.get_num_dof(), 0);
 
-    const I* bc_dofs = NULL;
+    const I *bc_dofs = NULL;
     I nbcs = bcs.get_bcs(&bc_dofs);
     for (I i = 0; i < nbcs; i++) {
       is_bc[bc_dofs[i]] = 1;
@@ -265,8 +265,8 @@ class StaticCondensationMat {
    * @param in The input vector
    * @param out The output vector
    */
-  void apply_factor(A2D::MultiArrayNew<T* [block_size]>& in,
-                    A2D::MultiArrayNew<T* [block_size]>& out) {
+  void apply_factor(A2D::MultiArrayNew<T *[block_size]> &in,
+                    A2D::MultiArrayNew<T *[block_size]> &out) {
     // Compute f = b - E * C^{-1} * d
     A2D::BLAS::zero(f);
     for (I elem = 0; elem < mesh.get_num_elements(); elem++) {
@@ -341,10 +341,10 @@ class StaticCondensationMat {
     }
   }
 
-  BMatType& get_bmat(I index) { return B[index]; }
-  EMatType& get_emat(I index) { return E[index]; }
-  FMatType& get_fmat(I index) { return F[index]; }
-  CMatType& get_cmat(I index) { return C[index]; }
+  BMatType &get_bmat(I index) { return B[index]; }
+  EMatType &get_emat(I index) { return E[index]; }
+  FMatType &get_fmat(I index) { return F[index]; }
+  CMatType &get_cmat(I index) { return C[index]; }
 
  private:
   template <index_t basis>
@@ -360,9 +360,9 @@ class StaticCondensationMat {
     }
   }
 
-  A2D::ElementMesh<Basis>& mesh;
-  A2D::MultiArrayNew<T* [block_size][null_size]> bnull;
-  A2D::MultiArrayNew<T* [block_size]> x, f;
+  A2D::ElementMesh<Basis> &mesh;
+  A2D::MultiArrayNew<T *[block_size][null_size]> bnull;
+  A2D::MultiArrayNew<T *[block_size]> x, f;
 
   std::vector<BMatType> B;
   std::vector<CMatType> C;

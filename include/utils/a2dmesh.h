@@ -220,6 +220,46 @@ class MesherBrick3D {
   }
 
   /**
+   * @brief Populate X and conn
+   *
+   * @tparam T number type
+   * @tparam I index type
+   * @param Xloc nodal locations, size: 3 * nverts
+   * @param hex connectivity for hexahedral elements, size: 8 * nhex
+   */
+  template <typename I, typename T>
+  void set_X_conn(T* Xloc, I* hex) {
+    // Helper lambda
+    auto node_num = [this](int i, int j, int k) {
+      return i + j * (this->nx + 1) + k * (this->nx + 1) * (this->ny + 1);
+    };
+    // Set X
+    for (I k = 0; k < nz + 1; k++) {
+      for (I j = 0; j < ny + 1; j++) {
+        for (I i = 0; i < nx + 1; i++) {
+          Xloc[3 * node_num(i, j, k)] = (lx * i) / nx;
+          Xloc[3 * node_num(i, j, k) + 1] = (ly * j) / ny;
+          Xloc[3 * node_num(i, j, k) + 2] = (lz * k) / nz;
+        }
+      }
+    }
+
+    // Set connectivity
+    using ET = A2D::ElementTypes;
+    for (I k = 0, e = 0; k < nz; k++) {
+      for (I j = 0; j < ny; j++) {
+        for (I i = 0; i < nx; i++, e++) {
+          for (I ii = 0; ii < ET::HEX_VERTS; ii++) {
+            hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
+                                       j + ET::HEX_VERTS_CART[ii][1],
+                                       k + ET::HEX_VERTS_CART[ii][2]);
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * @brief populate boundary conditions: fix all dofs along face x = 0
    *
    * @param bcs boundary condition multiarray

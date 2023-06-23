@@ -6,6 +6,7 @@
 #include <random>
 #include <type_traits>
 
+#include "multiphysics/feelementmat.h"
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fesolution.h"
@@ -43,15 +44,22 @@ class DOFCoordinates {
   using QGeoSpace =
       QptSpace<DOFQuadrature, typename PDE::FiniteElementGeometry>;
 
-  template <class GeoElemVec, class ElemVec>
-  void get_dof_coordinates(GeoElemVec& elem_geo, ElemVec& elem_x,
-                           ElemVec& elem_y, ElemVec& elem_z) {
+  template <ElemVecType evtype, class GeoElemVec, class ElemVec>
+  void get_dof_coordinates(ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                           ElementVectorBase<evtype, ElemVec>& elem_x,
+                           ElementVectorBase<evtype, ElemVec>& elem_y,
+                           ElementVectorBase<evtype, ElemVec>& elem_z) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_geo.get_values();
+    }
     for (A2D::index_t i = 0; i < num_elements; i++) {
       // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_geo.get_element_values(i, geo_dof);
+      }
       QGeoSpace geo;
       GeoBasis::template interp(geo_dof, geo);
 
@@ -71,9 +79,16 @@ class DOFCoordinates {
         z_dof[j] = X(2);
       }
 
-      elem_x.set_element_values(i, x_dof);
-      elem_y.set_element_values(i, y_dof);
-      elem_z.set_element_values(i, z_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_x.set_element_values(i, x_dof);
+        elem_y.set_element_values(i, y_dof);
+        elem_z.set_element_values(i, z_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_x.set_values();
+      elem_y.set_values();
+      elem_z.set_values();
     }
   }
 };
@@ -106,31 +121,40 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @return The integral over the element
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  T integrate(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-              ElemVec& elem_sol) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec>
+  T integrate(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+              ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+              ElementVectorBase<evtype, ElemVec>& elem_sol) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
     T value = 0.0;
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
@@ -169,32 +193,41 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @return The maximum value over the domain
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  T max(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-        ElemVec& elem_sol) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec>
+  T max(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+        ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+        ElementVectorBase<evtype, ElemVec>& elem_sol) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
-    // Need to make this more robust?
+    // TODO: Need to make this more robust?
     T max_value = -1e20;
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
@@ -238,31 +271,41 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_deriv Output derivative of the functional w.r.t. data
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec,
-            class DataDerivElemVec>
-  void add_data_derivative(PDE& pde, DataElemVec& elem_data,
-                           GeoElemVec& elem_geo, ElemVec& elem_sol,
-                           DataDerivElemVec& elem_deriv) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class DataDerivElemVec>
+  void add_data_derivative(
+      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+      ElementVectorBase<evtype, ElemVec>& elem_sol,
+      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_deriv.get_zero_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       // Allocate space for the derivative
@@ -290,7 +333,13 @@ class FiniteElement {
       // Add the derivative of the data back to the data space
       typename DataDerivElemVec::FEDof deriv_dof(i, elem_deriv);
       DataBasis::template add(deriv, deriv_dof);
-      elem_deriv.add_element_values(i, deriv_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_deriv.add_element_values(i, deriv_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_deriv.add_values();
     }
   }
 
@@ -310,39 +359,47 @@ class FiniteElement {
    * @param elem_adj Element adjoint vector
    * @param elem_deriv Data derivative
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec,
-            class ElemAdjVec, class DataDerivElemVec>
-  void add_adjoint_residual_data_derivative(PDE& pde, DataElemVec& elem_data,
-                                            GeoElemVec& elem_geo,
-                                            ElemVec& elem_sol,
-                                            ElemAdjVec& elem_adj,
-                                            DataDerivElemVec& elem_deriv) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class ElemAdjVec, class DataDerivElemVec>
+  void add_adjoint_residual_data_derivative(
+      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+      ElementVectorBase<evtype, ElemVec>& elem_sol,
+      ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
+      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_adj.get_values();
+      elem_deriv.get_zero_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get data, geo, sol and adj for this element and interpolate them
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
-      QSpace sol;
-      Basis::template interp(sol_dof, sol);
-
-      // Set up the values for the adjoint vector input
       typename ElemAdjVec::FEDof adj_dof(i, elem_adj);
-      elem_adj.get_element_values(i, adj_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+        elem_adj.get_element_values(i, adj_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
+      QSpace sol;
       QSpace adj;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
+      Basis::template interp(sol_dof, sol);
       Basis::template interp(adj_dof, adj);
 
       // Allocate space for the derivative
@@ -375,7 +432,12 @@ class FiniteElement {
       // Add the derivative of the data back to the data space
       typename DataDerivElemVec::FEDof deriv_dof(i, elem_deriv);
       DataBasis::template add(deriv, deriv_dof);
-      elem_deriv.add_element_values(i, deriv_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_deriv.add_element_values(i, deriv_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_deriv.add_values();
     }
   }
 
@@ -392,30 +454,40 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec,
-            class ElemResVec>
-  void add_residual(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-                    ElemVec& elem_sol, ElemResVec& elem_res) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class ElemResVec>
+  void add_residual(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+                    ElementVectorBase<evtype, ElemResVec>& elem_res) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_res.get_zero_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       // Allocate space for the residual values at each quadrature point
@@ -449,7 +521,13 @@ class FiniteElement {
       // mesh
       typename ElemVec::FEDof res_dof(i, elem_res);
       Basis::template add(res, res_dof);
-      elem_res.add_element_values(i, res_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_res.add_element_values(i, res_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_res.add_values();
     }
   }
 
@@ -466,36 +544,48 @@ class FiniteElement {
    * @param elem_xvec Element solution vector for storing x-components
    * @param elem_yvec Output element solution vector storing y-components
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_jacobian_vector_product(PDE& pde, DataElemVec& elem_data,
-                                   GeoElemVec& elem_geo, ElemVec& elem_sol,
-                                   ElemVec& elem_xvec, ElemVec& elem_yvec) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec>
+  void add_jacobian_vector_product(
+      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+      ElementVectorBase<evtype, ElemVec>& elem_sol,
+      ElementVectorBase<evtype, ElemVec>& elem_xvec,
+      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_xvec.get_values();
+      elem_yvec.get_zero_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry, solution and input vector for this element and
+      // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
-      QSpace sol;
-      Basis::template interp(sol_dof, sol);
-
-      // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
-      elem_xvec.get_element_values(i, x_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+        elem_xvec.get_element_values(i, x_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
+      QSpace sol;
       QSpace xsol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
+      Basis::template interp(sol_dof, sol);
       Basis::template interp(x_dof, xsol);
 
       // Allocate space for the output vector
@@ -534,7 +624,12 @@ class FiniteElement {
       // problem
       typename ElemVec::FEDof y_dof(i, elem_yvec);
       Basis::template add(ysol, y_dof);
-      elem_yvec.add_element_values(i, y_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_yvec.add_element_values(i, y_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_yvec.add_values();
     }
   }
 
@@ -555,31 +650,41 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_mat Element matrix output
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
-  void add_jacobian(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-                    ElemVec& elem_sol, ElemMat& elem_mat) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class ElemMat>
+  void add_jacobian(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+                    ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
     const A2D::index_t num_elements = elem_geo.get_num_elements();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       // Initialize the element matrix
@@ -669,9 +774,11 @@ class MatrixFree {
 
   MatrixFree() {}
 
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void initialize(PDE& pde, DataElemVec& elem_data, GeoElemVec& elem_geo,
-                  ElemVec& elem_sol) {
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec>
+  void initialize(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+                  ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                  ElementVectorBase<evtype, ElemVec>& elem_sol) {
     Timer timer("MatrixFree::initialize()");
     // Re-size the vector as needed
     const A2D::index_t num_elements = elem_geo.get_num_elements();
@@ -685,23 +792,30 @@ class MatrixFree {
     // Get the number of quadrature points
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
 
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
     for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data for the element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
-      elem_data.get_element_values(i, data_dof);
-      QDataSpace data;
-      DataBasis::template interp(data_dof, data);
-
-      // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      elem_geo.get_element_values(i, geo_dof);
-      QGeoSpace geo;
-      GeoBasis::template interp(geo_dof, geo);
-
-      // Get the degrees of freedom for the element and interpolate the solution
       typename ElemVec::FEDof sol_dof(i, elem_sol);
-      elem_sol.get_element_values(i, sol_dof);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
       QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
       for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
@@ -753,18 +867,27 @@ class MatrixFree {
     }
   }
 
-  template <class ElemVec>
-  void add_jacobian_vector_product(ElemVec& elem_xvec, ElemVec& elem_yvec) {
+  template <ElemVecType evtype, class ElemVec>
+  void add_jacobian_vector_product(
+      ElementVectorBase<evtype, ElemVec>& elem_xvec,
+      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
     const A2D::index_t num_elements = qmat.size();
     const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
     const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
+
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_xvec.get_values();
+      elem_yvec.get_zero_values();
+    }
 
     for (A2D::index_t i = 0; i < num_elements; i++) {
       // Kokkos::parallel_for(
       //     num_elements, A2D_LAMBDA(index_t i) {
       // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
-      elem_xvec.get_element_values(i, x_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_xvec.get_element_values(i, x_dof);
+      }
       QSpace xsol;
       Basis::template interp(x_dof, xsol);
 
@@ -791,7 +914,12 @@ class MatrixFree {
       // Add to the output-vector for the element
       typename ElemVec::FEDof y_dof(i, elem_yvec);
       Basis::template add(ysol, y_dof);
-      elem_yvec.add_element_values(i, y_dof);
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_yvec.add_element_values(i, y_dof);
+      }
+    }
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_yvec.add_values();
     }
   }
 

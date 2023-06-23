@@ -440,69 +440,69 @@ const double GaussQuadWts32[] = {
 
 template <index_t order>
 constexpr const double* get_gauss_quadrature_wts() {
-  if (order == 1) {
+  if constexpr (order == 1) {
     return GaussQuadWts1;
-  } else if (order == 2) {
+  } else if constexpr (order == 2) {
     return GaussQuadWts2;
-  } else if (order == 3) {
+  } else if constexpr (order == 3) {
     return GaussQuadWts3;
-  } else if (order == 4) {
+  } else if constexpr (order == 4) {
     return GaussQuadWts4;
-  } else if (order == 5) {
+  } else if constexpr (order == 5) {
     return GaussQuadWts5;
-  } else if (order == 6) {
+  } else if constexpr (order == 6) {
     return GaussQuadWts6;
-  } else if (order == 7) {
+  } else if constexpr (order == 7) {
     return GaussQuadWts7;
-  } else if (order == 8) {
+  } else if constexpr (order == 8) {
     return GaussQuadWts8;
-  } else if (order == 9) {
+  } else if constexpr (order == 9) {
     return GaussQuadWts9;
-  } else if (order == 10) {
+  } else if constexpr (order == 10) {
     return GaussQuadWts10;
-  } else if (order == 11) {
+  } else if constexpr (order == 11) {
     return GaussQuadWts11;
-  } else if (order == 12) {
+  } else if constexpr (order == 12) {
     return GaussQuadWts12;
-  } else if (order == 13) {
+  } else if constexpr (order == 13) {
     return GaussQuadWts13;
-  } else if (order == 14) {
+  } else if constexpr (order == 14) {
     return GaussQuadWts14;
-  } else if (order == 15) {
+  } else if constexpr (order == 15) {
     return GaussQuadWts15;
-  } else if (order == 16) {
+  } else if constexpr (order == 16) {
     return GaussQuadWts16;
-  } else if (order == 17) {
+  } else if constexpr (order == 17) {
     return GaussQuadWts17;
-  } else if (order == 18) {
+  } else if constexpr (order == 18) {
     return GaussQuadWts18;
-  } else if (order == 19) {
+  } else if constexpr (order == 19) {
     return GaussQuadWts19;
-  } else if (order == 20) {
+  } else if constexpr (order == 20) {
     return GaussQuadWts20;
-  } else if (order == 21) {
+  } else if constexpr (order == 21) {
     return GaussQuadWts21;
-  } else if (order == 22) {
+  } else if constexpr (order == 22) {
     return GaussQuadWts22;
-  } else if (order == 23) {
+  } else if constexpr (order == 23) {
     return GaussQuadWts23;
-  } else if (order == 24) {
+  } else if constexpr (order == 24) {
     return GaussQuadWts24;
-  } else if (order == 25) {
+  } else if constexpr (order == 25) {
     return GaussQuadWts25;
-  } else if (order == 26) {
+  } else if constexpr (order == 26) {
     return GaussQuadWts26;
-  } else if (order == 27) {
+  } else if constexpr (order == 27) {
     return GaussQuadWts27;
-  } else if (order == 28) {
+  } else if constexpr (order == 28) {
     return GaussQuadWts28;
-  } else if (order == 29) {
+  } else if constexpr (order == 29) {
     return GaussQuadWts29;
-  } else if (order == 30) {
+  } else if constexpr (order == 30) {
     return GaussQuadWts30;
-  } else if (order == 31) {
+  } else if constexpr (order == 31) {
     return GaussQuadWts31;
-  } else if (order == 32) {
+  } else if constexpr (order == 32) {
     return GaussQuadWts32;
   }
   return NULL;
@@ -510,69 +510,69 @@ constexpr const double* get_gauss_quadrature_wts() {
 
 template <index_t order>
 constexpr const double* get_gauss_quadrature_pts() {
-  if (order == 1) {
+  if constexpr (order == 1) {
     return GaussQuadPts1;
-  } else if (order == 2) {
+  } else if constexpr (order == 2) {
     return GaussQuadPts2;
-  } else if (order == 3) {
+  } else if constexpr (order == 3) {
     return GaussQuadPts3;
-  } else if (order == 4) {
+  } else if constexpr (order == 4) {
     return GaussQuadPts4;
-  } else if (order == 5) {
+  } else if constexpr (order == 5) {
     return GaussQuadPts5;
-  } else if (order == 6) {
+  } else if constexpr (order == 6) {
     return GaussQuadPts6;
-  } else if (order == 7) {
+  } else if constexpr (order == 7) {
     return GaussQuadPts7;
-  } else if (order == 8) {
+  } else if constexpr (order == 8) {
     return GaussQuadPts8;
-  } else if (order == 9) {
+  } else if constexpr (order == 9) {
     return GaussQuadPts9;
-  } else if (order == 10) {
+  } else if constexpr (order == 10) {
     return GaussQuadPts10;
-  } else if (order == 11) {
+  } else if constexpr (order == 11) {
     return GaussQuadPts11;
-  } else if (order == 12) {
+  } else if constexpr (order == 12) {
     return GaussQuadPts12;
-  } else if (order == 13) {
+  } else if constexpr (order == 13) {
     return GaussQuadPts13;
-  } else if (order == 14) {
+  } else if constexpr (order == 14) {
     return GaussQuadPts14;
-  } else if (order == 15) {
+  } else if constexpr (order == 15) {
     return GaussQuadPts15;
-  } else if (order == 16) {
+  } else if constexpr (order == 16) {
     return GaussQuadPts16;
-  } else if (order == 17) {
+  } else if constexpr (order == 17) {
     return GaussQuadPts17;
-  } else if (order == 18) {
+  } else if constexpr (order == 18) {
     return GaussQuadPts18;
-  } else if (order == 19) {
+  } else if constexpr (order == 19) {
     return GaussQuadPts19;
-  } else if (order == 20) {
+  } else if constexpr (order == 20) {
     return GaussQuadPts20;
-  } else if (order == 21) {
+  } else if constexpr (order == 21) {
     return GaussQuadPts21;
-  } else if (order == 22) {
+  } else if constexpr (order == 22) {
     return GaussQuadPts22;
-  } else if (order == 23) {
+  } else if constexpr (order == 23) {
     return GaussQuadPts23;
-  } else if (order == 24) {
+  } else if constexpr (order == 24) {
     return GaussQuadPts24;
-  } else if (order == 25) {
+  } else if constexpr (order == 25) {
     return GaussQuadPts25;
-  } else if (order == 26) {
+  } else if constexpr (order == 26) {
     return GaussQuadPts26;
-  } else if (order == 27) {
+  } else if constexpr (order == 27) {
     return GaussQuadPts27;
-  } else if (order == 28) {
+  } else if constexpr (order == 28) {
     return GaussQuadPts28;
-  } else if (order == 29) {
+  } else if constexpr (order == 29) {
     return GaussQuadPts29;
-  } else if (order == 30) {
+  } else if constexpr (order == 30) {
     return GaussQuadPts30;
-  } else if (order == 31) {
+  } else if constexpr (order == 31) {
     return GaussQuadPts31;
-  } else if (order == 32) {
+  } else if constexpr (order == 32) {
     return GaussQuadPts32;
   }
   return NULL;
@@ -1015,69 +1015,69 @@ const double GaussLobattoQuadWts32[] = {
 
 template <index_t order>
 constexpr const double* get_gauss_lobatto_wts() {
-  if (order == 1) {
+  if constexpr (order == 1) {
     return GaussQuadWts1;
-  } else if (order == 2) {
+  } else if constexpr (order == 2) {
     return GaussLobattoQuadWts2;
-  } else if (order == 3) {
+  } else if constexpr (order == 3) {
     return GaussLobattoQuadWts3;
-  } else if (order == 4) {
+  } else if constexpr (order == 4) {
     return GaussLobattoQuadWts4;
-  } else if (order == 5) {
+  } else if constexpr (order == 5) {
     return GaussLobattoQuadWts5;
-  } else if (order == 6) {
+  } else if constexpr (order == 6) {
     return GaussLobattoQuadWts6;
-  } else if (order == 7) {
+  } else if constexpr (order == 7) {
     return GaussLobattoQuadWts7;
-  } else if (order == 8) {
+  } else if constexpr (order == 8) {
     return GaussLobattoQuadWts8;
-  } else if (order == 9) {
+  } else if constexpr (order == 9) {
     return GaussLobattoQuadWts9;
-  } else if (order == 10) {
+  } else if constexpr (order == 10) {
     return GaussLobattoQuadWts10;
-  } else if (order == 11) {
+  } else if constexpr (order == 11) {
     return GaussLobattoQuadWts11;
-  } else if (order == 12) {
+  } else if constexpr (order == 12) {
     return GaussLobattoQuadWts12;
-  } else if (order == 13) {
+  } else if constexpr (order == 13) {
     return GaussLobattoQuadWts13;
-  } else if (order == 14) {
+  } else if constexpr (order == 14) {
     return GaussLobattoQuadWts14;
-  } else if (order == 15) {
+  } else if constexpr (order == 15) {
     return GaussLobattoQuadWts15;
-  } else if (order == 16) {
+  } else if constexpr (order == 16) {
     return GaussLobattoQuadWts16;
-  } else if (order == 17) {
+  } else if constexpr (order == 17) {
     return GaussLobattoQuadWts17;
-  } else if (order == 18) {
+  } else if constexpr (order == 18) {
     return GaussLobattoQuadWts18;
-  } else if (order == 19) {
+  } else if constexpr (order == 19) {
     return GaussLobattoQuadWts19;
-  } else if (order == 20) {
+  } else if constexpr (order == 20) {
     return GaussLobattoQuadWts20;
-  } else if (order == 21) {
+  } else if constexpr (order == 21) {
     return GaussLobattoQuadWts21;
-  } else if (order == 22) {
+  } else if constexpr (order == 22) {
     return GaussLobattoQuadWts22;
-  } else if (order == 23) {
+  } else if constexpr (order == 23) {
     return GaussLobattoQuadWts23;
-  } else if (order == 24) {
+  } else if constexpr (order == 24) {
     return GaussLobattoQuadWts24;
-  } else if (order == 25) {
+  } else if constexpr (order == 25) {
     return GaussLobattoQuadWts25;
-  } else if (order == 26) {
+  } else if constexpr (order == 26) {
     return GaussLobattoQuadWts26;
-  } else if (order == 27) {
+  } else if constexpr (order == 27) {
     return GaussLobattoQuadWts27;
-  } else if (order == 28) {
+  } else if constexpr (order == 28) {
     return GaussLobattoQuadWts28;
-  } else if (order == 29) {
+  } else if constexpr (order == 29) {
     return GaussLobattoQuadWts29;
-  } else if (order == 30) {
+  } else if constexpr (order == 30) {
     return GaussLobattoQuadWts30;
-  } else if (order == 31) {
+  } else if constexpr (order == 31) {
     return GaussLobattoQuadWts31;
-  } else if (order == 32) {
+  } else if constexpr (order == 32) {
     return GaussLobattoQuadWts32;
   }
   return NULL;
@@ -1085,69 +1085,69 @@ constexpr const double* get_gauss_lobatto_wts() {
 
 template <index_t order>
 constexpr const double* get_gauss_lobatto_pts() {
-  if (order == 1) {
+  if constexpr (order == 1) {
     return GaussQuadPts1;
-  } else if (order == 2) {
+  } else if constexpr (order == 2) {
     return GaussLobattoQuadPts2;
-  } else if (order == 3) {
+  } else if constexpr (order == 3) {
     return GaussLobattoQuadPts3;
-  } else if (order == 4) {
+  } else if constexpr (order == 4) {
     return GaussLobattoQuadPts4;
-  } else if (order == 5) {
+  } else if constexpr (order == 5) {
     return GaussLobattoQuadPts5;
-  } else if (order == 6) {
+  } else if constexpr (order == 6) {
     return GaussLobattoQuadPts6;
-  } else if (order == 7) {
+  } else if constexpr (order == 7) {
     return GaussLobattoQuadPts7;
-  } else if (order == 8) {
+  } else if constexpr (order == 8) {
     return GaussLobattoQuadPts8;
-  } else if (order == 9) {
+  } else if constexpr (order == 9) {
     return GaussLobattoQuadPts9;
-  } else if (order == 10) {
+  } else if constexpr (order == 10) {
     return GaussLobattoQuadPts10;
-  } else if (order == 11) {
+  } else if constexpr (order == 11) {
     return GaussLobattoQuadPts11;
-  } else if (order == 12) {
+  } else if constexpr (order == 12) {
     return GaussLobattoQuadPts12;
-  } else if (order == 13) {
+  } else if constexpr (order == 13) {
     return GaussLobattoQuadPts13;
-  } else if (order == 14) {
+  } else if constexpr (order == 14) {
     return GaussLobattoQuadPts14;
-  } else if (order == 15) {
+  } else if constexpr (order == 15) {
     return GaussLobattoQuadPts15;
-  } else if (order == 16) {
+  } else if constexpr (order == 16) {
     return GaussLobattoQuadPts16;
-  } else if (order == 17) {
+  } else if constexpr (order == 17) {
     return GaussLobattoQuadPts17;
-  } else if (order == 18) {
+  } else if constexpr (order == 18) {
     return GaussLobattoQuadPts18;
-  } else if (order == 19) {
+  } else if constexpr (order == 19) {
     return GaussLobattoQuadPts19;
-  } else if (order == 20) {
+  } else if constexpr (order == 20) {
     return GaussLobattoQuadPts20;
-  } else if (order == 21) {
+  } else if constexpr (order == 21) {
     return GaussLobattoQuadPts21;
-  } else if (order == 22) {
+  } else if constexpr (order == 22) {
     return GaussLobattoQuadPts22;
-  } else if (order == 23) {
+  } else if constexpr (order == 23) {
     return GaussLobattoQuadPts23;
-  } else if (order == 24) {
+  } else if constexpr (order == 24) {
     return GaussLobattoQuadPts24;
-  } else if (order == 25) {
+  } else if constexpr (order == 25) {
     return GaussLobattoQuadPts25;
-  } else if (order == 26) {
+  } else if constexpr (order == 26) {
     return GaussLobattoQuadPts26;
-  } else if (order == 27) {
+  } else if constexpr (order == 27) {
     return GaussLobattoQuadPts27;
-  } else if (order == 28) {
+  } else if constexpr (order == 28) {
     return GaussLobattoQuadPts28;
-  } else if (order == 29) {
+  } else if constexpr (order == 29) {
     return GaussLobattoQuadPts29;
-  } else if (order == 30) {
+  } else if constexpr (order == 30) {
     return GaussLobattoQuadPts30;
-  } else if (order == 31) {
+  } else if constexpr (order == 31) {
     return GaussLobattoQuadPts31;
-  } else if (order == 32) {
+  } else if constexpr (order == 32) {
     return GaussLobattoQuadPts32;
   }
   return NULL;

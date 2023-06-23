@@ -45,19 +45,12 @@ documentation](https://github.com/kokkos/kokkos-kernels/wiki/Building).
 Build system [CMake](https://cmake.org/cmake/help/latest/guide/tutorial/index.html) is used.
 A2D requires CMAKE_BUILD_TYPE to be set explicitly to either Debug or Release.
 It is recommended to use out-of-source builds and separate different build types.
-For example, to build all examples and python binding with **debug** flags, do:
+For example, to build examples with **debug**/**optimization** flags, do:
 
 ```
 mkdir build-debug
 cd build-debug
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
-make -j <nproc>
-````
-To build all examples and python binding with **optimization** flags, do:
-```
-mkdir build-release
-cd build-release
-cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_EXAMPLES_AMGX=ON -DA2D_BUILD_EXTENSION=ON
+cmake .. -DCMAKE_BUILD_TYPE=[Debug,Release]
 make -j <nproc>
 ````
 

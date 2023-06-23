@@ -249,7 +249,7 @@ class ElementVector {
                             const FEDof& dof);  // update global solution vector
                                                 // from this element
     void init_values();  // initialize local storage from global solution vector
-    void init_zero_values();  // allocate local storage and set values to 0
+    void get_zero_values();  // allocate local storage and set values to 0
     void add_values();  // add values to source from local storage
 };
 ```

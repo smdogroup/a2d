@@ -30,14 +30,14 @@ class A2DExpression {
   A2D_INLINE_FUNCTION void hreverse() { cast().hreverse(); }
 };
 
-template <class ScalarType>
+template <class T>
 class ADScalar {
  public:
-  A2D_INLINE_FUNCTION ADScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0)
+  A2D_INLINE_FUNCTION ADScalar(T value = 0.0, T bvalue = 0.0)
       : value(value), bvalue(bvalue) {}
 
-  ScalarType value;
-  ScalarType bvalue;
+  T value;
+  T bvalue;
 };
 
 template <class MatType>
@@ -70,18 +70,17 @@ class ADVec {
   VecType& Vb;  // Reverse mode derivative value
 };
 
-template <class ScalarType>
+template <class T>
 class A2DScalar {
  public:
-  A2D_INLINE_FUNCTION A2DScalar(ScalarType value = 0.0, ScalarType bvalue = 0.0,
-                                ScalarType pvalue = 0.0,
-                                ScalarType hvalue = 0.0)
+  A2D_INLINE_FUNCTION A2DScalar(T value = 0.0, T bvalue = 0.0, T pvalue = 0.0,
+                                T hvalue = 0.0)
       : value(value), bvalue(bvalue), pvalue(pvalue), hvalue(hvalue) {}
 
-  ScalarType value;
-  ScalarType bvalue;
-  ScalarType pvalue;
-  ScalarType hvalue;
+  T value;
+  T bvalue;
+  T pvalue;
+  T hvalue;
 };
 
 template <class VecType>

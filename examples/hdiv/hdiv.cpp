@@ -1,18 +1,202 @@
 #include <iostream>
 #include <memory>
-#include <string>
 
+#include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
+#include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hex_basis.h"
-#include "multiphysics/lagrange_quad_basis.h"
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
+#include "multiphysics/static_condensation.h"
 #include "sparse/sparse_amg.h"
-#include "utils/a2dprofiler.h"
+
+using namespace A2D;
+
+/**
+ * @brief Mixed Helmholtz problem
+ *
+ * @tparam T Scalar type for the calculation
+ * @tparam D Dimension of the problem
+ */
+template <typename T, A2D::index_t D>
+class MixedHelmholtz {
+ public:
+  MixedHelmholtz(T r) : r(r) {}
+
+  T r;  // The Helmholtz radius for the filter
+
+  // Spatial dimension
+  static const A2D::index_t dim = D;
+
+  // No data associated with this element
+  static const A2D::index_t data_dim = 0;
+
+  // Space for the finite-element data
+  typedef A2D::FESpace<T, data_dim> DataSpace;
+
+  // Finite element space
+  typedef A2D::FESpace<T, dim, A2D::HdivSpace<T, dim>, A2D::L2Space<T, 1, dim>>
+      FiniteElementSpace;
+
+  // Space for the element geometry - parametrized by H1 in 2D
+  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+
+  // The type of matrix used to store data at each quadrature point
+  typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+
+  /**
+   * @brief Evaluate the weak form of the coefficients
+   *
+   * v * u + <tau, sigma> - r * v * div(sigma) - r * div(tau) * u - v * f
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param dobj The data at the quadrature point
+   * @param geo The geometry evaluated at the current point
+   * @param s The trial solution
+   * @param coef Derivative of the weak form w.r.t. coefficients
+   */
+  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) {
+    // Field objects for solution functions
+    const A2D::HdivSpace<T, dim>& sigma = s.template get<0>();
+    const A2D::L2Space<T, 1, dim>& u = s.template get<1>();
+
+    // Solution function values
+    const A2D::Vec<T, dim>& sigma_val = sigma.get_value();
+    const T& sigma_div = sigma.get_div();
+    const T& u_val = u.get_value();
+
+    // Test function values
+    A2D::HdivSpace<T, dim>& tau = coef.template get<0>();
+    A2D::L2Space<T, 1, dim>& v = coef.template get<1>();
+
+    // Test function values
+    A2D::Vec<T, dim>& tau_val = tau.get_value();
+    T& tau_div = tau.get_div();
+    T& v_val = v.get_value();
+
+    // Set the terms from the variational statement
+    for (A2D::index_t k = 0; k < dim; k++) {
+      tau_val(k) = wdetJ * sigma_val(k);
+    }
+
+    const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
+    T r0 = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
+    T f = 1.0 - r0;
+
+    // Use f = 1.0 for now...
+    v_val = -wdetJ * (u_val + r * sigma_div - f);
+    tau_div = -r * wdetJ * u_val;
+  }
+
+  /**
+   * @brief Construct a JacVecProduct functor
+   *
+   * This functor computes a Jacobian-vector product of the
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param s The solution at the quadrature point
+   */
+  class JacVecProduct {
+   public:
+    A2D_INLINE_FUNCTION JacVecProduct(const MixedHelmholtz<T, D>& pde, T wdetJ,
+                                      const DataSpace& data,
+                                      const FiniteElementGeometry& geo,
+                                      const FiniteElementSpace& s)
+        : wdetJ(wdetJ), r(pde.r) {}
+
+    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+                                        FiniteElementSpace& Jp) {
+      // Field objects for solution functions
+      const A2D::HdivSpace<T, dim>& sigma = p.template get<0>();
+      const A2D::L2Space<T, 1, dim>& u = p.template get<1>();
+
+      // Solution function values
+      const A2D::Vec<T, dim>& sigma_val = sigma.get_value();
+      const T& sigma_div = sigma.get_div();
+      const T& u_val = u.get_value();
+
+      // Test function values
+      A2D::HdivSpace<T, dim>& tau = Jp.template get<0>();
+      A2D::L2Space<T, 1, dim>& v = Jp.template get<1>();
+
+      // Test function values
+      A2D::Vec<T, dim>& tau_val = tau.get_value();
+      T& tau_div = tau.get_div();
+      T& v_val = v.get_value();
+
+      // Set the terms from the variational statement
+      for (A2D::index_t k = 0; k < dim; k++) {
+        tau_val(k) = wdetJ * sigma_val(k);
+      }
+
+      v_val = -wdetJ * (u_val + r * sigma_div);
+      tau_div = -r * wdetJ * u_val;
+    }
+
+   private:
+    T wdetJ, r;
+  };
+};
+
+// - (2 *x^2 - 2 * x - e^(1-x) - 4 * e^x + e^(1 + x) + 4)/(2 * x)
+template <typename T, A2D::index_t D>
+class HelmholtzForSphereError {
+ public:
+  // Spatial dimension
+  static const A2D::index_t dim = D;
+  static const A2D::index_t data_dim = 0;
+
+  using DataSpace = typename MixedHelmholtz<T, D>::DataSpace;
+  using FiniteElementSpace = typename MixedHelmholtz<T, D>::FiniteElementSpace;
+  using FiniteElementGeometry =
+      typename MixedHelmholtz<T, D>::FiniteElementGeometry;
+  using SolutionMapping = typename MixedHelmholtz<T, D>::SolutionMapping;
+
+  HelmholtzForSphereError() {}
+
+  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& s) {
+    T u = (s.template get<1>()).get_value();
+
+    // Compute the right-hand-side
+    const A2D::Vec<T, dim>& xpt = (geo.template get<0>()).get_value();
+    T x = std::sqrt(xpt(0) * xpt(0) + xpt(1) * xpt(1) + xpt(2) * xpt(2));
+    if (std::real(x) == 0) {
+      x = 1e-15;
+    }
+    // T inv = 0.5 / r;
+    // T u0 = -inv * (2.0 * r * r - 2.0 * r - std::exp(1.0 - r) -
+    //                4.0 * std::exp(r) + std::exp(r + 1.0) + 4.0);
+
+    // y(x) = (e^(-32 x) (-33 e^(32 x) (512 x^2 - 512 x + 1) - 31 e^(32 (x + 2))
+    // (512 x^2 - 512 x + 1) + 33 e^(64 x) + 511 e^(64 x + 32) + 31 e^64 - 511
+    // e^32))/(512 (33 + 31 e^64) x)
+
+    T u0 = (std::exp(-32.0 * x) *
+            (-33.0 * std::exp(32 * x) * (512.0 * x * x - 512.0 * x + 1.0) -
+             31.0 * std::exp(32 * (x + 2)) * (512.0 * x * x - 512.0 * x + 1.0) +
+             33.0 * std::exp(64 * x) + 511 * std::exp(64 * x + 32) +
+             31.0 * std::exp(64.0) - 511 * std::exp(32.0))) /
+           (512.0 * (33.0 + 31.0 * std::exp(64.0) * x));
+
+    T err = (u - u0);
+
+    return wdetJ * err * err;
+  }
+
+  double R;
+};
 
 template <A2D::index_t nx, class GeoBasis, typename T, class GeoElemVec>
 void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
@@ -122,118 +306,14 @@ void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
   }
 }
 
-template <typename T, A2D::index_t D>
-class PoissonForSphere {
- public:
-  // Spatial dimension
-  static const A2D::index_t dim = D;
-  static const A2D::index_t data_dim = 0;
-
-  using DataSpace = A2D::FESpace<T, data_dim>;
-  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>>;
-  using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
-  using QMatType = A2D::SymmMat<T, FiniteElementSpace::ncomp>;
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
-
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
-    const A2D::H1Space<T, 1, dim>& u = s.template get<0>();
-    const A2D::Vec<T, dim>& u_grad = u.get_grad();
-
-    A2D::H1Space<T, 1, dim>& v = coef.template get<0>();
-    A2D::Vec<T, dim>& v_grad = v.get_grad();
-
-    // Compute the right-hand-side
-    T& v_value = v.get_value();
-    const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    v_value = -wdetJ * r * r * r * r;
-
-    // Set the terms from the variational statement
-    for (A2D::index_t k = 0; k < dim; k++) {
-      v_grad(k) = wdetJ * u_grad(k);
-    }
-  }
-
-  /**
-   * @brief Construct the JacVecProduct functor
-   *
-   * This functor computes a Jacobian-vector product of the weak form
-   *
-   * @param pde The PDE object for this class
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param geo The geometry at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  class JacVecProduct {
-   public:
-    A2D_INLINE_FUNCTION JacVecProduct(const PoissonForSphere<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
-        : wdetJ(wdetJ) {}
-
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
-      const A2D::H1Space<T, 1, dim>& u = p.template get<0>();
-      const A2D::Vec<T, dim>& u_grad = u.get_grad();
-
-      A2D::H1Space<T, 1, dim>& v = Jp.template get<0>();
-      A2D::Vec<T, dim>& v_grad = v.get_grad();
-
-      // Set the terms from the variational statement
-      for (A2D::index_t k = 0; k < dim; k++) {
-        v_grad(k) = wdetJ * u_grad(k);
-      }
-    }
-
-   private:
-    T wdetJ;
-  };
-};
-
-template <typename T, A2D::index_t D>
-class PoissonForSphereError {
- public:
-  // Spatial dimension
-  static const A2D::index_t dim = D;
-  static const A2D::index_t data_dim = 0;
-
-  using DataSpace = typename PoissonForSphere<T, D>::DataSpace;
-  using FiniteElementSpace =
-      typename PoissonForSphere<T, D>::FiniteElementSpace;
-  using FiniteElementGeometry =
-      typename PoissonForSphere<T, D>::FiniteElementGeometry;
-  using SolutionMapping = typename PoissonForSphere<T, D>::SolutionMapping;
-
-  PoissonForSphereError(T R = 1.0) : R(R) {}
-
-  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
-    T u = (s.template get<0>()).get_value();
-
-    // Compute the right-hand-side
-    const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    T u0 = (r * r * r * r * r * r - R * R * R * R * R * R) / 42.0;
-
-    T err = (u - u0);
-
-    return wdetJ * err * err;
-  }
-
-  double R;
-};
-
 template <typename T, A2D::index_t degree>
-class PoissonSphere {
+class HelmholtzSphere {
  public:
   // Alias templates
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
+  using ElementVectorEmpty =
+      A2D::ElemenetVector_Empty<A2D::ElemVecType::Serial>;
 
   // Basic types
   using I = A2D::index_t;
@@ -245,8 +325,14 @@ class PoissonSphere {
   static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
 
+  // Offset for static condenseation
+  static constexpr I static_condensation_basis_offset = 1;
+
+  // Null-space size
+  static constexpr I null_size = 1;
+
   // Problem PDE
-  using PDE = PoissonForSphere<T, spatial_dim>;
+  using PDE = MixedHelmholtz<T, spatial_dim>;
 
   // The type of solution vector to use
   using BasisVecType = A2D::SolutionVector<T>;
@@ -256,8 +342,9 @@ class PoissonSphere {
   using DataBasis = A2D::FEBasis<T>;
   using GeoBasis =
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
-  using DataElemVec = A2D::EmptyElementVector;
+  using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
+                        LagrangeL2HexBasis<T, 1, degree - 1>>;
+  using DataElemVec = ElementVectorEmpty;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
 
@@ -266,9 +353,9 @@ class PoissonSphere {
   using LOrderDataBasis = A2D::FEBasis<T>;
   using LOrderGeoBasis =
       A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
-  using LOrderBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, low_degree>>;
-  using LOrderDataElemVec = A2D::EmptyElementVector;
+  using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
+                              LagrangeL2HexBasis<T, 1, low_degree - 1>>;
+  using LOrderDataElemVec = ElementVectorEmpty;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
@@ -280,20 +367,19 @@ class PoissonSphere {
   using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
                                       LOrderGeoBasis, LOrderBasis>;
 
-  // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
-
   // Matrix-free operator
   using MatFree =
       A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
-  // Algebraic multigrid solver
-  static constexpr I null_size = 1;
-  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
+  // Static condensation matrix information
+  using SDMatType =
+      StaticCondensationMat<T, block_size, static_condensation_basis_offset,
+                            LOrderBasis>;
 
-  PoissonSphere(A2D::MeshConnectivity3D& conn, A2D::DirichletBCInfo& bcinfo,
-                int amg_nlevels, int cg_it, double cg_rtol, double cg_atol,
-                bool verbose = false)
+  HelmholtzSphere(T r, A2D::MeshConnectivity3D& conn,
+                  A2D::DirichletBCInfo& bcinfo, int amg_nlevels, int cg_it,
+                  double cg_rtol, double cg_atol,
+                  bool verbose = false)
       :  // Meshes for the solution, geometry and data
         mesh(conn),
         geomesh(conn),
@@ -317,36 +403,16 @@ class PoissonSphere {
         lorder_elem_sol(lorder_mesh, sol),
         lorder_elem_geo(lorder_geomesh, geo),
 
-        B("B", sol.get_num_dof() / block_size),
+        // Store the static condensation matrix
+        elem_mat(lorder_mesh),
+
+        pde(r),
 
         amg_nlevels(amg_nlevels),
         cg_it(cg_it),
         cg_rtol(cg_rtol),
         cg_atol(cg_atol),
-        verbose(verbose) {
-    // Create the matrix for the low-order mesh
-    I nrows;
-    std::vector<I> rowp, cols;
-    lorder_mesh.template create_block_csr<block_size>(nrows, rowp, cols);
-
-    // Create the shared pointer
-    mat = std::make_shared<BSRMatType>(nrows, nrows, cols.size(), rowp, cols);
-
-    // Initialize the near null-space to an appropriate vector
-    for (I i = 0; i < B.extent(0); i++) {
-      B(i, 0, 0) = 1.0;
-    }
-
-    // Zero out the boundary conditions
-    const I* bc_dofs;
-    I nbcs = bcs.get_bcs(&bc_dofs);
-    for (I i = 0; i < nbcs; i++) {
-      I dof = bc_dofs[i];
-      for (I j = 0; j < null_size; j++) {
-        B(dof / block_size, dof % block_size, j) = 0.0;
-      }
-    }
-  }
+        verbose(verbose) {}
 
   A2D::index_t get_num_dof() { return sol.get_num_dof(); }
 
@@ -358,18 +424,15 @@ class PoissonSphere {
    *
    */
   void solve() {
-    // Create a view of the low-order element matrix
-    A2D::ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh,
-                                                                *mat);
-
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
 
-    // Apply the boundary conditions
-    const I* bc_dofs;
-    I nbcs = bcs.get_bcs(&bc_dofs);
-    mat->zero_rows(nbcs, bc_dofs);
+    // Apply Boundary conditions to the matrix
+    elem_mat.zero_bcs(bcs);
+
+    // Factor the matrix
+    elem_mat.factor();
 
     // Initialize the matrix-free data
     matfree.initialize(pde, elem_data, elem_geo, elem_sol);
@@ -379,6 +442,10 @@ class PoissonSphere {
     A2D::SolutionVector<T> yvec(mesh.get_num_dof());
     ElemVec elem_xvec(mesh, xvec);
     ElemVec elem_yvec(mesh, yvec);
+
+    // Apply the boundary conditions
+    const I* bc_dofs;
+    I nbcs = bcs.get_bcs(&bc_dofs);
 
     auto mat_vec = [&](A2D::MultiArrayNew<T* [block_size]>& in,
                        A2D::MultiArrayNew<T* [block_size]>& out) -> void {
@@ -403,15 +470,6 @@ class PoissonSphere {
             in(dof / block_size, dof % block_size);
       }
     };
-
-    // Allocate the solver - we should add some of these as solver options
-    double omega = 4.0 / 3.0;
-    double epsilon = 0.0;
-    bool print_info = false;
-    if (verbose) {
-      print_info = true;
-    }
-    BSRMatAmgType amg(amg_nlevels, omega, epsilon, mat, B, print_info);
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
@@ -439,31 +497,35 @@ class PoissonSphere {
 
     // Solve the problem
     I monitor = 0;
-    if (verbose) {
-      monitor = 5;
-    }
-    bool succ =
-        amg.cg(mat_vec, rhs_vec, sol_vec, monitor, cg_it, cg_rtol, cg_atol);
+    const I gmres_size = 50;
+    I nrestart = 10;
+    bool succ = A2D::fgmres<T, block_size, gmres_size>(
+        mat_vec,
+        [&](A2D::MultiArrayNew<T* [block_size]>& in,
+            A2D::MultiArrayNew<T* [block_size]>& out) -> void {
+          elem_mat.apply_factor(in, out);
+        },
+        rhs_vec, sol_vec, monitor, nrestart, cg_rtol, cg_atol);
     if (!succ) {
       char msg[256];
       std::snprintf(msg, sizeof(msg),
-                    "%s:%d: CG failed to converge after %d iterations given "
+                    "%s:%d: GMRES failed to converge after %d iterations given "
                     "rtol=%.1e, atol=%.1e",
                     __FILE__, __LINE__, cg_it, cg_rtol, cg_atol);
-      throw std::runtime_error(msg);
+      std::cout << msg << std::endl;
+      // throw std::runtime_error(msg);
     }
 
     // Record the solution
     for (I i = 0; i < sol.get_num_dof(); i++) {
-      sol[i] = -sol_vec(i / block_size, i % block_size);
+      sol[i] = sol_vec(i / block_size, i % block_size);
     }
   }
 
   T compute_solution_error() {
     // Compute and print out the solution error
-    double R = 1.0;
-    PoissonForSphereError<T, spatial_dim> error(R);
-    A2D::FiniteElement<T, PoissonForSphereError<T, spatial_dim>,
+    HelmholtzForSphereError<T, spatial_dim> error;
+    A2D::FiniteElement<T, HelmholtzForSphereError<T, spatial_dim>,
                        A2D::HexGaussQuadrature<degree + 10>, DataBasis,
                        GeoBasis, Basis>
         functional;
@@ -473,11 +535,11 @@ class PoissonSphere {
   }
 
   void tovtk(const std::string filename) {
-    A2D::write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
+    A2D::write_hex_to_vtk<5, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
         [](I k, typename PDE::DataSpace& d,
            typename PDE::FiniteElementGeometry& g,
-           typename PDE::FiniteElementSpace& s) { return s[0]; });
+           typename PDE::FiniteElementSpace& s) { return s[k]; });
   }
 
  private:
@@ -503,17 +565,14 @@ class PoissonSphere {
   LOrderGeoElemVec lorder_elem_geo;
   LOrderDataElemVec lorder_elem_data;
 
+  // Matrix type
+  SDMatType elem_mat;
+
   PDE pde;
   FE_PDE fe;
 
   LOrderFE lorder_fe;
   MatFree matfree;
-
-  // The near null-space to an appropriate vector
-  A2D::MultiArrayNew<T* [block_size][null_size]> B;
-
-  // System matrix
-  std::shared_ptr<BSRMatType> mat;
 
   // AMG settings
   int amg_nlevels;
@@ -602,34 +661,29 @@ void find_spherical_error(bool write_sphere = false) {
   double cg_rtol = 1e-14;
   double cg_atol = 1e-30;
 
-  PoissonSphere<T, degree> sphere(conn, bcinfo, amg_nlevels, cg_it, cg_rtol,
-                                  cg_atol);
+  double r = 1.0 / 32.0;  // Set r = 1.0 for the error computation
+  HelmholtzSphere<T, degree> sphere(r, conn, bcinfo, amg_nlevels, cg_it,
+                                    cg_rtol, cg_atol);
 
   // Set the geometry from the node locations
   auto elem_geo = sphere.get_geometry();
-  set_geo_spherical<nx, typename PoissonSphere<T, degree>::GeoBasis>(alpha, R,
-                                                                     elem_geo);
+  set_geo_spherical<nx, typename HelmholtzSphere<T, degree>::GeoBasis>(
+      alpha, R, elem_geo);
   sphere.reset_geometry();
 
-  // Find best p and nx to give similar dof at the end
-  // std::printf("degree: %2d, nx: %2d, ndof: %10d\n", degree, nx,
-  //             sphere.get_num_dof());
-  // return;
-
   // Solve the spherical problem
-  Kokkos::Timer timer;
   sphere.solve();
-  double elapsed_time = timer.seconds();
 
   T error = sphere.compute_solution_error();
 
   if (nx == 1 && degree == 1) {
-    std::printf("%10s%10s%10s%20s%25s\n", "p", "nx", "ndof", "elapsed_time(s)",
-                "error");
+    std::cout << std::setw(10) << "p" << std::setw(10) << "nx" << std::setw(10)
+              << "ndof" << std::setw(25) << "error" << std::endl;
   }
   A2D::index_t ndof = sphere.get_num_dof();
-  std::printf("%10d%10d%10d%20.5e%25.15e\n", degree, nx, ndof, elapsed_time,
-              error);
+  std::cout << std::setw(10) << degree << std::setw(10) << nx << std::setw(10)
+            << ndof << std::setw(25) << std::setprecision(16) << error
+            << std::endl;
 
   if (write_sphere) {
     sphere.tovtk("filename.vtk");
@@ -639,55 +693,58 @@ void find_spherical_error(bool write_sphere = false) {
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
 
-  find_spherical_error<1, 1>();
+  find_spherical_error<2, 1>();
+  find_spherical_error<3, 1>();
+  find_spherical_error<4, 1>();
   find_spherical_error<5, 1>();
+  find_spherical_error<6, 1>();
+  find_spherical_error<7, 1>();
+  find_spherical_error<8, 1>();
+  find_spherical_error<9, 1>();
   find_spherical_error<10, 1>();
+  find_spherical_error<11, 1>();
+  find_spherical_error<12, 1>();
+  find_spherical_error<13, 1>();
+  find_spherical_error<14, 1>();
   find_spherical_error<15, 1>();
+  find_spherical_error<16, 1>();
+  find_spherical_error<17, 1>();
+  find_spherical_error<18, 1>();
+  find_spherical_error<19, 1>();
   find_spherical_error<20, 1>();
-  find_spherical_error<25, 1>();
-  find_spherical_error<30, 1>();
-  find_spherical_error<35, 1>();
-  find_spherical_error<40, 1>();
-  find_spherical_error<45, 1>();
-  find_spherical_error<50, 1>();
-  find_spherical_error<54, 1>();
 
   find_spherical_error<1, 2>();
+  find_spherical_error<2, 2>();
+  find_spherical_error<3, 2>();
   find_spherical_error<4, 2>();
+  find_spherical_error<5, 2>();
+  find_spherical_error<6, 2>();
+  find_spherical_error<7, 2>();
   find_spherical_error<8, 2>();
-  find_spherical_error<12, 2>();
-  find_spherical_error<16, 2>();
-  find_spherical_error<20, 2>();
-  find_spherical_error<24, 2>();
-  find_spherical_error<27, 2>();
+  find_spherical_error<9, 2>();
+  find_spherical_error<10, 2>();
+
+  find_spherical_error<1, 3>();
+  find_spherical_error<2, 3>();
+  find_spherical_error<3, 3>();
+  find_spherical_error<4, 3>();
+  find_spherical_error<5, 3>();
+  find_spherical_error<6, 3>();
+  find_spherical_error<7, 3>();
 
   find_spherical_error<1, 4>();
+  find_spherical_error<2, 4>();
   find_spherical_error<3, 4>();
-  find_spherical_error<5, 4>();
-  find_spherical_error<7, 4>();
-  find_spherical_error<9, 4>();
-  find_spherical_error<11, 4>();
-  find_spherical_error<13, 4>();
+  find_spherical_error<4, 4>();
+  find_spherical_error<5, 4>(true);
 
-  find_spherical_error<1, 6>();
-  find_spherical_error<3, 6>();
-  find_spherical_error<5, 6>();
-  find_spherical_error<7, 6>();
-  find_spherical_error<9, 6>();
+  // find_spherical_error<1, 5>();
+  // find_spherical_error<2, 5>();
+  // find_spherical_error<3, 5>();
+  // find_spherical_error<4, 5>();
 
-  find_spherical_error<1, 8>();
-  find_spherical_error<2, 8>();
-  find_spherical_error<3, 8>();
-  find_spherical_error<4, 8>();
-  find_spherical_error<5, 8>();
-  find_spherical_error<6, 8>();
-  find_spherical_error<7, 8>();
+  // find_spherical_error<5, 4>();
+  // find_spherical_error<6, 4>(true);
 
-  find_spherical_error<1, 10>();
-  find_spherical_error<2, 10>();
-  find_spherical_error<3, 10>();
-  find_spherical_error<4, 10>();
-  find_spherical_error<5, 10>(true);
-
-  return 0;
+  return (0);
 }

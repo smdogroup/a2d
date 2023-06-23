@@ -23,7 +23,7 @@ jobs:
       #   with:
       #     python-version: 3.8
 
-      - name: build tests and examples
+      - name: build tests
         run: |
           git clone https://github.com/kokkos/kokkos.git extern/kokkos;
           cd extern/kokkos;
@@ -34,7 +34,7 @@ jobs:
           ninja install;
           mkdir ../../../build;
           cd ../../../build;
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=ON -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=OFF -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
           ninja;
 
       - name: run unit tests

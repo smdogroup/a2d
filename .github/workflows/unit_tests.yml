@@ -34,7 +34,7 @@ jobs:
           ninja install;
           mkdir ../../../build;
           cd ../../../build;
-          cmake .. -DA2D_BUILD_EXAMPLES_BASIC=ON -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=ON -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
           ninja;
 
       - name: run unit tests

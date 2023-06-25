@@ -212,7 +212,7 @@ class BSRMat {
   IdxArray1D_t color_count;  // Number of nodes with this color, not
                              // allocated by default
 
-  // MultiArray data - length: nnz
+  // A multi-dimensional array that stores entries, shape: (M, N, nnz)
   MultiArrayNew<T *[M][N]> Avals;
 };
 

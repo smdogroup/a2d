@@ -1,4 +1,9 @@
-// #include "ParOptBlasLapack.h"
+/*
+  This file contains implementations of the inline functions.
+*/
+#ifndef A2D_SPARSE_CHOLESKY_INL_H
+#define A2D_SPARSE_CHOLESKY_INL_H
+
 #include "sparse/sparse_cholesky.h"
 
 namespace A2D {
@@ -26,8 +31,7 @@ SparseCholesky<T>::SparseCholesky(int _size, const int *Acolp, const int *Arows,
 
     // Set up the matrix for reordering - remove the diagonal entry
     int remove_diagonal = 1;
-    ParOptSortAndRemoveDuplicates(size, copy_Acolp, copy_Arows,
-                                  remove_diagonal);
+    SortAndRemoveDuplicates(size, copy_Acolp, copy_Arows, remove_diagonal);
 
     // Compute the permutation using approximate AMD implemented here...
     perm = new int[size];
@@ -456,7 +460,7 @@ void SparseCholesky<T>::updateColumn(const int lwidth, const int nlcols,
 template <typename T>
 int SparseCholesky<T>::factorDiag(const int diag_size, T *D) {
   int n = diag_size, info;
-  LAPACKdpptrf("U", &n, D, &info);
+  LAPACKpptrf("U", &n, D, &info);
   return info;
 }
 
@@ -686,3 +690,5 @@ void SparseCholesky<T>::solve(T *x) {
 }
 
 }  // namespace A2D
+
+#endif  // A2D_SPARSE_CHOLESKY_INL_H

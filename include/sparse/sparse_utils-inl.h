@@ -1,5 +1,12 @@
+/*
+  This file contains implementations of the inline functions.
+*/
+#ifndef A2D_SPARSE_UTILS_INL_H
+#define A2D_SPARSE_UTILS_INL_H
 
 #include "sparse/sparse_utils.h"
+
+namespace A2D {
 
 // Compute y = alpha A * x + beta * y
 template <typename T>
@@ -135,50 +142,6 @@ void SparseTranspose(int nrows, int ncols, const int *rowp, const int *cols,
 }
 
 // Compute the number of entries in the matrix product A * A^{T}
-int MatMatTransSymbolic(int nrows, int ncols, const int *rowp, const int *cols,
-                        const int *colp, const int *rows, int *Bcolp,
-                        int *flag) {
-  for (int i = 0; i < nrows; i++) {
-    Bcolp[i] = 0;
-    flag[i] = -1;
-  }
-
-  // P_{*j} = A_{*k} * A_{jk}
-  for (int j = 0; j < nrows; j++) {
-    int nz = 0;
-
-    // Loop over the non-zero columns
-    int kp_end = rowp[j + 1];
-    for (int kp = rowp[j]; kp < kp_end; kp++) {
-      int k = cols[kp];
-
-      // Add the non-zero pattern from column k
-      int ip_end = colp[k + 1];
-      for (int ip = colp[k]; ip < ip_end; ip++) {
-        int i = rows[ip];
-
-        if (flag[i] != j) {
-          flag[i] = j;
-          nz++;
-        }
-      }
-    }
-
-    Bcolp[j] = nz;
-  }
-
-  int nnz = 0;
-  for (int j = 0; j < nrows; j++) {
-    int tmp = Bcolp[j];
-    Bcolp[j] = nnz;
-    nnz += tmp;
-  }
-  Bcolp[nrows] = nnz;
-
-  return nnz;
-}
-
-// Compute the number of entries in the matrix product A * A^{T}
 template <typename T>
 void MatMatTransNumeric(int nrows, int ncols, const int *rowp, const int *cols,
                         const T *Avals, const int *colp, const int *rows,
@@ -269,11 +232,55 @@ void MatMatTransNumeric(int nrows, int ncols, const T *cvals, const int *rowp,
   }
 }
 
+// Compute the number of entries in the matrix product A * A^{T}
+inline int MatMatTransSymbolic(int nrows, int ncols, const int *rowp,
+                               const int *cols, const int *colp,
+                               const int *rows, int *Bcolp, int *flag) {
+  for (int i = 0; i < nrows; i++) {
+    Bcolp[i] = 0;
+    flag[i] = -1;
+  }
+
+  // P_{*j} = A_{*k} * A_{jk}
+  for (int j = 0; j < nrows; j++) {
+    int nz = 0;
+
+    // Loop over the non-zero columns
+    int kp_end = rowp[j + 1];
+    for (int kp = rowp[j]; kp < kp_end; kp++) {
+      int k = cols[kp];
+
+      // Add the non-zero pattern from column k
+      int ip_end = colp[k + 1];
+      for (int ip = colp[k]; ip < ip_end; ip++) {
+        int i = rows[ip];
+
+        if (flag[i] != j) {
+          flag[i] = j;
+          nz++;
+        }
+      }
+    }
+
+    Bcolp[j] = nz;
+  }
+
+  int nnz = 0;
+  for (int j = 0; j < nrows; j++) {
+    int tmp = Bcolp[j];
+    Bcolp[j] = nnz;
+    nnz += tmp;
+  }
+  Bcolp[nrows] = nnz;
+
+  return nnz;
+}
+
 /*
   Sort an array of length len, then remove duplicate entries and
   entries with values -1.
 */
-int RemoveDuplicates(int *array, int len, int exclude) {
+inline int RemoveDuplicates(int *array, int len, int exclude) {
   std::sort(array, array + len);
 
   // Remove any negative numbers
@@ -305,12 +312,9 @@ int RemoveDuplicates(int *array, int len, int exclude) {
   return j;  // The new length of the array
 }
 
-/*
-  Sort the CSR data and remove duplicates
-*/
-template <typename T>
-void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
-                             int remove_diagonal) {
+// Sort and make the data structure unique - remove diagonal
+inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
+                                    int remove_diagonal) {
   int begin = rowp[0];
   for (int i = 0; i < nvars; i++) {
     int len = rowp[i + 1] - begin;
@@ -331,3 +335,7 @@ void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
     rowp[i + 1] = rowp[i] + new_len;
   }
 }
+
+}  // namespace A2D
+
+#endif  // A2D_SPARSE_UTILS_INL_H

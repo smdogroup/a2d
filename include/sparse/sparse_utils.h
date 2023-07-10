@@ -20,11 +20,6 @@ template <typename T>
 void SparseTranspose(int nrows, int ncols, const int *rowp, const int *cols,
                      const T *Avals, int *colp, int *rows, T *ATvals);
 
-// Compute the number of non-zeros in the matrix product A * A^{T}
-int MatMatTransSymbolic(int nrows, int ncols, const int *rowp, const int *cols,
-                        const int *colp, const int *rows, int *Bcolp,
-                        int *flag);
-
 // Compute the matrix-matrix product A * A^{T}
 template <typename T>
 void MatMatTransNumeric(int nrows, int ncols, const int *rowp, const int *cols,
@@ -40,13 +35,21 @@ void MatMatTransNumeric(int nrows, int ncols, const T *cvals, const int *rowp,
                         const int *Bcolp, int *Brows, T *Bvals, int *flag,
                         T *tmp);
 
-// Remove duplicates from a list
-int RemoveDuplicates(int *array, int len, int exclude = -1);
+// Compute the number of entries in the matrix product A * A^{T}
+inline int MatMatTransSymbolic(int nrows, int ncols, const int *rowp,
+                               const int *cols, const int *colp,
+                               const int *rows, int *Bcolp, int *flag);
+
+// Sort an array of length len, then remove duplicate entries and
+// entries with values -1.
+inline int RemoveDuplicates(int *array, int len, int exclude = -1);
 
 // Sort and make the data structure unique - remove diagonal
-void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
-                             int remove_diagonal = 0);
+inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
+                                    int remove_diagonal = 0);
 
 }  // namespace A2D
+
+#include "sparse/sparse_utils.inc"
 
 #endif  // A2D_SPARSE_UTILS_H

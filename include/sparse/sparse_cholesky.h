@@ -2,6 +2,7 @@
 #define A2D_SPARSE_CHOLESKY_H
 
 #include "sparse/sparse_utils.h"
+#include "utils/a2dlapack.h"
 
 // Include METIS
 extern "C" {
@@ -160,6 +161,6 @@ class SparseCholesky {
 
 }  // namespace A2D
 
-#include "sparse/sparse_cholesky.hpp"
+#include "sparse/sparse_cholesky-inl.h"
 
 #endif  //  A2D_SPARSE_CHOLESKY_H

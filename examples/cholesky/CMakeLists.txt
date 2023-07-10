@@ -2,7 +2,8 @@
 include_directories(${A2D_ROOT_DIR}/include)
 
 # include metis
-include_directories(${A2D_METIS_DIR})
+include_directories(${A2D_METIS_DIR}/include)
+link_directories(${A2D_METIS_DIR}/lib)
 
 # Add targets
 add_executable(cholesky cholesky.cpp)
@@ -15,7 +16,7 @@ find_package(MPI REQUIRED)
 target_link_libraries(cholesky Kokkos::kokkos)
 
 # Link libraries
-target_link_libraries(cholesky MPI::MPI_CXX OpenMP::OpenMP_CXX LAPACK::LAPACK)
+target_link_libraries(cholesky MPI::MPI_CXX OpenMP::OpenMP_CXX LAPACK::LAPACK metis)
 
 # If using gcc and version < 9, need to explicitly link to filesystem
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

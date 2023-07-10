@@ -65,173 +65,147 @@ extern void zpptrs_(const char *c, int *n, int *nrhs, std::complex<double> *ap,
                     std::complex<double> *rhs, int *ldrhs, int *info);
 }
 
-/* Function templates - never call these */
-
-// Level 1 BLAS routines
-template <typename T>
-T BLASddot(int *n, T *x, int *incx, T *y, int *incy) = delete;
-template <typename T>
-double BLASdnrm2(int *n, T *x, int *incx) = delete;
-template <typename T>
-void BLASdaxpy(int *n, T *a, T *x, int *incx, T *y, int *incy) = delete;
-template <typename T>
-void BLASdscal(int *n, T *a, T *x, int *incx) = delete;
-
-// Compute C := alpha*A*A**T + beta*C or C := alpha*A**T*A + beta*C
-template <typename T>
-void BLASsyrk(const char *uplo, const char *trans, int *n, int *k, T *alpha,
-              T *a, int *lda, T *beta, T *c, int *ldc) = delete;
-
-// Solve A*x = b or A^T*x = b where A is in packed format
-template <typename T>
-void BLAStpsv(const char *uplo, const char *transa, const char *diag, int *n,
-              T *a, T *x, int *incx) = delete;
-
-// Level 2 BLAS routines
-// y = alpha * A * x + beta * y, for a general matrix
-template <typename T>
-void BLASgemv(const char *c, int *m, int *n, T *alpha, T *a, int *lda, T *x,
-              int *incx, T *beta, T *y, int *incy) = delete;
-
-// Level 3 BLAS routines
-// C := alpha*op( A )*op( B ) + beta*C,
-template <typename T>
-void BLASgemm(const char *ta, const char *tb, int *m, int *n, int *k, T *alpha,
-              T *a, int *lda, T *b, int *ldb, T *beta, T *c, int *ldc) = delete;
-
-// General factorization routines
-template <typename T>
-void LAPACKdgetrf(int *m, int *n, T *a, int *lda, int *ipiv,
-                  int *info) = delete;
-template <typename T>
-void LAPACKdgetrs(const char *c, int *n, int *nrhs, T *a, int *lda, int *ipiv,
-                  T *b, int *ldb, int *info) = delete;
-
-// Factorization of packed-storage matrices
-template <typename T>
-void LAPACKdpptrf(const char *c, int *n, T *ap, int *info) = delete;
-template <typename T>
-void LAPACKdpptrs(const char *c, int *n, int *nrhs, T *ap, T *rhs, int *ldrhs,
-                  int *info) = delete;
+/* BLAS/LAPACK functions for double precision real datatype */
 
 // Level 1 BLAS routines
 
-template <>
-inline double BLASddot(int *n, double *x, int *incx, double *y,
-                       int *incy) = delete;
-template <>
-inline double BLASdnrm2(int *n, double *x, int *incx) = delete;
-template <>
-inline void BLASdaxpy(int *n, double *a, double *x, int *incx, double *y,
-                      int *incy) = delete;
-template <>
-inline void BLASdscal(int *n, double *a, double *x, int *incx) = delete;
+inline double BLASdot(int *n, double *x, int *incx, double *y, int *incy) {
+  return ddot_(n, x, incx, y, incy);
+}
+inline double BLASnrm2(int *n, double *x, int *incx) {
+  return dnrm2_(n, x, incx);
+}
+inline void BLASaxpy(int *n, double *a, double *x, int *incx, double *y,
+                     int *incy) {
+  return daxpy_(n, a, x, incx, y, incy);
+}
+inline void BLASscal(int *n, double *a, double *x, int *incx) {
+  return dscal_(n, a, x, incx);
+}
 
 // Compute C := alpha*A*A**double + beta*C or C := alpha*A**double*A + beta*C
-template <>
 inline void BLASsyrk(const char *uplo, const char *trans, int *n, int *k,
                      double *alpha, double *a, int *lda, double *beta,
-                     double *c, int *ldc) = delete;
+                     double *c, int *ldc) {
+  return dsyrk_(uplo, trans, n, k, alpha, a, lda, beta, c, ldc);
+}
 
 // Solve A*x = b or A^double*x = b where A is in packed format
-template <>
 inline void BLAStpsv(const char *uplo, const char *transa, const char *diag,
-                     int *n, double *a, double *x, int *incx) = delete;
+                     int *n, double *a, double *x, int *incx) {
+  return dtpsv_(uplo, transa, diag, n, a, x, incx);
+}
 
 // Level 2 BLAS routines
 // y = alpha * A * x + beta * y, for a general matrix
-template <>
 inline void BLASgemv(const char *c, int *m, int *n, double *alpha, double *a,
                      int *lda, double *x, int *incx, double *beta, double *y,
-                     int *incy) = delete;
+                     int *incy) {
+  return dgemv_(c, m, n, alpha, a, lda, x, incx, beta, y, incy);
+}
 
 // Level 3 BLAS routines
 // C := alpha*op( A )*op( B ) + beta*C,
-template <>
 inline void BLASgemm(const char *ta, const char *tb, int *m, int *n, int *k,
                      double *alpha, double *a, int *lda, double *b, int *ldb,
-                     double *beta, double *c, int *ldc) = delete;
+                     double *beta, double *c, int *ldc) {
+  return dgemm_(ta, tb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
 
 // General factorization routines
-template <>
-inline void LAPACKdgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
-                         int *info) = delete;
-template <>
-inline void LAPACKdgetrs(const char *c, int *n, int *nrhs, double *a, int *lda,
-                         int *ipiv, double *b, int *ldb, int *info) = delete;
+inline void LAPACKgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
+                        int *info) {
+  return dgetrf_(m, n, a, lda, ipiv, info);
+}
+inline void LAPACKgetrs(const char *c, int *n, int *nrhs, double *a, int *lda,
+                        int *ipiv, double *b, int *ldb, int *info) {
+  return dgetrs_(c, n, nrhs, a, lda, ipiv, b, ldb, info);
+}
 
 // Factorization of packed-storage matrices
-template <>
-inline void LAPACKdpptrf(const char *c, int *n, double *ap, int *info) = delete;
-template <>
-inline void LAPACKdpptrs(const char *c, int *n, int *nrhs, double *ap,
-                         double *rhs, int *ldrhs, int *info) = delete;
-/* Specializations - double precision real */
+inline void LAPACKpptrf(const char *c, int *n, double *ap, int *info) {
+  return dpptrf_(c, n, ap, info);
+}
+inline void LAPACKpptrs(const char *c, int *n, int *nrhs, double *ap,
+                        double *rhs, int *ldrhs, int *info) {
+  return dpptrs_(c, n, nrhs, ap, rhs, ldrhs, info);
+}
 
-/* Specializations - double precision complex */
+/* BLAS/LAPACK functions for double precision complex datatype */
 
 // Level 1 BLAS routines
-template <>
-inline std::complex<double> BLASddot(int *n, std::complex<double> *x, int *incx,
-                                     std::complex<double> *y,
-                                     int *incy) = delete;
-template <>
-inline double BLASdnrm2(int *n, std::complex<double> *x, int *incx) = delete;
-template <>
-inline void BLASdaxpy(int *n, std::complex<double> *a, std::complex<double> *x,
-                      int *incx, std::complex<double> *y, int *incy) = delete;
-template <>
-inline void BLASdscal(int *n, std::complex<double> *a, std::complex<double> *x,
-                      int *incx) = delete;
+inline std::complex<double> BLASdot(int *n, std::complex<double> *x, int *incx,
+                                    std::complex<double> *y, int *incy) {
+  return zdotu_(n, x, incx, y, incy);
+}
+inline double BLASnrm2(int *n, std::complex<double> *x, int *incx) {
+  return dznrm2_(n, x, incx);
+}
+inline void BLASaxpy(int *n, std::complex<double> *a, std::complex<double> *x,
+                     int *incx, std::complex<double> *y, int *incy) {
+  return zaxpy_(n, a, x, incx, y, incy);
+}
+inline void BLASscal(int *n, std::complex<double> *a, std::complex<double> *x,
+                     int *incx) {
+  return zscal_(n, a, x, incx);
+}
 
 // Compute C := alpha*A*A**std::complex<double> + beta*C or C :=
 // alpha*A**std::complex<double>*A + beta*C
-template <>
 inline void BLASsyrk(const char *uplo, const char *trans, int *n, int *k,
                      std::complex<double> *alpha, std::complex<double> *a,
                      int *lda, std::complex<double> *beta,
-                     std::complex<double> *c, int *ldc) = delete;
+                     std::complex<double> *c, int *ldc) {
+  return zsyrk_(uplo, trans, n, k, alpha, a, lda, beta, c, ldc);
+}
 
 // Solve A*x = b or A^std::complex<double>*x = b where A is in packed format
-template <>
 inline void BLAStpsv(const char *uplo, const char *transa, const char *diag,
                      int *n, std::complex<double> *a, std::complex<double> *x,
-                     int *incx) = delete;
+                     int *incx) {
+  return ztpsv_(uplo, transa, diag, n, a, x, incx);
+}
 
 // Level 2 BLAS routines
 // y = alpha * A * x + beta * y, for a general matrix
-template <>
 inline void BLASgemv(const char *c, int *m, int *n, std::complex<double> *alpha,
                      std::complex<double> *a, int *lda, std::complex<double> *x,
                      int *incx, std::complex<double> *beta,
-                     std::complex<double> *y, int *incy) = delete;
+                     std::complex<double> *y, int *incy) {
+  return zgemv_(c, m, n, alpha, a, lda, x, incx, beta, y, incy);
+}
 
 // Level 3 BLAS routines
 // C := alpha*op( A )*op( B ) + beta*C,
-template <>
 inline void BLASgemm(const char *ta, const char *tb, int *m, int *n, int *k,
                      std::complex<double> *alpha, std::complex<double> *a,
                      int *lda, std::complex<double> *b, int *ldb,
                      std::complex<double> *beta, std::complex<double> *c,
-                     int *ldc) = delete;
+                     int *ldc) {
+  return zgemm_(ta, tb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
 
 // General factorization routines
-template <>
-inline void LAPACKdgetrf(int *m, int *n, std::complex<double> *a, int *lda,
-                         int *ipiv, int *info) = delete;
-template <>
-inline void LAPACKdgetrs(const char *c, int *n, int *nrhs,
-                         std::complex<double> *a, int *lda, int *ipiv,
-                         std::complex<double> *b, int *ldb, int *info) = delete;
+inline void LAPACKgetrf(int *m, int *n, std::complex<double> *a, int *lda,
+                        int *ipiv, int *info) {
+  return zgetrf_(m, n, a, lda, ipiv, info);
+}
+inline void LAPACKgetrs(const char *c, int *n, int *nrhs,
+                        std::complex<double> *a, int *lda, int *ipiv,
+                        std::complex<double> *b, int *ldb, int *info) {
+  return zgetrs_(c, n, nrhs, a, lda, ipiv, b, ldb, info);
+}
 
 // Factorization of packed-storage matrices
-template <>
-inline void LAPACKdpptrf(const char *c, int *n, std::complex<double> *ap,
-                         int *info) = delete;
-template <>
-inline void LAPACKdpptrs(const char *c, int *n, int *nrhs,
-                         std::complex<double> *ap, std::complex<double> *rhs,
-                         int *ldrhs, int *info) = delete;
+inline void LAPACKpptrf(const char *c, int *n, std::complex<double> *ap,
+                        int *info) {
+  return zpptrf_(c, n, ap, info);
+}
+inline void LAPACKpptrs(const char *c, int *n, int *nrhs,
+                        std::complex<double> *ap, std::complex<double> *rhs,
+                        int *ldrhs, int *info) {
+  return zpptrs_(c, n, nrhs, ap, rhs, ldrhs, info);
+}
 
 }  // namespace A2D
 

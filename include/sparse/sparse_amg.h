@@ -166,7 +166,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       I j = PT.cols[jp];
       for (I k1 = 0; k1 < N; k1++) {
         for (I k2 = 0; k2 < M; k2++) {
-          PT.Avals(jp, k1, k2) = B(j, k2, k1);
+          PT.vals(jp, k1, k2) = B(j, k2, k1);
         }
       }
     }
@@ -177,7 +177,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       T init_norm = 0.0;
       for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
-          init_norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
+          init_norm += PT.vals(jp, k, m) * PT.vals(jp, k, m);
         }
       }
       init_norm = A2D::sqrt(init_norm);
@@ -188,7 +188,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
         T dot = 0.0;
         for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
           for (I m = 0; m < M; m++) {
-            dot += PT.Avals(jp, j, m) * PT.Avals(jp, k, m);
+            dot += PT.vals(jp, j, m) * PT.vals(jp, k, m);
           }
         }
 
@@ -198,7 +198,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
         // Subtract the dot product time row j from row k
         for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
           for (I m = 0; m < M; m++) {
-            PT.Avals(jp, k, m) -= dot * PT.Avals(jp, j, m);
+            PT.vals(jp, k, m) -= dot * PT.vals(jp, j, m);
           }
         }
       }
@@ -207,7 +207,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       T norm = 0.0;
       for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
-          norm += PT.Avals(jp, k, m) * PT.Avals(jp, k, m);
+          norm += PT.vals(jp, k, m) * PT.vals(jp, k, m);
         }
       }
       norm = A2D::sqrt(norm);
@@ -229,7 +229,7 @@ BSRMat<I, T, M, N>* BSRMatMakeTentativeProlongation(
       // Set the scale value
       for (I jp = PT.rowp[i]; jp < jp_end; jp++) {
         for (I m = 0; m < M; m++) {
-          PT.Avals(jp, k, m) *= scale;
+          PT.vals(jp, k, m) *= scale;
         }
       }
     }
@@ -253,8 +253,8 @@ BSRMat<I, T, M, N>* BSRJacobiProlongationSmoother(T omega,
   BSRMat<I, T, M, M>* DinvA = BSRMatDuplicate(A);
   for (I i = 0; i < A.nbrows; i++) {
     for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
-      blockGemmSlice<T, M, M, M>(Dinv.Avals, Dinv.rowp[i], A.Avals, jp,
-                                 DinvA->Avals, jp);
+      blockGemmSlice<T, M, M, M>(Dinv.vals, Dinv.rowp[i], A.vals, jp,
+                                 DinvA->vals, jp);
     }
   }
 
@@ -302,7 +302,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
       d[i] = 0.0;
       for (I ii = 0; ii < M; ii++) {
         for (I jj = 0; jj < M; jj++) {
-          d[i] += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
+          d[i] += A.vals(jp, ii, jj) * A.vals(jp, ii, jj);
         }
       }
     }
@@ -314,7 +314,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
         d[i] = 0.0;
         for (I ii = 0; ii < M; ii++) {
           for (I jj = 0; jj < M; jj++) {
-            d[i] += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
+            d[i] += A.vals(jp, ii, jj) * A.vals(jp, ii, jj);
           }
         }
       }
@@ -335,7 +335,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<I, T, M, M>& A,
         T af = 0.0;
         for (I ii = 0; ii < M; ii++) {
           for (I jj = 0; jj < M; jj++) {
-            af += A.Avals(jp, ii, jj) * A.Avals(jp, ii, jj);
+            af += A.vals(jp, ii, jj) * A.vals(jp, ii, jj);
           }
         }
 

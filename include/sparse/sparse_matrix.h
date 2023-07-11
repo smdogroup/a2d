@@ -34,7 +34,7 @@ class BSRMat {
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &rowp_,
          const VecType &cols_)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals("Avals", nnz) {
+      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), vals("vals", nnz) {
     rowp = IdxArray1D_t("rowp", nbrows + 1);
     cols = IdxArray1D_t("cols", nnz);
 
@@ -61,19 +61,20 @@ class BSRMat {
         iperm(src.iperm),
         num_colors(src.num_colors),
         color_count(src.color_count),
-        Avals(src.Avals) {}
+        vals(src.vals) {}
 
-  A2D_INLINE_FUNCTION ~BSRMat() {}
+  A2D_INLINE_FUNCTION ~BSRMat() = default;
 
   // Zero the entries of the matrix
-  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(Avals); }
+  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(vals); }
 
   /**
    * @brief Find the address of the column index given block indices (row, col)
    *
    * @param row block row index
    * @param col block column index
-   * @return I* address of the block column index
+   * @return I the block column index, NO_INDEX if (row, col) isn't in the
+   * nonzero pattern
    */
   I find_column_index(I row, I col) {
     I jp_start = rowp[row];
@@ -101,7 +102,7 @@ class BSRMat {
 
         index_t jp = find_column_index(block_row, block_col);
         if (jp != NO_INDEX) {
-          Avals(jp, eq_row, eq_col) += mat(ii, jj);
+          vals(jp, eq_row, eq_col) += mat(ii, jj);
         }
       }
     }
@@ -114,11 +115,11 @@ class BSRMat {
 
       for (index_t jp = rowp[block_row]; jp < rowp[block_row + 1]; jp++) {
         for (index_t k = 0; k < N; k++) {
-          Avals(jp, eq_row, k) = 0.0;
+          vals(jp, eq_row, k) = 0.0;
         }
 
         if (cols[jp] == block_row) {
-          Avals(jp, eq_row, eq_row) = 1.0;
+          vals(jp, eq_row, eq_row) = 1.0;
         }
       }
     }
@@ -141,7 +142,7 @@ class BSRMat {
           const index_t irow = M * i + ii;
           for (index_t jj = 0; jj < N; jj++) {
             const index_t jcol = N * j + jj;
-            A[n * irow + jcol] = Avals(jp, ii, jj);
+            A[n * irow + jcol] = vals(jp, ii, jj);
           }
         }
       }
@@ -173,7 +174,7 @@ class BSRMat {
           for (index_t jj = 0; jj < N; jj++) {
             // (irow, jcol) is the entry coo
             const index_t jcol = N * j + jj + 1;  // convert to 1-based index
-            std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, Avals(jp, ii, jj));
+            std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, vals(jp, ii, jj));
           }
         }
       }
@@ -213,7 +214,7 @@ class BSRMat {
                              // allocated by default
 
   // A multi-dimensional array that stores entries, shape: (M, N, nnz)
-  MultiArrayNew<T *[M][N]> Avals;
+  MultiArrayNew<T *[M][N]> vals;
 };
 
 }  // namespace A2D

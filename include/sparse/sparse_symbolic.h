@@ -677,7 +677,7 @@ BSRMat<I, T, N, M>* BSRMatMakeTranspose(BSRMat<I, T, M, N>& A) {
       if (kp != BSRMat<I, T, M, N>::NO_INDEX) {
         for (I k1 = 0; k1 < M; k1++) {
           for (I k2 = 0; k2 < N; k2++) {
-            At->Avals(kp, k2, k1) = A.Avals(jp, k1, k2);
+            At->vals(kp, k2, k1) = A.vals(jp, k1, k2);
           }
         }
       } else {

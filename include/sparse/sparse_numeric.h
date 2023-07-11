@@ -71,7 +71,7 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
         if (jp != BSRMat<I, T, M, M>::NO_INDEX) {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < M; k2++) {
-              A.Avals(jp, k1, k2) += jac(i, j1, j2, k1, k2);
+              A.vals(jp, k1, k2) += jac(i, j1, j2, k1, k2);
             }
           }
         } else {
@@ -99,7 +99,7 @@ void BSRMatVecMult(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
 
-          blockGemvAddSlice<T, M, N>(A.Avals, jp, x, j, y, i);
+          blockGemvAddSlice<T, M, N>(A.vals, jp, x, j, y, i);
         }
       });
 }
@@ -116,7 +116,7 @@ void BSRMatVecMultAdd(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
 
-          blockGemvAddSlice<T, M, N>(A.Avals, jp, x, j, y, i);
+          blockGemvAddSlice<T, M, N>(A.vals, jp, x, j, y, i);
         }
       });
 }
@@ -133,7 +133,7 @@ void BSRMatVecMultSub(BSRMat<I, T, M, N> &A, MultiArrayNew<T *[N]> &x,
         for (I jp = A.rowp[i]; jp < jp_end; jp++) {
           I j = A.cols[jp];
 
-          blockGemvSubSlice<T, M, N>(A.Avals, jp, x, j, y, i);
+          blockGemvSubSlice<T, M, N>(A.vals, jp, x, j, y, i);
         }
       });
 }
@@ -168,8 +168,7 @@ void BSRMatMatMult(BSRMat<I, T, M, N> &A, BSRMat<I, T, N, P> &B,
               break;
             }
             if (B.cols[kp] == C.cols[cp]) {
-              blockGemmAddSlice<T, M, N, P>(A.Avals, jp, B.Avals, kp, C.Avals,
-                                            cp);
+              blockGemmAddSlice<T, M, N, P>(A.vals, jp, B.vals, kp, C.vals, cp);
             }
           }
         }
@@ -204,8 +203,8 @@ void BSRMatMatMultAddScale(T scale, BSRMat<I, T, M, N> &A,
               break;
             }
             if (B.cols[kp] == C.cols[cp]) {
-              blockGemmAddScaleSlice<T, M, N, P>(scale, A.Avals, jp, B.Avals,
-                                                 kp, C.Avals, cp);
+              blockGemmAddScaleSlice<T, M, N, P>(scale, A.vals, jp, B.vals, kp,
+                                                 C.vals, cp);
             }
           }
         }
@@ -239,7 +238,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
         if (kp != BSRMat<I, T, M, N>::NO_INDEX) {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < N; k2++) {
-              dest.Avals(kp, k1, k2) = src.Avals(jp, k1, k2);
+              dest.vals(kp, k1, k2) = src.vals(jp, k1, k2);
             }
           }
         } else {
@@ -268,7 +267,7 @@ void BSRMatCopy(BSRMat<I, T, M, N> &src, BSRMat<I, T, M, N> &dest) {
           if (dest.cols[kp] == src.cols[jp]) {
             for (I k1 = 0; k1 < M; k1++) {
               for (I k2 = 0; k2 < N; k2++) {
-                dest.Avals(kp, k1, k2) = src.Avals(jp, k1, k2);
+                dest.vals(kp, k1, k2) = src.vals(jp, k1, k2);
               }
             }
           } else {
@@ -294,12 +293,12 @@ void BSRMatZeroBCRows(BCArray &bcs, BSRMat<I, T, M, M> &A) {
       if (bcs(i, 1) & (1U << j)) {
         for (I jp = A.rowp[index]; jp < A.rowp[index + 1]; jp++) {
           for (I k = 0; k < M; k++) {
-            A.Avals(jp, j, k) = 0.0;
+            A.vals(jp, j, k) = 0.0;
           }
 
           // Set the diagonal element to the identity
           if (A.cols[jp] == index) {
-            A.Avals(jp, j, j) = 1.0;
+            A.vals(jp, j, j) = 1.0;
           }
         }
       }
@@ -364,7 +363,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
       I j = A.cols[jp];
 
       // D = A[jp] * A[diag[j]]
-      blockGemmSlice<T, M, M, M>(A.Avals, jp, A.Avals, diag[j], D);
+      blockGemmSlice<T, M, M, M>(A.vals, jp, A.vals, diag[j], D);
 
       // Scan through the remainder of row i
       I kp = jp + 1;
@@ -382,14 +381,14 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
 
         // A[kp] = A[kp] - D * A[p]
         if (kp < row_end && A.cols[kp] == A.cols[pp]) {
-          blockGemmSubSlice<T, M, M, M>(D, A.Avals, pp, A.Avals, kp);
+          blockGemmSubSlice<T, M, M, M>(D, A.vals, pp, A.vals, kp);
         }
       }
 
       // Copy the temporary matrix back
       for (I n = 0; n < M; n++) {
         for (I m = 0; m < M; m++) {
-          A.Avals(jp, n, m) = D(n, m);
+          A.vals(jp, n, m) = D(n, m);
         }
       }
     }
@@ -403,7 +402,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
     diag[i] = jp;
 
     // Invert the diagonal matrix component -- Invert( &A[b2*diag[i] )
-    int fail = blockInverseSlice<T, M>(A.Avals, jp, D, ipiv);
+    int fail = blockInverseSlice<T, M>(A.vals, jp, D, ipiv);
 
     if (fail) {
       std::cerr << "BSRMatFactor: Failure in factorization of block row " << i
@@ -413,7 +412,7 @@ void BSRMatFactor(BSRMat<I, T, M, M> &A) {
     } else {
       for (I n = 0; n < M; n++) {
         for (I m = 0; m < M; m++) {
-          A.Avals(jp, n, m) = D(n, m);
+          A.vals(jp, n, m) = D(n, m);
         }
       }
     }
@@ -435,7 +434,7 @@ void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
       for (; jp < end; jp++) {
         I j = A.cols[jp];
 
-        blockGemvSubSlice<T, M, M>(A.Avals, jp, y, A.perm[j], y, A.perm[i]);
+        blockGemvSubSlice<T, M, M>(A.vals, jp, y, A.perm[j], y, A.perm[i]);
       }
     }
   } else {
@@ -445,7 +444,7 @@ void BSRMatApplyLower(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
       for (; jp < end; jp++) {
         I j = A.cols[jp];
 
-        blockGemvSubSlice<T, M, M>(A.Avals, jp, y, j, y, i);
+        blockGemvSubSlice<T, M, M>(A.vals, jp, y, j, y, i);
       }
     }
   }
@@ -471,10 +470,10 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
       for (; jp < end; jp++) {
         I j = A.cols[jp];
 
-        blockGemvSubSlice<T, M, M>(A.Avals, jp, y, A.perm[j], ty);
+        blockGemvSubSlice<T, M, M>(A.vals, jp, y, A.perm[j], ty);
       }
 
-      blockGemvSlice<T, M, M>(A.Avals, diag, ty, y, A.perm[i - 1]);
+      blockGemvSlice<T, M, M>(A.vals, diag, ty, y, A.perm[i - 1]);
     }
   } else {
     for (I i = A.nbrows; i > 0; i--) {
@@ -489,10 +488,10 @@ void BSRMatApplyUpper(BSRMat<I, T, M, M> &A, MultiArrayNew<T *[M]> &y) {
       for (; jp < end; jp++) {
         I j = A.cols[jp];
 
-        blockGemvSubSlice<T, M, M>(A.Avals, jp, y, j, ty);
+        blockGemvSubSlice<T, M, M>(A.vals, jp, y, j, ty);
       }
 
-      blockGemvSlice<T, M, M>(A.Avals, diag, ty, y, i - 1);
+      blockGemvSlice<T, M, M>(A.vals, diag, ty, y, i - 1);
     }
   }
 }
@@ -548,12 +547,12 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
       // Copy the values
       for (I k1 = 0; k1 < M; k1++) {
         for (I k2 = 0; k2 < M; k2++) {
-          D->Avals(D->nnz, k1, k2) = A.Avals(jp, k1, k2);
+          D->vals(D->nnz, k1, k2) = A.vals(jp, k1, k2);
         }
       }
 
       if (inverse) {
-        auto D0 = Kokkos::subview(D->Avals, D->nnz, Kokkos::ALL, Kokkos::ALL);
+        auto D0 = Kokkos::subview(D->vals, D->nnz, Kokkos::ALL, Kokkos::ALL);
         int fail = blockPseudoInverse(D0, Dinv);
         // int fail = blockInverse<T, M>(D0, Dinv, ipiv);
 
@@ -567,7 +566,7 @@ BSRMat<I, T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<I, T, M, M> &A,
         } else {
           for (I k1 = 0; k1 < M; k1++) {
             for (I k2 = 0; k2 < M; k2++) {
-              D->Avals(D->nnz, k1, k2) = Dinv(k1, k2);
+              D->vals(D->nnz, k1, k2) = Dinv(k1, k2);
             }
           }
         }
@@ -613,7 +612,7 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+                blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
               }
             }
 
@@ -622,7 +621,7 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               x(i, m) = (1.0 - omega) * x(i, m);
             }
 
-            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
           });
 
       offset += count;
@@ -641,7 +640,7 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+          blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
         }
       }
 
@@ -649,7 +648,7 @@ void BSRApplySOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
       for (I m = 0; m < M; m++) {
         x(i, m) = (1.0 - omega) * x(i, m);
       }
-      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
     }
   }
 }
@@ -681,7 +680,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+                blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
               }
             }
 
@@ -690,7 +689,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               x(i, m) = (1.0 - omega) * x(i, m);
             }
 
-            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
           });
 
       offset += count;
@@ -715,7 +714,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
               I j = A.cols[jp];
 
               if (i != j) {
-                blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+                blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
               }
             }
 
@@ -723,7 +722,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
             for (I m = 0; m < M; m++) {
               x(i, m) = (1.0 - omega) * x(i, m);
             }
-            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+            blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
           });
 
       if (color >= 2) {
@@ -744,7 +743,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+          blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
         }
       }
 
@@ -752,7 +751,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
       for (I m = 0; m < M; m++) {
         x(i, m) = (1.0 - omega) * x(i, m);
       }
-      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
     }
 
     for (I index = nrows; index > 0; index--) {
@@ -768,7 +767,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
         I j = A.cols[jp];
 
         if (i != j) {
-          blockGemvSubSlice<T, M, M>(A.Avals, jp, x, j, t);
+          blockGemvSubSlice<T, M, M>(A.vals, jp, x, j, t);
         }
       }
 
@@ -776,7 +775,7 @@ void BSRApplySSOR(BSRMat<I, T, M, M> &Dinv, BSRMat<I, T, M, M> &A, T omega,
       for (I m = 0; m < M; m++) {
         x(i, m) = (1.0 - omega) * x(i, m);
       }
-      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.Avals, i, t, x, i);
+      blockGemvAddScaleSlice<T, M, M>(omega, Dinv.vals, i, t, x, i);
     }
   }
 }
@@ -796,11 +795,11 @@ T BSRMatGershgorinSpectralEstimate(BSRMat<I, T, M, M> &A) {
 
       for (I jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
         for (I j = 0; j < M; j++) {
-          R += absfunc(A.Avals(jp, k, j));
+          R += absfunc(A.vals(jp, k, j));
         }
 
         if (A.cols[jp] == i) {
-          a = A.Avals(jp, k, k);
+          a = A.vals(jp, k, k);
         }
       }
 

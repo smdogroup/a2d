@@ -192,7 +192,7 @@ class FEModel {
   //     (*it)->add_node_set(node_set);
   //   }
   //   return std::shared_ptr<typename PDEInfo::SparseMat>(
-  //       A2D::BSRMatFromNodeSet<I, T, PDEInfo::vars_per_node>(nnodes,
+  //       A2D::BSRMatFromNodeSet<T, PDEInfo::vars_per_node>(nnodes,
   //       node_set));
   // }
 

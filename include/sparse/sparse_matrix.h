@@ -11,16 +11,13 @@ namespace A2D {
 /**
  * @brief Block CSR matrix, object acts like shared_ptr
  *
- * @tparam I index type
  * @tparam T data type
  * @tparam M number of rows for each block
  * @tparam N number of columns for each block
  */
-template <typename I, typename T, index_t M, index_t N>
+template <typename T, index_t M, index_t N>
 class BSRMat {
  public:
-  static constexpr index_t NO_INDEX = std::numeric_limits<I>::max();
-
   /**
    * @brief Constructor
    *
@@ -38,11 +35,11 @@ class BSRMat {
     rowp = IdxArray1D_t("rowp", nbrows + 1);
     cols = IdxArray1D_t("cols", nnz);
 
-    for (I i = 0; i < nbrows + 1; i++) {
+    for (index_t i = 0; i < nbrows + 1; i++) {
       rowp[i] = rowp_[i];
     }
 
-    for (I i = 0; i < nnz; i++) {
+    for (index_t i = 0; i < nnz; i++) {
       cols[i] = cols_[i];
     }
   }
@@ -73,20 +70,20 @@ class BSRMat {
    *
    * @param row block row index
    * @param col block column index
-   * @return I the block column index, NO_INDEX if (row, col) isn't in the
-   * nonzero pattern
+   * @return index_t the block column index, MAX_INDEX if (row, col) isn't in
+   * the nonzero pattern
    */
-  I find_column_index(I row, I col) {
-    I jp_start = rowp[row];
-    I jp_end = rowp[row + 1];
+  index_t find_column_index(index_t row, index_t col) {
+    index_t jp_start = rowp[row];
+    index_t jp_end = rowp[row + 1];
 
-    for (I jp = jp_start; jp < jp_end; jp++) {
+    for (index_t jp = jp_start; jp < jp_end; jp++) {
       if (cols[jp] == col) {
         return jp;
       }
     }
 
-    return NO_INDEX;
+    return MAX_INDEX;
   }
 
   template <class Mat>
@@ -101,7 +98,7 @@ class BSRMat {
         index_t eq_col = j[jj] % N;
 
         index_t jp = find_column_index(block_row, block_col);
-        if (jp != NO_INDEX) {
+        if (jp != MAX_INDEX) {
           vals(jp, eq_row, eq_col) += mat(ii, jj);
         }
       }
@@ -184,7 +181,7 @@ class BSRMat {
   }
 
   // Array type
-  using IdxArray1D_t = A2D::MultiArrayNew<I *>;
+  using IdxArray1D_t = A2D::MultiArrayNew<index_t *>;
 
   // Number of block rows and block columns
   index_t nbrows, nbcols;
@@ -209,7 +206,7 @@ class BSRMat {
   IdxArray1D_t iperm;
 
   // When coloring is used, its ordering is stored in the permutation array
-  I num_colors;              // Number of colors
+  index_t num_colors;        // Number of colors
   IdxArray1D_t color_count;  // Number of nodes with this color, not
                              // allocated by default
 

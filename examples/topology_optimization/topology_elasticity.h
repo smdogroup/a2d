@@ -80,7 +80,7 @@ class TopoElasticityAnalysis {
   using TractionElemVec = ElementVector<T, TractionBasis, BasisVecType>;
 
   // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
+  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
 
   /* Problem specific types */
 
@@ -108,7 +108,7 @@ class TopoElasticityAnalysis {
 
   // Algebraic multigrid solver
   static constexpr I null_size = 6;
-  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
+  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
 
   // Filter information
   // Use the Gauss quadrature points here so that the filter can be evaluated at

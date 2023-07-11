@@ -64,7 +64,7 @@ class TopoHeatAnalysis {
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
   // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
+  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
 
   /* Problem specific types */
 
@@ -87,7 +87,7 @@ class TopoHeatAnalysis {
 
   // Algebraic multigrid solver
   static constexpr I null_size = 1;
-  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
+  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
 
   // Filter information
   // Use the Gauss quadrature points here so that the filter can be evaluated at
@@ -551,7 +551,7 @@ void test_heat_analysis(int argc, char *argv[]) {
       A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, degree - 1>>;
 
   // Block sparse compressed row matrix
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
+  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
 
   // Element-centric views
   using GlobalVecType = A2D::SolutionVector<T>;
@@ -671,13 +671,13 @@ void test_heat_analysis(int argc, char *argv[]) {
   A2D::MultiArrayNew<T *[block_size][null_size]> B(
       "B", sol.get_num_dof() / block_size);
   A2D::BLAS::fill(B, 1.0);
-  A2D::BSRMatAmg<I, T, block_size, null_size> amg(num_levels, omega, epsilon,
-                                                  mat, B, print_info);
+  A2D::BSRMatAmg<T, block_size, null_size> amg(num_levels, omega, epsilon, mat,
+                                               B, print_info);
 
   // Solve
   auto mat_vec = [&](A2D::MultiArrayNew<T *[block_size]> &in,
                      A2D::MultiArrayNew<T *[block_size]> &out) -> void {
-    A2D::BSRMatVecMult<I, T, block_size, block_size>(*mat, in, out);
+    A2D::BSRMatVecMult<T, block_size, block_size>(*mat, in, out);
   };
 
   amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);

@@ -37,8 +37,8 @@ class StaticCondensationMat {
   static const constexpr I csize = Basis::ndof - bsize;
 
   // Definitions for the matrix types
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
-  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
+  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
+  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
   using BMatType = A2D::Mat<T, bsize, bsize>;
   using CMatType = A2D::Mat<T, csize, csize>;
   using EMatType = A2D::Mat<T, bsize, csize>;

@@ -50,6 +50,6 @@ inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
 
 }  // namespace A2D
 
-#include "sparse/sparse_utils.inc"
+#include "sparse/sparse_utils-inl.h"
 
 #endif  // A2D_SPARSE_UTILS_H

@@ -77,10 +77,8 @@ template <typename T, index_t M>
 BSRMat<T, M, M>* BSRMatFromNodeSet(index_t nnodes,
                                    Kokkos::UnorderedMap<COO, void>& node_set) {
   Timer t("BSRMatFromNodeSet(2)");
-  using VecType = MultiArrayNew<index_t*>;
-
   // Find the number of nodes referenced by other nodes
-  VecType rowp("rowp", (nnodes + 1));
+  IdxArray1D_t rowp("rowp", (nnodes + 1));
 
   // Loop over COO entries and count number of entries in each row
   Kokkos::parallel_for(
@@ -99,7 +97,7 @@ BSRMat<T, M, M>* BSRMatFromNodeSet(index_t nnodes,
   }
 
   index_t nnz = rowp[nnodes];
-  VecType cols("cols", nnz);
+  IdxArray1D_t cols("cols", nnz);
 
   // Maintain a hash map to track the offset from rowp for each row:
   // offset_tracker[row_idx] = current_offset
@@ -369,8 +367,6 @@ index_t CSRFactorSymbolic(const index_t nrows, const VecType Arowp,
 template <typename T, index_t M>
 BSRMat<T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<T, M, M>& A,
                                          double fill_factor = 5.0) {
-  using IdxArray1D_t = A2D::MultiArrayNew<index_t*>;
-
   // Copy over the non-zero structure of the matrix
   int nrows = A.nbrows;
   IdxArray1D_t rowp("rowp", A.nbrows + 1);
@@ -479,9 +475,8 @@ BSRMat<T, M, P>* BSRMatMatMultSymbolic(BSRMat<T, M, N>& A, BSRMat<T, N, P>& B,
   std::vector<index_t> next(ncols, empty);
 
   // Row, column and diagonal index data for the new factored matrix
-  using VecType = MultiArrayNew<index_t*>;
-  VecType rowp("rowp", nrows + 1);
-  VecType cols("cols", index_t(fill_factor * A.nnz));
+  IdxArray1D_t rowp("rowp", nrows + 1);
+  IdxArray1D_t cols("cols", index_t(fill_factor * A.nnz));
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
@@ -549,9 +544,8 @@ BSRMat<T, M, P>* BSRMatMatMultAddSymbolic(BSRMat<T, M, P>& S,
   std::vector<index_t> next(ncols, empty);
 
   // Row, column and diagonal index data for the new factored matrix
-  using VecType = MultiArrayNew<index_t*>;
-  VecType rowp("rowp", nrows + 1);
-  VecType cols("cols", index_t(fill_factor * A.nnz));
+  IdxArray1D_t rowp("rowp", nrows + 1);
+  IdxArray1D_t cols("cols", index_t(fill_factor * A.nnz));
 
   // Compute the non-zero structure of the resulting matrix C = A * B
   // one row at a time
@@ -669,7 +663,7 @@ BSRMat<T, N, M>* BSRMatMakeTranspose(BSRMat<T, M, N>& A) {
     for (index_t jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
       index_t j = A.cols[jp];
 
-      index_t kp = At->find_column_index(j, i);  // Find At(j, i)
+      index_t kp = At->find_value_index(j, i);  // Find At(j, i)
       if (kp != NO_INDEX) {
         for (index_t k1 = 0; k1 < M; k1++) {
           for (index_t k2 = 0; k2 < N; k2++) {
@@ -763,8 +757,6 @@ index_t CSRMultiColorOrder(const index_t nvars, const index_t rowp[],
 
 template <typename T, index_t M>
 void BSRMatMultiColorOrder(BSRMat<T, M, M>& A) {
-  using IdxArray1D_t = A2D::MultiArrayNew<index_t*>;
-
   A.perm = IdxArray1D_t("A.perm", A.nbrows);
 
   IdxArray1D_t colors("colors", A.nbrows);

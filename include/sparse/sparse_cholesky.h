@@ -1,6 +1,7 @@
 #ifndef A2D_SPARSE_CHOLESKY_H
 #define A2D_SPARSE_CHOLESKY_H
 
+#include "sparse/sparse_matrix.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dlapack.h"
 
@@ -34,7 +35,14 @@ class SparseCholesky {
  public:
   SparseCholesky(int _size, const int *Acolp, const int *Arows,
                  CholOrderingType order = CholOrderingType::ND,
-                 const int *_perm = NULL);
+                 const int *_perm = NULL) {
+    construct_cholesky(_size, Acolp, Arows, order, _perm);
+  }
+
+  template <index_t M>
+  SparseCholesky(int _size, BSRMat<T, M, M> bsr_mat,
+                 CholOrderingType order = CholOrderingType::ND);
+
   ~SparseCholesky();
 
   // Set values into the Cholesky matrix
@@ -50,6 +58,11 @@ class SparseCholesky {
   void getInfo(int *_size, int *_num_snodes, int *_nnzL);
 
  private:
+  // Construct the class
+  void construct_cholesky(int _size, const int *Acolp, const int *Arows,
+                          CholOrderingType order = CholOrderingType::ND,
+                          const int *_perm = NULL);
+
   // Build the elimination tree/forest
   void buildForest(const int Acolp[], const int Arows[], int parent[],
                    int Lnz[]);

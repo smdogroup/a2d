@@ -308,7 +308,7 @@ void BSRMatStrengthOfConnection(T epsilon, BSRMat<T, M, M>& A,
     }
   } else {
     for (index_t i = 0; i < A.nbrows; i++) {
-      index_t jp = A.find_column_index(i, i);
+      index_t jp = A.find_value_index(i, i);
 
       if (jp != NO_INDEX) {
         d[i] = 0.0;

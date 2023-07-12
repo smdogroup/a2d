@@ -9,8 +9,10 @@
 namespace A2D {
 
 template <typename T>
-SparseCholesky<T>::SparseCholesky(int _size, const int *Acolp, const int *Arows,
-                                  CholOrderingType order, const int *_perm) {
+void SparseCholesky<T>::construct_cholesky(int _size, const int *Acolp,
+                                           const int *Arows,
+                                           CholOrderingType order,
+                                           const int *_perm) {
   // Set the size of the sparse matrix
   size = _size;
 

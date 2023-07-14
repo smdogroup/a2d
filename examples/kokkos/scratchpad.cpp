@@ -377,7 +377,7 @@ void test_is_complex() {
 class BSRMatToy {
  public:
   BSRMatToy() {}
-  void initialize() { perm = IdxArray1D_t("perm", 20); }
+  void initialize() { perm = A2D::IdxArray1D_t("perm", 20); }
   void yell() {
     if (!perm.is_allocated()) {
       std::cout << "perm is not allocated\n";
@@ -387,8 +387,7 @@ class BSRMatToy {
   }
 
  private:
-  using IdxArray1D_t = A2D::MultiArrayNew<I*>;
-  IdxArray1D_t perm;
+  A2D::IdxArray1D_t perm;
 };
 
 void test_view_is_allocated() {
@@ -399,10 +398,25 @@ void test_view_is_allocated() {
   return;
 }
 
+void allocate_and_populate(A2D::IdxArray1D_t& cols) {
+  cols = A2D::IdxArray1D_t("cols", 20);
+  cols(0) = 233;
+  return;
+}
+
+void test_smart_pointer_behavior() {
+  A2D::IdxArray1D_t cols;
+  std::cout << cols(0) << "\n";
+  std::cout << "is allocated? " << cols.is_allocated() << "\n";
+  allocate_and_populate(cols);
+  std::cout << cols(0) << "\n";
+  std::cout << "is allocated? " << cols.is_allocated() << "\n";
+  return;
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
-  {
-    // test_axpy(argc, argv);
+  {  // test_axpy(argc, argv);
     // test_matvec(argc, argv);
     // test_unordered_set();
     // test_subview();
@@ -410,7 +424,8 @@ int main(int argc, char* argv[]) {
     // test_is_same_layout();
     // test_complex();
     // test_is_complex();
-    test_view_is_allocated();
+    // test_view_is_allocated();
+    test_smart_pointer_behavior();
   }
   Kokkos::finalize();
 }

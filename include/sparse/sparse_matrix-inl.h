@@ -120,6 +120,28 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name) {
   return;
 }
 
+// Export the matrix as mtx format
+template <typename T>
+void CSRMat<T>::write_mtx(const std::string mtx_name) {
+  // Open file and destroy old contents, if any
+  std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
+
+  // Write header
+  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+
+  // Write m, n and nnz
+  std::fprintf(fp, "%d %d %d\n", nrows, ncols, nnz);
+
+  // Write entries
+  for (index_t i = 0; i < nrows; i++) {
+    for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
+      std::fprintf(fp, "%d %d %30.20e\n", i + 1, cols[jp] + 1, vals[jp]);
+    }
+  }
+  std::fclose(fp);
+  return;
+}
+
 }  // namespace A2D
 
 #endif  // A2D_SPARSE_MATRIX_INL_H

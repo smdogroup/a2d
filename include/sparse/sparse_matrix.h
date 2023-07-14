@@ -9,11 +9,13 @@
 namespace A2D {
 
 /**
- * @brief Block CSR matrix, object acts like shared_ptr
+ * @brief Block Compressed sparse row matrix
  *
  * @tparam T data type
  * @tparam M number of rows for each block
  * @tparam N number of columns for each block
+ *
+ * Example:
  *
  * Below is an illustration of a blocked sparse matrix with 2x3 blocks
  *
@@ -49,10 +51,12 @@ class BSRMat {
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &rowp_,
          const VecType &cols_)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), vals("vals", nnz) {
-    rowp = IdxArray1D_t("rowp", nbrows + 1);
-    cols = IdxArray1D_t("cols", nnz);
-
+      : nbrows(nbrows),
+        nbcols(nbcols),
+        nnz(nnz),
+        rowp("rowp", nbrows + 1),
+        cols("cols", nnz),
+        vals("vals", nnz) {
     for (index_t i = 0; i < nbrows + 1; i++) {
       rowp[i] = rowp_[i];
     }
@@ -129,11 +133,6 @@ class BSRMat {
   void to_dense(index_t *m_, index_t *n_, T **A_);
 
   /**
-   * @brief Convert block sparse matrix to ordinary sparse matrix
-   */
-  void to_csr() {}
-
-  /**
    * @brief Export the matrix as mtx format
    *
    * @param mtx_name the output file
@@ -169,6 +168,38 @@ class BSRMat {
 
   // A multi-dimensional array that stores entries, shape: (nnz, M, N)
   MultiArrayNew<T *[M][N]> vals;
+};
+
+/**
+ * @brief Compressed sparse row matrix
+ */
+template <typename T>
+class CSRMat {
+ public:
+  CSRMat(index_t nrows, index_t ncols, index_t nnz,
+         const index_t *_rowp = nullptr, const index_t *_cols = nullptr)
+      : nrows(nrows),
+        ncols(ncols),
+        nnz(nnz),
+        rowp("rowp", nrows + 1),
+        cols("cols", nnz),
+        vals("vals", nnz) {
+    if (_rowp && _cols) {
+      for (index_t i = 0; i < nrows + 1; i++) {
+        rowp(i) = _rowp[i];
+      }
+      for (index_t i = 0; i < nnz; i++) {
+        cols(i) = _cols[i];
+      }
+    }
+  }
+
+  void write_mtx(const std::string mtx_name = "matrix.mtx");
+
+  index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
+  IdxArray1D_t rowp;          // length: nrows + 1
+  IdxArray1D_t cols;          // length: nnz
+  ValArray1D_t<T> vals;       // length: nnz
 };
 
 }  // namespace A2D

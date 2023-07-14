@@ -336,6 +336,52 @@ inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
   }
 }
 
+// Convert BSRMat to an unblocked, CSR format
+template <typename T, index_t M, index_t N>
+CSRMat<T> bsr_to_csr(BSRMat<T, M, N> bsr_mat) {
+  index_t nbrows = bsr_mat.nbrows;
+  index_t nbcols = bsr_mat.nbcols;
+  index_t nnz = bsr_mat.nnz;
+
+  index_t nrows = nbrows * M;
+  index_t ncols = nbcols * N;
+  index_t gnnz = bsr_mat.nnz * M * N;
+
+  CSRMat<T> csr_mat(nrows, ncols, gnnz);
+
+  // Populate rowp
+  index_t i, nblocks_this_row;
+  for (index_t ib = 0; ib < nbrows; ib++) {
+    nblocks_this_row = bsr_mat.rowp(ib + 1) - bsr_mat.rowp(ib);
+    for (index_t ii = 0; ii < M; ii++) {
+      i = M * ib + ii;
+      csr_mat.rowp(i) = (M * bsr_mat.rowp(ib) + ii * nblocks_this_row) * N;
+    }
+  }
+  csr_mat.rowp(nrows) = gnnz;
+
+  // Populate cols and vals
+  index_t e = NO_INDEX;
+  index_t MN = M * N;
+  for (index_t ib = 0; ib < nbrows; ib++) {
+    nblocks_this_row = bsr_mat.rowp(ib + 1) - bsr_mat.rowp(ib);
+    index_t eb, index;
+    for (eb = bsr_mat.rowp(ib), index = 0; eb < bsr_mat.rowp(ib + 1);
+         eb++, index++) {
+      for (index_t ii = 0; ii < M; ii++) {
+        i = M * ib + ii;
+        for (index_t jj = 0; jj < M; jj++) {
+          e = csr_mat.rowp(i) + index * N + jj;
+          csr_mat.vals(e) = bsr_mat.vals(eb, ii, jj);
+          csr_mat.cols(e) = N * bsr_mat.cols(eb) + jj;
+        }
+      }
+    }
+  }
+
+  return csr_mat;
+}
+
 }  // namespace A2D
 
 #endif  // A2D_SPARSE_UTILS_INL_H

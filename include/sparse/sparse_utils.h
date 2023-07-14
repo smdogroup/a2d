@@ -3,6 +3,9 @@
 
 #include <algorithm>
 
+#include "a2dobjs.h"
+#include "sparse/sparse_matrix.h"
+
 namespace A2D {
 
 // Compute y = alpha * A * x + beta * y
@@ -47,6 +50,10 @@ inline int RemoveDuplicates(int *array, int len, int exclude = -1);
 // Sort and make the data structure unique - remove diagonal
 inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
                                     int remove_diagonal = 0);
+
+// Convert BSRMat to an unblocked, CSR format
+template <typename T, index_t M, index_t N>
+CSRMat<T> bsr_to_csr(BSRMat<T, M, N> bsr_mat);
 
 }  // namespace A2D
 

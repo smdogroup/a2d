@@ -175,6 +175,8 @@ void axpby(View& y, typename View::const_value_type& alpha,
 
 // Array type shortcuts
 using IdxArray1D_t = MultiArrayNew<index_t*>;
+template <typename T>
+using ValArray1D_t = MultiArrayNew<T*>;
 
 }  // namespace A2D
 

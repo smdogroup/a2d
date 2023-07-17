@@ -82,9 +82,10 @@ class Timer {
   ~Timer() {
     if (TIMER_IS_ON) {
       auto t_end = std::chrono::steady_clock::now();
-      auto t_elapse =
-          std::chrono::duration_cast<std::chrono::milliseconds>(t_end - t_start)
-              .count();
+      double t_elapse =
+          1e-6 *
+          (std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start)
+               .count());  // in ms
 
       counter--;
 
@@ -93,7 +94,7 @@ class Timer {
       snprintf(
           _message, 256, "%-80s(%.2f ms)",
           (std::string(TIMER_TAB * counter, ' ') + fun_name + " exits").c_str(),
-          (double)t_elapse);
+          t_elapse);
       std::string message(_message);
 
       // Flush the long log
@@ -102,7 +103,7 @@ class Timer {
       std::fclose(fp);
 
       // Save data for short log
-      buffer.push_back(TimerEntry{message, ')', (double)t_elapse});
+      buffer.push_back(TimerEntry{message, ')', t_elapse});
 
       // Once the most outer function returns, we filter the buffer such
       // that we only keep entry pairs whose elapse time is above threshold
@@ -170,6 +171,23 @@ class Timer {
   inline static std::string TIMER_SHORT_OUTPUT_FILE = "profile_short.log";
   inline static double TIMER_THRESHOLD_MS = 1.0;
   inline static bool TIMER_IS_ON = true;
+};
+
+class StopWatch {
+ public:
+  StopWatch() { t_start = std::chrono::steady_clock::now(); }
+  double lap() {
+    auto now = std::chrono::steady_clock::now();
+    double t_elapse =
+        1e-9 *
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now - t_start)
+            .count();  // in s
+    return t_elapse;
+  }
+  void reset_start() { t_start = std::chrono::steady_clock::now(); }
+
+ private:
+  std::chrono::time_point<std::chrono::steady_clock> t_start;
 };
 
 }  // namespace A2D

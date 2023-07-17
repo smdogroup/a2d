@@ -17,10 +17,16 @@ for mtx in args.mtx:
 
 # Compute difference
 if len(mat_list) == 2:
-    diff = np.max(np.abs(mat_list[0] - mat_list[1]))
+    mat1 = mat_list[0]
+    mat2 = mat_list[1]
 
-    print("max entry of mat 1: %20.10f" % np.max(np.abs(mat_list[0])))
-    print("max entry of mat 2: %20.10f" % np.max(np.abs(mat_list[1])))
+    diff = np.max(np.abs(mat1 - mat2))
+
+    print("max entry of mat 1: %20.10f" % np.max(np.abs(mat1)))
+    print("max entry of mat 2: %20.10f" % np.max(np.abs(mat2)))
     print("max entry diff: %20.10f" % diff)
+
+    fig, ax = plt.subplots()
+    ax.matshow((mat1 - mat2).todense())
 
 plt.show()

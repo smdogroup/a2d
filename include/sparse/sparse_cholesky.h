@@ -35,13 +35,18 @@ class SparseCholesky {
  public:
   SparseCholesky(int _size, const int *Acolp, const int *Arows,
                  CholOrderingType order = CholOrderingType::ND,
-                 const int *_perm = NULL) {
+                 const int *_perm = nullptr) {
     construct_cholesky(_size, Acolp, Arows, order, _perm);
   }
 
-  template <index_t M>
-  SparseCholesky(int _size, BSRMat<T, M, M> bsr_mat,
-                 CholOrderingType order = CholOrderingType::ND);
+  SparseCholesky(CSCMat<T> csc_mat,
+                 CholOrderingType order = CholOrderingType::ND,
+                 const int *_perm = nullptr) {
+    construct_cholesky(csc_mat.nrows, (const int *)csc_mat.colp.data(),
+                       (const int *)csc_mat.rows.data(), order, _perm);
+    setValues(csc_mat.ncols, (const int *)csc_mat.colp.data(),
+              (const int *)csc_mat.rows.data(), csc_mat.vals.data());
+  }
 
   ~SparseCholesky();
 
@@ -61,7 +66,7 @@ class SparseCholesky {
   // Construct the class
   void construct_cholesky(int _size, const int *Acolp, const int *Arows,
                           CholOrderingType order = CholOrderingType::ND,
-                          const int *_perm = NULL);
+                          const int *_perm = nullptr);
 
   // Build the elimination tree/forest
   void buildForest(const int Acolp[], const int Arows[], int parent[],
@@ -130,11 +135,11 @@ class SparseCholesky {
   int size;
 
   // Permutation and inverese permultation for the matrix. Both of these may be
-  // NULL.
+  // nullptr.
   int *perm, *iperm;
 
   // Temporary vector for solving with the permutation arrays - only allocated
-  // if perm and iperm are allocated, otherwise it is NULL
+  // if perm and iperm are allocated, otherwise it is nullptr
   T *temp;
 
   // The row indices for the strict lower-diagonal entries of each super node.
@@ -170,6 +175,10 @@ class SparseCholesky {
 
   // The numerical data for all entries size = data_ptr[num_snodes]
   T *data;
+
+  // Optional, if the matrix is given as a block compressed sparse row matrix,
+  // we first convert it to a csc format
+  CSCMat<T> csc_mat;
 };
 
 }  // namespace A2D

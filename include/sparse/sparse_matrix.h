@@ -118,10 +118,9 @@ class BSRMat {
    * @brief Zero out rows and set diagonal entry to one for each zeroed row
    *
    * @param nbcs number of global rows to zero-out
-   * @param i global row indices, usually a list of dof indices for finite
-   * element context
+   * @param dof global dof indices
    */
-  void zero_rows(const index_t nbcs, const index_t i[]);
+  void zero_rows(const index_t nbcs, const index_t dof[]);
 
   /**
    * @brief Convert to a dense matrix
@@ -136,8 +135,10 @@ class BSRMat {
    * @brief Export the matrix as mtx format
    *
    * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
    */
-  void write_mtx(const std::string mtx_name = "matrix.mtx");
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
 
   // Number of block rows and block columns
   index_t nbrows, nbcols;
@@ -176,6 +177,7 @@ class BSRMat {
 template <typename T>
 class CSRMat {
  public:
+  CSRMat() = default;
   CSRMat(index_t nrows, index_t ncols, index_t nnz,
          const index_t *_rowp = nullptr, const index_t *_cols = nullptr)
       : nrows(nrows),
@@ -194,7 +196,33 @@ class CSRMat {
     }
   }
 
-  void write_mtx(const std::string mtx_name = "matrix.mtx");
+  CSRMat(const CSRMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    rowp = other.rowp;
+    cols = other.cols;
+    vals = other.vals;
+  }
+
+  CSRMat &operator=(const CSRMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    rowp = other.rowp;
+    cols = other.cols;
+    vals = other.vals;
+    return *this;
+  }
+
+  /**
+   * @brief Export the matrix as mtx format
+   *
+   * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
+   */
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
 
   index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
   IdxArray1D_t rowp;          // length: nrows + 1
@@ -208,6 +236,7 @@ class CSRMat {
 template <typename T>
 class CSCMat {
  public:
+  CSCMat() = default;
   CSCMat(index_t nrows, index_t ncols, index_t nnz,
          const index_t *_colp = nullptr, const index_t *_rows = nullptr)
       : nrows(nrows),
@@ -226,7 +255,42 @@ class CSCMat {
     }
   }
 
-  void write_mtx(const std::string mtx_name = "matrix.mtx");
+  CSCMat(const CSCMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    colp = other.colp;
+    rows = other.rows;
+    vals = other.vals;
+  }
+
+  CSCMat &operator=(const CSCMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    colp = other.colp;
+    rows = other.rows;
+    vals = other.vals;
+    return *this;
+  }
+
+  /**
+   * @brief Zero out columns and set diagonal entry to one for each zeroed
+   * column
+   *
+   * @param nbcs number of global columns to zero-out
+   * @param dof global dof indices
+   */
+  void zero_columns(const index_t nbcs, const index_t dof[]);
+
+  /**
+   * @brief Export the matrix as mtx format
+   *
+   * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
+   */
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
 
   index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
   IdxArray1D_t colp;          // length: ncols + 1

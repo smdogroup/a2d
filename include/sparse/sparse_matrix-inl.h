@@ -43,10 +43,10 @@ void BSRMat<T, M, N>::add_values(const index_t m, const index_t i[],
 
 // Zero out rows and set diagonal entry to one for each zeroed row
 template <typename T, index_t M, index_t N>
-void BSRMat<T, M, N>::zero_rows(const index_t nbcs, const index_t i[]) {
+void BSRMat<T, M, N>::zero_rows(const index_t nbcs, const index_t dof[]) {
   for (index_t ii = 0; ii < nbcs; ii++) {
-    index_t block_row = i[ii] / M;
-    index_t local_row = i[ii] % M;
+    index_t block_row = dof[ii] / M;
+    index_t local_row = dof[ii] % M;
 
     for (index_t jp = rowp[block_row]; jp < rowp[block_row + 1]; jp++) {
       for (index_t k = 0; k < N; k++) {
@@ -91,7 +91,7 @@ void BSRMat<T, M, N>::to_dense(index_t *m_, index_t *n_, T **A_) {
 
 // Export the matrix as mtx format
 template <typename T, index_t M, index_t N>
-void BSRMat<T, M, N>::write_mtx(const std::string mtx_name) {
+void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
   // Open file and destroy old contents, if any
   std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
 
@@ -99,9 +99,10 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name) {
   std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
 
   // Write global m, n and nnz
-  std::fprintf(fp, "%d %d %d\n", nbrows * M, nbcols * N, nnz * M * N);
+  std::fprintf(fp, "%15d%15d%15d\n", nbrows * M, nbcols * N, nnz * M * N);
 
   // Write entries
+  index_t nnz_mtx = 0;
   for (index_t i = 0; i < nbrows; i++) {
     for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
       index_t j = cols[jp];  // (i, j) is the block index pair
@@ -111,40 +112,28 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name) {
         for (index_t jj = 0; jj < N; jj++) {
           // (irow, jcol) is the entry coo
           const index_t jcol = N * j + jj + 1;  // convert to 1-based index
-          std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, vals(jp, ii, jj));
+          T val = vals(jp, ii, jj);
+          if (std::fabs(val) >= epsilon) {
+            nnz_mtx++;
+            std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, val);
+          }
         }
       }
     }
   }
   std::fclose(fp);
-  return;
-}
 
-// Export the matrix as mtx format
-template <typename T>
-void CSRMat<T>::write_mtx(const std::string mtx_name) {
-  // Open file and destroy old contents, if any
-  std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
-
-  // Write header
+  // Modify nnz
+  fp = std::fopen(mtx_name.c_str(), "r+");
   std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
-
-  // Write m, n and nnz
-  std::fprintf(fp, "%d %d %d\n", nrows, ncols, nnz);
-
-  // Write entries
-  for (index_t i = 0; i < nrows; i++) {
-    for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-      std::fprintf(fp, "%d %d %30.20e\n", i + 1, cols[jp] + 1, vals[jp]);
-    }
-  }
+  std::fprintf(fp, "%15d%15d%15d", nbrows * M, nbcols * N, nnz_mtx);
   std::fclose(fp);
   return;
 }
 
 // Export the matrix as mtx format
 template <typename T>
-void CSCMat<T>::write_mtx(const std::string mtx_name) {
+void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   // Open file and destroy old contents, if any
   std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
 
@@ -152,14 +141,72 @@ void CSCMat<T>::write_mtx(const std::string mtx_name) {
   std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
 
   // Write m, n and nnz
-  std::fprintf(fp, "%d %d %d\n", nrows, ncols, nnz);
+  std::fprintf(fp, "%15d%15d%15d\n", nrows, ncols, nnz);
 
   // Write entries
-  for (index_t j = 0; j < ncols; j++) {
-    for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
-      std::fprintf(fp, "%d %d %30.20e\n", rows[ip] + 1, j + 1, vals[ip]);
+  index_t nnz_mtx = 0;
+  for (index_t i = 0; i < nrows; i++) {
+    for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
+      if (std::fabs(vals[jp]) >= epsilon) {
+        nnz_mtx++;
+        std::fprintf(fp, "%d %d %30.20e\n", i + 1, cols[jp] + 1, vals[jp]);
+      }
     }
   }
+  std::fclose(fp);
+
+  // Modify nnz
+  fp = std::fopen(mtx_name.c_str(), "r+");
+  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  std::fprintf(fp, "%15d%15d%15d", nrows, ncols, nnz_mtx);
+  std::fclose(fp);
+  return;
+}
+
+// Zero out columns and set diagonal entry to one for each zeroed column
+template <typename T>
+void CSCMat<T>::zero_columns(const index_t nbcs, const index_t dof[]) {
+  for (index_t ii = 0; ii < nbcs; ii++) {
+    index_t column = dof[ii];
+
+    for (index_t jp = colp[column]; jp < colp[column + 1]; jp++) {
+      vals(jp) = 0.0;
+
+      if (rows[jp] == column) {
+        vals(jp) = 1.0;
+      }
+    }
+  }
+}
+
+// Export the matrix as mtx format
+template <typename T>
+void CSCMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
+  // Open file and destroy old contents, if any
+  std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
+
+  // Write header
+  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+
+  // Write m, n and nnz
+  std::fprintf(fp, "%15d%15d%15d\n", nrows, ncols, nnz);
+
+  // Write entries
+  index_t nnz_mtx = 0;
+  for (index_t j = 0; j < ncols; j++) {
+    for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
+      if (std::fabs(vals[ip]) >= epsilon) {
+        nnz_mtx++;
+        std::fprintf(fp, "%d %d %30.20e\n", rows[ip] + 1, j + 1, vals[ip]);
+      }
+    }
+  }
+  std::fclose(fp);
+
+  // Modify nnz
+  fp = std::fopen(mtx_name.c_str(), "r+");
+  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  std::fprintf(fp, "%15d%15d%15d", nrows, ncols, nnz_mtx);
   std::fclose(fp);
   return;
 }

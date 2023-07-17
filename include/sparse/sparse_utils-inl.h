@@ -349,37 +349,102 @@ CSRMat<T> bsr_to_csr(BSRMat<T, M, N> bsr_mat) {
 
   CSRMat<T> csr_mat(nrows, ncols, gnnz);
 
-  // Populate rowp
-  index_t i, nblocks_this_row;
+  index_t i;            // row index for this entry
+  index_t n;            // entry index if entries are continuous in rows
+  index_t nb;           // block index for this block
+  index_t num_entries;  // number of entries in this row
+  index_t MN = M * N;   // block size
+  index_t index;        // aux entry index within the row
+
   for (index_t ib = 0; ib < nbrows; ib++) {
-    nblocks_this_row = bsr_mat.rowp(ib + 1) - bsr_mat.rowp(ib);
+    num_entries = (bsr_mat.rowp(ib + 1) - bsr_mat.rowp(ib)) * N;
     for (index_t ii = 0; ii < M; ii++) {
       i = M * ib + ii;
-      csr_mat.rowp(i) = (M * bsr_mat.rowp(ib) + ii * nblocks_this_row) * N;
+      csr_mat.rowp(i) = MN * bsr_mat.rowp(ib) + ii * num_entries;
+      for (nb = bsr_mat.rowp(ib), index = 0; nb < bsr_mat.rowp(ib + 1);
+           nb++, index++) {
+        for (index_t jj = 0; jj < M; jj++) {
+          n = csr_mat.rowp(i) + index * N + jj;
+          csr_mat.vals(n) = bsr_mat.vals(nb, ii, jj);
+          csr_mat.cols(n) = N * bsr_mat.cols(nb) + jj;
+        }
+      }
     }
   }
   csr_mat.rowp(nrows) = gnnz;
 
-  // Populate cols and vals
-  index_t e = NO_INDEX;
-  index_t MN = M * N;
+  return csr_mat;
+}
+
+// Convert BSRMat to an unblocked, CSC format
+template <typename T, index_t M, index_t N>
+CSCMat<T> bsr_to_csc(BSRMat<T, M, N> bsr_mat) {
+  index_t nbrows = bsr_mat.nbrows;
+  index_t nbcols = bsr_mat.nbcols;
+  index_t nnz = bsr_mat.nnz;
+
+  index_t nrows = nbrows * M;
+  index_t ncols = nbcols * N;
+  index_t gnnz = bsr_mat.nnz * M * N;
+
+  CSCMat<T> csc_mat(nrows, ncols, gnnz);
+  BLAS::fill(csc_mat.colp, 0);
+
+  index_t i, j;  // global row, column index for this entry
+  index_t n;     // entry index if entries are continuous in rows
+  index_t nb;    // block index if blocks are continuous in rows
+  index_t m;     // entry index if entries are continuous in columns
+
+  for (nb = 0; nb < nnz; nb++) {
+    for (index_t jj = 0; jj < N; jj++) {
+      // Count entries for each column, need a prefix sum later
+      csc_mat.colp(N * bsr_mat.cols(nb) + jj) += M;
+    }
+  }
+
+  // Perform the prefix sum across columns to get real colp
+  index_t presum = 0;  // prefix sum, number of entries before this column
+  index_t temp;
+  for (index_t jb = 0; jb < nbcols; jb++) {
+    for (index_t jj = 0; jj < N; jj++) {
+      j = N * jb + jj;
+      temp = csc_mat.colp(j);
+      csc_mat.colp(j) = presum;
+      presum += temp;
+    }
+  }
+  csc_mat.colp(ncols) = gnnz;
+
+  // Now populate rows and vals, note that we use colp to track each column,
+  // this means we need to set colp back later on
   for (index_t ib = 0; ib < nbrows; ib++) {
-    nblocks_this_row = bsr_mat.rowp(ib + 1) - bsr_mat.rowp(ib);
-    index_t eb, index;
-    for (eb = bsr_mat.rowp(ib), index = 0; eb < bsr_mat.rowp(ib + 1);
-         eb++, index++) {
-      for (index_t ii = 0; ii < M; ii++) {
-        i = M * ib + ii;
-        for (index_t jj = 0; jj < M; jj++) {
-          e = csr_mat.rowp(i) + index * N + jj;
-          csr_mat.vals(e) = bsr_mat.vals(eb, ii, jj);
-          csr_mat.cols(e) = N * bsr_mat.cols(eb) + jj;
+    for (index_t ii = 0; ii < M; ii++) {
+      i = M * ib + ii;
+      for (nb = bsr_mat.rowp(ib); nb < bsr_mat.rowp(ib + 1); nb++) {
+        for (index_t jj = 0; jj < N; jj++) {
+          j = N * bsr_mat.cols(nb) + jj;
+          m = csc_mat.colp(j);
+
+          csc_mat.rows(m) = i;
+          csc_mat.vals(m) = bsr_mat.vals(nb, ii, jj);
+          csc_mat.colp(j)++;
         }
       }
     }
   }
 
-  return csr_mat;
+  // Now we reset colp
+  index_t last = 0;
+  for (index_t jb = 0; jb < nbcols; jb++) {
+    for (index_t jj = 0; jj < N; jj++) {
+      j = N * jb + jj;
+      temp = csc_mat.colp(j);
+      csc_mat.colp(j) = last;
+      last = temp;
+    }
+  }
+
+  return csc_mat;
 }
 
 }  // namespace A2D

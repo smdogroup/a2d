@@ -116,9 +116,13 @@ int main() {
     // Create csr mat
     CSRMat<T> csr_mat = bsr_to_csr(bsr_mat);
 
+    // Create csc mat
+    CSCMat<T> csc_mat = bsr_to_csc(bsr_mat);
+
     // Write to mtx
     bsr_mat.write_mtx("bsr_mat.mtx");
     csr_mat.write_mtx("csr_mat.mtx");
+    csc_mat.write_mtx("csc_mat.mtx");
   }
 
   Kokkos::finalize();

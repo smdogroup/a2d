@@ -142,6 +142,28 @@ void CSRMat<T>::write_mtx(const std::string mtx_name) {
   return;
 }
 
+// Export the matrix as mtx format
+template <typename T>
+void CSCMat<T>::write_mtx(const std::string mtx_name) {
+  // Open file and destroy old contents, if any
+  std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
+
+  // Write header
+  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+
+  // Write m, n and nnz
+  std::fprintf(fp, "%d %d %d\n", nrows, ncols, nnz);
+
+  // Write entries
+  for (index_t j = 0; j < ncols; j++) {
+    for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
+      std::fprintf(fp, "%d %d %30.20e\n", rows[ip] + 1, j + 1, vals[ip]);
+    }
+  }
+  std::fclose(fp);
+  return;
+}
+
 }  // namespace A2D
 
 #endif  // A2D_SPARSE_MATRIX_INL_H

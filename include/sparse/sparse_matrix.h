@@ -202,6 +202,38 @@ class CSRMat {
   ValArray1D_t<T> vals;       // length: nnz
 };
 
+/**
+ * @brief Compressed sparse column matrix
+ */
+template <typename T>
+class CSCMat {
+ public:
+  CSCMat(index_t nrows, index_t ncols, index_t nnz,
+         const index_t *_colp = nullptr, const index_t *_rows = nullptr)
+      : nrows(nrows),
+        ncols(ncols),
+        nnz(nnz),
+        colp("colp", ncols + 1),
+        rows("rows", nnz),
+        vals("vals", nnz) {
+    if (_colp && _rows) {
+      for (index_t i = 0; i < ncols + 1; i++) {
+        colp(i) = _colp[i];
+      }
+      for (index_t i = 0; i < nnz; i++) {
+        rows(i) = _rows[i];
+      }
+    }
+  }
+
+  void write_mtx(const std::string mtx_name = "matrix.mtx");
+
+  index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
+  IdxArray1D_t colp;          // length: ncols + 1
+  IdxArray1D_t rows;          // length: nnz
+  ValArray1D_t<T> vals;       // length: nnz
+};
+
 }  // namespace A2D
 
 #include "sparse/sparse_matrix-inl.h"

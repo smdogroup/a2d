@@ -55,6 +55,10 @@ inline void SortAndRemoveDuplicates(int nvars, int *rowp, int *cols,
 template <typename T, index_t M, index_t N>
 CSRMat<T> bsr_to_csr(BSRMat<T, M, N> bsr_mat);
 
+// Convert BSRMat to an unblocked, CSC format
+template <typename T, index_t M, index_t N>
+CSCMat<T> bsr_to_csc(BSRMat<T, M, N> bsr_mat);
+
 }  // namespace A2D
 
 #include "sparse/sparse_utils-inl.h"

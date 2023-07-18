@@ -74,7 +74,7 @@ class MatCoreTest : public ::testing::Test {
 
 TEST_F(MatCoreTest, IsRowMajor) {
   Mat2x3 C(C2x3_data);
-  EXPECT_MAT_EQ(2, 3, C, C2x3_data);
+  EXPECT_MAT_NEAR(2, 3, C, C2x3_data);
 }
 
 TEST_F(MatCoreTest, MatMatMultCore) {
@@ -82,7 +82,7 @@ TEST_F(MatCoreTest, MatMatMultCore) {
   const Mat3x5 D(D3x5_data);
   Mat2x5 CD;
   A2D::MatMatMultCore<2, 3, 5, Mat2x3, Mat3x5, Mat2x5>(C, D, CD);
-  EXPECT_MAT_EQ(2, 5, CD, CD_data);
+  EXPECT_MAT_NEAR(2, 5, CD, CD_data);
 }
 
 TEST_F(MatCoreTest, MatTransMatMultCore) {
@@ -90,7 +90,7 @@ TEST_F(MatCoreTest, MatTransMatMultCore) {
   const Mat3x5 D(D3x5_data);
   Mat2x5 CD;
   A2D::MatTransMatMultCore<2, 3, 5, Mat3x2, Mat3x5, Mat2x5>(CT, D, CD);
-  EXPECT_MAT_EQ(2, 5, CD, CD_data);
+  EXPECT_MAT_NEAR(2, 5, CD, CD_data);
 }
 
 TEST_F(MatCoreTest, MatMatTransMultCore) {
@@ -98,7 +98,7 @@ TEST_F(MatCoreTest, MatMatTransMultCore) {
   const Mat5x3 DT(D5x3_data);
   Mat2x5 CD;
   A2D::MatMatTransMultCore<2, 3, 5, Mat2x3, Mat5x3, Mat2x5>(C, DT, CD);
-  EXPECT_MAT_EQ(2, 5, CD, CD_data);
+  EXPECT_MAT_NEAR(2, 5, CD, CD_data);
 }
 
 TEST_F(MatCoreTest, MatTransMatTransMultCore) {
@@ -106,7 +106,7 @@ TEST_F(MatCoreTest, MatTransMatTransMultCore) {
   const Mat5x3 DT(D5x3_data);
   Mat2x5 CD;
   A2D::MatTransMatTransMultCore<2, 3, 5, Mat3x2, Mat5x3, Mat2x5>(CT, DT, CD);
-  EXPECT_MAT_EQ(2, 5, CD, CD_data);
+  EXPECT_MAT_NEAR(2, 5, CD, CD_data);
 }
 
 /**
@@ -118,7 +118,7 @@ TEST_F(MatCoreTest, Symm3x3SymmMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Symm3x3SymmMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, AB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, AB_data);
 }
 
 TEST_F(MatCoreTest, Symm3x3SymmMultScaleCore) {
@@ -129,7 +129,7 @@ TEST_F(MatCoreTest, Symm3x3SymmMultScaleCore) {
   A2D::Symm3x3SymmMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3SymmMultAddCore) {
@@ -139,7 +139,7 @@ TEST_F(MatCoreTest, Symm3x3SymmMultAddCore) {
   A2D::Symm3x3SymmMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3SymmMultSubCore) {
@@ -149,7 +149,7 @@ TEST_F(MatCoreTest, Symm3x3SymmMultSubCore) {
   A2D::Symm3x3SymmMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3SymmMultAddScaleCore) {
@@ -160,7 +160,7 @@ TEST_F(MatCoreTest, Symm3x3SymmMultAddScaleCore) {
   A2D::Symm3x3SymmMultAddScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -172,7 +172,7 @@ TEST_F(MatCoreTest, Symm3x3MatMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Symm3x3MatMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, AB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, AB_data);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatMultScaleCore) {
@@ -183,7 +183,7 @@ TEST_F(MatCoreTest, Symm3x3MatMultScaleCore) {
   A2D::Symm3x3MatMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatMultAddCore) {
@@ -193,7 +193,7 @@ TEST_F(MatCoreTest, Symm3x3MatMultAddCore) {
   A2D::Symm3x3MatMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatMultSubCore) {
@@ -203,7 +203,7 @@ TEST_F(MatCoreTest, Symm3x3MatMultSubCore) {
   A2D::Symm3x3MatMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatMultAddScaleCore) {
@@ -214,7 +214,7 @@ TEST_F(MatCoreTest, Symm3x3MatMultAddScaleCore) {
   A2D::Symm3x3MatMultAddScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -226,7 +226,7 @@ TEST_F(MatCoreTest, Symm3x3MatTransMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Symm3x3MatTransMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, ABT_data);
+  EXPECT_MAT_NEAR(3, 3, AB, ABT_data);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatTransMultScaleCore) {
@@ -237,7 +237,7 @@ TEST_F(MatCoreTest, Symm3x3MatTransMultScaleCore) {
   A2D::Symm3x3MatTransMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatTransMultAddCore) {
@@ -247,7 +247,7 @@ TEST_F(MatCoreTest, Symm3x3MatTransMultAddCore) {
   A2D::Symm3x3MatTransMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatTransMultSubCore) {
@@ -257,7 +257,7 @@ TEST_F(MatCoreTest, Symm3x3MatTransMultSubCore) {
   A2D::Symm3x3MatTransMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Symm3x3MatTransMultAddScaleCore) {
@@ -269,7 +269,7 @@ TEST_F(MatCoreTest, Symm3x3MatTransMultAddScaleCore) {
                                                                   C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -281,7 +281,7 @@ TEST_F(MatCoreTest, Mat3x3SymmMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Mat3x3SymmMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, AB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, AB_data);
 }
 
 TEST_F(MatCoreTest, Mat3x3SymmMultScaleCore) {
@@ -292,7 +292,7 @@ TEST_F(MatCoreTest, Mat3x3SymmMultScaleCore) {
   A2D::Mat3x3SymmMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3SymmMultAddCore) {
@@ -302,7 +302,7 @@ TEST_F(MatCoreTest, Mat3x3SymmMultAddCore) {
   A2D::Mat3x3SymmMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3SymmMultSubCore) {
@@ -312,7 +312,7 @@ TEST_F(MatCoreTest, Mat3x3SymmMultSubCore) {
   A2D::Mat3x3SymmMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3SymmMultAddScaleCore) {
@@ -323,7 +323,7 @@ TEST_F(MatCoreTest, Mat3x3SymmMultAddScaleCore) {
   A2D::Mat3x3SymmMultAddScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -335,7 +335,7 @@ TEST_F(MatCoreTest, MatTrans3x3SymmMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::MatTrans3x3SymmMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, ATB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, ATB_data);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3SymmMultScaleCore) {
@@ -346,7 +346,7 @@ TEST_F(MatCoreTest, MatTrans3x3SymmMultScaleCore) {
   A2D::MatTrans3x3SymmMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3SymmMultAddCore) {
@@ -356,7 +356,7 @@ TEST_F(MatCoreTest, MatTrans3x3SymmMultAddCore) {
   A2D::MatTrans3x3SymmMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3SymmMultSubCore) {
@@ -366,7 +366,7 @@ TEST_F(MatCoreTest, MatTrans3x3SymmMultSubCore) {
   A2D::MatTrans3x3SymmMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3SymmMultAddScaleCore) {
@@ -378,7 +378,7 @@ TEST_F(MatCoreTest, MatTrans3x3SymmMultAddScaleCore) {
                                                                   C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -390,7 +390,7 @@ TEST_F(MatCoreTest, Mat3x3MatMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Mat3x3MatMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, AB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, AB_data);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatMultScaleCore) {
@@ -401,7 +401,7 @@ TEST_F(MatCoreTest, Mat3x3MatMultScaleCore) {
   A2D::Mat3x3MatMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatMultAddCore) {
@@ -411,7 +411,7 @@ TEST_F(MatCoreTest, Mat3x3MatMultAddCore) {
   A2D::Mat3x3MatMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatMultSubCore) {
@@ -421,7 +421,7 @@ TEST_F(MatCoreTest, Mat3x3MatMultSubCore) {
   A2D::Mat3x3MatMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatMultAddScaleCore) {
@@ -432,7 +432,7 @@ TEST_F(MatCoreTest, Mat3x3MatMultAddScaleCore) {
   A2D::Mat3x3MatMultAddScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * AB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -444,7 +444,7 @@ TEST_F(MatCoreTest, Mat3x3MatTransMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::Mat3x3MatTransMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, ABT_data);
+  EXPECT_MAT_NEAR(3, 3, AB, ABT_data);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatTransMultScaleCore) {
@@ -455,7 +455,7 @@ TEST_F(MatCoreTest, Mat3x3MatTransMultScaleCore) {
   A2D::Mat3x3MatTransMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatTransMultAddCore) {
@@ -465,7 +465,7 @@ TEST_F(MatCoreTest, Mat3x3MatTransMultAddCore) {
   A2D::Mat3x3MatTransMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatTransMultSubCore) {
@@ -475,7 +475,7 @@ TEST_F(MatCoreTest, Mat3x3MatTransMultSubCore) {
   A2D::Mat3x3MatTransMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, Mat3x3MatTransMultAddScaleCore) {
@@ -487,7 +487,7 @@ TEST_F(MatCoreTest, Mat3x3MatTransMultAddScaleCore) {
                                                                  C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * ABT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -499,7 +499,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::MatTrans3x3MatMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, ATB_data);
+  EXPECT_MAT_NEAR(3, 3, AB, ATB_data);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatMultScaleCore) {
@@ -510,7 +510,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatMultScaleCore) {
   A2D::MatTrans3x3MatMultScaleCore<T, Mat3x3, Mat3x3, Mat3x3>(scale, A, B, AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatMultAddCore) {
@@ -520,7 +520,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatMultAddCore) {
   A2D::MatTrans3x3MatMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatMultSubCore) {
@@ -530,7 +530,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatMultSubCore) {
   A2D::MatTrans3x3MatMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatMultAddScaleCore) {
@@ -542,7 +542,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatMultAddScaleCore) {
                                                                  C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * ATB_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 /**
@@ -554,7 +554,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatTransMultCore) {
   const Mat3x3 B(B3x3_data);
   Mat3x3 AB;
   A2D::MatTrans3x3MatTransMultCore<Mat3x3, Mat3x3, Mat3x3>(A, B, AB);
-  EXPECT_MAT_EQ(3, 3, AB, ATBT_data);
+  EXPECT_MAT_NEAR(3, 3, AB, ATBT_data);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatTransMultScaleCore) {
@@ -566,7 +566,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatTransMultScaleCore) {
                                                                    AB);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = scale * ATBT_data[i];
-  EXPECT_MAT_EQ(3, 3, AB, res);
+  EXPECT_MAT_NEAR(3, 3, AB, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatTransMultAddCore) {
@@ -576,7 +576,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatTransMultAddCore) {
   A2D::MatTrans3x3MatTransMultAddCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + ATBT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatTransMultSubCore) {
@@ -586,7 +586,7 @@ TEST_F(MatCoreTest, MatTrans3x3MatTransMultSubCore) {
   A2D::MatTrans3x3MatTransMultSubCore<Mat3x3, Mat3x3, Mat3x3>(A, B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] - ATBT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }
 
 TEST_F(MatCoreTest, MatTrans3x3MatTransMultAddScaleCore) {
@@ -598,5 +598,5 @@ TEST_F(MatCoreTest, MatTrans3x3MatTransMultAddScaleCore) {
                                                                       B, C);
   T res[9];
   for (I i = 0; i < 9; i++) res[i] = Z3x3_data[i] + scale * ATBT_data[i];
-  EXPECT_MAT_EQ(3, 3, C, res);
+  EXPECT_MAT_NEAR(3, 3, C, res);
 }

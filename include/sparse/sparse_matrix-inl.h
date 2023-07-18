@@ -131,6 +131,28 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
   return;
 }
 
+// Convert to a dense matrix
+template <typename T>
+void CSRMat<T>::to_dense(index_t *m_, index_t *n_, T **A_) {
+  index_t m = nrows;
+  index_t n = ncols;
+  index_t size = m * n;
+
+  T *A = new T[size];
+  std::fill(A, A + size, T(0.0));
+
+  for (index_t i = 0; i < nrows; i++) {
+    for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
+      index_t j = cols[jp];
+      A[n * i + j] = vals(jp);
+    }
+  }
+
+  *A_ = A;
+  *m_ = m;
+  *n_ = n;
+}
+
 // Export the matrix as mtx format
 template <typename T>
 void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
@@ -177,6 +199,28 @@ void CSCMat<T>::zero_columns(const index_t nbcs, const index_t dof[]) {
       }
     }
   }
+}
+
+// Convert to a dense matrix
+template <typename T>
+void CSCMat<T>::to_dense(index_t *m_, index_t *n_, T **A_) {
+  index_t m = nrows;
+  index_t n = ncols;
+  index_t size = m * n;
+
+  T *A = new T[size];
+  std::fill(A, A + size, T(0.0));
+
+  for (index_t j = 0; j < ncols; j++) {
+    for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
+      index_t i = rows[ip];
+      A[n * i + j] = vals(ip);
+    }
+  }
+
+  *A_ = A;
+  *m_ = m;
+  *n_ = n;
 }
 
 // Export the matrix as mtx format

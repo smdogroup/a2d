@@ -66,6 +66,8 @@ class BSRMat {
     }
   }
 
+  BSRMat() = default;
+
   /**
    * @brief Copy constructor (shallow copy)
    */
@@ -216,6 +218,15 @@ class CSRMat {
   }
 
   /**
+   * @brief Convert to a dense matrix
+   *
+   * @param m_ output, number of rows of the dense matrix
+   * @param n_ output, number of columns of the dense matrix
+   * @param A_ output, dense matrix values stored in row-major ordering
+   */
+  void to_dense(index_t *m_, index_t *n_, T **A_);
+
+  /**
    * @brief Export the matrix as mtx format
    *
    * @param mtx_name the output file
@@ -282,6 +293,15 @@ class CSCMat {
    * @param dof global dof indices
    */
   void zero_columns(const index_t nbcs, const index_t dof[]);
+
+  /**
+   * @brief Convert to a dense matrix
+   *
+   * @param m_ output, number of rows of the dense matrix
+   * @param n_ output, number of columns of the dense matrix
+   * @param A_ output, dense matrix values stored in row-major ordering
+   */
+  void to_dense(index_t *m_, index_t *n_, T **A_);
 
   /**
    * @brief Export the matrix as mtx format

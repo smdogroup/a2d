@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include "mpi.h"
 #include "sparse/sparse_cholesky.h"
+#include "utils/a2dprofiler.h"
 
 using namespace A2D;
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
   }
 
   std::printf("size = %d\n", size);
-  double t0 = MPI_Wtime();
+  StopWatch watch;
   CholOrderingType order = CholOrderingType::ND;
   for (int k = 0; k < argc; k++) {
     if (strcmp(argv[k], "ND") == 0) {
@@ -129,20 +129,20 @@ int main(int argc, char *argv[]) {
     }
   }
   SparseCholesky<T> *chol = new SparseCholesky<T>(size, colp, rows, order);
-  double t1 = MPI_Wtime();
+  double t1 = watch.lap();
   chol->setValues(size, colp, rows, kvals);
 
   delete[] colp;
   delete[] rows;
   delete[] kvals;
 
-  double t2 = MPI_Wtime();
+  double t2 = watch.lap();
   chol->factor();
-  double t3 = MPI_Wtime();
+  double t3 = watch.lap();
   chol->solve(b);
-  double t4 = MPI_Wtime();
+  double t4 = watch.lap();
 
-  std::printf("Setup/order time: %12.5e\n", t1 - t0);
+  std::printf("Setup/order time: %12.5e\n", t1);
   std::printf("Set values  time: %12.5e\n", t2 - t1);
   std::printf("Factor time:      %12.5e\n", t3 - t2);
   std::printf("Solve time:       %12.5e\n", t4 - t3);

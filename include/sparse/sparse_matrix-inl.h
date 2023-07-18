@@ -113,7 +113,7 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
           // (irow, jcol) is the entry coo
           const index_t jcol = N * j + jj + 1;  // convert to 1-based index
           T val = vals(jp, ii, jj);
-          if (std::fabs(val) >= epsilon) {
+          if (absfunc(val) >= epsilon) {
             nnz_mtx++;
             std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, val);
           }
@@ -169,7 +169,7 @@ void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   index_t nnz_mtx = 0;
   for (index_t i = 0; i < nrows; i++) {
     for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-      if (std::fabs(vals[jp]) >= epsilon) {
+      if (absfunc(vals[jp]) >= epsilon) {
         nnz_mtx++;
         std::fprintf(fp, "%d %d %30.20e\n", i + 1, cols[jp] + 1, vals[jp]);
       }
@@ -239,7 +239,7 @@ void CSCMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   index_t nnz_mtx = 0;
   for (index_t j = 0; j < ncols; j++) {
     for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
-      if (std::fabs(vals[ip]) >= epsilon) {
+      if (absfunc(vals[ip]) >= epsilon) {
         nnz_mtx++;
         std::fprintf(fp, "%d %d %30.20e\n", rows[ip] + 1, j + 1, vals[ip]);
       }

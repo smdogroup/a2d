@@ -6,26 +6,6 @@
 
 namespace A2D {
 
-double absfunc(A2D_complex_t<double> a) {
-  if (a.real() >= 0.0) {
-    return a.real();
-  } else {
-    return -a.real();
-  }
-}
-
-double absfunc(double a) {
-  if (a >= 0.0) {
-    return a;
-  } else {
-    return -a;
-  }
-}
-
-double RealPart(double a) { return a; }
-
-double RealPart(A2D_complex_t<double> a) { return a.real(); }
-
 /*
   Compute y = A * x
 */

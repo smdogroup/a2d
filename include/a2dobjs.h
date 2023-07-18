@@ -51,6 +51,26 @@ A2D_INLINE_FUNCTION double fmt(A2D_complex_t<T> val) {
 
 A2D_INLINE_FUNCTION double fmt(double val) { return val; }
 
+double absfunc(A2D_complex_t<double> a) {
+  if (a.real() >= 0.0) {
+    return a.real();
+  } else {
+    return -a.real();
+  }
+}
+
+double absfunc(double a) {
+  if (a >= 0.0) {
+    return a;
+  } else {
+    return -a;
+  }
+}
+
+double RealPart(double a) { return a; }
+
+double RealPart(A2D_complex_t<double> a) { return a.real(); }
+
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename T>
 A2D_INLINE_FUNCTION T sqrt(T val) {

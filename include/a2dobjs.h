@@ -24,6 +24,8 @@ using A2D_complex_t = std::complex<T>;
 
 namespace A2D {
 using index_t = uint32_t;  // TODO: size_t may be a better choice here
+static constexpr index_t MAX_INDEX = std::numeric_limits<index_t>::max();
+static constexpr index_t NO_INDEX = MAX_INDEX;
 
 /**
  * @brief Check if a type is complex.
@@ -48,6 +50,26 @@ A2D_INLINE_FUNCTION double fmt(A2D_complex_t<T> val) {
 }
 
 A2D_INLINE_FUNCTION double fmt(double val) { return val; }
+
+double absfunc(A2D_complex_t<double> a) {
+  if (a.real() >= 0.0) {
+    return a.real();
+  } else {
+    return -a.real();
+  }
+}
+
+double absfunc(double a) {
+  if (a >= 0.0) {
+    return a;
+  } else {
+    return -a;
+  }
+}
+
+double RealPart(double a) { return a; }
+
+double RealPart(A2D_complex_t<double> a) { return a.real(); }
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename T>

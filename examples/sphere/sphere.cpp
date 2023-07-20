@@ -283,7 +283,7 @@ class PoissonSphere {
                                       LOrderGeoBasis, LOrderBasis>;
 
   // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<I, T, block_size, block_size>;
+  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
 
   // Matrix-free operator
   using MatFree =
@@ -291,7 +291,7 @@ class PoissonSphere {
 
   // Algebraic multigrid solver
   static constexpr I null_size = 1;
-  using BSRMatAmgType = A2D::BSRMatAmg<I, T, block_size, null_size>;
+  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
 
   PoissonSphere(A2D::MeshConnectivity3D& conn, A2D::DirichletBCInfo& bcinfo,
                 int amg_nlevels, int cg_it, double cg_rtol, double cg_atol,

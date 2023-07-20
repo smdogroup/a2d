@@ -225,7 +225,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   }
 
   const index_t block_size = 1;
-  using BSRMatType = BSRMat<index_t, T, block_size, block_size>;
+  using BSRMatType = BSRMat<T, block_size, block_size>;
 
   index_t nrows = mesh.get_num_dof();
   std::vector<index_t> rowp(nrows + 1), cols(nrows * nrows);

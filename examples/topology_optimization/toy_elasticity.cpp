@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
 
   // using T = double;
   using T = A2D_complex_t<double>;
-  A2D::TopoLinearElasticity<T, dim> elasticity(70e3, 0.3, 5.0);
 
   // Number of elements in each dimension
   const int nx = 20, ny = 10, nz = 10;

@@ -24,6 +24,7 @@ set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(KOKKOS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos)
 set(KOKKOS_KERNELS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos-kernels)
 set(Kokkos_ROOT ${KOKKOS_INSTALL_DIR}) # for a2d cmake to find kokkos cmake
+set(A2D_METIS_DIR ${A2D_ROOT_DIR}/installs/metis)
 
 # Set options
 option(A2D_BUILD_EXAMPLES "Compile the a2d examples" ON)

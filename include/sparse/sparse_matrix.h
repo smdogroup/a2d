@@ -9,43 +9,64 @@
 namespace A2D {
 
 /**
- * @brief Block CSR matrix, object acts like shared_ptr
+ * @brief Block Compressed sparse row matrix
  *
- * @tparam I index type
  * @tparam T data type
  * @tparam M number of rows for each block
  * @tparam N number of columns for each block
+ *
+ * Example:
+ *
+ * Below is an illustration of a blocked sparse matrix with 2x3 blocks
+ *
+ *  [x x x          [x x x
+ *   x x x]          x x x]
+ *          [x x x          [x x x
+ *           x x x]          x x x]
+ *  [x x x          [x x x
+ *   x x x]          x x x]
+ *          [x x x          [x x x
+ *           x x x]          x x x]
+ *
+ * for this example, M = 2, N = 3, nbrows = nbcols = 4
+ * block row and column indices are 0, 1, 2, 3
+ * global row and column indices are 0, 1, ..., 7
+ * local row indices for each block are 0, 1
+ * local column indices for each block are 0, 1, 2
+ *
  */
-template <typename I, typename T, index_t M, index_t N>
+template <typename T, index_t M, index_t N>
 class BSRMat {
  public:
-  static constexpr index_t NO_INDEX = std::numeric_limits<I>::max();
-
   /**
    * @brief Constructor
    *
    * @tparam VecType a vector type
    * @param nbrows number of rows of blocks
    * @param nbcols number of columns of blocks
-   * @param nnz number of non-zero blocks, note that nnz(mat) = nnz * M * N
+   * @param nnz number of non-zero blocks, note that global nnz = nnz * M * N
    * @param _rowp vector of row pointers
    * @param _cols vector of column indices
    */
   template <class VecType>
   BSRMat(index_t nbrows, index_t nbcols, index_t nnz, const VecType &rowp_,
          const VecType &cols_)
-      : nbrows(nbrows), nbcols(nbcols), nnz(nnz), Avals("Avals", nnz) {
-    rowp = IdxArray1D_t("rowp", nbrows + 1);
-    cols = IdxArray1D_t("cols", nnz);
-
-    for (I i = 0; i < nbrows + 1; i++) {
+      : nbrows(nbrows),
+        nbcols(nbcols),
+        nnz(nnz),
+        rowp("rowp", nbrows + 1),
+        cols("cols", nnz),
+        vals("vals", nnz) {
+    for (index_t i = 0; i < nbrows + 1; i++) {
       rowp[i] = rowp_[i];
     }
 
-    for (I i = 0; i < nnz; i++) {
+    for (index_t i = 0; i < nnz; i++) {
       cols[i] = cols_[i];
     }
   }
+
+  BSRMat() = default;
 
   /**
    * @brief Copy constructor (shallow copy)
@@ -61,129 +82,65 @@ class BSRMat {
         iperm(src.iperm),
         num_colors(src.num_colors),
         color_count(src.color_count),
-        Avals(src.Avals) {}
-
-  A2D_INLINE_FUNCTION ~BSRMat() {}
-
-  // Zero the entries of the matrix
-  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(Avals); }
+        vals(src.vals) {}
 
   /**
-   * @brief Find the address of the column index given block indices (row, col)
+   * @brief Default destructor
+   */
+  A2D_INLINE_FUNCTION ~BSRMat() = default;
+
+  // Zero the entries of the matrix
+  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(vals); }
+
+  /**
+   * @brief Find the value index of a block given indices (row, col) of a block
    *
    * @param row block row index
    * @param col block column index
-   * @return I* address of the block column index
+   * @return index_t the value index jp such that vals[jp] gives the
+   * sought block, if (row, col) isn't in the nonzero pattern, NO_INDEX will be
+   * returned
    */
-  I find_column_index(I row, I col) {
-    I jp_start = rowp[row];
-    I jp_end = rowp[row + 1];
+  index_t find_value_index(index_t row, index_t col);
 
-    for (I jp = jp_start; jp < jp_end; jp++) {
-      if (cols[jp] == col) {
-        return jp;
-      }
-    }
-
-    return NO_INDEX;
-  }
-
+  /**
+   * @brief add values from an element matrix mat of shape (m, n)
+   *
+   * @param m number of rows of mat
+   * @param i global row indices for each entry of mat
+   * @param n number of columns of mat
+   * @param j global column indices for each entry of mat
+   * @param mat the element matrix
+   */
   template <class Mat>
   void add_values(const index_t m, const index_t i[], const index_t n,
-                  const index_t j[], Mat &mat) {
-    for (index_t ii = 0; ii < m; ii++) {
-      index_t block_row = i[ii] / M;
-      index_t eq_row = i[ii] % M;
+                  const index_t j[], Mat &mat);
 
-      for (index_t jj = 0; jj < n; jj++) {
-        index_t block_col = j[jj] / N;
-        index_t eq_col = j[jj] % N;
+  /**
+   * @brief Zero out rows and set diagonal entry to one for each zeroed row
+   *
+   * @param nbcs number of global rows to zero-out
+   * @param dof global dof indices
+   */
+  void zero_rows(const index_t nbcs, const index_t dof[]);
 
-        index_t jp = find_column_index(block_row, block_col);
-        if (jp != NO_INDEX) {
-          Avals(jp, eq_row, eq_col) += mat(ii, jj);
-        }
-      }
-    }
-  }
+  /**
+   * @brief Convert to a dense matrix
+   *
+   * @param m_ output, number of rows of the dense matrix
+   * @param n_ output, number of columns of the dense matrix
+   * @param A_ output, dense matrix values stored in row-major ordering
+   */
+  void to_dense(index_t *m_, index_t *n_, T **A_);
 
-  void zero_rows(const index_t nbcs, const index_t dof[]) {
-    for (index_t ii = 0; ii < nbcs; ii++) {
-      index_t block_row = dof[ii] / M;
-      index_t eq_row = dof[ii] % M;
-
-      for (index_t jp = rowp[block_row]; jp < rowp[block_row + 1]; jp++) {
-        for (index_t k = 0; k < N; k++) {
-          Avals(jp, eq_row, k) = 0.0;
-        }
-
-        if (cols[jp] == block_row) {
-          Avals(jp, eq_row, eq_row) = 1.0;
-        }
-      }
-    }
-  }
-
-  // Convert to a dense matrix
-  void to_dense(index_t *m_, index_t *n_, T **A_) {
-    index_t m = M * nbrows;
-    index_t n = N * nbcols;
-    index_t size = m * n;
-
-    T *A = new T[size];
-    std::fill(A, A + size, T(0.0));
-
-    for (index_t i = 0; i < nbrows; i++) {
-      for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-        index_t j = cols[jp];
-
-        for (index_t ii = 0; ii < M; ii++) {
-          const index_t irow = M * i + ii;
-          for (index_t jj = 0; jj < N; jj++) {
-            const index_t jcol = N * j + jj;
-            A[n * irow + jcol] = Avals(jp, ii, jj);
-          }
-        }
-      }
-    }
-
-    *A_ = A;
-    *m_ = m;
-    *n_ = n;
-  }
-
-  // Write the sparse matrix in the mtx format
-  void write_mtx(const std::string mtx_name = "matrix.mtx") {
-    // Open file and destroy old contents, if any
-    std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
-
-    // Write header
-    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
-
-    // Write M, N and nnz
-    std::fprintf(fp, "%d %d %d\n", nbrows * M, nbcols * N, nnz * M * N);
-
-    // Write entries
-    for (index_t i = 0; i < nbrows; i++) {
-      for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-        index_t j = cols[jp];  // (i, j) is the block index pair
-
-        for (index_t ii = 0; ii < M; ii++) {
-          const index_t irow = M * i + ii + 1;  // convert to 1-based index
-          for (index_t jj = 0; jj < N; jj++) {
-            // (irow, jcol) is the entry coo
-            const index_t jcol = N * j + jj + 1;  // convert to 1-based index
-            std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, Avals(jp, ii, jj));
-          }
-        }
-      }
-    }
-    std::fclose(fp);
-    return;
-  }
-
-  // Array type
-  using IdxArray1D_t = A2D::MultiArrayNew<I *>;
+  /**
+   * @brief Export the matrix as mtx format
+   *
+   * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
+   */
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
 
   // Number of block rows and block columns
   index_t nbrows, nbcols;
@@ -199,23 +156,170 @@ class BSRMat {
   // factorization
   IdxArray1D_t diag;  // length: nbrows
 
-  // permutation perm[new var] = old var
+  // row-permutation perm[new row] = old row
   // This is not allocated by default
   IdxArray1D_t perm;
 
-  // Inverse permutation iperm[old var] = new var
+  // Inverse row-permutation iperm[old row] = new row
   // This is not allocated by default
   IdxArray1D_t iperm;
 
   // When coloring is used, its ordering is stored in the permutation array
-  I num_colors;              // Number of colors
+  index_t num_colors;        // Number of colors
   IdxArray1D_t color_count;  // Number of nodes with this color, not
                              // allocated by default
 
-  // MultiArray data - length: nnz
-  MultiArrayNew<T *[M][N]> Avals;
+  // A multi-dimensional array that stores entries, shape: (nnz, M, N)
+  MultiArrayNew<T *[M][N]> vals;
+};
+
+/**
+ * @brief Compressed sparse row matrix
+ */
+template <typename T>
+class CSRMat {
+ public:
+  CSRMat() = default;
+  CSRMat(index_t nrows, index_t ncols, index_t nnz,
+         const index_t *_rowp = nullptr, const index_t *_cols = nullptr)
+      : nrows(nrows),
+        ncols(ncols),
+        nnz(nnz),
+        rowp("rowp", nrows + 1),
+        cols("cols", nnz),
+        vals("vals", nnz) {
+    if (_rowp && _cols) {
+      for (index_t i = 0; i < nrows + 1; i++) {
+        rowp(i) = _rowp[i];
+      }
+      for (index_t i = 0; i < nnz; i++) {
+        cols(i) = _cols[i];
+      }
+    }
+  }
+
+  CSRMat(const CSRMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    rowp = other.rowp;
+    cols = other.cols;
+    vals = other.vals;
+  }
+
+  CSRMat &operator=(const CSRMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    rowp = other.rowp;
+    cols = other.cols;
+    vals = other.vals;
+    return *this;
+  }
+
+  /**
+   * @brief Convert to a dense matrix
+   *
+   * @param m_ output, number of rows of the dense matrix
+   * @param n_ output, number of columns of the dense matrix
+   * @param A_ output, dense matrix values stored in row-major ordering
+   */
+  void to_dense(index_t *m_, index_t *n_, T **A_);
+
+  /**
+   * @brief Export the matrix as mtx format
+   *
+   * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
+   */
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
+
+  index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
+  IdxArray1D_t rowp;          // length: nrows + 1
+  IdxArray1D_t cols;          // length: nnz
+  ValArray1D_t<T> vals;       // length: nnz
+};
+
+/**
+ * @brief Compressed sparse column matrix
+ */
+template <typename T>
+class CSCMat {
+ public:
+  CSCMat() = default;
+  CSCMat(index_t nrows, index_t ncols, index_t nnz,
+         const index_t *_colp = nullptr, const index_t *_rows = nullptr)
+      : nrows(nrows),
+        ncols(ncols),
+        nnz(nnz),
+        colp("colp", ncols + 1),
+        rows("rows", nnz),
+        vals("vals", nnz) {
+    if (_colp && _rows) {
+      for (index_t i = 0; i < ncols + 1; i++) {
+        colp(i) = _colp[i];
+      }
+      for (index_t i = 0; i < nnz; i++) {
+        rows(i) = _rows[i];
+      }
+    }
+  }
+
+  CSCMat(const CSCMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    colp = other.colp;
+    rows = other.rows;
+    vals = other.vals;
+  }
+
+  CSCMat &operator=(const CSCMat &other) {
+    nrows = other.nrows;
+    ncols = other.ncols;
+    nnz = other.nnz;
+    colp = other.colp;
+    rows = other.rows;
+    vals = other.vals;
+    return *this;
+  }
+
+  /**
+   * @brief Zero out columns and set diagonal entry to one for each zeroed
+   * column
+   *
+   * @param nbcs number of global columns to zero-out
+   * @param dof global dof indices
+   */
+  void zero_columns(const index_t nbcs, const index_t dof[]);
+
+  /**
+   * @brief Convert to a dense matrix
+   *
+   * @param m_ output, number of rows of the dense matrix
+   * @param n_ output, number of columns of the dense matrix
+   * @param A_ output, dense matrix values stored in row-major ordering
+   */
+  void to_dense(index_t *m_, index_t *n_, T **A_);
+
+  /**
+   * @brief Export the matrix as mtx format
+   *
+   * @param mtx_name the output file
+   * @param epsilon only write entries such that abs(e) >= epsilon
+   */
+  void write_mtx(const std::string mtx_name = "matrix.mtx",
+                 double epsilon = 0.0);
+
+  index_t nrows, ncols, nnz;  // number of rows, columns and nonzeros
+  IdxArray1D_t colp;          // length: ncols + 1
+  IdxArray1D_t rows;          // length: nnz
+  ValArray1D_t<T> vals;       // length: nnz
 };
 
 }  // namespace A2D
+
+#include "sparse/sparse_matrix-inl.h"
 
 #endif  // A2D_SPARSE_MATRIX_H

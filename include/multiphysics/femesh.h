@@ -20,7 +20,7 @@ namespace A2D {
  */
 class MeshConnectivity3D {
  public:
-  static constexpr index_t NO_LABEL = std::numeric_limits<index_t>::max();
+  static constexpr index_t NO_LABEL = MAX_INDEX;
 
   // Use the definitions from the element types
   using ET = ElementTypes;
@@ -1397,7 +1397,7 @@ class ElementMesh {
   using ET = ElementTypes;
 
   /// @brief  Constant expression indicating an un-ordered dof
-  static constexpr index_t NO_INDEX = std::numeric_limits<index_t>::max();
+  static constexpr index_t NO_INDEX = MAX_INDEX;
 
   // Number of degrees of freedom for each element
   static const index_t ndof_per_element = Basis::ndof;

@@ -5,6 +5,7 @@
 #include "Kokkos_StdAlgorithms.hpp"
 #include "Kokkos_UnorderedMap.hpp"
 #include "a2dobjs.h"
+#include "array.h"
 
 using namespace std;
 using T = double;
@@ -373,13 +374,58 @@ void test_is_complex() {
   std::cout << is_complex<T4>::value << std::endl;  // should be 1
 }
 
+class BSRMatToy {
+ public:
+  BSRMatToy() {}
+  void initialize() { perm = A2D::IdxArray1D_t("perm", 20); }
+  void yell() {
+    if (!perm.is_allocated()) {
+      std::cout << "perm is not allocated\n";
+    } else {
+      std::cout << "perm is allocated\n";
+    }
+  }
+
+ private:
+  A2D::IdxArray1D_t perm;
+};
+
+void test_view_is_allocated() {
+  BSRMatToy b;
+  b.yell();
+  b.initialize();
+  b.yell();
+  return;
+}
+
+void allocate_and_populate(A2D::IdxArray1D_t& cols) {
+  cols = A2D::IdxArray1D_t("cols", 20);
+  cols(0) = 233;
+  return;
+}
+
+void test_smart_pointer_behavior() {
+  A2D::IdxArray1D_t cols;
+  std::cout << cols(0) << "\n";
+  std::cout << "is allocated? " << cols.is_allocated() << "\n";
+  allocate_and_populate(cols);
+  std::cout << cols(0) << "\n";
+  std::cout << "is allocated? " << cols.is_allocated() << "\n";
+  return;
+}
+
 int main(int argc, char* argv[]) {
-  // test_axpy(argc, argv);
-  // test_matvec(argc, argv);
-  // test_unordered_set();
-  // test_subview();
-  // test_sort();
-  // test_is_same_layout();
-  test_complex();
-  // test_is_complex();
+  Kokkos::initialize();
+  {  // test_axpy(argc, argv);
+    // test_matvec(argc, argv);
+    // test_unordered_set();
+    // test_subview();
+    // test_sort();
+    // test_is_same_layout();
+    // test_complex();
+    // test_is_complex();
+    // test_view_is_allocated();
+    test_smart_pointer_behavior();
+  }
+  Kokkos::finalize();
 }

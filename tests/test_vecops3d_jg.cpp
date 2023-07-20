@@ -63,7 +63,7 @@ TEST_F(Vec3Norm_Vec, passive) {
   // Evaluations:
   A2D::Vec3Norm(x, a); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VAL_EQ(a, a_out); /*UNQ_T1F_TFP_06*/
+  EXPECT_VAL_NEAR(a, a_out); /*UNQ_T1F_TFP_06*/
 }
 
 class Vec3Norm_ADVec : public Vec3Norm {
@@ -84,7 +84,7 @@ TEST_F(Vec3Norm_ADVec, passive) {
   // Evaluations:
   A2D::Vec3Norm(x_ad, a_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Norm_ADVec, forward) {
@@ -96,8 +96,8 @@ TEST_F(Vec3Norm_ADVec, forward) {
   auto expr = A2D::Vec3Norm(x_ad, a_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                        /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Norm_ADVec, reverse) {
@@ -111,8 +111,8 @@ TEST_F(Vec3Norm_ADVec, reverse) {
   auto expr = A2D::Vec3Norm(x_ad, a_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                        /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Scale : public vecops3d_jgTest {
@@ -134,7 +134,7 @@ TEST_F(Vec3Scale_VecScalar, passive) {
   // Evaluations:
   A2D::Vec3Scale(x, a, v); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v, v_out); /*UNQ_T1F_TFP_06*/
+  EXPECT_VEC_NEAR(3, v, v_out); /*UNQ_T1F_TFP_06*/
 }
 
 class Vec3Scale_ADVecScalar : public Vec3Scale {
@@ -157,7 +157,7 @@ TEST_F(Vec3Scale_ADVecScalar, passive) {
   // Evaluations:
   A2D::Vec3Scale(x_ad, a, v_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_ADVecScalar, forward) {
@@ -170,8 +170,8 @@ TEST_F(Vec3Scale_ADVecScalar, forward) {
   auto expr = A2D::Vec3Scale(x_ad, a, v_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                            /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VEC_EQ(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VEC_NEAR(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Scale_ADVecScalar, reverse) {
@@ -184,8 +184,8 @@ TEST_F(Vec3Scale_ADVecScalar, reverse) {
   auto expr = A2D::Vec3Scale(x_ad, a, v_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                            /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Scale_VecADScalar : public Vec3Scale {
@@ -208,7 +208,7 @@ TEST_F(Vec3Scale_VecADScalar, passive) {
   // Evaluations:
   A2D::Vec3Scale(x, a_ad, v_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_VecADScalar, forward) {
@@ -222,8 +222,8 @@ TEST_F(Vec3Scale_VecADScalar, forward) {
   auto expr = A2D::Vec3Scale(x, a_ad, v_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                            /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VEC_EQ(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VEC_NEAR(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Scale_VecADScalar, reverse) {
@@ -237,8 +237,8 @@ TEST_F(Vec3Scale_VecADScalar, reverse) {
   auto expr = A2D::Vec3Scale(x, a_ad, v_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                            /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out); /*UNQ_T1F_TFR_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out);    /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out); /*UNQ_T1F_TFR_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out);    /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Scale_ADVecADScalar : public Vec3Scale {
@@ -263,7 +263,7 @@ TEST_F(Vec3Scale_ADVecADScalar, passive) {
   // Evaluations:
   A2D::Vec3Scale(x_ad, a_ad, v_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Scale_ADVecADScalar, forward) {
@@ -277,8 +277,8 @@ TEST_F(Vec3Scale_ADVecADScalar, forward) {
   auto expr = A2D::Vec3Scale(x_ad, a_ad, v_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                               /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VEC_EQ(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VEC_NEAR(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Scale_ADVecADScalar, reverse) {
@@ -292,9 +292,9 @@ TEST_F(Vec3Scale_ADVecADScalar, reverse) {
   auto expr = A2D::Vec3Scale(x_ad, a_ad, v_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                               /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out);      /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out);      /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Dot : public vecops3d_jgTest {
@@ -314,7 +314,7 @@ TEST_F(Vec3Dot_VecVec, passive) {
   // Evaluations:
   A2D::Vec3Dot(x, y, a); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VAL_EQ(a, a_out); /*UNQ_T1F_TFP_06*/
+  EXPECT_VAL_NEAR(a, a_out); /*UNQ_T1F_TFP_06*/
 }
 
 class Vec3Dot_ADVecVec : public Vec3Dot {
@@ -335,7 +335,7 @@ TEST_F(Vec3Dot_ADVecVec, passive) {
   // Evaluations:
   A2D::Vec3Dot(x_ad, y, a_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Dot_ADVecVec, forward) {
@@ -347,8 +347,8 @@ TEST_F(Vec3Dot_ADVecVec, forward) {
   auto expr = A2D::Vec3Dot(x_ad, y, a_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                          /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Dot_ADVecVec, reverse) {
@@ -362,8 +362,8 @@ TEST_F(Vec3Dot_ADVecVec, reverse) {
   auto expr = A2D::Vec3Dot(x_ad, y, a_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                          /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Dot_ADVecADVec : public Vec3Dot {
@@ -386,7 +386,7 @@ TEST_F(Vec3Dot_ADVecADVec, passive) {
   // Evaluations:
   A2D::Vec3Dot(x_ad, y_ad, a_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Dot_ADVecADVec, forward) {
@@ -398,8 +398,8 @@ TEST_F(Vec3Dot_ADVecADVec, forward) {
   auto expr = A2D::Vec3Dot(x_ad, y_ad, a_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                             /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Dot_ADVecADVec, reverse) {
@@ -413,9 +413,9 @@ TEST_F(Vec3Dot_ADVecADVec, reverse) {
   auto expr = A2D::Vec3Dot(x_ad, y_ad, a_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                             /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VAL_EQ(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
-  EXPECT_VEC_EQ(3, y_ad.bvalue(), yb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VAL_NEAR(a_ad.value, a_out);        /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, y_ad.bvalue(), yb_out); /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3Normalize : public vecops3d_jgTest {
@@ -436,7 +436,7 @@ TEST_F(Vec3Normalize_Vec, passive) {
   // Evaluations:
   A2D::Vec3Normalize(x, v); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v, v_out); /*UNQ_T1F_TFP_06*/
+  EXPECT_VEC_NEAR(3, v, v_out); /*UNQ_T1F_TFP_06*/
 }
 
 class Vec3Normalize_ADVec : public Vec3Normalize {
@@ -458,7 +458,7 @@ TEST_F(Vec3Normalize_ADVec, passive) {
   // Evaluations:
   A2D::Vec3Normalize(x_ad, v_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3Normalize_ADVec, forward) {
@@ -470,8 +470,8 @@ TEST_F(Vec3Normalize_ADVec, forward) {
   auto expr = A2D::Vec3Normalize(x_ad, v_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                             /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_VEC_EQ(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_VEC_NEAR(3, v_ad.bvalue(), vb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3Normalize_ADVec, reverse) {
@@ -483,8 +483,8 @@ TEST_F(Vec3Normalize_ADVec, reverse) {
   auto expr = A2D::Vec3Normalize(x_ad, v_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                             /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_VEC_EQ(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, v_ad.value(), v_out);   /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out); /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3ScaleSymmetricOuterProduct : public vecops3d_jgTest {
@@ -509,7 +509,7 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarVec, passive) {
   // Evaluations:
   A2D::Vec3ScaleSymmetricOuterProduct(a, x, S); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S, S_out); /*UNQ_T1F_TFP_06*/
+  EXPECT_MAT_NEAR(3, 3, S, S_out); /*UNQ_T1F_TFP_06*/
 }
 
 class Vec3ScaleSymmetricOuterProduct_ADScalarVec
@@ -537,7 +537,7 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarVec, passive) {
   // Evaluations:
   A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x, S_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarVec, forward) {
@@ -552,8 +552,8 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarVec, forward) {
       A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x, S_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                                         /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_MAT_EQ(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarVec, reverse) {
@@ -569,8 +569,8 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarVec, reverse) {
       A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x, S_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                                         /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out);       /*UNQ_T1F_TFR_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out);       /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3ScaleSymmetricOuterProduct_ScalarADVec
@@ -600,7 +600,7 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarADVec, passive) {
   // Evaluations:
   A2D::Vec3ScaleSymmetricOuterProduct(a, x_ad, S_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarADVec, forward) {
@@ -615,8 +615,8 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarADVec, forward) {
       A2D::Vec3ScaleSymmetricOuterProduct(a, x_ad, S_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                                         /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_MAT_EQ(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarADVec, reverse) {
@@ -633,8 +633,8 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ScalarADVec, reverse) {
       A2D::Vec3ScaleSymmetricOuterProduct(a, x_ad, S_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                                         /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out);  /*UNQ_T1F_TFR_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out);  /*UNQ_T1F_TFR_07*/
 }
 
 class Vec3ScaleSymmetricOuterProduct_ADScalarADVec
@@ -666,7 +666,7 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarADVec, passive) {
   // Evaluations:
   A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x_ad, S_ad); /*UNQ_T1F_TFP_04*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFP_05*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarADVec, forward) {
@@ -682,8 +682,8 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarADVec, forward) {
       A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x_ad, S_ad); /*UNQ_T1F_TFF_04*/
   expr.forward();                                            /*UNQ_T1F_TFF_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
-  EXPECT_MAT_EQ(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out);   /*UNQ_T1F_TFF_06*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.bvalue(), Sb_out); /*UNQ_T1F_TFF_07*/
 }
 
 TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarADVec, reverse) {
@@ -701,7 +701,7 @@ TEST_F(Vec3ScaleSymmetricOuterProduct_ADScalarADVec, reverse) {
       A2D::Vec3ScaleSymmetricOuterProduct(a_ad, x_ad, S_ad); /*UNQ_T1F_TFR_04*/
   expr.reverse();                                            /*UNQ_T1F_TFR_05*/
   // Comparisons:
-  EXPECT_MAT_EQ(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
-  EXPECT_VAL_EQ(a_ad.bvalue, ab_out);       /*UNQ_T1F_TFR_07*/
-  EXPECT_VEC_EQ(3, x_ad.bvalue(), xb_out);  /*UNQ_T1F_TFR_07*/
+  EXPECT_MAT_NEAR(3, 3, S_ad.value(), S_out); /*UNQ_T1F_TFR_06*/
+  EXPECT_VAL_NEAR(a_ad.bvalue, ab_out);       /*UNQ_T1F_TFR_07*/
+  EXPECT_VEC_NEAR(3, x_ad.bvalue(), xb_out);  /*UNQ_T1F_TFR_07*/
 }

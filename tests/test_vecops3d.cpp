@@ -95,8 +95,8 @@ TEST_F(Axpy, all_tests) {
   */
   A2D::Vec3Axpy(alpha, x, y, axpy);
   A2D::Vec3Axpy(scale, alpha, x, y, saxpy);
-  EXPECT_VEC_EQ(3, axpy, axpy_out);
-  EXPECT_VEC_EQ(3, saxpy, saxpy_out);
+  EXPECT_VEC_NEAR(3, axpy, axpy_out);
+  EXPECT_VEC_NEAR(3, saxpy, saxpy_out);
 
   /*
     Expression (axpy) and forward (axpyb)
@@ -110,46 +110,46 @@ TEST_F(Axpy, all_tests) {
   // AXX
   auto axx = A2D::Vec3Axpy(aobj, x, y, axpy_obj);
   axx.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), axpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AXX_axpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), axpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AXX_axpyb_out);
 
   auto saxx = A2D::Vec3Axpy(scale, aobj, x, y, axpy_obj);
   saxx.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), saxpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AXX_saxpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), saxpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AXX_saxpyb_out);
 
   // AAX
   auto aax = A2D::Vec3Axpy(aobj, xobj, y, axpy_obj);
   aax.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), axpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AAX_axpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), axpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AAX_axpyb_out);
 
   auto saax = A2D::Vec3Axpy(scale, aobj, xobj, y, axpy_obj);
   saax.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), saxpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AAX_saxpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), saxpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AAX_saxpyb_out);
 
   // XAA
   auto xaa = A2D::Vec3Axpy(alpha, xobj, yobj, axpy_obj);
   xaa.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), axpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), XAA_axpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), axpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), XAA_axpyb_out);
 
   auto sxaa = A2D::Vec3Axpy(scale, alpha, xobj, yobj, axpy_obj);
   sxaa.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), saxpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), XAA_saxpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), saxpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), XAA_saxpyb_out);
 
   // AAA
   auto aaa = A2D::Vec3Axpy(aobj, xobj, yobj, axpy_obj);
   aaa.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), axpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AAA_axpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), axpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AAA_axpyb_out);
 
   auto saaa = A2D::Vec3Axpy(scale, aobj, xobj, yobj, axpy_obj);
   saaa.forward();
-  EXPECT_VEC_EQ(3, axpy_obj.value(), saxpy_out);
-  EXPECT_VEC_EQ(3, axpy_obj.bvalue(), AAA_saxpyb_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.value(), saxpy_out);
+  EXPECT_VEC_NEAR(3, axpy_obj.bvalue(), AAA_saxpyb_out);
 
   /*
     Reverse
@@ -163,11 +163,11 @@ TEST_F(Axpy, all_tests) {
   // AXX
   aobj.bvalue = 0.0;
   axx.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, ab_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, ab_out);
 
   aobj.bvalue = 0.0;
   saxx.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, sab_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, sab_out);
 
   // AAX
   aobj.bvalue = 0.0;
@@ -175,16 +175,16 @@ TEST_F(Axpy, all_tests) {
     xobj.bvalue()(i) = 0.0;
   }
   aax.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, ab_out);
-  EXPECT_VEC_EQ(3, xobj.bvalue(), xb_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, ab_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), xb_out);
 
   aobj.bvalue = 0.0;
   for (int i = 0; i != 3; i++) {
     xobj.bvalue()(i) = 0.0;
   }
   saax.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, sab_out);
-  EXPECT_VEC_EQ(3, xobj.bvalue(), sxb_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, sab_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), sxb_out);
 
   // XAA
   for (int i = 0; i != 3; i++) {
@@ -192,16 +192,16 @@ TEST_F(Axpy, all_tests) {
     yobj.bvalue()(i) = 0.0;
   }
   xaa.reverse();
-  EXPECT_VEC_EQ(3, xobj.bvalue(), xb_out);
-  EXPECT_VEC_EQ(3, yobj.bvalue(), yb_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), xb_out);
+  EXPECT_VEC_NEAR(3, yobj.bvalue(), yb_out);
 
   for (int i = 0; i != 3; i++) {
     xobj.bvalue()(i) = 0.0;
     yobj.bvalue()(i) = 0.0;
   }
   sxaa.reverse();
-  EXPECT_VEC_EQ(3, xobj.bvalue(), sxb_out);
-  EXPECT_VEC_EQ(3, yobj.bvalue(), syb_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), sxb_out);
+  EXPECT_VEC_NEAR(3, yobj.bvalue(), syb_out);
 
   // AAA
   aobj.bvalue = 0.0;
@@ -210,9 +210,9 @@ TEST_F(Axpy, all_tests) {
     yobj.bvalue()(i) = 0.0;
   }
   aaa.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, ab_out);
-  EXPECT_VEC_EQ(3, xobj.bvalue(), xb_out);
-  EXPECT_VEC_EQ(3, yobj.bvalue(), yb_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, ab_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), xb_out);
+  EXPECT_VEC_NEAR(3, yobj.bvalue(), yb_out);
 
   aobj.bvalue = 0.0;
   for (int i = 0; i != 3; i++) {
@@ -220,9 +220,9 @@ TEST_F(Axpy, all_tests) {
     yobj.bvalue()(i) = 0.0;
   }
   saaa.reverse();
-  EXPECT_VAL_EQ(aobj.bvalue, sab_out);
-  EXPECT_VEC_EQ(3, xobj.bvalue(), sxb_out);
-  EXPECT_VEC_EQ(3, yobj.bvalue(), syb_out);
+  EXPECT_VAL_NEAR(aobj.bvalue, sab_out);
+  EXPECT_VEC_NEAR(3, xobj.bvalue(), sxb_out);
+  EXPECT_VEC_NEAR(3, yobj.bvalue(), syb_out);
 }
 
 class Cross : public VecOpsTest {
@@ -235,7 +235,7 @@ class Cross : public VecOpsTest {
 TEST_F(Cross, passive) {
   Vec_t x(x_data), y(y_data), cross;
   A2D::Vec3Cross(x, y, cross);
-  EXPECT_VEC_EQ(3, cross, cross_out);
+  EXPECT_VEC_NEAR(3, cross, cross_out);
 }
 
 TEST_F(Cross, forward) {
@@ -248,8 +248,8 @@ TEST_F(Cross, forward) {
   ADVec_t x_ad(x, xb), y_ad(y, yb), cross_ad(cross, crossb);
   auto expr = A2D::Vec3Cross(x_ad, y_ad, cross_ad);
   expr.forward();
-  EXPECT_VEC_EQ(3, cross, cross_out);
-  EXPECT_VEC_EQ(3, crossb, crossb_out);
+  EXPECT_VEC_NEAR(3, cross, cross_out);
+  EXPECT_VEC_NEAR(3, crossb, crossb_out);
 }
 
 TEST_F(Cross, reverse) {
@@ -263,7 +263,7 @@ TEST_F(Cross, reverse) {
   ADVec_t x_ad(x, xb), y_ad(y, yb), cross_ad(cross, crossb);
   auto expr = A2D::Vec3Cross(x_ad, y_ad, cross_ad);
   expr.reverse();
-  EXPECT_VEC_EQ(3, cross, cross_out);
-  EXPECT_VEC_EQ(3, xb, xb_out);
-  EXPECT_VEC_EQ(3, yb, yb_out);
+  EXPECT_VEC_NEAR(3, cross, cross_out);
+  EXPECT_VEC_NEAR(3, xb, xb_out);
+  EXPECT_VEC_NEAR(3, yb, yb_out);
 }

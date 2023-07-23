@@ -28,6 +28,16 @@ class ElementTypes {
    */
   enum ElementEntity { VERTEX, EDGE, FACE, VOLUME };
 
+  // Maximum number of vertices of a face, for alignment purpose
+  static constexpr index_t MAX_FACE_VERTS = 4;
+
+  // Maximum number of edges of a face, for alignment purpose
+  static constexpr index_t MAX_FACE_EDGES = 4;
+
+  // Maximum number of faces of an element
+  static constexpr index_t MAX_FACES = 6;
+  static constexpr index_t NONE_FACE_NQUANTS[MAX_FACES] = {0, 0, 0, 0, 0, 0};
+
   /**
    * @brief Triangle element
    *
@@ -507,26 +517,45 @@ class ElementTypes {
    *       1
    *
    * The edges of the tetrahedral are
-   * 0 -> 1
-   * 1 -> 2
-   * 2 -> 0
-   * 0 -> 3
-   * 1 -> 3
-   * 2 -> 3
+   * Idx    Edge
+   * (0)    0 -> 1
+   * (1)    1 -> 2
+   * (2)    2 -> 0
+   * (3)    0 -> 3
+   * (4)    1 -> 3
+   * (5)    2 -> 3
    *
    * The faces of the element are
-   * 1 -> 2 -> 3
-   * 0 -> 3 -> 2
-   * 0 -> 1 -> 3
-   * 0 -> 2 -> 1
+   * Idx    Face
+   * (0)    1 -> 2 -> 3    1, 5, -4
+   * (1)    0 -> 3 -> 2    3, -5, 2
+   * (2)    0 -> 1 -> 3    0, 4, -3
+   * (3)    0 -> 2 -> 1    -2, -1, -0
    */
+  // Number of vertices, edges and faces
   static const index_t TET_VERTS = 4;
   static const index_t TET_EDGES = 6;
   static const index_t TET_FACES = 4;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t TET_EDGE_VERTS[][2] = {{0, 1}, {1, 2}, {2, 0},
                                                   {0, 3}, {1, 3}, {2, 3}};
-  static constexpr index_t TET_FACE_VERTS[][3] = {
-      {1, 2, 3}, {0, 3, 2}, {0, 1, 3}, {0, 2, 1}};
+
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t TET_FACE_NVERTS[] = {3, 3, 3, 3};
+  static constexpr index_t TET_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {1, 2, 3, NO_INDEX},
+      {0, 3, 2, NO_INDEX},
+      {0, 1, 3, NO_INDEX},
+      {0, 2, 1, NO_INDEX}};
+
+  // Given face index, return edge indices
+  static constexpr index_t TET_FACE_NEDGES[] = {3, 3, 3, 3};
+  static constexpr index_t TET_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {1, 5, 4, NO_INDEX},
+      {3, 5, 2, NO_INDEX},
+      {0, 4, 3, NO_INDEX},
+      {2, 1, 0, NO_INDEX}};
 
   /**
    * @brief Hexahedral properties
@@ -542,21 +571,52 @@ class ElementTypes {
    *    |  /             |  /
    *    | /              | /
    *    0 -------------- 1
+   *
+   * The edges are
+   * Idx    Edge
+   * (0)    0 -> 1
+   * (1)    3 -> 2
+   * (2)    4 -> 5
+   * (3)    7 -> 6
+   * (4)    0 -> 3
+   * (5)    1 -> 2
+   * (6)    4 -> 7
+   * (7)    5 -> 6
+   * (8)    0 -> 4
+   * (9)    1 -> 5
+   * (10)   3 -> 7
+   * (11)   2 -> 6
+   *
+   * The faces are
+   * Idx    Face                Edges
+   * (0)    0 -> 4 -> 7 -> 3    8, 6, -10, -4
+   * (1)    1 -> 2 -> 6 -> 5    5, 11, -7, -9
+   * (2)    0 -> 1 -> 5 -> 4    0, 9, -2, -8
+   * (3)    3 -> 7 -> 6 -> 2    10, 3, -11, -1
+   * (4)    0 -> 3 -> 2 -> 1    4, 1, -5, -0
+   * (5)    4 -> 5 -> 6 -> 7    2, 7, -3, -6
    */
+  // Number of vertices, edges and faces
   static const index_t HEX_VERTS = 8;
   static const index_t HEX_EDGES = 12;
   static const index_t HEX_FACES = 6;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t HEX_EDGE_VERTS[][2] = {
       {0, 1}, {3, 2}, {4, 5}, {7, 6}, {0, 3}, {1, 2},
       {4, 7}, {5, 6}, {0, 4}, {1, 5}, {3, 7}, {2, 6}};
 
-  static constexpr index_t HEX_FACE_VERTS[][4] = {{0, 4, 7, 3}, {1, 2, 6, 5},
-                                                  {0, 1, 5, 4}, {3, 7, 6, 2},
-                                                  {0, 3, 2, 1}, {4, 5, 6, 7}};
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t HEX_FACE_NVERTS[] = {4, 4, 4, 4, 4, 4};
+  static constexpr index_t HEX_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {0, 4, 7, 3}, {1, 2, 6, 5}, {0, 1, 5, 4},
+      {3, 7, 6, 2}, {0, 3, 2, 1}, {4, 5, 6, 7}};
 
-  static constexpr index_t HEX_FACE_EDGES[][4] = {{8, 10, 4, 6}, {5, 7, 9, 11},
-                                                  {0, 2, 8, 9},  {1, 3, 11, 10},
-                                                  {4, 5, 0, 1},  {2, 3, 6, 7}};
+  // Given face index, return edge indices
+  static constexpr index_t HEX_FACE_NEDGES[] = {4, 4, 4, 4, 4, 4};
+  static constexpr index_t HEX_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {8, 10, 4, 6},  {5, 7, 9, 11}, {0, 2, 8, 9},
+      {1, 3, 11, 10}, {4, 5, 0, 1},  {2, 3, 6, 7}};
 
   // Cartesian coordinates of the vertices in the reference element
   static constexpr index_t HEX_VERTS_CART[][3] = {
@@ -1044,18 +1104,52 @@ class ElementTypes {
    *     \  |            \  |
    *      \ |             \ |
    *        1 ------------- 4
+   *
+   * The edges are
+   * Idx    Edge
+   * (0)    0 -> 1
+   * (1)    1 -> 2
+   * (2)    2 -> 0
+   * (3)    3 -> 4
+   * (4)    4 -> 5
+   * (5)    5 -> 3
+   * (6)    0 -> 3
+   * (7)    1 -> 4
+   * (8)    2 -> 5
+   *
+   * The faces are
+   * Idx    Face                Edges
+   * (0)    0 -> 1 -> 2         0, 1, 2
+   * (1)    3 -> 4 -> 5         3, 4, 5
+   * (2)    0 -> 3 -> 4 -> 1    6, 3, -7, -0
+   * (3)    1 -> 4 -> 5 -> 2    7, 4, -8, -1
+   * (4)    0 -> 2 -> 5 -> 3    -2, 8, 5, -6
    */
   static const index_t WEDGE_VERTS = 6;
   static const index_t WEDGE_EDGES = 9;
   static const index_t WEDGE_FACES = 5;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t WEDGE_EDGE_VERTS[][2] = {
       {0, 1}, {1, 2}, {2, 0}, {3, 4}, {4, 5}, {5, 3}, {0, 3}, {1, 4}, {2, 5}};
 
-  static const index_t WEDGE_TRI_FACES = 2;
-  static constexpr index_t WEDGE_TRI_FACE_VERTS[][3] = {{0, 1, 2}, {3, 4, 5}};
-  static const index_t WEDGE_QUAD_FACES = 2;
-  static constexpr index_t WEDGE_QUAD_FACE_VERTS[][4] = {
-      {0, 3, 4, 1}, {1, 4, 5, 2}, {0, 2, 5, 3}};
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t WEDGE_FACE_NVERTS[] = {3, 3, 4, 4, 4};
+  static constexpr index_t WEDGE_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {0, 1, 2, NO_INDEX},
+      {3, 4, 5, NO_INDEX},
+      {0, 3, 4, 1},
+      {1, 4, 5, 2},
+      {0, 2, 5, 3}};
+
+  // Given face index, return edge indices
+  static constexpr index_t WEDGE_FACE_NEDGES[] = {3, 3, 4, 4, 4};
+  static constexpr index_t WEDGE_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {0, 1, 2, NO_INDEX},
+      {3, 4, 5, NO_INDEX},
+      {6, 3, 7, 0},
+      {7, 4, 8, 1},
+      {2, 8, 5, 6}};
 
   /**
    * @brief Pyramid properties
@@ -1069,17 +1163,51 @@ class ElementTypes {
    *   | /           \ |
    *   |/             \|
    *   1 --------------2
+   *
+   * The edges are
+   * Idx    Edge
+   * (0)    0 -> 1
+   * (1)    1 -> 2
+   * (2)    2 -> 3
+   * (3)    3 -> 0
+   * (4)    0 -> 4
+   * (5)    1 -> 4
+   * (6)    2 -> 4
+   * (7)    3 -> 4
+   *
+   * The faces are
+   * Idx    Face                Edges
+   * (0)    0 -> 1 -> 4         0, 5, -4
+   * (1)    1 -> 2 -> 4         1, 6, -5
+   * (2)    2 -> 3 -> 4         2, 7, -6
+   * (3)    0 -> 4 -> 3         4, -7, 3
+   * (4)    0 -> 3 -> 2 -> 1    -3, -2, -1, -0
    */
   static const index_t PYRMD_VERTS = 5;
   static const index_t PYRMD_EDGES = 8;
   static const index_t PYRMD_FACES = 5;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t PYRMD_EDGE_VERTS[][2] = {
       {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}};
-  static const index_t PYRMD_TRI_FACES = 4;
-  static constexpr index_t PYRMD_TRI_FACE_VERTS[][3] = {
-      {0, 1, 4}, {1, 2, 4}, {2, 3, 4}, {0, 4, 3}};
-  static const index_t PYRMD_QUAD_FACES = 4;
-  static constexpr index_t PYRMD_QUAD_FACE_VERTS[] = {0, 3, 2, 1};
+
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t PYRMD_FACE_NVERTS[] = {3, 3, 3, 3, 4};
+  static constexpr index_t PYRMD_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {0, 1, 4, NO_INDEX},
+      {1, 2, 4, NO_INDEX},
+      {2, 3, 4, NO_INDEX},
+      {0, 4, 3, NO_INDEX},
+      {0, 3, 2, 1}};
+
+  // Given face index, return edge indices
+  static constexpr index_t PYRMD_FACE_NEDGES[] = {3, 3, 3, 3, 4};
+  static constexpr index_t PYRMD_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {0, 5, 4, NO_INDEX},
+      {1, 6, 5, NO_INDEX},
+      {2, 7, 6, NO_INDEX},
+      {4, 7, 3, NO_INDEX},
+      {3, 2, 1, 0}};
 };
 
 }  // namespace A2D

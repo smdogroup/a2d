@@ -11,8 +11,8 @@ int main(int argc, char *argv[]) {
   const A2D::index_t degree = 1;
   const A2D::index_t filter_degree = 1;
 
-  // using T = double;
-  using T = A2D_complex_t<double>;
+  using T = double;
+  // using T = A2D_complex_t<double>;
 
   // Number of elements in each dimension
   const int nx = 20, ny = 10, nz = 10;

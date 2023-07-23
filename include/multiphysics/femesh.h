@@ -14,69 +14,45 @@
 
 namespace A2D {
 
+// Meta data for a specific type of elements
+struct ElemMetaData {
+  using ET = ElementTypes;
+
+  bool is_valid_element = false;
+
+  // Number of quantities for a single element of this type
+  index_t NVERTS = NO_INDEX;
+  index_t NEDGES = NO_INDEX;
+  index_t NFACES = NO_INDEX;
+
+  // Face -> verts
+  const index_t* FACE_NVERTS = nullptr;  // number of verts for each face
+  const index_t (*FACE_VERTS)[ET::MAX_FACE_VERTS] =
+      nullptr;  // verts of all faces of an element
+
+  // Face -> edges
+  const index_t* FACE_NEDGES = nullptr;
+  const index_t (*FACE_EDGES)[ET::MAX_FACE_EDGES] = nullptr;
+
+  // Edge -> verts
+  const index_t (*EDGE_VERTS)[2] = nullptr;
+
+  // Element -> vert connectivity
+  index_t** verts = nullptr;
+
+  // Element -> edge connectivity
+  index_t** edges = nullptr;
+
+  // Element -> face connectivity
+  index_t** faces = nullptr;
+};
+
 class MeshConnectivityBase {
  public:
   static constexpr index_t NO_LABEL = MAX_INDEX;
-  virtual index_t get_element_verts(index_t elem, const index_t* verts[]) = 0;
 
- protected:
-  MeshConnectivityBase(index_t nverts) : nverts(nverts) {}
-
-  ~MeshConnectivityBase() {
-    if (vert_element_ptr) {
-      delete[] vert_element_ptr;
-    }
-    if (vert_elements) {
-      delete[] vert_elements;
-    }
-  }
-
-  // Initialize the data for the connection between vertices and
-  // the elements
-  void init_vert_element_data();
-
-  // Inputs
-  index_t nverts;
-
-  // Derived count info
-  index_t nelems;  // Total number of elements
-
-  // Global data for pointing from verts to elements
-  index_t* vert_element_ptr;
-  index_t* vert_elements;
-};
-
-// Mesh connecivity class for 3D meshes composed of tetrahedral,
-// hexahedral, wedge and pyramid elements
-class MeshConnectivity3D : public MeshConnectivityBase {
- public:
-  // Use the definitions from the element types
-  using ET = ElementTypes;
-
-  template <typename I>
-  MeshConnectivity3D(I nverts, I ntets, I* tets, I nhex, I* hex, I nwedge,
-                     I* wedge, I npyrmd, I* pyrmd);
-  ~MeshConnectivity3D();
-
-  // Get the boundary faces and labels
-  index_t get_boundary_faces(const index_t* boundary_faces_[],
-                             const index_t* boundary_labels_[]);
-
-  // Return the number of boundary labels
-  index_t get_num_boundary_labels() { return num_boundary_labels; }
-
-  //  Count up the number of boundary faces with the given label
-  index_t get_num_boundary_faces_with_label(const index_t label);
-
-  // Add a boundary label from the vertices
-  template <typename IdxType>
-  index_t add_boundary_label_from_verts(index_t nv, const IdxType vert_list[]);
-
-  // Get global element counts
-  index_t get_num_elements() { return nelems; }
-  index_t get_num_faces() { return nfaces; }
-  index_t get_num_edges() { return nedges; }
-  index_t get_num_verts() { return nverts; }
+  virtual inline const ElemMetaData& get_local_elem_and_meta(index_t& elem) = 0;
+  virtual bool get_face_elements(index_t face, index_t* e1, index_t* e2) = 0;
 
   // Get quantities associated to an element
   index_t get_element_verts(index_t elem, const index_t* verts[]);
@@ -91,6 +67,86 @@ class MeshConnectivity3D : public MeshConnectivityBase {
                                         index_t verts[]);
   index_t get_element_edges(index_t elem, const index_t* edges[]);
   void get_element_edge_verts(index_t elem, index_t edge, index_t verts[]);
+
+  // Get boundary faces and labels
+  index_t get_boundary_faces(const index_t* boundary_faces_[],
+                             const index_t* boundary_labels_[]);
+
+  // Return the number of boundary labels
+  index_t get_num_boundary_labels() { return num_boundary_labels; }
+
+  //  Count up the number of boundary faces with the given label
+  index_t get_num_boundary_faces_with_label(const index_t label);
+
+  // Add a boundary label from the vertices
+  template <typename IdxType>
+  index_t add_boundary_label_from_verts(index_t nv, const IdxType vert_list[]);
+
+ protected:
+  MeshConnectivityBase(index_t nverts);
+  ~MeshConnectivityBase();
+
+  // Get a non-constant entities
+  index_t get_element_faces(index_t elem, index_t* faces[]);
+  index_t get_element_edges(index_t elem, index_t* edges[]);
+
+  // Initialize the data for the connection between vertices and
+  // the elements
+  void init_vert_element_data();
+
+  // Inputs
+  index_t nverts;
+
+  // Derived count info
+  index_t nelems;  // Total number of elements
+
+  // Global data for pointing from verts to elements
+  index_t* vert_element_ptr;
+  index_t* vert_elements;
+
+  // Boundary labels for faces that touch a boundary
+  index_t num_boundary_labels;
+  index_t num_boundary_faces;
+  index_t* boundary_labels;
+  index_t* boundary_faces;
+};
+
+// Mesh connecivity class for 3D meshes composed of tetrahedral,
+// hexahedral, wedge and pyramid elements
+class MeshConnectivity3D : public MeshConnectivityBase {
+ public:
+  // Use the definitions from the element types
+  using ET = ElementTypes;
+
+  template <typename I>
+  MeshConnectivity3D(I nverts, I ntets, I* tets, I nhex, I* hex, I nwedge,
+                     I* wedge, I npyrmd, I* pyrmd);
+  ~MeshConnectivity3D();
+
+  // Get global element counts
+  index_t get_num_elements() { return nelems; }
+  index_t get_num_faces() { return nfaces; }
+  index_t get_num_edges() { return nedges; }
+  index_t get_num_verts() { return nverts; }
+
+  // Shift elem to get local index within its element type (tet, hex, etc.)
+  // and return the meta data for this element type
+  const inline ElemMetaData& get_local_elem_and_meta(index_t& elem) {
+    if (elem < ntets) {
+      return meta_tet;
+    } else if (elem < ntets + nhex) {
+      elem -= ntets;
+      return meta_hex;
+    } else if (elem < ntets + nhex + nwedge) {
+      elem -= ntets + nhex;
+      return meta_wedge;
+    } else if (elem < ntets + nhex + nwedge + npyrmd) {
+      elem -= ntets + nhex + nwedge;
+      return meta_pyrmd;
+    } else {
+      return meta_none;
+    }
+  }
 
   // Get the adjacent elements from the vert index
   index_t get_adjacent_elements_from_vert(const index_t vert,
@@ -111,10 +167,6 @@ class MeshConnectivity3D : public MeshConnectivityBase {
                              index_t face_labels[]);
 
  private:
-  // Get a non-constant entities
-  index_t get_element_faces(index_t elem, index_t* faces[]);
-  index_t get_element_edges(index_t elem, index_t* edges[]);
-
   // Initialize
   void init_face_data();
   void init_edge_data();
@@ -149,11 +201,8 @@ class MeshConnectivity3D : public MeshConnectivityBase {
   index_t* wedge_edges;
   index_t* pyrmd_edges;
 
-  // Boundary labels for faces that touch a boundary
-  index_t num_boundary_labels;
-  index_t num_boundary_faces;
-  index_t* boundary_faces;
-  index_t* boundary_labels;
+  // Element meta data
+  ElemMetaData meta_tet, meta_hex, meta_wedge, meta_pyrmd, meta_none;
 };
 
 // This class provides a mapping between any boundary labels and

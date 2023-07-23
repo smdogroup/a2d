@@ -13,6 +13,7 @@ class Environment : public ::testing::Environment {
   void TearDown() override { Kokkos::finalize(); }
 };
 
+// Create a new environment and initialize kokkos
 ::testing::Environment *const initialize_kokkos =
     ::testing::AddGlobalTestEnvironment(new Environment);
 

@@ -46,8 +46,9 @@ inline void MeshConnectivityBase::init_vert_element_data() {
   vert_element_ptr[0] = 0;
 }
 
-inline MeshConnectivityBase::MeshConnectivityBase(index_t nverts)
-    : nverts(nverts) {
+inline MeshConnectivityBase::MeshConnectivityBase(index_t nverts,
+                                                  index_t nelems)
+    : nverts(nverts), nelems(nelems) {
   // Set to NULL all the boundary info
   num_boundary_labels = 1;
   num_boundary_faces = 0;
@@ -67,192 +68,6 @@ inline MeshConnectivityBase::~MeshConnectivityBase() {
   }
   if (boundary_labels) {
     DELETE_ARRAY(boundary_labels);
-  }
-}
-
-template <typename I>
-inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
-                                              I nhex, I* hex, I nwedge,
-                                              I* wedge, I npyrmd, I* pyrmd)
-    : MeshConnectivityBase(nverts),
-      ntets(ntets),
-      nhex(nhex),
-      nwedge(nwedge),
-      npyrmd(npyrmd),
-      meta_tet{true,
-               ET::TET_VERTS,
-               ET::TET_EDGES,
-               ET::TET_FACES,
-               ET::TET_FACE_NVERTS,
-               ET::TET_FACE_VERTS,
-               ET::TET_FACE_NEDGES,
-               ET::TET_FACE_EDGES,
-               ET::TET_EDGE_VERTS,
-               &tet_verts,
-               &tet_edges,
-               &tet_faces},
-      meta_hex{true,
-               ET::HEX_VERTS,
-               ET::HEX_EDGES,
-               ET::HEX_FACES,
-               ET::HEX_FACE_NVERTS,
-               ET::HEX_FACE_VERTS,
-               ET::HEX_FACE_NEDGES,
-               ET::HEX_FACE_EDGES,
-               ET::HEX_EDGE_VERTS,
-               &hex_verts,
-               &hex_edges,
-               &hex_faces},
-      meta_wedge{true,
-                 ET::WEDGE_VERTS,
-                 ET::WEDGE_EDGES,
-                 ET::WEDGE_FACES,
-                 ET::WEDGE_FACE_NVERTS,
-                 ET::WEDGE_FACE_VERTS,
-                 ET::WEDGE_FACE_NEDGES,
-                 ET::WEDGE_FACE_EDGES,
-                 ET::WEDGE_EDGE_VERTS,
-                 &wedge_verts,
-                 &wedge_edges,
-                 &wedge_faces},
-      meta_pyrmd{true,
-                 ET::PYRMD_VERTS,
-                 ET::PYRMD_EDGES,
-                 ET::PYRMD_FACES,
-                 ET::PYRMD_FACE_NVERTS,
-                 ET::PYRMD_FACE_VERTS,
-                 ET::PYRMD_FACE_NEDGES,
-                 ET::PYRMD_FACE_EDGES,
-                 ET::PYRMD_EDGE_VERTS,
-                 &pyrmd_verts,
-                 &pyrmd_edges,
-                 &pyrmd_faces},
-      meta_none{false,
-                0,
-                0,
-                0,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr} {
-  Timer timer("MeshConnectivity3D");
-  // Allocate space for the element -> vert connectivity
-  tet_verts = new index_t[ET::TET_VERTS * ntets];
-  hex_verts = new index_t[ET::HEX_VERTS * nhex];
-  wedge_verts = new index_t[ET::WEDGE_VERTS * nwedge];
-  pyrmd_verts = new index_t[ET::PYRMD_VERTS * npyrmd];
-
-  // vert -> element connectivity
-  vert_element_ptr = NULL;
-  vert_elements = NULL;
-
-  // element -> face connectivity
-  tet_faces = NULL;
-  hex_faces = NULL;
-  wedge_faces = NULL;
-  pyrmd_faces = NULL;
-  tri_face_elements = NULL;
-  quad_face_elements = NULL;
-
-  // element -> edge connectivity
-  tet_edges = NULL;
-  hex_edges = NULL;
-  wedge_edges = NULL;
-  pyrmd_edges = NULL;
-
-  // Count the total number of elements
-  nelems = ntets + nhex + nwedge + npyrmd;
-
-  // Set the connectivity: element -> verts
-  for (index_t i = 0; i < ET::TET_VERTS * ntets; i++) {
-    tet_verts[i] = tets[i];
-  }
-  for (index_t i = 0; i < ET::HEX_VERTS * nhex; i++) {
-    hex_verts[i] = hex[i];
-  }
-  for (index_t i = 0; i < ET::WEDGE_VERTS * nwedge; i++) {
-    wedge_verts[i] = wedge[i];
-  }
-  for (index_t i = 0; i < ET::PYRMD_VERTS * npyrmd; i++) {
-    pyrmd_verts[i] = pyrmd[i];
-  }
-
-  init_vert_element_data();
-  init_face_data();
-  init_edge_data();
-
-  // Count up all the faces that are on the boundary
-  num_boundary_faces = 0;
-  for (index_t face = 0; face < nfaces; face++) {
-    index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
-    if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      num_boundary_faces++;
-    }
-  }
-
-  // Set the boundary labels - 0 for anything on the boundary
-  boundary_faces = new index_t[num_boundary_faces];
-  boundary_labels = new index_t[num_boundary_faces];
-  for (index_t face = 0, count = 0; face < nfaces; face++) {
-    index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
-    if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      boundary_faces[count] = face;
-      boundary_labels[count] = 0;
-      count++;
-    }
-  }
-}
-
-inline MeshConnectivity3D::~MeshConnectivity3D() {
-  if (tet_verts) {
-    DELETE_ARRAY(tet_verts);
-  }
-  if (hex_verts) {
-    DELETE_ARRAY(hex_verts);
-  }
-  if (wedge_verts) {
-    DELETE_ARRAY(wedge_verts);
-  }
-  if (pyrmd_verts) {
-    DELETE_ARRAY(pyrmd_verts);
-  }
-
-  if (tet_faces) {
-    DELETE_ARRAY(tet_faces);
-  }
-  if (hex_faces) {
-    DELETE_ARRAY(hex_faces);
-  }
-  if (wedge_faces) {
-    DELETE_ARRAY(wedge_faces);
-  }
-  if (pyrmd_faces) {
-    DELETE_ARRAY(pyrmd_faces);
-  }
-  if (tri_face_elements) {
-    DELETE_ARRAY(tri_face_elements);
-  }
-  if (quad_face_elements) {
-    DELETE_ARRAY(quad_face_elements);
-  }
-
-  if (tet_edges) {
-    DELETE_ARRAY(tet_edges);
-  }
-  if (hex_edges) {
-    DELETE_ARRAY(hex_edges);
-  }
-  if (wedge_edges) {
-    DELETE_ARRAY(wedge_edges);
-  }
-  if (pyrmd_edges) {
-    DELETE_ARRAY(pyrmd_edges);
   }
 }
 
@@ -403,7 +218,7 @@ inline index_t MeshConnectivityBase::get_element_verts(index_t elem,
  * @param elems Array of the adjacent element indices
  * @return The number of elements
  */
-inline index_t MeshConnectivity3D::get_adjacent_elements_from_vert(
+inline index_t MeshConnectivityBase::get_adjacent_elements_from_vert(
     const index_t vert, const index_t* elems[]) {
   if (vert < nverts) {
     *elems = &vert_elements[vert_element_ptr[vert]];
@@ -602,10 +417,10 @@ inline index_t MeshConnectivityBase::get_element_global_face_verts(
  *
  * @return True if the faces match, false otherwise
  */
-inline bool MeshConnectivity3D::global_face_equality(index_t na,
-                                                     const index_t a[],
-                                                     index_t nb,
-                                                     const index_t b[]) {
+inline bool MeshConnectivityBase::global_face_equality(index_t na,
+                                                       const index_t a[],
+                                                       index_t nb,
+                                                       const index_t b[]) {
   if (na == nb) {
     if (na == 3) {
       if (a[0] == b[0] && a[1] == b[1] && a[2] == b[2]) {
@@ -625,8 +440,8 @@ inline bool MeshConnectivity3D::global_face_equality(index_t na,
  *
  * @return True if the edges match, false otherwise
  */
-inline bool MeshConnectivity3D::global_edge_equality(const index_t a[],
-                                                     const index_t b[]) {
+inline bool MeshConnectivityBase::global_edge_equality(const index_t a[],
+                                                       const index_t b[]) {
   if ((a[0] == b[0] && a[1] == b[1]) || (a[0] == b[1] && a[1] == b[0])) {
     return true;
   }
@@ -641,14 +456,19 @@ inline bool MeshConnectivity3D::global_edge_equality(const index_t a[],
  * @param e2 Returned value of the second element (if it exists)
  * @return Boolean if this face is on the boundary
  */
-inline bool MeshConnectivity3D::get_face_elements(index_t face, index_t* e1,
-                                                  index_t* e2) {
-  if (face < ntri_faces) {
+inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
+                                                    index_t* e2) {
+  if (face < nline_faces) {
+    *e1 = line_face_elements[2 * face];
+    *e2 = line_face_elements[2 * face + 1];
+    return (line_face_elements[2 * face + 1] == NO_LABEL);
+  } else if (face < ntri_faces) {
+    face = face - nline_faces;
     *e1 = tri_face_elements[2 * face];
     *e2 = tri_face_elements[2 * face + 1];
     return (tri_face_elements[2 * face + 1] == NO_LABEL);
   } else {
-    face = face - ntri_faces;
+    face = face - nline_faces - ntri_faces;
     *e1 = quad_face_elements[2 * face];
     *e2 = quad_face_elements[2 * face + 1];
     return (quad_face_elements[2 * face + 1] == NO_LABEL);
@@ -692,6 +512,219 @@ inline void MeshConnectivityBase::get_element_edge_verts(index_t elem,
   }
 }
 
+template <typename I>
+inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
+                                              I nhex, I* hex, I nwedge,
+                                              I* wedge, I npyrmd, I* pyrmd)
+    : MeshConnectivityBase(nverts, ntets + nhex + nwedge + npyrmd),
+      ntets(ntets),
+      nhex(nhex),
+      nwedge(nwedge),
+      npyrmd(npyrmd),
+      meta_tet{true,
+               ET::TET_VERTS,
+               ET::TET_EDGES,
+               ET::TET_FACES,
+               ET::TET_FACE_NVERTS,
+               ET::TET_FACE_VERTS,
+               ET::TET_FACE_NEDGES,
+               ET::TET_FACE_EDGES,
+               ET::TET_EDGE_VERTS,
+               &tet_verts,
+               &tet_edges,
+               &tet_faces},
+      meta_hex{true,
+               ET::HEX_VERTS,
+               ET::HEX_EDGES,
+               ET::HEX_FACES,
+               ET::HEX_FACE_NVERTS,
+               ET::HEX_FACE_VERTS,
+               ET::HEX_FACE_NEDGES,
+               ET::HEX_FACE_EDGES,
+               ET::HEX_EDGE_VERTS,
+               &hex_verts,
+               &hex_edges,
+               &hex_faces},
+      meta_wedge{true,
+                 ET::WEDGE_VERTS,
+                 ET::WEDGE_EDGES,
+                 ET::WEDGE_FACES,
+                 ET::WEDGE_FACE_NVERTS,
+                 ET::WEDGE_FACE_VERTS,
+                 ET::WEDGE_FACE_NEDGES,
+                 ET::WEDGE_FACE_EDGES,
+                 ET::WEDGE_EDGE_VERTS,
+                 &wedge_verts,
+                 &wedge_edges,
+                 &wedge_faces},
+      meta_pyrmd{true,
+                 ET::PYRMD_VERTS,
+                 ET::PYRMD_EDGES,
+                 ET::PYRMD_FACES,
+                 ET::PYRMD_FACE_NVERTS,
+                 ET::PYRMD_FACE_VERTS,
+                 ET::PYRMD_FACE_NEDGES,
+                 ET::PYRMD_FACE_EDGES,
+                 ET::PYRMD_EDGE_VERTS,
+                 &pyrmd_verts,
+                 &pyrmd_edges,
+                 &pyrmd_faces},
+      meta_none{false,
+                0,
+                0,
+                0,
+                ET::NONE_FACE_NQUANTS,
+                nullptr,
+                ET::NONE_FACE_NQUANTS,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr} {
+  Timer timer("MeshConnectivity3D");
+  // Allocate space for the element -> vert connectivity
+  tet_verts = new index_t[ET::TET_VERTS * ntets];
+  hex_verts = new index_t[ET::HEX_VERTS * nhex];
+  wedge_verts = new index_t[ET::WEDGE_VERTS * nwedge];
+  pyrmd_verts = new index_t[ET::PYRMD_VERTS * npyrmd];
+
+  // vert -> element connectivity
+  vert_element_ptr = NULL;
+  vert_elements = NULL;
+
+  // element -> face connectivity
+  tet_faces = NULL;
+  hex_faces = NULL;
+  wedge_faces = NULL;
+  pyrmd_faces = NULL;
+  line_face_elements = NULL;
+  tri_face_elements = NULL;
+  quad_face_elements = NULL;
+
+  // element -> edge connectivity
+  tet_edges = NULL;
+  hex_edges = NULL;
+  wedge_edges = NULL;
+  pyrmd_edges = NULL;
+
+  // Set the connectivity: element -> verts
+  for (index_t i = 0; i < ET::TET_VERTS * ntets; i++) {
+    tet_verts[i] = tets[i];
+  }
+  for (index_t i = 0; i < ET::HEX_VERTS * nhex; i++) {
+    hex_verts[i] = hex[i];
+  }
+  for (index_t i = 0; i < ET::WEDGE_VERTS * nwedge; i++) {
+    wedge_verts[i] = wedge[i];
+  }
+  for (index_t i = 0; i < ET::PYRMD_VERTS * npyrmd; i++) {
+    pyrmd_verts[i] = pyrmd[i];
+  }
+
+  init_vert_element_data();
+  init_face_data();
+  init_edge_data();
+
+  // Count up all the faces that are on the boundary
+  num_boundary_faces = 0;
+  for (index_t face = 0; face < nfaces; face++) {
+    index_t e1, e2;
+    get_face_elements(face, &e1, &e2);
+    if (e1 == NO_LABEL || e2 == NO_LABEL) {
+      num_boundary_faces++;
+    }
+  }
+
+  // Set the boundary labels - 0 for anything on the boundary
+  boundary_faces = new index_t[num_boundary_faces];
+  boundary_labels = new index_t[num_boundary_faces];
+  for (index_t face = 0, count = 0; face < nfaces; face++) {
+    index_t e1, e2;
+    get_face_elements(face, &e1, &e2);
+    if (e1 == NO_LABEL || e2 == NO_LABEL) {
+      boundary_faces[count] = face;
+      boundary_labels[count] = 0;
+      count++;
+    }
+  }
+}
+
+inline MeshConnectivity3D::~MeshConnectivity3D() {
+  if (tet_verts) {
+    DELETE_ARRAY(tet_verts);
+  }
+  if (hex_verts) {
+    DELETE_ARRAY(hex_verts);
+  }
+  if (wedge_verts) {
+    DELETE_ARRAY(wedge_verts);
+  }
+  if (pyrmd_verts) {
+    DELETE_ARRAY(pyrmd_verts);
+  }
+
+  if (tet_faces) {
+    DELETE_ARRAY(tet_faces);
+  }
+  if (hex_faces) {
+    DELETE_ARRAY(hex_faces);
+  }
+  if (wedge_faces) {
+    DELETE_ARRAY(wedge_faces);
+  }
+  if (pyrmd_faces) {
+    DELETE_ARRAY(pyrmd_faces);
+  }
+  if (line_face_elements) {
+    DELETE_ARRAY(line_face_elements);
+  }
+  if (tri_face_elements) {
+    DELETE_ARRAY(tri_face_elements);
+  }
+  if (quad_face_elements) {
+    DELETE_ARRAY(quad_face_elements);
+  }
+
+  if (tet_edges) {
+    DELETE_ARRAY(tet_edges);
+  }
+  if (hex_edges) {
+    DELETE_ARRAY(hex_edges);
+  }
+  if (wedge_edges) {
+    DELETE_ARRAY(wedge_edges);
+  }
+  if (pyrmd_edges) {
+    DELETE_ARRAY(pyrmd_edges);
+  }
+}
+
+/**
+ * @brief Shift elem to get local index within its element type (tet, hex, etc.)
+ * and return the meta data for this element type
+ *
+ * @param elem global element index, on exit, elem is modified such that it
+ * becomes the index within the element type (tet, hex, etc.)
+ * @return a const reference to the meta data struct of the element type
+ */
+const inline ElemMetaData& MeshConnectivity3D::get_local_elem_and_meta(
+    index_t& elem) {
+  if (elem < ntets) {
+    return meta_tet;
+  } else if (elem < ntets + nhex) {
+    elem -= ntets;
+    return meta_hex;
+  } else if (elem < ntets + nhex + nwedge) {
+    elem -= ntets + nhex;
+    return meta_wedge;
+  } else if (elem < ntets + nhex + nwedge + npyrmd) {
+    elem -= ntets + nhex + nwedge;
+    return meta_pyrmd;
+  } else {
+    return meta_none;
+  }
+}
+
 /**
  * @brief Label the verts, edges and faces that touch the list of vertices
  *
@@ -702,11 +735,11 @@ inline void MeshConnectivityBase::get_element_edge_verts(index_t elem,
  * @param face_labels An array of length nfaces
  */
 template <typename IdxType>
-inline void MeshConnectivity3D::get_labels_from_verts(const index_t nv,
-                                                      const IdxType verts[],
-                                                      index_t vert_labels[],
-                                                      index_t edge_labels[],
-                                                      index_t face_labels[]) {
+inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
+                                                        const IdxType verts[],
+                                                        index_t vert_labels[],
+                                                        index_t edge_labels[],
+                                                        index_t face_labels[]) {
   std::fill(vert_labels, vert_labels + nverts, NO_LABEL);
   std::fill(edge_labels, edge_labels + nedges, NO_LABEL);
   std::fill(face_labels, face_labels + nfaces, NO_LABEL);
@@ -739,7 +772,7 @@ inline void MeshConnectivity3D::get_labels_from_verts(const index_t nv,
       index_t fv[4];  // Face vertices
       index_t nfv = get_element_face_verts(elem, f, fv);
 
-      // Check if all the face vertices are labeled
+      // Check if all the face vertices are labeled, TODO:: need nfv == 2 for 2D
       if (nfv == 3) {
         if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL &&
             vert_labels[fv[2]] != NO_LABEL) {
@@ -789,12 +822,8 @@ inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
   return meta.NEDGES;
 }
 
-/**
- * @brief Initialize data associated with the face information
- *
- * This code uniquely orders the faces assocaited with each element
- */
-inline void MeshConnectivity3D::init_face_data() {
+inline void MeshConnectivity3D::allocate_face_data() {
+  // Deallocate old data, if any (why is this needed anyways?)
   if (tet_faces) {
     DELETE_ARRAY(tet_faces);
   }
@@ -819,9 +848,19 @@ inline void MeshConnectivity3D::init_face_data() {
   std::fill(hex_faces, hex_faces + ET::HEX_FACES * nhex, NO_LABEL);
   std::fill(wedge_faces, wedge_faces + ET::WEDGE_FACES * nwedge, NO_LABEL);
   std::fill(pyrmd_faces, pyrmd_faces + ET::PYRMD_FACES * npyrmd, NO_LABEL);
+}
+
+/**
+ * @brief Initialize data associated with the face information
+ *
+ * This code uniquely orders the faces assocaited with each element
+ */
+inline void MeshConnectivityBase::init_face_data() {
+  allocate_face_data();
 
   // Prepare to count and number the number of faces. This keeps track of
   // separate triangle and quadrilateral face counts
+  nline_faces = 0;
   ntri_faces = 0;
   nquad_faces = 0;
   nfaces = 0;
@@ -865,7 +904,11 @@ inline void MeshConnectivity3D::init_face_data() {
                 if (adj_faces[adj_face] == NO_LABEL &&
                     global_face_equality(nface_verts, face_verts,
                                          adj_nface_verts, adj_face_verts)) {
-                  if (nface_verts == 3) {
+                  if (nface_verts == 2) {
+                    adj_faces[adj_face] = nline_faces;
+                    faces[face] = nline_faces;
+                    nline_faces++;
+                  } else if (nface_verts == 3) {
                     adj_faces[adj_face] = ntri_faces;
                     faces[face] = ntri_faces;
                     ntri_faces++;
@@ -893,7 +936,10 @@ inline void MeshConnectivity3D::init_face_data() {
 
         // No adjacent face was found. This is a boundary face
         if (!face_located) {
-          if (nface_verts == 3) {
+          if (nface_verts == 2) {
+            faces[face] = nline_faces;
+            nline_faces++;
+          } else if (nface_verts == 3) {
             faces[face] = ntri_faces;
             ntri_faces++;
           } else {
@@ -908,13 +954,16 @@ inline void MeshConnectivity3D::init_face_data() {
   }
 
   // Sum up the total number of faces
-  nfaces = ntri_faces + nquad_faces;
+  nfaces = nline_faces + ntri_faces + nquad_faces;
 
   // Set the face indices associated with the two adjacent elements. At
   // this point the face indices stored are with respect to separate lists
   // of triangular and quadrilateral faces. We order the triangular faces
   // first, so we have to add the total number of triangular faces to each
   // quadrilateral face index to get the global index.
+  line_face_elements = new index_t[2 * nline_faces];
+  std::fill(line_face_elements, line_face_elements + 2 * nline_faces, NO_LABEL);
+
   tri_face_elements = new index_t[2 * ntri_faces];
   std::fill(tri_face_elements, tri_face_elements + 2 * ntri_faces, NO_LABEL);
 
@@ -931,12 +980,23 @@ inline void MeshConnectivity3D::init_face_data() {
       index_t nface_verts =
           get_element_global_face_verts(elem, face, face_verts);
 
-      if (nface_verts == 3) {
+      if (nface_verts == 2) {
+        if (line_face_elements[2 * faces[face]] == NO_LABEL) {
+          line_face_elements[2 * faces[face]] = elem;
+        } else if (line_face_elements[2 * faces[face] + 1] == NO_LABEL) {
+          line_face_elements[2 * faces[face] + 1] = elem;
+        }
+      } else if (nface_verts == 3) {
         if (tri_face_elements[2 * faces[face]] == NO_LABEL) {
           tri_face_elements[2 * faces[face]] = elem;
         } else if (tri_face_elements[2 * faces[face] + 1] == NO_LABEL) {
           tri_face_elements[2 * faces[face] + 1] = elem;
         }
+
+        // Reset the face index into the global face index - add the
+        // number of line faces. Now the faces will index from a
+        // global face number.
+        faces[face] += nline_faces;
       } else {
         if (quad_face_elements[2 * faces[face]] == NO_LABEL) {
           quad_face_elements[2 * faces[face]] = elem;
@@ -945,23 +1005,15 @@ inline void MeshConnectivity3D::init_face_data() {
         }
 
         // Reset the face index into the global face index - add the
-        // number of triangle faces. Now the faces will index from a
+        // number of line and triangle faces. Now the faces will index from a
         // global face number.
-        faces[face] += ntri_faces;
+        faces[face] += nline_faces + ntri_faces;
       }
     }
   }
 }
 
-/**
- * @brief Initialize and order the edge information.
- *
- * This relies on the face connectivity data - so that must be initialized
- * first.
- */
-inline void MeshConnectivity3D::init_edge_data() {
-  nedges = 0;
-
+inline void MeshConnectivity3D::allocate_edge_data() {
   if (tet_edges) {
     DELETE_ARRAY(tet_edges);
   }
@@ -985,6 +1037,18 @@ inline void MeshConnectivity3D::init_edge_data() {
   std::fill(hex_edges, hex_edges + ET::HEX_EDGES * nhex, NO_LABEL);
   std::fill(wedge_edges, wedge_edges + ET::WEDGE_EDGES * nwedge, NO_LABEL);
   std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_EDGES * npyrmd, NO_LABEL);
+}
+
+/**
+ * @brief Initialize and order the edge information.
+ *
+ * This relies on the face connectivity data - so that must be initialized
+ * first.
+ */
+inline void MeshConnectivityBase::init_edge_data() {
+  allocate_edge_data();
+
+  nedges = 0;
 
   for (index_t elem = 0; elem < nelems; elem++) {
     // Get the number of element edges

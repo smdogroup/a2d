@@ -49,11 +49,11 @@ struct ElemMetaData {
 
 class MeshConnectivityBase {
  public:
+  using ET = ElementTypes;
   static constexpr index_t NO_LABEL = MAX_INDEX;
 
+  // Get the right meta data based on element index
   virtual inline const ElemMetaData& get_local_elem_and_meta(index_t& elem) = 0;
-  virtual inline void allocate_face_data() = 0;
-  virtual inline void allocate_edge_data() = 0;
 
   // Get global element counts
   index_t get_num_elements() { return nelems; }
@@ -111,10 +111,9 @@ class MeshConnectivityBase {
   MeshConnectivityBase(index_t nverts, index_t nelems);
   ~MeshConnectivityBase();
 
-  // Initialize
-  void init_vert_element_data();
-  void init_face_data();
-  void init_edge_data();
+  // Initialize all derived connectivity data and set up boundary, allocation
+  // must be performed explicitly before calling this function
+  void initialize();
 
   // Get a non-constant entities
   index_t get_element_faces(index_t elem, index_t* faces[]);
@@ -140,15 +139,49 @@ class MeshConnectivityBase {
   index_t num_boundary_faces;
   index_t* boundary_labels;
   index_t* boundary_faces;
+
+ private:
+  void init_vert_element_data();
+  void init_face_data();
+  void init_edge_data();
+};
+
+// Mesh connecivity class for 2D meshes composed of triangle and quadrilateral
+// elements
+class MeshConnectivity2D final : public MeshConnectivityBase {
+ public:
+  template <typename I>
+  MeshConnectivity2D(I nverts, I ntri, I* tri, I nquad, I* quad);
+  ~MeshConnectivity2D();
+
+  // Shift elem to get local index within its element type (tri or quad)
+  // and return the meta data for this element type
+  const inline ElemMetaData& get_local_elem_and_meta(index_t& elem);
+
+ private:
+  // Input counts of the triangle and quadrilateral elements
+  index_t ntri, nquad;
+
+  // Element -> vert connectivity
+  index_t* tri_verts;
+  index_t* quad_verts;
+
+  // Element -> face connectivity
+  index_t* tri_faces;
+  index_t* quad_faces;
+
+  // Element -> edge connectivity
+  index_t* tri_edges;
+  index_t* quad_edges;
+
+  // Element meta data
+  ElemMetaData meta_tri, meta_quad, meta_none;
 };
 
 // Mesh connecivity class for 3D meshes composed of tetrahedral,
 // hexahedral, wedge and pyramid elements
 class MeshConnectivity3D final : public MeshConnectivityBase {
  public:
-  // Use the definitions from the element types
-  using ET = ElementTypes;
-
   template <typename I>
   MeshConnectivity3D(I nverts, I ntets, I* tets, I nhex, I* hex, I nwedge,
                      I* wedge, I npyrmd, I* pyrmd);
@@ -159,10 +192,7 @@ class MeshConnectivity3D final : public MeshConnectivityBase {
   const inline ElemMetaData& get_local_elem_and_meta(index_t& elem);
 
  private:
-  void allocate_face_data();
-  void allocate_edge_data();
-
-  // Input counts of the verts, tet, hex, wedge and pyramid elements
+  // Input counts of the tet, hex, wedge and pyramid elements
   index_t ntets, nhex, nwedge, npyrmd;
 
   // Element -> vert connectivity

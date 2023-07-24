@@ -41,7 +41,7 @@ class ElementTypes {
   /**
    * @brief Triangle element
    *
-   *  The vertices of the triangle are
+   * The vertices of the triangle are
    *
    *     2
    *     | .
@@ -52,14 +52,38 @@ class ElementTypes {
    *     0 ------------- 1
    *            (2)
    *
-   *  The edges of the triangle are
-   *  (0)  1 -> 2
-   *  (1)  2 -> 1
-   *  (2)  0 -> 1
+   * The edges of the triangle are
+   * Idx    Edge
+   * (0)    1 -> 2
+   * (1)    2 -> 0
+   * (2)    0 -> 1
+   *
+   * The faces are (note that for 2d elements face and edge are the same)
+   * Idx    Face      Edges
+   * (0)    1 -> 2    0,
+   * (1)    2 -> 0    1,
+   * (2)    0 -> 1    2,
    */
   static const index_t TRI_VERTS = 3;
   static const index_t TRI_EDGES = 3;
+  static const index_t TRI_FACES = 3;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t TRI_EDGE_VERTS[][2] = {{1, 2}, {2, 0}, {0, 1}};
+
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t TRI_FACE_NVERTS[] = {2, 2, 2};
+  static constexpr index_t TRI_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {1, 2, NO_INDEX, NO_INDEX},
+      {2, 0, NO_INDEX, NO_INDEX},
+      {0, 1, NO_INDEX, NO_INDEX}};
+
+  // Given face index, return edge indices
+  static constexpr index_t TRI_FACE_NEDGES[] = {1, 1, 1};
+  static constexpr index_t TRI_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {0, NO_INDEX, NO_INDEX, NO_INDEX},
+      {1, NO_INDEX, NO_INDEX, NO_INDEX},
+      {2, NO_INDEX, NO_INDEX, NO_INDEX}};
 
   /**
    * @brief Quadrilateral element
@@ -75,17 +99,45 @@ class ElementTypes {
    *      0 ----------- 1
    *            (0)
    *
-   *  The edges of the quadrilateral are
-   *  (0)  0 -> 1
-   *  (1)  3 -> 2
-   *  (2)  0 -> 3
-   *  (3)  1 -> 2
+   * The edges of the quadrilateral are
+   * Idx    Edge
+   * (0)    0 -> 1
+   * (1)    3 -> 2
+   * (2)    0 -> 3
+   * (3)    1 -> 2
+   *
+   * The faces are (note that for 2d elements face and edge are the same)
+   * Idx    Face      Edges
+   * (0)    0 -> 1    0,
+   * (1)    3 -> 2    1,
+   * (2)    0 -> 3    2,
+   * (3)    1 -> 2    3,
    */
   static const index_t QUAD_VERTS = 4;
   static const index_t QUAD_EDGES = 4;
+  static const index_t QUAD_FACES = 4;
+
+  // Given edge index, return edge vertex indices
   static constexpr index_t QUAD_EDGE_VERTS[][2] = {
       {0, 1}, {3, 2}, {0, 3}, {1, 2}};
 
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t QUAD_FACE_NVERTS[] = {2, 2, 2, 2};
+  static constexpr index_t QUAD_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {0, 1, NO_INDEX, NO_INDEX},
+      {3, 2, NO_INDEX, NO_INDEX},
+      {0, 3, NO_INDEX, NO_INDEX},
+      {1, 2, NO_INDEX, NO_INDEX}};
+
+  // Given face index, return edge indices
+  static constexpr index_t QUAD_FACE_NEDGES[] = {1, 1, 1, 1};
+  static constexpr index_t QUAD_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {0, NO_INDEX, NO_INDEX, NO_INDEX},
+      {1, NO_INDEX, NO_INDEX, NO_INDEX},
+      {2, NO_INDEX, NO_INDEX, NO_INDEX},
+      {3, NO_INDEX, NO_INDEX, NO_INDEX}};
+
+  // Cartesian coordinates of the vertices in the reference element
   static constexpr index_t QUAD_VERTS_CART[][2] = {
       {0, 0}, {1, 0}, {1, 1}, {0, 1}};
 

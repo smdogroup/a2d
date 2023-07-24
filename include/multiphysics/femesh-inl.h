@@ -99,6 +99,40 @@ inline MeshConnectivityBase::~MeshConnectivityBase() {
 }
 
 /**
+ * @brief Initialize all derived connectivity data and set up boundary
+ *
+ * Note: allocation must be performed explicitly before calling this function
+ */
+inline void MeshConnectivityBase::initialize() {
+  init_vert_element_data();
+  init_face_data();
+  init_edge_data();
+
+  // Count up all the faces that are on the boundary
+  num_boundary_faces = 0;
+  for (index_t face = 0; face < nfaces; face++) {
+    index_t e1, e2;
+    get_face_elements(face, &e1, &e2);
+    if (e1 == NO_LABEL || e2 == NO_LABEL) {
+      num_boundary_faces++;
+    }
+  }
+
+  // Set the boundary labels - 0 for anything on the boundary
+  boundary_faces = new index_t[num_boundary_faces];
+  boundary_labels = new index_t[num_boundary_faces];
+  for (index_t face = 0, count = 0; face < nfaces; face++) {
+    index_t e1, e2;
+    get_face_elements(face, &e1, &e2);
+    if (e1 == NO_LABEL || e2 == NO_LABEL) {
+      boundary_faces[count] = face;
+      boundary_labels[count] = 0;
+      count++;
+    }
+  }
+}
+
+/**
  * @brief Get the boundary faces and labels
  *
  * @param boundary_faces_ Array of the boundary faces
@@ -540,6 +574,123 @@ inline void MeshConnectivityBase::get_element_edge_verts(index_t elem,
 }
 
 template <typename I>
+inline MeshConnectivity2D::MeshConnectivity2D(I nverts, I ntri, I* tri, I nquad,
+                                              I* quad)
+    : MeshConnectivityBase(nverts, ntri + nquad),
+      ntri(ntri),
+      nquad(nquad),
+      meta_tri{true,
+               ET::TRI_VERTS,
+               ET::TRI_EDGES,
+               ET::TRI_FACES,
+               ET::TRI_FACE_NVERTS,
+               ET::TRI_FACE_VERTS,
+               ET::TRI_FACE_NEDGES,
+               ET::TRI_FACE_EDGES,
+               ET::TRI_EDGE_VERTS,
+               &tri_verts,
+               &tri_edges,
+               &tri_faces},
+      meta_quad{true,
+                ET::QUAD_VERTS,
+                ET::QUAD_EDGES,
+                ET::QUAD_FACES,
+                ET::QUAD_FACE_NVERTS,
+                ET::QUAD_FACE_VERTS,
+                ET::QUAD_FACE_NEDGES,
+                ET::QUAD_FACE_EDGES,
+                ET::QUAD_EDGE_VERTS,
+                &quad_verts,
+                &quad_edges,
+                &quad_faces},
+      meta_none{false,
+                0,
+                0,
+                0,
+                ET::NONE_FACE_NQUANTS,
+                nullptr,
+                ET::NONE_FACE_NQUANTS,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr,
+                nullptr} {
+  Timer timer("MeshConnectivity2D");
+  // Allocate space for the element -> vert connectivity
+  tri_verts = new index_t[ET::TRI_VERTS * ntri];
+  quad_verts = new index_t[ET::QUAD_VERTS * nquad];
+
+  // Set the connectivity: element -> verts
+  for (index_t i = 0; i < ET::TRI_VERTS * ntri; i++) {
+    tri_verts[i] = tri[i];
+  }
+  for (index_t i = 0; i < ET::QUAD_VERTS * nquad; i++) {
+    quad_verts[i] = quad[i];
+  }
+
+  // Allocate the face data
+  tri_faces = new index_t[ET::TRI_FACES * ntri];
+  quad_faces = new index_t[ET::QUAD_FACES * nquad];
+
+  // Fill the face arrays with NO_LABEL
+  std::fill(tri_faces, tri_faces + ET::TRI_FACES * ntri, NO_LABEL);
+  std::fill(quad_faces, quad_faces + ET::QUAD_FACES * nquad, NO_LABEL);
+
+  // element -> edge connectivity
+  tri_edges = new index_t[ET::TRI_EDGES * ntri];
+  quad_edges = new index_t[ET::QUAD_EDGES * nquad];
+
+  // Fill the face arrays with NO_LABEL
+  std::fill(tri_edges, tri_edges + ET::TRI_EDGES * ntri, NO_LABEL);
+  std::fill(quad_edges, quad_edges + ET::QUAD_EDGES * nquad, NO_LABEL);
+
+  initialize();
+}
+
+inline MeshConnectivity2D::~MeshConnectivity2D() {
+  if (tri_verts) {
+    DELETE_ARRAY(tri_verts);
+  }
+  if (quad_verts) {
+    DELETE_ARRAY(quad_verts);
+  }
+
+  if (tri_faces) {
+    DELETE_ARRAY(tri_faces);
+  }
+  if (quad_faces) {
+    DELETE_ARRAY(quad_faces);
+  }
+
+  if (tri_edges) {
+    DELETE_ARRAY(tri_edges);
+  }
+  if (quad_edges) {
+    DELETE_ARRAY(quad_edges);
+  }
+}
+
+/**
+ * @brief Shift elem to get local index within its element type (tri or quad)
+ * and return the meta data for this element type
+ *
+ * @param elem global element index, on exit, elem is modified such that it
+ * becomes the index within the element type (tri or quad)
+ * @return a const reference to the meta data struct of the element type
+ */
+const inline ElemMetaData& MeshConnectivity2D::get_local_elem_and_meta(
+    index_t& elem) {
+  if (elem < ntri) {
+    return meta_tri;
+  } else if (elem < ntri + nquad) {
+    elem -= ntri;
+    return meta_quad;
+  } else {
+    return meta_none;
+  }
+}
+
+template <typename I>
 inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
                                               I nhex, I* hex, I nwedge,
                                               I* wedge, I npyrmd, I* pyrmd)
@@ -615,18 +766,6 @@ inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
   wedge_verts = new index_t[ET::WEDGE_VERTS * nwedge];
   pyrmd_verts = new index_t[ET::PYRMD_VERTS * npyrmd];
 
-  // element -> face connectivity
-  tet_faces = NULL;
-  hex_faces = NULL;
-  wedge_faces = NULL;
-  pyrmd_faces = NULL;
-
-  // element -> edge connectivity
-  tet_edges = NULL;
-  hex_edges = NULL;
-  wedge_edges = NULL;
-  pyrmd_edges = NULL;
-
   // Set the connectivity: element -> verts
   for (index_t i = 0; i < ET::TET_VERTS * ntets; i++) {
     tet_verts[i] = tets[i];
@@ -641,32 +780,31 @@ inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
     pyrmd_verts[i] = pyrmd[i];
   }
 
-  init_vert_element_data();
-  init_face_data();
-  init_edge_data();
+  // Allocate the face data
+  tet_faces = new index_t[ET::TET_FACES * ntets];
+  hex_faces = new index_t[ET::HEX_FACES * nhex];
+  wedge_faces = new index_t[ET::WEDGE_FACES * nwedge];
+  pyrmd_faces = new index_t[ET::PYRMD_FACES * npyrmd];
 
-  // Count up all the faces that are on the boundary
-  num_boundary_faces = 0;
-  for (index_t face = 0; face < nfaces; face++) {
-    index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
-    if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      num_boundary_faces++;
-    }
-  }
+  // Fill the face arrays with NO_LABEL
+  std::fill(tet_faces, tet_faces + ET::TET_FACES * ntets, NO_LABEL);
+  std::fill(hex_faces, hex_faces + ET::HEX_FACES * nhex, NO_LABEL);
+  std::fill(wedge_faces, wedge_faces + ET::WEDGE_FACES * nwedge, NO_LABEL);
+  std::fill(pyrmd_faces, pyrmd_faces + ET::PYRMD_FACES * npyrmd, NO_LABEL);
 
-  // Set the boundary labels - 0 for anything on the boundary
-  boundary_faces = new index_t[num_boundary_faces];
-  boundary_labels = new index_t[num_boundary_faces];
-  for (index_t face = 0, count = 0; face < nfaces; face++) {
-    index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
-    if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      boundary_faces[count] = face;
-      boundary_labels[count] = 0;
-      count++;
-    }
-  }
+  // element -> edge connectivity
+  tet_edges = new index_t[ET::TET_EDGES * ntets];
+  hex_edges = new index_t[ET::HEX_EDGES * nhex];
+  wedge_edges = new index_t[ET::WEDGE_EDGES * nwedge];
+  pyrmd_edges = new index_t[ET::PYRMD_EDGES * npyrmd];
+
+  // Fill the face arrays with NO_LABEL
+  std::fill(tet_edges, tet_edges + ET::TET_EDGES * ntets, NO_LABEL);
+  std::fill(hex_edges, hex_edges + ET::HEX_EDGES * nhex, NO_LABEL);
+  std::fill(wedge_edges, wedge_edges + ET::WEDGE_EDGES * nwedge, NO_LABEL);
+  std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_EDGES * npyrmd, NO_LABEL);
+
+  initialize();
 }
 
 inline MeshConnectivity3D::~MeshConnectivity3D() {
@@ -780,11 +918,15 @@ inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
     const index_t* elem_faces;
     index_t nf = get_element_faces(elem, &elem_faces);
     for (index_t f = 0; f < nf; f++) {
-      index_t fv[4];  // Face vertices
+      index_t fv[ET::MAX_FACE_VERTS];  // Face vertices
       index_t nfv = get_element_face_verts(elem, f, fv);
 
-      // Check if all the face vertices are labeled, TODO:: need nfv == 2 for 2D
-      if (nfv == 3) {
+      // Check if all the face vertices are labeled
+      if (nfv == 2) {
+        if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL) {
+          face_labels[elem_faces[f]] = elem_faces[f];
+        }
+      } else if (nfv == 3) {
         if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL &&
             vert_labels[fv[2]] != NO_LABEL) {
           face_labels[elem_faces[f]] = elem_faces[f];
@@ -833,42 +975,12 @@ inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
   return meta.NEDGES;
 }
 
-inline void MeshConnectivity3D::allocate_face_data() {
-  // Deallocate old data, if any (why is this needed anyways?)
-  if (tet_faces) {
-    DELETE_ARRAY(tet_faces);
-  }
-  if (hex_faces) {
-    DELETE_ARRAY(hex_faces);
-  }
-  if (wedge_faces) {
-    DELETE_ARRAY(wedge_faces);
-  }
-  if (pyrmd_faces) {
-    DELETE_ARRAY(pyrmd_faces);
-  }
-
-  // Allocate the face data
-  tet_faces = new index_t[ET::TET_FACES * ntets];
-  hex_faces = new index_t[ET::HEX_FACES * nhex];
-  wedge_faces = new index_t[ET::WEDGE_FACES * nwedge];
-  pyrmd_faces = new index_t[ET::PYRMD_FACES * npyrmd];
-
-  // Fill the face arrays with NO_LABEL
-  std::fill(tet_faces, tet_faces + ET::TET_FACES * ntets, NO_LABEL);
-  std::fill(hex_faces, hex_faces + ET::HEX_FACES * nhex, NO_LABEL);
-  std::fill(wedge_faces, wedge_faces + ET::WEDGE_FACES * nwedge, NO_LABEL);
-  std::fill(pyrmd_faces, pyrmd_faces + ET::PYRMD_FACES * npyrmd, NO_LABEL);
-}
-
 /**
  * @brief Initialize data associated with the face information
  *
  * This code uniquely orders the faces assocaited with each element
  */
 inline void MeshConnectivityBase::init_face_data() {
-  allocate_face_data();
-
   // Prepare to count and number the number of faces. This keeps track of
   // separate triangle and quadrilateral face counts
   for (index_t elem = 0; elem < nelems; elem++) {
@@ -1019,32 +1131,6 @@ inline void MeshConnectivityBase::init_face_data() {
   }
 }
 
-inline void MeshConnectivity3D::allocate_edge_data() {
-  if (tet_edges) {
-    DELETE_ARRAY(tet_edges);
-  }
-  if (hex_edges) {
-    DELETE_ARRAY(hex_edges);
-  }
-  if (wedge_edges) {
-    DELETE_ARRAY(wedge_edges);
-  }
-  if (pyrmd_edges) {
-    DELETE_ARRAY(pyrmd_edges);
-  }
-
-  tet_edges = new index_t[ET::TET_EDGES * ntets];
-  hex_edges = new index_t[ET::HEX_EDGES * nhex];
-  wedge_edges = new index_t[ET::WEDGE_EDGES * nwedge];
-  pyrmd_edges = new index_t[ET::PYRMD_EDGES * npyrmd];
-
-  // Fill the face arrays with NO_LABEL
-  std::fill(tet_edges, tet_edges + ET::TET_EDGES * ntets, NO_LABEL);
-  std::fill(hex_edges, hex_edges + ET::HEX_EDGES * nhex, NO_LABEL);
-  std::fill(wedge_edges, wedge_edges + ET::WEDGE_EDGES * nwedge, NO_LABEL);
-  std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_EDGES * npyrmd, NO_LABEL);
-}
-
 /**
  * @brief Initialize and order the edge information.
  *
@@ -1052,8 +1138,6 @@ inline void MeshConnectivity3D::allocate_edge_data() {
  * first.
  */
 inline void MeshConnectivityBase::init_edge_data() {
-  allocate_edge_data();
-
   for (index_t elem = 0; elem < nelems; elem++) {
     // Get the number of element edges
     index_t* elem_edges;

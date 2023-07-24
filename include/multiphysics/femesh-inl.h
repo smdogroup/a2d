@@ -49,6 +49,22 @@ inline void MeshConnectivityBase::init_vert_element_data() {
 inline MeshConnectivityBase::MeshConnectivityBase(index_t nverts,
                                                   index_t nelems)
     : nverts(nverts), nelems(nelems) {
+  nfaces = 0;
+  nedges = 0;
+
+  nline_faces = 0;
+  ntri_faces = 0;
+  nquad_faces = 0;
+
+  // vert -> element connectivity
+  vert_element_ptr = NULL;
+  vert_elements = NULL;
+
+  // Face -> element connectivity
+  line_face_elements = NULL;
+  tri_face_elements = NULL;
+  quad_face_elements = NULL;
+
   // Set to NULL all the boundary info
   num_boundary_labels = 1;
   num_boundary_faces = 0;
@@ -63,6 +79,17 @@ inline MeshConnectivityBase::~MeshConnectivityBase() {
   if (vert_elements) {
     DELETE_ARRAY(vert_elements);
   }
+
+  if (line_face_elements) {
+    DELETE_ARRAY(line_face_elements);
+  }
+  if (tri_face_elements) {
+    DELETE_ARRAY(tri_face_elements);
+  }
+  if (quad_face_elements) {
+    DELETE_ARRAY(quad_face_elements);
+  }
+
   if (boundary_faces) {
     DELETE_ARRAY(boundary_faces);
   }
@@ -588,18 +615,11 @@ inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
   wedge_verts = new index_t[ET::WEDGE_VERTS * nwedge];
   pyrmd_verts = new index_t[ET::PYRMD_VERTS * npyrmd];
 
-  // vert -> element connectivity
-  vert_element_ptr = NULL;
-  vert_elements = NULL;
-
   // element -> face connectivity
   tet_faces = NULL;
   hex_faces = NULL;
   wedge_faces = NULL;
   pyrmd_faces = NULL;
-  line_face_elements = NULL;
-  tri_face_elements = NULL;
-  quad_face_elements = NULL;
 
   // element -> edge connectivity
   tet_edges = NULL;
@@ -674,15 +694,6 @@ inline MeshConnectivity3D::~MeshConnectivity3D() {
   }
   if (pyrmd_faces) {
     DELETE_ARRAY(pyrmd_faces);
-  }
-  if (line_face_elements) {
-    DELETE_ARRAY(line_face_elements);
-  }
-  if (tri_face_elements) {
-    DELETE_ARRAY(tri_face_elements);
-  }
-  if (quad_face_elements) {
-    DELETE_ARRAY(quad_face_elements);
   }
 
   if (tet_edges) {
@@ -860,11 +871,6 @@ inline void MeshConnectivityBase::init_face_data() {
 
   // Prepare to count and number the number of faces. This keeps track of
   // separate triangle and quadrilateral face counts
-  nline_faces = 0;
-  ntri_faces = 0;
-  nquad_faces = 0;
-  nfaces = 0;
-
   for (index_t elem = 0; elem < nelems; elem++) {
     // Loop over the elements of this face
     index_t* faces;
@@ -1047,8 +1053,6 @@ inline void MeshConnectivity3D::allocate_edge_data() {
  */
 inline void MeshConnectivityBase::init_edge_data() {
   allocate_edge_data();
-
-  nedges = 0;
 
   for (index_t elem = 0; elem < nelems; elem++) {
     // Get the number of element edges

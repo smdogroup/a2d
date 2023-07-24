@@ -112,16 +112,13 @@ class MeshConnectivityBase {
   ~MeshConnectivityBase();
 
   // Initialize
+  void init_vert_element_data();
   void init_face_data();
   void init_edge_data();
 
   // Get a non-constant entities
   index_t get_element_faces(index_t elem, index_t* faces[]);
   index_t get_element_edges(index_t elem, index_t* edges[]);
-
-  // Initialize the data for the connection between vertices and
-  // the elements
-  void init_vert_element_data();
 
   // Inputs: number of vertices, elements, faces and edges
   index_t nverts, nelems, nfaces, nedges;
@@ -194,7 +191,7 @@ class MeshConnectivity3D final : public MeshConnectivityBase {
 // associated boundary conditions
 class DirichletBCInfo {
  public:
-  static const index_t MAX_FIXED_FIELDS = INDEX_BIT - 1;
+  static const index_t MAX_FIXED_FIELDS = INDEX_NBITS - 1;
 
   DirichletBCInfo() = default;
 

@@ -1277,7 +1277,7 @@ inline bool DirichletBCInfo::active_for_dof(index_t label, index_t basis,
  * @param conn The mesh connectivity
  */
 template <class Basis>
-ElementMesh<Basis>::ElementMesh(MeshConnectivity3D& conn)
+ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     : nelems(conn.get_num_elements()), num_dof(0) {
   // Count up the number of degrees of freedom
   element_dof = new index_t[nelems * ndof_per_element];
@@ -1479,7 +1479,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivity3D& conn)
  */
 template <class Basis>
 template <class InteriorBasis>
-ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivity3D& conn,
+ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
                                 ElementMesh<InteriorBasis>& mesh)
     : nelems(conn.get_num_boundary_faces_with_label(label)) {
   element_dof = new index_t[nelems * ndof_per_element];
@@ -1721,7 +1721,7 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
  * @param mesh The mesh object with the ordered degrees of freedom
  */
 template <class Basis>
-DirichletBCs<Basis>::DirichletBCs(MeshConnectivity3D& conn,
+DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
                                   ElementMesh<Basis>& mesh,
                                   DirichletBCInfo& bcinfo) {
   const index_t* boundary_faces;

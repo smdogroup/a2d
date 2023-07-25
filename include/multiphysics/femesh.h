@@ -251,9 +251,9 @@ class ElementMesh {
   static const index_t ndof_per_element = Basis::ndof;
 
   // Constructors
-  ElementMesh(MeshConnectivity3D& conn);
+  ElementMesh(MeshConnectivityBase& conn);
   template <class InteriorBasis>
-  ElementMesh(const index_t label, MeshConnectivity3D& conn,
+  ElementMesh(const index_t label, MeshConnectivityBase& conn,
               ElementMesh<InteriorBasis>& mesh);
   template <class HOrderBasis>
   ElementMesh(ElementMesh<HOrderBasis>& mesh);
@@ -300,7 +300,7 @@ class DirichletBCs {
   // Use the definitions from the element types
   using ET = ElementTypes;
 
-  DirichletBCs(MeshConnectivity3D& conn, ElementMesh<Basis>& mesh,
+  DirichletBCs(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
                DirichletBCInfo& bcinfo);
 
   index_t get_bcs(const index_t* bcs[]) const {

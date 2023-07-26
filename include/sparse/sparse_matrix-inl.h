@@ -96,7 +96,11 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
   std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
 
   // Write header
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  }
 
   // Write global m, n and nnz
   std::fprintf(fp, "%15d%15d%15d\n", nbrows * M, nbcols * N, nnz * M * N);
@@ -113,9 +117,13 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
           // (irow, jcol) is the entry coo
           const index_t jcol = N * j + jj + 1;  // convert to 1-based index
           T val = vals(jp, ii, jj);
-          if (absfunc(val) >= epsilon) {
+          if constexpr (is_complex<T>::value) {
+            std::fprintf(fp, "%d %d %30.20e %30.20e\n", irow, jcol, val.real(),
+                         val.imag());
             nnz_mtx++;
+          } else if (absfunc(val) >= epsilon) {
             std::fprintf(fp, "%d %d %30.20e\n", irow, jcol, val);
+            nnz_mtx++;
           }
         }
       }
@@ -125,7 +133,11 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
 
   // Modify nnz
   fp = std::fopen(mtx_name.c_str(), "r+");
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  }
   std::fprintf(fp, "%15d%15d%15d", nbrows * M, nbcols * N, nnz_mtx);
   std::fclose(fp);
   return;
@@ -160,7 +172,11 @@ void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
 
   // Write header
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  }
 
   // Write m, n and nnz
   std::fprintf(fp, "%15d%15d%15d\n", nrows, ncols, nnz);
@@ -169,9 +185,13 @@ void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   index_t nnz_mtx = 0;
   for (index_t i = 0; i < nrows; i++) {
     for (index_t jp = rowp[i]; jp < rowp[i + 1]; jp++) {
-      if (absfunc(vals[jp]) >= epsilon) {
+      if constexpr (is_complex<T>::value) {
+        std::fprintf(fp, "%d %d %30.20e %30.20e\n", i + 1, cols[jp] + 1,
+                     vals[jp].real(), vals[jp].imag());
         nnz_mtx++;
+      } else if (absfunc(vals[jp]) >= epsilon) {
         std::fprintf(fp, "%d %d %30.20e\n", i + 1, cols[jp] + 1, vals[jp]);
+        nnz_mtx++;
       }
     }
   }
@@ -179,7 +199,11 @@ void CSRMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
 
   // Modify nnz
   fp = std::fopen(mtx_name.c_str(), "r+");
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  }
   std::fprintf(fp, "%15d%15d%15d", nrows, ncols, nnz_mtx);
   std::fclose(fp);
   return;
@@ -230,7 +254,11 @@ void CSCMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   std::FILE *fp = std::fopen(mtx_name.c_str(), "w");
 
   // Write header
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  }
 
   // Write m, n and nnz
   std::fprintf(fp, "%15d%15d%15d\n", nrows, ncols, nnz);
@@ -239,9 +267,13 @@ void CSCMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
   index_t nnz_mtx = 0;
   for (index_t j = 0; j < ncols; j++) {
     for (index_t ip = colp[j]; ip < colp[j + 1]; ip++) {
-      if (absfunc(vals[ip]) >= epsilon) {
+      if constexpr (is_complex<T>::value) {
+        std::fprintf(fp, "%d %d %30.20e %30.20e\n", rows[ip] + 1, j + 1,
+                     vals[ip].real(), vals[ip].imag());
         nnz_mtx++;
+      } else if (absfunc(vals[ip]) >= epsilon) {
         std::fprintf(fp, "%d %d %30.20e\n", rows[ip] + 1, j + 1, vals[ip]);
+        nnz_mtx++;
       }
     }
   }
@@ -249,7 +281,11 @@ void CSCMat<T>::write_mtx(const std::string mtx_name, double epsilon) {
 
   // Modify nnz
   fp = std::fopen(mtx_name.c_str(), "r+");
-  std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  if (is_complex<T>::value) {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
+  }
   std::fprintf(fp, "%15d%15d%15d", nrows, ncols, nnz_mtx);
   std::fclose(fp);
   return;

@@ -47,7 +47,7 @@ class LagrangeH1HypercubeBasis {
    *
    * @param entity The type of topological entity (vertex, edge, face or volume)
    * @param index The index of the topological entity (e.g. edge index)
-   * @return The number of degrees of freedom
+   * @return The number of degrees of freedom on a given entity
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
     if (entity == ET::VERTEX) {
@@ -215,7 +215,8 @@ class LagrangeH1HypercubeBasis {
                              LOrderDof& ldof) {
     if constexpr (dim == 2) {
       const index_t i = n % degree;
-      const index_t j = n / (degree * degree);
+      // const index_t j = n / (degree * degree);
+      const index_t j = n / degree;
 
       for (index_t jj = 0; jj < 2; jj++) {
         for (index_t ii = 0; ii < 2; ii++) {
@@ -365,31 +366,32 @@ class LagrangeH1HypercubeBasis {
         T u1[order * q0dim * q1dim];
         T u1x[order * q0dim * q1dim];
         T u1y[order * q0dim * q1dim];
-        index_t qouter = dim == 2 ? 1 : q1dim;
-        for (index_t q1 = 0; q1 < qouter; q1++) {
-          double n1[order], d1[order];
-          const double pt1 = Quadrature::get_tensor_point(1, q1);
-          interpolation_basis<order, interp_type>(pt1, n1, d1);
+        if constexpr (dim == 3) {
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order], d1[order];
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1, d1);
 
-          for (index_t q0 = 0; q0 < q0dim; q0++) {
-            for (index_t j2 = 0; j2 < order; j2++) {
-              T val(0.0), derx(0.0), dery(0.0);
-              for (index_t j1 = 0; j1 < order; j1++) {
-                val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
-                derx += n1[j1] * u0x[j1 + order * (j2 + order * q0)];
-                dery += d1[j1] * u0[j1 + order * (j2 + order * q0)];
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              for (index_t j2 = 0; j2 < order; j2++) {
+                T val(0.0), derx(0.0), dery(0.0);
+                for (index_t j1 = 0; j1 < order; j1++) {
+                  val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+                  derx += n1[j1] * u0x[j1 + order * (j2 + order * q0)];
+                  dery += d1[j1] * u0[j1 + order * (j2 + order * q0)];
+                }
+
+                u1[j2 + order * (q0 + q0dim * q1)] = val;
+                u1x[j2 + order * (q0 + q0dim * q1)] = derx;
+                u1y[j2 + order * (q0 + q0dim * q1)] = dery;
               }
-
-              u1[j2 + order * (q0 + q0dim * q1)] = val;
-              u1x[j2 + order * (q0 + q0dim * q1)] = derx;
-              u1y[j2 + order * (q0 + q0dim * q1)] = dery;
             }
           }
         }
 
         // For dim == 3: interpolate along the 2-direction, or
         // for dim == 2: interpolate along the 1-direction
-        qouter = dim == 2 ? 1 : q2dim;
+        const index_t qouter = dim == 2 ? 1 : q2dim;
         double n2[order], d2[order];
         for (index_t q2 = 0; q2 < qouter; q2++) {  // q2 == 0 for dim == 2
           if constexpr (dim == 3) {
@@ -813,17 +815,16 @@ class LagrangeH1HypercubeBasis {
   }
 };
 
-template <typename T, index_t C, index_t degree,
+template <typename T, index_t dim, index_t C, index_t degree,
           InterpolationType interp_type = GAUSS_INTERPOLATION>
-class LagrangeL2HexBasis {
+class LagrangeL2HypercubeBasis {
  public:
   using ET = ElementTypes;
 
-  static const index_t dim = 3;             // Spatial dimension
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
   static const index_t ndof =
-      C * order * order * order;  // Total number of degrees of freedom
+      C * indexpow<order, dim>::value;  // Total number of degrees of freedom
 
   // Number of components
   static const index_t ncomp = L2Space<T, C, dim>::ncomp;
@@ -832,7 +833,7 @@ class LagrangeL2HexBasis {
   static constexpr BasisType get_basis_type() { return L2; }
 
   // Define the equivalent low-order basis class if any
-  using LOrderBasis = LagrangeL2HexBasis<T, C, 0, interp_type>;
+  using LOrderBasis = LagrangeL2HypercubeBasis<T, dim, C, 0, interp_type>;
 
   /**
    * @brief Degree of freedom handling on the vertices, edges, faces and
@@ -844,7 +845,8 @@ class LagrangeL2HexBasis {
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 3 and entity == ET::VOLUME) or
+        (dim == 2 and entity == ET::FACE)) {
       return ndof;
     }
     return 0;
@@ -864,7 +866,8 @@ class LagrangeL2HexBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 3 and entity == ET::VOLUME) or
+        (dim == 2 and entity == ET::FACE)) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
       }
@@ -886,7 +889,8 @@ class LagrangeL2HexBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 3 and entity == ET::VOLUME) or
+        (dim == 2 and entity == ET::FACE)) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];
       }
@@ -917,7 +921,7 @@ class LagrangeL2HexBasis {
    * @brief Get the number of low order elements defined by this basis
    */
   constexpr static index_t get_num_lorder_elements() {
-    return order * order * order;
+    return indexpow<order, dim>::value;
   }
 
   /**
@@ -935,14 +939,25 @@ class LagrangeL2HexBasis {
             class LOrderDof>
   static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
                              LOrderDof& ldof) {
-    const index_t i = n % order;
-    const index_t j = (n % (order * order)) / order;
-    const index_t k = n / (order * order);
+    if constexpr (dim == 2) {
+      const index_t i = n % order;
+      const index_t j = n / order;
 
-    const index_t hnode = i + order * (j + order * k);
+      const index_t hnode = i + order * j;
 
-    for (index_t p = 0; p < C; p++) {
-      ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
+      for (index_t p = 0; p < C; p++) {
+        ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
+      }
+    } else {
+      const index_t i = n % order;
+      const index_t j = (n % (order * order)) / order;
+      const index_t k = n / (order * order);
+
+      const index_t hnode = i + order * (j + order * k);
+
+      for (index_t p = 0; p < C; p++) {
+        ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
+      }
     }
   }
 
@@ -976,9 +991,15 @@ class LagrangeL2HexBasis {
     constexpr const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
-    pt[0] = pts[n % order];
-    pt[1] = pts[(n % (order * order)) / order];
-    pt[2] = pts[n / (order * order)];
+
+    if constexpr (dim == 2) {
+      pt[0] = pts[n % order];
+      pt[1] = pts[n / order];
+    } else {
+      pt[0] = pts[n % order];
+      pt[1] = pts[(n % (order * order)) / order];
+      pt[2] = pts[n / (order * order)];
+    }
   }
 
   /**
@@ -1022,17 +1043,18 @@ class LagrangeL2HexBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = Quadrature::tensor_dim2;
+      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 0-direction
-        T u0[order * order * q0dim];
+        T u0[indexpow<order, dim - 1>::value * q0dim];
         for (index_t q0 = 0; q0 < q0dim; q0++) {
           double n0[order];
           const double pt0 = Quadrature::get_tensor_point(0, q0);
           interpolation_basis<order, interp_type>(pt0, n0);
 
-          for (index_t j2 = 0; j2 < order; j2++) {
+          const index_t outer = dim == 2 ? 1 : order;
+          for (index_t j2 = 0; j2 < outer; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
               T val(0.0);
               for (index_t j0 = 0; j0 < order; j0++) {
@@ -1040,44 +1062,64 @@ class LagrangeL2HexBasis {
                 val += n0[j0] * sol[offset + C * node + i];
               }
 
-              u0[j1 + order * (j2 + order * q0)] = val;
+              u0[j1 + order * (j2 + outer * q0)] = val;
             }
           }
         }
 
-        // Interpolate along the 1-direction
+        // Interpolate along the 1-direction, for dim == 3 only
         T u1[order * q0dim * q1dim];
-        for (index_t q1 = 0; q1 < q1dim; q1++) {
-          double n1[order];
-          const double pt1 = Quadrature::get_tensor_point(1, q1);
-          interpolation_basis<order, interp_type>(pt1, n1);
+        if constexpr (dim == 3) {
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order];
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1);
 
-          for (index_t q0 = 0; q0 < q0dim; q0++) {
-            for (index_t j2 = 0; j2 < order; j2++) {
-              T val(0.0);
-              for (index_t j1 = 0; j1 < order; j1++) {
-                val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              for (index_t j2 = 0; j2 < order; j2++) {
+                T val(0.0);
+                for (index_t j1 = 0; j1 < order; j1++) {
+                  val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+                }
+
+                u1[j2 + order * (q0 + q0dim * q1)] = val;
               }
-
-              u1[j2 + order * (q0 + q0dim * q1)] = val;
             }
           }
         }
 
-        // Interpolate along the 2-direction
-        for (index_t q2 = 0; q2 < q2dim; q2++) {
-          double n2[order];
-          const double pt2 = Quadrature::get_tensor_point(2, q2);
-          interpolation_basis<order, interp_type>(pt2, n2);
-
+        // For dim == 3: interpolate along the 2-direction, or
+        // for dim == 2: interpolate along the 1-direction
+        const index_t qouter = dim == 2 ? 1 : q2dim;
+        double n2[order];
+        for (index_t q2 = 0; q2 < qouter; q2++) {  // q2 == 0 for dim == 2
+          if constexpr (dim == 3) {
+            const double pt2 = Quadrature::get_tensor_point(2, q2);
+            interpolation_basis<order, interp_type>(pt2, n2);
+          }
           for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order];
+            if constexpr (dim == 2) {
+              const double pt1 = Quadrature::get_tensor_point(1, q1);
+              interpolation_basis<order, interp_type>(pt1, n1);
+            }
             for (index_t q0 = 0; q0 < q0dim; q0++) {
               T val(0.0);
               for (index_t j2 = 0; j2 < order; j2++) {
-                val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+                if constexpr (dim == 3) {
+                  val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+                } else {
+                  val += n1[j2] * u0[j2 + order * q0];
+                }
               }
 
-              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              index_t qindex;
+              if constexpr (dim == 2) {
+                qindex = Quadrature::get_tensor_index(q0, q1);
+              } else {
+                qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              }
+
               FiniteElementSpace& s = out.get(qindex);
               L2Space<T, C, dim>& l2 = s.template get<space>();
               typename L2Space<T, C, dim>::VarType& u = l2.get_value();
@@ -1111,20 +1153,30 @@ class LagrangeL2HexBasis {
         double n0[order], n1[order], n2[order];
         interpolation_basis<order, interp_type>(pt[0], n0);
         interpolation_basis<order, interp_type>(pt[1], n1);
-        interpolation_basis<order, interp_type>(pt[2], n2);
+        if constexpr (dim == 3) {
+          interpolation_basis<order, interp_type>(pt[2], n2);
+        }
 
-        for (index_t j2 = 0; j2 < order; j2++) {
+        const index_t outer = dim == 2 ? 1 : order;
+        for (index_t j2 = 0; j2 < outer; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
-            double n1n2 = n1[j1] * n2[j2];
+            double n1n2;
+            if constexpr (dim == 3) {
+              n1n2 = n1[j1] * n2[j2];
+            }
             for (index_t j0 = 0; j0 < order; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
-              double n0n1n2 = n0[j0] * n1n2;
-
+              double coeff;
+              if constexpr (dim == 3) {
+                coeff = n0[j0] * n1n2;
+              } else {
+                coeff = n0[j0] * n1[j1];
+              }
               if constexpr (C == 1) {
-                u += n0n1n2 * sol[offset + node];
+                u += coeff * sol[offset + node];
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  u(i) += n0n1n2 * sol[offset + C * node + i];
+                  u(i) += coeff * sol[offset + C * node + i];
                 }
               }
             }
@@ -1173,21 +1225,46 @@ class LagrangeL2HexBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = Quadrature::tensor_dim2;
+      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
-        T u1[order * q0dim * q1dim];
-        std::fill(u1, u1 + order * q0dim * q1dim, T(0.0));
+        index_t u0size, u1size;
 
-        for (index_t q2 = 0; q2 < q2dim; q2++) {
+        if constexpr (dim == 2) {
+          u0size = order * q0dim;
+          u1size = order * q0dim;
+        } else {  // dim == 3
+          u0size = order * order * q0dim;
+          u1size = order * q0dim * q1dim;
+        }
+
+        T u0[u0size];
+        std::fill(u0, u0 + u0size, T(0.0));
+        T u1[u1size];
+        std::fill(u1, u1 + u1size, T(0.0));
+
+        const index_t qouter = dim == 2 ? 1 : q2dim;
+        for (index_t q2 = 0; q2 < qouter; q2++) {
           double n2[order];
-          const double pt2 = Quadrature::get_tensor_point(2, q2);
-          interpolation_basis<order, interp_type>(pt2, n2);
+          if constexpr (dim == 3) {
+            const double pt2 = Quadrature::get_tensor_point(2, q2);
+            interpolation_basis<order, interp_type>(pt2, n2);
+          }
 
           for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order];
+            if constexpr (dim == 2) {
+              const double pt1 = Quadrature::get_tensor_point(1, q1);
+              interpolation_basis<order, interp_type>(pt1, n1);
+            }
             for (index_t q0 = 0; q0 < q0dim; q0++) {
-              const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              index_t qindex;
+              if constexpr (dim == 2) {
+                qindex = Quadrature::get_tensor_index(q0, q1);
+              } else {
+                qindex = Quadrature::get_tensor_index(q0, q1, q2);
+              }
 
               const FiniteElementSpace& s = in.get(qindex);
               const L2Space<T, C, dim>& l2 = s.template get<space>();
@@ -1200,25 +1277,29 @@ class LagrangeL2HexBasis {
                 val = u(i);
               }
               for (index_t j2 = 0; j2 < order; j2++) {
-                u1[j2 + order * (q0 + q0dim * q1)] += n2[j2] * val;
+                if constexpr (dim == 2) {
+                  u0[j2 + order * q0] += n1[j2] * val;
+                } else {
+                  u1[j2 + order * (q0 + q0dim * q1)] += n2[j2] * val;
+                }
               }
             }
           }
         }
 
-        T u0[order * order * q0dim];
-        std::fill(u0, u0 + order * order * q0dim, T(0.0));
-        for (index_t q1 = 0; q1 < q1dim; q1++) {
-          double n1[order];
-          const double pt1 = Quadrature::get_tensor_point(1, q1);
-          interpolation_basis<order, interp_type>(pt1, n1);
+        if constexpr (dim == 3) {
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order];
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1);
 
-          for (index_t q0 = 0; q0 < q0dim; q0++) {
-            for (index_t j2 = 0; j2 < order; j2++) {
-              T val = u1[j2 + order * (q0 + q0dim * q1)];
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              for (index_t j2 = 0; j2 < order; j2++) {
+                T val = u1[j2 + order * (q0 + q0dim * q1)];
 
-              for (index_t j1 = 0; j1 < order; j1++) {
-                u0[j1 + order * (j2 + order * q0)] += n1[j1] * val;
+                for (index_t j1 = 0; j1 < order; j1++) {
+                  u0[j1 + order * (j2 + order * q0)] += n1[j1] * val;
+                }
               }
             }
           }
@@ -1229,9 +1310,10 @@ class LagrangeL2HexBasis {
           const double pt0 = Quadrature::get_tensor_point(0, q0);
           interpolation_basis<order, interp_type>(pt0, n0);
 
-          for (index_t j2 = 0; j2 < order; j2++) {
+          const index_t outer = dim == 2 ? 1 : order;
+          for (index_t j2 = 0; j2 < outer; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
-              T val = u0[j1 + order * (j2 + order * q0)];
+              T val = u0[j1 + order * (j2 + outer * q0)];
 
               for (index_t j0 = 0; j0 < order; j0++) {
                 const index_t node = j0 + order * (j1 + order * j2);
@@ -1257,18 +1339,27 @@ class LagrangeL2HexBasis {
         interpolation_basis<order, interp_type>(pt[1], n1);
         interpolation_basis<order, interp_type>(pt[2], n2);
 
-        for (index_t j2 = 0; j2 < order; j2++) {
+        const index_t outer = dim == 2 ? 1 : order;
+        for (index_t j2 = 0; j2 < outer; j2++) {
           for (index_t j1 = 0; j1 < order; j1++) {
-            double n1n2 = n1[j1] * n2[j2];
+            double n1n2;
+            if constexpr (dim == 3) {
+              n1n2 = n1[j1] * n2[j2];
+            }
             for (index_t j0 = 0; j0 < order; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
-              double n0n1n2 = n0[j0] * n1n2;
+              double coeff;
+              if constexpr (dim == 3) {
+                coeff = n0[j0] * n1n2;
+              } else {
+                coeff = n0[j0] * n1[j1];
+              }
 
               if constexpr (C == 1) {
-                res[offset + node] += n0n1n2 * u;
+                res[offset + node] += coeff * u;
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  res[offset + C * node + i] += n0n1n2 * u(i);
+                  res[offset + C * node + i] += coeff * u(i);
                 }
               }
             }
@@ -1282,7 +1373,7 @@ class LagrangeL2HexBasis {
   static const index_t stride = C;
 
   // Set the basis size
-  static const index_t basis_size = order * order * order;
+  static const index_t basis_size = indexpow<order, dim>::value;
 
   // Set the derived quantities - number of dof for each stride
   static const index_t ndof_per_stride = ndof / stride;
@@ -1302,12 +1393,20 @@ class LagrangeL2HexBasis {
     interpolation_basis<order, interp_type>(pt[1], n1);
     interpolation_basis<order, interp_type>(pt[2], n2);
 
-    for (index_t j2 = 0; j2 < order; j2++) {
+    const index_t outer = dim == 2 ? 1 : order;
+    for (index_t j2 = 0; j2 < outer; j2++) {
       for (index_t j1 = 0; j1 < order; j1++) {
-        double n1n2 = n1[j1] * n2[j2];
+        double n1n2;
+        if constexpr (dim == 3) {
+          n1n2 = n1[j1] * n2[j2];
+        }
         for (index_t j0 = 0; j0 < order; j0++) {
           const index_t node = j0 + order * (j1 + order * j2);
-          N[node] = n1[j0] * n1n2;
+          if constexpr (dim == 2) {
+            N[node] = n0[j0] * n1[j1];
+          } else {
+            N[node] = n0[j0] * n1n2;
+          }
         }
       }
     }
@@ -1318,6 +1417,11 @@ template <typename T, index_t C, index_t degree,
           InterpolationType interp_type = GLL_INTERPOLATION>
 using LagrangeH1HexBasis =
     LagrangeH1HypercubeBasis<T, 3, C, degree, interp_type>;
+
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
+using LagrangeL2HexBasis =
+    LagrangeL2HypercubeBasis<T, 3, C, degree, interp_type>;
 
 }  // namespace A2D
 

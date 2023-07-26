@@ -335,7 +335,10 @@ class LagrangeH1HypercubeBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
+      index_t q2dim = 0;
+      if constexpr (dim == 3) {
+        q2dim = Quadrature::tensor_dim2;
+      }
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 0-direction
@@ -569,7 +572,10 @@ class LagrangeH1HypercubeBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
+      index_t q2dim = 0;
+      if constexpr (dim == 3) {
+        q2dim = Quadrature::tensor_dim2;
+      }
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
@@ -1043,7 +1049,10 @@ class LagrangeL2HypercubeBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
+      index_t q2dim = 0;
+      if constexpr (dim == 3) {
+        q2dim = Quadrature::tensor_dim2;
+      }
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 0-direction
@@ -1225,7 +1234,10 @@ class LagrangeL2HypercubeBasis {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      const index_t q2dim = dim == 2 ? 0 : Quadrature::tensor_dim2;
+      index_t q2dim = 0;
+      if constexpr (dim == 3) {
+        q2dim = Quadrature::tensor_dim2;
+      }
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
@@ -1422,6 +1434,16 @@ template <typename T, index_t C, index_t degree,
           InterpolationType interp_type = GLL_INTERPOLATION>
 using LagrangeL2HexBasis =
     LagrangeL2HypercubeBasis<T, 3, C, degree, interp_type>;
+
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
+using LagrangeH1QuadBasis =
+    LagrangeH1HypercubeBasis<T, 2, C, degree, interp_type>;
+
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
+using LagrangeL2QuadBasis =
+    LagrangeL2HypercubeBasis<T, 2, C, degree, interp_type>;
 
 }  // namespace A2D
 

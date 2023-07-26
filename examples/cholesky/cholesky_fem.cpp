@@ -8,7 +8,7 @@
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dmesh.h"

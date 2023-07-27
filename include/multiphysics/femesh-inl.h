@@ -285,7 +285,7 @@ inline index_t MeshConnectivityBase::get_adjacent_elements_from_vert(
     *elems = &vert_elements[vert_element_ptr[vert]];
     return vert_element_ptr[vert + 1] - vert_element_ptr[vert];
   }
-  elems = NULL;
+  *elems = NULL;
   return 0;
 }
 
@@ -380,10 +380,19 @@ inline index_t MeshConnectivityBase::get_element_face_edge_indices(
  */
 inline index_t MeshConnectivityBase::get_element_global_face_verts(
     index_t elem, index_t local_face, index_t verts[]) {
-  index_t t[4];
+  index_t t[ET::MAX_FACE_VERTS];
   index_t n = get_element_face_verts(elem, local_face, t);
 
-  if (n == 3) {
+  if (n == 2) {
+    // Find the smallest vertex index
+    if (t[0] < t[1]) {  // t[0] is the smallest
+      verts[0] = t[0];
+      verts[1] = t[1];
+    } else {  // t[1] is the smallest
+      verts[0] = t[1];
+      verts[1] = t[0];
+    }
+  } else if (n == 3) {
     // Find the smallest vertex index
     if (t[0] < t[1] && t[0] < t[2]) {  // t[0] is the smallest
       if (t[1] < t[2]) {
@@ -416,9 +425,7 @@ inline index_t MeshConnectivityBase::get_element_global_face_verts(
         verts[2] = t[0];
       }
     }
-
-    return 3;
-  } else {                                            // n == 4
+  } else if (n == 4) {                                // n == 4
     if (t[0] < t[1] && t[0] < t[2] && t[0] < t[3]) {  // t[0] is smallest
       if (t[1] < t[3]) {
         verts[0] = t[0];
@@ -468,9 +475,12 @@ inline index_t MeshConnectivityBase::get_element_global_face_verts(
         verts[3] = t[0];
       }
     }
-
-    return 4;
+  } else {
+    char msg[256];
+    snprintf(msg, 256, "%d is an invalid number of vertices for a face", n);
+    throw std::runtime_error(msg);
   }
+  return n;
 }
 
 /**
@@ -483,7 +493,11 @@ inline bool MeshConnectivityBase::global_face_equality(index_t na,
                                                        index_t nb,
                                                        const index_t b[]) {
   if (na == nb) {
-    if (na == 3) {
+    if (na == 2) {
+      if (a[0] == b[0] && a[1] == b[1]) {
+        return true;
+      }
+    } else if (na == 3) {
       if (a[0] == b[0] && a[1] == b[1] && a[2] == b[2]) {
         return true;
       }
@@ -514,7 +528,8 @@ inline bool MeshConnectivityBase::global_edge_equality(const index_t a[],
  *
  * @param face Global face index
  * @param e1 Returned value of the first element
- * @param e2 Returned value of the second element (if it exists)
+ * @param e2 Returned value of the second element, NO_INDEX indicates second
+ * element doesn't exist, and this face is a boundary face
  * @return Boolean if this face is on the boundary
  */
 inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
@@ -528,11 +543,15 @@ inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
     *e1 = tri_face_elements[2 * face];
     *e2 = tri_face_elements[2 * face + 1];
     return (tri_face_elements[2 * face + 1] == NO_LABEL);
-  } else {
+  } else if (face < nquad_faces) {
     face = face - nline_faces - ntri_faces;
     *e1 = quad_face_elements[2 * face];
     *e2 = quad_face_elements[2 * face + 1];
     return (quad_face_elements[2 * face + 1] == NO_LABEL);
+  } else {
+    char msg[256];
+    std::snprintf(msg, 256, "%d is not a valid global face index", face);
+    throw std::runtime_error(msg);
   }
 }
 
@@ -982,7 +1001,7 @@ inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
  */
 inline void MeshConnectivityBase::init_face_data() {
   // Prepare to count and number the number of faces. This keeps track of
-  // separate triangle and quadrilateral face counts
+  // counts of separate face types (line, triangle, quadrilateral)
   for (index_t elem = 0; elem < nelems; elem++) {
     // Loop over the elements of this face
     index_t* faces;
@@ -991,7 +1010,7 @@ inline void MeshConnectivityBase::init_face_data() {
     for (index_t face = 0; face < nf; face++) {
       if (faces[face] == NO_LABEL) {
         // Get the unique set of verts corresponding to this face
-        index_t face_verts[4];
+        index_t face_verts[ET::MAX_FACE_VERTS];
         index_t nface_verts =
             get_element_global_face_verts(elem, face, face_verts);
 
@@ -1094,7 +1113,7 @@ inline void MeshConnectivityBase::init_face_data() {
     const index_t nf = get_element_faces(elem, &faces);
 
     for (index_t face = 0; face < nf; face++) {
-      index_t face_verts[4];
+      index_t face_verts[ET::MAX_FACE_VERTS];
       index_t nface_verts =
           get_element_global_face_verts(elem, face, face_verts);
 
@@ -1675,7 +1694,7 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
   }
 
   nrows = num_dof_offset[basis_offset - 1] / M;
-  if (nrows % M > 0) {
+  if (num_dof_offset[basis_offset - 1] % M > 0) {
     nrows += 1;
   }
 

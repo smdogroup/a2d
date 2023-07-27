@@ -332,7 +332,7 @@ void ElementTypes::set_quad_edge_dof(const index_t e, const index_t orient,
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
-          index_t nz, class ElemDof, class EntityDof>
+          class ElemDof, class EntityDof>
 void ElementTypes::get_quad_face_dof(const ElemDof& element,
                                      EntityDof& entity) {
   if constexpr (ends) {

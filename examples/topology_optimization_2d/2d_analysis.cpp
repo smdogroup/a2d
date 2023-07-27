@@ -16,31 +16,47 @@
 using namespace A2D;
 
 template <typename T>
-class FEProb {
+class TopoElasticityAnalysis2D {
  public:
-  static constexpr int spatial_dim = 3;
+  static constexpr int spatial_dim = 2;
+  static constexpr int degree = 1;          // Polynomial degree
+  static constexpr int order = degree + 1;  // Spline order, = degree + 1
+  static constexpr int data_degree = degree - 1;
+  static constexpr int data_order = data_degree + 1;
   static constexpr int data_dim = 1;
-  static constexpr int var_dim = 3;
+  static constexpr int var_dim = spatial_dim;
   static constexpr int block_size = var_dim;
-  static constexpr int degree = 1;
 
   using Vec_t = SolutionVector<T>;
   using BSRMat_t = BSRMat<T, block_size, block_size>;
 
-  using PDE = TopoLinearElasticity<T, spatial_dim>;
-  using Quadrature = HexGaussQuadrature<degree + 1>;
-  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
-
-  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using Quadrature = QuadGaussQuadrature<order>;
+  using DataBasis = FEBasis<T, LagrangeL2QuadBasis<T, data_dim, data_degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using Basis = FEBasis<T, LagrangeH1QuadBasis<T, var_dim, degree>>;
   using DataElemVec = ElementVector_Serial<T, DataBasis, Vec_t>;
   using GeoElemVec = ElementVector_Serial<T, GeoBasis, Vec_t>;
   using ElemVec = ElementVector_Serial<T, Basis, Vec_t>;
 
-  FEProb(MeshConnectivity3D &conn, int nhex, const int hex[],
-         const double Xloc[], DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
-         T q = 5.0)
+  using TQuadrature = QuadGaussQuadrature<order>;
+  using TDataBasis = FEBasis<T>;
+  using TGeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using TBasis = FEBasis<T, LagrangeH1QuadBasis<T, var_dim, degree>>;
+  using TDataElemVec = ElementVector_Serial<T, TDataBasis, Vec_t>;
+  using TGeoElemVec = ElementVector_Serial<T, TGeoBasis, Vec_t>;
+  using TElemVec = ElementVector_Serial<T, TBasis, Vec_t>;
+
+  using PDE = TopoLinearElasticity<T, spatial_dim>;
+  using Traction = TopoSurfaceTraction<T, spatial_dim>;
+
+  using FE_PDE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_Traction =
+      FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
+
+  TopoElasticityAnalysis2D(MeshConnectivityBase &conn, index_t nquad,
+                           const index_t quad[], const double Xloc[],
+                           DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
+                           T q = 5.0)
       : E(E),
         nu(nu),
         q(q),
@@ -54,12 +70,11 @@ class FEProb {
         elem_geo(geomesh, geo),
         elem_sol(mesh, sol) {
     // Set geometry
-    set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
+    set_geo_from_quad_nodes<GeoBasis>(nquad, quad, Xloc, elem_geo);
   }
 
   BSRMat_t create_fea_bsr_matrix() {
     // Symbolically create block CSR matrix
-
     index_t nrows;
     std::vector<index_t> rowp, cols;
     mesh.template create_block_csr<block_size>(nrows, rowp, cols);
@@ -67,7 +82,7 @@ class FEProb {
     BSRMat_t bsr_mat(nrows, nrows, cols.size(), rowp, cols);
 
     // Populate the CSR matrix
-    FE fe;
+    FE_PDE fe;
     PDE pde(E, nu, q);
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
@@ -97,33 +112,27 @@ int main(int argc, char *argv[]) {
     using T = double;
 
     // Number of elements in each dimension
-    const int nx = 16, ny = 8, nz = 8;
-    const double lx = 1.5, ly = 2.0, lz = 1.0;
+    const index_t nx = 512, ny = 512;
+    const double lx = 1.5, ly = 2.0;
 
     // Set up mesh
-    const int nverts = (nx + 1) * (ny + 1) * (nz + 1);
-    int ntets = 0, nwedge = 0, npyrmd = 0;
-    const int nhex = nx * ny * nz;
-    int *tets = NULL, *wedge = NULL, *pyrmd = NULL;
-    std::vector<int> hex(8 * nhex);
-    std::vector<double> Xloc(3 * nverts);
-    MesherBrick3D mesher(nx, ny, nz, lx, ly, lz);
-    mesher.set_X_conn<int, double>(Xloc.data(), hex.data());
-    MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex.data(), nwedge,
-                            wedge, npyrmd, pyrmd);
+    const index_t nverts = (nx + 1) * (ny + 1);
+    const index_t ntri = 0, nquad = nx * ny;
+    index_t *tri = nullptr;
+    std::vector<index_t> quad(4 * nquad);
+    std::vector<double> Xloc(2 * nverts);
+    MesherRect2D mesher(nx, ny, lx, ly);
+    mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data());
 
+    MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
     // Set up bcs
-    auto node_num = [](int i, int j, int k) {
-      return i + j * (nx + 1) + k * (nx + 1) * (ny + 1);
-    };
+    auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
 
-    const int num_boundary_verts = (ny + 1) * (nz + 1);
-    int boundary_verts[num_boundary_verts];
+    const index_t num_boundary_verts = (ny + 1);
+    index_t boundary_verts[num_boundary_verts];
 
-    for (int k = 0, index = 0; k < nz + 1; k++) {
-      for (int j = 0; j < ny + 1; j++, index++) {
-        boundary_verts[index] = node_num(0, j, k);
-      }
+    for (index_t j = 0; j < ny + 1; j++) {
+      boundary_verts[j] = node_num(0, j);
     }
 
     A2D::index_t bc_label =
@@ -132,12 +141,15 @@ int main(int argc, char *argv[]) {
     A2D::DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    FEProb<T> prob(conn, nhex, hex.data(), Xloc.data(), bcinfo);
+    TopoElasticityAnalysis2D<T> prob(conn, nquad, quad.data(), Xloc.data(),
+                                     bcinfo);
 
     // Create bsr mat and zero bcs rows
-    FEProb<T>::BSRMat_t bsr_mat = prob.create_fea_bsr_matrix();
+    TopoElasticityAnalysis2D<T>::BSRMat_t bsr_mat =
+        prob.create_fea_bsr_matrix();
     const index_t *bc_dofs;
-    DirichletBCs<FEProb<T>::Basis> bcs(conn, prob.get_mesh(), bcinfo);
+    DirichletBCs<TopoElasticityAnalysis2D<T>::Basis> bcs(conn, prob.get_mesh(),
+                                                         bcinfo);
     index_t nbcs = bcs.get_bcs(&bc_dofs);
     bsr_mat.zero_rows(nbcs, bc_dofs);
 
@@ -145,13 +157,13 @@ int main(int argc, char *argv[]) {
     StopWatch watch;
     CSRMat<T> csr_mat = bsr_to_csr(bsr_mat);
     double t1 = watch.lap();
-    std::printf("bsr->csr time: %12.5e s\n", t1);
+    printf("bsr->csr time: %12.5e s\n", t1);
 
     // Convert to csc mat and apply bcs
     CSCMat<T> csc_mat = bsr_to_csc(bsr_mat);
     csc_mat.zero_columns(nbcs, bc_dofs);
     double t2 = watch.lap();
-    std::printf("bsr->csc time: %12.5e s\n", t2 - t1);
+    printf("bsr->csc time: %12.5e s\n", t2 - t1);
 
     // Create rhs
     std::vector<T> b(csc_mat.nrows);
@@ -164,12 +176,12 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // // Write to mtx
-    // bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
-    // csr_mat.write_mtx("csr_mat.mtx", 1e-12);
-    // csc_mat.write_mtx("csc_mat.mtx", 1e-12);
-    // double t3 = watch.lap();
-    // std::printf("write mtx time: %12.5e s\n", t3 - t2);
+    // Write to mtx
+    bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
+    csr_mat.write_mtx("csr_mat.mtx", 1e-12);
+    csc_mat.write_mtx("csc_mat.mtx", 1e-12);
+    double t3 = watch.lap();
+    printf("write mtx time: %12.5e s\n", t3 - t2);
 
     // Perform cholesky factorization
     printf("number of vertices: %d\n", conn.get_num_verts());
@@ -181,18 +193,18 @@ int main(int argc, char *argv[]) {
     double t4 = watch.lap();
     SparseCholesky<T> *chol = new SparseCholesky<T>(csc_mat);
     double t5 = watch.lap();
-    std::printf("Setup/order/setvalue time: %12.5e s\n", t5 - t4);
+    printf("Setup/order/setvalue time: %12.5e s\n", t5 - t4);
     chol->factor();
     double t6 = watch.lap();
-    std::printf("Factor time:               %12.5e s\n", t6 - t5);
+    printf("Factor time:               %12.5e s\n", t6 - t5);
     chol->solve(b.data());
     double t7 = watch.lap();
-    std::printf("Solve time:                %12.5e s\n", t7 - t6);
+    printf("Solve time:                %12.5e s\n", t7 - t6);
     T err = 0.0;
     for (int i = 0; i < csc_mat.nrows; i++) {
       err += (1.0 - b[i]) * (1.0 - b[i]);
     }
-    std::printf("||x - e||: %25.15e\n", sqrt(err));
+    printf("||x - e||: %25.15e\n", sqrt(err));
   }
 
   Kokkos::finalize();

@@ -62,6 +62,50 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
   }
 }
 
+template <class GeoBasis, typename I, typename T, class GeoElemVec,
+          ElemVecType evtype>
+void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
+                             const T Xloc[],
+                             ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
+  for (int e = 0; e < nquad; e++) {
+    // Get the geometry values
+    typename GeoElemVec::FEDof geo_dof(e, elem_geo);
+
+    for (int ii = 0; ii < GeoBasis::ndof; ii++) {
+      double pt[2];
+      GeoBasis::get_dof_point(ii, pt);
+
+      double N[4];
+      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+
+      // Interpolate to find the basis
+      if (ii % 2 == 0) {
+        T x = 0.0;
+        for (index_t kk = 0; kk < 4; kk++) {
+          x += N[kk] * Xloc[2 * quad[4 * e + kk]];
+        }
+        geo_dof[ii] = x;
+      } else if (ii % 2 == 1) {
+        T y = 0.0;
+        for (index_t kk = 0; kk < 4; kk++) {
+          y += N[kk] * Xloc[2 * quad[4 * e + kk] + 1];
+        }
+        geo_dof[ii] = y;
+      }
+    }
+
+    if constexpr (evtype == ElemVecType::Serial) {
+      elem_geo.set_element_values(e, geo_dof);
+    }
+  }
+  if constexpr (evtype == ElemVecType::Parallel) {
+    elem_geo.set_values();
+  }
+}
+
 template <index_t outputs, index_t degree, typename T, class DataBasis,
           class GeoBasis, class Basis, class PDE, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>

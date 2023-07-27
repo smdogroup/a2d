@@ -198,7 +198,7 @@ class ElementTypes {
 
   // Get the degrees of freedom from the quad face
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
-            index_t nz, class ElemDof, class EntityDof>
+            class ElemDof, class EntityDof>
   static void get_quad_face_dof(const ElemDof& element, EntityDof& entity);
 
   // Set the degrees of freeom from the face into the element

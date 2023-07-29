@@ -164,13 +164,13 @@ class ElementVectorBase {
   Element vector implementation for empty values - does nothing
 */
 template <ElemVecType evtype>
-class ElemenetVector_Empty : public ElementVectorBase<evtype, ElemenetVector_Empty<evtype>> {
+class ElementVector_Empty : public ElementVectorBase<evtype, ElementVector_Empty<evtype>> {
  private:
-  using base_t = ElementVectorBase<evtype, ElemenetVector_Empty<evtype>>;
+  using base_t = ElementVectorBase<evtype, ElementVector_Empty<evtype>>;
   struct null_t {};
 
  public:
-  ElemenetVector_Empty() {}
+  ElementVector_Empty() {}
   class FEDof : public base_t::template FEDofBase<null_t, FEDof> {
    public:
     FEDof(index_t elem, base_t& elem_vec) {}

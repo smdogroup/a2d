@@ -97,9 +97,9 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
 
   // Write header
   if (is_complex<T>::value) {
-    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
-  } else {
     std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
   }
 
   // Write global m, n and nnz
@@ -134,9 +134,9 @@ void BSRMat<T, M, N>::write_mtx(const std::string mtx_name, double epsilon) {
   // Modify nnz
   fp = std::fopen(mtx_name.c_str(), "r+");
   if (is_complex<T>::value) {
-    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
-  } else {
     std::fprintf(fp, "%%%%MatrixMarket matrix coordinate complex general\n");
+  } else {
+    std::fprintf(fp, "%%%%MatrixMarket matrix coordinate real general\n");
   }
   std::fprintf(fp, "%15d%15d%15d", nbrows * M, nbcols * N, nnz_mtx);
   std::fclose(fp);

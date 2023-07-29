@@ -177,8 +177,8 @@ void SparseCholesky<T>::getInfo(int *_size, int *_num_snodes, int *_nnzL) {
   @param Avals The numerical values
 */
 template <typename T>
-void SparseCholesky<T>::setValues(int n, const int Acolp[], const int Arows[],
-                                  const T Avals[]) {
+void SparseCholesky<T>::_setValues(int n, const int Acolp[], const int Arows[],
+                                   const T Avals[]) {
   for (int i = 0; i < data_ptr[num_snodes]; i++) {
     data[i] = 0.0;
   }

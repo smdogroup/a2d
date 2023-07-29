@@ -54,7 +54,10 @@ class LagrangeH1HypercubeBasis {
       return C;
     } else if (entity == ET::EDGE) {
       return C * (order - 2);
-    } else if (entity == ET::FACE) {
+    } else if (entity == ET::FACE and
+               dim == 3) {  // faces of 2D mesh have 0 associated dof - because
+                            // in 2D faces and edges are coalesced by my
+                            // (Aaron's) definition
       return C * (order - 2) * (order - 2);
     } else if (entity == ET::VOLUME) {
       return C * (order - 2) * (order - 2) * (order - 2);
@@ -98,20 +101,23 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::FACE:
+        // there's no dof on 2D faces
+        if constexpr (dim == 3) {
+          const bool endp = false;
+          ET::get_hex_face_dof<offset, endp, C, order, order, order, ElemDof,
+                               EntityDof>(index, element_dof, entity_dof);
+        }
+        break;
+      case ET::VOLUME:
         if constexpr (dim == 2) {
           const bool endp = false;
           ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof,
                                 EntityDof>(element_dof, entity_dof);
         } else {  // dim == 3
           const bool endp = false;
-          ET::get_hex_face_dof<offset, endp, C, order, order, order, ElemDof,
-                               EntityDof>(index, element_dof, entity_dof);
+          ET::get_hex_volume_dof<offset, endp, C, order, order, order, ElemDof,
+                                 EntityDof>(element_dof, entity_dof);
         }
-        break;
-      case ET::VOLUME:  // only for dim == 3
-        const bool endp = false;
-        ET::get_hex_volume_dof<offset, endp, C, order, order, order, ElemDof,
-                               EntityDof>(element_dof, entity_dof);
         break;
     }
   }
@@ -153,20 +159,23 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::FACE:
+        // there's no dof on 2D faces
+        if constexpr (dim == 3) {
+          const bool endp = false;
+          ET::set_hex_face_dof<offset, endp, C, order, order, order, EntityDof,
+                               ElemDof>(index, orient, entity_dof, element_dof);
+        }
+        break;
+      case ET::VOLUME:
         if constexpr (dim == 2) {
           const bool endp = false;
           ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof,
                                 ElemDof>(orient, entity_dof, element_dof);
         } else {  // dim == 3
           const bool endp = false;
-          ET::set_hex_face_dof<offset, endp, C, order, order, order, EntityDof,
-                               ElemDof>(index, orient, entity_dof, element_dof);
+          ET::set_hex_volume_dof<offset, endp, C, order, order, order,
+                                 EntityDof, ElemDof>(entity_dof, element_dof);
         }
-        break;
-      case ET::VOLUME:  // only for dim == 3
-        const bool endp = false;
-        ET::set_hex_volume_dof<offset, endp, C, order, order, order, EntityDof,
-                               ElemDof>(entity_dof, element_dof);
         break;
     }
   }
@@ -855,8 +864,7 @@ class LagrangeL2HypercubeBasis {
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if ((dim == 3 and entity == ET::VOLUME) or
-        (dim == 2 and entity == ET::FACE)) {
+    if (entity == ET::VOLUME) {
       return ndof;
     }
     return 0;
@@ -876,8 +884,7 @@ class LagrangeL2HypercubeBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if ((dim == 3 and entity == ET::VOLUME) or
-        (dim == 2 and entity == ET::FACE)) {
+    if (entity == ET::VOLUME) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
       }
@@ -899,8 +906,7 @@ class LagrangeL2HypercubeBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if ((dim == 3 and entity == ET::VOLUME) or
-        (dim == 2 and entity == ET::FACE)) {
+    if (entity == ET::VOLUME) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];
       }

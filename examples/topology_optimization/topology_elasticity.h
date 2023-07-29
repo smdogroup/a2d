@@ -29,7 +29,7 @@ class TopoElasticityAnalysis {
   template <class... Args>
   using ElementVector = A2D::ElementVector_Parallel<Args...>;
   using ElementVectorEmpty =
-      A2D::ElemenetVector_Empty<A2D::ElemVecType::Parallel>;
+      A2D::ElementVector_Empty<A2D::ElemVecType::Parallel>;
 
   // Basic types
   using I = A2D::index_t;
@@ -285,7 +285,6 @@ class TopoElasticityAnalysis {
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
-    mat->write_mtx("low_order_Jacobian.mtx");  // TODO: delete this
 
     // Apply the boundary conditions
     const I *bc_dofs;

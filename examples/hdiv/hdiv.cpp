@@ -313,7 +313,7 @@ class HelmholtzSphere {
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
   using ElementVectorEmpty =
-      A2D::ElemenetVector_Empty<A2D::ElemVecType::Serial>;
+      A2D::ElementVector_Empty<A2D::ElemVecType::Serial>;
 
   // Basic types
   using I = A2D::index_t;

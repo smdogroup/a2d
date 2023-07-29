@@ -15,11 +15,14 @@
 
 using namespace A2D;
 
-template <typename T>
+/**
+ * @tparam T type
+ * @tparam degree polynomial degree
+ */
+template <typename T, index_t degree>
 class TopoElasticityAnalysis2D {
  public:
   static constexpr int spatial_dim = 2;
-  static constexpr int degree = 1;          // Polynomial degree
   static constexpr int order = degree + 1;  // Spline order, = degree + 1
   static constexpr int data_degree = degree - 1;
   static constexpr int data_order = data_degree + 1;
@@ -60,15 +63,16 @@ class TopoElasticityAnalysis2D {
       : E(E),
         nu(nu),
         q(q),
-        datamesh(conn),
-        geomesh(conn),
+        pde(E, nu, q),
         mesh(conn),
-        data(datamesh.get_num_dof()),
-        geo(geomesh.get_num_dof()),
+        geomesh(conn),
+        datamesh(conn),
         sol(mesh.get_num_dof()),
-        elem_data(datamesh, data),
+        geo(geomesh.get_num_dof()),
+        data(datamesh.get_num_dof()),
+        elem_sol(mesh, sol),
         elem_geo(geomesh, geo),
-        elem_sol(mesh, sol) {
+        elem_data(datamesh, data) {
     // Set geometry
     set_geo_from_quad_nodes<GeoBasis>(nquad, quad, Xloc, elem_geo);
   }
@@ -83,7 +87,6 @@ class TopoElasticityAnalysis2D {
 
     // Populate the CSR matrix
     FE_PDE fe;
-    PDE pde(E, nu, q);
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
     fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
@@ -93,17 +96,33 @@ class TopoElasticityAnalysis2D {
 
   ElementMesh<Basis> &get_mesh() { return mesh; }
 
+  void tovtk(const std::string filename) {
+    A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
+        pde, elem_data, elem_geo, elem_sol, filename,
+        [](index_t k, typename PDE::DataSpace &d,
+           typename PDE::FiniteElementGeometry &g,
+           typename PDE::FiniteElementSpace &s) {
+          if (k == 2) {  // write data
+            return (d.template get<0>()).get_value();
+          } else {  // write solution components
+            auto u = (s.template get<0>()).get_value();
+            return u(k);
+          }
+        });
+  }
+
  private:
   T E, nu, q;
-  ElementMesh<DataBasis> datamesh;
-  ElementMesh<GeoBasis> geomesh;
+  PDE pde;
   ElementMesh<Basis> mesh;
-  Vec_t data;
-  Vec_t geo;
+  ElementMesh<GeoBasis> geomesh;
+  ElementMesh<DataBasis> datamesh;
   Vec_t sol;
-  DataElemVec elem_data;
-  GeoElemVec elem_geo;
+  Vec_t geo;
+  Vec_t data;
   ElemVec elem_sol;
+  GeoElemVec elem_geo;
+  DataElemVec elem_data;
 };
 
 int main(int argc, char *argv[]) {
@@ -112,7 +131,8 @@ int main(int argc, char *argv[]) {
     using T = double;
 
     // Number of elements in each dimension
-    const index_t nx = 512, ny = 512;
+    const index_t degree = 2;
+    const index_t nx = 256, ny = 256;
     const double lx = 1.5, ly = 2.0;
 
     // Set up mesh
@@ -141,29 +161,28 @@ int main(int argc, char *argv[]) {
     A2D::DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    TopoElasticityAnalysis2D<T> prob(conn, nquad, quad.data(), Xloc.data(),
-                                     bcinfo);
+    TopoElasticityAnalysis2D<T, degree> prob(conn, nquad, quad.data(),
+                                             Xloc.data(), bcinfo);
+
+    // Save mesh
+    prob.tovtk("mesh.vtk");
 
     // Create bsr mat and zero bcs rows
-    TopoElasticityAnalysis2D<T>::BSRMat_t bsr_mat =
+    TopoElasticityAnalysis2D<T, degree>::BSRMat_t bsr_mat =
         prob.create_fea_bsr_matrix();
     const index_t *bc_dofs;
-    DirichletBCs<TopoElasticityAnalysis2D<T>::Basis> bcs(conn, prob.get_mesh(),
-                                                         bcinfo);
+    DirichletBCs<TopoElasticityAnalysis2D<T, degree>::Basis> bcs(
+        conn, prob.get_mesh(), bcinfo);
     index_t nbcs = bcs.get_bcs(&bc_dofs);
     bsr_mat.zero_rows(nbcs, bc_dofs);
 
     // Convert to csr mat and zero bcs columns
     StopWatch watch;
     CSRMat<T> csr_mat = bsr_to_csr(bsr_mat);
-    double t1 = watch.lap();
-    printf("bsr->csr time: %12.5e s\n", t1);
 
     // Convert to csc mat and apply bcs
     CSCMat<T> csc_mat = bsr_to_csc(bsr_mat);
     csc_mat.zero_columns(nbcs, bc_dofs);
-    double t2 = watch.lap();
-    printf("bsr->csc time: %12.5e s\n", t2 - t1);
 
     // Create rhs
     std::vector<T> b(csc_mat.nrows);
@@ -177,11 +196,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Write to mtx
-    bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
-    csr_mat.write_mtx("csr_mat.mtx", 1e-12);
-    csc_mat.write_mtx("csc_mat.mtx", 1e-12);
-    double t3 = watch.lap();
-    printf("write mtx time: %12.5e s\n", t3 - t2);
+    // double t2 = watch.lap();
+    // bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
+    // csc_mat.write_mtx("csc_mat.mtx", 1e-12);
+    // double t3 = watch.lap();
+    // printf("write mtx time: %12.5e s\n", t3 - t2);
 
     // Perform cholesky factorization
     printf("number of vertices: %d\n", conn.get_num_verts());

@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 
   const A2D::index_t dim = 3;
-  const A2D::index_t degree = 1;
+  const A2D::index_t degree = 2;
   const A2D::index_t filter_degree = 1;
 
   using T = double;

@@ -41,17 +41,19 @@ class SparseCholesky {
 
   SparseCholesky(CSCMat<T> csc_mat,
                  CholOrderingType order = CholOrderingType::ND,
-                 const int *_perm = nullptr) {
+                 const int *_perm = nullptr, bool set_values = true) {
     construct_cholesky(csc_mat.nrows, (const int *)csc_mat.colp.data(),
                        (const int *)csc_mat.rows.data(), order, _perm);
-    setValues(csc_mat.ncols, (const int *)csc_mat.colp.data(),
-              (const int *)csc_mat.rows.data(), csc_mat.vals.data());
+    setValues(csc_mat);
   }
 
   ~SparseCholesky();
 
   // Set values into the Cholesky matrix
-  void setValues(int n, const int Acolp[], const int Arows[], const T Avals[]);
+  void setValues(const CSCMat<T> &csc_mat) {
+    _setValues(csc_mat.ncols, (const int *)csc_mat.colp.data(),
+               (const int *)csc_mat.rows.data(), csc_mat.vals.data());
+  };
 
   // Factor the matrix
   int factor();
@@ -67,6 +69,9 @@ class SparseCholesky {
   void construct_cholesky(int _size, const int *Acolp, const int *Arows,
                           CholOrderingType order = CholOrderingType::ND,
                           const int *_perm = nullptr);
+
+  // Set values into the Cholesky matrix
+  void _setValues(int n, const int Acolp[], const int Arows[], const T Avals[]);
 
   // Build the elimination tree/forest
   void buildForest(const int Acolp[], const int Arows[], int parent[],

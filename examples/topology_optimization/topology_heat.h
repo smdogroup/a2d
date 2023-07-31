@@ -13,7 +13,7 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 

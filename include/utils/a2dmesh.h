@@ -76,6 +76,39 @@ class MesherRect2D {
   }
 
   /**
+   * @brief populate X and conn
+   *
+   * @tparam T number type
+   * @tparam I index type
+   * @param Xloc nodal locations, size: 2 * nverts
+   * @param hex connectivity for hexahedral elements, size: 3 * nquad
+   */
+  template <typename I, typename T>
+  void set_X_conn(T* Xloc, I* quad) {
+    // Helper lambda
+    auto node_num = [this](I i, I j) { return i + j * (this->nx + 1); };
+
+    // Set X
+    for (I j = 0; j < ny + 1; j++) {
+      for (I i = 0; i < nx + 1; i++) {
+        Xloc[2 * node_num(i, j)] = (lx * i) / nx;
+        Xloc[2 * node_num(i, j) + 1] = (ly * j) / ny;
+      }
+    }
+
+    // Set connectivity
+    using ET = A2D::ElementTypes;
+    for (I j = 0, e = 0; j < ny; j++) {
+      for (I i = 0; i < nx; i++, e++) {
+        for (I ii = 0; ii < ET::QUAD_VERTS; ii++) {
+          quad[4 * e + ii] = node_num(i + ET::QUAD_VERTS_CART[ii][0],
+                                      j + ET::QUAD_VERTS_CART[ii][1]);
+        }
+      }
+    }
+  }
+
+  /**
    * @brief populate boundary conditions: fix all dofs along edge x = 0
    *
    * @param bcs boundary condition multiarray

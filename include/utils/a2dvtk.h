@@ -98,10 +98,20 @@ class ToVTK {
 
     // If not provided, infer vtk type id from nnodes_per_elem
     if (vtk_elem_type == -1) {
-      if (nnodes_per_elem == 4) {
-        vtk_elem_type = VTKID::QUAD;
-      } else if (nnodes_per_elem == 8) {
-        vtk_elem_type = VTKID::HEXAHEDRON;
+      switch (nnodes_per_elem) {
+        case 4:
+          vtk_elem_type = VTKID::QUAD;
+          break;
+
+        case 8:
+          vtk_elem_type = VTKID::HEXAHEDRON;
+          break;
+
+        default:
+          char msg[256];
+          snprintf(msg, 256, "nnodes_per_elem = %d is not supported",
+                   nnodes_per_elem);
+          throw std::runtime_error(msg);
       }
     }
 

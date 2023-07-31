@@ -7,7 +7,7 @@
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/fespace.h"
-#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "utils/a2dvtk.h"
 

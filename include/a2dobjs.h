@@ -25,7 +25,13 @@ using A2D_complex_t = std::complex<T>;
 namespace A2D {
 using index_t = uint32_t;  // TODO: size_t may be a better choice here
 static constexpr index_t MAX_INDEX = std::numeric_limits<index_t>::max();
+static constexpr index_t INDEX_NBITS = std::numeric_limits<index_t>::digits;
 static constexpr index_t NO_INDEX = MAX_INDEX;
+
+// Free heap memory and set pointer to nullptr
+#define DELETE_ARRAY(array_ptr) \
+  delete[] array_ptr;           \
+  array_ptr = nullptr;
 
 /**
  * @brief Check if a type is complex.

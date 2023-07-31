@@ -143,7 +143,8 @@ class LagrangeH1QuadBasis {
   static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
                              LOrderDof& ldof) {
     const index_t i = n % degree;
-    const index_t j = n / (degree * degree);
+    // const index_t j = n / (degree * degree);
+    const index_t j = n / degree;
 
     for (index_t jj = 0; jj < 2; jj++) {
       for (index_t ii = 0; ii < 2; ii++) {

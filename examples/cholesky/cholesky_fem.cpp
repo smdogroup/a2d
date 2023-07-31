@@ -8,7 +8,7 @@
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dmesh.h"
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     using T = double;
 
     // Number of elements in each dimension
-    const int nx = 32, ny = 32, nz = 32;
+    const int nx = 16, ny = 8, nz = 8;
     const double lx = 1.5, ly = 2.0, lz = 1.0;
 
     // Set up mesh
@@ -172,8 +172,12 @@ int main(int argc, char *argv[]) {
     // std::printf("write mtx time: %12.5e s\n", t3 - t2);
 
     // Perform cholesky factorization
-    std::printf("sparse matrix dimension: (%d, %d)\n", csr_mat.nrows,
-                csr_mat.ncols);
+    printf("number of vertices: %d\n", conn.get_num_verts());
+    printf("number of edges:    %d\n", conn.get_num_edges());
+    printf("number of faces:    %d\n", conn.get_num_faces());
+    printf("number of elements: %d\n", conn.get_num_elements());
+    printf("number of dofs:     %d\n", prob.get_mesh().get_num_dof());
+    printf("matrix dimension:  (%d, %d)\n", csr_mat.nrows, csr_mat.ncols);
     double t4 = watch.lap();
     SparseCholesky<T> *chol = new SparseCholesky<T>(csc_mat);
     double t5 = watch.lap();

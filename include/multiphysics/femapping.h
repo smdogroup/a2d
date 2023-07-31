@@ -41,8 +41,7 @@ class InteriorMapping {
 };
 
 /**
- * @brief 3D surface transformation - this needs to be fixed
- *
+ * @brief surface transformation - this needs to be fixed TODO: how?
  */
 template <typename T, index_t D>
 class SurfaceMapping {
@@ -88,7 +87,7 @@ class SurfaceMapping {
   T& detJ;
 
   // J with the normal direction added
-  A2D::Mat<T, dim_surf, dim_surf> J, Jinv;
+  A2D::Mat<T, dim_surf, dim_surf> J, Jinv;  // TODO: where are these computed?
 };
 
 }  // namespace A2D

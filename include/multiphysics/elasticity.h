@@ -626,22 +626,44 @@ class TopoVonMisesAggregation {
  */
 template <typename T, A2D::index_t D>
 class TopoSurfaceTraction {
+ private:
+  template <index_t dim>
+  struct torque_dim;
+
+  template <>
+  struct torque_dim<3> {
+    static const int value = 3;
+  };
+
+  template <>
+  struct torque_dim<2> {
+    static const int value = 1;
+  };
+
  public:
-  TopoSurfaceTraction(const T tx_[], const T torx_[] = nullptr,
+  TopoSurfaceTraction(const T tx_[] = nullptr, const T torx_[] = nullptr,
                       const T x0_[] = nullptr) {
     has_traction = false;
     has_torque = false;
 
-    for (A2D::index_t i = 0; i < dim; i++) {
-      if (tx_) {
+    if (tx_) {
+      for (A2D::index_t i = 0; i < dim; i++) {
         tx[i] = tx_[i];
-        has_traction = true;
       }
-      if (torx_ && x0_) {
-        torx[i] = torx_[i];
+      has_traction = true;
+    }
+
+    if (torx_ && x0_) {
+      for (A2D::index_t i = 0; i < dim; i++) {
         x0[i] = x0_[i];
-        has_torque = true;
+        if constexpr (dim == 3) {
+          torx[i] = torx_[i];
+        }
       }
+      if constexpr (dim == 2) {
+        torx[0] = torx_[0];
+      }
+      has_torque = true;
     }
   }
 
@@ -655,19 +677,17 @@ class TopoSurfaceTraction {
   using DataSpace = A2D::FESpace<T, dim>;
 
   // Space for the element geometry
-  using FiniteElementGeometry =
-      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+  using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, 2>>;
 
   // Finite element space
-  using FiniteElementSpace =
-      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, 2>>;
 
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::SurfaceMapping<T, dim>;
 
-  T tx[dim];    // surface traction vector
-  T torx[dim];  // surface  torque vector
-  T x0[dim];    // torque origin
+  T tx[dim];                       // surface traction vector
+  T torx[torque_dim<dim>::value];  // surface  torque vector
+  T x0[dim];                       // torque origin
   bool has_traction;
   bool has_torque;
 
@@ -700,10 +720,16 @@ class TopoSurfaceTraction {
       // Extract location
       const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
 
-      // Force at this point is (x - x0) cross torque
-      U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) * torx[1]);
-      U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) - x0[0]) * torx[2]);
-      U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) - x0[1]) * torx[0]);
+      if constexpr (dim == 2) {
+        // Force at this point is (x - x0) cross torque
+        U(0) += wdetJ * torx[0] * (x(1) - x0[1]);
+        U(1) += -wdetJ * torx[0] * (x(0) - x0[0]);
+      } else {  // dim == 3
+        // Force at this point is (x - x0) cross torque
+        U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) * torx[1]);
+        U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) - x0[0]) * torx[2]);
+        U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) - x0[1]) * torx[0]);
+      }
     }
   }
 };

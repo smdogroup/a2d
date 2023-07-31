@@ -8,7 +8,7 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hex_basis.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "multiphysics/static_condensation.h"
@@ -312,8 +312,7 @@ class HelmholtzSphere {
   // Alias templates
   template <class... Args>
   using ElementVector = A2D::ElementVector_Serial<Args...>;
-  using ElementVectorEmpty =
-      A2D::ElemenetVector_Empty<A2D::ElemVecType::Serial>;
+  using ElementVectorEmpty = A2D::ElementVector_Empty<A2D::ElemVecType::Serial>;
 
   // Basic types
   using I = A2D::index_t;

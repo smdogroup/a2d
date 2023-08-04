@@ -3,7 +3,7 @@
 ### Nomenclature
 
 $$
-\begin{aligned}
+\begin{align*}
 &\text{node} &&\text{a control point in an element about which a shape function
 is defined} \\
 &\text{DOF} &&\text{degree of freedom associated with a node} \\
@@ -48,16 +48,16 @@ basis nodes)}, \in \mathbb{R}^{n_\text{dof}} \\
 \\
 &u_{h, e}, w_{h, e} &&\text{local nodal solution and test function DOFs for
 $e$-th element} \\
-\end{aligned}
+\end{align*}
 $$
 
 ### Subscripts
 $$
-\begin{aligned}
+\begin{align*}
 &(~)_h &&\text{by finite element discretization} \\
 &(~)_e &&\text{$e$-th element} \\
 &(~)_q &&\text{$q$-th quadrature point} \\
-\end{aligned}
+\end{align*}
 $$
 
 ### Convention for matrix calculus
@@ -145,7 +145,7 @@ $$
 Next, the exact integral is approximated using basis functions and numerically
 evaluated using quadrature rule:
 $$
-\begin{aligned}
+\begin{align*}
 I
 &\approx \sum_{e=1}^{n_e} \int_{\Omega_\xi} \det\left(J(\mathbf{x})\right)
 f_\mathbf{x}\left(\tilde{u}_e(\boldsymbol{\xi}), \tilde{w}_e(\boldsymbol{\xi})\right) d
@@ -155,7 +155,7 @@ f_\mathbf{x}\left(\tilde{u}_e(\boldsymbol{\xi}), \tilde{w}_e(\boldsymbol{\xi})\r
 f_\mathbf{x}\left(\tilde{u}(\boldsymbol{\xi}_q),
 \tilde{w}(\boldsymbol{\xi}_q)\right) \\
 &= \tilde{I}(u_h, w_h)
-\end{aligned}
+\end{align*}
 $$
 where $m_q$ is the quadrature weights.
 
@@ -170,14 +170,14 @@ function and, more importantly, derivatives can be separated.
 Once those local computations are done, they need to be transferred to the
 global (physical) systems by the following rules:
 $$
-\begin{aligned}
+\begin{align*}
 \nabla_{\mathbf{x}} v &= J^{-T} \nabla_{\boldsymbol{\xi}} v \\
 \dfrac{\partial g}{\partial \nabla_{\boldsymbol{\xi}}v} &=
 \dfrac{\partial g}{\partial \nabla_{\mathbf{x}}v} J^{-T}\\
 \dfrac{\partial^2 g}{\partial \nabla_{\boldsymbol{\xi}}v\partial
 \nabla_{\boldsymbol{\xi}}t} &= J^{-1}\dfrac{\partial^2 g}{\partial
 \nabla_{\mathbf{x}}v\partial \nabla_{\mathbf{x}}t} \\
-\end{aligned}
+\end{align*}
 $$
 where $v$ and $t$ are some arbitrary functions such as solution or test
 function, $g$ is some scalar functional.
@@ -188,13 +188,13 @@ Trace identity states that for $b=f(a)$, we have $\bar{b}^T \dot{b} = \bar{a}^T
 function $s$ by definition.
 Use the identity above, we have
 $$
-\begin{aligned}
+\begin{align*}
 \bar{(\nabla_{\mathbf{x}} v)} \dot{\nabla_{\mathbf{x}} v} =
 \bar{(\nabla_{\mathbf{x}} v)} J^{-T} \dot{\nabla_{\boldsymbol{\xi}} v} &=
 \bar{(\nabla_{\boldsymbol{\xi}} v)} \dot{\nabla_{\boldsymbol{\xi}} v}  \\
 \Rightarrow \bar{(\nabla_{\boldsymbol{\xi}} v)} &= \bar{(\nabla_{\mathbf{x}} v)}
 J^{-T} \\
-\end{aligned}
+\end{align*}
 $$
 where we define $\bar{(~)} = \dfrac{\partial g}{\partial (~)}$.
 For second order derivatives of $g$ w.r.t. gradients, we first consider it's $j$-column, we define
@@ -208,7 +208,7 @@ t}\right]_i.
 $$
 Then use the exact same analysis above, we have
 $$
-\begin{aligned}
+\begin{align*}
 \hat{(\nabla_{\boldsymbol{\xi}} v)} &= \hat{(\nabla_{\mathbf{x}} v)} J^{-T} \\
 \Rightarrow \dfrac{\partial}{\partial \nabla_{\boldsymbol{\xi}}v}
 \left[\dfrac{\partial g}{\partial \nabla_{\boldsymbol{\xi}} t}\right]_j &=
@@ -218,7 +218,7 @@ $$
 \left[\dfrac{\partial g}{\partial \nabla_{\boldsymbol{\xi}} t} \right]_j \right]^T &= [J^{-1}]_{ji} J^{-1} \left[
 \dfrac{\partial}{\partial \nabla_{\mathbf{x}}v}
 \left[\dfrac{\partial g}{\partial \nabla_{\mathbf{x}} t}\right]_i \right]^T.
-\end{aligned}
+\end{align*}
 $$
 As a result, the transformation for the Hessian matrix is:
 $$
@@ -268,7 +268,7 @@ $$
 
 Plug (3) into (2), we have
 $$
-\begin{aligned}
+\begin{align*}
 R(u_h)
 &= \sum_{e=1}^{n_e} \sum_{q=1}^{n_q} m_q \det\left(J(\boldsymbol{\xi}_q)\right)
 \dfrac{\partial f_{\mathbf{x}}\left(\tilde{u}_e(\boldsymbol{\xi}_q),
@@ -279,7 +279,7 @@ J^{-1}(\boldsymbol{\xi}_q) \dfrac{\partial
 f_{\mathbf{x}}\left(\tilde{u}_e(\boldsymbol{\xi}_q),
 \tilde{w}_e(\boldsymbol{\xi}_q)\right)}{\partial \nabla_{\mathbf{x}}\tilde{w}_e}
 \nabla_{\boldsymbol{\xi}} N_e(\boldsymbol{\xi}_q) P_e \\
-\end{aligned}
+\end{align*}
 $$
 Note that the transformations between physical coordinates and computational
 coordinates are used.

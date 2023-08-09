@@ -23,6 +23,27 @@ class TriQuadrature3 {
 };
 
 template <index_t order>
+class LineGaussQuadrature {
+ public:
+  /// @brief  Is this a tensor product implementation
+  static const bool is_tensor_product = false;
+
+  /// @brief The total number of quadrature points
+  static const index_t num_quad_points = order;
+
+  static index_t get_num_points() { return order; }
+
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n];
+  }
+  static double get_weight(const index_t n) {
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n];
+  }
+};
+
+template <index_t order>
 class QuadGaussQuadrature {
  public:
   /// @brief  Is this a tensor product implementation
@@ -148,6 +169,26 @@ class HexGaussQuadrature {
 };
 
 template <index_t order>
+class LineGaussLobattoQuadrature {
+ public:
+  /// @brief  Is this a tensor product implementation
+  static const bool is_tensor_product = false;
+
+  /// @brief The total number of quadrature points
+  static const index_t num_quad_points = order;
+
+  static index_t get_num_points() { return order; }
+  static void get_point(const index_t n, double pt[]) {
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n];
+  }
+  static double get_weight(const index_t n) {
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[n];
+  }
+};
+
+template <index_t order>
 class QuadGaussLobattoQuadrature {
  public:
   /// @brief  Is this a tensor product implementation
@@ -195,7 +236,7 @@ class QuadGaussLobattoQuadrature {
     return q0 + order * q1;
   }
 
-  static index_t get_num_points() { return order * order * order; }
+  static index_t get_num_points() { return order * order; }
   static void get_point(const index_t n, double pt[]) {
     constexpr const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n % order];

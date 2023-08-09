@@ -39,6 +39,63 @@ class ElementTypes {
   static constexpr index_t NONE_FACE_NQUANTS[MAX_FACES] = {0, 0, 0, 0, 0, 0};
 
   /**
+   * @brief Line element
+   *
+   * The vertices of a line is
+   *
+   *  0 ------------- 1
+   *         (0)
+   *
+   * The edge of the line
+   * Idx    Edge
+   * (0)    0 -> 1
+   *
+   * The faces are (note that for 1d elements, face and edge are the same)
+   * Idx    Face      Edges
+   * (0)    0 -> 1    0,
+   */
+
+  static const index_t LINE_VERTS = 2;
+  static const index_t LINE_EDGES = 1;
+  static const index_t LINE_FACES = 1;
+
+  // Given edge index, return edge vertex indices
+  static constexpr index_t LINE_EDGE_VERTS[][2] = {{0, 1}};
+
+  // Given face index, return number of vertices/vertex indices
+  static constexpr index_t LINE_FACE_NVERTS[] = {2};
+  static constexpr index_t LINE_FACE_VERTS[][MAX_FACE_VERTS] = {
+      {0, 1, NO_INDEX, NO_INDEX}};
+
+  // Given face index, return edge indices
+  static constexpr index_t LINE_FACE_NEDGES[] = {1};
+  static constexpr index_t LINE_FACE_EDGES[][MAX_FACE_EDGES] = {
+      {0, NO_INDEX, NO_INDEX, NO_INDEX}};
+
+  // Get the degrees of freedom associated with the vertex
+  template <index_t offset, index_t ndof, index_t nx, class ElemDof,
+            class EntityDof>
+  static void get_line_vert_dof(index_t v, const ElemDof& element,
+                                EntityDof& entity);
+
+  // Get the degrees of freedom associated with the vertex
+  template <index_t offset, index_t ndof, index_t nx, class EntityDof,
+            class ElemDof>
+  static void set_line_vert_dof(index_t v, const EntityDof& entity,
+                                ElemDof& element);
+
+  // Get the degrees of freedom from the edge
+  template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,
+            class EntityDof>
+  static void get_line_edge_dof(const ElemDof& element, EntityDof& entity);
+
+  // Set the degrees of freedom from the edge
+  template <index_t offset, bool ends, index_t ndof, index_t nx,
+            class EntityDof, class ElemDof>
+  static void set_line_edge_dof(const index_t orient, const EntityDof& entity,
+                                ElemDof& element);
+
+  /**
    * @brief Triangle element
    *
    * The vertices of the triangle are

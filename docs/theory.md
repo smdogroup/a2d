@@ -34,7 +34,7 @@ Below is a short list of pitfalls I stepped into.
 |$u(\mathbf{x}) $|PDE solution function (infinite-dimensional, defined everywhere within the domain)|
 |$w(\mathbf{x}) $| test function (infinite-dimensional, defined everywhere within the domain)|
 |$N _ e(\mathbf{x}) $|A collection of basis function values at location $\mathbf{x}$, row vector|
-|$\nabla N _ e(\mathbf{x}) $|A collection of basis function derivatives at location $\mathbf{x}$, 3-by-$l _ {\text{dof}, e}$ matrix|
+|$\nabla N _ e(\mathbf{x}) $|A collection of basis function derivatives at location $\mathbf{x}$, 3-by- $l _ {\text{dof}, e}$ matrix|
 |$\tilde{u} _ e(\mathbf{x}) $|solution functions approximated by bases of $e$-th finite element|
 |$\tilde{w} _ e(\mathbf{x}) $|test functions approximated by bases of $e$-th finite element|
 |$u _ h $|discretized nodal PDE solution (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
@@ -67,23 +67,24 @@ for $x \in \mathbb{R}^m$ and $y \in \mathbb{R}^n$
 
 ### PDE and weak form
 
-Consider the following PDE:
+Consider the following PDE
 
 $$
 p _ \mathbf{x}\left(u(\mathbf{x})\right) = 0
 $$
 
-and its weak form:
+and its weak form
 
 $$
 I = \int _ {\Omega} f _ \mathbf{x}(u, w) d \mathbf{x} = 0
 $$
 
-where $p$ is the PDE operator, $u$ is the exact solution function, $w$ is the
-test function.
-$f$ is some general functional derived from $p$ (e.g. via integration by parts).
-A2D solves the weak form numerically by solving the following (potentially
-nonlinear) discretized system:
+where $p _ \mathbf{x}$ is the PDE operator, $u$ is the exact solution function,
+$w$ is the test function.
+$f _ \mathbf{x}$ is some general functional derived from $p _ \mathbf{x}$ (e.g.
+via integration by parts).
+A2D solves the weak form by solving the following (potentially nonlinear)
+discretized system:
 
 $$
 \dfrac{\partial \tilde{I}}{\partial w _ h} = 0
@@ -105,7 +106,7 @@ $\cup _ {e=1}^{n_e} \Omega _ e = \Omega$.
 Functionals $u$ and $w$ are approximated by finite-dimensional
 vectors $u$ and $w$ using predefined basis functions associated with the mesh.
 Within each element $\Omega _ e$, the solution and test functions are approximated
-by a weighted sum of basis function evaluations
+by a weighted sum of basis functions
 
 $$
 \begin{align*}

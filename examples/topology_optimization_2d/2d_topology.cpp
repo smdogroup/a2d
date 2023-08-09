@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
     using T = double;
 
     // Number of elements in each dimension
-    const index_t nx = 32, ny = 32;
+    const index_t nx = 1, ny = 1;
     const double lx = 1.5, ly = 2.0;
 
     // Set up mesh

@@ -25,7 +25,8 @@ class TopoElasticityAnalysis2D {
   static constexpr int degree = 1;          // Polynomial degree
   static constexpr int order = degree + 1;  // Spline order, = degree + 1
   static constexpr int data_degree = degree - 1;
-  static constexpr int filter_degree = degree - 1;
+  // static constexpr int filter_degree = degree - 1;
+  static constexpr int filter_degree = degree;
   static constexpr int data_order = data_degree + 1;
   static constexpr int data_dim = 1;
   static constexpr int var_dim = spatial_dim;
@@ -46,10 +47,10 @@ class TopoElasticityAnalysis2D {
   using ElemVec = ElementVector_Serial<T, Basis, Vec_t>;
 
   // Traction component
-  using TQuadrature = QuadGaussQuadrature<order>;
+  using TQuadrature = LineGaussQuadrature<order>;
   using TDataBasis = FEBasis<T>;
-  using TGeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
-  using TBasis = FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using TGeoBasis = FEBasis<T, LagrangeH1LineBasis<T, spatial_dim, degree>>;
+  using TBasis = FEBasis<T, LagrangeH1LineBasis<T, spatial_dim, degree>>;
   using TDataElemVec = ElementVector_Serial<T, TDataBasis, Vec_t>;
   using TGeoElemVec = ElementVector_Serial<T, TGeoBasis, Vec_t>;
   using TElemVec = ElementVector_Serial<T, TBasis, Vec_t>;

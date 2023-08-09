@@ -22,6 +22,9 @@ struct indexpow {
   static const int value = x * indexpow<x, y - 1>::value;
 };
 
+/**
+ * Line (dim == 1), Quad (dim == 2) or Hex (dim == 3) high order Lagrange basis
+ */
 template <typename T, index_t dim, index_t C, index_t degree,
           InterpolationType interp_type = GLL_INTERPOLATION>
 class LagrangeH1HypercubeBasis {
@@ -50,17 +53,23 @@ class LagrangeH1HypercubeBasis {
    * @return The number of degrees of freedom on a given entity
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if (entity == ET::VERTEX) {
-      return C;
-    } else if (entity == ET::EDGE) {
-      return C * (order - 2);
-    } else if (entity == ET::FACE and
-               dim == 3) {  // faces of 2D mesh have 0 associated dof - because
-                            // in 2D faces and edges are coalesced by my
-                            // (Aaron's) definition
-      return C * (order - 2) * (order - 2);
-    } else if (entity == ET::VOLUME) {
-      return C * (order - 2) * (order - 2) * (order - 2);
+    switch (entity) {
+      case ET::VERTEX:
+        return C;
+
+      case ET::EDGE:
+        return C * (order - 2);
+
+      case ET::FACE:
+        if constexpr (dim == 3) {
+          // faces of 2D mesh have 0 associated dof - because in 1D/2D faces and
+          // edges are coalesced by definition
+          return C * (order - 2) * (order - 2);
+        }
+        break;
+
+      case ET::VOLUME:
+        return C * (order - 2) * (order - 2) * (order - 2);
     }
     return 0;
   }
@@ -81,7 +90,10 @@ class LagrangeH1HypercubeBasis {
                              EntityDof& entity_dof) {
     switch (entity) {
       case ET::VERTEX:
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          ET::get_line_vert_dof<offset, C, order, ElemDof, EntityDof>(
+              index, element_dof, entity_dof);
+        } else if constexpr (dim == 2) {
           ET::get_quad_vert_dof<offset, C, order, order, ElemDof, EntityDof>(
               index, element_dof, entity_dof);
         } else {  // dim == 3
@@ -90,18 +102,20 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::EDGE:
+        // there's no dof on 1D edges because 1D edges are treated as
+        // ``volumes''
         if constexpr (dim == 2) {
           const bool endp = false;
           ET::get_quad_edge_dof<offset, endp, C, order, order, ElemDof,
                                 EntityDof>(index, element_dof, entity_dof);
-        } else {  // dim == 3
+        } else if constexpr (dim == 3) {
           const bool endp = false;
           ET::get_hex_edge_dof<offset, endp, C, order, order, order, ElemDof,
                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
       case ET::FACE:
-        // there's no dof on 2D faces
+        // there's no dof on 2D faces, 2D faces are treated as ``volumes''
         if constexpr (dim == 3) {
           const bool endp = false;
           ET::get_hex_face_dof<offset, endp, C, order, order, order, ElemDof,
@@ -109,7 +123,11 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::VOLUME:
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          const bool endp = false;
+          ET::get_line_edge_dof<offset, endp, C, order, ElemDof, EntityDof>(
+              element_dof, entity_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
           ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof,
                                 EntityDof>(element_dof, entity_dof);
@@ -138,7 +156,10 @@ class LagrangeH1HypercubeBasis {
                              ElemDof& element_dof) {
     switch (entity) {
       case ET::VERTEX:
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          ET::set_line_vert_dof<offset, C, order, EntityDof, ElemDof>(
+              index, entity_dof, element_dof);
+        } else if constexpr (dim == 2) {
           ET::set_quad_vert_dof<offset, C, order, order, EntityDof, ElemDof>(
               index, entity_dof, element_dof);
         } else {  // dim == 3
@@ -147,19 +168,21 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::EDGE:
+        // there's no dof on 1D edges because 1D edges are treated as
+        // ``volumes''
         if constexpr (dim == 2) {
           const bool endp = false;
           ET::set_quad_edge_dof<offset, endp, C, order, order, EntityDof,
                                 ElemDof>(index, orient, entity_dof,
                                          element_dof);
-        } else {  // dim == 3
+        } else if constexpr (dim == 3) {
           const bool endp = false;
           ET::set_hex_edge_dof<offset, endp, C, order, order, order, EntityDof,
                                ElemDof>(index, orient, entity_dof, element_dof);
         }
         break;
       case ET::FACE:
-        // there's no dof on 2D faces
+        // there's no dof on 2D faces, 2D faces are treated as ``volumes''
         if constexpr (dim == 3) {
           const bool endp = false;
           ET::set_hex_face_dof<offset, endp, C, order, order, order, EntityDof,
@@ -167,7 +190,11 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::VOLUME:
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          const bool endp = false;
+          ET::set_line_edge_dof<offset, endp, C, order, EntityDof, ElemDof>(
+              orient, entity_dof, element_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
           ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof,
                                 ElemDof>(orient, entity_dof, element_dof);
@@ -222,9 +249,22 @@ class LagrangeH1HypercubeBasis {
             class LOrderDof>
   static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
                              LOrderDof& ldof) {
-    if constexpr (dim == 2) {
+    if constexpr (dim == 1) {
+      // lorder element index:
+      // n = i
+      for (index_t ii = 0; ii < 2; ii++) {
+        const index_t lnode = ii;
+        const index_t hnode = n + ii;
+
+        for (index_t p = 0; p < C; p++) {
+          ldof[lorder_offset + C * lnode + p] =
+              hdof[horder_offset + C * hnode + p];
+        }
+      }
+    } else if constexpr (dim == 2) {
+      // lorder element index:
+      // n = i + j * degree, 0 <= i, j < degree
       const index_t i = n % degree;
-      // const index_t j = n / (degree * degree);
       const index_t j = n / degree;
 
       for (index_t jj = 0; jj < 2; jj++) {
@@ -239,6 +279,8 @@ class LagrangeH1HypercubeBasis {
         }
       }
     } else {  // dim == 3
+      // lorder element index:
+      // n = i + j * degree + k * degree * degree, 0 <= i, j, k < degree
       const index_t i = n % degree;
       const index_t j = (n % (degree * degree)) / degree;
       const index_t k = n / (degree * degree);
@@ -282,8 +324,8 @@ class LagrangeH1HypercubeBasis {
    * @brief Get the parametric point location associated with the given
    * degree of freedom
    *
-   * This code assumes we're using GLL interpolation. That is not necessarily
-   * the case. Generalize this?
+   * TODO: This code assumes we're using GLL interpolation. That is not
+   * necessarily the case. Generalize this?
    *
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
@@ -293,7 +335,9 @@ class LagrangeH1HypercubeBasis {
     constexpr const double* pts = get_interpolation_pts<order, interp_type>();
     index_t n = index / C;
 
-    if constexpr (dim == 2) {
+    if constexpr (dim == 1) {
+      pt[0] = pts[n];
+    } else if constexpr (dim == 2) {
       pt[0] = pts[n % order];
       pt[1] = pts[n / order];
     } else {  // dim == 3
@@ -463,7 +507,7 @@ class LagrangeH1HypercubeBasis {
           }
         }
       }
-    } else {
+    } else {  // is not tensor_product
       for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
         // Get the quadrature point
         double pt[dim];
@@ -473,9 +517,14 @@ class LagrangeH1HypercubeBasis {
         double n0[order], d0[order];
         double n1[order], d1[order];
         double n2[order], d2[order];
-        interpolation_basis<order, interp_type>(pt[0], n0, d0);
-        interpolation_basis<order, interp_type>(pt[1], n1, d1);
-        if constexpr (dim == 3) {
+
+        if constexpr (dim >= 1) {
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        }
+        if constexpr (dim >= 2) {
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+        }
+        if constexpr (dim >= 3) {
           interpolation_basis<order, interp_type>(pt[2], n2, d2);
         }
 
@@ -491,16 +540,24 @@ class LagrangeH1HypercubeBasis {
         }
         grad.zero();
 
-        const index_t outer = dim == 2 ? 1 : order;
-        for (index_t j2 = 0; j2 < outer; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+        // | dim | j2range | j1range | j0range |
+        // -------------------------------------
+        // | 3   | order   | order   | order   |
+        // | 2   | 1       | order   | order   |
+        // | 1   | 1       | 1       | order   |
+        constexpr index_t j2range = dim >= 3 ? order : 1;
+        constexpr index_t j1range = dim >= 2 ? order : 1;
+        constexpr index_t j0range = dim >= 1 ? order : 1;
+
+        for (index_t j2 = 0; j2 < j2range; j2++) {
+          for (index_t j1 = 0; j1 < j1range; j1++) {
             double n1n2, d1n2, n1d2;
             if constexpr (dim == 3) {
               n1n2 = n1[j1] * n2[j2];
               d1n2 = d1[j1] * n2[j2];
               n1d2 = n1[j1] * d2[j2];
             }
-            for (index_t j0 = 0; j0 < order; j0++) {
+            for (index_t j0 = 0; j0 < j0range; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
               double N, dx, dy, dz;
               if constexpr (dim == 3) {
@@ -508,19 +565,26 @@ class LagrangeH1HypercubeBasis {
                 dx = d0[j0] * n1n2;
                 dy = n0[j0] * d1n2;
                 dz = n0[j0] * n1d2;
-              } else {
+              } else if constexpr (dim == 2) {
                 N = n0[j0] * n1[j1];
                 dx = d0[j0] * n1[j1];
                 dy = n0[j0] * d1[j1];
+              } else {  // dim == 1
+                N = n0[j0];
+                dx = d0[j0];
               }
 
               if constexpr (C == 1) {
                 const T val = sol[offset + node];
 
                 u += N * val;
-                grad(0) += dx * val;
-                grad(1) += dy * val;
-                if constexpr (dim == 3) {
+                if constexpr (dim >= 1) {
+                  grad(0) += dx * val;
+                }
+                if constexpr (dim >= 2) {
+                  grad(1) += dy * val;
+                }
+                if constexpr (dim >= 3) {
                   grad(2) += dz * val;
                 }
               } else {
@@ -528,9 +592,13 @@ class LagrangeH1HypercubeBasis {
                   const T val = sol[offset + C * node + i];
 
                   u(i) += N * val;
-                  grad(i, 0) += dx * val;
-                  grad(i, 1) += dy * val;
-                  if constexpr (dim == 3) {
+                  if constexpr (dim >= 1) {
+                    grad(i, 0) += dx * val;
+                  }
+                  if constexpr (dim >= 2) {
+                    grad(i, 1) += dy * val;
+                  }
+                  if constexpr (dim >= 3) {
                     grad(i, 2) += dz * val;
                   }
                 }
@@ -717,9 +785,14 @@ class LagrangeH1HypercubeBasis {
         double n0[order], d0[order];
         double n1[order], d1[order];
         double n2[order], d2[order];
-        interpolation_basis<order, interp_type>(pt[0], n0, d0);
-        interpolation_basis<order, interp_type>(pt[1], n1, d1);
-        if constexpr (dim == 3) {
+
+        if constexpr (dim >= 1) {
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+        }
+        if constexpr (dim >= 2) {
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+        }
+        if constexpr (dim >= 3) {
           interpolation_basis<order, interp_type>(pt[2], n2, d2);
         }
 
@@ -728,16 +801,24 @@ class LagrangeH1HypercubeBasis {
         const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
         const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-        const index_t outer = dim == 2 ? 1 : order;
-        for (index_t j2 = 0; j2 < outer; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+        // | dim | j2range | j1range | j0range |
+        // -------------------------------------
+        // | 3   | order   | order   | order   |
+        // | 2   | 1       | order   | order   |
+        // | 1   | 1       | 1       | order   |
+        constexpr index_t j2range = dim >= 3 ? order : 1;
+        constexpr index_t j1range = dim >= 2 ? order : 1;
+        constexpr index_t j0range = dim >= 1 ? order : 1;
+
+        for (index_t j2 = 0; j2 < j2range; j2++) {
+          for (index_t j1 = 0; j1 < j1range; j1++) {
             double n1n2, d1n2, n1d2;
             if constexpr (dim == 3) {
               n1n2 = n1[j1] * n2[j2];
               d1n2 = d1[j1] * n2[j2];
               n1d2 = n1[j1] * d2[j2];
             }
-            for (index_t j0 = 0; j0 < order; j0++) {
+            for (index_t j0 = 0; j0 < j0range; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
               double N, dx, dy, dz;
               if constexpr (dim == 3) {
@@ -745,23 +826,32 @@ class LagrangeH1HypercubeBasis {
                 dx = d0[j0] * n1n2;
                 dy = n0[j0] * d1n2;
                 dz = n0[j0] * n1d2;
-              } else {
-                double N = n0[j0] * n1[j1];
-                double dx = d0[j0] * n1[j1];
-                double dy = n0[j0] * d1[j1];
+              } else if constexpr (dim == 2) {
+                N = n0[j0] * n1[j1];
+                dx = d0[j0] * n1[j1];
+                dy = n0[j0] * d1[j1];
+              } else {  // dim == 1
+                N = n0[j0];
+                dx = d0[j0];
               }
 
               if constexpr (C == 1) {
-                res[offset + node] += N * u + dx * grad(0) + dy * grad(1);
+                res[offset + node] += N * u + dx * grad(0);
+                if constexpr (dim == 2) {
+                  res[offset + node] += dy * grad(1);
+                }
                 if constexpr (dim == 3) {
-                  res[offset + node] += dz * grad(2);
+                  res[offset + node] += dy * grad(1) + dz * grad(2);
                 }
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  res[offset + C * node + i] +=
-                      N * u(i) + dx * grad(i, 0) + dy * grad(i, 1);
+                  res[offset + C * node + i] += N * u(i) + dx * grad(i, 0);
+                  if constexpr (dim == 2) {
+                    res[offset + C * node + i] += dy * grad(i, 1);
+                  }
                   if constexpr (dim == 3) {
-                    res[offset + C * node + i] += dz * grad(i, 2);
+                    res[offset + C * node + i] +=
+                        dy * grad(i, 1) + dz * grad(i, 2);
                   }
                 }
               }
@@ -800,29 +890,47 @@ class LagrangeH1HypercubeBasis {
     // Evaluate the basis functions
     double n0[order], n1[order], n2[order];
     double d0[order], d1[order], d2[order];
-    interpolation_basis<order, interp_type>(pt[0], n0, d0);
-    interpolation_basis<order, interp_type>(pt[1], n1, d1);
+
+    if constexpr (dim >= 1) {
+      interpolation_basis<order, interp_type>(pt[0], n0, d0);
+    }
+    if constexpr (dim >= 2) {
+      interpolation_basis<order, interp_type>(pt[1], n1, d1);
+    }
     if constexpr (dim == 3) {
       interpolation_basis<order, interp_type>(pt[2], n2, d2);
     }
 
-    const index_t outer = dim == 2 ? 1 : order;
-    for (index_t j2 = 0; j2 < outer; j2++) {
-      for (index_t j1 = 0; j1 < order; j1++) {
+    // | dim | j2range | j1range | j0range |
+    // -------------------------------------
+    // | 3   | order   | order   | order   |
+    // | 2   | 1       | order   | order   |
+    // | 1   | 1       | 1       | order   |
+    constexpr index_t j2range = dim >= 3 ? order : 1;
+    constexpr index_t j1range = dim >= 2 ? order : 1;
+    constexpr index_t j0range = dim >= 1 ? order : 1;
+
+    for (index_t j2 = 0; j2 < j2range; j2++) {
+      for (index_t j1 = 0; j1 < j1range; j1++) {
         double n1n2, d1n2, n1d2;
+
         if constexpr (dim == 3) {
           n1n2 = n1[j1] * n2[j2];
           d1n2 = d1[j1] * n2[j2];
           n1d2 = n1[j1] * d2[j2];
         }
 
-        for (index_t j0 = 0; j0 < order; j0++) {
+        for (index_t j0 = 0; j0 < j0range; j0++) {
           const index_t node = j0 + order * (j1 + order * j2);
-          if constexpr (dim == 2) {
+
+          if constexpr (dim == 1) {
+            N[(dim + 1) * node] = n0[j0];
+            N[(dim + 1) * node + 1] = d0[j0];
+          } else if constexpr (dim == 2) {
             N[(dim + 1) * node] = n0[j0] * n1[j1];
             N[(dim + 1) * node + 1] = d0[j0] * n1[j1];
             N[(dim + 1) * node + 2] = n0[j0] * d1[j1];
-          } else {
+          } else {  // dim == 3
             N[(dim + 1) * node] = n0[j0] * n1n2;
             N[(dim + 1) * node + 1] = d0[j0] * n1n2;
             N[(dim + 1) * node + 2] = n0[j0] * d1n2;
@@ -955,25 +1063,29 @@ class LagrangeL2HypercubeBasis {
             class LOrderDof>
   static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
                              LOrderDof& ldof) {
-    if constexpr (dim == 2) {
+    index_t hnode;
+
+    if constexpr (dim == 1) {
+      // lorder element index:
+      // n = i
+      hnode = n;
+    } else if constexpr (dim == 2) {
+      // lorder element index:
+      // n = i + j * order, 0 <= i, j < order
       const index_t i = n % order;
       const index_t j = n / order;
-
-      const index_t hnode = i + order * j;
-
-      for (index_t p = 0; p < C; p++) {
-        ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
-      }
-    } else {
+      hnode = i + order * j;
+    } else {  // dim == 3
+      // lorder element index:
+      // n = i + j * order + k * order * order, 0 <= i, j, k < order
       const index_t i = n % order;
       const index_t j = (n % (order * order)) / order;
       const index_t k = n / (order * order);
+      hnode = i + order * (j + order * k);
+    }
 
-      const index_t hnode = i + order * (j + order * k);
-
-      for (index_t p = 0; p < C; p++) {
-        ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
-      }
+    for (index_t p = 0; p < C; p++) {
+      ldof[lorder_offset + p] = hdof[horder_offset + C * hnode + p];
     }
   }
 
@@ -1008,7 +1120,9 @@ class LagrangeL2HypercubeBasis {
 
     index_t n = index / C;
 
-    if constexpr (dim == 2) {
+    if constexpr (dim == 1) {
+      pt[0] = pts[n];
+    } else if constexpr (dim == 2) {
       pt[0] = pts[n % order];
       pt[1] = pts[n / order];
     } else {
@@ -1170,26 +1284,41 @@ class LagrangeL2HypercubeBasis {
 
         // Evaluate the basis functions
         double n0[order], n1[order], n2[order];
-        interpolation_basis<order, interp_type>(pt[0], n0);
-        interpolation_basis<order, interp_type>(pt[1], n1);
+
+        if constexpr (dim >= 1) {
+          interpolation_basis<order, interp_type>(pt[0], n0);
+        }
+        if constexpr (dim >= 2) {
+          interpolation_basis<order, interp_type>(pt[1], n1);
+        }
         if constexpr (dim == 3) {
           interpolation_basis<order, interp_type>(pt[2], n2);
         }
 
-        const index_t outer = dim == 2 ? 1 : order;
-        for (index_t j2 = 0; j2 < outer; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+        // | dim | j2range | j1range | j0range |
+        // -------------------------------------
+        // | 3   | order   | order   | order   |
+        // | 2   | 1       | order   | order   |
+        // | 1   | 1       | 1       | order   |
+        constexpr index_t j2range = dim >= 3 ? order : 1;
+        constexpr index_t j1range = dim >= 2 ? order : 1;
+        constexpr index_t j0range = dim >= 1 ? order : 1;
+
+        for (index_t j2 = 0; j2 < j2range; j2++) {
+          for (index_t j1 = 0; j1 < j1range; j1++) {
             double n1n2;
             if constexpr (dim == 3) {
               n1n2 = n1[j1] * n2[j2];
             }
-            for (index_t j0 = 0; j0 < order; j0++) {
+            for (index_t j0 = 0; j0 < j0range; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
               double coeff;
               if constexpr (dim == 3) {
                 coeff = n0[j0] * n1n2;
-              } else {
+              } else if constexpr (dim == 2) {
                 coeff = n0[j0] * n1[j1];
+              } else {  // dim == 1
+                coeff = n0[j0];
               }
               if constexpr (C == 1) {
                 u += coeff * sol[offset + node];
@@ -1357,26 +1486,40 @@ class LagrangeL2HypercubeBasis {
 
         // Evaluate the basis functions
         double n0[order], n1[order], n2[order];
-        interpolation_basis<order, interp_type>(pt[0], n0);
-        interpolation_basis<order, interp_type>(pt[1], n1);
-        if constexpr (dim == 3) {
+        if constexpr (dim >= 1) {
+          interpolation_basis<order, interp_type>(pt[0], n0);
+        }
+        if constexpr (dim >= 2) {
+          interpolation_basis<order, interp_type>(pt[1], n1);
+        }
+        if constexpr (dim >= 3) {
           interpolation_basis<order, interp_type>(pt[2], n2);
         }
 
-        const index_t outer = dim == 2 ? 1 : order;
-        for (index_t j2 = 0; j2 < outer; j2++) {
-          for (index_t j1 = 0; j1 < order; j1++) {
+        // | dim | j2range | j1range | j0range |
+        // -------------------------------------
+        // | 3   | order   | order   | order   |
+        // | 2   | 1       | order   | order   |
+        // | 1   | 1       | 1       | order   |
+        constexpr index_t j2range = dim >= 3 ? order : 1;
+        constexpr index_t j1range = dim >= 2 ? order : 1;
+        constexpr index_t j0range = dim >= 1 ? order : 1;
+
+        for (index_t j2 = 0; j2 < j2range; j2++) {
+          for (index_t j1 = 0; j1 < j1range; j1++) {
             double n1n2;
             if constexpr (dim == 3) {
               n1n2 = n1[j1] * n2[j2];
             }
-            for (index_t j0 = 0; j0 < order; j0++) {
+            for (index_t j0 = 0; j0 < j0range; j0++) {
               const index_t node = j0 + order * (j1 + order * j2);
               double coeff;
               if constexpr (dim == 3) {
                 coeff = n0[j0] * n1n2;
-              } else {
+              } else if constexpr (dim == 2) {
                 coeff = n0[j0] * n1[j1];
+              } else {  // dim == 1
+                coeff = n0[j0];
               }
 
               if constexpr (C == 1) {
@@ -1413,25 +1556,40 @@ class LagrangeL2HypercubeBasis {
 
     // Evaluate the basis functions
     double n0[order], n1[order], n2[order];
-    interpolation_basis<order, interp_type>(pt[0], n0);
-    interpolation_basis<order, interp_type>(pt[1], n1);
-    if constexpr (dim == 3) {
+
+    if constexpr (dim >= 1) {
+      interpolation_basis<order, interp_type>(pt[0], n0);
+    }
+    if constexpr (dim >= 2) {
+      interpolation_basis<order, interp_type>(pt[1], n1);
+    }
+    if constexpr (dim >= 3) {
       interpolation_basis<order, interp_type>(pt[2], n2);
     }
 
-    const index_t outer = dim == 2 ? 1 : order;
-    for (index_t j2 = 0; j2 < outer; j2++) {
-      for (index_t j1 = 0; j1 < order; j1++) {
+    // | dim | j2range | j1range | j0range |
+    // -------------------------------------
+    // | 3   | order   | order   | order   |
+    // | 2   | 1       | order   | order   |
+    // | 1   | 1       | 1       | order   |
+    constexpr index_t j2range = dim >= 3 ? order : 1;
+    constexpr index_t j1range = dim >= 2 ? order : 1;
+    constexpr index_t j0range = dim >= 1 ? order : 1;
+
+    for (index_t j2 = 0; j2 < j2range; j2++) {
+      for (index_t j1 = 0; j1 < j1range; j1++) {
         double n1n2;
         if constexpr (dim == 3) {
           n1n2 = n1[j1] * n2[j2];
         }
-        for (index_t j0 = 0; j0 < order; j0++) {
+        for (index_t j0 = 0; j0 < j0range; j0++) {
           const index_t node = j0 + order * (j1 + order * j2);
-          if constexpr (dim == 2) {
-            N[node] = n0[j0] * n1[j1];
-          } else {
+          if constexpr (dim == 3) {
             N[node] = n0[j0] * n1n2;
+          } else if constexpr (dim == 2) {
+            N[node] = n0[j0] * n1[j1];
+          } else {  // dim == 1
+            N[node] = n0[j0];
           }
         }
       }
@@ -1458,6 +1616,16 @@ template <typename T, index_t C, index_t degree,
           InterpolationType interp_type = GLL_INTERPOLATION>
 using LagrangeL2QuadBasis =
     LagrangeL2HypercubeBasis<T, 2, C, degree, interp_type>;
+
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
+using LagrangeH1LineBasis =
+    LagrangeH1HypercubeBasis<T, 1, C, degree, interp_type>;
+
+template <typename T, index_t C, index_t degree,
+          InterpolationType interp_type = GLL_INTERPOLATION>
+using LagrangeL2LineBasis =
+    LagrangeL2HypercubeBasis<T, 1, C, degree, interp_type>;
 
 }  // namespace A2D
 

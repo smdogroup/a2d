@@ -62,14 +62,14 @@ int main(int argc, char *argv[]) {
   bcinfo.add_boundary_condition(bc_label);
 
   // Set the traction components
-  T t[3] = {1.0, 0.0, 0.0};
+  T t[3] = {0.0, 0.0, 0.0};
 
   // Set the body force components
   T tb[3] = {0.0, 0.0, 0.0};
 
   // Set the torque components
-  T tt[3] = {0.0, 0.0, 0.0};
-  T x0[3] = {0.0, 0.5, 0.5};
+  T tt[3] = {1.0, 0.0, 0.0};
+  T x0[3] = {0.0, 0.0, 0.0};
 
   // Create the finite-element model
   T E = 70.0e3, nu = 0.3, q = 5.0;

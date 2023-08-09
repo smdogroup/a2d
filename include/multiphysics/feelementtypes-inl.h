@@ -6,6 +6,113 @@
 namespace A2D {
 
 /**
+ * @brief Get the degrees of freedom associated with the vertex
+ *
+ * @tparam offset Offset into the global degree of freedom array
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param v Vertex index
+ * @param element Element degree of freedom array
+ * @param entity Entity degree of freedom array
+ */
+template <index_t offset, index_t ndof, index_t nx, class ElemDof,
+          class EntityDof>
+void ElementTypes::get_line_vert_dof(index_t v, const ElemDof& element,
+                                     EntityDof& entity) {
+  const index_t start = offset + ndof * (nx - 1) * v;
+  for (index_t i = 0; i < ndof; i++) {
+    entity[i] = element[start + i];
+  }
+}
+
+/**
+ * @brief Set the degrees of freedom associated with the vertex
+ *
+ * @tparam offset Offset into the global degree of freedom array
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param v Vertex index
+ * @param element Element degree of freedom array
+ * @param entity Entity degree of freedom array
+ */
+template <index_t offset, index_t ndof, index_t nx, class EntityDof,
+          class ElemDof>
+void ElementTypes::set_line_vert_dof(index_t v, const EntityDof& entity,
+                                     ElemDof& element) {
+  const index_t start = offset + ndof * (nx - 1) * v;
+  for (index_t i = 0; i < ndof; i++) {
+    element[start + i] = entity[i];
+  }
+}
+
+/**
+ * @brief Get the degrees of freedom from the edge
+ *
+ * @tparam offset Offset into the element dof array
+ * @tparam ends Include the end points of the edge or not
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param element Element degrees of freedom
+ * @param entity Entity degrees of freedom
+ */
+template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,
+          class EntityDof>
+void ElementTypes::get_line_edge_dof(const ElemDof& element,
+                                     EntityDof& entity) {
+  if constexpr (ends) {
+    for (index_t j = 0; j < nx; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        entity[ndof * j + i] = element[offset + ndof * j + i];
+      }
+    }
+  } else {
+    for (index_t j = 1; j < nx - 1; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        entity[ndof * j + i] = element[offset + ndof * j + i];
+      }
+    }
+  }
+}
+
+/**
+ * @brief Set the degrees of freedom from the edge
+ *
+ * @tparam offset Offset into the element dof array
+ * @tparam ends Include the end points of the edge or not
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param element Element degrees of freedom
+ * @param entity Entity degrees of freedom
+ */
+template <index_t offset, bool ends, index_t ndof, index_t nx, class EntityDof,
+          class ElemDof>
+void ElementTypes::set_line_edge_dof(const index_t orient,
+                                     const EntityDof& entity,
+                                     ElemDof& element) {
+  if constexpr (ends) {
+    for (index_t j = 0; j < nx; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        element[offset + ndof * j + i] = entity[ndof * j + i];
+      }
+    }
+  } else {
+    for (index_t j = 1; j < nx - 1; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        element[offset + ndof * j + i] = entity[ndof * j + i];
+      }
+    }
+  }
+}
+
+/**
  * @brief Given a reference face, find the orientation
  *
  * @param ref

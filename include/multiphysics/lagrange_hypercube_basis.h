@@ -972,7 +972,9 @@ class LagrangeL2HypercubeBasis {
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 1 and entity == ET::LINE) or
+        (dim == 2 and entity == ET::FACE) or
+        (dim == 3 and entity == ET::VOLUME)) {
       return ndof;
     }
     return 0;
@@ -992,7 +994,9 @@ class LagrangeL2HypercubeBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 1 and entity == ET::LINE) or
+        (dim == 2 and entity == ET::FACE) or
+        (dim == 3 and entity == ET::VOLUME)) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
       }
@@ -1014,7 +1018,9 @@ class LagrangeL2HypercubeBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if (entity == ET::VOLUME) {
+    if ((dim == 1 and entity == ET::LINE) or
+        (dim == 2 and entity == ET::FACE) or
+        (dim == 3 and entity == ET::VOLUME)) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];
       }

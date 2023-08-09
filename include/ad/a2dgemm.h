@@ -84,33 +84,34 @@ class ADMatMatMultExpr {
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-auto MatMatMult(ADMat<Mat<T, N, M>>& A, ADMat<Mat<T, K, L>>& B,
-                ADMat<Mat<T, P, Q>>& C) {
+A2D_INLINE_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A,
+                                    ADMat<Mat<T, K, L>>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
   return ADMatMatMultExpr<T, N, M, K, L, P, Q, opA, opB, VarAd::AD, VarAd::AD>(
       A, B, C);
 }
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-auto MatMatMult(Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
-                ADMat<Mat<T, P, Q>>& C) {
+A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
   return ADMatMatMultExpr<T, N, M, K, L, P, Q, opA, opB, VarAd::CONST,
                           VarAd::AD>(A, B, C);
 }
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-auto MatMatMult(ADMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
-                ADMat<Mat<T, P, Q>>& C) {
+A2D_INLINE_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
   return ADMatMatMultExpr<T, N, M, K, L, P, Q, opA, opB, VarAd::AD,
                           VarAd::CONST>(A, B, C);
 }
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-auto MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B, Mat<T, P, Q>& C) {
-  return ADMatMatMultExpr<T, N, M, K, L, P, Q, opA, opB, VarAd::CONST,
-                          VarAd::CONST>(A, B, C);
+A2D_INLINE_FUNCTION void MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
+                                    Mat<T, P, Q>& C) {
+  MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(A, B, C);
 }
 
 }  // namespace A2D

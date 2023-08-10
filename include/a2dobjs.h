@@ -159,6 +159,11 @@ class Vec {
 };
 
 template <typename T, int M, int N>
+T* get_data(Mat<T, M, N>& A) {
+  return A.A;
+}
+
+template <typename T, int M, int N>
 class Mat {
  public:
   typedef T type;
@@ -216,6 +221,11 @@ class Mat {
 
   T A[M * N];
 };
+
+template <typename T, int M, int N>
+T* get_data(Mat<T, M, N>& A) {
+  return A.A;
+}
 
 template <typename T, int N>
 class SymmMat {
@@ -278,94 +288,10 @@ class SymmMat {
   T A[MAT_SIZE];
 };
 
-/*
-  Full 4-th order tensor without any symmetry.
-
-  This tensor class is required for mixed second order derivatives of
-  two matrices X and Y such that
-
-  A(i, j, k, l) = d^2 f/dX(i, j) dY(k, l)
-*/
-template <typename T, int M, int N, int P, int Q>
-class Tensor {
- public:
-  typedef T type;
-  static const int TENSOR_SIZE = M * N * P * Q;
-  A2D_INLINE_FUNCTION Tensor() {
-    for (int i = 0; i < TENSOR_SIZE; i++) {
-      A[i] = 0.0;
-    }
-  }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j,
-                                    const IdxType k, const IdxType l) {
-    return A[l + Q * (k + P * (j + N * i))];
-  }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType i, const IdxType j,
-                                          const IdxType k,
-                                          const IdxType l) const {
-    return A[l + Q * (k + P * (j + N * i))];
-  }
-
-  T* data() { return A; }
-
-  T A[TENSOR_SIZE];
-};
-
-/*
-  Basic 4-th order symmetric tensor.
-
-  This class stores a symmetric tensor found by taking the second order
-  derivatives of a scalar function f with respect to a non-symmetric M-by-N
-  matrix:
-
-  A(i, j, k, l) = d^2 f/dX(i, j) dX(k, l)
-
-  As a result:
-
-  A(i, j, k, l) = A(k, l, i, j).
-*/
-template <typename T, int M, int N>
-class SymmTensor {
- public:
-  typedef T type;
-  static const int TENSOR_SIZE = (M * N * (M * N + 1)) / 2;
-  A2D_INLINE_FUNCTION SymmTensor() {
-    for (int i = 0; i < TENSOR_SIZE; i++) {
-      A[i] = 0.0;
-    }
-  }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType i, const IdxType j,
-                                    const IdxType k, const IdxType l) {
-    const int ii = N * i + j;
-    const int jj = N * k + l;
-
-    if (ii >= jj) {
-      return A[jj + ii * (ii + 1) / 2];
-    } else {
-      return A[ii + jj * (jj + 1) / 2];
-    }
-  }
-  template <class IdxType>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType i, const IdxType j,
-                                          const IdxType k,
-                                          const IdxType l) const {
-    const int ii = N * i + j;
-    const int jj = N * k + l;
-
-    if (ii >= jj) {
-      return A[jj + ii * (ii + 1) / 2];
-    } else {
-      return A[ii + jj * (jj + 1) / 2];
-    }
-  }
-
-  T* data() { return A; }
-
-  T A[TENSOR_SIZE];
-};
+template <typename T, int M>
+T* get_data(SymmMat<T, M>& A) {
+  return A.A;
+}
 
 }  // namespace A2D
 

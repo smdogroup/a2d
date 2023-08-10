@@ -1,22 +1,9 @@
 #ifndef A2D_GEMMCORE_H
 #define A2D_GEMMCORE_H
 
+#include "a2denum.h"
+
 namespace A2D {
-
-enum class MatOp { NORMAL, TRANSPOSE };
-
-template <MatOp op>
-struct negate_op {};
-
-template <>
-struct negate_op<MatOp::NORMAL> {
-  static constexpr MatOp value = MatOp::TRANSPOSE;
-};
-
-template <>
-struct negate_op<MatOp::TRANSPOSE> {
-  static constexpr MatOp value = MatOp::NORMAL;
-};
 
 template <bool B, int i, int j>
 struct int_conditional {};
@@ -300,13 +287,37 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[],
 }
 
 /**
- * @brief The dispatcher.
+ * @brief matrix-matrix multiplication C = alpha * Op(A) * Op(B), where op is
+ * normal (nominal) or transpose
+ *
+ * @note This function acts as a dispatcher for specialized versions of the
+ * matrix multiplication function, falling back on the general implementation.
+ * This also verifies the dimensions of the inputs and outputs are
+ * appropriate for the multiplication to be executed.
+ *
+ * @tparam T: scalar type
+ * @tparam Anrows: number of rows of A
+ * @tparam Ancols: number of cols of A
+ * @tparam Bnrows: number of rows of B
+ * @tparam Bncols: number of cols of B
+ * @tparam Cnrows: number of rows of C
+ * @tparam Cncols: number of cols of C
+ * @tparam opA: transpose A or not
+ * @tparam opB: transpose B or not
+ * @tparam opC: transpose C or not
+ * @tparam additive: true for increment (C += ..), false for assignment (C = ..)
+ * @tparam scale: true if result should be scaled by alpha before output
+ *
+ * @param[in] A: Anrows-by-Ancols matrix
+ * @param[in] B: Bnrows-by-Bncols matrix
+ * @param[in, out] C: Cnrows-by-Cncols matrix
+ * @param[in] alpha: the scalar
  */
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, MatOp opC = MatOp::NORMAL,
           bool additive = false, bool scale = false>
-void MatMatMultCore(const T A[], const T B[], T C[], T alpha = 1.0) {
+inline void MatMatMultCore(const T A[], const T B[], T C[], T alpha = 1.0) {
   // Check if shapes are consistent
   if constexpr (opC == MatOp::NORMAL) {
     if constexpr (opA == MatOp::TRANSPOSE && opB == MatOp::TRANSPOSE) {

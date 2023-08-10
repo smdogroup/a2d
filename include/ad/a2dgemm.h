@@ -21,15 +21,6 @@ A2D_INLINE_FUNCTION T* get_mat_data(ADMat<Mat<T, m, n>> mat) {
   return mat.value().data();
 }
 
-// template <typename T, int N, int M, int K, int L, int P, int Q,
-//           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-// A2D_INLINE_FUNCTION void MatMatMult(const Mat<T, N, M>& A,
-//                                     const Mat<T, K, L>& B,
-//                                     Mat<T, P, Q>& C) noexcept {
-//   MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(A.data(), B.data(),
-//   C.data());
-// }
-
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL,
           VarAd adA = VarAd::AD, VarAd adB = VarAd::AD>

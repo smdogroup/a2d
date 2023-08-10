@@ -7,8 +7,10 @@
 #include <gtest/gtest.h>
 
 #include "a2dobjs.h"
-#include "a2dtypes.h"
 #include "a2dvecops3d.h"
+#include "ad/a2dmat.h"
+#include "ad/a2dscalar.h"
+#include "ad/a2dvec.h"
 #include "test_commons.h"
 
 using T = double;                    /*UNQ_TC_TD_01*/

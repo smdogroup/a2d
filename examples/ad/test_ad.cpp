@@ -15,21 +15,21 @@ int main() {
 
   // Test all active/passive combinations
   A2D::MatMatMult(Amat, Bmat, Cmat);
-  // A2D::MatMatMult(A, Bmat, Cmat);
-  // A2D::MatMatMult(A, B, C);
-  // A2D::MatMatMult(Amat, B, Cmat);
+  A2D::MatMatMult(A, Bmat, Cmat);
+  A2D::MatMatMult(A, B, C);
+  A2D::MatMatMult(Amat, B, Cmat);
 
-  // auto expr1 = A2D::MatMatMult(Amat, Bmat, Cmat);  // C = A * B
-  // auto expr2 = A2D::MatMatMult(Cmat, Dmat, Emat);  // E = C * D
-  // auto expr3 = A2D::MatMatMult(Emat, Fmat, Gmat);  // G = E * F
+  auto expr1 = A2D::MatMatMult(Amat, Bmat, Cmat);  // C = A * B
+  auto expr2 = A2D::MatMatMult(Cmat, Dmat, Emat);  // E = C * D
+  auto expr3 = A2D::MatMatMult(Emat, Fmat, Gmat);  // G = E * F
+  auto stack = A2D::MakeStack(expr1, expr2, expr3);
 
-  // auto stack = A2D::MakeStack(expr1, expr2, expr3);
+  stack.reverse();
+  stack.forward();
 
-  // stack.reverse();
-  // stack.forward();
-
-  // A2D::MatMatMult(A2Dmat, B2Dmat, C2Dmat);
-
-  // stack.hforward();
-  // stack.hreverse();
+  auto exprH = A2D::MatMatMult(A2Dmat, B2Dmat, C2Dmat);
+  exprH.forward();
+  exprH.reverse();
+  exprH.hforward();
+  exprH.hreverse();
 }

@@ -132,6 +132,11 @@ A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
 }
 
 template <typename T, int m, int n>
+A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
+  return mat.A.A;
+}
+
+template <typename T, int m, int n>
 A2D_INLINE_FUNCTION T* get_bdata(ADMat<Mat<T, m, n>>& mat) {
   return mat.Ab.A;
 }

@@ -14,7 +14,8 @@ template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
 A2D_INLINE_FUNCTION void MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
                                     Mat<T, P, Q>& C) {
-  MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(A, B, C);
+  MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
+                                                get_data(C));
 }
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
@@ -111,7 +112,7 @@ class A2DMatMatMultExpr {
   using Ctype = A2DMat<Mat<T, P, Q>>;
 
  public:
-  A2D_INLINE_FUNCTION ADMatMatMultExpr(Atype& A, Btype& B, Ctype& C)
+  A2D_INLINE_FUNCTION A2DMatMatMultExpr(Atype& A, Btype& B, Ctype& C)
       : A(A), B(B), C(C) {
     MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                   get_data(C));

@@ -1,27 +1,20 @@
 #ifndef A2D_GEMMCORE_H
 #define A2D_GEMMCORE_H
 
+#include "a2denum.h"
+
 namespace A2D {
 
-enum class MatOp { NORMAL, TRANSPOSE };
+template <bool B, int i, int j>
+struct int_conditional {};
 
-template <MatOp op> struct negate_op {};
-
-template <> struct negate_op<MatOp::NORMAL> {
-  static constexpr MatOp value = MatOp::TRANSPOSE;
-};
-
-template <> struct negate_op<MatOp::TRANSPOSE> {
-  static constexpr MatOp value = MatOp::NORMAL;
-};
-
-template <bool B, int i, int j> struct int_conditional {};
-
-template <int i, int j> struct int_conditional<true, i, j> {
+template <int i, int j>
+struct int_conditional<true, i, j> {
   static constexpr int value = i;
 };
 
-template <int i, int j> struct int_conditional<false, i, j> {
+template <int i, int j>
+struct int_conditional<false, i, j> {
   static constexpr int value = j;
 };
 
@@ -255,7 +248,7 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[],
           value += A[Ancols * k + i] * B[Bncols * k + j];
         } else if constexpr (opA == MatOp::NORMAL and opB == MatOp::TRANSPOSE) {
           value += A[Ancols * i + k] * B[Bncols * j + k];
-        } else { // opA, opB == MatOp::TRANSPOSE
+        } else {  // opA, opB == MatOp::TRANSPOSE
           value += A[Ancols * k + i] * B[Bncols * j + k];
         }
 
@@ -273,7 +266,7 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[],
               C[Cncols * i + j] = value;
             }
           }
-        } else { // opC == MatOp::TRANSPOSE
+        } else {  // opC == MatOp::TRANSPOSE
           if constexpr (scale) {
             if constexpr (additive) {
               C[Cncols * j + i] += alpha * value;
@@ -340,7 +333,7 @@ inline void MatMatMultCore(const T A[], const T B[], T C[], T alpha = 1.0) {
       static_assert(Ancols == Bnrows && Anrows == Cnrows && Bncols == Cncols,
                     "Matrix dimensions must agree.");
     }
-  } else { // opC == MatOp::TRANSPOSE
+  } else {  // opC == MatOp::TRANSPOSE
     if constexpr (opA == MatOp::TRANSPOSE && opB == MatOp::TRANSPOSE) {
       static_assert(Anrows == Bncols && Ancols == Cncols && Bnrows == Cnrows,
                     "Matrix dimensions must agree.");
@@ -367,10 +360,10 @@ inline void MatMatMultCore(const T A[], const T B[], T C[], T alpha = 1.0) {
     } else if constexpr (!additive and !scale) {
       MatMatMultCore3x3<T, opA, opB>(A, B, C);
     }
-  } else { // The general fallback implmentation
+  } else {  // The general fallback implmentation
     MatMatMultCoreGeneral<T, Anrows, Ancols, Bnrows, Bncols, Cnrows, Cncols,
                           opA, opB, opC, additive, scale>(A, B, C, alpha);
   }
 }
-} // namespace A2D
-#endif // A2D_GEMMCORE_H
+}  // namespace A2D
+#endif  // A2D_GEMMCORE_H

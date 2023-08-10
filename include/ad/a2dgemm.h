@@ -3,98 +3,12 @@
 
 #include <type_traits>
 
+#include "a2denum.h"
+#include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dtypes.h"
 #include "ad/core/a2dgemmcore.h"
 
 namespace A2D {
-
-/**
- * @brief Whether a variable should be automatically differentiated or not
- */
-enum class ADiffType { PASSIVE, ACTIVE };
-
-// TODO: move these to helper headers
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(Mat<T, m, n>& mat) {
-  return mat.A;
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
-  return mat.A.A;
-}
-
-/**
- * @brief Select type based on whether the matrix is passive or active (can be
- * differentiated)
- *
- * @tparam adiff_type passive or active
- * @tparam MatType the numeric type of the matrix
- */
-template <ADiffType adiff_type, class MatType>
-using ADMatType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                            ADMat<MatType>, MatType>::type;
-
-template <ADiffType adiff_type, class MatType>
-using A2DMatType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                             A2DMat<MatType>, MatType>::type;
-
-/**
- * @brief Select type based on whether the vector is passive or active (can be
- * differentiated)
- *
- * @tparam adiff_type passive or active
- * @tparam VecType the numeric type of the vector
- */
-template <ADiffType adiff_type, class VecType>
-using ADVecType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                            ADVec<VecType>, VecType>::type;
-
-template <ADiffType adiff_type, class VecType>
-using A2DVecType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                             A2DVec<VecType>, VecType>::type;
-
-/**
- * @brief Select type based on whether the scalar is passive or active (can be
- * differentiated)
- *
- * @tparam adiff_type passive or active
- * @tparam MatType the numeric type of the matrix
- */
-template <ADiffType adiff_type, typename T>
-using ADScalarType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                               ADScalar<T>, T>::type;
-
-template <ADiffType adiff_type, typename T>
-using A2DScalarType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                                A2DScalar<T>, T>::type;
-A2D_INLINE_FUNCTION T* get_data(Mat<T, m, n>& mat) { return mat.data(); }
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
-  return mat.value().data();
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_bdata(ADMat<Mat<T, m, n>>& mat) {
-  return mat.bvalue().data();
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_bdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.bvalue().data();
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_pdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.pvalue().data();
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_hdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.hvalue().data();
-}
 
 template <typename T, int N, int M, int K, int L, int P, int Q,
           MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
@@ -192,13 +106,9 @@ class A2DMatMatMultExpr {
   static constexpr MatOp not_opA = negate_op<opA>::value;
   static constexpr MatOp not_opB = negate_op<opB>::value;
 
-  using Atype =
-      typename std::conditional<adA == ADiffType::ACTIVE, A2DMat<Mat<T, N, M>>,
-                                Mat<T, N, M>>::type;
-  using Btype =
-      typename std::conditional<adB == ADiffType::ACTIVE, A2DMat<Mat<T, K, L>>,
-                                Mat<T, K, L>>::type;
-  using Ctype = typename A2DMat<Mat<T, P, Q>>;
+  using Atype = A2DMatType<adA, Mat<T, N, M>>;
+  using Btype = A2DMatType<adB, Mat<T, K, L>>;
+  using Ctype = A2DMat<Mat<T, P, Q>>;
 
  public:
   A2D_INLINE_FUNCTION ADMatMatMultExpr(Atype& A, Btype& B, Ctype& C)
@@ -209,12 +119,13 @@ class A2DMatMatMultExpr {
 
   A2D_INLINE_FUNCTION void forward() {
     if constexpr (adA == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, false>(
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, MatOp::NORMAL, false>(
           get_bdata(A), get_data(B), get_bdata(C));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, adA == ADiffType::ACTIVE>(
-          get_data(A), get_bdata(B), get_bdata(C));
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, MatOp::NORMAL,
+                     adA == ADiffType::ACTIVE>(get_data(A), get_bdata(B),
+                                               get_bdata(C));
     }
   }
 
@@ -231,12 +142,13 @@ class A2DMatMatMultExpr {
 
   A2D_INLINE_FUNCTION void hforward() {
     if constexpr (adA == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, false>(
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, MatOp::NORMAL, false>(
           get_pdata(A), get_data(B), get_pdata(C));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, adA == ADiffType::ACTIVE>(
-          get_data(A), get_pdata(B), get_pdata(C));
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, MatOp::NORMAL,
+                     adA == ADiffType::ACTIVE>(get_data(A), get_pdata(B),
+                                               get_pdata(C));
     }
   }
 

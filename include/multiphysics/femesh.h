@@ -246,6 +246,7 @@ template <class Basis>
 class ElementMesh {
  public:
   using ET = ElementTypes;
+  static constexpr index_t dim = Basis::dim;
 
   // Number of degrees of freedom for each element
   static const index_t ndof_per_element = Basis::ndof;
@@ -299,6 +300,7 @@ class DirichletBCs {
  public:
   // Use the definitions from the element types
   using ET = ElementTypes;
+  static constexpr index_t dim = Basis::dim;
 
   DirichletBCs(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
                DirichletBCInfo& bcinfo);

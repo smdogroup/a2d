@@ -25,11 +25,13 @@ struct indexpow {
 /**
  * Line (dim == 1), Quad (dim == 2) or Hex (dim == 3) high order Lagrange basis
  */
-template <typename T, index_t dim, index_t C, index_t degree,
+template <typename T, index_t Dim, index_t C, index_t degree,
           InterpolationType interp_type = GLL_INTERPOLATION>
 class LagrangeH1HypercubeBasis {
  public:
   using ET = ElementTypes;
+
+  static constexpr index_t dim = Dim;
 
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
@@ -61,12 +63,7 @@ class LagrangeH1HypercubeBasis {
         return C * (order - 2);
 
       case ET::FACE:
-        if constexpr (dim == 3) {
-          // faces of 2D mesh have 0 associated dof - because in 1D/2D faces and
-          // edges are coalesced by definition
-          return C * (order - 2) * (order - 2);
-        }
-        break;
+        return C * (order - 2) * (order - 2);
 
       case ET::VOLUME:
         return C * (order - 2) * (order - 2) * (order - 2);
@@ -96,15 +93,17 @@ class LagrangeH1HypercubeBasis {
         } else if constexpr (dim == 2) {
           ET::get_quad_vert_dof<offset, C, order, order, ElemDof, EntityDof>(
               index, element_dof, entity_dof);
-        } else {  // dim == 3
+        } else if constexpr (dim == 3) {
           ET::get_hex_vert_dof<offset, C, order, order, order, ElemDof,
                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
       case ET::EDGE:
-        // there's no dof on 1D edges because 1D edges are treated as
-        // ``volumes''
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          const bool endp = false;
+          ET::get_line_edge_dof<offset, endp, C, order, ElemDof, EntityDof>(
+              element_dof, entity_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
           ET::get_quad_edge_dof<offset, endp, C, order, order, ElemDof,
                                 EntityDof>(index, element_dof, entity_dof);
@@ -115,23 +114,18 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::FACE:
-        // there's no dof on 2D faces, 2D faces are treated as ``volumes''
-        if constexpr (dim == 3) {
+        if constexpr (dim == 2) {
+          const bool endp = false;
+          ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof,
+                                EntityDof>(element_dof, entity_dof);
+        } else if constexpr (dim == 3) {
           const bool endp = false;
           ET::get_hex_face_dof<offset, endp, C, order, order, order, ElemDof,
                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
       case ET::VOLUME:
-        if constexpr (dim == 1) {
-          const bool endp = false;
-          ET::get_line_edge_dof<offset, endp, C, order, ElemDof, EntityDof>(
-              element_dof, entity_dof);
-        } else if constexpr (dim == 2) {
-          const bool endp = false;
-          ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof,
-                                EntityDof>(element_dof, entity_dof);
-        } else {  // dim == 3
+        if constexpr (dim == 3) {
           const bool endp = false;
           ET::get_hex_volume_dof<offset, endp, C, order, order, order, ElemDof,
                                  EntityDof>(element_dof, entity_dof);
@@ -162,15 +156,17 @@ class LagrangeH1HypercubeBasis {
         } else if constexpr (dim == 2) {
           ET::set_quad_vert_dof<offset, C, order, order, EntityDof, ElemDof>(
               index, entity_dof, element_dof);
-        } else {  // dim == 3
+        } else if constexpr (dim == 3) {
           ET::set_hex_vert_dof<offset, C, order, order, order, EntityDof,
                                ElemDof>(index, entity_dof, element_dof);
         }
         break;
       case ET::EDGE:
-        // there's no dof on 1D edges because 1D edges are treated as
-        // ``volumes''
-        if constexpr (dim == 2) {
+        if constexpr (dim == 1) {
+          const bool endp = false;
+          ET::set_line_edge_dof<offset, endp, C, order, EntityDof, ElemDof>(
+              orient, entity_dof, element_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
           ET::set_quad_edge_dof<offset, endp, C, order, order, EntityDof,
                                 ElemDof>(index, orient, entity_dof,
@@ -182,23 +178,18 @@ class LagrangeH1HypercubeBasis {
         }
         break;
       case ET::FACE:
-        // there's no dof on 2D faces, 2D faces are treated as ``volumes''
-        if constexpr (dim == 3) {
+        if constexpr (dim == 2) {
+          const bool endp = false;
+          ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof,
+                                ElemDof>(orient, entity_dof, element_dof);
+        } else if constexpr (dim == 3) {
           const bool endp = false;
           ET::set_hex_face_dof<offset, endp, C, order, order, order, EntityDof,
                                ElemDof>(index, orient, entity_dof, element_dof);
         }
         break;
       case ET::VOLUME:
-        if constexpr (dim == 1) {
-          const bool endp = false;
-          ET::set_line_edge_dof<offset, endp, C, order, EntityDof, ElemDof>(
-              orient, entity_dof, element_dof);
-        } else if constexpr (dim == 2) {
-          const bool endp = false;
-          ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof,
-                                ElemDof>(orient, entity_dof, element_dof);
-        } else {  // dim == 3
+        if constexpr (dim == 3) {
           const bool endp = false;
           ET::set_hex_volume_dof<offset, endp, C, order, order, order,
                                  EntityDof, ElemDof>(entity_dof, element_dof);
@@ -942,11 +933,13 @@ class LagrangeH1HypercubeBasis {
   }
 };
 
-template <typename T, index_t dim, index_t C, index_t degree,
+template <typename T, index_t Dim, index_t C, index_t degree,
           InterpolationType interp_type = GAUSS_INTERPOLATION>
 class LagrangeL2HypercubeBasis {
  public:
   using ET = ElementTypes;
+
+  static constexpr index_t dim = Dim;
 
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
@@ -972,7 +965,7 @@ class LagrangeL2HypercubeBasis {
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if ((dim == 1 and entity == ET::LINE) or
+    if ((dim == 1 and entity == ET::EDGE) or
         (dim == 2 and entity == ET::FACE) or
         (dim == 3 and entity == ET::VOLUME)) {
       return ndof;
@@ -994,7 +987,7 @@ class LagrangeL2HypercubeBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if ((dim == 1 and entity == ET::LINE) or
+    if ((dim == 1 and entity == ET::EDGE) or
         (dim == 2 and entity == ET::FACE) or
         (dim == 3 and entity == ET::VOLUME)) {
       for (index_t i = 0; i < ndof; i++) {
@@ -1018,7 +1011,7 @@ class LagrangeL2HypercubeBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if ((dim == 1 and entity == ET::LINE) or
+    if ((dim == 1 and entity == ET::EDGE) or
         (dim == 2 and entity == ET::FACE) or
         (dim == 3 and entity == ET::VOLUME)) {
       for (index_t i = 0; i < ndof; i++) {

@@ -1357,13 +1357,28 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
 
       // The volume DOF are always owned by the element - no need to check
       // for the element that owns them
-      index_t ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
+      index_t ndof;
+      if constexpr (dim == 3) {
+        ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
+      } else if constexpr (dim == 2) {
+        ndof = Basis::get_entity_ndof(basis, ET::FACE, 0);
+      } else if constexpr (dim == 1) {
+        ndof = Basis::get_entity_ndof(basis, ET::EDGE, 0);
+      }
 
       for (index_t i = 0; i < ndof; i++, dof_counter++) {
         dof[i] = dof_counter;
       }
-      Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
-      Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
+      if constexpr (dim == 3) {
+        Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
+      } else if constexpr (dim == 2) {
+        Basis::set_entity_dof(basis, ET::FACE, 0, 0, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::FACE, 0, 0, elem_sign);
+      } else if constexpr (dim == 1) {
+        Basis::set_entity_dof(basis, ET::EDGE, 0, 0, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::EDGE, 0, 0, elem_sign);
+      }
 
       // Order the faces
       const index_t* faces;
@@ -1374,7 +1389,13 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
         if (face_owners[face] == NO_INDEX || face_owners[face] == elem) {
           face_owners[face] = elem;
 
-          ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
+          if constexpr (dim == 3) {
+            ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
+          } else if constexpr (dim == 2) {
+            ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
+          } else {
+            ndof = 0;
+          }
           for (index_t i = 0; i < ndof; i++, dof_counter++) {
             dof[i] = dof_counter;
           }
@@ -1389,9 +1410,15 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
               index_t nverts = conn.get_element_face_verts(owner_elem, i, ref);
               conn.get_element_face_verts(elem, index, verts);
 
-              Basis::get_entity_dof(basis, ET::FACE, i,
-                                    &element_dof[owner_elem * ndof_per_element],
-                                    dof);
+              if constexpr (dim == 3) {
+                Basis::get_entity_dof(
+                    basis, ET::FACE, i,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+              } else if constexpr (dim == 2) {
+                Basis::get_entity_dof(
+                    basis, ET::EDGE, i,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+              }
 
               if (nverts == 4) {
                 orient = ET::get_quad_face_orientation(ref, verts);
@@ -1401,8 +1428,13 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           }
         }
 
-        Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::FACE, index, orient, elem_sign);
+        if constexpr (dim == 3) {
+          Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof);
+          Basis::set_entity_signs(basis, ET::FACE, index, orient, elem_sign);
+        } else if constexpr (dim == 2) {
+          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
+          Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
+        }
       }
 
       // Order the edges
@@ -1414,7 +1446,11 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
         if (edge_owners[edge] == NO_INDEX || edge_owners[edge] == elem) {
           edge_owners[edge] = elem;
 
-          ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
+          if constexpr (dim == 3) {
+            ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
+          } else {
+            ndof = 0;
+          }
           for (index_t i = 0; i < ndof; i++, dof_counter++) {
             dof[i] = dof_counter;
           }
@@ -1429,9 +1465,11 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
               conn.get_element_edge_verts(owner_elem, i, ref);
               conn.get_element_edge_verts(elem, index, verts);
 
-              Basis::get_entity_dof(basis, ET::EDGE, i,
-                                    &element_dof[owner_elem * ndof_per_element],
-                                    dof);
+              if constexpr (dim == 3) {
+                Basis::get_entity_dof(
+                    basis, ET::EDGE, i,
+                    &element_dof[owner_elem * ndof_per_element], dof);
+              }
 
               if (ref[0] == verts[1] && ref[1] == verts[0]) {
                 orient = 1;
@@ -1441,8 +1479,10 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           }
         }
 
-        Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
+        if constexpr (dim == 3) {
+          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
+          Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
+        }
       }
 
       // Order the vertices
@@ -1571,8 +1611,10 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
           index_t edge_index = e[j];
 
           // Get the vertex dof from the interior element
-          InteriorBasis::get_entity_dof(basis, ET::EDGE, edge_index, dof,
-                                        entity_dof);
+          if constexpr (dim == 3) {
+            InteriorBasis::get_entity_dof(basis, ET::EDGE, edge_index, dof,
+                                          entity_dof);
+          }
 
           // Get the edge orientation relative to the face
           index_t orient = 0;
@@ -1581,10 +1623,12 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
           index_t surf_edge_index = j;
 
           // Set the same edge on the corresponding surface
-          Basis::set_entity_dof(basis, ET::EDGE, surf_edge_index, orient,
-                                entity_dof, surf_dof);
-          Basis::set_entity_signs(basis, ET::EDGE, surf_edge_index, orient,
-                                  surf_signs);
+          if constexpr (dim == 3) {
+            Basis::set_entity_dof(basis, ET::EDGE, surf_edge_index, orient,
+                                  entity_dof, surf_dof);
+            Basis::set_entity_signs(basis, ET::EDGE, surf_edge_index, orient,
+                                    surf_signs);
+          }
         }
       }
 
@@ -1592,13 +1636,25 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
       for (index_t basis = 0; basis < InteriorBasis::nbasis; basis++) {
         // Get the degrees of freeom from the element
         index_t orient = 0;
-        InteriorBasis::get_entity_dof(basis, ET::FACE, face_index, dof,
-                                      entity_dof);
+        if constexpr (dim == 3) {
+          InteriorBasis::get_entity_dof(basis, ET::FACE, face_index, dof,
+                                        entity_dof);
+        } else if constexpr (dim == 2) {
+          InteriorBasis::get_entity_dof(basis, ET::EDGE, face_index, dof,
+                                        entity_dof);
+        }
 
         // Set the degrees of freedom - the face element has the same
         // orientation as its interior owner
-        Basis::set_entity_dof(basis, ET::FACE, 0, orient, entity_dof, surf_dof);
-        Basis::set_entity_signs(basis, ET::FACE, 0, orient, surf_signs);
+        if constexpr (dim == 3) {
+          Basis::set_entity_dof(basis, ET::FACE, 0, orient, entity_dof,
+                                surf_dof);
+          Basis::set_entity_signs(basis, ET::FACE, 0, orient, surf_signs);
+        } else if constexpr (dim == 2) {
+          Basis::set_entity_dof(basis, ET::EDGE, 0, orient, entity_dof,
+                                surf_dof);
+          Basis::set_entity_signs(basis, ET::EDGE, 0, orient, surf_signs);
+        }
       }
 
       elem_count++;
@@ -1788,9 +1844,16 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
 
       for (index_t basis = 0; basis < Basis::nbasis; basis++) {
         if (bcinfo.active_for_basis(label, basis)) {
-          index_t nface_dof =
-              Basis::get_entity_ndof(basis, ET::FACE, face_index);
-          Basis::get_entity_dof(basis, ET::FACE, face_index, elem_dof, dof);
+          index_t nface_dof;
+          if constexpr (dim == 3) {
+            nface_dof = Basis::get_entity_ndof(basis, ET::FACE, face_index);
+            Basis::get_entity_dof(basis, ET::FACE, face_index, elem_dof, dof);
+          } else if constexpr (dim == 2) {
+            nface_dof = Basis::get_entity_ndof(basis, ET::EDGE, face_index);
+            Basis::get_entity_dof(basis, ET::EDGE, face_index, elem_dof, dof);
+          } else {
+            nface_dof = 0;
+          }
 
           for (index_t k = 0; k < nface_dof; k++) {
             bool active = bcinfo.active_for_dof(label, basis,
@@ -1811,9 +1874,13 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
           for (index_t j = 0; j < ne; j++) {
             index_t edge_index = e[j];
 
-            index_t nedge_dof =
-                Basis::get_entity_ndof(basis, ET::EDGE, edge_index);
-            Basis::get_entity_dof(basis, ET::EDGE, edge_index, elem_dof, dof);
+            index_t nedge_dof;
+            if constexpr (dim == 3) {
+              nedge_dof = Basis::get_entity_ndof(basis, ET::EDGE, edge_index);
+              Basis::get_entity_dof(basis, ET::EDGE, edge_index, elem_dof, dof);
+            } else {
+              nedge_dof = 0;
+            }
 
             for (index_t k = 0; k < nedge_dof; k++) {
               bool active = bcinfo.active_for_dof(label, basis,

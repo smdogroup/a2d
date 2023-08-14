@@ -32,16 +32,12 @@ enum class ADseed { b, p, h };
  * @tparam FalseVal the value user gets if B is false
  */
 template <class T, bool B, T TrueVal, T FalseVal>
-struct conditional_value {};
-
+struct conditional_value {
+  static constexpr T value = FalseVal;
+};
 template <class T, T TrueVal, T FalseVal>
 struct conditional_value<T, true, TrueVal, FalseVal> {
   static constexpr T value = TrueVal;
-};
-
-template <class T, T TrueVal, T FalseVal>
-struct conditional_value<T, false, TrueVal, FalseVal> {
-  static constexpr T value = FalseVal;
 };
 
 }  // namespace A2D

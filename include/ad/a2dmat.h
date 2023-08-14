@@ -136,41 +136,53 @@ A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
 
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_bdata(ADMat<Mat<T, m, n>>& mat) {
-  return mat.Ab.A;
-}
+/**
+ * @brief Get pointer to seed data (bvalue, pvalue, hvalue) from
+ * Mat/ADMat/A2DMat objects
+ */
+template <ADseed seed>
+class GetSeed {
+ public:
+  template <typename T, int m, int n>
+  static A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
+    return mat.Ab.A;
+  }
 
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_bdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.Ab.A;
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_pdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.Ap.A;
-}
-
-template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_hdata(A2DMat<Mat<T, m, n>>& mat) {
-  return mat.Ah.A;
-}
+  template <typename T, int m, int n>
+  static A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DMat");
+    if constexpr (seed == ADseed::b) {
+      return mat.Ab.A;
+    } else if constexpr (seed == ADseed::p) {
+      return mat.Ap.A;
+    } else {  // seed == ADseed::h
+      return mat.Ah.A;
+    }
+  }
+};
 
 /**
  * @brief Select type based on whether the matrix is passive or active (can be
  * differentiated)
  *
+ * For example, the following types are equivalent:
+ *
+ * Mat<...>    == ADMatType<ADiffType::PASSIVE, *,               Mat<...>>;
+ * ADMat<...>  == ADMatType<ADiffType::ACTIVE,  ADorder::FIRST,  Mat<...>>;
+ * A2DMat<...> == ADMatType<ADiffType::ACTIVE,  ADorder::SECOND, Mat<...>>;
+ *
  * @tparam adiff_type passive or active
+ * @tparam order first (AD) or second (A2D)
  * @tparam MatType the numeric type of the matrix
  */
-template <ADiffType adiff_type, class MatType>
-using ADMatType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                            ADMat<MatType>, MatType>::type;
-
-template <ADiffType adiff_type, class MatType>
-using A2DMatType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                             A2DMat<MatType>, MatType>::type;
-
+template <ADiffType adiff_type, ADorder order, class MatType>
+using ADMatType = typename std::conditional<
+    adiff_type == ADiffType::ACTIVE,
+    typename std::conditional<order == ADorder::FIRST, ADMat<MatType>,
+                              A2DMat<MatType>>::type,
+    MatType>::type;
 }  // namespace A2D
 
 #endif  // A2D_MAT_H

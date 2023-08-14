@@ -13,37 +13,37 @@ class Vec {
 
   A2D_INLINE_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {
-      x[i] = 0.0;
+      V[i] = 0.0;
     }
   }
   A2D_INLINE_FUNCTION Vec(const T* vals) {
     for (int i = 0; i < N; i++) {
-      x[i] = vals[i];
+      V[i] = vals[i];
     }
   }
   template <class VecType>
   A2D_INLINE_FUNCTION Vec(const VecType& vec) {
     for (int i = 0; i < N; i++) {
-      x[i] = vec(i);
+      V[i] = vec(i);
     }
   }
   A2D_INLINE_FUNCTION void zero() {
     for (int i = 0; i < N; i++) {
-      x[i] = 0.0;
+      V[i] = 0.0;
     }
   }
   template <class IdxType>
   A2D_INLINE_FUNCTION T& operator()(const IdxType i) {
-    return x[i];
+    return V[i];
   }
   template <class IdxType>
   A2D_INLINE_FUNCTION const T& operator()(const IdxType i) const {
-    return x[i];
+    return V[i];
   }
 
-  T* data() { return x; }
+  T* data() { return V; }
 
-  T x[N];
+  T V[N];
 };
 
 template <class VecType>
@@ -65,33 +65,71 @@ template <class VecType>
 class A2DVec {
  public:
   A2D_INLINE_FUNCTION A2DVec() {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& x) : x(x) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& x, const VecType& xb)
-      : x(x), xb(xb) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& x, const VecType& xb,
-                             const VecType& xp)
-      : x(x), xb(xb), xp(xp) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& x, const VecType& xb,
-                             const VecType& xp, const VecType& xh)
-      : x(x), xb(xb), xp(xp), xh(xh) {}
+  A2D_INLINE_FUNCTION A2DVec(const VecType& V) : V(V) {}
+  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb)
+      : V(V), Vb(Vb) {}
+  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
+                             const VecType& Vp)
+      : V(V), Vb(Vb), Vp(Vp) {}
+  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
+                             const VecType& Vp, const VecType& Vh)
+      : V(V), Vb(Vb), Vp(Vp), Vh(Vh) {}
 
-  A2D_INLINE_FUNCTION VecType& value() { return x; }
-  A2D_INLINE_FUNCTION const VecType& value() const { return x; }
+  A2D_INLINE_FUNCTION VecType& value() { return V; }
+  A2D_INLINE_FUNCTION const VecType& value() const { return V; }
 
-  A2D_INLINE_FUNCTION VecType& bvalue() { return xb; }
-  A2D_INLINE_FUNCTION const VecType& bvalue() const { return xb; }
+  A2D_INLINE_FUNCTION VecType& bvalue() { return Vb; }
+  A2D_INLINE_FUNCTION const VecType& bvalue() const { return Vb; }
 
-  A2D_INLINE_FUNCTION VecType& pvalue() { return xp; }
-  A2D_INLINE_FUNCTION const VecType& pvalue() const { return xp; }
+  A2D_INLINE_FUNCTION VecType& pvalue() { return Vp; }
+  A2D_INLINE_FUNCTION const VecType& pvalue() const { return Vp; }
 
-  A2D_INLINE_FUNCTION VecType& hvalue() { return xh; }
-  A2D_INLINE_FUNCTION const VecType& hvalue() const { return *xh; }
+  A2D_INLINE_FUNCTION VecType& hvalue() { return Vh; }
+  A2D_INLINE_FUNCTION const VecType& hvalue() const { return *Vh; }
 
-  VecType x;
-  VecType xb;
-  VecType xp;
-  VecType xh;
+  VecType V;
+  VecType Vb;
+  VecType Vp;
+  VecType Vh;
 };
+
+/**
+ * @brief Get data pointers from Mat/ADMat/A2DMat objects
+ */
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_data(Vec<T, n>& vec) {
+  return vec.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, n>>& vec) {
+  return vec.V.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, n>>& vec) {
+  return vec.V.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_bdata(ADVec<Vec<T, n>>& vec) {
+  return vec.Vb.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_bdata(A2DVec<Vec<T, n>>& vec) {
+  return vec.Vb.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_pdata(A2DVec<Vec<T, n>>& vec) {
+  return vec.Vp.V;
+}
+
+template <typename T, int n>
+A2D_INLINE_FUNCTION T* get_hdata(A2DVec<Vec<T, n>>& vec) {
+  return vec.Vh.V;
+}
 
 /**
  * @brief Select type based on whether the vector is passive or active (can be

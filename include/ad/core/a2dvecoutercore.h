@@ -1,6 +1,7 @@
 #ifndef A2D_VEC_OUTER_CORE_H
 #define A2D_VEC_OUTER_CORE_H
 
+namespace A2D {
 /*
   Compute the outer product of two vectors
 
@@ -27,5 +28,7 @@ inline void VecOuterCore(const T alpha, const T x[], const T y[], T A[]) {
     }
   }
 }
+
+}  // namespace A2D
 
 #endif  //  A2D_VEC_OUTER_CORE_H

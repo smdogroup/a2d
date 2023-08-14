@@ -1,13 +1,20 @@
 #ifndef A2D_VEC_OUTER_H
 #define A2D_VEC_OUTER_H
 
+#include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dtypes.h"
-#include "ad/core/a2dmatvecinnercore.h"
+#include "a2dscalar.h"
+#include "a2dvec.h"
+#include "ad/core/a2dmatinnercore.h"
+#include "ad/core/a2dmatveccore.h"
 #include "ad/core/a2dvecoutercore.h"
-#include "ad/corea/2dmatveccore.h"
 
 namespace A2D {
+
+template <typename T, int M, int N>
+void VecOuter(T alpha, Vec<T, M>& x, Vec<T, N>& y, Mat<T, M, N>& A) {
+  VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
+}
 
 /*
   Compute the vector outer product
@@ -26,51 +33,52 @@ namespace A2D {
   bar{x} = alpha * bar{A} * y
   bar{y} = alpha * bar{A}^{T} * x
 */
-
-template <typename T, int M, int N, VarAd adAlpha = VarAD::AD,
-          VarAD adx = VarAd::AD, VarAd ady = VarAD::AD, bool additive = false,
-          bool scale = false>
+template <typename T, int M, int N, ADiffType adAlpha = ADiffType::ACTIVE,
+          ADiffType adx = ADiffType::ACTIVE, ADiffType ady = ADiffType::ACTIVE,
+          bool additive = false>
 class ADVecOuterExpr {
  private:
-  using alphaType =
-      typename std::conditional<adAlpha == VarAd::AD, ADScalar<T>, T>::type;
-  using xType = typename std::conditional<adx == VarAd::AD, ADVec<Vec<T, M>>,
-                                          Vec<T, M>>::type;
-  using yType = typename std::conditional<ady == VarAd::AD, ADVec<Vec<T, N>>,
-                                          Vec<T, N>>::type;
+  using alphaType = ADScalarType<adAlpha, T>;
+  using xType = ADVecType<adx, Vec<T, M>>;
+  using yType = ADVecType<ady, Vec<T, N>>;
+  using AType = ADMat<Mat<T, M, N>>;
 
  public:
-  A2D_INLINE_FUNCTION
-  ADVecOuterExpr(alphaType& alpha, xType& x, yType& y, ADMat<Mat<T, M, N>>& A)
+  A2D_INLINE_FUNCTION ADVecOuterExpr(alphaType& alpha, xType& x, yType& y,
+                                     AType& A)
       : alpha(alpha), x(x), y(y), A(A) {
     VecOuterCore<T, M, N>(get_data(alpha), get_data(x), get_data(y),
                           get_data(A));
   }
 
   void forward() {
-    if constexpr (adAlpha == VarAD::AD) {
-      VecOuterCore<T, M, N>(get_bdata(alpha), get_data(x), get_data(y),
-                            get_bdata(A));
+    if constexpr (adAlpha == ADiffType::ACTIVE) {
+      constexpr bool additive = false;
+      VecOuterCore<T, M, N, additive>(get_bdata(alpha), get_data(x),
+                                      get_data(y), get_bdata(A));
     }
-    if constexpr (xad == VarAD::AD) {
-      VecOuterCore<T, M, N>(get_data(alpha), get_bdata(x), get_data(y),
-                            get_bdata(A));
+    if constexpr (adx == ADiffType::ACTIVE) {
+      constexpr bool additive = (adAlpha == ADiffType::ACTIVE);
+      VecOuterCore<T, M, N, additive>(get_data(alpha), get_bdata(x),
+                                      get_data(y), get_bdata(A));
     }
-    if constexpr (yad == VarAD::AD) {
-      VecOuterCore<T, M, N>(get_data(alpha), get_data(x), get_bdata(y),
-                            get_bdata(A));
+    if constexpr (ady == ADiffType::ACTIVE) {
+      constexpr bool additive =
+          (adAlpha == ADiffType::ACTIVE or adx == ADiffType::ACTIVE);
+      VecOuterCore<T, M, N, additive>(get_data(alpha), get_data(x),
+                                      get_bdata(y), get_bdata(A));
     }
   }
   void reverse() {
-    if constexpr (adAlpha == VarAD::AD) {
+    if constexpr (adAlpha == ADiffType::ACTIVE) {
       alpha.bvalue +=
           MatInnerCore<T, M, N>(get_bdata(A), get_data(x), get_data(y));
     }
-    if constexpr (xad == VarAD::AD) {
+    if constexpr (adx == ADiffType::ACTIVE) {
       MatVecCoreScale<T, M, N, MatOp::NORMAL, true>(
           get_data(alpha), get_bdata(A), get_data(y), get_bdata(x));
     }
-    if constexpr (yad == VarAD::AD) {
+    if constexpr (ady == ADiffType::ACTIVE) {
       MatVecCoreScale<T, M, N, MatOp::TRANSPOSE, true>(
           get_data(alpha), get_bdata(A), get_data(x), get_bdata(y));
     }
@@ -82,11 +90,6 @@ class ADVecOuterExpr {
   yType& y;
   ADMat<Mat<T, M, N>>& A;
 };
-
-template <typename T, int M, int N>
-void VecOuter(T alpha, Vec<T, M>& x, Vec<T, N>& y, Mat<T, M, N>& A) {
-  VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
-}
 
 }  // namespace A2D
 

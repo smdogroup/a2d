@@ -237,10 +237,10 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[],
       int_conditional<opA == MatOp::NORMAL, Ancols, Anrows>::value;
 
   for (int i = 0; i < M; i++) {
-    for (int j = 0; j < P; j++) {
-      T value = 0.0;
+    for (int j = 0; j < N; j++) {
+      T value = T(0.0);
 
-      for (int k = 0; k < N; k++) {
+      for (int k = 0; k < P; k++) {
         // value += A(i, k) * B(k, j);
         if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
           value += A[Ancols * i + k] * B[Bncols * k + j];
@@ -251,34 +251,34 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[],
         } else {  // opA, opB == MatOp::TRANSPOSE
           value += A[Ancols * k + i] * B[Bncols * j + k];
         }
+      }
 
-        if constexpr (opC == MatOp::NORMAL) {
-          if constexpr (scale) {
-            if constexpr (additive) {
-              C[Cncols * i + j] += alpha * value;
-            } else {
-              C[Cncols * i + j] = alpha * value;
-            }
+      if constexpr (opC == MatOp::NORMAL) {
+        if constexpr (scale) {
+          if constexpr (additive) {
+            C[Cncols * i + j] += alpha * value;
           } else {
-            if constexpr (additive) {
-              C[Cncols * i + j] += value;
-            } else {
-              C[Cncols * i + j] = value;
-            }
+            C[Cncols * i + j] = alpha * value;
           }
-        } else {  // opC == MatOp::TRANSPOSE
-          if constexpr (scale) {
-            if constexpr (additive) {
-              C[Cncols * j + i] += alpha * value;
-            } else {
-              C[Cncols * j + i] = alpha * value;
-            }
+        } else {
+          if constexpr (additive) {
+            C[Cncols * i + j] += value;
           } else {
-            if constexpr (additive) {
-              C[Cncols * j + i] += value;
-            } else {
-              C[Cncols * j + i] = value;
-            }
+            C[Cncols * i + j] = value;
+          }
+        }
+      } else {  // opC == MatOp::TRANSPOSE
+        if constexpr (scale) {
+          if constexpr (additive) {
+            C[Cncols * j + i] += alpha * value;
+          } else {
+            C[Cncols * j + i] = alpha * value;
+          }
+        } else {
+          if constexpr (additive) {
+            C[Cncols * j + i] += value;
+          } else {
+            C[Cncols * j + i] = value;
           }
         }
       }
@@ -365,5 +365,6 @@ inline void MatMatMultCore(const T A[], const T B[], T C[], T alpha = 1.0) {
                           opA, opB, opC, additive, scale>(A, B, C, alpha);
   }
 }
+
 }  // namespace A2D
 #endif  // A2D_GEMMCORE_H

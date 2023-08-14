@@ -1,6 +1,9 @@
 #ifndef A2D_MAT_VEC_CORE_H
 #define A2D_MAT_VEC_CORE_H
 
+#include "a2denum.h"
+
+namespace A2D {
 /*
   Compute the matrix-vector products
 
@@ -12,7 +15,7 @@
 */
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-inline void MatVecCore(const T A[], const T[] x, T[] y) noexcept {
+inline void MatVecCore(const T A[], const T x[], T y[]) noexcept {
   if constexpr (additive) {
     if consexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
@@ -57,8 +60,8 @@ inline void MatVecCore(const T A[], const T[] x, T[] y) noexcept {
 
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-inline void MatVecCoreScale(const alpha const T A[], const T[] x,
-                            T[] y) noexcept {
+inline void MatVecCoreScale(const T alpha, const T A[], const T x[],
+                            T y[]) noexcept {
   if constexpr (additive) {
     if consexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
@@ -102,5 +105,7 @@ inline void MatVecCoreScale(const alpha const T A[], const T[] x,
     }
   }
 }
+
+}  // namespace A2D
 
 #endif  //  A2D_MAT_VEC_CORE_H

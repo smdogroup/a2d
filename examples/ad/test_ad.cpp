@@ -1,8 +1,184 @@
+#include <complex>
+#include <cstdlib>
+#include <iostream>
+
 #include "ad/a2dgemm.h"
 #include "ad/a2dstack.h"
 #include "ad/core/a2dgemmcore.h"
 
+template <typename I, typename T>
+void print_row_major_matrix(I M, I N, T mat[]) {
+  for (I i = 0; i < M; i++) {
+    for (I j = 0; j < N; j++) {
+      std::cout << std::setw(15) << mat[i * N + j];
+    }
+    std::cout << "\n";
+  }
+}
+
+// A set of reference implementations for the purpose of unit testing
+namespace RefImpl {
+// Transpose A.
+// On entry, A is an M-by-N matrix, on exit, A is an N-by-M matrix
+template <typename T, int M, int N>
+void Transpose(T A[]) {
+  T tmp[M * N];
+
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      tmp[M * j + i] = A[N * i + j];
+    }
+  }
+
+  for (int i = 0; i < M * N; i++) {
+    A[i] = tmp[i];
+  }
+}
+
+// Computes C {=,+=} alpha * A * B, where A is M-by-P, B is P-by-N, C is
+// M-by-N
+template <typename T, int M, int P, int N, bool additive = false>
+void MatMatMult(const T A[], const T B[], T C[], T alpha = T(1.0)) {
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      if constexpr (!additive) {
+        C[N * i + j] = T(0.0);
+      }
+      for (int p = 0; p < P; p++) {
+        // C(i, j) = A(i, p) * B(p, j)
+        C[N * i + j] += alpha * A[P * i + p] * B[N * p + j];
+      }
+    }
+  }
+}
+
+/**
+ * @brief Given F = F(A), compute Fdot = dF/dA * Adot using complex step
+ *
+ * Note: F and A are all matrices, eval has the following signature:
+ *
+ *   eval(const std::complex<T> Ac[], std::complex<T> Fc[])
+ *
+ * Note: On exit, Fdot is incremented, hence this function can be called
+ * multiple times to evaluate forward derivatives using complex step of a
+ * function that has multiple inputs: F(A, B, C, ...)
+ *
+ */
+template <typename T, int Am, int An, int Fm, int Fn, class Functor>
+void complex_step(const T A[], const T Adot[], T Fdot[], Functor& eval,
+                  T h = T(1e-30)) {
+  std::complex<T> Ac[Am * An];    // A in complex
+  std::complex<T> Ap[Am * An];    // A perturbed
+  std::complex<T> dFdA[Fm * Fn];  // df/dA(k, l)
+
+  for (int n = 0; n < Am * An; n++) {
+    Ac[n] = A[n];
+  }
+
+  for (int k = 0; k < Am; k++) {
+    for (int l = 0; l < An; l++) {
+      // Reset A perturbed
+      for (int n = 0; n < Am * An; n++) {
+        Ap[n] = A[n];
+      }
+
+      // Perturb A(k, l) only
+      Ap[k * An + l] += std::complex<T>(0.0, h);
+
+      // Evaluate dF(i, j)/dA(k, l) for all i, j
+      eval(Ap, dFdA);
+
+      // Compute Fdot(i, j) += dF(i, j)/dA(k, l) * Adot(k, l) for all i, j
+      for (int i = 0; i < Fm; i++) {
+        for (int j = 0; j < Fn; j++) {
+          Fdot[i * Fn + j] += dFdA[i * Fn + j].imag() / h * Adot[k * An + l];
+        }
+      }
+    }
+  }
+}
+
+}  // namespace RefImpl
+
+void test_matmatmult() {
+  using T = double;
+
+  std::srand(30067);  // Set seed
+
+  int constexpr Am = 2, An = 3, Bm = 3, Bn = 4, Cm = 2, Cn = 4;
+  A2D::Mat<T, Am, An> A, Ab;
+  A2D::Mat<T, Bm, Bn> B, Bb;
+  A2D::Mat<T, Cm, Cn> C, Cb;
+
+  for (int i = 0; i < Am * An; i++) {
+    A.data()[i] = T(std::rand()) / RAND_MAX;
+    Ab.data()[i] = T(std::rand()) / RAND_MAX;
+  }
+
+  for (int i = 0; i < Bm * Bn; i++) {
+    B.data()[i] = T(std::rand()) / RAND_MAX;
+    Bb.data()[i] = T(std::rand()) / RAND_MAX;
+  }
+
+  //   for (int i = 0; i < Cm * Cn; i++) {
+  //     C.data()[i] = T(std::rand()) / RAND_MAX;
+  //   }
+
+  A2D::Mat<T, Cm, Cn> Cref, Cbref;
+
+  RefImpl::MatMatMult<T, Am, An, Bn>(A.data(), B.data(), Cref.data());
+
+  A2D::ADMat<A2D::Mat<T, Am, An>> Aobj(A, Ab);
+  A2D::ADMat<A2D::Mat<T, Bm, Bn>> Bobj(B, Bb);
+  A2D::ADMat<A2D::Mat<T, Cm, Cn>> Cobj(C, Cb);
+
+  auto expr = A2D::MatMatMult(Aobj, Bobj, Cobj);
+
+  //   std::printf("A\n");
+  //   print_row_major_matrix(Am, An, A.data());
+  //   std::printf("B\n");
+  //   print_row_major_matrix(Bm, Bn, B.data());
+  //   std::printf("C=A*B\n");
+  //   print_row_major_matrix(Cm, Cn, C.data());
+  //   std::printf("Cref\n");
+  //   print_row_major_matrix(Cm, Cn, Cref.data());
+  //   std::printf("Cref^T\n");
+  //   RefImpl::Transpose<T, Cm, Cn>(Cref.data());
+  //   print_row_major_matrix(Cn, Cm, Cref.data());
+
+  expr.forward();
+  std::printf("Cb\n");
+  print_row_major_matrix(Cm, Cn, Cb.data());
+
+  auto evalA = [=](const std::complex<T> Ac[], std::complex<T> Cc[]) mutable {
+    std::complex<T> Bc[Bm * Bn];
+    for (int n = 0; n < Bm * Bn; n++) {
+      Bc[n] = B.data()[n];
+    }
+    A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
+  };
+
+  auto evalB = [=](const std::complex<T> Bc[], std::complex<T> Cc[]) mutable {
+    std::complex<T> Ac[Am * An];
+    for (int n = 0; n < Am * An; n++) {
+      Ac[n] = A.data()[n];
+    }
+    A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
+  };
+
+  RefImpl::complex_step<T, Am, An, Cm, Cn>(A.data(), Ab.data(), Cbref.data(),
+                                           evalA);
+  RefImpl::complex_step<T, Bm, Bn, Cm, Cn>(B.data(), Bb.data(), Cbref.data(),
+                                           evalB);
+
+  std::printf("Cb_ref\n");
+  print_row_major_matrix(Cm, Cn, Cbref.data());
+}
+
 int main() {
+  test_matmatmult();
+  return 0;
+
   using T = double;
 
   A2D::Mat<T, 3, 3> A, B, C, D, E, F, G, Ab, Bb, Cb, Db, Eb, Fb, Gb, Ap, Bp, Cp,

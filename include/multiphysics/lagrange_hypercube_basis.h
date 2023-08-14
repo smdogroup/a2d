@@ -63,10 +63,14 @@ class LagrangeH1HypercubeBasis {
         return C * (order - 2);
 
       case ET::FACE:
-        return C * (order - 2) * (order - 2);
+        if constexpr (dim >= 2) {
+          return C * (order - 2) * (order - 2);
+        }
 
       case ET::VOLUME:
-        return C * (order - 2) * (order - 2) * (order - 2);
+        if constexpr (dim >= 3) {
+          return C * (order - 2) * (order - 2) * (order - 2);
+        }
     }
     return 0;
   }
@@ -215,7 +219,9 @@ class LagrangeH1HypercubeBasis {
     for (index_t i = 0; i < entity_ndof; i++) {
       sgns[i] = 1;
     }
-    set_entity_dof<offset>(entity, index, orient, sgns, signs);
+    if (entity_ndof != 0) {
+      set_entity_dof<offset>(entity, index, orient, sgns, signs);
+    }
   }
 
   /**
@@ -1037,7 +1043,9 @@ class LagrangeL2HypercubeBasis {
     for (index_t i = 0; i < entity_ndof; i++) {
       sgns[i] = 1;
     }
-    set_entity_dof<offset>(entity, index, orient, sgns, signs);
+    if (entity_ndof) {
+      set_entity_dof<offset>(entity, index, orient, sgns, signs);
+    }
   }
 
   /**

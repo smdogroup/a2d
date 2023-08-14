@@ -3,17 +3,6 @@
 
 namespace A2D {
 
-template <typename T>
-struct tag {
-  using type = T;
-};
-
-template <typename... Ts>
-struct select_last {
-  // Use a fold-expression to fold the comma operator over the parameter pack.
-  using type = typename decltype((tag<Ts>{}, ...))::type;
-};
-
 template <class... Operations>
 class Stack {
  public:
@@ -35,7 +24,7 @@ class Stack {
 
   template <index_t index>
   void forward_() {
-    std::get<index>(stack).forward();
+    std::get<index>(stack).template forward<ADorder::FIRST>();
     if constexpr (index < num_ops - 1) {
       forward_<index + 1>();
     }
@@ -51,7 +40,7 @@ class Stack {
 
   template <index_t index>
   void hforward_() {
-    std::get<index>(stack).hforward();
+    std::get<index>(stack).template forward<ADorder::SECOND>();
     if constexpr (index < num_ops - 1) {
       hforward_<index + 1>();
     }

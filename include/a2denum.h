@@ -23,19 +23,25 @@ enum class MatOp { NORMAL, TRANSPOSE };
 enum class ADseed { b, p, h };
 
 /**
- * @brief Create an opposite MatOp enum
+ * @brief compile-time conditional for non-type values, works like
+ * std::conditional, but user gets non-type values instead.
+ *
+ * @tparam T type of the non-type value
+ * @tparam B condition, true or false
+ * @tparam TrueVal the value user gets if B is true
+ * @tparam FalseVal the value user gets if B is false
  */
-template <MatOp op>
-struct negate_op {};
+template <class T, bool B, T TrueVal, T FalseVal>
+struct conditional_value {};
 
-template <>
-struct negate_op<MatOp::NORMAL> {
-  static constexpr MatOp value = MatOp::TRANSPOSE;
+template <class T, T TrueVal, T FalseVal>
+struct conditional_value<T, true, TrueVal, FalseVal> {
+  static constexpr T value = TrueVal;
 };
 
-template <>
-struct negate_op<MatOp::TRANSPOSE> {
-  static constexpr MatOp value = MatOp::NORMAL;
+template <class T, T TrueVal, T FalseVal>
+struct conditional_value<T, false, TrueVal, FalseVal> {
+  static constexpr T value = FalseVal;
 };
 
 }  // namespace A2D

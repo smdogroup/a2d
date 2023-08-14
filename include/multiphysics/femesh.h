@@ -15,7 +15,7 @@
 namespace A2D {
 
 // Meta data for a specific type of elements
-struct ElemMetaData {
+struct ElemConnMetaData {
   using ET = ElementTypes;
 
   bool is_valid_element = false;
@@ -53,7 +53,8 @@ class MeshConnectivityBase {
   static constexpr index_t NO_LABEL = MAX_INDEX;
 
   // Get the right meta data based on element index
-  virtual inline const ElemMetaData& get_local_elem_and_meta(index_t& elem) = 0;
+  virtual inline const ElemConnMetaData& get_local_elem_and_meta(
+      index_t& elem) = 0;
 
   // Get global element counts
   index_t get_num_elements() { return nelems; }
@@ -156,7 +157,7 @@ class MeshConnectivity2D final : public MeshConnectivityBase {
 
   // Shift elem to get local index within its element type (tri or quad)
   // and return the meta data for this element type
-  const inline ElemMetaData& get_local_elem_and_meta(index_t& elem);
+  const inline ElemConnMetaData& get_local_elem_and_meta(index_t& elem);
 
  private:
   // Input counts of the triangle and quadrilateral elements
@@ -175,7 +176,7 @@ class MeshConnectivity2D final : public MeshConnectivityBase {
   index_t* quad_edges;
 
   // Element meta data
-  ElemMetaData meta_tri, meta_quad, meta_none;
+  ElemConnMetaData meta_tri, meta_quad, meta_none;
 };
 
 // Mesh connecivity class for 3D meshes composed of tetrahedral,
@@ -189,7 +190,7 @@ class MeshConnectivity3D final : public MeshConnectivityBase {
 
   // Shift elem to get local index within its element type (tet, hex, etc.)
   // and return the meta data for this element type
-  const inline ElemMetaData& get_local_elem_and_meta(index_t& elem);
+  const inline ElemConnMetaData& get_local_elem_and_meta(index_t& elem);
 
  private:
   // Input counts of the tet, hex, wedge and pyramid elements
@@ -214,7 +215,7 @@ class MeshConnectivity3D final : public MeshConnectivityBase {
   index_t* pyrmd_edges;
 
   // Element meta data
-  ElemMetaData meta_tet, meta_hex, meta_wedge, meta_pyrmd, meta_none;
+  ElemConnMetaData meta_tet, meta_hex, meta_wedge, meta_pyrmd, meta_none;
 };
 
 // This class provides a mapping between any boundary labels and

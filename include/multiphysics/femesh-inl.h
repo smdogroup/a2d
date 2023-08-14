@@ -247,7 +247,7 @@ inline index_t MeshConnectivityBase::add_boundary_label_from_verts(
  */
 inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
                                                        const index_t* faces[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   *faces = nullptr;
   if (*meta.faces) {
     *faces = &(*meta.faces)[meta.NFACES * elem];
@@ -264,7 +264,7 @@ inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
  */
 inline index_t MeshConnectivityBase::get_element_verts(index_t elem,
                                                        const index_t* verts[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   *verts = nullptr;
   if (*meta.verts) {
     *verts = &(*meta.verts)[meta.NVERTS * elem];
@@ -300,7 +300,7 @@ inline index_t MeshConnectivityBase::get_adjacent_elements_from_vert(
 inline index_t MeshConnectivityBase::get_element_face_verts(index_t elem,
                                                             index_t f,
                                                             index_t verts[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   index_t nverts = meta.FACE_NVERTS[f];
   for (index_t i = 0; i < nverts; i++) {
     verts[i] = (*meta.verts)[meta.NVERTS * elem + meta.FACE_VERTS[f][i]];
@@ -318,7 +318,7 @@ inline index_t MeshConnectivityBase::get_element_face_verts(index_t elem,
  */
 inline index_t MeshConnectivityBase::get_element_face_vert_indices(
     index_t elem, index_t f, index_t verts[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   index_t nverts = meta.FACE_NVERTS[f];
   for (index_t i = 0; i < nverts; i++) {
     verts[i] = meta.FACE_VERTS[f][i];
@@ -337,7 +337,7 @@ inline index_t MeshConnectivityBase::get_element_face_vert_indices(
 inline index_t MeshConnectivityBase::get_element_face_edges(index_t elem,
                                                             index_t f,
                                                             index_t edges[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   index_t nedges = meta.FACE_NEDGES[f];
 
   for (index_t i = 0; i < nedges; i++) {
@@ -357,7 +357,7 @@ inline index_t MeshConnectivityBase::get_element_face_edges(index_t elem,
  */
 inline index_t MeshConnectivityBase::get_element_face_edge_indices(
     index_t elem, index_t f, index_t edges[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   index_t nedges = meta.FACE_NEDGES[f];
 
   for (index_t i = 0; i < nedges; i++) {
@@ -564,7 +564,7 @@ inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
  */
 inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
                                                        const index_t* edges[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   *edges = nullptr;
   if (*meta.edges) {
     *edges = &(*meta.edges)[meta.NEDGES * elem];
@@ -584,7 +584,7 @@ inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
 inline void MeshConnectivityBase::get_element_edge_verts(index_t elem,
                                                          index_t edge,
                                                          index_t verts[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
 
   if (meta.is_valid_element) {
     verts[0] = (*meta.verts)[meta.NVERTS * elem + meta.EDGE_VERTS[edge][0]];
@@ -601,7 +601,7 @@ inline MeshConnectivity2D::MeshConnectivity2D(I nverts, I ntri, I* tri, I nquad,
       meta_tri{true,
                ET::TRI_VERTS,
                ET::TRI_EDGES,
-               ET::TRI_FACES,
+               ET::TRI_NFACES,
                ET::TRI_FACE_NVERTS,
                ET::TRI_FACE_VERTS,
                ET::TRI_FACE_NEDGES,
@@ -697,7 +697,7 @@ inline MeshConnectivity2D::~MeshConnectivity2D() {
  * becomes the index within the element type (tri or quad)
  * @return a const reference to the meta data struct of the element type
  */
-const inline ElemMetaData& MeshConnectivity2D::get_local_elem_and_meta(
+const inline ElemConnMetaData& MeshConnectivity2D::get_local_elem_and_meta(
     index_t& elem) {
   if (elem < ntri) {
     return meta_tri;
@@ -875,7 +875,7 @@ inline MeshConnectivity3D::~MeshConnectivity3D() {
  * becomes the index within the element type (tet, hex, etc.)
  * @return a const reference to the meta data struct of the element type
  */
-const inline ElemMetaData& MeshConnectivity3D::get_local_elem_and_meta(
+const inline ElemConnMetaData& MeshConnectivity3D::get_local_elem_and_meta(
     index_t& elem) {
   if (elem < ntets) {
     return meta_tet;
@@ -969,7 +969,7 @@ inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
  */
 inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
                                                        index_t* faces[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   *faces = nullptr;
   if (*meta.faces) {
     *faces = &(*meta.faces)[meta.NFACES * elem];
@@ -986,7 +986,7 @@ inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
  */
 inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
                                                        index_t* edges[]) {
-  const ElemMetaData& meta = get_local_elem_and_meta(elem);
+  const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
   *edges = nullptr;
   if (*meta.edges) {
     *edges = &(*meta.edges)[meta.NEDGES * elem];

@@ -222,11 +222,11 @@ int main() {
   TestMatInv<std::complex<double>, 3> test_inv;
   A2D::Test::RunADTest(test_inv);
 
-  // TestMatMult<std::complex<double>, 3, 3, 3> test1;
-  // A2D::Test::RunADTest(test1);
+  TestMatMult<std::complex<double>, 3, 3, 3> test1;
+  A2D::Test::RunADTest(test1);
 
-  // TestMatMult<std::complex<double>, 5, 4, 1> test2;
-  // A2D::Test::RunADTest(test2);
+  TestMatMult<std::complex<double>, 5, 4, 1> test2;
+  A2D::Test::RunADTest(test2);
 
   return (0);
 }

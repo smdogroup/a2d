@@ -64,8 +64,12 @@ class MatTraceExpr {
     }
   }
 
-  // A2D_INLINE_FUNCTION void hreverse() {
-  // }
+  A2D_INLINE_FUNCTION void hreverse() {
+    if constexpr (adA == ADiffType::ACTIVE) {
+      MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
+                           GetSeed<ADseed::h>::get_data(A));
+    }
+  }
 
  private:
   Atype& A;

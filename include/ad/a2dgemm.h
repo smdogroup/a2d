@@ -133,20 +133,20 @@ class MatMatMultExpr {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
     if constexpr (adA == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, not_opB, opA, true>(
+      MatMatMultCore<T, P, Q, K, L, N, M, MatOp::NORMAL, not_opB, opA, true>(
           GetSeed<ADseed::h>::get_data(C), get_data(B),
           GetSeed<ADseed::h>::get_data(A));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, not_opA, MatOp::NORMAL, opB, true>(
+      MatMatMultCore<T, N, M, P, Q, K, L, not_opA, MatOp::NORMAL, opB, true>(
           get_data(A), GetSeed<ADseed::h>::get_data(C),
           GetSeed<ADseed::h>::get_data(B));
     }
     if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, not_opB, opA, true>(
+      MatMatMultCore<T, P, Q, K, L, N, M, MatOp::NORMAL, not_opB, opA, true>(
           GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::p>::get_data(B),
           GetSeed<ADseed::h>::get_data(A));
-      MatMatMultCore<T, N, M, K, L, P, Q, not_opA, MatOp::NORMAL, opB, true>(
+      MatMatMultCore<T, N, M, P, Q, K, L, not_opA, MatOp::NORMAL, opB, true>(
           GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::b>::get_data(C),
           GetSeed<ADseed::h>::get_data(B));
     }
@@ -195,6 +195,20 @@ A2D_INLINE_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A,
 
 // compute C = op(A) * op(B) and return an expression, where A is passive, B is
 // active variables
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::ACTIVE>(
+      A, B, C);
+}
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, A2DMat<Mat<T, K, L>>& B,
+                                    A2DMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::ACTIVE>(
+      A, B, C);
+}
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
@@ -212,6 +226,20 @@ A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, A2DMat<Mat<T, K, L>>& B,
 
 // compute C = op(A) * op(B) and return an expression, where A is active, B is
 // passive variables
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::PASSIVE>(
+      A, B, C);
+}
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
+                                    A2DMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::PASSIVE>(
+      A, B, C);
+}
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 A2D_INLINE_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
@@ -231,6 +259,20 @@ A2D_INLINE_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A, Mat<T, K, L>& B,
 // passive variables, but C is active variable
 // Note: this still returns an expression, but it's empty, i.e. the expression
 // doesn't have meaningful implementation of forward(), reverse(), etc.
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
+                                    ADMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::PASSIVE>(
+      A, B, C);
+}
+template <typename T, int N, int M, int K, int L, int P, int Q>
+A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
+                                    A2DMat<Mat<T, P, Q>>& C) {
+  return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
+                        MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::PASSIVE>(
+      A, B, C);
+}
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 A2D_INLINE_FUNCTION auto MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,

@@ -49,6 +49,16 @@ class A2DTest {
                      VarTuple<T, Inputs...>& g) = 0;
 
   /**
+   * @brief Compute the derivative of the output as a function of the inputs
+   *
+   * @param x Variable tuple for the input
+   * @param g Derivative of the output w.r.t. the input
+   */
+  virtual void hprod(const VarTuple<T, Inputs...>& x,
+                     const VarTuple<T, Inputs...>& p,
+                     VarTuple<T, Inputs...>& h) = 0;
+
+  /**
    * @brief Check whether two values are close to one another
    *
    * @param test_value The test value (computed using AD)
@@ -86,10 +96,10 @@ class A2DTest {
     } else {
       out << str << " FAILED.";
     }
-    out << std::setprecision(9) << " AD: " << std::setw(12)
-        << std::real(test_value) << " CS: " << std::setw(12)
-        << std::real(ref_value) << " Rel Err: " << std::setw(12)
-        << std::real(rel_err) << " Abs Err: " << std::setw(12)
+    out << std::scientific << std::setprecision(9) << " AD: " << std::setw(17)
+        << std::real(test_value) << " CS: " << std::setw(17)
+        << std::real(ref_value) << " Rel Err: " << std::setw(17)
+        << std::real(rel_err) << " Abs Err: " << std::setw(17)
         << std::real(abs_err) << std::endl;
   }
 
@@ -103,16 +113,17 @@ class A2DTest {
 template <typename T, class... Inputs>
 bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
   // Declare all of the variables needed
-  VarTuple<std::complex<T>, Inputs...> x, g, x1, p;
+  VarTuple<std::complex<T>, Inputs...> x, g, x1, p, h;
 
   // Get the starting point
   test.get_point(x);
 
-  // Evaluate the function and its derivatives
-  test.deriv(x, g);
-
   // Set a random direction for the test
   p.set_rand();
+
+  // Evaluate the function and its derivatives
+  test.deriv(x, g);
+  test.hprod(x, p, h);
 
   // Set x1 = x + dh * p1
   double dh = test.get_step_size();
@@ -132,6 +143,17 @@ bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
   bool passed = test.is_close(ans, fd);
 
   test.write_result("First-order", std::cout, ans, fd);
+
+  // Compute the derivative at the point (x + dh * p)
+  test.deriv(x1, g);
+
+  for (index_t i = 0; i < x.get_num_components(); i++) {
+    T ans = std::real(h[i]);
+    T fd = std::imag(g[i]) / dh;
+    passed = passed && test.is_close(ans, fd);
+
+    test.write_result("Second-order", std::cout, ans, fd);
+  }
 
   return passed;
 }

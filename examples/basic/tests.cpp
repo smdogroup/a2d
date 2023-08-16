@@ -13,7 +13,6 @@ class TestMatMult
   TestMatMult() {}
 
   T eval(const TupleType& x) {
-    // T scalar;
     A2D::Mat<T, M, N> A;
     A2D::Mat<T, N, K> B;
     A2D::Mat<T, M, K> C;
@@ -39,7 +38,6 @@ class TestMatMult
   }
 
   void deriv(const TupleType& x, TupleType& g) {
-    // T scalar;
     A2D::Mat<T, M, N> A0, Ab;
     A2D::Mat<T, N, K> B0, Bb;
     A2D::Mat<T, M, K> C0, Cb;
@@ -78,12 +76,50 @@ class TestMatMult
 
     g.set_values(Ab, Bb);
   }
+
+  void hprod(const TupleType& x, const TupleType& p, TupleType& h) {
+    A2D::A2DMat<A2D::Mat<T, M, N>> A;
+    A2D::A2DMat<A2D::Mat<T, N, K>> B;
+    A2D::A2DMat<A2D::Mat<T, M, K>> C;
+    A2D::A2DMat<A2D::Mat<T, K, K>> D;
+    A2D::A2DMat<A2D::Mat<T, K, M>> E;
+    A2D::A2DMat<A2D::Mat<T, K, K>> F;
+
+    x.get_values(A.value(), B.value());
+    p.get_values(A.pvalue(), B.pvalue());
+
+    // C = A * B
+    auto mult1 = A2D::MatMatMult(A, B, C);
+    // D = C^{T} * C
+    auto mult2 =
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(C, C, D);
+    // E = D^{T} * C^{T}
+    auto mult3 =
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::TRANSPOSE>(D, C, E);
+    // F = E * E^{T}
+    auto mult4 =
+        A2D::MatMatMult<A2D::MatOp::NORMAL, A2D::MatOp::TRANSPOSE>(E, E, F);
+
+    A2D::A2DScalar<T> trace;
+    auto tr1 = A2D::MatTrace(D, trace);
+
+    auto stack = A2D::MakeStack(mult1, mult2, mult3, mult4, tr1);
+
+    trace.bvalue = 1.0;
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+
+    h.set_values(A.hvalue(), B.hvalue());
+  }
 };
 
 int main() {
-  TestMatMult<std::complex<double>, 3, 5, 7> test1;
-
+  TestMatMult<std::complex<double>, 3, 3, 3> test1;
   A2D::Test::RunADTest(test1);
+
+  TestMatMult<std::complex<double>, 3, 4, 5> test2;
+  A2D::Test::RunADTest(test2);
 
   return (0);
 }

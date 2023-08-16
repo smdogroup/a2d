@@ -9,6 +9,18 @@
 
 namespace A2D {
 
+template <typename T>
+struct __is_complex : public std::false_type {};
+
+template <typename T>
+struct __is_complex<std::complex<T>> : public std::true_type {};
+
+template <typename T>
+struct __is_scalar_type {
+  static const bool value =
+      std::is_arithmetic<T>::value || __is_complex<T>::value;
+};
+
 struct __basic_arithmetic_type {
   static const index_t num_components = 1;
 };
@@ -24,8 +36,8 @@ struct __count_var_components<> {
 template <class First, class... Remain>
 struct __count_var_components<First, Remain...> {
   static const index_t num_components =
-      std::conditional<std::is_arithmetic<First>::value,
-                       __basic_arithmetic_type, First>::type::num_components +
+      std::conditional<__is_scalar_type<First>::value, __basic_arithmetic_type,
+                       First>::type::num_components +
       __count_var_components<Remain...>::num_components;
 };
 
@@ -93,7 +105,7 @@ class VarTuple {
 
   template <typename I, index_t index, class First, class... Remain>
   T& get_value(const I comp) {
-    if constexpr (std::is_arithmetic<First>::value) {
+    if constexpr (__is_scalar_type<First>::value) {
       if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var);
       } else if (comp == 0) {
@@ -114,7 +126,7 @@ class VarTuple {
 
   template <index_t index, class First, class... Remain>
   void set_values_(const First& f, const Remain&... r) {
-    if constexpr (std::is_arithmetic<First>::value) {
+    if constexpr (__is_scalar_type<First>::value) {
       std::get<index>(var) = f;
     } else {
       First& val = std::get<index>(var);
@@ -129,7 +141,7 @@ class VarTuple {
 
   template <index_t index, class First, class... Remain>
   void get_values_(First& f, Remain&... r) const {
-    if constexpr (std::is_arithmetic<First>::value) {
+    if constexpr (__is_scalar_type<First>::value) {
       f = std::get<index>(var);
     } else {
       const First& val = std::get<index>(var);

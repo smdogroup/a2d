@@ -35,9 +35,9 @@ class QHdivHexBasis {
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if (entity == ET::FACE) {
+    if (entity == ET::Bound) {
       return (order - 1) * (order - 1);
-    } else if (entity == ET::VOLUME) {
+    } else if (entity == ET::Domain) {
       return 3 * (order - 2) * (order - 1) * (order - 1);
     }
     return 0;
@@ -57,29 +57,29 @@ class QHdivHexBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if (entity == ET::FACE) {
+    if (entity == ET::Bound) {
       if (index < 2) {
         const bool endp = true;
         const index_t ndof = 1;
-        ET::get_hex_face_dof<offset, endp, ndof, order, order - 1, order - 1,
+        ET::get_hex_bound_dof<offset, endp, ndof, order, order - 1, order - 1,
                              ElemDof, EntityDof>(index, element_dof,
                                                  entity_dof);
       } else if (index < 4) {
         const index_t off = offset + order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
-        ET::get_hex_face_dof<off, endp, ndof, order - 1, order, order - 1,
+        ET::get_hex_bound_dof<off, endp, ndof, order - 1, order, order - 1,
                              ElemDof, EntityDof>(index, element_dof,
                                                  entity_dof);
       } else {
         const index_t off = offset + 2 * order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
-        ET::get_hex_face_dof<off, endp, ndof, order - 1, order - 1, order,
+        ET::get_hex_bound_dof<off, endp, ndof, order - 1, order - 1, order,
                              ElemDof, EntityDof>(index, element_dof,
                                                  entity_dof);
       }
-    } else if (entity == ET::VOLUME) {
+    } else if (entity == ET::Domain) {
       index_t enode = 0;
       for (index_t j3 = 0; j3 < order - 1; j3++) {
         for (index_t j2 = 0; j2 < order - 1; j2++) {
@@ -127,29 +127,29 @@ class QHdivHexBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if (entity == ET::FACE) {
+    if (entity == ET::Bound) {
       if (index < 2) {
         const bool endp = true;
         const index_t ndof = 1;
-        ET::set_hex_face_dof<offset, endp, ndof, order, order - 1, order - 1,
+        ET::set_hex_bound_dof<offset, endp, ndof, order, order - 1, order - 1,
                              EntityDof, ElemDof>(index, orient, entity_dof,
                                                  element_dof);
       } else if (index < 4) {
         const index_t off = offset + order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
-        ET::set_hex_face_dof<off, endp, ndof, order - 1, order, order - 1,
+        ET::set_hex_bound_dof<off, endp, ndof, order - 1, order, order - 1,
                              EntityDof, ElemDof>(index, orient, entity_dof,
                                                  element_dof);
       } else {
         const index_t off = offset + 2 * order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
-        ET::set_hex_face_dof<off, endp, ndof, order - 1, order - 1, order,
+        ET::set_hex_bound_dof<off, endp, ndof, order - 1, order - 1, order,
                              EntityDof, ElemDof>(index, orient, entity_dof,
                                                  element_dof);
       }
-    } else if (entity == ET::VOLUME) {
+    } else if (entity == ET::Domain) {
       index_t enode = 0;
 
       for (index_t j3 = 0; j3 < order - 1; j3++) {
@@ -202,7 +202,7 @@ class QHdivHexBasis {
       sgns[k] = 1;
     }
 
-    if (entity == ET::FACE) {
+    if (entity == ET::Bound) {
       if (orient >= 4) {
         for (index_t k = 0; k < entity_ndof; k++) {
           sgns[k] = -1;

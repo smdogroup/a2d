@@ -32,6 +32,7 @@ class LagrangeH1HypercubeBasis {
   using ET = ElementTypes;
 
   static constexpr index_t dim = Dim;
+  static_assert(dim == 1 or dim == 2 or dim == 3, "unsupported dim");
 
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
@@ -48,29 +49,30 @@ class LagrangeH1HypercubeBasis {
   using LOrderBasis = LagrangeH1HypercubeBasis<T, dim, C, 1, interp_type>;
 
   /**
-   * @brief Degree of freedom handling on the vertices, edges, faces and volume
+   * @brief Degree of freedom handling on the topological entities
    *
-   * @param entity The type of topological entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom on a given entity
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
     switch (entity) {
-      case ET::VERTEX:
+      case ET::Vertex:
         return C;
 
-      case ET::EDGE:
-        return C * (order - 2);
-
-      case ET::FACE:
-        if constexpr (dim >= 2) {
-          return C * (order - 2) * (order - 2);
+      // Only 3D element has edge
+      case ET::Edge:
+        if constexpr (dim == 3) {
+          return C * (order - 2);
         }
 
-      case ET::VOLUME:
-        if constexpr (dim >= 3) {
-          return C * (order - 2) * (order - 2) * (order - 2);
-        }
+      // Bound for n-dimensional element has n-1 dimensions
+      case ET::Bound:
+        return C * indexpow<order - 2, dim - 1>::value;
+
+      // Domain for n-dimensional element has n dimensions
+      case ET::Domain:
+        return C * indexpow<order - 2, dim>::value;
     }
     return 0;
   }
@@ -79,7 +81,7 @@ class LagrangeH1HypercubeBasis {
    * @brief Get the entity DOF from the element DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param element_dof Degrees of freedom for this element
@@ -90,11 +92,8 @@ class LagrangeH1HypercubeBasis {
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
     switch (entity) {
-      case ET::VERTEX:
-        if constexpr (dim == 1) {
-          ET::get_line_vert_dof<offset, C, order, ElemDof, EntityDof>(
-              index, element_dof, entity_dof);
-        } else if constexpr (dim == 2) {
+      case ET::Vertex:
+        if constexpr (dim == 2) {
           ET::get_quad_vert_dof<offset, C, order, order, ElemDof, EntityDof>(
               index, element_dof, entity_dof);
         } else if constexpr (dim == 3) {
@@ -102,36 +101,42 @@ class LagrangeH1HypercubeBasis {
                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
-      case ET::EDGE:
-        if constexpr (dim == 1) {
-          const bool endp = false;
-          ET::get_line_edge_dof<offset, endp, C, order, ElemDof, EntityDof>(
-              element_dof, entity_dof);
-        } else if constexpr (dim == 2) {
-          const bool endp = false;
-          ET::get_quad_edge_dof<offset, endp, C, order, order, ElemDof,
-                                EntityDof>(index, element_dof, entity_dof);
-        } else if constexpr (dim == 3) {
+
+      case ET::Edge:
+        if constexpr (dim == 3) {
           const bool endp = false;
           ET::get_hex_edge_dof<offset, endp, C, order, order, order, ElemDof,
                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
-      case ET::FACE:
-        if constexpr (dim == 2) {
+
+      case ET::Bound:
+        if constexpr (dim == 1) {
+          ET::get_line_bound_dof<offset, C, order, ElemDof, EntityDof>(
+              index, element_dof, entity_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
-          ET::get_quad_face_dof<offset, endp, C, order, order, ElemDof,
-                                EntityDof>(element_dof, entity_dof);
+          ET::get_quad_bound_dof<offset, endp, C, order, order, ElemDof,
+                                 EntityDof>(index, element_dof, entity_dof);
         } else if constexpr (dim == 3) {
           const bool endp = false;
-          ET::get_hex_face_dof<offset, endp, C, order, order, order, ElemDof,
-                               EntityDof>(index, element_dof, entity_dof);
+          ET::get_hex_bound_dof<offset, endp, C, order, order, order, ElemDof,
+                                EntityDof>(index, element_dof, entity_dof);
         }
         break;
-      case ET::VOLUME:
-        if constexpr (dim == 3) {
+
+      case ET::Domain:
+        if constexpr (dim == 1) {
           const bool endp = false;
-          ET::get_hex_volume_dof<offset, endp, C, order, order, order, ElemDof,
+          ET::get_line_domain_dof<offset, endp, C, order, ElemDof, EntityDof>(
+              element_dof, entity_dof);
+        } else if constexpr (dim == 2) {
+          const bool endp = false;
+          ET::get_quad_domain_dof<offset, endp, C, order, order, ElemDof,
+                                  EntityDof>(element_dof, entity_dof);
+        } else if constexpr (dim == 3) {
+          const bool endp = false;
+          ET::get_hex_domain_dof<offset, endp, C, order, order, order, ElemDof,
                                  EntityDof>(element_dof, entity_dof);
         }
         break;
@@ -142,7 +147,7 @@ class LagrangeH1HypercubeBasis {
    * @brief Set the element DOF and signs from the entity DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param entity_dof Entity DOF in the global orientation
@@ -153,11 +158,8 @@ class LagrangeH1HypercubeBasis {
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
     switch (entity) {
-      case ET::VERTEX:
-        if constexpr (dim == 1) {
-          ET::set_line_vert_dof<offset, C, order, EntityDof, ElemDof>(
-              index, entity_dof, element_dof);
-        } else if constexpr (dim == 2) {
+      case ET::Vertex:
+        if constexpr (dim == 2) {
           ET::set_quad_vert_dof<offset, C, order, order, EntityDof, ElemDof>(
               index, entity_dof, element_dof);
         } else if constexpr (dim == 3) {
@@ -165,37 +167,44 @@ class LagrangeH1HypercubeBasis {
                                ElemDof>(index, entity_dof, element_dof);
         }
         break;
-      case ET::EDGE:
-        if constexpr (dim == 1) {
-          const bool endp = false;
-          ET::set_line_edge_dof<offset, endp, C, order, EntityDof, ElemDof>(
-              orient, entity_dof, element_dof);
-        } else if constexpr (dim == 2) {
-          const bool endp = false;
-          ET::set_quad_edge_dof<offset, endp, C, order, order, EntityDof,
-                                ElemDof>(index, orient, entity_dof,
-                                         element_dof);
-        } else if constexpr (dim == 3) {
+
+      case ET::Edge:
+        if constexpr (dim == 3) {
           const bool endp = false;
           ET::set_hex_edge_dof<offset, endp, C, order, order, order, EntityDof,
                                ElemDof>(index, orient, entity_dof, element_dof);
         }
         break;
-      case ET::FACE:
-        if constexpr (dim == 2) {
+
+      case ET::Bound:
+        if constexpr (dim == 1) {
+          ET::set_line_bound_dof<offset, C, order, EntityDof, ElemDof>(
+              index, entity_dof, element_dof);
+        } else if constexpr (dim == 2) {
           const bool endp = false;
-          ET::set_quad_face_dof<offset, endp, C, order, order, EntityDof,
-                                ElemDof>(orient, entity_dof, element_dof);
+          ET::set_quad_bound_dof<offset, endp, C, order, order, EntityDof,
+                                 ElemDof>(index, orient, entity_dof,
+                                          element_dof);
         } else if constexpr (dim == 3) {
           const bool endp = false;
-          ET::set_hex_face_dof<offset, endp, C, order, order, order, EntityDof,
-                               ElemDof>(index, orient, entity_dof, element_dof);
+          ET::set_hex_bound_dof<offset, endp, C, order, order, order, EntityDof,
+                                ElemDof>(index, orient, entity_dof,
+                                         element_dof);
         }
         break;
-      case ET::VOLUME:
-        if constexpr (dim == 3) {
+
+      case ET::Domain:
+        if constexpr (dim == 1) {
           const bool endp = false;
-          ET::set_hex_volume_dof<offset, endp, C, order, order, order,
+          ET::set_line_domain_dof<offset, endp, C, order, EntityDof, ElemDof>(
+              orient, entity_dof, element_dof);
+        } else if constexpr (dim == 2) {
+          const bool endp = false;
+          ET::set_quad_domain_dof<offset, endp, C, order, order, EntityDof,
+                                  ElemDof>(orient, entity_dof, element_dof);
+        } else if constexpr (dim == 3) {
+          const bool endp = false;
+          ET::set_hex_domain_dof<offset, endp, C, order, order, order,
                                  EntityDof, ElemDof>(entity_dof, element_dof);
         }
         break;
@@ -945,6 +954,7 @@ class LagrangeL2HypercubeBasis {
  public:
   using ET = ElementTypes;
 
+  // The topological dimension (dimension of the reference element)
   static constexpr index_t dim = Dim;
 
   static const index_t order = degree + 1;  // Number of nodes along each edge
@@ -962,18 +972,14 @@ class LagrangeL2HypercubeBasis {
   using LOrderBasis = LagrangeL2HypercubeBasis<T, dim, C, 0, interp_type>;
 
   /**
-   * @brief Degree of freedom handling on the vertices, edges, faces and
-   * volume
+   * @brief Degree of freedom handling on the topological entities
    *
-   * @param entity The type of topological entity (vertex, edge, face or
-   * volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
   static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
-    if ((dim == 1 and entity == ET::EDGE) or
-        (dim == 2 and entity == ET::FACE) or
-        (dim == 3 and entity == ET::VOLUME)) {
+    if (entity == ET::Domain) {
       return ndof;
     }
     return 0;
@@ -983,7 +989,7 @@ class LagrangeL2HypercubeBasis {
    * @brief Get the entity DOF from the element DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param element_dof Degrees of freedom for this element
@@ -993,9 +999,7 @@ class LagrangeL2HypercubeBasis {
   static void get_entity_dof(ET::ElementEntity entity, index_t index,
                              const ElemDof& element_dof,
                              EntityDof& entity_dof) {
-    if ((dim == 1 and entity == ET::EDGE) or
-        (dim == 2 and entity == ET::FACE) or
-        (dim == 3 and entity == ET::VOLUME)) {
+    if (entity == ET::Domain) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
       }
@@ -1006,7 +1010,7 @@ class LagrangeL2HypercubeBasis {
    * @brief Set the element DOF and signs from the entity DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (domain, bound, edge, vertex)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param entity_dof Entity DOF in the global orientation
@@ -1017,9 +1021,7 @@ class LagrangeL2HypercubeBasis {
   static void set_entity_dof(ET::ElementEntity entity, index_t index,
                              index_t orient, const EntityDof& entity_dof,
                              ElemDof& element_dof) {
-    if ((dim == 1 and entity == ET::EDGE) or
-        (dim == 2 and entity == ET::FACE) or
-        (dim == 3 and entity == ET::VOLUME)) {
+    if (entity == ET::Domain) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];
       }

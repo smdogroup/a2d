@@ -177,7 +177,7 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
   for (int k = 0, e = 0; k < b_nz; k++) {
     for (int j = 0; j < b_ny; j++) {
       for (int i = 0; i < b_nx; i++, e++) {
-        for (int ii = 0; ii < ET::HEX_VERTS; ii++) {
+        for (int ii = 0; ii < ET::HEX_NVERTS; ii++) {
           hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
                                      j + ET::HEX_VERTS_CART[ii][1],
                                      k + ET::HEX_VERTS_CART[ii][2]);
@@ -274,23 +274,23 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
   I nverts = nelems_c * (nelems_r + 1) * (nelems_h + 1);
 
   // Construct element connectivity
-  std::vector<I> hex(nhex * ET::HEX_VERTS);
+  std::vector<I> hex(nhex * ET::HEX_NVERTS);
   I diff = nelems_c * (nelems_h + 1);
   I elem_idx = 0;
   for (I r = 0; r < nelems_r; r++) {
     for (I i = 0; i < nelems_h; i++) {
       for (I j = 0, jc = 1; j < nelems_c; j++, elem_idx++, jc++) {
         I ref_vert = r * nelems_c * (nelems_h + 1) + i * nelems_c;
-        hex[ET::HEX_VERTS * elem_idx] = ref_vert + j + diff;
-        hex[ET::HEX_VERTS * elem_idx + 1] = ref_vert + j;
-        hex[ET::HEX_VERTS * elem_idx + 2] = ref_vert + jc % nelems_c;
-        hex[ET::HEX_VERTS * elem_idx + 3] = ref_vert + jc % nelems_c + diff;
+        hex[ET::HEX_NVERTS * elem_idx] = ref_vert + j + diff;
+        hex[ET::HEX_NVERTS * elem_idx + 1] = ref_vert + j;
+        hex[ET::HEX_NVERTS * elem_idx + 2] = ref_vert + jc % nelems_c;
+        hex[ET::HEX_NVERTS * elem_idx + 3] = ref_vert + jc % nelems_c + diff;
 
         ref_vert = r * nelems_c * (nelems_h + 1) + (i + 1) * nelems_c;
-        hex[ET::HEX_VERTS * elem_idx + 4] = ref_vert + j + diff;
-        hex[ET::HEX_VERTS * elem_idx + 5] = ref_vert + j;
-        hex[ET::HEX_VERTS * elem_idx + 6] = ref_vert + jc % nelems_c;
-        hex[ET::HEX_VERTS * elem_idx + 7] = ref_vert + jc % nelems_c + diff;
+        hex[ET::HEX_NVERTS * elem_idx + 4] = ref_vert + j + diff;
+        hex[ET::HEX_NVERTS * elem_idx + 5] = ref_vert + j;
+        hex[ET::HEX_NVERTS * elem_idx + 6] = ref_vert + jc % nelems_c;
+        hex[ET::HEX_NVERTS * elem_idx + 7] = ref_vert + jc % nelems_c + diff;
       }
     }
   }

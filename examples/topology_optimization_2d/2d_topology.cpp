@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     printf("number of vertices: %d\n", conn.get_num_verts());
     printf("number of edges:    %d\n", conn.get_num_edges());
-    printf("number of faces:    %d\n", conn.get_num_faces());
+    printf("number of faces:    %d\n", conn.get_num_bounds());
     printf("number of elements: %d\n", conn.get_num_elements());
     printf("number of dofs:     %d\n", prob.get_mesh().get_num_dof());
     printf("matrix dimension:  (%d, %d)\n", csc_mat.nrows, csc_mat.ncols);

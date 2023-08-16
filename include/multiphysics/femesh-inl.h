@@ -48,28 +48,26 @@ inline void MeshConnectivityBase::init_vert_element_data() {
 
 inline MeshConnectivityBase::MeshConnectivityBase(index_t nverts,
                                                   index_t nelems)
-    : nverts(nverts), nelems(nelems) {
-  nfaces = 0;
-  nedges = 0;
-
-  nline_faces = 0;
-  ntri_faces = 0;
-  nquad_faces = 0;
+    : nelems(nelems), nbounds(0), nedges(0), nverts(nverts) {
+  // Number of bounds of all types
+  nline_bounds = 0;
+  ntri_bounds = 0;
+  nquad_bounds = 0;
 
   // vert -> element connectivity
-  vert_element_ptr = NULL;
-  vert_elements = NULL;
+  vert_element_ptr = nullptr;
+  vert_elements = nullptr;
 
-  // Face -> element connectivity
-  line_face_elements = NULL;
-  tri_face_elements = NULL;
-  quad_face_elements = NULL;
+  // Bound -> element connectivity
+  line_bound_elements = nullptr;
+  tri_bound_elements = nullptr;
+  quad_bound_elements = nullptr;
 
   // Set to NULL all the boundary info
   num_boundary_labels = 1;
-  num_boundary_faces = 0;
-  boundary_labels = NULL;
-  boundary_faces = NULL;
+  num_boundary_bounds = 0;
+  boundary_labels = nullptr;
+  boundary_bounds = nullptr;
 }
 
 inline MeshConnectivityBase::~MeshConnectivityBase() {
@@ -80,18 +78,18 @@ inline MeshConnectivityBase::~MeshConnectivityBase() {
     DELETE_ARRAY(vert_elements);
   }
 
-  if (line_face_elements) {
-    DELETE_ARRAY(line_face_elements);
+  if (line_bound_elements) {
+    DELETE_ARRAY(line_bound_elements);
   }
-  if (tri_face_elements) {
-    DELETE_ARRAY(tri_face_elements);
+  if (tri_bound_elements) {
+    DELETE_ARRAY(tri_bound_elements);
   }
-  if (quad_face_elements) {
-    DELETE_ARRAY(quad_face_elements);
+  if (quad_bound_elements) {
+    DELETE_ARRAY(quad_bound_elements);
   }
 
-  if (boundary_faces) {
-    DELETE_ARRAY(boundary_faces);
+  if (boundary_bounds) {
+    DELETE_ARRAY(boundary_bounds);
   }
   if (boundary_labels) {
     DELETE_ARRAY(boundary_labels);
@@ -105,27 +103,28 @@ inline MeshConnectivityBase::~MeshConnectivityBase() {
  */
 inline void MeshConnectivityBase::initialize() {
   init_vert_element_data();
-  init_face_data();
+  init_bound_data();
   init_edge_data();
 
-  // Count up all the faces that are on the boundary
-  num_boundary_faces = 0;
-  for (index_t face = 0; face < nfaces; face++) {
+  // Count up all the bounds that are on the boundary
+  num_boundary_bounds = 0;
+  for (index_t bound = 0; bound < nbounds; bound++) {
     index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
+    get_bound_elements(bound, &e1, &e2);
     if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      num_boundary_faces++;
+      num_boundary_bounds++;
     }
   }
 
-  // Set the boundary labels - 0 for anything on the boundary
-  boundary_faces = new index_t[num_boundary_faces];
-  boundary_labels = new index_t[num_boundary_faces];
-  for (index_t face = 0, count = 0; face < nfaces; face++) {
+  // Set the boundary labels - 0 for anything on the external boundary of the
+  // mesh
+  boundary_bounds = new index_t[num_boundary_bounds];
+  boundary_labels = new index_t[num_boundary_bounds];
+  for (index_t bound = 0, count = 0; bound < nbounds; bound++) {
     index_t e1, e2;
-    get_face_elements(face, &e1, &e2);
+    get_bound_elements(bound, &e1, &e2);
     if (e1 == NO_LABEL || e2 == NO_LABEL) {
-      boundary_faces[count] = face;
+      boundary_bounds[count] = bound;
       boundary_labels[count] = 0;
       count++;
     }
@@ -133,33 +132,33 @@ inline void MeshConnectivityBase::initialize() {
 }
 
 /**
- * @brief Get the boundary faces and labels
+ * @brief Get the boundary bounds and labels
  *
- * @param boundary_faces_ Array of the boundary faces
+ * @param boundary_bounds_ Array of the boundary bounds
  * @param boundary_labels_ Array of the boundary labels
- * @return The number of boundary faces
+ * @return The number of boundary bounds
  */
-inline index_t MeshConnectivityBase::get_boundary_faces(
-    const index_t* boundary_faces_[], const index_t* boundary_labels_[]) {
-  if (boundary_faces_) {
-    *boundary_faces_ = boundary_faces;
+inline index_t MeshConnectivityBase::get_boundary_bounds(
+    const index_t* boundary_bounds_[], const index_t* boundary_labels_[]) {
+  if (boundary_bounds_) {
+    *boundary_bounds_ = boundary_bounds;
   }
   if (boundary_labels_) {
     *boundary_labels_ = boundary_labels;
   }
-  return num_boundary_faces;
+  return num_boundary_bounds;
 }
 
 /**
- * @brief Count up the number of boundary faces with the given label
+ * @brief Count up the number of boundary bounds with the given label
  *
  * @param label The label index
  * @return The number
  */
-inline index_t MeshConnectivityBase::get_num_boundary_faces_with_label(
+inline index_t MeshConnectivityBase::get_num_boundary_bounds_with_label(
     const index_t label) {
   index_t count = 0;
-  for (index_t i = 0; i < num_boundary_faces; i++) {
+  for (index_t i = 0; i < num_boundary_bounds; i++) {
     if (boundary_labels[i] == label) {
       count++;
     }
@@ -171,7 +170,7 @@ inline index_t MeshConnectivityBase::get_num_boundary_faces_with_label(
 /**
  * @brief Add a boundary label from the vertices
  *
- * Any boundary face with all nodes that touch the given set of vertices is
+ * Any boundary bound with all nodes that touch the given set of vertices is
  * labeled
  *
  * @return index_t
@@ -192,27 +191,27 @@ inline index_t MeshConnectivityBase::add_boundary_label_from_verts(
     }
   }
 
-  for (index_t i = 0; i < num_boundary_faces; i++) {
-    index_t face = boundary_faces[i];
+  for (index_t i = 0; i < num_boundary_bounds; i++) {
+    index_t bound = boundary_bounds[i];
 
-    // Get the element corresponding to the face
+    // Get the element corresponding to the bound
     index_t elem, e2;
-    get_face_elements(face, &elem, &e2);
+    get_bound_elements(bound, &elem, &e2);
 
-    // Find the face index for the the boundary face;
-    index_t face_index = 0;
-    const index_t* faces;
-    index_t nf = get_element_faces(elem, &faces);
+    // Find the bound index for the the boundary bound;
+    index_t bound_index = 0;
+    const index_t* bounds;
+    index_t nf = get_element_bounds(elem, &bounds);
     for (index_t j = 0; j < nf; j++) {
-      if (faces[j] == face) {
-        face_index = j;
+      if (bounds[j] == bound) {
+        bound_index = j;
         break;
       }
     }
 
     // Check if all the vertices are labeled or not
     index_t v[4];
-    index_t nv = get_element_face_verts(elem, face_index, v);
+    index_t nv = get_element_bound_verts(elem, bound_index, v);
     bool labeled = true;
     for (index_t k = 0; k < nv; k++) {
       if (vert_labels[v[k]] != VERT_LABEL) {
@@ -228,31 +227,29 @@ inline index_t MeshConnectivityBase::add_boundary_label_from_verts(
 
   DELETE_ARRAY(vert_labels);
 
-  // Return the label that was applied to the faces
+  // Return the label that was applied to the bounds
   if (count > 0) {
     num_boundary_labels++;
     return num_boundary_labels - 1;
   }
 
-  // No faces were found
+  // No bounds were found
   return NO_LABEL;
 }
 
 /**
- * @brief Get the element faces array
+ * @brief Get the element bounds array
  *
  * @param elem The element index
- * @param faces The face indicies associated with the element
- * @return The number of faces
+ * @param bounds The bounds indicies associated with the element
+ * @return The number of bounds
  */
-inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
-                                                       const index_t* faces[]) {
+inline index_t MeshConnectivityBase::get_element_bounds(
+    index_t elem, const index_t* bounds[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  *faces = nullptr;
-  if (*meta.faces) {
-    *faces = &(*meta.faces)[meta.NFACES * elem];
-  }
-  return meta.NFACES;
+  index_t nbounds = meta.get_nbounds();
+  *bounds = &(*meta.bounds)[nbounds * elem];
+  return nbounds;
 }
 
 /**
@@ -265,11 +262,8 @@ inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
 inline index_t MeshConnectivityBase::get_element_verts(index_t elem,
                                                        const index_t* verts[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  *verts = nullptr;
-  if (*meta.verts) {
-    *verts = &(*meta.verts)[meta.NVERTS * elem];
-  }
-  return meta.NVERTS;
+  *verts = &(*meta.verts)[meta.get_nverts() * elem];
+  return meta.get_nverts();
 }
 
 /**
@@ -290,98 +284,108 @@ inline index_t MeshConnectivityBase::get_adjacent_elements_from_vert(
 }
 
 /**
- * @brief Get the global indices of the face in its local order
+ * @brief Get the global indices of the bound in its local order
  *
  * @param elem The element index
- * @param f The local face index
+ * @param b The local bound index
  * @param verts The vertices
  * @return The number of vertices
  */
-inline index_t MeshConnectivityBase::get_element_face_verts(index_t elem,
-                                                            index_t f,
-                                                            index_t verts[]) {
+inline index_t MeshConnectivityBase::get_element_bound_verts(index_t elem,
+                                                             index_t b,
+                                                             index_t verts[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  index_t nverts = meta.FACE_NVERTS[f];
+  index_t nverts = meta.get_bound_nverts(b);
   for (index_t i = 0; i < nverts; i++) {
-    verts[i] = (*meta.verts)[meta.NVERTS * elem + meta.FACE_VERTS[f][i]];
+    verts[i] =
+        (*meta.verts)[meta.get_nverts() * elem + meta.get_bound_vert(b, i)];
   }
   return nverts;
 }
 
 /**
- * @brief Get the local indices of the face in its local order
+ * @brief Get the local indices of the bound in its local order
  *
  * @param elem The element index
- * @param f The local face index
+ * @param b The local bound index
  * @param verts The vertices
  * @return The number of vertices
  */
-inline index_t MeshConnectivityBase::get_element_face_vert_indices(
-    index_t elem, index_t f, index_t verts[]) {
+inline index_t MeshConnectivityBase::get_element_bound_vert_indices(
+    index_t elem, index_t b, index_t verts[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  index_t nverts = meta.FACE_NVERTS[f];
+  index_t nverts = meta.get_bound_nverts(b);
   for (index_t i = 0; i < nverts; i++) {
-    verts[i] = meta.FACE_VERTS[f][i];
+    verts[i] = meta.get_bound_vert(b, i);
   }
   return nverts;
 }
 
 /**
- * @brief Get the edges of the face in its local order
+ * @brief Get the edges of the bound in its local order
  *
  * @param elem The element index
- * @param f The local face index
+ * @param b The local bound index
  * @param edges The edges
  * @return The number of edges
  */
-inline index_t MeshConnectivityBase::get_element_face_edges(index_t elem,
-                                                            index_t f,
-                                                            index_t edges[]) {
+inline index_t MeshConnectivityBase::get_element_bound_edges(index_t elem,
+                                                             index_t b,
+                                                             index_t edges[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  index_t nedges = meta.FACE_NEDGES[f];
+  index_t nedges = meta.get_bound_nedges(b);
+
+  if (nedges == 0) {
+    return nedges;
+  }
 
   for (index_t i = 0; i < nedges; i++) {
-    edges[i] = (*meta.edges)[meta.NEDGES * elem + meta.FACE_EDGES[f][i]];
+    edges[i] =
+        (*meta.edges)[meta.get_nedges() * elem + meta.get_bound_edge(b, i)];
   }
 
   return nedges;
 }
 
 /**
- * @brief Get the indices of the face in its local order
+ * @brief Get the indices of the bound in its local order
  *
  * @param elem The element index
- * @param f The local face index
+ * @param b The local bound index
  * @param edges The vertices
  * @return The number of edges
  */
-inline index_t MeshConnectivityBase::get_element_face_edge_indices(
-    index_t elem, index_t f, index_t edges[]) {
+inline index_t MeshConnectivityBase::get_element_bound_edge_indices(
+    index_t elem, index_t b, index_t edges[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  index_t nedges = meta.FACE_NEDGES[f];
+  index_t nedges = meta.get_bound_nedges(b);
+
+  if (nedges == 0) {
+    return nedges;
+  }
 
   for (index_t i = 0; i < nedges; i++) {
-    edges[i] = meta.FACE_EDGES[f][i];
+    edges[i] = meta.get_bound_edge(b, i);
   }
 
   return nedges;
 }
 
 /**
- * @brief Get the face element vertices in a sorted order
+ * @brief Get the bound element vertices in a sorted order
  *
  * This call will return the vertices in the same order regardless of the
- * orientation of the face. This is used to compare faces.
+ * orientation of the bound. This is used to compare bounds.
  *
  * @param elem The element index
- * @param f The local face index
+ * @param local_bound The local bound index
  * @param verts The vertices
  * @return The number of vertices
  */
-inline index_t MeshConnectivityBase::get_element_global_face_verts(
-    index_t elem, index_t local_face, index_t verts[]) {
-  index_t t[ET::MAX_FACE_VERTS];
-  index_t n = get_element_face_verts(elem, local_face, t);
+inline index_t MeshConnectivityBase::get_element_global_bound_verts(
+    index_t elem, index_t local_bound, index_t verts[]) {
+  index_t t[ET::MAX_BOUND_VERTS];
+  index_t n = get_element_bound_verts(elem, local_bound, t);
 
   if (n == 2) {
     // Find the smallest vertex index
@@ -477,21 +481,21 @@ inline index_t MeshConnectivityBase::get_element_global_face_verts(
     }
   } else {
     char msg[256];
-    snprintf(msg, 256, "%d is an invalid number of vertices for a face", n);
+    snprintf(msg, 256, "%d is an invalid number of vertices for a bound", n);
     throw std::runtime_error(msg);
   }
   return n;
 }
 
 /**
- * @brief Check for equality between two faces
+ * @brief Check for equality between two bounds
  *
- * @return True if the faces match, false otherwise
+ * @return True if the bounds match, false otherwise
  */
-inline bool MeshConnectivityBase::global_face_equality(index_t na,
-                                                       const index_t a[],
-                                                       index_t nb,
-                                                       const index_t b[]) {
+inline bool MeshConnectivityBase::global_bound_equality(index_t na,
+                                                        const index_t a[],
+                                                        index_t nb,
+                                                        const index_t b[]) {
   if (na == nb) {
     if (na == 2) {
       if (a[0] == b[0] && a[1] == b[1]) {
@@ -524,33 +528,33 @@ inline bool MeshConnectivityBase::global_edge_equality(const index_t a[],
 }
 
 /**
- * @brief Get the face elements associated with the given face
+ * @brief Get the bound elements associated with the given bound
  *
- * @param face Global face index
+ * @param bound Global bound index
  * @param e1 Returned value of the first element
  * @param e2 Returned value of the second element, NO_INDEX indicates second
- * element doesn't exist, and this face is a boundary face
- * @return Boolean if this face is on the boundary
+ * element doesn't exist, and this bound is an external boundary bound
+ * @return Boolean if this bound is on the boundary
  */
-inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
-                                                    index_t* e2) {
-  if (face < nline_faces) {
-    *e1 = line_face_elements[2 * face];
-    *e2 = line_face_elements[2 * face + 1];
-    return (line_face_elements[2 * face + 1] == NO_LABEL);
-  } else if (face < ntri_faces) {
-    face = face - nline_faces;
-    *e1 = tri_face_elements[2 * face];
-    *e2 = tri_face_elements[2 * face + 1];
-    return (tri_face_elements[2 * face + 1] == NO_LABEL);
-  } else if (face < nquad_faces) {
-    face = face - nline_faces - ntri_faces;
-    *e1 = quad_face_elements[2 * face];
-    *e2 = quad_face_elements[2 * face + 1];
-    return (quad_face_elements[2 * face + 1] == NO_LABEL);
+inline bool MeshConnectivityBase::get_bound_elements(index_t bound, index_t* e1,
+                                                     index_t* e2) {
+  if (bound < nline_bounds) {
+    *e1 = line_bound_elements[2 * bound];
+    *e2 = line_bound_elements[2 * bound + 1];
+    return (line_bound_elements[2 * bound + 1] == NO_LABEL);
+  } else if (bound < ntri_bounds) {
+    bound = bound - nline_bounds;
+    *e1 = tri_bound_elements[2 * bound];
+    *e2 = tri_bound_elements[2 * bound + 1];
+    return (tri_bound_elements[2 * bound + 1] == NO_LABEL);
+  } else if (bound < nquad_bounds) {
+    bound = bound - nline_bounds - ntri_bounds;
+    *e1 = quad_bound_elements[2 * bound];
+    *e2 = quad_bound_elements[2 * bound + 1];
+    return (quad_bound_elements[2 * bound + 1] == NO_LABEL);
   } else {
     char msg[256];
-    std::snprintf(msg, 256, "%d is not a valid global face index", face);
+    std::snprintf(msg, 256, "%d is not a valid global bound index", bound);
     throw std::runtime_error(msg);
   }
 }
@@ -565,11 +569,13 @@ inline bool MeshConnectivityBase::get_face_elements(index_t face, index_t* e1,
 inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
                                                        const index_t* edges[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  *edges = nullptr;
-  if (*meta.edges) {
-    *edges = &(*meta.edges)[meta.NEDGES * elem];
+  index_t nedges = meta.get_nedges();
+  if (nedges == 0) {
+    *edges = nullptr;
+  } else {
+    *edges = &(*meta.edges)[nedges * elem];
   }
-  return meta.NEDGES;
+  return nedges;
 }
 
 /**
@@ -585,11 +591,10 @@ inline void MeshConnectivityBase::get_element_edge_verts(index_t elem,
                                                          index_t edge,
                                                          index_t verts[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-
-  if (meta.is_valid_element) {
-    verts[0] = (*meta.verts)[meta.NVERTS * elem + meta.EDGE_VERTS[edge][0]];
-    verts[1] = (*meta.verts)[meta.NVERTS * elem + meta.EDGE_VERTS[edge][1]];
-  }
+  verts[0] =
+      (*meta.verts)[meta.get_nverts() * elem + meta.get_edge_vert(edge, 0)];
+  verts[1] =
+      (*meta.verts)[meta.get_nverts() * elem + meta.get_edge_vert(edge, 1)];
 }
 
 template <typename I>
@@ -598,70 +603,30 @@ inline MeshConnectivity2D::MeshConnectivity2D(I nverts, I ntri, I* tri, I nquad,
     : MeshConnectivityBase(nverts, ntri + nquad),
       ntri(ntri),
       nquad(nquad),
-      meta_tri{true,
-               ET::TRI_VERTS,
-               ET::TRI_EDGES,
-               ET::TRI_FACES,
-               ET::TRI_FACE_NVERTS,
-               ET::TRI_FACE_VERTS,
-               ET::TRI_FACE_NEDGES,
-               ET::TRI_FACE_EDGES,
-               ET::TRI_EDGE_VERTS,
-               &tri_verts,
-               &tri_edges,
-               &tri_faces},
-      meta_quad{true,
-                ET::QUAD_VERTS,
-                ET::QUAD_EDGES,
-                ET::QUAD_FACES,
-                ET::QUAD_FACE_NVERTS,
-                ET::QUAD_FACE_VERTS,
-                ET::QUAD_FACE_NEDGES,
-                ET::QUAD_FACE_EDGES,
-                ET::QUAD_EDGE_VERTS,
-                &quad_verts,
-                &quad_edges,
-                &quad_faces},
-      meta_none{false,
-                0,
-                0,
-                0,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr} {
+      meta_tri(MetaDataFactory::create_2d_meta(ET::Element::Tri, &tri_bounds,
+                                               &tri_verts)),
+      meta_quad(MetaDataFactory::create_2d_meta(ET::Element::Quad, &quad_bounds,
+                                                &quad_verts)) {
   Timer timer("MeshConnectivity2D");
   // Allocate space for the element -> vert connectivity
-  tri_verts = new index_t[ET::TRI_VERTS * ntri];
-  quad_verts = new index_t[ET::QUAD_VERTS * nquad];
+  tri_verts = new index_t[ET::TRI_NVERTS * ntri];
+  quad_verts = new index_t[ET::QUAD_NVERTS * nquad];
 
   // Set the connectivity: element -> verts
-  for (index_t i = 0; i < ET::TRI_VERTS * ntri; i++) {
+  for (index_t i = 0; i < ET::TRI_NVERTS * ntri; i++) {
     tri_verts[i] = tri[i];
   }
-  for (index_t i = 0; i < ET::QUAD_VERTS * nquad; i++) {
+  for (index_t i = 0; i < ET::QUAD_NVERTS * nquad; i++) {
     quad_verts[i] = quad[i];
   }
 
-  // Allocate the face data
-  tri_faces = new index_t[ET::TRI_FACES * ntri];
-  quad_faces = new index_t[ET::QUAD_FACES * nquad];
+  // Allocate the bound data
+  tri_bounds = new index_t[ET::TRI_NBOUNDS * ntri];
+  quad_bounds = new index_t[ET::QUAD_NBOUNDS * nquad];
 
-  // Fill the face arrays with NO_LABEL
-  std::fill(tri_faces, tri_faces + ET::TRI_FACES * ntri, NO_LABEL);
-  std::fill(quad_faces, quad_faces + ET::QUAD_FACES * nquad, NO_LABEL);
-
-  // element -> edge connectivity
-  tri_edges = new index_t[ET::TRI_EDGES * ntri];
-  quad_edges = new index_t[ET::QUAD_EDGES * nquad];
-
-  // Fill the face arrays with NO_LABEL
-  std::fill(tri_edges, tri_edges + ET::TRI_EDGES * ntri, NO_LABEL);
-  std::fill(quad_edges, quad_edges + ET::QUAD_EDGES * nquad, NO_LABEL);
+  // Fill the bound arrays with NO_LABEL
+  std::fill(tri_bounds, tri_bounds + ET::TRI_NBOUNDS * ntri, NO_LABEL);
+  std::fill(quad_bounds, quad_bounds + ET::QUAD_NBOUNDS * nquad, NO_LABEL);
 
   initialize();
 }
@@ -674,18 +639,11 @@ inline MeshConnectivity2D::~MeshConnectivity2D() {
     DELETE_ARRAY(quad_verts);
   }
 
-  if (tri_faces) {
-    DELETE_ARRAY(tri_faces);
+  if (tri_bounds) {
+    DELETE_ARRAY(tri_bounds);
   }
-  if (quad_faces) {
-    DELETE_ARRAY(quad_faces);
-  }
-
-  if (tri_edges) {
-    DELETE_ARRAY(tri_edges);
-  }
-  if (quad_edges) {
-    DELETE_ARRAY(quad_edges);
+  if (quad_bounds) {
+    DELETE_ARRAY(quad_bounds);
   }
 }
 
@@ -705,7 +663,10 @@ const inline ElemConnMetaData& MeshConnectivity2D::get_local_elem_and_meta(
     elem -= ntri;
     return meta_quad;
   } else {
-    return meta_none;
+    char msg[256];
+    std::snprintf(msg, 256, "element index %d is beyond the range [0, %d)",
+                  elem, get_num_elements());
+    throw std::runtime_error(msg);
   }
 }
 
@@ -718,110 +679,58 @@ inline MeshConnectivity3D::MeshConnectivity3D(I nverts, I ntets, I* tets,
       nhex(nhex),
       nwedge(nwedge),
       npyrmd(npyrmd),
-      meta_tet{true,
-               ET::TET_VERTS,
-               ET::TET_EDGES,
-               ET::TET_FACES,
-               ET::TET_FACE_NVERTS,
-               ET::TET_FACE_VERTS,
-               ET::TET_FACE_NEDGES,
-               ET::TET_FACE_EDGES,
-               ET::TET_EDGE_VERTS,
-               &tet_verts,
-               &tet_edges,
-               &tet_faces},
-      meta_hex{true,
-               ET::HEX_VERTS,
-               ET::HEX_EDGES,
-               ET::HEX_FACES,
-               ET::HEX_FACE_NVERTS,
-               ET::HEX_FACE_VERTS,
-               ET::HEX_FACE_NEDGES,
-               ET::HEX_FACE_EDGES,
-               ET::HEX_EDGE_VERTS,
-               &hex_verts,
-               &hex_edges,
-               &hex_faces},
-      meta_wedge{true,
-                 ET::WEDGE_VERTS,
-                 ET::WEDGE_EDGES,
-                 ET::WEDGE_FACES,
-                 ET::WEDGE_FACE_NVERTS,
-                 ET::WEDGE_FACE_VERTS,
-                 ET::WEDGE_FACE_NEDGES,
-                 ET::WEDGE_FACE_EDGES,
-                 ET::WEDGE_EDGE_VERTS,
-                 &wedge_verts,
-                 &wedge_edges,
-                 &wedge_faces},
-      meta_pyrmd{true,
-                 ET::PYRMD_VERTS,
-                 ET::PYRMD_EDGES,
-                 ET::PYRMD_FACES,
-                 ET::PYRMD_FACE_NVERTS,
-                 ET::PYRMD_FACE_VERTS,
-                 ET::PYRMD_FACE_NEDGES,
-                 ET::PYRMD_FACE_EDGES,
-                 ET::PYRMD_EDGE_VERTS,
-                 &pyrmd_verts,
-                 &pyrmd_edges,
-                 &pyrmd_faces},
-      meta_none{false,
-                0,
-                0,
-                0,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                ET::NONE_FACE_NQUANTS,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr,
-                nullptr} {
+      meta_tet(MetaDataFactory::create_3d_meta(ET::Element::Tet, &tet_bounds,
+                                               &tet_edges, &tet_verts)),
+      meta_hex(MetaDataFactory::create_3d_meta(ET::Element::Hex, &hex_bounds,
+                                               &hex_edges, &hex_verts)),
+      meta_wedge(MetaDataFactory::create_3d_meta(
+          ET::Element::Wedge, &wedge_bounds, &wedge_edges, &wedge_verts)),
+      meta_pyrmd(MetaDataFactory::create_3d_meta(
+          ET::Element::Pyrmd, &pyrmd_bounds, &pyrmd_edges, &pyrmd_verts)) {
   Timer timer("MeshConnectivity3D");
   // Allocate space for the element -> vert connectivity
-  tet_verts = new index_t[ET::TET_VERTS * ntets];
-  hex_verts = new index_t[ET::HEX_VERTS * nhex];
-  wedge_verts = new index_t[ET::WEDGE_VERTS * nwedge];
-  pyrmd_verts = new index_t[ET::PYRMD_VERTS * npyrmd];
+  tet_verts = new index_t[ET::TET_NVERTS * ntets];
+  hex_verts = new index_t[ET::HEX_NVERTS * nhex];
+  wedge_verts = new index_t[ET::WEDGE_NVERTS * nwedge];
+  pyrmd_verts = new index_t[ET::PYRMD_NVERTS * npyrmd];
 
   // Set the connectivity: element -> verts
-  for (index_t i = 0; i < ET::TET_VERTS * ntets; i++) {
+  for (index_t i = 0; i < ET::TET_NVERTS * ntets; i++) {
     tet_verts[i] = tets[i];
   }
-  for (index_t i = 0; i < ET::HEX_VERTS * nhex; i++) {
+  for (index_t i = 0; i < ET::HEX_NVERTS * nhex; i++) {
     hex_verts[i] = hex[i];
   }
-  for (index_t i = 0; i < ET::WEDGE_VERTS * nwedge; i++) {
+  for (index_t i = 0; i < ET::WEDGE_NVERTS * nwedge; i++) {
     wedge_verts[i] = wedge[i];
   }
-  for (index_t i = 0; i < ET::PYRMD_VERTS * npyrmd; i++) {
+  for (index_t i = 0; i < ET::PYRMD_NVERTS * npyrmd; i++) {
     pyrmd_verts[i] = pyrmd[i];
   }
 
-  // Allocate the face data
-  tet_faces = new index_t[ET::TET_FACES * ntets];
-  hex_faces = new index_t[ET::HEX_FACES * nhex];
-  wedge_faces = new index_t[ET::WEDGE_FACES * nwedge];
-  pyrmd_faces = new index_t[ET::PYRMD_FACES * npyrmd];
+  // Allocate the bound data
+  tet_bounds = new index_t[ET::TET_NBOUNDS * ntets];
+  hex_bounds = new index_t[ET::HEX_NBOUNDS * nhex];
+  wedge_bounds = new index_t[ET::WEDGE_NBOUNDS * nwedge];
+  pyrmd_bounds = new index_t[ET::PYRMD_NBOUNDS * npyrmd];
 
-  // Fill the face arrays with NO_LABEL
-  std::fill(tet_faces, tet_faces + ET::TET_FACES * ntets, NO_LABEL);
-  std::fill(hex_faces, hex_faces + ET::HEX_FACES * nhex, NO_LABEL);
-  std::fill(wedge_faces, wedge_faces + ET::WEDGE_FACES * nwedge, NO_LABEL);
-  std::fill(pyrmd_faces, pyrmd_faces + ET::PYRMD_FACES * npyrmd, NO_LABEL);
+  // Fill the bound arrays with NO_LABEL
+  std::fill(tet_bounds, tet_bounds + ET::TET_NBOUNDS * ntets, NO_LABEL);
+  std::fill(hex_bounds, hex_bounds + ET::HEX_NBOUNDS * nhex, NO_LABEL);
+  std::fill(wedge_bounds, wedge_bounds + ET::WEDGE_NBOUNDS * nwedge, NO_LABEL);
+  std::fill(pyrmd_bounds, pyrmd_bounds + ET::PYRMD_NBOUNDS * npyrmd, NO_LABEL);
 
   // element -> edge connectivity
-  tet_edges = new index_t[ET::TET_EDGES * ntets];
-  hex_edges = new index_t[ET::HEX_EDGES * nhex];
-  wedge_edges = new index_t[ET::WEDGE_EDGES * nwedge];
-  pyrmd_edges = new index_t[ET::PYRMD_EDGES * npyrmd];
+  tet_edges = new index_t[ET::TET_NEDGES * ntets];
+  hex_edges = new index_t[ET::HEX_NEDGES * nhex];
+  wedge_edges = new index_t[ET::WEDGE_NEDGES * nwedge];
+  pyrmd_edges = new index_t[ET::PYRMD_NEDGES * npyrmd];
 
-  // Fill the face arrays with NO_LABEL
-  std::fill(tet_edges, tet_edges + ET::TET_EDGES * ntets, NO_LABEL);
-  std::fill(hex_edges, hex_edges + ET::HEX_EDGES * nhex, NO_LABEL);
-  std::fill(wedge_edges, wedge_edges + ET::WEDGE_EDGES * nwedge, NO_LABEL);
-  std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_EDGES * npyrmd, NO_LABEL);
+  // Fill the bound arrays with NO_LABEL
+  std::fill(tet_edges, tet_edges + ET::TET_NEDGES * ntets, NO_LABEL);
+  std::fill(hex_edges, hex_edges + ET::HEX_NEDGES * nhex, NO_LABEL);
+  std::fill(wedge_edges, wedge_edges + ET::WEDGE_NEDGES * nwedge, NO_LABEL);
+  std::fill(pyrmd_edges, pyrmd_edges + ET::PYRMD_NEDGES * npyrmd, NO_LABEL);
 
   initialize();
 }
@@ -840,17 +749,17 @@ inline MeshConnectivity3D::~MeshConnectivity3D() {
     DELETE_ARRAY(pyrmd_verts);
   }
 
-  if (tet_faces) {
-    DELETE_ARRAY(tet_faces);
+  if (tet_bounds) {
+    DELETE_ARRAY(tet_bounds);
   }
-  if (hex_faces) {
-    DELETE_ARRAY(hex_faces);
+  if (hex_bounds) {
+    DELETE_ARRAY(hex_bounds);
   }
-  if (wedge_faces) {
-    DELETE_ARRAY(wedge_faces);
+  if (wedge_bounds) {
+    DELETE_ARRAY(wedge_bounds);
   }
-  if (pyrmd_faces) {
-    DELETE_ARRAY(pyrmd_faces);
+  if (pyrmd_bounds) {
+    DELETE_ARRAY(pyrmd_bounds);
   }
 
   if (tet_edges) {
@@ -889,28 +798,29 @@ const inline ElemConnMetaData& MeshConnectivity3D::get_local_elem_and_meta(
     elem -= ntets + nhex + nwedge;
     return meta_pyrmd;
   } else {
-    return meta_none;
+    char msg[256];
+    std::snprintf(msg, 256, "element index %d is beyond the range [0, %d)",
+                  elem, get_num_elements());
+    throw std::runtime_error(msg);
   }
 }
 
 /**
- * @brief Label the verts, edges and faces that touch the list of vertices
+ * @brief Label the verts, edges and bounds that touch the list of vertices
  *
  * @param nv The number of input vertices
  * @param verts The vertex numbers
  * @param vert_labels An array of length nverts
  * @param edge_labels An array of length nedges
- * @param face_labels An array of length nfaces
+ * @param bound_labels An array of length nbounds
  */
 template <typename IdxType>
-inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
-                                                        const IdxType verts[],
-                                                        index_t vert_labels[],
-                                                        index_t edge_labels[],
-                                                        index_t face_labels[]) {
+inline void MeshConnectivityBase::get_labels_from_verts(
+    const index_t nv, const IdxType verts[], index_t vert_labels[],
+    index_t edge_labels[], index_t bound_labels[]) {
   std::fill(vert_labels, vert_labels + nverts, NO_LABEL);
   std::fill(edge_labels, edge_labels + nedges, NO_LABEL);
-  std::fill(face_labels, face_labels + nfaces, NO_LABEL);
+  std::fill(bound_labels, bound_labels + nbounds, NO_LABEL);
 
   // Label the vertices
   for (index_t i = 0; i < nv; i++) {
@@ -919,7 +829,7 @@ inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
     }
   }
 
-  // Loop over elements and label the edges and faces
+  // Loop over elements and label the edges and bounds
   for (index_t elem = 0; elem < nelems; elem++) {
     // Check whether the edges are labeled
     const index_t* elem_edges;
@@ -934,26 +844,26 @@ inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
       }
     }
 
-    const index_t* elem_faces;
-    index_t nf = get_element_faces(elem, &elem_faces);
+    const index_t* elem_bounds;
+    index_t nf = get_element_bounds(elem, &elem_bounds);
     for (index_t f = 0; f < nf; f++) {
-      index_t fv[ET::MAX_FACE_VERTS];  // Face vertices
-      index_t nfv = get_element_face_verts(elem, f, fv);
+      index_t fv[ET::MAX_BOUND_VERTS];  // bound vertices
+      index_t nfv = get_element_bound_verts(elem, f, fv);
 
-      // Check if all the face vertices are labeled
+      // Check if all the bound vertices are labeled
       if (nfv == 2) {
         if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL) {
-          face_labels[elem_faces[f]] = elem_faces[f];
+          bound_labels[elem_bounds[f]] = elem_bounds[f];
         }
       } else if (nfv == 3) {
         if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL &&
             vert_labels[fv[2]] != NO_LABEL) {
-          face_labels[elem_faces[f]] = elem_faces[f];
+          bound_labels[elem_bounds[f]] = elem_bounds[f];
         }
       } else if (nfv == 4) {
         if (vert_labels[fv[0]] != NO_LABEL && vert_labels[fv[1]] != NO_LABEL &&
             vert_labels[fv[2]] != NO_LABEL && vert_labels[fv[3]] != NO_LABEL) {
-          face_labels[elem_faces[f]] = elem_faces[f];
+          bound_labels[elem_bounds[f]] = elem_bounds[f];
         }
       }
     }
@@ -961,20 +871,18 @@ inline void MeshConnectivityBase::get_labels_from_verts(const index_t nv,
 }
 
 /**
- * @brief Get a non-constant element faces array
+ * @brief Get a non-constant element bounds array
  *
  * @param elem The element index
- * @param faces The face indicies associated with the element
- * @return The number of faces
+ * @param bounds The bound indicies associated with the element
+ * @return The number of bounds
  */
-inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
-                                                       index_t* faces[]) {
+inline index_t MeshConnectivityBase::get_element_bounds(index_t elem,
+                                                        index_t* bounds[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  *faces = nullptr;
-  if (*meta.faces) {
-    *faces = &(*meta.faces)[meta.NFACES * elem];
-  }
-  return meta.NFACES;
+  index_t nbounds = meta.get_nbounds();
+  *bounds = &(*meta.bounds)[nbounds * elem];
+  return nbounds;
 }
 
 /**
@@ -987,164 +895,168 @@ inline index_t MeshConnectivityBase::get_element_faces(index_t elem,
 inline index_t MeshConnectivityBase::get_element_edges(index_t elem,
                                                        index_t* edges[]) {
   const ElemConnMetaData& meta = get_local_elem_and_meta(elem);
-  *edges = nullptr;
-  if (*meta.edges) {
-    *edges = &(*meta.edges)[meta.NEDGES * elem];
+  index_t nedges = meta.get_nedges();
+  if (nedges == 0) {
+    *edges = nullptr;
+  } else {
+    *edges = &(*meta.edges)[nedges * elem];
   }
-  return meta.NEDGES;
+  return nedges;
 }
 
 /**
- * @brief Initialize data associated with the face information
+ * @brief Initialize data associated with the bound information
  *
- * This code uniquely orders the faces assocaited with each element
+ * This code uniquely orders the bounds associated with each element
  */
-inline void MeshConnectivityBase::init_face_data() {
-  // Prepare to count and number the number of faces. This keeps track of
-  // counts of separate face types (line, triangle, quadrilateral)
+inline void MeshConnectivityBase::init_bound_data() {
+  // Prepare to count and number the number of bounds. This keeps track of
+  // counts of separate bound types (line, triangle, quadrilateral)
   for (index_t elem = 0; elem < nelems; elem++) {
-    // Loop over the elements of this face
-    index_t* faces;
-    const index_t nf = get_element_faces(elem, &faces);
+    // Loop over the elements of this bound
+    index_t* bounds;
+    const index_t nf = get_element_bounds(elem, &bounds);
 
-    for (index_t face = 0; face < nf; face++) {
-      if (faces[face] == NO_LABEL) {
-        // Get the unique set of verts corresponding to this face
-        index_t face_verts[ET::MAX_FACE_VERTS];
-        index_t nface_verts =
-            get_element_global_face_verts(elem, face, face_verts);
+    for (index_t bound = 0; bound < nf; bound++) {
+      if (bounds[bound] == NO_LABEL) {
+        // Get the unique set of verts corresponding to this bound
+        index_t bound_verts[ET::MAX_BOUND_VERTS];
+        index_t nbound_verts =
+            get_element_global_bound_verts(elem, bound, bound_verts);
 
-        bool face_located = false;
+        bool bound_located = false;
 
         // For all adjacent elements check if there is a match
-        for (index_t m = 0; m < nface_verts; m++) {
+        for (index_t m = 0; m < nbound_verts; m++) {
           const index_t* adj_elems;
           const index_t nadj_elems =
-              get_adjacent_elements_from_vert(face_verts[m], &adj_elems);
+              get_adjacent_elements_from_vert(bound_verts[m], &adj_elems);
 
           // Loop over all adjacent elements that are not the current
           // element
           for (index_t k = 0; k < nadj_elems; k++) {
             if (adj_elems[k] != elem) {
-              // Loop over the elements of this face
-              index_t* adj_faces;
+              // Loop over the elements of this bound
+              index_t* adj_bounds;
               const index_t adj_nf =
-                  get_element_faces(adj_elems[k], &adj_faces);
+                  get_element_bounds(adj_elems[k], &adj_bounds);
 
-              for (index_t adj_face = 0; adj_face < adj_nf; adj_face++) {
+              for (index_t adj_bound = 0; adj_bound < adj_nf; adj_bound++) {
                 // Get the unique set of vertices corresponding to this
-                // face
-                index_t adj_face_verts[4];
-                index_t adj_nface_verts = get_element_global_face_verts(
-                    adj_elems[k], adj_face, adj_face_verts);
+                // bound
+                index_t adj_bound_verts[4];
+                index_t adj_nbound_verts = get_element_global_bound_verts(
+                    adj_elems[k], adj_bound, adj_bound_verts);
 
-                if (adj_faces[adj_face] == NO_LABEL &&
-                    global_face_equality(nface_verts, face_verts,
-                                         adj_nface_verts, adj_face_verts)) {
-                  if (nface_verts == 2) {
-                    adj_faces[adj_face] = nline_faces;
-                    faces[face] = nline_faces;
-                    nline_faces++;
-                  } else if (nface_verts == 3) {
-                    adj_faces[adj_face] = ntri_faces;
-                    faces[face] = ntri_faces;
-                    ntri_faces++;
+                if (adj_bounds[adj_bound] == NO_LABEL &&
+                    global_bound_equality(nbound_verts, bound_verts,
+                                          adj_nbound_verts, adj_bound_verts)) {
+                  if (nbound_verts == 2) {
+                    adj_bounds[adj_bound] = nline_bounds;
+                    bounds[bound] = nline_bounds;
+                    nline_bounds++;
+                  } else if (nbound_verts == 3) {
+                    adj_bounds[adj_bound] = ntri_bounds;
+                    bounds[bound] = ntri_bounds;
+                    ntri_bounds++;
                   } else {
-                    adj_faces[adj_face] = nquad_faces;
-                    faces[face] = nquad_faces;
-                    nquad_faces++;
+                    adj_bounds[adj_bound] = nquad_bounds;
+                    bounds[bound] = nquad_bounds;
+                    nquad_bounds++;
                   }
 
-                  face_located = true;
+                  bound_located = true;
                   break;
                 }
               }
 
-              if (face_located) {
+              if (bound_located) {
                 break;
               }
             }
           }
 
-          if (face_located) {
+          if (bound_located) {
             break;
           }
         }
 
-        // No adjacent face was found. This is a boundary face
-        if (!face_located) {
-          if (nface_verts == 2) {
-            faces[face] = nline_faces;
-            nline_faces++;
-          } else if (nface_verts == 3) {
-            faces[face] = ntri_faces;
-            ntri_faces++;
+        // No adjacent bound was found. This is a boundary bound
+        if (!bound_located) {
+          if (nbound_verts == 2) {
+            bounds[bound] = nline_bounds;
+            nline_bounds++;
+          } else if (nbound_verts == 3) {
+            bounds[bound] = ntri_bounds;
+            ntri_bounds++;
           } else {
-            faces[face] = nquad_faces;
-            nquad_faces++;
+            bounds[bound] = nquad_bounds;
+            nquad_bounds++;
           }
 
-          // Add this face to the boundary face list???
+          // Add this bound to the boundary bound list???
         }
       }
     }
   }
 
-  // Sum up the total number of faces
-  nfaces = nline_faces + ntri_faces + nquad_faces;
+  // Sum up the total number of bounds
+  nbounds = nline_bounds + ntri_bounds + nquad_bounds;
 
-  // Set the face indices associated with the two adjacent elements. At
-  // this point the face indices stored are with respect to separate lists
-  // of triangular and quadrilateral faces. We order the triangular faces
-  // first, so we have to add the total number of triangular faces to each
-  // quadrilateral face index to get the global index.
-  line_face_elements = new index_t[2 * nline_faces];
-  std::fill(line_face_elements, line_face_elements + 2 * nline_faces, NO_LABEL);
+  // Set the bound indices associated with the two adjacent elements. At
+  // this point the bound indices stored are with respect to separate lists
+  // of triangular and quadrilateral bounds. We order the triangular bounds
+  // first, so we have to add the total number of triangular bounds to each
+  // quadrilateral bound index to get the global index.
+  line_bound_elements = new index_t[2 * nline_bounds];
+  std::fill(line_bound_elements, line_bound_elements + 2 * nline_bounds,
+            NO_LABEL);
 
-  tri_face_elements = new index_t[2 * ntri_faces];
-  std::fill(tri_face_elements, tri_face_elements + 2 * ntri_faces, NO_LABEL);
+  tri_bound_elements = new index_t[2 * ntri_bounds];
+  std::fill(tri_bound_elements, tri_bound_elements + 2 * ntri_bounds, NO_LABEL);
 
-  quad_face_elements = new index_t[2 * nquad_faces];
-  std::fill(quad_face_elements, quad_face_elements + 2 * nquad_faces, NO_LABEL);
+  quad_bound_elements = new index_t[2 * nquad_bounds];
+  std::fill(quad_bound_elements, quad_bound_elements + 2 * nquad_bounds,
+            NO_LABEL);
 
   for (index_t elem = 0; elem < nelems; elem++) {
-    // Loop over the elements of this face
-    index_t* faces;
-    const index_t nf = get_element_faces(elem, &faces);
+    // Loop over the elements of this bound
+    index_t* bounds;
+    const index_t nf = get_element_bounds(elem, &bounds);
 
-    for (index_t face = 0; face < nf; face++) {
-      index_t face_verts[ET::MAX_FACE_VERTS];
-      index_t nface_verts =
-          get_element_global_face_verts(elem, face, face_verts);
+    for (index_t bound = 0; bound < nf; bound++) {
+      index_t bound_verts[ET::MAX_BOUND_VERTS];
+      index_t nbound_verts =
+          get_element_global_bound_verts(elem, bound, bound_verts);
 
-      if (nface_verts == 2) {
-        if (line_face_elements[2 * faces[face]] == NO_LABEL) {
-          line_face_elements[2 * faces[face]] = elem;
-        } else if (line_face_elements[2 * faces[face] + 1] == NO_LABEL) {
-          line_face_elements[2 * faces[face] + 1] = elem;
+      if (nbound_verts == 2) {
+        if (line_bound_elements[2 * bounds[bound]] == NO_LABEL) {
+          line_bound_elements[2 * bounds[bound]] = elem;
+        } else if (line_bound_elements[2 * bounds[bound] + 1] == NO_LABEL) {
+          line_bound_elements[2 * bounds[bound] + 1] = elem;
         }
-      } else if (nface_verts == 3) {
-        if (tri_face_elements[2 * faces[face]] == NO_LABEL) {
-          tri_face_elements[2 * faces[face]] = elem;
-        } else if (tri_face_elements[2 * faces[face] + 1] == NO_LABEL) {
-          tri_face_elements[2 * faces[face] + 1] = elem;
+      } else if (nbound_verts == 3) {
+        if (tri_bound_elements[2 * bounds[bound]] == NO_LABEL) {
+          tri_bound_elements[2 * bounds[bound]] = elem;
+        } else if (tri_bound_elements[2 * bounds[bound] + 1] == NO_LABEL) {
+          tri_bound_elements[2 * bounds[bound] + 1] = elem;
         }
 
-        // Reset the face index into the global face index - add the
-        // number of line faces. Now the faces will index from a
-        // global face number.
-        faces[face] += nline_faces;
+        // Reset the bound index into the global bound index - add the
+        // number of line bounds. Now the bounds will index from a
+        // global bound number.
+        bounds[bound] += nline_bounds;
       } else {
-        if (quad_face_elements[2 * faces[face]] == NO_LABEL) {
-          quad_face_elements[2 * faces[face]] = elem;
-        } else if (quad_face_elements[2 * faces[face] + 1] == NO_LABEL) {
-          quad_face_elements[2 * faces[face] + 1] = elem;
+        if (quad_bound_elements[2 * bounds[bound]] == NO_LABEL) {
+          quad_bound_elements[2 * bounds[bound]] = elem;
+        } else if (quad_bound_elements[2 * bounds[bound] + 1] == NO_LABEL) {
+          quad_bound_elements[2 * bounds[bound] + 1] = elem;
         }
 
-        // Reset the face index into the global face index - add the
-        // number of line and triangle faces. Now the faces will index from a
-        // global face number.
-        faces[face] += nline_faces + ntri_faces;
+        // Reset the bound index into the global bound index - add the
+        // number of line and triangle bounds. Now the bounds will index from a
+        // global bound number.
+        bounds[bound] += nline_bounds + ntri_bounds;
       }
     }
   }
@@ -1153,7 +1065,7 @@ inline void MeshConnectivityBase::init_face_data() {
 /**
  * @brief Initialize and order the edge information.
  *
- * This relies on the face connectivity data - so that must be initialized
+ * This relies on the bound connectivity data - so that must be initialized
  * first.
  */
 inline void MeshConnectivityBase::init_edge_data() {
@@ -1316,13 +1228,13 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
 
     for (index_t i = start; i < end; i++) {
       // Loop over
-      const index_t* faces;
-      index_t nf = conn.get_element_faces(stack[i], &faces);
+      const index_t* bounds;
+      index_t nf = conn.get_element_bounds(stack[i], &bounds);
 
       for (index_t j = 0; j < nf; j++) {
         // Look at the adjacent elements
         index_t e1, e2;
-        conn.get_face_elements(faces[j], &e1, &e2);
+        conn.get_bound_elements(bounds[j], &e1, &e2);
 
         if (e1 < nelems && ids[e1] == NO_INDEX) {
           ids[e1] = level;
@@ -1341,7 +1253,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     end = next;
   }
 
-  std::vector<index_t> face_owners(conn.get_num_faces(), NO_INDEX);
+  std::vector<index_t> bound_owners(conn.get_num_bounds(), NO_INDEX);
   std::vector<index_t> edge_owners(conn.get_num_edges(), NO_INDEX);
   std::vector<index_t> vert_owners(conn.get_num_verts(), NO_INDEX);
 
@@ -1355,89 +1267,60 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
       index_t* elem_dof = &element_dof[elem * ndof_per_element];
       int* elem_sign = &element_sign[elem * ndof_per_element];
 
-      // The volume DOF are always owned by the element - no need to check
+      // The domain DOF are always owned by the element - no need to check
       // for the element that owns them
-      index_t ndof;
-      if constexpr (dim == 3) {
-        ndof = Basis::get_entity_ndof(basis, ET::VOLUME, 0);
-      } else if constexpr (dim == 2) {
-        ndof = Basis::get_entity_ndof(basis, ET::FACE, 0);
-      } else if constexpr (dim == 1) {
-        ndof = Basis::get_entity_ndof(basis, ET::EDGE, 0);
-      }
+      index_t ndof = Basis::get_entity_ndof(basis, ET::Domain, 0);
 
       for (index_t i = 0; i < ndof; i++, dof_counter++) {
         dof[i] = dof_counter;
       }
-      if constexpr (dim == 3) {
-        Basis::set_entity_dof(basis, ET::VOLUME, 0, 0, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::VOLUME, 0, 0, elem_sign);
-      } else if constexpr (dim == 2) {
-        Basis::set_entity_dof(basis, ET::FACE, 0, 0, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::FACE, 0, 0, elem_sign);
-      } else if constexpr (dim == 1) {
-        Basis::set_entity_dof(basis, ET::EDGE, 0, 0, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::EDGE, 0, 0, elem_sign);
-      }
+      Basis::set_entity_dof(basis, ET::Domain, 0, 0, dof, elem_dof);
+      Basis::set_entity_signs(basis, ET::Domain, 0, 0, elem_sign);
 
-      // Order the faces
-      const index_t* faces;
-      index_t nf = conn.get_element_faces(elem, &faces);
+      // Order the bounds
+      const index_t* bounds;
+      index_t nf = conn.get_element_bounds(elem, &bounds);
       for (index_t index = 0; index < nf; index++) {
-        index_t face = faces[index];
+        index_t bound = bounds[index];
         index_t orient = 0;
-        if (face_owners[face] == NO_INDEX || face_owners[face] == elem) {
-          face_owners[face] = elem;
+        if (bound_owners[bound] == NO_INDEX || bound_owners[bound] == elem) {
+          bound_owners[bound] = elem;
 
-          if constexpr (dim == 3) {
-            ndof = Basis::get_entity_ndof(basis, ET::FACE, index);
-          } else if constexpr (dim == 2) {
-            ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
-          } else {
-            ndof = 0;
-          }
+          ndof = Basis::get_entity_ndof(basis, ET::Bound, index);
+
           for (index_t i = 0; i < ndof; i++, dof_counter++) {
             dof[i] = dof_counter;
           }
         } else {
-          index_t owner_elem = face_owners[face];
-          const index_t* owner_faces;
-          index_t nf_owner = conn.get_element_faces(owner_elem, &owner_faces);
+          index_t owner_elem = bound_owners[bound];
+          const index_t* owner_bounds;
+          index_t nf_owner = conn.get_element_bounds(owner_elem, &owner_bounds);
 
           for (index_t i = 0; i < nf_owner; i++) {
-            if (owner_faces[i] == face) {
+            if (owner_bounds[i] == bound) {
               index_t ref[4], verts[4];
-              index_t nverts = conn.get_element_face_verts(owner_elem, i, ref);
-              conn.get_element_face_verts(elem, index, verts);
+              index_t nverts = conn.get_element_bound_verts(owner_elem, i, ref);
+              conn.get_element_bound_verts(elem, index, verts);
 
-              if constexpr (dim == 3) {
-                Basis::get_entity_dof(
-                    basis, ET::FACE, i,
-                    &element_dof[owner_elem * ndof_per_element], dof);
-              } else if constexpr (dim == 2) {
-                Basis::get_entity_dof(
-                    basis, ET::EDGE, i,
-                    &element_dof[owner_elem * ndof_per_element], dof);
-              }
+              Basis::get_entity_dof(basis, ET::Bound, i,
+                                    &element_dof[owner_elem * ndof_per_element],
+                                    dof);
 
               if (nverts == 4) {
-                orient = ET::get_quad_face_orientation(ref, verts);
+                orient = ET::get_quad_domain_orientation(ref, verts);
+              } else if (nverts == 2) {
+                // TODO: probably this is needed for line element too?
               }
               break;
             }
           }
         }
 
-        if constexpr (dim == 3) {
-          Basis::set_entity_dof(basis, ET::FACE, index, orient, dof, elem_dof);
-          Basis::set_entity_signs(basis, ET::FACE, index, orient, elem_sign);
-        } else if constexpr (dim == 2) {
-          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
-          Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
-        }
+        Basis::set_entity_dof(basis, ET::Bound, index, orient, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::Bound, index, orient, elem_sign);
       }
 
-      // Order the edges
+      // Order the edges, only effective for dim == 3
       const index_t* edges;
       index_t ne = conn.get_element_edges(elem, &edges);
       for (index_t index = 0; index < ne; index++) {
@@ -1446,11 +1329,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
         if (edge_owners[edge] == NO_INDEX || edge_owners[edge] == elem) {
           edge_owners[edge] = elem;
 
-          if constexpr (dim == 3) {
-            ndof = Basis::get_entity_ndof(basis, ET::EDGE, index);
-          } else {
-            ndof = 0;
-          }
+          ndof = Basis::get_entity_ndof(basis, ET::Edge, index);
           for (index_t i = 0; i < ndof; i++, dof_counter++) {
             dof[i] = dof_counter;
           }
@@ -1465,11 +1344,9 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
               conn.get_element_edge_verts(owner_elem, i, ref);
               conn.get_element_edge_verts(elem, index, verts);
 
-              if constexpr (dim == 3) {
-                Basis::get_entity_dof(
-                    basis, ET::EDGE, i,
-                    &element_dof[owner_elem * ndof_per_element], dof);
-              }
+              Basis::get_entity_dof(basis, ET::Edge, i,
+                                    &element_dof[owner_elem * ndof_per_element],
+                                    dof);
 
               if (ref[0] == verts[1] && ref[1] == verts[0]) {
                 orient = 1;
@@ -1479,13 +1356,11 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           }
         }
 
-        if constexpr (dim == 3) {
-          Basis::set_entity_dof(basis, ET::EDGE, index, orient, dof, elem_dof);
-          Basis::set_entity_signs(basis, ET::EDGE, index, orient, elem_sign);
-        }
+        Basis::set_entity_dof(basis, ET::Edge, index, orient, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::Edge, index, orient, elem_sign);
       }
 
-      // Order the vertices
+      // Order the vertices (only effective for dim == 2 or 3)
       const index_t* verts;
       index_t nv = conn.get_element_verts(elem, &verts);
       for (index_t index = 0; index < nv; index++) {
@@ -1494,7 +1369,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
         if (vert_owners[vert] == NO_INDEX || vert_owners[vert] == elem) {
           vert_owners[vert] = elem;
 
-          ndof = Basis::get_entity_ndof(basis, ET::VERTEX, index);
+          ndof = Basis::get_entity_ndof(basis, ET::Vertex, index);
           for (index_t i = 0; i < ndof; i++, dof_counter++) {
             dof[i] = dof_counter;
           }
@@ -1505,7 +1380,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
 
           for (index_t i = 0; i < nv_owner; i++) {
             if (owner_verts[i] == vert) {
-              Basis::get_entity_dof(basis, ET::VERTEX, i,
+              Basis::get_entity_dof(basis, ET::Vertex, i,
                                     &element_dof[owner_elem * ndof_per_element],
                                     dof);
               break;
@@ -1513,8 +1388,8 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           }
         }
 
-        Basis::set_entity_dof(basis, ET::VERTEX, index, orient, dof, elem_dof);
-        Basis::set_entity_signs(basis, ET::VERTEX, index, orient, elem_sign);
+        Basis::set_entity_dof(basis, ET::Vertex, index, orient, dof, elem_dof);
+        Basis::set_entity_signs(basis, ET::Vertex, index, orient, elem_sign);
       }
     }
 
@@ -1531,6 +1406,9 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
  * Take the degrees of freedom for only thoes surface elements with the
  * specified label
  *
+ * Note: typically Basis in this case is in a lower dimension (dim=2, e.g.) and
+ * InteroirBasis is in a higher dimension (dim=3, e.g.)
+ *
  * @tparam InteriorBasis FEBasis type used in the interior
  * @param label Surface label index
  * @param conn The mesh connectivity information associated with the mesh
@@ -1540,31 +1418,31 @@ template <class Basis>
 template <class InteriorBasis>
 ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
                                 ElementMesh<InteriorBasis>& mesh)
-    : nelems(conn.get_num_boundary_faces_with_label(label)) {
+    : nelems(conn.get_num_boundary_bounds_with_label(label)) {
   element_dof = new index_t[nelems * ndof_per_element];
   element_sign = new int[nelems * ndof_per_element];
 
-  // Get the number of boundary faces
-  const index_t* boundary_faces;
+  // Get the number of boundary bounds
+  const index_t* boundary_bounds;
   const index_t* boundary_labels;
-  index_t num_boundary_faces =
-      conn.get_boundary_faces(&boundary_faces, &boundary_labels);
+  index_t num_boundary_bounds =
+      conn.get_boundary_bounds(&boundary_bounds, &boundary_labels);
 
-  for (index_t i = 0, elem_count = 0; i < num_boundary_faces; i++) {
+  for (index_t i = 0, elem_count = 0; i < num_boundary_bounds; i++) {
     if (boundary_labels[i] == label) {
-      index_t face = boundary_faces[i];
+      index_t bound = boundary_bounds[i];
 
-      // Get the element adjacent to the boundary face (e2 can be ignored)
+      // Get the element adjacent to the boundary bound (e2 can be ignored)
       index_t elem, e2;
-      conn.get_face_elements(face, &elem, &e2);
+      conn.get_bound_elements(bound, &elem, &e2);
 
-      // Find the face index for the element
-      index_t face_index = 0;
-      const index_t* faces;
-      index_t nf = conn.get_element_faces(elem, &faces);
+      // Find the bound index for the element
+      index_t bound_index = 0;
+      const index_t* bounds;
+      index_t nf = conn.get_element_bounds(elem, &bounds);
       for (index_t index = 0; index < nf; index++) {
-        if (face == faces[index]) {
-          face_index = index;
+        if (bound == bounds[index]) {
+          bound_index = index;
         }
       }
 
@@ -1581,80 +1459,76 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
       // The degree of freedom indices for each entity
       index_t entity_dof[InteriorBasis::ndof];
 
-      // Set the vertices associated with the face
+      // If this dim == 2:
+      //   - set vertices from interior vertices
+      // If this dim == 1:
+      //   - set bounds from interior vertices
       index_t v[4];
-      index_t nv = conn.get_element_face_vert_indices(elem, face_index, v);
+      index_t nv = conn.get_element_bound_vert_indices(elem, bound_index, v);
       for (index_t j = 0; j < nv; j++) {
         for (index_t basis = 0; basis < Basis::nbasis; basis++) {
           index_t vert_index = v[j];
 
           // Get the vertex dof from the interior element
-          InteriorBasis::get_entity_dof(basis, ET::VERTEX, vert_index, dof,
+          InteriorBasis::get_entity_dof(basis, ET::Vertex, vert_index, dof,
                                         entity_dof);
 
           index_t surf_vert_index = j;
           index_t orient = 0;
 
           // Set the same vertex index on the corresponding surface
-          Basis::set_entity_dof(basis, ET::VERTEX, surf_vert_index, orient,
+          ET::ElementEntity dest_entity;
+          if constexpr (dim == 2) {
+            dest_entity = ET::Vertex;
+          } else if constexpr (dim == 1) {
+            dest_entity = ET::Bound;
+          }
+          Basis::set_entity_dof(basis, dest_entity, surf_vert_index, orient,
                                 entity_dof, surf_dof);
-          Basis::set_entity_signs(basis, ET::VERTEX, surf_vert_index, orient,
+          Basis::set_entity_signs(basis, dest_entity, surf_vert_index, orient,
                                   surf_signs);
         }
       }
 
-      // Set the edges associated with the face
+      // Set bounds from interior edges
+      // Note: this is only effective when dim of this basis is 2
       index_t e[4];
-      index_t ne = conn.get_element_face_edge_indices(elem, face_index, e);
+      index_t ne = conn.get_element_bound_edge_indices(elem, bound_index, e);
       for (index_t j = 0; j < ne; j++) {
         for (index_t basis = 0; basis < Basis::nbasis; basis++) {
           index_t edge_index = e[j];
 
-          // Get the vertex dof from the interior element
-          if constexpr (dim == 3) {
-            InteriorBasis::get_entity_dof(basis, ET::EDGE, edge_index, dof,
-                                          entity_dof);
-          }
+          // Get domain dof for this basis from the bonud dof of the interior
+          // element
+          InteriorBasis::get_entity_dof(basis, ET::Edge, edge_index, dof,
+                                        entity_dof);
 
-          // Get the edge orientation relative to the face
+          // Get the edge orientation relative to the bound
           index_t orient = 0;
 
-          // Get the index of the edge on the face
+          // Get the index of the edge on the bound
           index_t surf_edge_index = j;
 
           // Set the same edge on the corresponding surface
-          if constexpr (dim == 3) {
-            Basis::set_entity_dof(basis, ET::EDGE, surf_edge_index, orient,
-                                  entity_dof, surf_dof);
-            Basis::set_entity_signs(basis, ET::EDGE, surf_edge_index, orient,
-                                    surf_signs);
-          }
+          Basis::set_entity_dof(basis, ET::Bound, surf_edge_index, orient,
+                                entity_dof, surf_dof);
+          Basis::set_entity_signs(basis, ET::Bound, surf_edge_index, orient,
+                                  surf_signs);
         }
       }
 
-      // Loop over all the boundary faces
+      // Set domain from interior bound
       for (index_t basis = 0; basis < InteriorBasis::nbasis; basis++) {
         // Get the degrees of freeom from the element
         index_t orient = 0;
-        if constexpr (dim == 3) {
-          InteriorBasis::get_entity_dof(basis, ET::FACE, face_index, dof,
-                                        entity_dof);
-        } else if constexpr (dim == 2) {
-          InteriorBasis::get_entity_dof(basis, ET::EDGE, face_index, dof,
-                                        entity_dof);
-        }
+        InteriorBasis::get_entity_dof(basis, ET::Bound, bound_index, dof,
+                                      entity_dof);
 
-        // Set the degrees of freedom - the face element has the same
+        // Set the degrees of freedom - the bound element has the same
         // orientation as its interior owner
-        if constexpr (dim == 3) {
-          Basis::set_entity_dof(basis, ET::FACE, 0, orient, entity_dof,
-                                surf_dof);
-          Basis::set_entity_signs(basis, ET::FACE, 0, orient, surf_signs);
-        } else if constexpr (dim == 2) {
-          Basis::set_entity_dof(basis, ET::EDGE, 0, orient, entity_dof,
-                                surf_dof);
-          Basis::set_entity_signs(basis, ET::EDGE, 0, orient, surf_signs);
-        }
+        Basis::set_entity_dof(basis, ET::Domain, 0, orient, entity_dof,
+                              surf_dof);
+        Basis::set_entity_signs(basis, ET::Domain, 0, orient, surf_signs);
       }
 
       elem_count++;
@@ -1789,7 +1663,7 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
 
 /**
  * @brief Construct a new Boundary Condition object by constraining the
- * degrees of freedom from the vertices, edges and faces that touch the
+ * degrees of freedom from the vertices, edges and bounds that touch the
  * specified degrees of freedom
  *
  * @param conn The connectivity
@@ -1799,10 +1673,10 @@ template <class Basis>
 DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
                                   ElementMesh<Basis>& mesh,
                                   DirichletBCInfo& bcinfo) {
-  const index_t* boundary_faces;
+  const index_t* boundary_bounds;
   const index_t* boundary_labels;
-  index_t num_boundary_faces =
-      conn.get_boundary_faces(&boundary_faces, &boundary_labels);
+  index_t num_boundary_bounds =
+      conn.get_boundary_bounds(&boundary_bounds, &boundary_labels);
 
   index_t num_dof = mesh.get_num_dof();
   index_t boundary_dof_counter = 0;
@@ -1813,16 +1687,16 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
   std::fill(dof_flags, dof_flags + num_dof, NO_LABEL);
 
   // Loop over all the boundaries
-  for (index_t boundary_face = 0; boundary_face < num_boundary_faces;
-       boundary_face++) {
-    index_t face = boundary_faces[boundary_face];
-    index_t label = boundary_labels[boundary_face];
+  for (index_t boundary_bound = 0; boundary_bound < num_boundary_bounds;
+       boundary_bound++) {
+    index_t bound = boundary_bounds[boundary_bound];
+    index_t label = boundary_labels[boundary_bound];
 
     // Find the edges and
     if (bcinfo.active_for_label(label)) {
-      // Find the element for this face
+      // Find the element for this bound
       index_t elem, e2;
-      conn.get_face_elements(face, &elem, &e2);
+      conn.get_bound_elements(bound, &elem, &e2);
 
       // Get the degrees of freedom for this element
       const index_t* elem_dof;
@@ -1831,31 +1705,25 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
       // Array of dof that may be extracted
       index_t dof[Basis::ndof];
 
-      // Find the face index for the active face
-      index_t face_index = 0;
-      const index_t* faces;
-      index_t nf = conn.get_element_faces(elem, &faces);
+      // Find the bound index for the active bound
+      index_t bound_index = 0;
+      const index_t* bounds;
+      index_t nf = conn.get_element_bounds(elem, &bounds);
       for (index_t i = 0; i < nf; i++) {
-        if (faces[i] == face) {
-          face_index = i;
+        if (bounds[i] == bound) {
+          bound_index = i;
           break;
         }
       }
 
       for (index_t basis = 0; basis < Basis::nbasis; basis++) {
         if (bcinfo.active_for_basis(label, basis)) {
-          index_t nface_dof;
-          if constexpr (dim == 3) {
-            nface_dof = Basis::get_entity_ndof(basis, ET::FACE, face_index);
-            Basis::get_entity_dof(basis, ET::FACE, face_index, elem_dof, dof);
-          } else if constexpr (dim == 2) {
-            nface_dof = Basis::get_entity_ndof(basis, ET::EDGE, face_index);
-            Basis::get_entity_dof(basis, ET::EDGE, face_index, elem_dof, dof);
-          } else {
-            nface_dof = 0;
-          }
+          // Set the boundary conditions on the bounds
+          index_t nbound_dof =
+              Basis::get_entity_ndof(basis, ET::Bound, bound_index);
+          Basis::get_entity_dof(basis, ET::Bound, bound_index, elem_dof, dof);
 
-          for (index_t k = 0; k < nface_dof; k++) {
+          for (index_t k = 0; k < nbound_dof; k++) {
             bool active = bcinfo.active_for_dof(label, basis,
                                                 k % Basis::get_stride(basis));
 
@@ -1867,20 +1735,16 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
             }
           }
 
-          // Set the boundary conditions on the element face edges and verts
+          // Set the boundary conditions on the edges, only effective for dim =
+          // 3
           index_t e[4];
-          int ne = conn.get_element_face_edge_indices(elem, face_index, e);
-
+          int ne = conn.get_element_bound_edge_indices(elem, bound_index, e);
           for (index_t j = 0; j < ne; j++) {
             index_t edge_index = e[j];
 
             index_t nedge_dof;
-            if constexpr (dim == 3) {
-              nedge_dof = Basis::get_entity_ndof(basis, ET::EDGE, edge_index);
-              Basis::get_entity_dof(basis, ET::EDGE, edge_index, elem_dof, dof);
-            } else {
-              nedge_dof = 0;
-            }
+            nedge_dof = Basis::get_entity_ndof(basis, ET::Edge, edge_index);
+            Basis::get_entity_dof(basis, ET::Edge, edge_index, elem_dof, dof);
 
             for (index_t k = 0; k < nedge_dof; k++) {
               bool active = bcinfo.active_for_dof(label, basis,
@@ -1895,16 +1759,18 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
             }
           }
 
-          // Get the vertices associated with the face
+          // Set the boundary conditions on the vertices, only effective for dim
+          // = 2 or 3
           index_t v[4];
-          index_t nv = conn.get_element_face_vert_indices(elem, face_index, v);
+          index_t nv =
+              conn.get_element_bound_vert_indices(elem, bound_index, v);
 
           for (index_t j = 0; j < nv; j++) {
             index_t vert_index = v[j];
 
             index_t nvert_dof =
-                Basis::get_entity_ndof(basis, ET::VERTEX, vert_index);
-            Basis::get_entity_dof(basis, ET::VERTEX, vert_index, elem_dof, dof);
+                Basis::get_entity_ndof(basis, ET::Vertex, vert_index);
+            Basis::get_entity_dof(basis, ET::Vertex, vert_index, elem_dof, dof);
 
             for (index_t k = 0; k < nvert_dof; k++) {
               bool active = bcinfo.active_for_dof(label, basis,

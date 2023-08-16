@@ -58,7 +58,7 @@ class A2DTest {
    */
   bool is_close(const T test_value, const T ref_value) {
     T abs_err = fabs(std::real(test_value - ref_value));
-    T combo = atol + rtol * fabs(std::real(test_value - ref_value));
+    T combo = atol + rtol * fabs(std::real(ref_value));
     if (std::real(abs_err) > std::real(combo)) {
       return false;
     }
@@ -82,11 +82,9 @@ class A2DTest {
     T rel_err = fabs(std::real((test_value - ref_value) / ref_value));
 
     if (passed) {
-      out << str << " test for " << typeid(A2DTest<T, Inputs...>).name()
-          << " PASSED.";
+      out << str << " PASSED.";
     } else {
-      out << str << " test for " << typeid(A2DTest<T, Inputs...>).name()
-          << " FAILED.";
+      out << str << " FAILED.";
     }
     out << std::setprecision(9) << " AD: " << std::setw(12)
         << std::real(test_value) << " CS: " << std::setw(12)

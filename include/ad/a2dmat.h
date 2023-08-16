@@ -4,6 +4,7 @@
 #include "a2denum.h"
 #include "a2dobjs.h"
 #include "a2dscalar.h"
+#include "a2dvec.h"
 
 namespace A2D {
 
@@ -261,25 +262,24 @@ class GetSeed {
     }
   }
 
-  // template <typename T, int N>
-  // static A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
-  //   static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
-  //   return value.bvalue;
-  // }
+  template <typename T, int N>
+  static A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
+    return value.Vb;
+  }
 
-  // template <typename T, int N>
-  // static A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, N>>& value) {
-  //   static_assert(seed == ADseed::b or seed == ADseed::p or seed ==
-  //   ADseed::h,
-  //                 "Incompatible seed type for A2DScalar");
-  //   if constexpr (seed == ADseed::b) {
-  //     return value.bvalue;
-  //   } else if constexpr (seed == ADseed::p) {
-  //     return value.pvalue;
-  //   } else {  // seed == ADseed::h
-  //     return value.hvalue;
-  //   }
-  // }
+  template <typename T, int N>
+  static A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, N>>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DScalar");
+    if constexpr (seed == ADseed::b) {
+      return value.Vb;
+    } else if constexpr (seed == ADseed::p) {
+      return value.Vp;
+    } else {  // seed == ADseed::h
+      return value.Vh;
+    }
+  }
 
   template <typename T, int m, int n>
   static A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {

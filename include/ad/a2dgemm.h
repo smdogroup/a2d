@@ -10,15 +10,43 @@
 
 namespace A2D {
 
+/*
+  Compute C = opA(A) * opB(B)
+
+  dot{C} =  opA(dot{A}) * opB(B) + opA(A) * opB(dot{B})
+
+  tr(bar{C}^{T} * dot{C})
+  = tr(bar{C}^{T} * opA(dot{A}) * opB(B)) +
+    tr(bar{C}^{T} * opA(A) * opB(dot{B}))
+  = tr(opB(B) * bar{C}^{T} * opA(dot{A})) +
+    tr(bar{C}^{T} * opA(A) * opB(dot{B}))
+
+  if opA == NORMAL then
+    tr(bar{B}^{T} * dot{A})
+    ==> bar{A} = bar{B}
+  if opA == TRANSPOSE
+    tr(bar{B}^{T} * dot{A^{T}}) = tr(dot{A} * bar{B}) = tr(bar{B} * dot{A})
+    ==> bar{A} = bar{B}^{T}
+
+  if opA == NORMAL then:
+    bar{A} = (opB(B) * bar{C}^{T})^{T} = bar{C} * not_opB(B)
+  if opA == TRANSPOSE then:
+    bar{A} = opB(B) * bar{C}^{T}
+
+  if opB == NORMAL
+    bar{B} = (bar{C}^{T} * opA(A))^{T} = not_opA(A) * bar{C}
+  if opB == TRANSPOSE then:
+    bar{B} = bar{C}^{T} * opA(A)
+*/
+
+// compute C = op(A) * op(B) and returns nothing, where A and B are all
+// passive variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
 A2D_INLINE_FUNCTION void MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
                                     Mat<T, P, Q>& C) {
   MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, MatOp::NORMAL>(
       get_data(A), get_data(B), get_data(C));
 }
-
-// compute C = op(A) * op(B) and returns nothing, where A and B are all
-// passive variables
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 A2D_INLINE_FUNCTION void MatMatMult(Mat<T, N, M>& A, Mat<T, K, L>& B,
@@ -70,14 +98,34 @@ class MatMatMultExpr {
 
   A2D_INLINE_FUNCTION void reverse() {
     if constexpr (adA == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, not_opB, opA, true>(
-          GetSeed<ADseed::b>::get_data(C), get_data(B),
-          GetSeed<ADseed::b>::get_data(A));
+      if constexpr (opA == MatOp::NORMAL) {
+        // bar{A} += bar{C} * not_opB(B)
+        MatMatMultCore<T, P, Q, K, L, N, M, MatOp::NORMAL, not_opB,
+                       MatOp::NORMAL, true>(GetSeed<ADseed::b>::get_data(C),
+                                            get_data(B),
+                                            GetSeed<ADseed::b>::get_data(A));
+      } else {
+        // bar{A} += opB(B) * bar{C}^{T}
+        MatMatMultCore<T, K, L, P, Q, N, M, opB, MatOp::TRANSPOSE,
+                       MatOp::NORMAL, true>(get_data(B),
+                                            GetSeed<ADseed::b>::get_data(C),
+                                            GetSeed<ADseed::b>::get_data(A));
+      }
     }
     if constexpr (adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, not_opA, MatOp::NORMAL, opB, true>(
-          get_data(A), GetSeed<ADseed::b>::get_data(C),
-          GetSeed<ADseed::b>::get_data(B));
+      if constexpr (opB == MatOp::NORMAL) {
+        // bar{B} += not_opA(A) * bar{C}
+        MatMatMultCore<T, N, M, P, Q, K, L, not_opA, MatOp::NORMAL,
+                       MatOp::NORMAL, true>(get_data(A),
+                                            GetSeed<ADseed::b>::get_data(C),
+                                            GetSeed<ADseed::b>::get_data(B));
+      } else {
+        // bar{B} += bar{C}^{T} * opA(A)
+        MatMatMultCore<T, P, Q, N, M, K, L, MatOp::TRANSPOSE, opA,
+                       MatOp::NORMAL, true>(GetSeed<ADseed::b>::get_data(C),
+                                            get_data(A),
+                                            GetSeed<ADseed::b>::get_data(B));
+      }
     }
   }
 

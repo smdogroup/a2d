@@ -18,13 +18,19 @@ class TestMatMult
     A2D::Mat<T, N, K> B;
     A2D::Mat<T, M, K> C;
     A2D::Mat<T, K, K> D;
+    A2D::Mat<T, K, M> E;
+    A2D::Mat<T, K, K> F;
 
     x.get_values(A, B);
 
-    // Compute C = A * B
+    // C = A * B
     A2D::MatMatMult(A, B, C);
-    // Compute D = C^{T} * C
+    // D = C^{T} * C
     A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(C, C, D);
+    // E = D^{T} * C^{T}
+    A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::TRANSPOSE>(D, C, E);
+    // F = E * E^{T}
+    A2D::MatMatMult<A2D::MatOp::NORMAL, A2D::MatOp::TRANSPOSE>(E, E, F);
 
     T trace;
     A2D::MatTrace(D, trace);
@@ -38,24 +44,34 @@ class TestMatMult
     A2D::Mat<T, N, K> B0, Bb;
     A2D::Mat<T, M, K> C0, Cb;
     A2D::Mat<T, K, K> D0, Db;
+    A2D::Mat<T, K, M> E0, Eb;
+    A2D::Mat<T, K, K> F0, Fb;
 
     A2D::ADMat<A2D::Mat<T, M, N>> A(A0, Ab);
     A2D::ADMat<A2D::Mat<T, N, K>> B(B0, Bb);
     A2D::ADMat<A2D::Mat<T, M, K>> C(C0, Cb);
     A2D::ADMat<A2D::Mat<T, K, K>> D(D0, Db);
+    A2D::ADMat<A2D::Mat<T, K, M>> E(E0, Eb);
+    A2D::ADMat<A2D::Mat<T, K, K>> F(F0, Fb);
 
     x.get_values(A0, B0);
 
-    // Compute C = A * B
+    // C = A * B
     auto mult1 = A2D::MatMatMult(A, B, C);
-    // Compute D = C^{T} * C
+    // D = C^{T} * C
     auto mult2 =
         A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::NORMAL>(C, C, D);
+    // E = D^{T} * C^{T}
+    auto mult3 =
+        A2D::MatMatMult<A2D::MatOp::TRANSPOSE, A2D::MatOp::TRANSPOSE>(D, C, E);
+    // F = E * E^{T}
+    auto mult4 =
+        A2D::MatMatMult<A2D::MatOp::NORMAL, A2D::MatOp::TRANSPOSE>(E, E, F);
 
     A2D::ADScalar<T> trace;
     auto tr1 = A2D::MatTrace(D, trace);
 
-    auto stack = A2D::MakeStack(mult1, mult2, tr1);
+    auto stack = A2D::MakeStack(mult1, mult2, mult3, mult4, tr1);
 
     trace.bvalue = 1.0;
     stack.reverse();
@@ -65,7 +81,7 @@ class TestMatMult
 };
 
 int main() {
-  TestMatMult<std::complex<double>, 3, 3, 3> test1;
+  TestMatMult<std::complex<double>, 3, 5, 7> test1;
 
   A2D::Test::RunADTest(test1);
 

@@ -1298,7 +1298,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
 
           for (index_t i = 0; i < nf_owner; i++) {
             if (owner_bounds[i] == bound) {
-              index_t ref[4], verts[4];
+              index_t ref[ET::MAX_BOUND_VERTS], verts[ET::MAX_BOUND_VERTS];
               index_t nverts = conn.get_element_bound_verts(owner_elem, i, ref);
               conn.get_element_bound_verts(elem, index, verts);
 
@@ -1309,7 +1309,9 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
               if (nverts == 4) {
                 orient = ET::get_quad_domain_orientation(ref, verts);
               } else if (nverts == 2) {
-                // TODO: probably this is needed for line element too?
+                if (ref[0] == verts[1] && ref[1] == verts[0]) {
+                  orient = 1;
+                }
               }
               break;
             }

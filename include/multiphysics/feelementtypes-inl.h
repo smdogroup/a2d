@@ -97,16 +97,25 @@ template <index_t offset, bool ends, index_t ndof, index_t nx, class EntityDof,
 void ElementTypes::set_line_domain_dof(const index_t orient,
                                        const EntityDof& entity,
                                        ElemDof& element) {
+  index_t index;
   if constexpr (ends) {
     for (index_t j = 0; j < nx; j++) {
       for (index_t i = 0; i < ndof; i++) {
-        element[offset + ndof * j + i] = entity[ndof * j + i];
+        index = offset + ndof * j;
+        if (orient == 1) {
+          index = offset + ndof * (nx - 1 - j);
+        }
+        element[index + i] = entity[ndof * j + i];
       }
     }
   } else {
     for (index_t j = 1; j < nx - 1; j++) {
       for (index_t i = 0; i < ndof; i++) {
-        element[offset + ndof * j + i] = entity[ndof * j + i];
+        index = offset + ndof * j;
+        if (orient == 1) {
+          index = offset + ndof * (nx - 1 - j);
+        }
+        element[index + i] = entity[ndof * j + i];
       }
     }
   }

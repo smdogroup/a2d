@@ -52,6 +52,7 @@ class SurfaceMapping {
   template <class FiniteElementGeometry>
   SurfaceMapping(const FiniteElementGeometry& geo, T& detJ) : detJ(detJ) {
     if constexpr (dim == 2) {
+      detJ = 1.0;
     } else if constexpr (dim == 3) {
       const A2D::Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
 

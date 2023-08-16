@@ -19,7 +19,8 @@
  *
  * Note: in our terminology, bound and boundary are different and need not to be
  * used interchangeably. Bound is the boundary of a single element, while
- * boundary is the boundary of the entire mesh.
+ * boundary is the boundary of the entire mesh that boundary conditions may be
+ * applied to.
  */
 
 namespace A2D {

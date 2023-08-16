@@ -28,9 +28,10 @@ class QHdivHexBasis {
   using LOrderBasis = QHdivHexBasis<T, 1>;
 
   /**
-   * @brief Degree of freedom handling on the vertices, edges, faces and volume
+   * @brief Degree of freedom handling on the vertices, edges, bounds and domain
    *
-   * @param entity The type of topological entity (vertex, edge, face or volume)
+   * @param entity The type of topological entity (vertex, edge, bound or
+   * domain)
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
@@ -47,7 +48,7 @@ class QHdivHexBasis {
    * @brief Get the entity DOF from the element DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of entity (vertex, edge, bound or domain)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param element_dof Degrees of freedom for this element
@@ -62,22 +63,22 @@ class QHdivHexBasis {
         const bool endp = true;
         const index_t ndof = 1;
         ET::get_hex_bound_dof<offset, endp, ndof, order, order - 1, order - 1,
-                             ElemDof, EntityDof>(index, element_dof,
-                                                 entity_dof);
+                              ElemDof, EntityDof>(index, element_dof,
+                                                  entity_dof);
       } else if (index < 4) {
         const index_t off = offset + order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
         ET::get_hex_bound_dof<off, endp, ndof, order - 1, order, order - 1,
-                             ElemDof, EntityDof>(index, element_dof,
-                                                 entity_dof);
+                              ElemDof, EntityDof>(index, element_dof,
+                                                  entity_dof);
       } else {
         const index_t off = offset + 2 * order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
         ET::get_hex_bound_dof<off, endp, ndof, order - 1, order - 1, order,
-                             ElemDof, EntityDof>(index, element_dof,
-                                                 entity_dof);
+                              ElemDof, EntityDof>(index, element_dof,
+                                                  entity_dof);
       }
     } else if (entity == ET::Domain) {
       index_t enode = 0;
@@ -117,7 +118,7 @@ class QHdivHexBasis {
    * @brief Set the element DOF and signs from the entity DOF
    *
    * @tparam offset The offset into the basis
-   * @param entity The type of entity (vertex, edge, face or volume)
+   * @param entity The type of entity (vertex, edge, bound or domain)
    * @param index The index of the entity (e.g. edge index)
    * @param orient Orientation flag indicating the relative orientation
    * @param entity_dof Entity DOF in the global orientation
@@ -132,22 +133,22 @@ class QHdivHexBasis {
         const bool endp = true;
         const index_t ndof = 1;
         ET::set_hex_bound_dof<offset, endp, ndof, order, order - 1, order - 1,
-                             EntityDof, ElemDof>(index, orient, entity_dof,
-                                                 element_dof);
+                              EntityDof, ElemDof>(index, orient, entity_dof,
+                                                  element_dof);
       } else if (index < 4) {
         const index_t off = offset + order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
         ET::set_hex_bound_dof<off, endp, ndof, order - 1, order, order - 1,
-                             EntityDof, ElemDof>(index, orient, entity_dof,
-                                                 element_dof);
+                              EntityDof, ElemDof>(index, orient, entity_dof,
+                                                  element_dof);
       } else {
         const index_t off = offset + 2 * order * (order - 1) * (order - 1);
         const bool endp = true;
         const index_t ndof = 1;
         ET::set_hex_bound_dof<off, endp, ndof, order - 1, order - 1, order,
-                             EntityDof, ElemDof>(index, orient, entity_dof,
-                                                 element_dof);
+                              EntityDof, ElemDof>(index, orient, entity_dof,
+                                                  element_dof);
       }
     } else if (entity == ET::Domain) {
       index_t enode = 0;
@@ -400,7 +401,7 @@ class QHdivHexBasis {
       lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order - 1>(knots, pt[2], n3);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n1[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -418,7 +419,7 @@ class QHdivHexBasis {
       lagrange_basis<order>(pt[1], n2, dx);
       lagrange_basis<order - 1>(knots, pt[2], n3);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n2[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -435,7 +436,7 @@ class QHdivHexBasis {
       lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order>(pt[2], n3, dx);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n3[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -505,7 +506,7 @@ class QHdivHexBasis {
       lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order - 1>(knots, pt[2], n3);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n1[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -523,7 +524,7 @@ class QHdivHexBasis {
       lagrange_basis<order>(pt[1], n2, dx);
       lagrange_basis<order - 1>(knots, pt[2], n3);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n2[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -540,7 +541,7 @@ class QHdivHexBasis {
       lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order>(pt[2], n3, dx);
 
-      // Flip the first basis function on the negative face
+      // Flip the first basis function on the negative bound
       n3[0] *= -1.0;
       dx[0] *= -1.0;
 
@@ -582,7 +583,7 @@ class QHdivHexBasis {
     lagrange_basis<order - 1>(knots, pt[1], n2);
     lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
+    // Flip the first basis function on the negative bound
     n1[0] *= -1.0;
     dx[0] *= -1.0;
 
@@ -602,7 +603,7 @@ class QHdivHexBasis {
     lagrange_basis<order>(pt[1], n2, dx);
     lagrange_basis<order - 1>(knots, pt[2], n3);
 
-    // Flip the first basis function on the negative face
+    // Flip the first basis function on the negative bound
     n2[0] *= -1.0;
     dx[0] *= -1.0;
 
@@ -621,7 +622,7 @@ class QHdivHexBasis {
     lagrange_basis<order - 1>(knots, pt[1], n2);
     lagrange_basis<order>(pt[2], n3, dx);
 
-    // Flip the first basis function on the negative face
+    // Flip the first basis function on the negative bound
     n3[0] *= -1.0;
     dx[0] *= -1.0;
 

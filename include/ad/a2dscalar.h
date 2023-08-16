@@ -29,20 +29,35 @@ class A2DScalar {
   T hvalue;
 };
 
+double& get_data(double& value) { return value; }
+
+std::complex<double>& get_data(std::complex<double>& value) { return value; }
+
+template <typename T>
+T& get_data(ADScalar<T>& value) {
+  return value.value;
+}
+
+template <typename T>
+T& get_data(A2DScalar<T>& value) {
+  return value.value;
+}
+
 /**
  * @brief Select type based on whether the scalar is passive or active (can be
  * differentiated)
  *
  * @tparam adiff_type passive or active
+ * @tparam order first (AD) or second (A2D)
  * @tparam MatType the numeric type of the matrix
  */
-template <ADiffType adiff_type, typename T>
-using ADScalarType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                               ADScalar<T>, T>::type;
-
-template <ADiffType adiff_type, typename T>
-using A2DScalarType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                                A2DScalar<T>, T>::type;
+template <ADiffType adiff_type, ADorder order, typename T>
+using ADScalarType = typename std::conditional<
+    adiff_type == ADiffType::ACTIVE,
+    typename std::conditional<order == ADorder::FIRST, ADScalar<T>,
+                              A2DScalar<T>>::type,
+    T>::type;
 
 }  // namespace A2D
+
 #endif  // A2D_SCALAR_H

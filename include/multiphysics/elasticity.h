@@ -36,7 +36,7 @@ class TopoLinearElasticity {
 
   // The type of matrix used to store data at each quadrature point
   static const A2D::index_t ncomp = FiniteElementSpace::ncomp;
-  using QMatType = A2D::SymmMat<T, ncomp>;
+  using QMatType = A2D::SymMat<T, ncomp>;
 
   // Data for the element
   T mu0;      // Second Lame parameter
@@ -65,7 +65,7 @@ class TopoLinearElasticity {
     A2D::Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
 
     // The Green-Langrange strain terms
-    A2D::SymmMat<T, dim> E;
+    A2D::SymMat<T, dim> E;
 
     T output;
     A2D::MatLinearGreenStrain(Ux, E);
@@ -102,8 +102,8 @@ class TopoLinearElasticity {
     A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
 
     // The Green-Langrange strain terms
-    A2D::SymmMat<T, dim> E0, Eb;
-    A2D::ADMat<A2D::SymmMat<T, dim>> E(E0, Eb);
+    A2D::SymMat<T, dim> E0, Eb;
+    A2D::ADMat<A2D::SymMat<T, dim>> E(E0, Eb);
 
     // The strain energy output
     A2D::ADScalar<T> output;
@@ -171,7 +171,7 @@ class TopoLinearElasticity {
     T rho, penalty;
     T mu, lambda;
     A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymmMat<T, dim>> E;
+    A2D::A2DMat<A2D::SymMat<T, dim>> E;
     A2D::A2DScalar<T> output;
 
     // Declare types of the operators
@@ -237,7 +237,7 @@ class TopoLinearElasticity {
     T mu0, lambda0;
     A2D::A2DScalar<T> mu, lambda;
     A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymmMat<T, dim>> E;
+    A2D::A2DMat<A2D::SymMat<T, dim>> E;
     A2D::A2DScalar<T> output;
 
     // Declare types of the operators
@@ -463,7 +463,7 @@ class TopoVonMisesAggregation {
   T max(const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s) {
     const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymmMat<T, dim> E, S;
+    A2D::SymMat<T, dim> E, S;
     T trS, trSS;
 
     A2D::MatLinearGreenStrain(Ux, E);
@@ -498,7 +498,7 @@ class TopoVonMisesAggregation {
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
               const FiniteElementSpace& s) {
     const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymmMat<T, dim> E, S;
+    A2D::SymMat<T, dim> E, S;
     T trS, trSS;
 
     A2D::MatLinearGreenStrain(Ux, E);
@@ -534,12 +534,12 @@ class TopoVonMisesAggregation {
             const FiniteElementSpace& s, FiniteElementSpace& coef) {
     A2D::Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
     A2D::Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    A2D::SymmMat<T, dim> E0, Eb;
-    A2D::SymmMat<T, dim> S0, Sb;
+    A2D::SymMat<T, dim> E0, Eb;
+    A2D::SymMat<T, dim> S0, Sb;
 
     A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    A2D::ADMat<A2D::SymmMat<T, dim>> E(E0, Eb);
-    A2D::ADMat<A2D::SymmMat<T, dim>> S(S0, Sb);
+    A2D::ADMat<A2D::SymMat<T, dim>> E(E0, Eb);
+    A2D::ADMat<A2D::SymMat<T, dim>> S(S0, Sb);
     A2D::ADScalar<T> trS, trSS;
 
     auto strain = A2D::MatLinearGreenStrain(Ux, E);
@@ -588,7 +588,7 @@ class TopoVonMisesAggregation {
                        const FiniteElementGeometry& geo,
                        const FiniteElementSpace& s, DataSpace& dfdx) {
     const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymmMat<T, dim> E, S;
+    A2D::SymMat<T, dim> E, S;
     T trS, trSS;
 
     A2D::MatLinearGreenStrain(Ux, E);

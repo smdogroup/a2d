@@ -3,6 +3,7 @@
 
 #include "a2denum.h"
 #include "a2dobjs.h"
+#include "a2dscalar.h"
 
 namespace A2D {
 
@@ -10,6 +11,8 @@ template <typename T, int M, int N>
 class Mat {
  public:
   typedef T type;
+
+  static const index_t num_components = M * N;
 
   A2D_INLINE_FUNCTION Mat() {
     for (int i = 0; i < M * N; i++) {
@@ -62,7 +65,88 @@ class Mat {
 
   T* data() { return A; }
 
+  template <typename I>
+  A2D_INLINE_FUNCTION T& operator[](const I i) {
+    return A[i];
+  }
+  template <typename I>
+  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+    return A[i];
+  }
+
   T A[M * N];
+};
+
+template <typename T, int N>
+class SymMat {
+ public:
+  typedef T type;
+  static const int MAT_SIZE = (N * (N + 1)) / 2;
+
+  static const index_t num_components = MAT_SIZE;
+
+  A2D_INLINE_FUNCTION SymMat() {
+    for (int i = 0; i < MAT_SIZE; i++) {
+      A[i] = 0.0;
+    }
+  }
+  A2D_INLINE_FUNCTION SymMat(const T* vals) {
+    for (int i = 0; i < MAT_SIZE; i++) {
+      A[i] = vals[i];
+    }
+  }
+  A2D_INLINE_FUNCTION void zero() {
+    for (int i = 0; i < MAT_SIZE; i++) {
+      A[i] = 0.0;
+    }
+  }
+  template <class SymMat>
+  A2D_INLINE_FUNCTION void set(const SymMat& mat) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        A[i + j * (j + 1) / 2] = mat(i, j);
+      }
+    }
+  }
+  template <class SymMat>
+  A2D_INLINE_FUNCTION void get(SymMat& mat) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        mat(i, j) = A[i + j * (j + 1) / 2];
+      }
+    }
+  }
+
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
+    if (i >= j) {
+      return A[j + i * (i + 1) / 2];
+    } else {
+      return A[i + j * (j + 1) / 2];
+    }
+  }
+  template <class IdxType1, class IdxType2>
+  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+                                          const IdxType2 j) const {
+    if (i >= j) {
+      return A[j + i * (i + 1) / 2];
+    } else {
+      return A[i + j * (j + 1) / 2];
+    }
+  }
+
+  T* data() { return A; }
+
+  template <typename I>
+  A2D_INLINE_FUNCTION T& operator[](const I i) {
+    return A[i];
+  }
+  template <typename I>
+  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+    return A[i];
+  }
+
+  T A[MAT_SIZE];
 };
 
 template <class MatType>
@@ -136,6 +220,21 @@ A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
 
+template <typename T, int m>
+A2D_INLINE_FUNCTION T* get_data(SymMat<T, m>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m>
+A2D_INLINE_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m>
+A2D_INLINE_FUNCTION T* get_data(A2DMat<SymMat<T, m>>& mat) {
+  return mat.A;
+}
+
 /**
  * @brief Get pointer to seed data (bvalue, pvalue, hvalue) from
  * Mat/ADMat/A2DMat objects
@@ -143,6 +242,45 @@ A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
 template <ADseed seed>
 class GetSeed {
  public:
+  template <typename T>
+  static A2D_INLINE_FUNCTION T& get_data(ADScalar<T>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
+    return value.bvalue;
+  }
+
+  template <typename T>
+  static A2D_INLINE_FUNCTION T& get_data(A2DScalar<T>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DScalar");
+    if constexpr (seed == ADseed::b) {
+      return value.bvalue;
+    } else if constexpr (seed == ADseed::p) {
+      return value.pvalue;
+    } else {  // seed == ADseed::h
+      return value.hvalue;
+    }
+  }
+
+  // template <typename T, int N>
+  // static A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
+  //   static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
+  //   return value.bvalue;
+  // }
+
+  // template <typename T, int N>
+  // static A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, N>>& value) {
+  //   static_assert(seed == ADseed::b or seed == ADseed::p or seed ==
+  //   ADseed::h,
+  //                 "Incompatible seed type for A2DScalar");
+  //   if constexpr (seed == ADseed::b) {
+  //     return value.bvalue;
+  //   } else if constexpr (seed == ADseed::p) {
+  //     return value.pvalue;
+  //   } else {  // seed == ADseed::h
+  //     return value.hvalue;
+  //   }
+  // }
+
   template <typename T, int m, int n>
   static A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");

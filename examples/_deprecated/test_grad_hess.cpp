@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
   // typedef int32_t IndexType;
   typedef A2D_complex_t<double> ScalarType;
   typedef A2D::Mat<ScalarType, 3, 3> Mat3x3;
-  typedef A2D::SymmMat<ScalarType, 3> SymmMat3x3;
+  typedef A2D::SymMat<ScalarType, 3> SymMat3x3;
 
   double dh = 1e-30;
 
@@ -42,13 +42,13 @@ int main(int argc, char* argv[]) {
   Mat3x3 Jinv0, Jinvb;
   Mat3x3 Uxi0, Uxib;
   Mat3x3 Ux0, Uxb;
-  SymmMat3x3 E0, Eb;
+  SymMat3x3 E0, Eb;
 
   A2D::A2DMat<N, Mat3x3> J(J0, Jb);
   A2D::A2DMat<N, Mat3x3> Jinv(Jinv0, Jinvb);
   A2D::A2DMat<N, Mat3x3> Uxi(Uxi0, Uxib);
   A2D::A2DMat<N, Mat3x3> Ux(Ux0, Uxb);
-  A2D::A2DMat<N, SymmMat3x3> E(E0, Eb);
+  A2D::A2DMat<N, SymMat3x3> E(E0, Eb);
   A2D::A2DScalar<N, ScalarType> output;
 
   ScalarType mu(0.5140), lambda(0.13414);

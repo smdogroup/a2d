@@ -46,7 +46,7 @@ class MixedHelmholtz {
   typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
 
   // The type of matrix used to store data at each quadrature point
-  typedef A2D::SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+  typedef A2D::SymMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::InteriorMapping<T, dim>;

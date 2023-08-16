@@ -11,11 +11,11 @@ template <typename T>
 void reisdual(T mu, T lambda, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
               A2D::Mat<T, 3, 3>& Uxi0, A2D::Mat<T, 3, 3>& Uxib) {
   A2D::Mat<T, 3, 3> Ux0, Uxb;
-  A2D::SymmMat<T, 3> E0, Eb;
+  A2D::SymMat<T, 3> E0, Eb;
 
   A2D::ADMat<A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
   A2D::ADMat<A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-  A2D::ADMat<A2D::SymmMat<T, 3>> E(E0, Eb);
+  A2D::ADMat<A2D::SymMat<T, 3>> E(E0, Eb);
   A2D::ADScalar<T> output;
 
   auto mult = A2D::MatMatMult(Uxi, Jinv0, Ux);
@@ -34,12 +34,12 @@ void adjoint_product(T mu0, T lambda0, T wdetJ, A2D::Mat<T, 3, 3>& Jinv0,
                      A2D::Mat<T, 3, 3> Uxi0, A2D::Mat<T, 3, 3> Pxi0, T& dmu,
                      T& dlambda) {
   A2D::Mat<T, 3, 3> Uxib, Ux0, Uxb;
-  A2D::SymmMat<T, 3> E0, Eb;
+  A2D::SymMat<T, 3> E0, Eb;
 
   const int N = 1;
   A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Uxi(Uxi0, Uxib);
   A2D::A2DMat<N, A2D::Mat<T, 3, 3>> Ux(Ux0, Uxb);
-  A2D::A2DMat<N, A2D::SymmMat<T, 3>> E(E0, Eb);
+  A2D::A2DMat<N, A2D::SymMat<T, 3>> E(E0, Eb);
   A2D::A2DScalar<N, T> output;
   A2D::A2DScalar<N, T> mu(mu0), lambda(lambda0);
 

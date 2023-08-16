@@ -11,6 +11,8 @@ class Vec {
  public:
   typedef T type;
 
+  static const index_t num_components = N;
+
   A2D_INLINE_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {
       V[i] = 0.0;
@@ -42,6 +44,17 @@ class Vec {
   }
 
   T* data() { return V; }
+
+  // private:
+
+  template <typename I>
+  A2D_INLINE_FUNCTION T& operator[](const I i) {
+    return V[i];
+  }
+  template <typename I>
+  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+    return V[i];
+  }
 
   T V[N];
 };

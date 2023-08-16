@@ -131,7 +131,7 @@ class PoissonForSphere {
   using DataSpace = A2D::FESpace<T, data_dim>;
   using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>>;
   using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
-  using QMatType = A2D::SymmMat<T, FiniteElementSpace::ncomp>;
+  using QMatType = A2D::SymMat<T, FiniteElementSpace::ncomp>;
   using SolutionMapping = A2D::InteriorMapping<T, dim>;
 
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,

@@ -29,7 +29,7 @@ class NonlinearElasticity {
   typedef FESpace<T, dim, H1Space<T, dim, dim>> FiniteElementSpace;
 
   // The type of matrix used to store data at each quadrature point
-  typedef SymmMat<T, FiniteElementSpace::ncomp> QMatType;
+  typedef SymMat<T, FiniteElementSpace::ncomp> QMatType;
 
   /**
    * @brief Evaluate the weak form coefficients for nonlinear elasticity
@@ -55,8 +55,8 @@ class NonlinearElasticity {
     ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
 
     // The Green-Langrange strain terms
-    SymmMat<T, dim> E0, Eb;
-    ADMat<SymmMat<T, dim>> E(E0, Eb);
+    SymMat<T, dim> E0, Eb;
+    ADMat<SymMat<T, dim>> E(E0, Eb);
 
     // The strain energy output
     ADScalar<T> output;
@@ -121,7 +121,7 @@ class NonlinearElasticity {
    private:
     T mu, lambda;
     A2DMat<Mat<T, dim, dim>> Ux;
-    A2DMat<SymmMat<T, dim>> E;
+    A2DMat<SymMat<T, dim>> E;
     A2DScalar<T> output;
 
     // Declare types of the operators
@@ -177,7 +177,7 @@ class NonlinearElasticity {
    private:
     A2DScalar<T> mu, lambda;
     A2DMat<Mat<T, dim, dim>> Ux;
-    A2DMat<SymmMat<T, dim>> E;
+    A2DMat<SymMat<T, dim>> E;
     A2DScalar<T> output;
 
     // Declare types of the operators

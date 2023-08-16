@@ -58,8 +58,8 @@ inline void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
     C[4] = A[1] * B[3] + A[4] * B[4] + A[7] * B[5];
     C[5] = A[1] * B[6] + A[4] * B[7] + A[7] * B[8];
     C[6] = A[2] * B[0] + A[5] * B[1] + A[8] * B[2];
-    C[7] = A[2] * B[6] + A[5] * B[7] + A[8] * B[8];
-    C[8] = A[2] * B[3] + A[5] * B[4] + A[8] * B[5];
+    C[7] = A[2] * B[3] + A[5] * B[4] + A[8] * B[5];
+    C[8] = A[2] * B[6] + A[5] * B[7] + A[8] * B[8];
   }
 }
 
@@ -103,8 +103,8 @@ inline void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[], T C[]) {
     C[4] = scalar * (A[1] * B[3] + A[4] * B[4] + A[7] * B[5]);
     C[5] = scalar * (A[1] * B[6] + A[4] * B[7] + A[7] * B[8]);
     C[6] = scalar * (A[2] * B[0] + A[5] * B[1] + A[8] * B[2]);
-    C[7] = scalar * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
-    C[8] = scalar * (A[2] * B[3] + A[5] * B[4] + A[8] * B[5]);
+    C[7] = scalar * (A[2] * B[3] + A[5] * B[4] + A[8] * B[5]);
+    C[8] = scalar * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 }
 
@@ -148,8 +148,8 @@ inline void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
     C[4] += A[1] * B[3] + A[4] * B[4] + A[7] * B[5];
     C[5] += A[1] * B[6] + A[4] * B[7] + A[7] * B[8];
     C[6] += A[2] * B[0] + A[5] * B[1] + A[8] * B[2];
-    C[7] += A[2] * B[6] + A[5] * B[7] + A[8] * B[8];
-    C[8] += A[2] * B[3] + A[5] * B[4] + A[8] * B[5];
+    C[7] += A[2] * B[3] + A[5] * B[4] + A[8] * B[5];
+    C[8] += A[2] * B[6] + A[5] * B[7] + A[8] * B[8];
   }
 }
 
@@ -194,8 +194,8 @@ inline void MatMatMultCore3x3ScaleAdd(T scalar, const T A[], const T B[],
     C[4] += scalar * (A[1] * B[3] + A[4] * B[4] + A[7] * B[5]);
     C[5] += scalar * (A[1] * B[6] + A[4] * B[7] + A[7] * B[8]);
     C[6] += scalar * (A[2] * B[0] + A[5] * B[1] + A[8] * B[2]);
-    C[7] += scalar * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
-    C[8] += scalar * (A[2] * B[3] + A[5] * B[4] + A[8] * B[5]);
+    C[7] += scalar * (A[2] * B[3] + A[5] * B[4] + A[8] * B[5]);
+    C[8] += scalar * (A[2] * B[6] + A[5] * B[7] + A[8] * B[8]);
   }
 }
 

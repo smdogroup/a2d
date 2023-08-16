@@ -13,7 +13,11 @@ namespace A2D {
 /*
   Compute C = opA(A) * opB(B)
 
+  Forward mode-derivative:
+
   dot{C} =  opA(dot{A}) * opB(B) + opA(A) * opB(dot{B})
+
+  Derivation of the reverse-mode derivative:
 
   tr(bar{C}^{T} * dot{C})
   = tr(bar{C}^{T} * opA(dot{A}) * opB(B)) +
@@ -21,12 +25,16 @@ namespace A2D {
   = tr(opB(B) * bar{C}^{T} * opA(dot{A})) +
     tr(bar{C}^{T} * opA(A) * opB(dot{B}))
 
+  In general:
+
   if opA == NORMAL then
     tr(bar{B}^{T} * dot{A})
     ==> bar{A} = bar{B}
   if opA == TRANSPOSE
     tr(bar{B}^{T} * dot{A^{T}}) = tr(dot{A} * bar{B}) = tr(bar{B} * dot{A})
     ==> bar{A} = bar{B}^{T}
+
+  Therefore:
 
   if opA == NORMAL then:
     bar{A} = (opB(B) * bar{C}^{T})^{T} = bar{C} * not_opB(B)

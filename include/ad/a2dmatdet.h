@@ -13,11 +13,6 @@ A2D_INLINE_FUNCTION void MatDet(Mat<T, N, N>& A, T& det) {
   det = MatDetCore<T, N>(get_data(A));
 }
 
-// template <typename T, int N>
-// A2D_INLINE_FUNCTION void MatDet(SymMat<T, N>& A, T& det) {
-//   det = SymMatDetCore<T, N>(get_data(A));
-// }
-
 template <typename T, int N, ADorder order>
 class MatDetExpr {
  private:

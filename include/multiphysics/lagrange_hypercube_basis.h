@@ -179,7 +179,7 @@ class LagrangeH1HypercubeBasis {
       case ET::Bound:
         if constexpr (dim == 1) {
           ET::set_line_bound_dof<offset, C, order, EntityDof, ElemDof>(
-              index, entity_dof, element_dof);
+              index, orient, entity_dof, element_dof);
         } else if constexpr (dim == 2) {
           const bool endp = false;
           ET::set_quad_bound_dof<offset, endp, C, order, order, EntityDof,

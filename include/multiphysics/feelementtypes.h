@@ -78,8 +78,8 @@ class ElementTypes {
   // Get the degrees of freedom associated with a bound
   template <index_t offset, index_t ndof, index_t nx, class EntityDof,
             class ElemDof>
-  static void set_line_bound_dof(index_t b, const EntityDof& entity,
-                                 ElemDof& element);
+  static void set_line_bound_dof(index_t b, const index_t orient,
+                                 const EntityDof& entity, ElemDof& element);
 
   // Get the degrees of freedom from the domain
   template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,

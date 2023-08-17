@@ -41,9 +41,10 @@ void ElementTypes::get_line_bound_dof(index_t b, const ElemDof& element,
  */
 template <index_t offset, index_t ndof, index_t nx, class EntityDof,
           class ElemDof>
-void ElementTypes::set_line_bound_dof(index_t b, const EntityDof& entity,
+void ElementTypes::set_line_bound_dof(index_t b, const index_t orient,
+                                      const EntityDof& entity,
                                       ElemDof& element) {
-  const index_t start = offset + ndof * (nx - 1) * b;
+  const index_t start = offset + ndof * (nx - 1) * ((b + orient) % 2);
   for (index_t i = 0; i < ndof; i++) {
     element[start + i] = entity[i];
   }
@@ -74,7 +75,7 @@ void ElementTypes::get_line_domain_dof(const ElemDof& element,
   } else {
     for (index_t j = 1; j < nx - 1; j++) {
       for (index_t i = 0; i < ndof; i++) {
-        entity[ndof * j + i] = element[offset + ndof * j + i];
+        entity[ndof * (j - 1) + i] = element[offset + ndof * j + i];
       }
     }
   }
@@ -115,7 +116,7 @@ void ElementTypes::set_line_domain_dof(const index_t orient,
         if (orient == 1) {
           index = offset + ndof * (nx - 1 - j);
         }
-        element[index + i] = entity[ndof * j + i];
+        element[index + i] = entity[ndof * (j - 1) + i];
       }
     }
   }

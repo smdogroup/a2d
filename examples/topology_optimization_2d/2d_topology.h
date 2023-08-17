@@ -18,11 +18,11 @@
 
 using namespace A2D;
 
-template <typename T>
+template <typename T, int Degree = 1>
 class TopoElasticityAnalysis2D {
  public:
   static constexpr int spatial_dim = 2;
-  static constexpr int degree = 1;          // Polynomial degree
+  static constexpr int degree = Degree;     // Polynomial degree
   static constexpr int order = degree + 1;  // Spline order, = degree + 1
   static constexpr int data_degree = degree - 1;
   // static constexpr int filter_degree = degree - 1;
@@ -48,7 +48,7 @@ class TopoElasticityAnalysis2D {
 
   // Traction component
   using TQuadrature = LineGaussQuadrature<order>;
-  using TDataBasis = FEBasis<T>;
+  using TDataBasis = FEBasis<T>;  // No data related to the traction
   using TGeoBasis = FEBasis<T, LagrangeH1LineBasis<T, spatial_dim, degree>>;
   using TBasis = FEBasis<T, LagrangeH1LineBasis<T, spatial_dim, degree>>;
   using TDataElemVec = ElementVector_Serial<T, TDataBasis, Vec_t>;
@@ -113,6 +113,8 @@ class TopoElasticityAnalysis2D {
         new SparseCholesky(csc_mat, CholOrderingType::ND, nullptr, set_values);
   }
 
+  void set_design_var() {}
+
   void factor() {
     // Create a new element view of the system matrix
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
@@ -130,6 +132,9 @@ class TopoElasticityAnalysis2D {
 
     // Apply boundary conditions to each column
     csc_mat.zero_columns(nbcs, bc_dofs);
+
+    // TODO: delete this
+    csc_mat.write_mtx("csc_matrix.mtx");
 
     // Set values to Cholesky solver and factorize
     chol->setValues(csc_mat);
@@ -151,6 +156,7 @@ class TopoElasticityAnalysis2D {
     std::vector<T> rhs(sol.get_num_dof());
     for (index_t i = 0; i < sol.get_num_dof(); i++) {
       rhs[i] = -traction_res[i];
+      // std::printf("rhs[%4d]: %10.5e\n", i, rhs[i]);  // TODO: delete this
     }
 
     // Solve

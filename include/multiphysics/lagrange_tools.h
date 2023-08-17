@@ -1342,7 +1342,7 @@ void lagrange_basis<3u>(const double pt, double N[], double Nx[]) {
  * Gauss interpolation: Interpolate from the Gauss quadrature points using
  * Lagrange interpolation
  *
- * Berntein: Interpolate with berstein polynomials
+ * Bernstein: Interpolate with Bernstein polynomials
  */
 enum InterpolationType {
   GLL_INTERPOLATION,

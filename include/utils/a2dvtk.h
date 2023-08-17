@@ -242,13 +242,13 @@ class ToVTK3D {
     // Write connectivities for tet, hex, wedge and pyrmd
     index_t ncells = ntets + nhex + nwedge + npyrmd;
     index_t data_size =
-        (ET::TET_VERTS + 1) * ntets + (ET::HEX_VERTS + 1) * nhex +
-        (ET::WEDGE_VERTS + 1) * nwedge + (ET::PYRMD_VERTS + 1) * npyrmd;
+        (ET::TET_NVERTS + 1) * ntets + (ET::HEX_NVERTS + 1) * nhex +
+        (ET::WEDGE_NVERTS + 1) * nwedge + (ET::PYRMD_NVERTS + 1) * npyrmd;
     std::fprintf(fp, "CELLS %d %d\n", ncells, data_size);
-    write_cell_conn(fp, ntets, tets, ET::TET_VERTS);
-    write_cell_conn(fp, nhex, hex, ET::HEX_VERTS);
-    write_cell_conn(fp, nwedge, wedge, ET::WEDGE_VERTS);
-    write_cell_conn(fp, npyrmd, pyrmd, ET::PYRMD_VERTS);
+    write_cell_conn(fp, ntets, tets, ET::TET_NVERTS);
+    write_cell_conn(fp, nhex, hex, ET::HEX_NVERTS);
+    write_cell_conn(fp, nwedge, wedge, ET::WEDGE_NVERTS);
+    write_cell_conn(fp, npyrmd, pyrmd, ET::PYRMD_NVERTS);
 
     // Write cell type
     std::fprintf(fp, "CELL_TYPES %d\n", ncells);

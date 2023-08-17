@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   // Set the torque components
   T tt[3] = {0.0, 0.0, 0.0};
-  T x0[3] = {0.0, 0.5, 0.5};
+  T x0[3] = {0.0, 0.0, 0.0};
 
   // Create the finite-element model
   T E = 70.0e3, nu = 0.3, q = 5.0;

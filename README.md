@@ -1,4 +1,4 @@
-# A2D - **A**lmost **a**utomatic **d**ifferentiation toolkit
+# A2D - a PDE solver using Almost Automatic Differentiation
 
 A toolkit for almost automatic differentiation of vector and matrix expressions.
 
@@ -8,6 +8,9 @@ AD".
 
 A2D is a header only c++ templated library with python binding created with
 [pybind11](https://pybind11.readthedocs.io/en/stable/).
+
+## Theory
+[So, how does A2D solve PDEs?](docs/theory.md)
 
 ## Dependencies
 A2D requires following dependencies
@@ -85,3 +88,4 @@ To run unit tests, need to `cmake` with `-DA2D_BUILD_UNIT_TESTS=ON`. After build
 ## Coding style
 ```clangFormat``` is used as the auto-formatter, with style ```Google```. If you would
 like to contribute to the project, please make sure you set up the auto-formatter accordingly.
+

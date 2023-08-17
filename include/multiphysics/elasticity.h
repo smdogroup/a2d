@@ -101,7 +101,7 @@ class TopoLinearElasticity {
     A2D::Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
     A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
 
-    // The Green-Langrange strain terms
+    // The Green-Lagrange strain terms
     A2D::SymMat<T, dim> E0, Eb;
     A2D::ADMat<A2D::SymMat<T, dim>> E(E0, Eb);
 
@@ -677,10 +677,12 @@ class TopoSurfaceTraction {
   using DataSpace = A2D::FESpace<T, dim>;
 
   // Space for the element geometry
-  using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, 2>>;
+  using FiniteElementGeometry =
+      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
 
   // Finite element space
-  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, 2>>;
+  using FiniteElementSpace =
+      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
 
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = A2D::SurfaceMapping<T, dim>;

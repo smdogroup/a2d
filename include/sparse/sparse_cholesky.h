@@ -54,6 +54,9 @@ class SparseCholesky {
     _setValues(csc_mat.ncols, (const int *)csc_mat.colp.data(),
                (const int *)csc_mat.rows.data(), csc_mat.vals.data());
   };
+  void setValues(int n, const int Acolp[], const int Arows[], const T Avals[]) {
+    _setValues(n, Acolp, Arows, Avals);
+  }
 
   // Factor the matrix
   int factor();

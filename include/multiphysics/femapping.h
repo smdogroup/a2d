@@ -41,23 +41,24 @@ class InteriorMapping {
 };
 
 /**
- * @brief surface transformation - this needs to be fixed TODO: how?
+ * @brief surface transformation - TODO: this needs to be fixed
  */
-template <typename T, index_t D>
+template <typename T, index_t dim>
 class SurfaceMapping {
  public:
-  static const index_t dim = D;
-  static const index_t dim_surf = D - 1;
+  static const index_t dim_surf = dim - 1;
 
   template <class FiniteElementGeometry>
   SurfaceMapping(const FiniteElementGeometry& geo, T& detJ) : detJ(detJ) {
+    const A2D::Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
+    A2D::Vec<T, dim> x, y, nA;
     if constexpr (dim == 2) {
-      detJ = 1.0;  // TODO: correct this
+      // Find the nA = vector of the distorted bound
+      nA(0) = Jxi(0, 0);
+      nA(1) = Jxi(1, 0);
+      detJ = std::sqrt(nA(0) * nA(0) + nA(1) * nA(1));
     } else if constexpr (dim == 3) {
-      const A2D::Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
-
       // Find the nA = (Area) * normal direction
-      A2D::Vec<T, dim> x, y, nA;
       x(0) = Jxi(0, 0);
       x(1) = Jxi(1, 0);
       x(2) = Jxi(2, 0);
@@ -89,7 +90,7 @@ class SurfaceMapping {
   T& detJ;
 
   // J with the normal direction added
-  A2D::Mat<T, dim_surf, dim_surf> J, Jinv;  // TODO: where are these computed?
+  A2D::Mat<T, dim_surf, dim_surf> J, Jinv;  // TODO
 };
 
 }  // namespace A2D

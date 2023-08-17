@@ -6,20 +6,141 @@
 namespace A2D {
 
 /**
- * @brief Given a reference face, find the orientation
+ * @brief Get the degrees of freedom associated with the vertex
  *
- * @param ref
- * @param face
+ * @tparam offset Offset into the global degree of freedom array
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param v Bound index
+ * @param element Element degree of freedom array
+ * @param entity Entity degree of freedom array
+ */
+template <index_t offset, index_t ndof, index_t nx, class ElemDof,
+          class EntityDof>
+void ElementTypes::get_line_bound_dof(index_t b, const ElemDof& element,
+                                      EntityDof& entity) {
+  const index_t start = offset + ndof * (nx - 1) * b;
+  for (index_t i = 0; i < ndof; i++) {
+    entity[i] = element[start + i];
+  }
+}
+
+/**
+ * @brief Set the degrees of freedom associated with the vertex
+ *
+ * @tparam offset Offset into the global degree of freedom array
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param b Bound index
+ * @param element Element degree of freedom array
+ * @param entity Entity degree of freedom array
+ */
+template <index_t offset, index_t ndof, index_t nx, class EntityDof,
+          class ElemDof>
+void ElementTypes::set_line_bound_dof(index_t b, const index_t orient,
+                                      const EntityDof& entity,
+                                      ElemDof& element) {
+  const index_t start = offset + ndof * (nx - 1) * ((b + orient) % 2);
+  for (index_t i = 0; i < ndof; i++) {
+    element[start + i] = entity[i];
+  }
+}
+
+/**
+ * @brief Get the degrees of freedom from the edge
+ *
+ * @tparam offset Offset into the element dof array
+ * @tparam ends Include the end points of the edge or not
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param element Element degrees of freedom
+ * @param entity Entity degrees of freedom
+ */
+template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,
+          class EntityDof>
+void ElementTypes::get_line_domain_dof(const ElemDof& element,
+                                       EntityDof& entity) {
+  if constexpr (ends) {
+    for (index_t j = 0; j < nx; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        entity[ndof * j + i] = element[offset + ndof * j + i];
+      }
+    }
+  } else {
+    for (index_t j = 1; j < nx - 1; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        entity[ndof * (j - 1) + i] = element[offset + ndof * j + i];
+      }
+    }
+  }
+}
+
+/**
+ * @brief Set the degrees of freedom from the edge
+ *
+ * @tparam offset Offset into the element dof array
+ * @tparam ends Include the end points of the edge or not
+ * @tparam ndof The nuber of degrees of freedom at each node
+ * @tparam nx Number of nodes along the line
+ * @tparam ElemDof Element degrees of freedom array type
+ * @tparam EntityDof Entity degrees of freedom array type
+ * @param element Element degrees of freedom
+ * @param entity Entity degrees of freedom
+ */
+template <index_t offset, bool ends, index_t ndof, index_t nx, class EntityDof,
+          class ElemDof>
+void ElementTypes::set_line_domain_dof(const index_t orient,
+                                       const EntityDof& entity,
+                                       ElemDof& element) {
+  index_t index;
+  if constexpr (ends) {
+    for (index_t j = 0; j < nx; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        index = offset + ndof * j;
+        if (orient == 1) {
+          index = offset + ndof * (nx - 1 - j);
+        }
+        element[index + i] = entity[ndof * j + i];
+      }
+    }
+  } else {
+    for (index_t j = 1; j < nx - 1; j++) {
+      for (index_t i = 0; i < ndof; i++) {
+        index = offset + ndof * j;
+        if (orient == 1) {
+          index = offset + ndof * (nx - 1 - j);
+        }
+        element[index + i] = entity[ndof * (j - 1) + i];
+      }
+    }
+  }
+}
+
+/**
+ * @brief Given a reference domain, find the orientation
+ *
+ * @param ref_domain_verts
+ * @param domain_verts
  * @return index_t
  */
-inline index_t ElementTypes::get_quad_face_orientation(const index_t ref[],
-                                                       const index_t face[]) {
+inline index_t ElementTypes::get_quad_domain_orientation(
+    const index_t ref_domain_verts[], const index_t domain_verts[]) {
   index_t orient = 0;
-  for (; orient < NUM_QUAD_FACE_ORIENTATIONS; orient++) {
-    if (ref[0] == face[QUAD_FACE_ORIENTATIONS[orient][0]] &&
-        ref[1] == face[QUAD_FACE_ORIENTATIONS[orient][1]] &&
-        ref[2] == face[QUAD_FACE_ORIENTATIONS[orient][2]] &&
-        ref[3] == face[QUAD_FACE_ORIENTATIONS[orient][3]]) {
+  for (; orient < NUM_QUAD_DOMAIN_ORIENTATIONS; orient++) {
+    if (ref_domain_verts[0] ==
+            domain_verts[QUAD_DOMAIN_ORIENTATIONS[orient][0]] &&
+        ref_domain_verts[1] ==
+            domain_verts[QUAD_DOMAIN_ORIENTATIONS[orient][1]] &&
+        ref_domain_verts[2] ==
+            domain_verts[QUAD_DOMAIN_ORIENTATIONS[orient][2]] &&
+        ref_domain_verts[3] ==
+            domain_verts[QUAD_DOMAIN_ORIENTATIONS[orient][3]]) {
       break;
     }
   }
@@ -138,7 +259,8 @@ int ElementTypes::get_quad_node(const int i, const int j) {
  * @return The number of nodes along the edge
  */
 template <index_t nx, index_t ny>
-index_t ElementTypes::get_quad_edge_length(const index_t v0, const index_t v1) {
+index_t ElementTypes::get_quad_bound_length(const index_t v0,
+                                            const index_t v1) {
   if (QUAD_VERTS_CART[v0][0] != QUAD_VERTS_CART[v1][0]) {
     return nx;
   } else {
@@ -208,24 +330,24 @@ void ElementTypes::set_quad_vert_dof(index_t v, const EntityDof& entity,
  * @tparam ny Number of nodes along the y-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param e Edge index
+ * @param b Bound index
  * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class ElemDof, class EntityDof>
-void ElementTypes::get_quad_edge_dof(const index_t e, const ElemDof& element,
-                                     EntityDof& entity) {
+void ElementTypes::get_quad_bound_dof(const index_t b, const ElemDof& element,
+                                      EntityDof& entity) {
   // Get the first and last vertices on the edge
-  const index_t v0 = QUAD_EDGE_VERTS[e][0];
-  const index_t v1 = QUAD_EDGE_VERTS[e][1];
+  const index_t v0 = QUAD_BOUND_VERTS[b][0];
+  const index_t v1 = QUAD_BOUND_VERTS[b][1];
 
   // Get the starting index on the element
   const index_t start = get_quad_node<nx, ny>(
       (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
 
   // Find the number of nodes along the u-edge
-  const index_t nu = get_quad_edge_length<nx, ny>(v0, v1);
+  const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
   const int incr =
@@ -268,26 +390,26 @@ void ElementTypes::get_quad_edge_dof(const index_t e, const ElemDof& element,
  * @tparam ny Number of nodes along the y-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param e Edge index
+ * @param b Bound index
  * @param orient Relative orientation between edges
  * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class EntityDof, class ElemDof>
-void ElementTypes::set_quad_edge_dof(const index_t e, const index_t orient,
-                                     const EntityDof& entity,
-                                     ElemDof& element) {
+void ElementTypes::set_quad_bound_dof(const index_t b, const index_t orient,
+                                      const EntityDof& entity,
+                                      ElemDof& element) {
   // Get the first and last vertices on the edge
-  const index_t v0 = QUAD_EDGE_VERTS[e][orient];
-  const index_t v1 = QUAD_EDGE_VERTS[e][(orient + 1) % 2];
+  const index_t v0 = QUAD_BOUND_VERTS[b][orient];
+  const index_t v1 = QUAD_BOUND_VERTS[b][(orient + 1) % 2];
 
   // Get the starting index on the element
   const index_t start = get_quad_node<nx, ny>(
       (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
 
   // Find the number of nodes along the u-edge
-  const index_t nu = get_quad_edge_length<nx, ny>(v0, v1);
+  const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
   const int incr =
@@ -318,7 +440,7 @@ void ElementTypes::set_quad_edge_dof(const index_t e, const index_t orient,
 }
 
 /**
- * @brief Get the degrees of freedom from the quad face
+ * @brief Get the degrees of freedom from the quad domain
  *
  * @tparam offset Offset into the element dof array
  * @tparam ends Include the end points of the edge or not
@@ -327,14 +449,13 @@ void ElementTypes::set_quad_edge_dof(const index_t e, const index_t orient,
  * @tparam ny Number of nodes along the y-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param f Face index
- * @param element Element degrees of freedmo
+ * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class ElemDof, class EntityDof>
-void ElementTypes::get_quad_face_dof(const ElemDof& element,
-                                     EntityDof& entity) {
+void ElementTypes::get_quad_domain_dof(const ElemDof& element,
+                                       EntityDof& entity) {
   if constexpr (ends) {
     for (index_t v = 0; v < ny; v++) {
       for (index_t u = 0; u < nx; u++) {
@@ -362,7 +483,7 @@ void ElementTypes::get_quad_face_dof(const ElemDof& element,
 }
 
 /**
- * @brief Set the degrees of freeom from the face into the element
+ * @brief Set the degrees of freedom from the domain into the element
  *
  * @tparam offset Offset into the element dof array
  * @tparam ends Include the end points of the edge or not
@@ -371,16 +492,15 @@ void ElementTypes::get_quad_face_dof(const ElemDof& element,
  * @tparam ny Number of nodes along the y-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param f Face index
- * @param orient Relative orientation between faces
- * @param element Element degrees of freedmo
+ * @param orient Relative orientation between domains
+ * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class EntityDof, class ElemDof>
-void ElementTypes::set_quad_face_dof(const index_t orient,
-                                     const EntityDof& entity,
-                                     ElemDof& element) {
+void ElementTypes::set_quad_domain_dof(const index_t orient,
+                                       const EntityDof& entity,
+                                       ElemDof& element) {
   if constexpr (ends) {
     for (index_t v = 0; v < ny; v++) {
       for (index_t u = 0; u < nx; u++) {
@@ -632,7 +752,7 @@ void ElementTypes::set_hex_edge_dof(const index_t e, const index_t orient,
 }
 
 /**
- * @brief Get the degrees of freedom from the hex face
+ * @brief Get the degrees of freedom from the hex bound
  *
  * @tparam offset Offset into the element dof array
  * @tparam ends Include the end points of the edge or not
@@ -642,18 +762,18 @@ void ElementTypes::set_hex_edge_dof(const index_t e, const index_t orient,
  * @tparam nz Number of nodes along the z-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param f Face index
- * @param element Element degrees of freedmo
+ * @param b Bound index
+ * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class ElemDof, class EntityDof>
-void ElementTypes::get_hex_face_dof(const index_t f, const ElemDof& element,
-                                    EntityDof& entity) {
-  // Get the origin and face vert directions
-  const index_t v0 = HEX_FACE_VERTS[f][0];  // Root vertex
-  const index_t v1 = HEX_FACE_VERTS[f][1];  // Vertex along the face u dir
-  const index_t v3 = HEX_FACE_VERTS[f][3];  // Vertex along the face v dir
+void ElementTypes::get_hex_bound_dof(const index_t b, const ElemDof& element,
+                                     EntityDof& entity) {
+  // Get the origin and bound vert directions
+  const index_t v0 = HEX_BOUND_VERTS[b][0];  // Root vertex
+  const index_t v1 = HEX_BOUND_VERTS[b][1];  // Vertex along the bound u dir
+  const index_t v3 = HEX_BOUND_VERTS[b][3];  // Vertex along the bound v dir
 
   // Get the root node location
   const index_t start = get_hex_node<nx, ny, nz>(
@@ -705,7 +825,7 @@ void ElementTypes::get_hex_face_dof(const index_t f, const ElemDof& element,
 }
 
 /**
- * @brief Set the degrees of freeom from the face into the element
+ * @brief Set the degrees of freedom from the bound into the element
  *
  * @tparam offset Offset into the element dof array
  * @tparam ends Include the end points of the edge or not
@@ -715,19 +835,20 @@ void ElementTypes::get_hex_face_dof(const index_t f, const ElemDof& element,
  * @tparam nz Number of nodes along the z-direction
  * @tparam ElemDof Element degrees of freedom array type
  * @tparam EntityDof Entity degrees of freedom array type
- * @param f Face index
- * @param orient Relative orientation between faces
- * @param element Element degrees of freedmo
+ * @param b Bound index
+ * @param orient Relative orientation between bounds
+ * @param element Element degrees of freedom
  * @param entity Entity degrees of freedom
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class EntityDof, class ElemDof>
-void ElementTypes::set_hex_face_dof(const index_t f, const index_t orient,
-                                    const EntityDof& entity, ElemDof& element) {
-  // Get the origin and face vert directions
-  const index_t v0 = HEX_FACE_VERTS[f][0];  // Root vertex
-  const index_t v1 = HEX_FACE_VERTS[f][1];  // Vertex along the face u dir
-  const index_t v3 = HEX_FACE_VERTS[f][3];  // Vertex along the face v dir
+void ElementTypes::set_hex_bound_dof(const index_t b, const index_t orient,
+                                     const EntityDof& entity,
+                                     ElemDof& element) {
+  // Get the origin and bound vert directions
+  const index_t v0 = HEX_BOUND_VERTS[b][0];  // Root vertex
+  const index_t v1 = HEX_BOUND_VERTS[b][1];  // Vertex along the bound u dir
+  const index_t v3 = HEX_BOUND_VERTS[b][3];  // Vertex along the bound v dir
 
   // Get the root node location
   const index_t start = get_hex_node<nx, ny, nz>(
@@ -782,7 +903,7 @@ void ElementTypes::set_hex_face_dof(const index_t f, const index_t orient,
 }
 
 /**
- * @brief Get the degrees of freeom from the volume
+ * @brief Get the degrees of freedom from the volume
  *
  * @tparam offset Offset into the element dof array
  * @tparam ends Include the end points of the edge or not
@@ -797,7 +918,7 @@ void ElementTypes::set_hex_face_dof(const index_t f, const index_t orient,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class ElemDof, class EntityDof>
-void ElementTypes::get_hex_volume_dof(const ElemDof& element,
+void ElementTypes::get_hex_domain_dof(const ElemDof& element,
                                       EntityDof& entity) {
   if constexpr (ends) {
     for (index_t w = 0; w < nz; w++) {
@@ -846,7 +967,7 @@ void ElementTypes::get_hex_volume_dof(const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class EntityDof, class ElemDof>
-void ElementTypes::set_hex_volume_dof(const EntityDof& entity,
+void ElementTypes::set_hex_domain_dof(const EntityDof& entity,
                                       ElemDof& element) {
   if constexpr (ends) {
     for (index_t w = 0; w < nz; w++) {

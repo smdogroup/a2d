@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
     // Number of elements in each dimension
     const index_t degree = 2;
-    const index_t nx = 256, ny = 256;
+    const index_t nx = 32, ny = 32;
     const double lx = 1.5, ly = 2.0;
 
     // Set up mesh
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
     // Perform cholesky factorization
     printf("number of vertices: %d\n", conn.get_num_verts());
     printf("number of edges:    %d\n", conn.get_num_edges());
-    printf("number of faces:    %d\n", conn.get_num_faces());
+    printf("number of faces:    %d\n", conn.get_num_bounds());
     printf("number of elements: %d\n", conn.get_num_elements());
     printf("number of dofs:     %d\n", prob.get_mesh().get_num_dof());
     printf("matrix dimension:  (%d, %d)\n", csr_mat.nrows, csr_mat.ncols);

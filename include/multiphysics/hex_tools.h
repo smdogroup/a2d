@@ -184,7 +184,7 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
         for (index_t i = 0; i < nex; i++, counter++) {
           index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
 
-          for (index_t ii = 0; ii < ET::HEX_VERTS; ii++) {
+          for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
             vtk_conn(counter, ii) =
                 off + vtk_node_num(i + ET::HEX_VERTS_CART[ii][0],
                                    j + ET::HEX_VERTS_CART[ii][1],
@@ -281,7 +281,7 @@ void write_quad_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
       for (index_t i = 0; i < nex; i++, counter++) {
         index_t off = n * (nex + 1) * (nex + 1);
 
-        for (index_t ii = 0; ii < ET::QUAD_VERTS; ii++) {
+        for (index_t ii = 0; ii < ET::QUAD_NVERTS; ii++) {
           vtk_conn(counter, ii) =
               off + vtk_node_num(i + ET::QUAD_VERTS_CART[ii][0],
                                  j + ET::QUAD_VERTS_CART[ii][1]);

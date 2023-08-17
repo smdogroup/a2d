@@ -100,7 +100,7 @@ class MesherRect2D {
     using ET = A2D::ElementTypes;
     for (I j = 0, e = 0; j < ny; j++) {
       for (I i = 0; i < nx; i++, e++) {
-        for (I ii = 0; ii < ET::QUAD_VERTS; ii++) {
+        for (I ii = 0; ii < ET::QUAD_NVERTS; ii++) {
           quad[4 * e + ii] = node_num(i + ET::QUAD_VERTS_CART[ii][0],
                                       j + ET::QUAD_VERTS_CART[ii][1]);
         }
@@ -282,7 +282,7 @@ class MesherBrick3D {
     for (I k = 0, e = 0; k < nz; k++) {
       for (I j = 0; j < ny; j++) {
         for (I i = 0; i < nx; i++, e++) {
-          for (I ii = 0; ii < ET::HEX_VERTS; ii++) {
+          for (I ii = 0; ii < ET::HEX_NVERTS; ii++) {
             hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
                                        j + ET::HEX_VERTS_CART[ii][1],
                                        k + ET::HEX_VERTS_CART[ii][2]);

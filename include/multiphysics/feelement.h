@@ -512,7 +512,7 @@ class FiniteElement {
         typename PDE::FiniteElementSpace coef;
         pde.weak(weight * detJ, data.get(j), gref, s, coef);
 
-        // Transform the coefficents back to the reference element
+        // Transform the coefficients back to the reference element
         typename PDE::FiniteElementSpace& cref = res.get(j);
         transform.rtransform(coef, cref);
       }

@@ -141,6 +141,37 @@ struct __count_basis_size<First, Remain...> {
 };
 
 /*
+  Check if all dimensions are the same
+*/
+template <class... Bases>
+struct have_same_dim;
+
+template <>
+struct have_same_dim<> {
+  static constexpr bool value = true;
+  static constexpr index_t dim = 0;
+};
+
+template <class B1>
+struct have_same_dim<B1> {
+  static constexpr bool value = true;
+  static constexpr index_t dim = B1::dim;
+};
+
+template <class B1, class B2>
+struct have_same_dim<B1, B2> {
+  static constexpr bool value = B1::dim == B2::dim;
+  static constexpr index_t dim = B1::dim;
+};
+
+template <class B1, class B2, class... rest>
+struct have_same_dim<B1, B2, rest...> {
+  static constexpr bool value =
+      have_same_dim<B1, B2>::value and have_same_dim<B2, rest...>::value;
+  static constexpr index_t dim = B1::dim;
+};
+
+/*
   The finite element basis class.
 
   This class stores a collection of basis function objects
@@ -148,7 +179,11 @@ struct __count_basis_size<First, Remain...> {
 template <typename T, class... Basis>
 class FEBasis {
  public:
-  typedef std::tuple<Basis...> BasisSpace;
+  using BasisSpace = std::tuple<Basis...>;
+  static_assert(have_same_dim<Basis...>::value,
+                "Bases should have same dimensions");
+
+  static constexpr index_t dim = have_same_dim<Basis...>::dim;
 
   // Use the definitions from the element types
   using ET = ElementTypes;

@@ -22,30 +22,35 @@ Below is a short list of pitfalls I stepped into.
 | node   |a control point in an element about which a shape function is defined|
 | DOF    |degree of freedom associated with a node|
 |$n _ \text{dof}$ |global number of basis nodes of the discretized problem |
-|$l _ {\text{dof}, e} $|local number of basis nodes for $e$-th element|
+|$n _ \text{dof,e}$ |number of basis nodes for element e of the discretized problem |
 |$x, y, z $|spatial coordinates in the physical coordinate system|
 |$\xi, \eta, \zeta $|spatial coordinates in the local (computational) coordinate system|
 |$\mathbf{x} $| $\mathbf{x} = (x, y, z)^T$|
 |$\boldsymbol{\xi} $| $\boldsymbol{\xi} = (\xi, \eta, \zeta)^T$|
 |$\Omega $| spatial domain where the PDE is defined|
 |$\Omega _ e $| spatial domain for $e$-th finite element|
-|$p _ \mathbf{x} \qquad $|PDE operator, derivatives are with respect to $\mathbf{x}$|
-|$f _ \mathbf{x} $| integration functional derived from $p _ \mathbf{x}$, derivatives are w.r.t. $\mathbf{x}$|
+|$p$|the PDE operator, $p(u;\mathbf{x}) = 0$ gives the PDE for state u, derivatives are with respect to $\mathbf{x}$|
+|$f$| integration functional of the weak form derived from the original PDE $p(u)=0$|
 |$u(\mathbf{x}) $|PDE solution function (infinite-dimensional, defined everywhere within the domain)|
 |$w(\mathbf{x}) $| test function (infinite-dimensional, defined everywhere within the domain)|
-|$N _ e(\mathbf{x}) $|A collection of basis function values at location $\mathbf{x}$, row vector|
-|$\nabla N _ e(\mathbf{x}) $|A collection of basis function derivatives at location $\mathbf{x}$, 3-by- $l _ {\text{dof}, e}$ matrix|
+|$N _ e(\mathbf{x}) $|A collection of basis function values at location $\mathbf{x}$, row vector, $n _ \text{dof,e}$ entries|
+|$\nabla N _ e(\mathbf{x}) $|A collection of basis function derivatives at location $\mathbf{x}$, 3-by- $n _ {\text{dof,e}}$ matrix|
 |$\tilde{u} _ e(\mathbf{x}) $|solution functions approximated by bases of $e$-th finite element|
 |$\tilde{w} _ e(\mathbf{x}) $|test functions approximated by bases of $e$-th finite element|
 |$u _ h $|discretized nodal PDE solution (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
 |$w _ h $|discretized nodal test function (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
+|$u _ {h,e} $|discretized nodal PDE solution on element e, $\in \mathbb{R}^{n _ \text{dof,e}}$|
+|$w _ {h,e} $|discretized nodal test function on element e, $\in \mathbb{R}^{n _ \text{dof,e}}$|
 |$I $| exact weak form integral|
 |$\tilde{I} $|numerically approximated weak form integral|
 |$J$| Jacobian coordinate transformation, $J = \dfrac{\partial\mathbf{x}}{\partial\boldsymbol{\xi}}, J^{-1} = \dfrac{\partial\boldsymbol{\xi}}{\partial \mathbf{x}}$|
 |$m _ q$|quadrature weight for $q$-th quadrature|
-|$P _ e $|short-and-wide selection matrix that gets DOFs for $e$-th element|
+|$P _ e $|short-and-wide selection matrix that gets DOFs for $e$-th element, $n _ {\text{dof,e}}$-by-$n _ {\text{dof}}$|
 |$u _ {h, e}, w _ {h, e} $|local nodal solution and test function DOFs for $e$-th element|
 
+| Superscript | Definition |
+| ---------- | ---------- |
+|$\tilde{( ~ )}$|a numerically approximated quantity|
 
 | Subscripts | Definition |
 | ---------- | ---------- |
@@ -70,19 +75,18 @@ for $x \in \mathbb{R}^m$ and $y \in \mathbb{R}^n$
 Consider the following PDE
 
 $$
-p _ \mathbf{x}\left(u(\mathbf{x})\right) = 0
+p\left(u(\mathbf{x})\right) = 0
 $$
 
 and its weak form
 
 $$
-I = \int _ {\Omega} f _ \mathbf{x}(u, w) d \mathbf{x} = 0
+I = \int _ {\Omega} f(u, w) d \mathbf{x} = 0
 $$
 
 where $p _ \mathbf{x}$ is the PDE operator, $u$ is the exact solution function,
-$w$ is the test function.
-$f _ \mathbf{x}$ is some general functional derived from $p _ \mathbf{x}$ (e.g.
-via integration by parts).
+$w$ is and arbitrary test function.
+$f$ is the weak form integral derived from $p$ (e.g. via integration by parts).
 A2D solves the weak form by solving the following (potentially nonlinear)
 discretized system:
 
@@ -93,9 +97,9 @@ $$
 
 where $\tilde{I}$ is an approximation to $I$ using finite element basis
 functions and numerical integration.
-$w _ h \in \mathbb{R}^{n _ \text{dof}}$ is a vector of unknowns where
-$n _ \text{dof}$ is total number of degrees of freedom nodes of the discretized
-finite element system.
+$w _ h \in \mathbb{R}^{n _ \text{dof}}$ is a vector of discretized test function
+values via finite element discretization, where $n _ \text{dof}$ is total number
+of degrees of freedom nodes of the discretized finite element system.
 
 ### Finite element basis
 
@@ -110,8 +114,8 @@ by a weighted sum of basis functions
 
 $$
 \begin{align*}
-u(\mathbf{x}) &\approx \tilde{u} _ e(\mathbf{x}) = N _ e(\mathbf{x}) u _ e \\
-w(\mathbf{x}) &\approx \tilde{w} _ e(\mathbf{x}) = N _ e(\mathbf{x}) w _ e \\
+u(\mathbf{x}) &\approx \tilde{u} _ e(\mathbf{x}) = N _ e(\mathbf{x}) u _ {h,e} \\
+w(\mathbf{x}) &\approx \tilde{w} _ e(\mathbf{x}) = N _ e(\mathbf{x}) w _ {h,e} \\
 \end{align*}
 $$
 
@@ -122,7 +126,7 @@ $u _ e$ and $w _ e$ can be obtained from global vecotors $u$ and $w$ using
 the selection matrix:
 
 $$
-u _ e = P _ e u _ {h, e}, ~  ~ w _ e = P _ e w _ {h, e}.
+u _ {h,e} = P _ e u _ h, ~  ~ w _ {h,e} = P _ e w _ h.
 $$
 
 ### Numerical integration
@@ -134,9 +138,9 @@ coordinates:
 
 $$
 I
-= \sum _ {e=1}^{n _ e} \int _ {\Omega _ e} f _ \mathbf{x}(u, w) d \mathbf{x}
+= \sum _ {e=1}^{n _ e} \int _ {\Omega _ e} f(u, w) d \mathbf{x}
 = \sum _ {e=1}^{n _ e} \int _ {\Omega _ \xi} \det\left(J\left(\mathbf{x}\right)\right)
-f _ \mathbf{x}(u, w) d \boldsymbol{\xi}
+f(u, w) d \boldsymbol{\xi}
 $$
 
 where $n _ e$ is number of subdomains, i.e. elements, $J$ is the Jacobian
@@ -161,12 +165,12 @@ $$
 \begin{align*}
 I
 &\approx \sum _ {e=1}^{n _ e} \int _ {\Omega _ \xi} \det\left(J(\mathbf{x})\right)
-f _ \mathbf{x}\left(\tilde{u} _ e(\boldsymbol{\xi}), \tilde{w} _ e(\boldsymbol{\xi})\right) d
-\boldsymbol{\xi} \\
+f\left(\tilde{u} _ e(\boldsymbol{\xi}), \tilde{w} _ e(\boldsymbol{\xi})\right) d
+\boldsymbol{\xi} \qquad &&\text{(finite element approximation)}\\
 &\approx  \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
 \det\left(J(\boldsymbol{\xi} _ q)\right)
-f _ \mathbf{x}\left(\tilde{u}(\boldsymbol{\xi} _ q),
-\tilde{w}(\boldsymbol{\xi} _ q)\right) \\
+f\left(\tilde{u}(\boldsymbol{\xi} _ q),
+\tilde{w}(\boldsymbol{\xi} _ q)\right) &&\text{(numerical integration approximation)}\\
 &= \tilde{I}(u _ h, w _ h)
 \end{align*}
 $$
@@ -265,31 +269,29 @@ derivatives).
 
 ### Evaluate the system residual
 
-Given the expression of $I$ above, residuals can be evaluated as follows:
+Given the expression of $\tilde{I}$ above, residuals can be evaluated as follows:
 
 $$
-R(u _ h) = \dfrac{\partial \tilde{I}(u _ h, w _ h)}{\partial w} = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q}
-m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial f _ {\mathbf{x}}\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
-\tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h}
+R(u _ h) = \dfrac{\partial \tilde{I}(u _ h, w _ h)}{\partial w _ h} = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q}
+m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
+\tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h}.
 \tag{2}
 $$
 
-note that $f(u, w)$ is linear with respect to $w$, so $R$ is only a function of
-$u$.
-Next we elaborate on $\dfrac{\partial f _ {\mathbf{x}}}{\partial w}$ by assuming
-that the only $\tilde{w} _ e$-related term in $f _ {\mathbf{x}}$ contains
-$\nabla \tilde{w} _ e$.
-Not that despite the example we choose, general rules apply to other function
-spaces.
-Since we need first order derivatives, we choose $H^1$ space for the bases.
-As a result, we can express $\dfrac{\partial f _ {\mathbf{x}}}{\partial w _ h}$ at each
-quadarture point as:
-
+Note that $R$ should only be a function of $u$, because $f(u, w)$ is linear
+with respect to $w$ and potentially its derivatives ($\nabla w$, $\text{div}(w)$, etc.).
+To make a simplified example, we assume that $f(u, w)$ only depends on $\nabla w$
+for $w$.
+i.e. $f(u, w)$ doesn't contain terms of $\text{div}(w)$, $\text{curl}(w)$, etc.
+Despite such assumption, the following analysis applies to other scenarios that
+include other $w$-dependent terms in a similar way.
+As a result, we can express $\dfrac{\partial f}{\partial w _ h}$ at a
+quadrature point as:
 $$
-\dfrac{\partial f _ {\mathbf{x}}}{\partial w _ h}
-= \dfrac{\partial f _ {\mathbf{x}}}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
+\dfrac{\partial f}{\partial w _ h}
+= \dfrac{\partial f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
 \dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}{\partial w _ h}
-= \dfrac{\partial f _ {\mathbf{x}}}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
+= \dfrac{\partial f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
 \nabla _ {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P _ e.
 \tag{3}
 $$
@@ -300,16 +302,93 @@ $$
 \begin{align*}
 R(u _ h)
 &= \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right)
-\dfrac{\partial f _ {\mathbf{x}}\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
+\dfrac{\partial f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
 \tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
 \nabla _ {\boldsymbol{\xi}} N _ e(\boldsymbol{\xi}) P _ e \\
 &= \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right)
 J^{-1}(\boldsymbol{\xi} _ q) \dfrac{\partial
-f _ {\mathbf{x}}\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
+f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
 \tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ {\mathbf{x}}\tilde{w} _ e}
 \nabla _ {\boldsymbol{\xi}} N _ e(\boldsymbol{\xi} _ q) P _ e \\
 \end{align*}
+\tag{4}
 $$
-
 where the transformations between physical coordinates and computational
 coordinates are used.
+
+### Evaluate the system Jacobian
+Jacobian matrix can be obtained by taking derivatives of the residual (4) with
+respect to trial solution $u _ h$:
+$$
+K(u _ h) = \dfrac{\partial R(u _ h)}{\partial u _ h} = \sum _ {e=1}^{n _ e} \sum
+_ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial^2 f
+\left(\tilde{u} _ e(\boldsymbol{\xi} _ q), \tilde{w} _
+e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h \partial u _ h}.
+\tag{5}
+$$
+Same as for the residual, we again assume that $\dfrac{\partial f}{\partial w}$
+only depends on $\nabla u$ for $u$.
+As a result, we can express $\dfrac{\partial^2 f}{\partial w _ h \partial u _ h}$
+at a quadrature point as:
+$$
+\begin{align*}
+\dfrac{\partial^2 f}{\partial w _ h \partial u _ h}
+&= \dfrac{\partial}{\partial u _ h} \dfrac{\partial f}{\partial w _ h} \\
+&= \dfrac{\partial }{\partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}
+\dfrac{\partial f}{\partial w _ h}
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}{\partial u _ h} \\
+&= \dfrac{\partial }{\partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}
+\left(
+\dfrac{\partial f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}{\partial w _ h}
+\right)
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}{\partial u _ h} \\
+&= \left(\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}{\partial w _
+h} \right)^T \dfrac{\partial^2 f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w}
+_ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e} \dfrac{\partial \nabla _
+{\boldsymbol{\xi}}\tilde{u} _ e}{\partial u _ h} \\
+&=P_e^T  \left[\nabla _ {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T
+\dfrac{\partial^2 f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w}
+_ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}
+\nabla _ {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e. \\
+\end{align*}
+\tag{6}
+$$
+Plug (6) into (5), we have
+$$
+K(u _ h) = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
+\det\left(J(\boldsymbol{\xi} _ q)\right) P_e^T  \left[\nabla _
+{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T J^{-1} \dfrac{\partial^2
+f}{\partial \nabla _ \mathbf{x}\tilde{w} _ e \partial \nabla _
+\mathbf{x}\tilde{u} _ e} J^{-T} \nabla _ {\boldsymbol{\xi}}N _
+e(\boldsymbol{\xi}) P_e
+$$
+where, again, the transformations between physical coordinates and computational
+coordinates are used.
+
+
+
+### Evaluate derivatives with automatic differentiation (AD)
+The power of A2D partly comes from its ability to form the residuals (e.g.
+equation (4)) and Jacobians automatically using AD.
+In the context of A2D, we are often interested in getting derivatives of some
+scalar functional $s$ (such as the integral of the weak form).
+Suppose we have some variable $v$, then we define the reverse seed as
+$$
+\bar{v} = \dfrac{\partial s}{\partial v}
+$$
+where the shape of $\bar{v}$ is same as the shape of $v$.
+
+#### First order derivatives
+The goal of performing first order AD is to obtain $\bar{x}$ for some
+independent input variable $x$ with respect to scalar quantity $s$.
+Within the computation graph of computing $s$ from $x$, we consider an
+intermediate expression $c=c(a, b)$.
+Using chain rule, we have the rule of backward propergation:
+$$
+\bar{a} _ i = \bar{c} _ j \dfrac{\partial c _ j}{\partial a _ i},~
+\bar{b} _ i = \bar{c} _ j \dfrac{\partial c _ j}{\partial b _ i}.
+$$
+
+#### Second order derivatives
+Jacobian

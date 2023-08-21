@@ -69,6 +69,27 @@ notation](https://en.wikipedia.org/wiki/Matrix_calculus#Numerator-layout_notatio
 is employed, i.e. $\dfrac{\partial x}{\partial y} \in \mathbb{R}^{m\times n}$
 for $x \in \mathbb{R}^m$ and $y \in \mathbb{R}^n$
 
+### Abstract
+A2D is a library to perform discretizations for general partial differential
+equations (PDEs) using finite element method.
+In a nutshell, it converts the following PDE
+$$
+p\left(u(\mathbf{x})\right) = 0
+$$
+to a discretized form
+$$
+R _ h (u _ h) = 0
+$$
+where $p$ is the PDE operator, $u$ is the solution variable ("the unknown"),
+$\mathbf{x}$ is the independent variables that the derivatives are taken with
+respect to (e.g. spatial coordinates), $u_h$ is the discretized solution vector,
+$R_h$ is the discretized residual vector.
+A2D also is able to provide the system Jacobian
+$$
+K _ h(u _ h) = \dfrac{\partial R _ h}{\partial u _ h}
+$$
+which is often required when solving the discretized nonlinear system of equations
+using Newton's method.
 
 ### PDE and weak form
 
@@ -148,6 +169,7 @@ transformation matrix, for 3-dimensional problem, $J$ is
 
 $$
 J = \dfrac{\partial \mathbf{x}}{\partial \boldsymbol{\xi}}
+= \nabla _ {\boldsymbol{\xi}} \mathbf{x}
 = \begin{bmatrix}
 \dfrac{\partial x}{\partial \xi} & \dfrac{\partial x}{\partial \eta} &
 \dfrac{\partial x}{\partial \zeta} \\
@@ -186,21 +208,29 @@ often chosen as $\boldsymbol{\xi} \in [-1, 1]^3$.
 Such auxiliary frame helps to simplify the computation as evaluations of the
 function and, more importantly, derivatives can be separated.
 Once those local computations are done, they need to be transferred to the
-global (physical) systems by the following rules:
+global (physical) systems by the following rules.
+
+#### Transformations of $\nabla v$
 
 $$
 \begin{align}
-\nabla _ {\mathbf{x}} v &= J^{-T} \nabla _ {\boldsymbol{\xi}} v  \tag{1a} \\
-\dfrac{\partial g}{\partial \nabla _ {\boldsymbol{\xi}}v} &=
-\dfrac{\partial g}{\partial \nabla _ {\mathbf{x}}v} J^{-T} \tag{1b} \\
+\nabla _ {\mathbf{x}} v &= J^{-T} \nabla _ {\boldsymbol{\xi}} v \qquad
+&&\text{\texttt{transform()}} \tag{1a} \\
+\left[\dfrac{\partial g}{\partial \nabla _ {\boldsymbol{\xi}}v} \right]^T &=
+J^{-1} \left[\dfrac{\partial g}{\partial \nabla _ {\mathbf{x}}v}\right]^T
+\qquad &&\text{\texttt{rtransform()}}\tag{1b} \\
 \dfrac{\partial^2 g}{\partial \nabla _ {\boldsymbol{\xi}}v\partial
 \nabla _ {\boldsymbol{\xi}}t} &= J^{-1}\dfrac{\partial^2 g}{\partial
-\nabla _ {\mathbf{x}}v\partial \nabla _ {\mathbf{x}}t} J^{-T} \tag{1c} \\
+\nabla _ {\mathbf{x}}v\partial \nabla _ {\mathbf{x}}t} J^{-T} \qquad &&
+\text{\texttt{jtransform()}} \tag{1c} \\
 \end{align}
 $$
 
 where $v$ and $t$ are some arbitrary functions such as solution or test
 function, $g$ is some scalar functional.
+
+##### Derivation
+
 (1a) is straightforward by chain rule, we derive (1b) and (1c) below.
 Trace identity states that for $b=f(a)$, we have $\bar{b}^T \dot{b} = \bar{a}^T \dot{a}$,
 where row vector $\bar{( ~ )} = \dfrac{\partial s}{\partial ( ~ )}$ for some scalar
@@ -258,6 +288,14 @@ $$
 \nabla _ {\mathbf{x}}v\partial \nabla _ {\mathbf{x}}t} J^{-T}.
 $$
 
+#### Transformation of $\text{div}(v)$
+
+To be added.
+
+#### Transformations of $\text{curl}(v)$
+
+To be added.
+
 ### Function spaces
 
 A2D is able to handle a mixture of different function spaces, including $L _ 2$,
@@ -272,7 +310,7 @@ derivatives).
 Given the expression of $\tilde{I}$ above, residuals can be evaluated as follows:
 
 $$
-R(u _ h) = \dfrac{\partial \tilde{I}(u _ h, w _ h)}{\partial w _ h} = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q}
+R _ h(u _ h) = \dfrac{\partial \tilde{I}(u _ h, w _ h)}{\partial w _ h} = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q}
 m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
 \tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h}.
 \tag{2}
@@ -300,7 +338,7 @@ Plug (3) into (2), we have
 
 $$
 \begin{align*}
-R(u _ h)
+R _ h(u _ h)
 &= \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right)
 \dfrac{\partial f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
 \tilde{w} _ e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
@@ -320,7 +358,7 @@ coordinates are used.
 Jacobian matrix can be obtained by taking derivatives of the residual (4) with
 respect to trial solution $u _ h$:
 $$
-K(u _ h) = \dfrac{\partial R(u _ h)}{\partial u _ h} = \sum _ {e=1}^{n _ e} \sum
+K _ h (u _ h) = \dfrac{\partial R _ h (u _ h)}{\partial u _ h} = \sum _ {e=1}^{n _ e} \sum
 _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial^2 f
 \left(\tilde{u} _ e(\boldsymbol{\xi} _ q), \tilde{w} _
 e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h \partial u _ h}.
@@ -356,14 +394,15 @@ _ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}
 $$
 Plug (6) into (5), we have
 $$
-K(u _ h) = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
+K _ h(u _ h) = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
 \det\left(J(\boldsymbol{\xi} _ q)\right) P_e^T  \left[\nabla _
-{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T J^{-1} \dfrac{\partial^2
-f}{\partial \nabla _ \mathbf{x}\tilde{w} _ e \partial \nabla _
-\mathbf{x}\tilde{u} _ e} J^{-T} \nabla _ {\boldsymbol{\xi}}N _
-e(\boldsymbol{\xi}) P_e
+{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T J^{-1} (\boldsymbol{\xi}_q)
+\dfrac{\partial^2 f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q), \tilde{w} _
+e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ \mathbf{x}\tilde{w} _ e
+\partial \nabla _ \mathbf{x}\tilde{u} _ e} J^{-T}(\boldsymbol{\xi}_q) \nabla _
+{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e
 $$
-where, again, the transformations between physical coordinates and computational
+where the transformations between physical coordinates and computational
 coordinates are used.
 
 
@@ -391,4 +430,10 @@ $$
 $$
 
 #### Second order derivatives
-Jacobian
+To be added.
+
+### References
+[1] Yicong Fu, Bao Li and Graeme J. Kennedy. "Multiphysics Simulation and
+Optimization using High-Order Finite Elements with Structured Differentiation,"
+AIAA 2023-0530. AIAA SCITECH 2023 Forum. January 2023.
+[https://doi.org/10.2514/6.2023-0530](https://doi.org/10.2514/6.2023-0530)

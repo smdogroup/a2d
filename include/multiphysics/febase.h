@@ -8,7 +8,7 @@ namespace A2D {
 /**
  * @brief Element base class.
  *
- * This defines an element that is compatible with the given PDE. You can
+ * This defines an element that is compatible with the given PDEIntegrand. You can
  * set the node locations into the element, add the non-zero-pattern of the
  * Jacobian matrix via the add_node_set as well as adding the residual and
  * Jacobian contributions
@@ -70,14 +70,14 @@ class ElementFunctional {
   The functional must be the result of a sum over the ElementFunctions in the
   container.
 */
-// template <typename I, typename T, class PDE>
+// template <typename I, typename T, class PDEIntegrand>
 // class Functional {
 //  public:
 //   Functional() {}
 //   virtual ~Functional() {}
 
 //   void add_functional(
-//       std::shared_ptr<ElementFunctional<I, T, PDE>> functional) {
+//       std::shared_ptr<ElementFunctional<I, T, PDEIntegrand>> functional) {
 //     functionals.push_back(functional);
 //   }
 
@@ -95,7 +95,7 @@ class ElementFunctional {
 //   /*
 //     Compute the derivative of the functional w.r.t. state variables
 //   */
-//   void eval_dfdu(std::shared_ptr<typename PDE::SolutionArray> dfdu) {
+//   void eval_dfdu(std::shared_ptr<typename PDEIntegrand::SolutionArray> dfdu) {
 //     A2D::BLAS::zero(*dfdu);
 //     for (auto it = functionals.begin(); it != functionals.end(); it++) {
 //       (*it)->add_dfdu(*dfdu);
@@ -105,7 +105,7 @@ class ElementFunctional {
 //   /*
 //     Compute the derivative of the functional w.r.t. design variables
 //   */
-//   void eval_dfdx(std::shared_ptr<typename PDE::DesignArray> dfdx) {
+//   void eval_dfdx(std::shared_ptr<typename PDEIntegrand::DesignArray> dfdx) {
 //     A2D::BLAS::zero(*dfdx);
 //     for (auto it = functionals.begin(); it != functionals.end(); it++) {
 //       (*it)->add_dfdx(*dfdx);
@@ -115,7 +115,7 @@ class ElementFunctional {
 //   /*
 //     Compute the derivative of the functional w.r.t. nodes
 //   */
-//   void eval_dfdnodes(std::shared_ptr<typename PDE::NodeArray> dfdx) {
+//   void eval_dfdnodes(std::shared_ptr<typename PDEIntegrand::NodeArray> dfdx) {
 //     A2D::BLAS::zero(*dfdx);
 //     for (auto it = functionals.begin(); it != functionals.end(); it++) {
 //       (*it)->add_dfdnodes(*dfdx);
@@ -123,7 +123,7 @@ class ElementFunctional {
 //   }
 
 //  private:
-//   std::list<std::shared_ptr<ElementFunctional<I, T, PDE>>> functionals;
+//   std::list<std::shared_ptr<ElementFunctional<I, T, PDEIntegrand>>> functionals;
 // };
 
 }  // namespace A2D

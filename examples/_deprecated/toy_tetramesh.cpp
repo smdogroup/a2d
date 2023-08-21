@@ -24,7 +24,7 @@ void main_body(int argc, char* argv[]) {
   I nelems = mesher.get_nelems();
   I nbcs = mesher.get_nbcs();
 
-  // Set PDE model and element
+  // Set PDEIntegrand model and element
   auto model = std::make_shared<FEModel<I, T, ElasticityPDE>>(nnodes, nbcs);
   auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
@@ -61,7 +61,7 @@ void main_body(int argc, char* argv[]) {
   // Set up the stress functional
   auto functional = std::make_shared<Functional<I, T, ElasticityPDE>>();
   auto agg_functional =
-      std::make_shared<TopoVonMisesAggregation<I, T, Basis>>(constitutive);
+      std::make_shared<IntegrandTopoVonMisesKS<I, T, Basis>>(constitutive);
   functional->add_functional(agg_functional);
 
   // Compute the Jacobian matrix

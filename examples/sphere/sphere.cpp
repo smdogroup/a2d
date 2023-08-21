@@ -8,7 +8,7 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
-#include "multiphysics/poisson.h"
+#include "multiphysics/integrand_poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
@@ -161,7 +161,7 @@ class PoissonForSphere {
    *
    * This functor computes a Jacobian-vector product of the weak form
    *
-   * @param pde The PDE object for this class
+   * @param pde The PDEIntegrand object for this class
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
    * @param geo The geometry at the quadrature point
@@ -240,13 +240,13 @@ class PoissonSphere {
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
-  static constexpr I var_dim = 1;      // dimension of the PDE solution variable
+  static constexpr I var_dim = 1;      // dimension of the PDEIntegrand solution variable
   static constexpr I data_dim = 1;     // dimension of material data
   static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
 
-  // Problem PDE
-  using PDE = PoissonForSphere<T, spatial_dim>;
+  // Problem PDEIntegrand
+  using PDEIntegrand = PoissonForSphere<T, spatial_dim>;
 
   // The type of solution vector to use
   using BasisVecType = A2D::SolutionVector<T>;
@@ -274,10 +274,10 @@ class PoissonSphere {
 
   // FE type
   using FE_PDE =
-      A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
+  using LOrderFE = A2D::FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
                                       LOrderGeoBasis, LOrderBasis>;
 
   // Block compressed row sparse matrix
@@ -285,7 +285,7 @@ class PoissonSphere {
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::MatrixFree<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 1;
@@ -475,9 +475,9 @@ class PoissonSphere {
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
-        [](I k, typename PDE::DataSpace& d,
-           typename PDE::FiniteElementGeometry& g,
-           typename PDE::FiniteElementSpace& s) { return s[0]; });
+        [](I k, typename PDEIntegrand::DataSpace& d,
+           typename PDEIntegrand::FiniteElementGeometry& g,
+           typename PDEIntegrand::FiniteElementSpace& s) { return s[0]; });
   }
 
  private:
@@ -503,7 +503,7 @@ class PoissonSphere {
   LOrderGeoElemVec lorder_elem_geo;
   LOrderDataElemVec lorder_elem_data;
 
-  PDE pde;
+  PDEIntegrand pde;
   FE_PDE fe;
 
   LOrderFE lorder_fe;

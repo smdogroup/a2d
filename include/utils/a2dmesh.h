@@ -184,9 +184,9 @@ class MesherRect2D {
   }
 
   /**
-   * @brief Set the system residual given a PDE model with boundary conditions
+   * @brief Set the system residual given a PDEIntegrand model with boundary conditions
    *
-   * @param model the PDE model
+   * @param model the PDEIntegrand model
    * @param residual the residual multiarray
    */
   template <class Model, class RhsArray>
@@ -355,9 +355,9 @@ class MesherBrick3D {
   }
 
   /**
-   * @brief Set the system residual given a PDE model with boundary conditions
+   * @brief Set the system residual given a PDEIntegrand model with boundary conditions
    *
-   * @param model the PDE model
+   * @param model the PDEIntegrand model
    * @param residual the residual multiarray
    */
   template <class Model, class RhsArray>

@@ -73,7 +73,7 @@ void main_body() {
   using SamplingQuadrature = SamplerQuadrature<nsample_per_dim>;
   using Basis = FEBasis<T, QHdivHexBasis<T, degree>>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
-  using PDE = ElementTesterPDE<T, dim>;
+  using PDEIntegrand = ElementTesterPDE<T, dim>;
 
   const index_t nx = 2, ny = 2, nz = 2;  // number of elements in each dimension
   const index_t nelems = nx * ny * nz;
@@ -144,8 +144,8 @@ void main_body() {
   // Allocate interpolation scalar and vector arrays
   index_t nsamples =
       nsample_per_dim * nsample_per_dim * nsample_per_dim * nelems;
-  std::vector<PDE::FiniteElementSpace> spaces;
-  std::vector<PDE::FiniteElementGeometry> geo_spaces;
+  std::vector<PDEIntegrand::FiniteElementSpace> spaces;
+  std::vector<PDEIntegrand::FiniteElementGeometry> geo_spaces;
   spaces.reserve(nsamples);
   geo_spaces.reserve(nsamples);
 
@@ -181,16 +181,16 @@ void main_body() {
         geoelemvec.set_element_values(elem, dof_geo);
 
         using QptSpaceSol =
-            QptSpace<SamplingQuadrature, PDE::FiniteElementSpace>;
+            QptSpace<SamplingQuadrature, PDEIntegrand::FiniteElementSpace>;
         QptSpaceSol qptspace;
         using QptSpaceGeo =
-            QptSpace<SamplingQuadrature, PDE::FiniteElementGeometry>;
+            QptSpace<SamplingQuadrature, PDEIntegrand::FiniteElementGeometry>;
         QptSpaceGeo qptspace_geo;
 
         Basis::template interp<SamplingQuadrature, ElemVec::FEDof,
-                               PDE::FiniteElementSpace>(dof, qptspace);
+                               PDEIntegrand::FiniteElementSpace>(dof, qptspace);
         GeoBasis::template interp<SamplingQuadrature, GeoElemVec::FEDof,
-                                  PDE::FiniteElementGeometry>(dof_geo,
+                                  PDEIntegrand::FiniteElementGeometry>(dof_geo,
                                                               qptspace_geo);
 
         // Loop over sample points in each element

@@ -6,7 +6,7 @@
 #include <random>
 #include <string>
 
-#include "multiphysics/elasticity.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
@@ -32,7 +32,7 @@ class TopoHeatAnalysis {
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
-  static constexpr I var_dim = 1;      // dimension of the PDE solution variable
+  static constexpr I var_dim = 1;      // dimension of the PDEIntegrand solution variable
   static constexpr I data_dim = 1;     // dimension of material data
   static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
@@ -68,22 +68,22 @@ class TopoHeatAnalysis {
 
   /* Problem specific types */
 
-  // Problem PDE
-  using PDE = A2D::HeatConduction<T, spatial_dim>;
+  // Problem PDEIntegrand
+  using PDEIntegrand = A2D::HeatConduction<T, spatial_dim>;
   using AdjRHS = A2D::AdjRHS<T, spatial_dim>;
 
   using FE_PDE =
-      A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_AdjRHS =
       A2D::FiniteElement<T, AdjRHS, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
+  using LOrderFE = A2D::FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
                                       LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::MatrixFree<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 1;
@@ -107,7 +107,7 @@ class TopoHeatAnalysis {
   using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
 
   // Functional definitions
-  using VolumePDE = A2D::TopoVolume<T, var_dim, spatial_dim, PDE>;
+  using VolumePDE = A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, PDEIntegrand>;
 
   using VolumeFunctional =
       A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
@@ -462,9 +462,9 @@ class TopoHeatAnalysis {
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
-        [](I k, typename PDE::DataSpace &d,
-           typename PDE::FiniteElementGeometry &g,
-           typename PDE::FiniteElementSpace &s) {
+        [](I k, typename PDEIntegrand::DataSpace &d,
+           typename PDEIntegrand::FiniteElementGeometry &g,
+           typename PDEIntegrand::FiniteElementSpace &s) {
           if (k == 0) {
             return (s.template get<0>()).get_value();  // state
           } else {
@@ -501,7 +501,7 @@ class TopoHeatAnalysis {
   LOrderGeoElemVec lorder_elem_geo;
   LOrderElemVec lorder_elem_sol;
 
-  PDE pde;
+  PDEIntegrand pde;
   AdjRHS adjrhs;
 
   FE_PDE fe;
@@ -561,8 +561,8 @@ void test_heat_analysis(int argc, char *argv[]) {
   using ElemMat = A2D::ElementMat_Serial<T, Basis, BSRMatType>;
 
   // Physics and functional
-  using PDE = A2D::HeatConduction<T, spatial_dim>;
-  using FE = A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using PDEIntegrand = A2D::HeatConduction<T, spatial_dim>;
+  using FE = A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   /* Load mesh and boundary vertices from vtk */
 
@@ -625,7 +625,7 @@ void test_heat_analysis(int argc, char *argv[]) {
   ElemMat elem_mat(mesh, *mat);
   FE fe;
   T kappa = 1.0, q = 0.0, heat_source = 1.0, bc_temp = 0.0;
-  PDE pde(kappa, q, heat_source);
+  PDEIntegrand pde(kappa, q, heat_source);
   fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
 
   mat->write_mtx("heat_jacobian_nobc.mtx");
@@ -690,9 +690,9 @@ void test_heat_analysis(int argc, char *argv[]) {
   // Write result to vtk
   A2D::write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
       pde, elem_data, elem_geo, elem_sol, "heat_analysis.vtk",
-      [](A2D::index_t k, typename PDE::DataSpace &d,
-         typename PDE::FiniteElementGeometry &g,
-         typename PDE::FiniteElementSpace &s) {
+      [](A2D::index_t k, typename PDEIntegrand::DataSpace &d,
+         typename PDEIntegrand::FiniteElementGeometry &g,
+         typename PDEIntegrand::FiniteElementSpace &s) {
         if (k == 0) {
           return (s.template get<0>()).get_value();  // state
         } else {

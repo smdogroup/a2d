@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 
-#include "multiphysics/elasticity.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
@@ -10,7 +10,7 @@
 #include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
-#include "multiphysics/poisson.h"
+#include "multiphysics/integrand_poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dparser.h"
@@ -82,10 +82,10 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   constexpr int low_degree = 1;
 
   // Switch between poisson and elasticity
-  using PDE =
+  using PDEIntegrand =
       typename std::conditional<pde_type == PDE_TYPE::POISSON,
                                 Poisson<T, spatial_dim>,
-                                TopoLinearElasticity<T, spatial_dim>>::type;
+                                IntegrandTopoLinearElasticity<T, spatial_dim>>::type;
   using Basis = typename std::conditional<
       pde_type == PDE_TYPE::POISSON,
       FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
@@ -97,13 +97,13 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
 
   using BasisVecType = A2D::SolutionVector<T>;
 
-  // using PDE = MixedPoisson<T, dim>;
+  // using PDEIntegrand = MixedPoisson<T, dim>;
   // using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
   //                       LagrangeL2HexBasis<T, 1, degree - 1>>;
   // using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
   //                             LagrangeL2HexBasis<T, 1, low_degree - 1>>;
 
-  // using PDE = Poisson<T, dim>;
+  // using PDEIntegrand = Poisson<T, dim>;
   // using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
   // using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
 
@@ -113,7 +113,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
-  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
@@ -125,7 +125,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
       A2D::ElementVector_Serial<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = A2D::ElementVector_Serial<T, LOrderBasis, BasisVecType>;
 
-  using LOrderFE = FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
+  using LOrderFE = FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
                                  LOrderGeoBasis, LOrderBasis>;
 
   /** Create mesh for a single element
@@ -217,11 +217,11 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   // Create the finite-element model
   FE fe;
   LOrderFE lorder_fe;
-  std::shared_ptr<PDE> pde;
+  std::shared_ptr<PDEIntegrand> pde;
   if constexpr (pde_type == PDE_TYPE::POISSON) {
-    pde = std::make_shared<PDE>();
+    pde = std::make_shared<PDEIntegrand>();
   } else {
-    pde = std::make_shared<PDE>(1.0, 0.3, 5.0);
+    pde = std::make_shared<PDEIntegrand>(1.0, 0.3, 5.0);
   }
 
   const index_t block_size = 1;
@@ -293,9 +293,9 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
 
   // write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
   //     pde, elem_data, elem_geo, elem_sol,
-  //     [](index_t k, typename PDE::DataSpace &data,
-  //        typename PDE::FiniteElementGeometry &geo,
-  //        typename PDE::FiniteElementSpace &sol) {
+  //     [](index_t k, typename PDEIntegrand::DataSpace &data,
+  //        typename PDEIntegrand::FiniteElementGeometry &geo,
+  //        typename PDEIntegrand::FiniteElementSpace &sol) {
   //       return sol.template get<0>().get_value();
   //     });
 }

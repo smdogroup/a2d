@@ -68,7 +68,7 @@ class Poisson {
    *
    * This functor computes a Jacobian-vector product of the weak form
    *
-   * @param pde The PDE object for this class
+   * @param pde The PDEIntegrand object for this class
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
    * @param geo The geometry at the quadrature point

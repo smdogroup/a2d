@@ -9,9 +9,9 @@
 namespace A2D {
 
 template <typename T, index_t D>
-class TopoLinearElasticity {
+class IntegrandTopoLinearElasticity {
  public:
-  TopoLinearElasticity(T E, T nu, T q) : q(q) {
+  IntegrandTopoLinearElasticity(T E, T nu, T q) : q(q) {
     mu0 = 0.5 * E / (1.0 + nu);
     lambda0 = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
   }
@@ -193,10 +193,10 @@ class TopoLinearElasticity {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const TopoLinearElasticity<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    A2D_INLINE_FUNCTION JacVecProduct(
+        const IntegrandTopoLinearElasticity<T, D>& pde, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
         :  // Initialize constitutive data
           rho(data[0]),
           penalty(1.0 / (1.0 + pde.q * (1.0 - rho))),
@@ -251,10 +251,10 @@ class TopoLinearElasticity {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const TopoLinearElasticity<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    A2D_INLINE_FUNCTION AdjVecProduct(
+        const IntegrandTopoLinearElasticity<T, D>& pde, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
         :  // Initialize constitutive data
           rho(data[0]),
           q(pde.q),
@@ -312,8 +312,8 @@ class TopoLinearElasticity {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, index_t C, index_t D, class PDE>
-class TopoVolume {
+template <typename T, index_t C, index_t D, class PDEIntegrand>
+class IntegrandTopoVolume {
  public:
   // Number of dimensions
   static const index_t dim = D;
@@ -322,16 +322,16 @@ class TopoVolume {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename PDE::DataSpace;
+  using DataSpace = typename PDEIntegrand::DataSpace;
 
   // Space for the element geometry
-  using FiniteElementGeometry = typename PDE::FiniteElementGeometry;
+  using FiniteElementGeometry = typename PDEIntegrand::FiniteElementGeometry;
 
   // Finite element space
-  using FiniteElementSpace = typename PDE::FiniteElementSpace;
+  using FiniteElementSpace = typename PDEIntegrand::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = typename PDE::SolutionMapping;
+  using SolutionMapping = typename PDEIntegrand::SolutionMapping;
 
   /**
    * @brief Compute the integrand for this functional
@@ -365,7 +365,7 @@ class TopoVolume {
 };
 
 template <typename T, index_t D>
-class TopoBodyForce {
+class IntegrandTopoBodyForce {
  public:
   // Number of dimensions
   static const index_t dim = D;
@@ -374,20 +374,20 @@ class TopoBodyForce {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+  using DataSpace = typename IntegrandTopoLinearElasticity<T, D>::DataSpace;
 
   // Space for the element geometry
   using FiniteElementGeometry =
-      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+      typename IntegrandTopoLinearElasticity<T, D>::FiniteElementGeometry;
 
   // Finite element space
   using FiniteElementSpace =
-      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+      typename IntegrandTopoLinearElasticity<T, D>::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = InteriorMapping<T, dim>;
 
-  TopoBodyForce(T q, const T tx_[]) : q(q) {
+  IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
     for (index_t i = 0; i < dim; i++) {
       tx[i] = tx_[i];
     }
@@ -409,8 +409,8 @@ class TopoBodyForce {
 
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const TopoBodyForce<T, dim>& pde, T wdetJ,
-                                      const DataSpace& data,
+    A2D_INLINE_FUNCTION AdjVecProduct(const IntegrandTopoBodyForce<T, dim>& pde,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : q(pde.q), rho(data[0]), wdetJ(wdetJ) {
@@ -443,9 +443,9 @@ class TopoBodyForce {
   Evalute the KS functional of the stress, given the constitutive class
 */
 template <typename T, index_t D>
-class TopoVonMisesAggregation {
+class IntegrandTopoVonMisesKS {
  public:
-  TopoVonMisesAggregation(T E, T nu, T q, T design_stress, T ks_penalty)
+  IntegrandTopoVonMisesKS(T E, T nu, T q, T design_stress, T ks_penalty)
       : q(q), design_stress(design_stress), ks_penalty(ks_penalty) {
     mu = 0.5 * E / (1.0 + nu);
     lambda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
@@ -461,18 +461,19 @@ class TopoVonMisesAggregation {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
+  using DataSpace = typename IntegrandTopoLinearElasticity<T, D>::DataSpace;
 
   // Space for the element geometry
   using FiniteElementGeometry =
-      typename TopoLinearElasticity<T, D>::FiniteElementGeometry;
+      typename IntegrandTopoLinearElasticity<T, D>::FiniteElementGeometry;
 
   // Finite element space
   using FiniteElementSpace =
-      typename TopoLinearElasticity<T, D>::FiniteElementSpace;
+      typename IntegrandTopoLinearElasticity<T, D>::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = typename TopoLinearElasticity<T, D>::SolutionMapping;
+  using SolutionMapping =
+      typename IntegrandTopoLinearElasticity<T, D>::SolutionMapping;
 
   // Material parameters
   T mu;
@@ -688,7 +689,7 @@ class TopoVonMisesAggregation {
  * @brief Apply surface traction and/or surface torque.
  */
 template <typename T, index_t D>
-class TopoSurfaceTraction {
+class IntegrandTopoSurfaceTraction {
  private:
   template <index_t dim>
   struct torque_dim;
@@ -704,8 +705,9 @@ class TopoSurfaceTraction {
   };
 
  public:
-  TopoSurfaceTraction(const T tx_[] = nullptr, const T torx_[] = nullptr,
-                      const T x0_[] = nullptr) {
+  IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
+                               const T torx_[] = nullptr,
+                               const T x0_[] = nullptr) {
     has_traction = false;
     has_torque = false;
 

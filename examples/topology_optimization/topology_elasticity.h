@@ -6,7 +6,7 @@
 #include <random>
 #include <string>
 
-#include "multiphysics/elasticity.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementvector.h"
@@ -14,7 +14,7 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
-#include "multiphysics/poisson.h"
+#include "multiphysics/integrand_poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
@@ -36,7 +36,7 @@ class TopoElasticityAnalysis {
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
-  static constexpr I var_dim = 3;      // dimension of the PDE solution variable
+  static constexpr I var_dim = 3;      // dimension of the PDEIntegrand solution variable
   static constexpr I data_dim = 1;     // dimension of material data
   static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
@@ -83,14 +83,14 @@ class TopoElasticityAnalysis {
 
   /* Problem specific types */
 
-  // Problem PDE
-  using PDE = A2D::TopoLinearElasticity<T, spatial_dim>;
-  using BodyForce = A2D::TopoBodyForce<T, spatial_dim>;
-  using TractionPDE = A2D::TopoSurfaceTraction<T, spatial_dim>;
+  // Problem PDEIntegrand
+  using PDEIntegrand = A2D::IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using BodyForce = A2D::IntegrandTopoBodyForce<T, spatial_dim>;
+  using TractionPDE = A2D::IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
   // Finite element functional
   using FE_PDE =
-      A2D::FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_BodyForce =
       A2D::FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
@@ -98,12 +98,12 @@ class TopoElasticityAnalysis {
                          TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = A2D::FiniteElement<T, PDE, LOrderQuadrature, LOrderDataBasis,
+  using LOrderFE = A2D::FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
                                       LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::MatrixFree<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 6;
@@ -127,12 +127,12 @@ class TopoElasticityAnalysis {
   using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
 
   // Functional definitions
-  using VolumePDE = A2D::TopoVolume<T, var_dim, spatial_dim, PDE>;
+  using VolumePDE = A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, PDEIntegrand>;
 
   using VolumeFunctional =
       A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using AggregationFunctional =
-      A2D::FiniteElement<T, A2D::TopoVonMisesAggregation<T, spatial_dim>,
+      A2D::FiniteElement<T, A2D::IntegrandTopoVonMisesKS<T, spatial_dim>,
                          Quadrature, DataBasis, GeoBasis, Basis>;
 
   /**
@@ -239,7 +239,7 @@ class TopoElasticityAnalysis {
     ElemVec elem_y(mesh, y);
     ElemVec elem_z(mesh, z);
 
-    A2D::DOFCoordinates<T, PDE, GeoBasis, Basis> coords;
+    A2D::DOFCoordinates<T, PDEIntegrand, GeoBasis, Basis> coords;
     coords.get_dof_coordinates(elem_geo, elem_x, elem_y, elem_z);
 
     // Initialize the near null-space to an appropriate vector
@@ -587,7 +587,7 @@ class TopoElasticityAnalysis {
   T eval_aggregation(T design_stress, T ks_penalty) {
     A2D::Timer timer("TopoElasticityAnalysis::eval_aggregation()");
     AggregationFunctional functional;
-    A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
+    A2D::IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(
         E, nu, q, design_stress, ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
@@ -611,7 +611,7 @@ class TopoElasticityAnalysis {
   void add_aggregation_gradient(T design_stress, T ks_penalty, VecType &dfdx) {
     A2D::Timer timer("TopoElasticityAnalysis::add_aggregation_gradient()");
     AggregationFunctional functional;
-    A2D::TopoVonMisesAggregation<T, spatial_dim> aggregation(
+    A2D::IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(
         E, nu, q, design_stress, ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
@@ -732,9 +732,9 @@ class TopoElasticityAnalysis {
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
-        [](I k, typename PDE::DataSpace &d,
-           typename PDE::FiniteElementGeometry &g,
-           typename PDE::FiniteElementSpace &s) {
+        [](I k, typename PDEIntegrand::DataSpace &d,
+           typename PDEIntegrand::FiniteElementGeometry &g,
+           typename PDEIntegrand::FiniteElementSpace &s) {
           if (k == 3) {
             return (d.template get<0>()).get_value();
           } else {
@@ -776,7 +776,7 @@ class TopoElasticityAnalysis {
   LOrderGeoElemVec lorder_elem_geo;
   LOrderDataElemVec lorder_elem_data;
 
-  PDE pde;
+  PDEIntegrand pde;
   BodyForce bodyforce;
   TractionPDE traction_pde;
 

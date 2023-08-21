@@ -1,7 +1,7 @@
 #include <vector>
 
 #include "a2dobjs.h"
-#include "multiphysics/elasticity.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
@@ -49,10 +49,10 @@ class TopoElasticityAnalysis2D {
   using TGeoElemVec = ElementVector_Serial<T, TGeoBasis, Vec_t>;
   using TElemVec = ElementVector_Serial<T, TBasis, Vec_t>;
 
-  using PDE = TopoLinearElasticity<T, spatial_dim>;
-  using Traction = TopoSurfaceTraction<T, spatial_dim>;
+  using PDEIntegrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using Traction = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
-  using FE_PDE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_PDE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
@@ -100,9 +100,9 @@ class TopoElasticityAnalysis2D {
   void tovtk(const std::string filename) {
     A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
         pde, elem_data, elem_geo, elem_sol, filename,
-        [](index_t k, typename PDE::DataSpace &d,
-           typename PDE::FiniteElementGeometry &g,
-           typename PDE::FiniteElementSpace &s) {
+        [](index_t k, typename PDEIntegrand::DataSpace &d,
+           typename PDEIntegrand::FiniteElementGeometry &g,
+           typename PDEIntegrand::FiniteElementSpace &s) {
           if (k == 2) {  // write data
             return (d.template get<0>()).get_value();
           } else {  // write solution components
@@ -114,7 +114,7 @@ class TopoElasticityAnalysis2D {
 
  private:
   T E, nu, q;
-  PDE pde;
+  PDEIntegrand pde;
   ElementMesh<Basis> mesh;
   ElementMesh<GeoBasis> geomesh;
   ElementMesh<DataBasis> datamesh;

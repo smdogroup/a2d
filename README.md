@@ -1,4 +1,4 @@
-# A2D - a PDE solver using Almost Automatic Differentiation
+# A2D - a PDEIntegrand solver using Almost Automatic Differentiation
 
 A toolkit for almost automatic differentiation of vector and matrix expressions.
 

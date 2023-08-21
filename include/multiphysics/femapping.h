@@ -35,12 +35,12 @@ class InteriorMapping {
   }
 
   // TODO: maybe the best way is to put jtransform in FESpace?
-  template <class PDE>
-  void jtransform(const typename PDE::QMatType& mat_in,
-                  typename PDE::QMatType& mat_out) {
-    constexpr index_t ncomp = PDE::FiniteElementSpace::ncomp;
+  template <class PDEIntegrand>
+  void jtransform(const typename PDEIntegrand::QMatType& mat_in,
+                  typename PDEIntegrand::QMatType& mat_out) {
+    constexpr index_t ncomp = PDEIntegrand::FiniteElementSpace::ncomp;
 
-    typename PDE::FiniteElementSpace pref, p, Jp;
+    typename PDEIntegrand::FiniteElementSpace pref, p, Jp;
 
     for (index_t k = 0; k < ncomp; k++) {
       pref.zero();

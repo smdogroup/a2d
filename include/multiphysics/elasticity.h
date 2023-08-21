@@ -8,7 +8,7 @@
 
 namespace A2D {
 
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class TopoLinearElasticity {
  public:
   TopoLinearElasticity(T E, T nu, T q) : q(q) {
@@ -17,26 +17,26 @@ class TopoLinearElasticity {
   }
 
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>>;
+  using DataSpace = FESpace<T, data_dim, L2Space<T, data_dim, dim>>;
 
   // Space for the element geometry
-  using FiniteElementGeometry = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
+  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim>>;
 
   // Finite element space
-  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
+  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim>>;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+  using SolutionMapping = InteriorMapping<T, dim>;
 
   // The type of matrix used to store data at each quadrature point
-  static const A2D::index_t ncomp = FiniteElementSpace::ncomp;
-  using QMatType = A2D::SymMat<T, ncomp>;
+  static const index_t ncomp = FiniteElementSpace::ncomp;
+  using QMatType = SymMat<T, ncomp>;
 
   // Data for the element
   T mu0;      // Second Lame parameter
@@ -62,14 +62,14 @@ class TopoLinearElasticity {
     T lambda = penalty * lambda0;
 
     // Extract the solution
-    A2D::Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
 
     // The Green-Langrange strain terms
-    A2D::SymMat<T, dim> E;
+    SymMat<T, dim> E;
 
     T output;
-    A2D::MatLinearGreenStrain(Ux, E);
-    A2D::SymmIsotropicEnergy(mu, lambda, E, output);
+    MatLinearGreenStrain(Ux, E);
+    SymmIsotropicEnergy(mu, lambda, E, output);
 
     return wdetJ * output;
   }
@@ -97,19 +97,19 @@ class TopoLinearElasticity {
     // Extract the trial solution gradient and the coefficient terms. Here
     // Uxb is the output computed as the derivative of the strain energy
     // w.r.t. Ux
-    A2D::Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
-    A2D::Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
+    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
+    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
 
     // The Green-Lagrange strain terms
-    A2D::SymMat<T, dim> E0, Eb;
-    A2D::ADMat<A2D::SymMat<T, dim>> E(E0, Eb);
+    SymMat<T, dim> E0, Eb;
+    ADMat<SymMat<T, dim>> E(E0, Eb);
 
     // The strain energy output
-    A2D::ADScalar<T> output;
+    ADScalar<T> output;
 
-    auto strain = A2D::MatLinearGreenStrain(Ux, E);
-    auto energy = A2D::SymmIsotropicEnergy(mu, lambda, E, output);
+    auto strain = MatLinearGreenStrain(Ux, E);
+    auto energy = SymmIsotropicEnergy(mu, lambda, E, output);
 
     // Seed the output value with the wdetJ
     output.bvalue = wdetJ;
@@ -117,6 +117,69 @@ class TopoLinearElasticity {
     // Reverse the derivatives through the code
     energy.reverse();
     strain.reverse();
+  }
+
+  // Evaluate the second order derivatives of the integral
+  A2D_INLINE_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
+                                    const FiniteElementGeometry& geo,
+                                    const FiniteElementSpace& s,
+                                    QMatType& jac) {
+    T rho = data[0];
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+
+    // Get the constitutive data at the points
+    T mu = penalty * mu0;
+    T lambda = penalty * lambda0;
+
+    // Extract displacement gradient
+    A2DMat<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+
+    // The Green-Lagrange strain terms
+    A2DMat<SymMat<T, dim>> E;
+
+    // The strain energy output
+    A2DScalar<T> output;
+
+    // Evaluate the energy
+    auto strain = MatLinearGreenStrain(Ux, E);
+    auto energy = SymmIsotropicEnergy(mu, lambda, E, output);
+
+    // Seed the output value with the wdetJ
+    output.bvalue = wdetJ;
+
+    // Reverse the derivatives through the code
+    energy.reverse();
+    strain.reverse();
+
+    // Temporary vectors
+    FiniteElementSpace p, Jp;
+
+    for (index_t k = 0; k < FiniteElementSpace::ncomp; k++) {
+      // Zero Hessian seeds because reverse operations are incremental
+      Ux.Ah.zero();
+      E.Ah.zero();
+      output.hvalue = 0.0;
+
+      // Select k-th column of the Hessian
+      p.zero();
+      p[k] = T(1.0);
+
+      // Set projection direction
+      Ux.set_pvalue((p.template get<0>()).get_grad());
+
+      // Forward sweep to compute dependent directions
+      strain.hforward();
+
+      // Reverse sweep to compute Hessian-vector products
+      energy.hreverse();
+      strain.hreverse();
+
+      // Set k-th column of the Hessian
+      Ux.get_hvalue((Jp.template get<0>()).get_grad());
+      for (A2D::index_t m = 0; m < ncomp; m++) {
+        jac(m, k) = Jp[m];
+      }
+    }
   }
 
   /**
@@ -170,13 +233,13 @@ class TopoLinearElasticity {
    private:
     T rho, penalty;
     T mu, lambda;
-    A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymMat<T, dim>> E;
-    A2D::A2DScalar<T> output;
+    A2DMat<Mat<T, dim, dim>> Ux;
+    A2DMat<SymMat<T, dim>> E;
+    A2DScalar<T> output;
 
     // Declare types of the operators
-    decltype(A2D::MatLinearGreenStrain(Ux, E)) strain;
-    decltype(A2D::SymmIsotropicEnergy(mu, lambda, E, output)) energy;
+    decltype(MatLinearGreenStrain(Ux, E)) strain;
+    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
   };
 
   /**
@@ -235,28 +298,28 @@ class TopoLinearElasticity {
     T q;
     T penalty;
     T mu0, lambda0;
-    A2D::A2DScalar<T> mu, lambda;
-    A2D::A2DMat<A2D::Mat<T, dim, dim>> Ux;
-    A2D::A2DMat<A2D::SymMat<T, dim>> E;
-    A2D::A2DScalar<T> output;
+    A2DScalar<T> mu, lambda;
+    A2DMat<Mat<T, dim, dim>> Ux;
+    A2DMat<SymMat<T, dim>> E;
+    A2DScalar<T> output;
 
     // Declare types of the operators
-    decltype(A2D::MatLinearGreenStrain(Ux, E)) strain;
-    decltype(A2D::SymmIsotropicEnergy(mu, lambda, E, output)) energy;
+    decltype(MatLinearGreenStrain(Ux, E)) strain;
+    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
   };
 };
 
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, A2D::index_t C, A2D::index_t D, class PDE>
+template <typename T, index_t C, index_t D, class PDE>
 class TopoVolume {
  public:
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
   using DataSpace = typename PDE::DataSpace;
@@ -301,14 +364,14 @@ class TopoVolume {
   }
 };
 
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class TopoBodyForce {
  public:
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
   using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
@@ -322,7 +385,7 @@ class TopoBodyForce {
       typename TopoLinearElasticity<T, D>::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+  using SolutionMapping = InteriorMapping<T, dim>;
 
   TopoBodyForce(T q, const T tx_[]) : q(q) {
     for (index_t i = 0; i < dim; i++) {
@@ -338,7 +401,7 @@ class TopoBodyForce {
     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
 
     // Add body force components
-    A2D::Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
+    Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
     for (index_t i = 0; i < dim; i++) {
       Ub(i) = wdetJ * penalty * tx[i];
     }
@@ -358,7 +421,7 @@ class TopoBodyForce {
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& psi,
                                         DataSpace& dfdx) {
-      const A2D::Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
+      const Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
       T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
 
       for (index_t i = 0; i < dim; i++) {
@@ -379,7 +442,7 @@ class TopoBodyForce {
 /*
   Evalute the KS functional of the stress, given the constitutive class
 */
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class TopoVonMisesAggregation {
  public:
   TopoVonMisesAggregation(T E, T nu, T q, T design_stress, T ks_penalty)
@@ -392,10 +455,10 @@ class TopoVonMisesAggregation {
   }
 
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
   using DataSpace = typename TopoLinearElasticity<T, D>::DataSpace;
@@ -449,7 +512,7 @@ class TopoVonMisesAggregation {
    */
   T evaluate_functional(T failure_index_integral_) {
     failure_index_integral = failure_index_integral_;
-    return max_failure_index + A2D::log(failure_index_integral) / ks_penalty;
+    return max_failure_index + log(failure_index_integral) / ks_penalty;
   }
 
   /**
@@ -462,14 +525,14 @@ class TopoVonMisesAggregation {
    */
   T max(const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s) {
-    const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymMat<T, dim> E, S;
+    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
+    SymMat<T, dim> E, S;
     T trS, trSS;
 
-    A2D::MatLinearGreenStrain(Ux, E);
-    A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
-    A2D::SymmTrace(S, trS);
-    A2D::SymmSymmMultTrace(S, S, trSS);
+    MatLinearGreenStrain(Ux, E);
+    SymmIsotropicConstitutive(mu, lambda, E, S);
+    SymmTrace(S, trS);
+    SymmSymmMultTrace(S, S, trSS);
 
     // Extract the design density value
     T rho = data[0];
@@ -497,14 +560,14 @@ class TopoVonMisesAggregation {
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
               const FiniteElementSpace& s) {
-    const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymMat<T, dim> E, S;
+    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
+    SymMat<T, dim> E, S;
     T trS, trSS;
 
-    A2D::MatLinearGreenStrain(Ux, E);
-    A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
-    A2D::SymmTrace(S, trS);
-    A2D::SymmSymmMultTrace(S, S, trSS);
+    MatLinearGreenStrain(Ux, E);
+    SymmIsotropicConstitutive(mu, lambda, E, S);
+    SymmTrace(S, trS);
+    SymmSymmMultTrace(S, S, trSS);
 
     // Extract the design density value
     T rho = data[0];
@@ -518,7 +581,7 @@ class TopoVonMisesAggregation {
     // Compute the failure index
     T failure_index = penalty * vm;
 
-    return wdetJ * A2D::exp(ks_penalty * (failure_index - max_failure_index));
+    return wdetJ * exp(ks_penalty * (failure_index - max_failure_index));
   }
 
   /**
@@ -532,20 +595,20 @@ class TopoVonMisesAggregation {
    */
   void weak(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
             const FiniteElementSpace& s, FiniteElementSpace& coef) {
-    A2D::Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
-    A2D::Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    A2D::SymMat<T, dim> E0, Eb;
-    A2D::SymMat<T, dim> S0, Sb;
+    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
+    SymMat<T, dim> E0, Eb;
+    SymMat<T, dim> S0, Sb;
 
-    A2D::ADMat<A2D::Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    A2D::ADMat<A2D::SymMat<T, dim>> E(E0, Eb);
-    A2D::ADMat<A2D::SymMat<T, dim>> S(S0, Sb);
-    A2D::ADScalar<T> trS, trSS;
+    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
+    ADMat<SymMat<T, dim>> E(E0, Eb);
+    ADMat<SymMat<T, dim>> S(S0, Sb);
+    ADScalar<T> trS, trSS;
 
-    auto strain = A2D::MatLinearGreenStrain(Ux, E);
-    auto cons = A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
-    auto trace1 = A2D::SymmTrace(S, trS);
-    auto trace2 = A2D::SymmSymmMultTrace(S, S, trSS);
+    auto strain = MatLinearGreenStrain(Ux, E);
+    auto cons = SymmIsotropicConstitutive(mu, lambda, E, S);
+    auto trace1 = SymmTrace(S, trS);
+    auto trace2 = SymmSymmMultTrace(S, S, trSS);
 
     // Extract the design density value
     T rho = data[0];
@@ -561,7 +624,7 @@ class TopoVonMisesAggregation {
     T failure_index = penalty * vm;
 
     // Compute the exponential contribution
-    T ks_exp = A2D::exp(ks_penalty * (failure_index - max_failure_index));
+    T ks_exp = exp(ks_penalty * (failure_index - max_failure_index));
 
     T scale = 0.5 * wdetJ * penalty * ks_exp /
               (vm * design_stress * design_stress * failure_index_integral);
@@ -587,14 +650,14 @@ class TopoVonMisesAggregation {
   void data_derivative(T wdetJ, const DataSpace& data,
                        const FiniteElementGeometry& geo,
                        const FiniteElementSpace& s, DataSpace& dfdx) {
-    const A2D::Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    A2D::SymMat<T, dim> E, S;
+    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
+    SymMat<T, dim> E, S;
     T trS, trSS;
 
-    A2D::MatLinearGreenStrain(Ux, E);
-    A2D::SymmIsotropicConstitutive(mu, lambda, E, S);
-    A2D::SymmTrace(S, trS);
-    A2D::SymmSymmMultTrace(S, S, trSS);
+    MatLinearGreenStrain(Ux, E);
+    SymmIsotropicConstitutive(mu, lambda, E, S);
+    SymmTrace(S, trS);
+    SymmSymmMultTrace(S, S, trSS);
 
     // Extract the design density value
     T rho = data[0];
@@ -613,7 +676,7 @@ class TopoVonMisesAggregation {
     T failure_index = penalty * vm;
 
     // Compute the exponential contribution
-    T ks_exp = A2D::exp(ks_penalty * (failure_index - max_failure_index));
+    T ks_exp = exp(ks_penalty * (failure_index - max_failure_index));
 
     T scale = wdetJ * vm * ks_exp / (failure_index_integral);
 
@@ -624,7 +687,7 @@ class TopoVonMisesAggregation {
 /**
  * @brief Apply surface traction and/or surface torque.
  */
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class TopoSurfaceTraction {
  private:
   template <index_t dim>
@@ -647,14 +710,14 @@ class TopoSurfaceTraction {
     has_torque = false;
 
     if (tx_) {
-      for (A2D::index_t i = 0; i < dim; i++) {
+      for (index_t i = 0; i < dim; i++) {
         tx[i] = tx_[i];
       }
       has_traction = true;
     }
 
     if (torx_ && x0_) {
-      for (A2D::index_t i = 0; i < dim; i++) {
+      for (index_t i = 0; i < dim; i++) {
         x0[i] = x0_[i];
         if constexpr (dim == 3) {
           torx[i] = torx_[i];
@@ -668,24 +731,22 @@ class TopoSurfaceTraction {
   }
 
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = A2D::FESpace<T, dim>;
+  using DataSpace = FESpace<T, dim>;
 
   // Space for the element geometry
-  using FiniteElementGeometry =
-      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
   // Finite element space
-  using FiniteElementSpace =
-      A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim - 1>>;
+  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::SurfaceMapping<T, dim>;
+  using SolutionMapping = SurfaceMapping<T, dim>;
 
   T tx[dim];                       // surface traction vector
   T torx[torque_dim<dim>::value];  // surface  torque vector
@@ -707,7 +768,7 @@ class TopoSurfaceTraction {
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
     // Extract the solution
-    A2D::Vec<T, dim>& U = (coef.template get<0>()).get_value();
+    Vec<T, dim>& U = (coef.template get<0>()).get_value();
     for (index_t i = 0; i < dim; i++) {
       U(i) = 0.0;
     }
@@ -720,7 +781,7 @@ class TopoSurfaceTraction {
 
     if (has_torque) {
       // Extract location
-      const A2D::Vec<T, dim>& x = (geo.template get<0>()).get_value();
+      const Vec<T, dim>& x = (geo.template get<0>()).get_value();
 
       if constexpr (dim == 2) {
         // Force at this point is (x - x0) cross torque

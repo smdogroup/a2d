@@ -18,7 +18,11 @@ int main(int argc, char *argv[]) {
     std::vector<index_t> quad(4 * nquad);
     std::vector<double> Xloc(2 * nverts);
     MesherRect2D mesher(nx, ny, lx, ly);
-    mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data());
+    bool randomize = true;
+    unsigned int seed = 0;
+    double fraction = 0.2;
+    mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data(), randomize,
+                                       seed, fraction);
     MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
 
     // Set up bcs and traction

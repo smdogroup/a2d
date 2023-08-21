@@ -34,6 +34,34 @@ class InteriorMapping {
     in.rtransform(detJ, J, Jinv, out);
   }
 
+  // TODO: maybe the best way is to put jtransform in FESpace?
+  template <class PDE>
+  void jtransform(const typename PDE::QMatType& mat_in,
+                  typename PDE::QMatType& mat_out) {
+    constexpr index_t ncomp = PDE::FiniteElementSpace::ncomp;
+
+    typename PDE::FiniteElementSpace pref, p, Jp;
+
+    for (index_t k = 0; k < ncomp; k++) {
+      pref.zero();
+      pref[k] = T(1.0);
+      transform(pref, p);
+
+      // Compute Jp
+      Jp.zero();
+      // TODO: use MatVec operation instead
+      for (index_t j = 0; j < ncomp; j++) {
+        for (index_t i = 0; i < ncomp; i++) {
+          Jp[i] += mat_in(i, j) * p[j];
+        }
+      }
+      rtransform(Jp, pref);
+      for (index_t i = 0; i < ncomp; i++) {
+        mat_out(i, k) = pref[i];
+      }
+    }
+  }
+
  private:
   const A2D::Mat<T, dim, dim>& J;
   A2D::Mat<T, dim, dim> Jinv;
@@ -59,11 +87,11 @@ class SurfaceMapping {
       detJ = std::sqrt(nA(0) * nA(0) + nA(1) * nA(1));
     } else if constexpr (dim == 3) {
       // Find the nA = (Area) * normal direction
-      x(0) = Jxi(0, 0);
+      x(0) = Jxi(0, 0);  // d(x, y, z)/dxi
       x(1) = Jxi(1, 0);
       x(2) = Jxi(2, 0);
 
-      y(0) = Jxi(0, 1);
+      y(0) = Jxi(0, 1);  // d(x, y, z)/deta
       y(1) = Jxi(1, 1);
       y(2) = Jxi(2, 1);
 

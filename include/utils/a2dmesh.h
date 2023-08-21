@@ -9,6 +9,7 @@
 #ifndef A2D_MESH_H
 #define A2D_MESH_H
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,7 @@ class MesherRect2D {
    * @param ny number of elements along y direction
    * @param lx length along x direction
    * @param ly length along y direction
+   * @param randomize if we randomly perturb nodal locations or not
    */
   MesherRect2D(int nx, int ny, double lx, double ly)
       : nx(nx), ny(ny), lx(lx), ly(ly) {}
@@ -84,15 +86,33 @@ class MesherRect2D {
    * @param hex connectivity for hexahedral elements, size: 3 * nquad
    */
   template <typename I, typename T>
-  void set_X_conn(T* Xloc, I* quad) {
+  void set_X_conn(T* Xloc, I* quad, bool randomize = false,
+                  unsigned int random_seed = 0, double fraction = 0.1) {
     // Helper lambda
     auto node_num = [this](I i, I j) { return i + j * (this->nx + 1); };
+
+    T dx = lx / nx;
+    T dy = ly / ny;
+
+    if (randomize) {
+      std::srand(random_seed);
+    }
 
     // Set X
     for (I j = 0; j < ny + 1; j++) {
       for (I i = 0; i < nx + 1; i++) {
-        Xloc[2 * node_num(i, j)] = (lx * i) / nx;
-        Xloc[2 * node_num(i, j) + 1] = (ly * j) / ny;
+        T px = 0.0;
+        T py = 0.0;
+
+        if (randomize) {
+          if (i and j and (i - nx) and (j - ny)) {
+            px = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dx;
+            py = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dy;
+          }
+        }
+
+        Xloc[2 * node_num(i, j)] = (lx * i) / nx + px;
+        Xloc[2 * node_num(i, j) + 1] = (ly * j) / ny + py;
       }
     }
 

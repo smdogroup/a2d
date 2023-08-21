@@ -221,7 +221,7 @@ class H1Space {
     }
   }
 
-  // Transform derivatives from the physical to the refernece space
+  // Transform derivatives from the physical to the reference space
   void rtransform(const T& detJ, const Mat<T, D, D>& J,
                   const Mat<T, D, D>& Jinv, H1Space<T, C, D>& s) const {
     // dot{s.grad} = dot{grad} Jinv =>

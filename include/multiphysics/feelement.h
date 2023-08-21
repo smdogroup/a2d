@@ -49,12 +49,12 @@ class DOFCoordinates {
                            ElementVectorBase<evtype, ElemVec>& elem_x,
                            ElementVectorBase<evtype, ElemVec>& elem_y,
                            ElementVectorBase<evtype, ElemVec>& elem_z) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_elements = elem_geo.get_num_elements();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_geo.get_values();
     }
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       if constexpr (evtype == ElemVecType::Serial) {
@@ -69,10 +69,10 @@ class DOFCoordinates {
       typename ElemVec::FEDof z_dof(i, elem_z);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < Basis::ndof; j++) {
+      for (index_t j = 0; j < Basis::ndof; j++) {
         // Get the solution/geometry in the reference domain
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
-        A2D::Vec<T, PDE::dim>& X = gref.template get<0>().get_value();
+        Vec<T, PDE::dim>& X = gref.template get<0>().get_value();
 
         x_dof[j] = X(0);
         y_dof[j] = X(1);
@@ -109,7 +109,7 @@ class FiniteElement {
   FiniteElement() {}
 
   /**
-   * @brief Compute the value of an integral functional over the finite-elemen
+   * @brief Compute the value of an integral functional over the finite-element
    * domain
    *
    * @tparam DataElemVec Element vector class for the data
@@ -126,8 +126,8 @@ class FiniteElement {
   T integrate(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
               ElementVectorBase<evtype, GeoElemVec>& elem_geo,
               ElementVectorBase<evtype, ElemVec>& elem_sol) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     T value = 0.0;
 
@@ -137,7 +137,7 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -158,7 +158,7 @@ class FiniteElement {
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
@@ -198,8 +198,8 @@ class FiniteElement {
   T max(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
         ElementVectorBase<evtype, GeoElemVec>& elem_geo,
         ElementVectorBase<evtype, ElemVec>& elem_sol) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     // TODO: Need to make this more robust?
     T max_value = -1e20;
@@ -210,7 +210,7 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -231,7 +231,7 @@ class FiniteElement {
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
@@ -278,8 +278,8 @@ class FiniteElement {
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -288,7 +288,7 @@ class FiniteElement {
       elem_deriv.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -312,7 +312,7 @@ class FiniteElement {
       QDataSpace deriv;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
@@ -367,8 +367,8 @@ class FiniteElement {
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
       ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -378,7 +378,7 @@ class FiniteElement {
       elem_deriv.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get data, geo, sol and adj for this element and interpolate them
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -406,7 +406,7 @@ class FiniteElement {
       QDataSpace deriv;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementSpace& aref = adj.get(j);
@@ -460,8 +460,8 @@ class FiniteElement {
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
                     ElementVectorBase<evtype, ElemResVec>& elem_res) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -470,7 +470,7 @@ class FiniteElement {
       elem_res.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -486,6 +486,10 @@ class FiniteElement {
       QGeoSpace geo;
       QSpace sol;
 
+      // Evaluate values (and potentially derivatives) for all quadrature
+      // points
+      // Note: derivatives computed at this point are all w.r.t. computational
+      // coordinates!
       DataBasis::template interp(data_dof, data);
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
@@ -494,10 +498,10 @@ class FiniteElement {
       QSpace res;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
-        // Get the solution/geometry in the reference domain
+      for (index_t j = 0; j < num_quadrature_points; j++) {
+        // Get the solution/geometry and derivatives in the reference domain
         typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);  // this has J
 
         // Initialize the transform object
         T detJ;
@@ -552,8 +556,8 @@ class FiniteElement {
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemVec>& elem_xvec,
       ElementVectorBase<evtype, ElemVec>& elem_yvec) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -563,7 +567,7 @@ class FiniteElement {
       elem_yvec.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry, solution and input vector for this element and
       // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
@@ -591,7 +595,7 @@ class FiniteElement {
       // Allocate space for the output vector
       QSpace ysol;
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementSpace& xref = xsol.get(j);
@@ -649,17 +653,20 @@ class FiniteElement {
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_mat Element matrix output
+   *
+   * Note: this function uses Jacobian-vector product, which is deprecated and
+   * will be removed soon
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemMat>
-  void add_jacobian(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                    ElementVectorBase<evtype, ElemVec>& elem_sol,
-                    ElemMat& elem_mat) {
+  void add_jacobian_deprecated(
+      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+      ElementVectorBase<evtype, ElemVec>& elem_sol, ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t ncomp = PDE::FiniteElementSpace::ncomp;
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -667,7 +674,7 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -690,7 +697,7 @@ class FiniteElement {
       // Initialize the element matrix
       typename ElemMat::FEMat element_mat(i, elem_mat);
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
@@ -714,14 +721,15 @@ class FiniteElement {
         // Temporary vectors
         typename PDE::FiniteElementSpace pref, p, Jp;
 
-        for (A2D::index_t k = 0; k < ncomp; k++) {
+        double weight = Quadrature::get_weight(j);
+
+        for (index_t k = 0; k < ncomp; k++) {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
           transform.transform(pref, p);
 
           // Allocate the Jacobian-vector product functor
-          double weight = Quadrature::get_weight(j);
           typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
                                           s);
 
@@ -731,13 +739,80 @@ class FiniteElement {
           // Transform to back to the reference element
           transform.rtransform(Jp, pref);
 
-          for (A2D::index_t m = 0; m < ncomp; m++) {
+          for (index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
           }
         }
 
         // Add the results of the outer product
         Basis::template add_outer<Quadrature>(j, jac, element_mat);
+      }
+
+      elem_mat.add_element_values(i, element_mat);
+    }
+  }
+
+  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
+            class ElemVec, class ElemMat>
+  void add_jacobian(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
+                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+                    ElemMat& elem_mat) {
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
+
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
+    for (index_t i = 0; i < num_elements; i++) {
+      // Get the data, geometry and solution for this element and interpolate it
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
+      QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
+      Basis::template interp(sol_dof, sol);
+
+      // Initialize the element matrix
+      typename ElemMat::FEMat element_mat(i, elem_mat);
+
+      for (index_t j = 0; j < num_quadrature_points; j++) {
+        // Transform to the local coordinate system
+        typename PDE::FiniteElementSpace& sref = sol.get(j);
+        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+
+        // Initialize the transform object
+        T detJ;
+        typename PDE::SolutionMapping transform(gref, detJ);
+
+        // Transform from the reference element to the physical space
+        typename PDE::FiniteElementSpace s;
+        transform.transform(sref, s);
+
+        // Compute the Jacobian for the weak form at the quadrature point
+        double weight = Quadrature::get_weight(j);
+        typename PDE::QMatType jac_ref, jac;
+        pde.jacobian(weight * detJ, data.get(j), gref, s, jac);
+
+        // Transform second derivatives from w.r.t. x to w.r.t. xi
+        transform.template jtransform<PDE>(jac, jac_ref);
+
+        // Add the results of the outer product
+        Basis::template add_outer<Quadrature>(j, jac_ref, element_mat);
       }
 
       elem_mat.add_element_values(i, element_mat);
@@ -781,16 +856,16 @@ class MatrixFree {
                   ElementVectorBase<evtype, ElemVec>& elem_sol) {
     Timer timer("MatrixFree::initialize()");
     // Re-size the vector as needed
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_elements = elem_geo.get_num_elements();
     if (qmat.size() != num_elements) {
       qmat.resize(num_elements);
     }
 
     // Number of components at the quadrature point
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
+    const index_t ncomp = PDE::FiniteElementSpace::ncomp;
 
     // Get the number of quadrature points
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -798,7 +873,7 @@ class MatrixFree {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -818,7 +893,7 @@ class MatrixFree {
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace& sref = sol.get(j);
         typename PDE::FiniteElementGeometry& gref = geo.get(j);
@@ -842,7 +917,7 @@ class MatrixFree {
         // Temporary vectors
         typename PDE::FiniteElementSpace pref, p, Jp;
 
-        for (A2D::index_t k = 0; k < ncomp; k++) {
+        for (index_t k = 0; k < ncomp; k++) {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
@@ -859,7 +934,7 @@ class MatrixFree {
           // Transform to back to the reference element
           transform.rtransform(Jp, pref);
 
-          for (A2D::index_t m = 0; m < ncomp; m++) {
+          for (index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
           }
         }
@@ -871,16 +946,16 @@ class MatrixFree {
   void add_jacobian_vector_product(
       ElementVectorBase<evtype, ElemVec>& elem_xvec,
       ElementVectorBase<evtype, ElemVec>& elem_yvec) {
-    const A2D::index_t num_elements = qmat.size();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
+    const index_t num_elements = qmat.size();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t ncomp = PDE::FiniteElementSpace::ncomp;
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_xvec.get_values();
       elem_yvec.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Kokkos::parallel_for(
       //     num_elements, A2D_LAMBDA(index_t i) {
       // Set up the values for the input vector
@@ -894,7 +969,7 @@ class MatrixFree {
       // Allocate space for the output vector
       QSpace ysol;
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
         typename PDE::FiniteElementSpace& yref = ysol.get(j);
         typename PDE::FiniteElementSpace& xref = xsol.get(j);
@@ -904,8 +979,8 @@ class MatrixFree {
 
         // Matrix-vector product at the quadrature point
         yref.zero();
-        for (A2D::index_t ii = 0; ii < ncomp; ii++) {
-          for (A2D::index_t jj = 0; jj < ncomp; jj++) {
+        for (index_t ii = 0; ii < ncomp; ii++) {
+          for (index_t jj = 0; jj < ncomp; jj++) {
             yref[ii] += jac(ii, jj) * xref[jj];
           }
         }

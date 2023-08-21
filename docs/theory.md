@@ -91,6 +91,32 @@ $$
 which is often required when solving the discretized nonlinear system of equations
 using Newton's method.
 
+One of the main applications for A2D is design optimization, which requires
+evaluation of gradients of functions of interest.
+Adjoint method is used for A2D to perform sensitivity analysis.
+Consider function of interest $ g(\rho _ h, u _ h) $, where $\rho _ h$ is the
+discretized design variable, $u _ h$ is the discretized solution variable that
+can be obtained by the governing equation $ R _ h (u _ h) = 0$.
+Using the discrete adjoint method, the total derivatives of the function $g$
+with respect to $\rho _ h$ can be obtained as follows:
+
+$$
+\dfrac{d g}{d \rho _ h}  = \dfrac{ \partial g }{ \partial \rho _ h} - \psi _ h
+^T \dfrac{\partial R _ h}{\partial \rho _ h}
+$$
+
+where the adjoint variable $\psi _ h$ can be solved by the following system of linear equations:
+
+$$
+\dfrac{\partial R _ h}{ \partial u _ h}^T \psi _ h = \dfrac{\partial g}{\partial u _ h}^T
+$$
+
+where we define $\dfrac{\partial R _ h}{\partial u _ h}$ as the adjoint Jacobian.
+
+
+
+
+
 ### PDE and weak form
 
 Consider the following PDE
@@ -368,7 +394,7 @@ e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h \partial u _ h}.
 \tag{5}
 $$
 
-Same as for the residual, we again assume that $\dfrac{\partial f}{\partial w}$
+Same as for the residual, we assume that $\dfrac{\partial f}{\partial w}$
 only depends on $\nabla u$ for $u$.
 As a result, we can express $\dfrac{\partial^2 f}{\partial w _ h \partial u _ h}$
 at a quadrature point as:
@@ -408,6 +434,67 @@ K _ h(u _ h) = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
 e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ \mathbf{x}\tilde{w} _ e
 \partial \nabla _ \mathbf{x}\tilde{u} _ e} J^{-T}(\boldsymbol{\xi}_q) \nabla _
 {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e
+\tag{7}
+$$
+
+where the transformations between physical coordinates and computational
+coordinates are used.
+
+
+### Evaluate the adjoint Jacobian
+
+Adjoint Jacobian matrix can be obtained by taking derivatives of the residual
+(4) with respect to the design variable $\rho _ h$:
+
+$$
+\dfrac{\partial R _ h (u _ h)}{\partial \rho _ h} = \sum _ {e=1}^{n _ e} \sum
+_ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial^2 f
+\left(\tilde{u} _ e(\boldsymbol{\xi} _ q), \tilde{w} _
+e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h \partial \rho _ h}.
+\tag{8}
+$$
+
+Same as for the residual, we assume that $\dfrac{\partial f}{\partial w}$
+only depends on $\nabla \rho$ for $\rho$.
+As a result, we can express $\dfrac{\partial^2 f}{\partial w _ h \partial \rho _ h}$
+at a quadrature point as:
+
+$$
+\begin{align*}
+\dfrac{\partial^2 f}{\partial w _ h \partial \rho _ h}
+&= \dfrac{\partial}{\partial \rho _ h} \dfrac{\partial f}{\partial w _ h} \\
+&= \dfrac{\partial }{\partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e}
+\dfrac{\partial f}{\partial w _ h}
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e}{\partial \rho _ h} \\
+&= \dfrac{\partial }{\partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e}
+\left(
+\dfrac{\partial f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}{\partial w _ h}
+\right)
+\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e}{\partial \rho _ h} \\
+&= \left(\dfrac{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}{\partial w _
+h} \right)^T \dfrac{\partial^2 f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w}
+_ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e} \dfrac{\partial \nabla _
+{\boldsymbol{\xi}}\tilde{\rho} _ e}{\partial \rho _ h} \\
+&=P_e^T  \left[\nabla _ {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T
+\dfrac{\partial^2 f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w}
+_ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{\rho} _ e}
+\nabla _ {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e. \\
+\end{align*}
+\tag{9}
+$$
+
+Plug (9) into (8), we have
+
+$$
+\dfrac{\partial R _ h (u _ h)}{\partial \rho _ h} = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
+\det\left(J(\boldsymbol{\xi} _ q)\right) P_e^T  \left[\nabla _
+{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi})\right]^T J^{-1} (\boldsymbol{\xi}_q)
+\dfrac{\partial^2 f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q), \tilde{w} _
+e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ \mathbf{x}\tilde{w} _ e
+\partial \nabla _ \mathbf{x}\tilde{\rho} _ e} J^{-T}(\boldsymbol{\xi}_q) \nabla _
+{\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e
+\tag{10}
 $$
 
 where the transformations between physical coordinates and computational

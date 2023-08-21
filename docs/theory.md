@@ -325,6 +325,7 @@ Despite such assumption, the following analysis applies to other scenarios that
 include other $w$-dependent terms in a similar way.
 As a result, we can express $\dfrac{\partial f}{\partial w _ h}$ at a
 quadrature point as:
+
 $$
 \dfrac{\partial f}{\partial w _ h}
 = \dfrac{\partial f}{\partial \nabla _ {\boldsymbol{\xi}}\tilde{w} _ e}
@@ -351,12 +352,14 @@ f\left(\tilde{u} _ e(\boldsymbol{\xi} _ q),
 \end{align*}
 \tag{4}
 $$
+
 where the transformations between physical coordinates and computational
 coordinates are used.
 
 ### Evaluate the system Jacobian
 Jacobian matrix can be obtained by taking derivatives of the residual (4) with
 respect to trial solution $u _ h$:
+
 $$
 K _ h (u _ h) = \dfrac{\partial R _ h (u _ h)}{\partial u _ h} = \sum _ {e=1}^{n _ e} \sum
 _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial^2 f
@@ -364,10 +367,12 @@ _ {q=1}^{n _ q} m _ q \det\left(J(\boldsymbol{\xi} _ q)\right) \dfrac{\partial^2
 e(\boldsymbol{\xi} _ q)\right)}{\partial w _ h \partial u _ h}.
 \tag{5}
 $$
+
 Same as for the residual, we again assume that $\dfrac{\partial f}{\partial w}$
 only depends on $\nabla u$ for $u$.
 As a result, we can express $\dfrac{\partial^2 f}{\partial w _ h \partial u _ h}$
 at a quadrature point as:
+
 $$
 \begin{align*}
 \dfrac{\partial^2 f}{\partial w _ h \partial u _ h}
@@ -392,7 +397,9 @@ _ e \partial \nabla _ {\boldsymbol{\xi}}\tilde{u} _ e}
 \end{align*}
 \tag{6}
 $$
+
 Plug (6) into (5), we have
+
 $$
 K _ h(u _ h) = \sum _ {e=1}^{n _ e} \sum _ {q=1}^{n _ q} m _ q
 \det\left(J(\boldsymbol{\xi} _ q)\right) P_e^T  \left[\nabla _
@@ -402,6 +409,7 @@ e(\boldsymbol{\xi} _ q)\right)}{\partial \nabla _ \mathbf{x}\tilde{w} _ e
 \partial \nabla _ \mathbf{x}\tilde{u} _ e} J^{-T}(\boldsymbol{\xi}_q) \nabla _
 {\boldsymbol{\xi}}N _ e(\boldsymbol{\xi}) P_e
 $$
+
 where the transformations between physical coordinates and computational
 coordinates are used.
 
@@ -413,9 +421,11 @@ equation (4)) and Jacobians automatically using AD.
 In the context of A2D, we are often interested in getting derivatives of some
 scalar functional $s$ (such as the integral of the weak form).
 Suppose we have some variable $v$, then we define the reverse seed as
+
 $$
 \bar{v} = \dfrac{\partial s}{\partial v}
 $$
+
 where the shape of $\bar{v}$ is same as the shape of $v$.
 
 #### First order derivatives
@@ -424,6 +434,7 @@ independent input variable $x$ with respect to scalar quantity $s$.
 Within the computation graph of computing $s$ from $x$, we consider an
 intermediate expression $c=c(a, b)$.
 Using chain rule, we have the rule of backward propergation:
+
 $$
 \bar{a} _ i = \bar{c} _ j \dfrac{\partial c _ j}{\partial a _ i},~
 \bar{b} _ i = \bar{c} _ j \dfrac{\partial c _ j}{\partial b _ i}.

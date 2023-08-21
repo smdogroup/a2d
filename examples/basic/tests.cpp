@@ -225,7 +225,7 @@ int main() {
   TestMatMult<std::complex<double>, 3, 3, 3> test1;
   A2D::Test::RunADTest(test1);
 
-  TestMatMult<std::complex<double>, 5, 4, 1> test2;
+  TestMatMult<std::complex<double>, 8, 4, 3> test2;
   A2D::Test::RunADTest(test2);
 
   return (0);

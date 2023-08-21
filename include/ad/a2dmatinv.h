@@ -46,18 +46,18 @@ class MatInvExpr {
                                               ADseed::b, ADseed::p>::value;
 
     T temp[N * N];
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL, NORMAL>(
+    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL>(
         get_data(Ainv), GetSeed<seed>::get_data(A), temp);
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL, NORMAL, false, true>(
-        temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv), T(-1.0));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, true>(
+        T(-1.0), temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv));
   }
 
   A2D_INLINE_FUNCTION void reverse() {
     T temp[N * N];
-    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL, NORMAL>(
+    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
         get_data(Ainv), GetSeed<ADseed::b>::get_data(Ainv), temp);
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, NORMAL, true, true>(
-        temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A), T(-1.0));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+        T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A));
   }
 
   A2D_INLINE_FUNCTION void hreverse() {
@@ -67,23 +67,23 @@ class MatInvExpr {
     T temp[N * N];
 
     // - A^{-T} * Ap^{T} * Ab
-    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, TRANSPOSE, NORMAL>(
+    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, TRANSPOSE>(
         get_data(Ainv), GetSeed<ADseed::p>::get_data(A), temp);
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL, NORMAL, true, true>(
-        temp, GetSeed<ADseed::b>::get_data(A), GetSeed<ADseed::h>::get_data(A),
-        T(-1.0));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, true>(
+        T(-1.0), temp, GetSeed<ADseed::b>::get_data(A),
+        GetSeed<ADseed::h>::get_data(A));
 
     // - Ab * Ap^{T} * A^{-T}
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, NORMAL>(
+    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE>(
         GetSeed<ADseed::b>::get_data(A), GetSeed<ADseed::p>::get_data(A), temp);
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, NORMAL, true, true>(
-        temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A), T(-1.0));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+        T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A));
 
     // - A^{-T} * Ainvh * A^{-T}
-    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL, NORMAL>(
+    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
         get_data(Ainv), GetSeed<ADseed::h>::get_data(Ainv), temp);
-    MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, NORMAL, true, true>(
-        temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A), T(-1.0));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+        T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A));
   }
 
   Atype& A;

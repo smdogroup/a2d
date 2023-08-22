@@ -59,10 +59,10 @@ class TopoElasticityAnalysis2D {
   using IntegrandTrac = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
   // Element operations
-  using ElemOpsElas = FiniteElement<T, IntegrandElas, QuadratureElas,
-                                    DataBasisElas, GeoBasisElas, BasisElas>;
-  using ElemOpsTrac = FiniteElement<T, IntegrandTrac, QuadratureTrac,
-                                    DataBasisTrac, GeoBasisTrac, BasisTrac>;
+  using ElemOpsElas = ElementOps<T, IntegrandElas, QuadratureElas,
+                                 DataBasisElas, GeoBasisElas, BasisElas>;
+  using ElemOpsTrac = ElementOps<T, IntegrandTrac, QuadratureTrac,
+                                 DataBasisTrac, GeoBasisTrac, BasisTrac>;
 
   TopoElasticityAnalysis2D(MeshConnectivityBase &conn, DirichletBCInfo &bcinfo,
                            index_t nquad, index_t *quad, double *Xloc,

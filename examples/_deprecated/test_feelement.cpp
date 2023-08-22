@@ -17,7 +17,7 @@ void main_body() {
 
   // constexpr bool use_parallel_elemvec = false;
   constexpr bool use_parallel_elemvec = true;
-  using FE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis,
+  using FE = ElementOps<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis,
                            Basis, use_parallel_elemvec>;
 
   // Set the node locations

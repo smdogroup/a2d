@@ -73,12 +73,12 @@ class TopoHeatAnalysis {
   using AdjRHS = AdjRHS<T, spatial_dim>;
 
   using FE_PDE =
-      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_AdjRHS =
-      FiniteElement<T, AdjRHS, Quadrature, DataBasis, GeoBasis, Basis>;
+      ElementOps<T, AdjRHS, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature,
                                  LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
@@ -109,7 +109,7 @@ class TopoHeatAnalysis {
   using VolumePDE = IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
 
   using VolumeFunctional =
-      FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      ElementOps<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
   /**
    * @brief The heat conduction topology analysis class.
@@ -559,7 +559,7 @@ void test_heat_analysis(int argc, char *argv[]) {
   // Physics and functional
   using Integrand = HeatConduction<T, spatial_dim>;
   using FE =
-      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   /* Load mesh and boundary vertices from vtk */
 

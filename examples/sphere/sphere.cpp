@@ -275,10 +275,10 @@ class PoissonSphere {
 
   // FE type
   using FE_PDE =
-      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature,
                                  LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Block compressed row sparse matrix
@@ -463,7 +463,7 @@ class PoissonSphere {
     // Compute and print out the solution error
     double R = 1.0;
     PoissonForSphereError<T, spatial_dim> error(R);
-    FiniteElement<T, PoissonForSphereError<T, spatial_dim>,
+    ElementOps<T, PoissonForSphereError<T, spatial_dim>,
                   HexGaussQuadrature<degree + 10>, DataBasis, GeoBasis, Basis>
         functional;
 

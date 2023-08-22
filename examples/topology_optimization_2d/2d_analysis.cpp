@@ -1,13 +1,13 @@
 #include <vector>
 
 #include "a2dobjs.h"
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
@@ -49,10 +49,11 @@ class TopoElasticityAnalysis2D {
   using TGeoElemVec = ElementVector_Serial<T, TGeoBasis, Vec_t>;
   using TElemVec = ElementVector_Serial<T, TBasis, Vec_t>;
 
-  using PDEIntegrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
   using Traction = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
-  using FE_PDE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_PDE =
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
@@ -63,7 +64,7 @@ class TopoElasticityAnalysis2D {
       : E(E),
         nu(nu),
         q(q),
-        pde(E, nu, q),
+        integrand(E, nu, q),
         mesh(conn),
         geomesh(conn),
         datamesh(conn),
@@ -89,7 +90,7 @@ class TopoElasticityAnalysis2D {
     FE_PDE fe;
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
-    fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+    fe.add_jacobian(integrand, elem_data, elem_geo, elem_sol, elem_mat);
     bsr_mat.write_mtx("Jacobian.mtx");
 
     return bsr_mat;
@@ -99,10 +100,10 @@ class TopoElasticityAnalysis2D {
 
   void tovtk(const std::string filename) {
     A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol, filename,
-        [](index_t k, typename PDEIntegrand::DataSpace &d,
-           typename PDEIntegrand::FiniteElementGeometry &g,
-           typename PDEIntegrand::FiniteElementSpace &s) {
+        integrand, elem_data, elem_geo, elem_sol, filename,
+        [](index_t k, typename Integrand::DataSpace &d,
+           typename Integrand::FiniteElementGeometry &g,
+           typename Integrand::FiniteElementSpace &s) {
           if (k == 2) {  // write data
             return (d.template get<0>()).get_value();
           } else {  // write solution components
@@ -114,7 +115,7 @@ class TopoElasticityAnalysis2D {
 
  private:
   T E, nu, q;
-  PDEIntegrand pde;
+  Integrand integrand;
   ElementMesh<Basis> mesh;
   ElementMesh<GeoBasis> geomesh;
   ElementMesh<DataBasis> datamesh;

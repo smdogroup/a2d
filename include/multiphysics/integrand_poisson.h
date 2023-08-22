@@ -68,7 +68,7 @@ class Poisson {
    *
    * This functor computes a Jacobian-vector product of the weak form
    *
-   * @param pde The PDEIntegrand object for this class
+   * @param integrand The Integrand object for this class
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
    * @param geo The geometry at the quadrature point
@@ -76,7 +76,7 @@ class Poisson {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const Poisson<T, D>& pde, T wdetJ,
+    A2D_INLINE_FUNCTION JacVecProduct(const Poisson<T, D>& integrand, T wdetJ,
                                       const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
@@ -183,8 +183,8 @@ class MixedPoisson {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const MixedPoisson<T, D>& pde, T wdetJ,
-                                      const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}

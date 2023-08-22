@@ -194,7 +194,7 @@ class QuadratureType {
 ```
 
 
-## PDEIntegrand implementations, for example: ```integrand_poisson.h```
+## Integrand implementations, for example: ```integrand_poisson.h```
 A2D solves PDEs. Such problem instances need to be implemented to comply with
 the following skeleton:
 ```c++

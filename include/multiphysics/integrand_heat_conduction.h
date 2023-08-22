@@ -104,14 +104,14 @@ class HeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const HeatConduction<T, D>& pde, T wdetJ,
-                                      const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const HeatConduction<T, D>& integrand,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ),
-          kappa(pde.kappa),
+          kappa(integrand.kappa),
           rho(data[0]),
-          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))) {}
+          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
@@ -140,15 +140,15 @@ class HeatConduction {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const HeatConduction<T, D>& pde, T wdetJ,
-                                      const DataSpace& data,
+    A2D_INLINE_FUNCTION AdjVecProduct(const HeatConduction<T, D>& integrand,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ),
-          kappa(pde.kappa),
+          kappa(integrand.kappa),
           rho(data[0]),
-          q(pde.q),
-          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))),
+          q(integrand.q),
+          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))),
           tx(s.template get<0>().get_grad()) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
@@ -312,10 +312,10 @@ class MixedHeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const MixedHeatConduction<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    A2D_INLINE_FUNCTION JacVecProduct(
+        const MixedHeatConduction<T, D>& integrand, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
         : wdetJ(wdetJ), kappa(data[0]) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,

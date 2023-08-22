@@ -1,13 +1,13 @@
 #include <vector>
 
 #include "a2dobjs.h"
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
@@ -27,13 +27,14 @@ class FEProb {
   using Vec_t = SolutionVector<T>;
   using BSRMat_t = BSRMat<T, block_size, block_size>;
 
-  using PDEIntegrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
 
-  using FE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE =
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using DataElemVec = ElementVector_Serial<T, DataBasis, Vec_t>;
   using GeoElemVec = ElementVector_Serial<T, GeoBasis, Vec_t>;
   using ElemVec = ElementVector_Serial<T, Basis, Vec_t>;
@@ -68,10 +69,10 @@ class FEProb {
 
     // Populate the CSR matrix
     FE fe;
-    PDEIntegrand pde(E, nu, q);
+    Integrand integrand(E, nu, q);
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
-    fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+    fe.add_jacobian(integrand, elem_data, elem_geo, elem_sol, elem_mat);
 
     return bsr_mat;
   }

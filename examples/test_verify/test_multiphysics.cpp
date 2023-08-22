@@ -1,15 +1,15 @@
 #include <iostream>
 #include <memory>
 
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hypercube_basis.h"
+#include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/integrand_poisson.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 

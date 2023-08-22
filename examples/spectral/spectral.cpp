@@ -2,15 +2,15 @@
 #include <memory>
 #include <string>
 
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/heat_conduction.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hypercube_basis.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/integrand_poisson.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dparser.h"
@@ -72,7 +72,7 @@ void compute_eigenvalues(index_t n, double *A, double *B, double *eigvals,
 
 enum class PDE_TYPE { POISSON, ELASTICITY };
 
-template <int degree, PDE_TYPE pde_type>
+template <int degree, PDE_TYPE integrand_type>
 void main_body(std::string type, int ar = 1, double h = 1.0,
                bool write_vtk = false) {
   using I = index_t;
@@ -82,28 +82,27 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   constexpr int low_degree = 1;
 
   // Switch between poisson and elasticity
-  using PDEIntegrand =
-      typename std::conditional<pde_type == PDE_TYPE::POISSON,
-                                Poisson<T, spatial_dim>,
-                                IntegrandTopoLinearElasticity<T, spatial_dim>>::type;
+  using Integrand = typename std::conditional<
+      integrand_type == PDE_TYPE::POISSON, Poisson<T, spatial_dim>,
+      IntegrandTopoLinearElasticity<T, spatial_dim>>::type;
   using Basis = typename std::conditional<
-      pde_type == PDE_TYPE::POISSON,
+      integrand_type == PDE_TYPE::POISSON,
       FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,
       FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>>::type;
   using LOrderBasis = typename std::conditional<
-      pde_type == PDE_TYPE::POISSON,
+      integrand_type == PDE_TYPE::POISSON,
       FEBasis<T, LagrangeH1HexBasis<T, 1, low_degree>>,
       FEBasis<T, LagrangeH1HexBasis<T, 3, low_degree>>>::type;
 
   using BasisVecType = A2D::SolutionVector<T>;
 
-  // using PDEIntegrand = MixedPoisson<T, dim>;
+  // using Integrand = MixedPoisson<T, dim>;
   // using Basis = FEBasis<T, QHdivHexBasis<T, degree>,
   //                       LagrangeL2HexBasis<T, 1, degree - 1>>;
   // using LOrderBasis = FEBasis<T, QHdivHexBasis<T, low_degree>,
   //                             LagrangeL2HexBasis<T, 1, low_degree - 1>>;
 
-  // using PDEIntegrand = Poisson<T, dim>;
+  // using Integrand = Poisson<T, dim>;
   // using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
   // using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, 1>>;
 
@@ -113,7 +112,8 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
-  using FE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE =
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
@@ -125,8 +125,8 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
       A2D::ElementVector_Serial<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = A2D::ElementVector_Serial<T, LOrderBasis, BasisVecType>;
 
-  using LOrderFE = FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
-                                 LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+                                 LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   /** Create mesh for a single element
    *
@@ -217,11 +217,11 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   // Create the finite-element model
   FE fe;
   LOrderFE lorder_fe;
-  std::shared_ptr<PDEIntegrand> pde;
-  if constexpr (pde_type == PDE_TYPE::POISSON) {
-    pde = std::make_shared<PDEIntegrand>();
+  std::shared_ptr<Integrand> integrand;
+  if constexpr (integrand_type == PDE_TYPE::POISSON) {
+    integrand = std::make_shared<Integrand>();
   } else {
-    pde = std::make_shared<PDEIntegrand>(1.0, 0.3, 5.0);
+    integrand = std::make_shared<Integrand>(1.0, 0.3, 5.0);
   }
 
   const index_t block_size = 1;
@@ -242,13 +242,13 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
 
   BSRMatType horder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, Basis, BSRMatType> elem_mat(mesh, horder_mat);
-  fe.add_jacobian(*pde, elem_data, elem_geo, elem_sol, elem_mat);
+  fe.add_jacobian(*integrand, elem_data, elem_geo, elem_sol, elem_mat);
 
   lorder_mesh.template create_block_csr<block_size>(nrows, rowp, cols);
   BSRMatType lorder_mat(nrows, nrows, rowp[nrows], rowp, cols);
   ElementMat_Serial<T, LOrderBasis, BSRMatType> lorder_elem_mat(lorder_mesh,
                                                                 lorder_mat);
-  lorder_fe.add_jacobian(*pde, lorder_elem_data, lorder_elem_geo,
+  lorder_fe.add_jacobian(*integrand, lorder_elem_data, lorder_elem_geo,
                          lorder_elem_sol, lorder_elem_mat);
 
   index_t n, m;
@@ -292,10 +292,10 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   delete[] eigvals;
 
   // write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
-  //     pde, elem_data, elem_geo, elem_sol,
-  //     [](index_t k, typename PDEIntegrand::DataSpace &data,
-  //        typename PDEIntegrand::FiniteElementGeometry &geo,
-  //        typename PDEIntegrand::FiniteElementSpace &sol) {
+  //     integrand, elem_data, elem_geo, elem_sol,
+  //     [](index_t k, typename Integrand::DataSpace &data,
+  //        typename Integrand::FiniteElementGeometry &geo,
+  //        typename Integrand::FiniteElementSpace &sol) {
   //       return sol.template get<0>().get_value();
   //     });
 }
@@ -306,19 +306,20 @@ int main(int argc, char *argv[]) {
     // Get cmd arguments
     ArgumentParser parser(argc, argv);
     std::string type = parser.parse_option("--type", std::string("distortion"));
-    std::string pde = parser.parse_option("--pde", std::string("poisson"));
+    std::string integrand =
+        parser.parse_option("--integrand", std::string("poisson"));
     double h = parser.parse_option("--h", 1.0);
     parser.help_info();
 
     // Check option validity
     std::vector<std::string> valid_types = {"distortion", "box"};
     assert_option_in(type, valid_types);
-    std::vector<std::string> valid_pdes = {"poisson", "elasticity"};
-    assert_option_in(pde, valid_pdes);
+    std::vector<std::string> valid_integrands = {"poisson", "elasticity"};
+    assert_option_in(integrand, valid_integrands);
 
     int ar[] = {1, 2, 4, 8, 16, 32};
 
-    if (pde == "poisson") {
+    if (integrand == "poisson") {
       for (auto a : ar) {
         main_body<1, PDE_TYPE::POISSON>(type, a, h);
         main_body<2, PDE_TYPE::POISSON>(type, a, h);

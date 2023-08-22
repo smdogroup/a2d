@@ -194,14 +194,14 @@ class IntegrandTopoLinearElasticity {
   class JacVecProduct {
    public:
     A2D_INLINE_FUNCTION JacVecProduct(
-        const IntegrandTopoLinearElasticity<T, D>& pde, T wdetJ,
+        const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
         :  // Initialize constitutive data
           rho(data[0]),
-          penalty(1.0 / (1.0 + pde.q * (1.0 - rho))),
-          mu(penalty * pde.mu0),
-          lambda(penalty * pde.lambda0),
+          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))),
+          mu(penalty * integrand.mu0),
+          lambda(penalty * integrand.lambda0),
 
           // Initialize the displacement gradient
           Ux(s.template get<0>().get_grad()),
@@ -252,15 +252,15 @@ class IntegrandTopoLinearElasticity {
   class AdjVecProduct {
    public:
     A2D_INLINE_FUNCTION AdjVecProduct(
-        const IntegrandTopoLinearElasticity<T, D>& pde, T wdetJ,
+        const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
         :  // Initialize constitutive data
           rho(data[0]),
-          q(pde.q),
+          q(integrand.q),
           penalty(1.0 / (1.0 + q * (1.0 - rho))),
-          mu0(pde.mu0),
-          lambda0(pde.lambda0),
+          mu0(integrand.mu0),
+          lambda0(integrand.lambda0),
           mu(penalty * mu0),
           lambda(penalty * lambda0),
 
@@ -312,7 +312,7 @@ class IntegrandTopoLinearElasticity {
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, index_t C, index_t D, class PDEIntegrand>
+template <typename T, index_t C, index_t D, class Integrand>
 class IntegrandTopoVolume {
  public:
   // Number of dimensions
@@ -322,16 +322,16 @@ class IntegrandTopoVolume {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename PDEIntegrand::DataSpace;
+  using DataSpace = typename Integrand::DataSpace;
 
   // Space for the element geometry
-  using FiniteElementGeometry = typename PDEIntegrand::FiniteElementGeometry;
+  using FiniteElementGeometry = typename Integrand::FiniteElementGeometry;
 
   // Finite element space
-  using FiniteElementSpace = typename PDEIntegrand::FiniteElementSpace;
+  using FiniteElementSpace = typename Integrand::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = typename PDEIntegrand::SolutionMapping;
+  using SolutionMapping = typename Integrand::SolutionMapping;
 
   /**
    * @brief Compute the integrand for this functional
@@ -409,13 +409,13 @@ class IntegrandTopoBodyForce {
 
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const IntegrandTopoBodyForce<T, dim>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
-        : q(pde.q), rho(data[0]), wdetJ(wdetJ) {
+    A2D_INLINE_FUNCTION AdjVecProduct(
+        const IntegrandTopoBodyForce<T, dim>& integrand, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
+        : q(integrand.q), rho(data[0]), wdetJ(wdetJ) {
       for (index_t i = 0; i < dim; i++) {
-        tx[i] = pde.tx[i];
+        tx[i] = integrand.tx[i];
       }
     }
 

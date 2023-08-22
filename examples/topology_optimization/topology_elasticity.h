@@ -6,15 +6,15 @@
 #include <random>
 #include <string>
 
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
-#include "multiphysics/lagrange_hypercube_basis.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/integrand_poisson.h"
+#include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
@@ -36,9 +36,10 @@ class TopoElasticityAnalysis {
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
-  static constexpr I var_dim = 3;      // dimension of the PDEIntegrand solution variable
-  static constexpr I data_dim = 1;     // dimension of material data
-  static constexpr I low_degree = 1;   // low order preconditinoer mesh degree
+  static constexpr I var_dim =
+      3;  // dimension of the Integrand solution variable
+  static constexpr I data_dim = 1;    // dimension of material data
+  static constexpr I low_degree = 1;  // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
 
   // The type of solution vector to use
@@ -83,14 +84,14 @@ class TopoElasticityAnalysis {
 
   /* Problem specific types */
 
-  // Problem PDEIntegrand
-  using PDEIntegrand = A2D::IntegrandTopoLinearElasticity<T, spatial_dim>;
+  // Problem Integrand
+  using Integrand = A2D::IntegrandTopoLinearElasticity<T, spatial_dim>;
   using BodyForce = A2D::IntegrandTopoBodyForce<T, spatial_dim>;
   using TractionPDE = A2D::IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
   // Finite element functional
   using FE_PDE =
-      A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_BodyForce =
       A2D::FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
@@ -98,12 +99,13 @@ class TopoElasticityAnalysis {
                          TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = A2D::FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
-                                      LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE =
+      A2D::FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
+                         LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 6;
@@ -127,7 +129,8 @@ class TopoElasticityAnalysis {
   using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
 
   // Functional definitions
-  using VolumePDE = A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, PDEIntegrand>;
+  using VolumePDE =
+      A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
 
   using VolumeFunctional =
       A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
@@ -204,9 +207,9 @@ class TopoElasticityAnalysis {
         lorder_elem_geo(lorder_geomesh, geo),
         lorder_elem_data(lorder_datamesh, data),
 
-        pde(E, nu, q),
+        integrand(E, nu, q),
         bodyforce(q, tx_bodyforce),
-        traction_pde(tx_traction, tx_torque, x0_torque),
+        traction_integrand(tx_traction, tx_torque, x0_torque),
 
         B("B", sol.get_num_dof() / block_size),
         verbose(verbose),
@@ -239,7 +242,7 @@ class TopoElasticityAnalysis {
     ElemVec elem_y(mesh, y);
     ElemVec elem_z(mesh, z);
 
-    A2D::DOFCoordinates<T, PDEIntegrand, GeoBasis, Basis> coords;
+    A2D::DOFCoordinates<T, Integrand, GeoBasis, Basis> coords;
     coords.get_dof_coordinates(elem_geo, elem_x, elem_y, elem_z);
 
     // Initialize the near null-space to an appropriate vector
@@ -283,7 +286,7 @@ class TopoElasticityAnalysis {
                                                                 *mat);
 
     // Initialie the Jacobian matrix
-    lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
+    lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
 
     // Apply the boundary conditions
@@ -292,7 +295,7 @@ class TopoElasticityAnalysis {
     mat->zero_rows(nbcs, bc_dofs);
 
     // Initialize the matrix-free data
-    matfree.initialize(pde, elem_data, elem_geo, elem_sol);
+    matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
     A2D::SolutionVector<T> xvec(mesh.get_num_dof());
@@ -348,8 +351,9 @@ class TopoElasticityAnalysis {
     // Assemble the force contribution
     A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
     TractionElemVec elem_traction_res(traction_mesh, traction_res);
-    traction.add_residual(traction_pde, elem_traction_data, elem_traction_geo,
-                          elem_traction_sol, elem_traction_res);
+    traction.add_residual(traction_integrand, elem_traction_data,
+                          elem_traction_geo, elem_traction_sol,
+                          elem_traction_res);
 
     // Assemble the body force contribution
     A2D::SolutionVector<T> res(mesh.get_num_dof());
@@ -511,7 +515,7 @@ class TopoElasticityAnalysis {
    */
   T eval_compliance() {
     A2D::Timer timer("TopoElasticityAnalysis::eval_compliance()");
-    return fe.integrate(pde, elem_data, elem_geo, elem_sol);
+    return fe.integrate(integrand, elem_data, elem_geo, elem_sol);
   }
 
   /**
@@ -531,8 +535,8 @@ class TopoElasticityAnalysis {
     }
     ElemVec elem_adjoint(mesh, adjoint);
 
-    fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
-                                            elem_adjoint, elem_dfdrho);
+    fe.add_adjoint_residual_data_derivative(
+        integrand, elem_data, elem_geo, elem_sol, elem_adjoint, elem_dfdrho);
 
     for (I i = 0; i < adjoint.get_num_dof(); i++) {
       adjoint[i] = -sol[i];
@@ -640,7 +644,7 @@ class TopoElasticityAnalysis {
                                                                 *mat);
 
     // Initialie the Jacobian matrix
-    lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
+    lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
 
     // Apply the boundary conditions
@@ -649,7 +653,7 @@ class TopoElasticityAnalysis {
     mat->zero_rows(nbcs, bc_dofs);
 
     // Initialize the matrix-free data
-    matfree.initialize(pde, elem_data, elem_geo, elem_sol);
+    matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
     A2D::SolutionVector<T> xvec(mesh.get_num_dof());
@@ -722,8 +726,8 @@ class TopoElasticityAnalysis {
       dfdu[i] = sol_vec(i / block_size, i % block_size);
     }
 
-    fe.add_adjoint_residual_data_derivative(pde, elem_data, elem_geo, elem_sol,
-                                            elem_dfdu, elem_dfdrho);
+    fe.add_adjoint_residual_data_derivative(integrand, elem_data, elem_geo,
+                                            elem_sol, elem_dfdu, elem_dfdrho);
     feb.add_adjoint_residual_data_derivative(bodyforce, elem_data, elem_geo,
                                              elem_sol, elem_dfdu, elem_dfdrho);
     filter_add(elem_dfdrho, dfdx);
@@ -731,10 +735,10 @@ class TopoElasticityAnalysis {
 
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol, filename,
-        [](I k, typename PDEIntegrand::DataSpace &d,
-           typename PDEIntegrand::FiniteElementGeometry &g,
-           typename PDEIntegrand::FiniteElementSpace &s) {
+        integrand, elem_data, elem_geo, elem_sol, filename,
+        [](I k, typename Integrand::DataSpace &d,
+           typename Integrand::FiniteElementGeometry &g,
+           typename Integrand::FiniteElementSpace &s) {
           if (k == 3) {
             return (d.template get<0>()).get_value();
           } else {
@@ -776,9 +780,9 @@ class TopoElasticityAnalysis {
   LOrderGeoElemVec lorder_elem_geo;
   LOrderDataElemVec lorder_elem_data;
 
-  PDEIntegrand pde;
+  Integrand integrand;
   BodyForce bodyforce;
-  TractionPDE traction_pde;
+  TractionPDE traction_integrand;
 
   FE_PDE fe;
   FE_BodyForce feb;

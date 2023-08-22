@@ -4,13 +4,13 @@
 #include <vector>
 
 #include "a2dobjs.h"
-#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
@@ -60,10 +60,11 @@ class TopoElasticityAnalysis2D {
   using FBasis = FEBasis<T, LagrangeH1QuadBasis<T, data_dim, filter_degree>>;
   using FElemVec = ElementVector_Serial<T, FBasis, Vec_t>;
 
-  using PDEIntegrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
   using Traction = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
-  using FE_PDE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_PDE =
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
@@ -97,8 +98,8 @@ class TopoElasticityAnalysis2D {
         elem_traction_sol(traction_mesh, sol),
         elem_traction_geo(traction_geomesh, geo),
 
-        pde(E, nu, q),
-        traction_pde(tx_traction) {
+        integrand(E, nu, q),
+        traction_integrand(tx_traction) {
     // Set geometry
     set_geo_from_quad_nodes<GeoBasis>(nquad, quad, Xloc, elem_geo);
 
@@ -120,7 +121,7 @@ class TopoElasticityAnalysis2D {
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
 
     // Populate the system matrix
-    fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+    fe.add_jacobian_new(integrand, elem_data, elem_geo, elem_sol, elem_mat);
 
     // Apply boundary conditions to each row
     const index_t *bc_dofs;
@@ -150,8 +151,9 @@ class TopoElasticityAnalysis2D {
     A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
     TElemVec elem_traction_res(traction_mesh, traction_res);
 
-    traction.add_residual(traction_pde, elem_traction_data, elem_traction_geo,
-                          elem_traction_sol, elem_traction_res);
+    traction.add_residual(traction_integrand, elem_traction_data,
+                          elem_traction_geo, elem_traction_sol,
+                          elem_traction_res);
 
     std::vector<T> rhs(sol.get_num_dof());
     for (index_t i = 0; i < sol.get_num_dof(); i++) {
@@ -170,10 +172,10 @@ class TopoElasticityAnalysis2D {
 
   void tovtk(const std::string filename) {
     A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol, filename,
-        [](index_t k, typename PDEIntegrand::DataSpace &d,
-           typename PDEIntegrand::FiniteElementGeometry &g,
-           typename PDEIntegrand::FiniteElementSpace &s) {
+        integrand, elem_data, elem_geo, elem_sol, filename,
+        [](index_t k, typename Integrand::DataSpace &d,
+           typename Integrand::FiniteElementGeometry &g,
+           typename Integrand::FiniteElementSpace &s) {
           if (k == 2) {  // write data
             return (d.template get<0>()).get_value();
           } else {  // write solution components
@@ -211,8 +213,8 @@ class TopoElasticityAnalysis2D {
   TElemVec elem_traction_sol;
   TGeoElemVec elem_traction_geo;
 
-  PDEIntegrand pde;
-  Traction traction_pde;
+  Integrand integrand;
+  Traction traction_integrand;
 
   FE_PDE fe;
   FE_Traction traction;

@@ -35,20 +35,20 @@ class InteriorMapping {
   }
 
   // TODO: maybe the best way is to put jtransform in FESpace?
-  template <class PDEIntegrand>
-  void jtransform(const typename PDEIntegrand::QMatType& mat_in,
-                  typename PDEIntegrand::QMatType& mat_out) {
-    constexpr index_t ncomp = PDEIntegrand::FiniteElementSpace::ncomp;
+  template <class FiniteElementSpace, class QMatType>
+  void jtransform(const QMatType& mat_in, QMatType& mat_out) {
+    constexpr index_t ncomp = QMatType::nrows;
 
-    typename PDEIntegrand::FiniteElementSpace pref, p, Jp;
+    FiniteElementSpace pref, p, Jp;
 
     for (index_t k = 0; k < ncomp; k++) {
       pref.zero();
       pref[k] = T(1.0);
       transform(pref, p);
 
-      // Compute Jp
+      // Compute mat-vec multiplication
       Jp.zero();
+
       // TODO: use MatVec operation instead
       for (index_t j = 0; j < ncomp; j++) {
         for (index_t i = 0; i < ncomp; i++) {

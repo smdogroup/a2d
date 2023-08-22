@@ -75,7 +75,7 @@ void main_body() {
   using SamplingQuadrature = SamplerQuadrature<nsample_per_dim>;
   using Basis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree>>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, dim, geo_degree>>;
-  using PDEIntegrand = ElementTesterPDE<T, dim>;
+  using Integrand = ElementTesterPDE<T, dim>;
 
   const index_t nx = 1, ny = 1, nz = 1;  // number of elements in each dimension
   const index_t nelems = nx * ny * nz;
@@ -150,8 +150,8 @@ void main_body() {
   // Allocate interpolation scalar and vector arrays
   index_t nsamples =
       nsample_per_dim * nsample_per_dim * nsample_per_dim * nelems;
-  std::vector<PDEIntegrand::FiniteElementSpace> spaces;
-  std::vector<PDEIntegrand::FiniteElementGeometry> geo_spaces;
+  std::vector<Integrand::FiniteElementSpace> spaces;
+  std::vector<Integrand::FiniteElementGeometry> geo_spaces;
   spaces.reserve(nsamples);
   geo_spaces.reserve(nsamples);
 
@@ -187,17 +187,17 @@ void main_body() {
         geoelemvec.set_element_values(elem, dof_geo);
 
         using QptSpaceSol =
-            QptSpace<SamplingQuadrature, PDEIntegrand::FiniteElementSpace>;
+            QptSpace<SamplingQuadrature, Integrand::FiniteElementSpace>;
         QptSpaceSol qptspace;
         using QptSpaceGeo =
-            QptSpace<SamplingQuadrature, PDEIntegrand::FiniteElementGeometry>;
+            QptSpace<SamplingQuadrature, Integrand::FiniteElementGeometry>;
         QptSpaceGeo qptspace_geo;
 
         Basis::template interp<SamplingQuadrature, ElemVec::FEDof,
-                               PDEIntegrand::FiniteElementSpace>(dof, qptspace);
+                               Integrand::FiniteElementSpace>(dof, qptspace);
         GeoBasis::template interp<SamplingQuadrature, GeoElemVec::FEDof,
-                                  PDEIntegrand::FiniteElementGeometry>(dof_geo,
-                                                              qptspace_geo);
+                                  Integrand::FiniteElementGeometry>(
+            dof_geo, qptspace_geo);
 
         // Loop over sample points in each element
         for (index_t kk = 0, pt = 0; kk < nsample_per_dim; kk++) {

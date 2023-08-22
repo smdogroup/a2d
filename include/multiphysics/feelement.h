@@ -26,7 +26,7 @@ namespace A2D {
  * @tparam GeoBasis Geometry basis type
  * @tparam Basis Solution basis type
  */
-template <typename T, class PDEIntegrand, class GeoBasis, class Basis>
+template <typename T, class Integrand, class GeoBasis, class Basis>
 class DOFCoordinates {
  public:
   // Set the quadrature point
@@ -42,7 +42,7 @@ class DOFCoordinates {
 
   // Quadrature point object for the geometry
   using QGeoSpace =
-      QptSpace<DOFQuadrature, typename PDEIntegrand::FiniteElementGeometry>;
+      QptSpace<DOFQuadrature, typename Integrand::FiniteElementGeometry>;
 
   template <ElemVecType evtype, class GeoElemVec, class ElemVec>
   void get_dof_coordinates(ElementVectorBase<evtype, GeoElemVec>& elem_geo,
@@ -71,8 +71,8 @@ class DOFCoordinates {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < Basis::ndof; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
-        Vec<T, PDEIntegrand::dim>& X = gref.template get<0>().get_value();
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
+        Vec<T, Integrand::dim>& X = gref.template get<0>().get_value();
 
         x_dof[j] = X(0);
         y_dof[j] = X(1);
@@ -93,20 +93,19 @@ class DOFCoordinates {
   }
 };
 
-template <typename T, class PDEIntegrand, class Quadrature, class DataBasis,
+template <typename T, class Integrand, class Quadrature, class DataBasis,
           class GeoBasis, class Basis>
 class FiniteElement {
  public:
   // Quadrature point object for the data space
-  using QDataSpace = QptSpace<Quadrature, typename PDEIntegrand::DataSpace>;
+  using QDataSpace = QptSpace<Quadrature, typename Integrand::DataSpace>;
 
   // Quadrature point object for the geometry
   using QGeoSpace =
-      QptSpace<Quadrature, typename PDEIntegrand::FiniteElementGeometry>;
+      QptSpace<Quadrature, typename Integrand::FiniteElementGeometry>;
 
   // Quadrature point object for the finite-element space
-  using QSpace =
-      QptSpace<Quadrature, typename PDEIntegrand::FiniteElementSpace>;
+  using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
 
   FiniteElement() {}
 
@@ -117,7 +116,7 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -125,7 +124,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  T integrate(PDEIntegrand& pde,
+  T integrate(Integrand& integrand,
               ElementVectorBase<evtype, DataElemVec>& elem_data,
               ElementVectorBase<evtype, GeoElemVec>& elem_geo,
               ElementVectorBase<evtype, ElemVec>& elem_sol) {
@@ -163,21 +162,21 @@ class FiniteElement {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDEIntegrand
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::FiniteElementSpace coef;
-        value += pde.integrand(weight * detJ, data.get(j), gref, s);
+        typename Integrand::FiniteElementSpace coef;
+        value += integrand.integrand(weight * detJ, data.get(j), gref, s);
       }
     }
 
@@ -190,7 +189,7 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -198,7 +197,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  T max(PDEIntegrand& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+  T max(Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
         ElementVectorBase<evtype, GeoElemVec>& elem_geo,
         ElementVectorBase<evtype, ElemVec>& elem_sol) {
     const index_t num_elements = elem_geo.get_num_elements();
@@ -236,21 +235,21 @@ class FiniteElement {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDEIntegrand
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::FiniteElementSpace coef;
-        T value = pde.max(data.get(j), gref, s);
+        typename Integrand::FiniteElementSpace coef;
+        T value = integrand.max(data.get(j), gref, s);
         if (std::real(value) > std::real(max_value)) {
           max_value = value;
         }
@@ -268,7 +267,7 @@ class FiniteElement {
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
    * @tparam DataDerivElemVec Element vector class for the derivative
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -277,7 +276,7 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class DataDerivElemVec>
   void add_data_derivative(
-      PDEIntegrand& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
@@ -317,20 +316,21 @@ class FiniteElement {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDEIntegrand
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        pde.data_derivative(weight * detJ, data.get(j), gref, s, deriv.get(j));
+        integrand.data_derivative(weight * detJ, data.get(j), gref, s,
+                                  deriv.get(j));
       }
 
       // Add the derivative of the data back to the data space
@@ -355,7 +355,7 @@ class FiniteElement {
    * @tparam ElemVec Element vector class for the solution
    * @tparam ElemAdjVec Element vector class for the adjoint
    * @tparam DataDerivElemVec Element vector class for the derivative
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -365,7 +365,7 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemAdjVec, class DataDerivElemVec>
   void add_adjoint_residual_data_derivative(
-      PDEIntegrand& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
@@ -411,23 +411,23 @@ class FiniteElement {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementSpace& aref = adj.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementSpace& aref = adj.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s, a;
+        typename Integrand::FiniteElementSpace s, a;
         transform.transform(sref, s);
         transform.transform(aref, a);
 
         // Allocate the Jacobian-adjoint product functor
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::AdjVecProduct ajp(pde, weight * detJ,
-                                                 data.get(j), gref, s);
+        typename Integrand::AdjVecProduct ajp(integrand, weight * detJ,
+                                              data.get(j), gref, s);
 
         ajp(a, deriv.get(j));
       }
@@ -451,7 +451,7 @@ class FiniteElement {
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution
    * @tparam ElemResVec Element vector class for the residual
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -459,7 +459,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemResVec>
-  void add_residual(PDEIntegrand& pde,
+  void add_residual(Integrand& integrand,
                     ElementVectorBase<evtype, DataElemVec>& elem_data,
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
@@ -504,25 +504,25 @@ class FiniteElement {
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry and derivatives in the reference domain
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref =
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref =
             geo.get(j);  // this has J
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDEIntegrand
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::FiniteElementSpace coef;
-        pde.weak(weight * detJ, data.get(j), gref, s, coef);
+        typename Integrand::FiniteElementSpace coef;
+        integrand.weak(weight * detJ, data.get(j), gref, s, coef);
 
         // Transform the coefficients back to the reference element
-        typename PDEIntegrand::FiniteElementSpace& cref = res.get(j);
+        typename Integrand::FiniteElementSpace& cref = res.get(j);
         transform.rtransform(coef, cref);
       }
 
@@ -546,7 +546,7 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDEIntegrand
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -556,7 +556,7 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
   void add_jacobian_vector_product(
-      PDEIntegrand& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemVec>& elem_xvec,
@@ -602,30 +602,30 @@ class FiniteElement {
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementSpace& xref = xsol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementSpace& xref = xsol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace x, s;
+        typename Integrand::FiniteElementSpace x, s;
         transform.transform(sref, s);
         transform.transform(xref, x);
 
         // Allocate the Jacobian-vector product functor
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::JacVecProduct jvp(pde, weight * detJ,
-                                                 data.get(j), gref, s);
+        typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                              data.get(j), gref, s);
 
         // Compute the Jacobian-vector product
-        typename PDEIntegrand::FiniteElementSpace y;
+        typename Integrand::FiniteElementSpace y;
         jvp(x, y);
 
         // Transform to back to the reference element
-        typename PDEIntegrand::FiniteElementSpace& yref = ysol.get(j);
+        typename Integrand::FiniteElementSpace& yref = ysol.get(j);
         transform.rtransform(y, yref);
       }
 
@@ -653,7 +653,7 @@ class FiniteElement {
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
    * @tparam ElemMat The element matrix
-   * @param pde The PDEIntegrand instance
+   * @param integrand The Integrand instance
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
@@ -664,13 +664,13 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemMat>
-  void add_jacobian(PDEIntegrand& pde,
+  void add_jacobian(Integrand& integrand,
                     ElementVectorBase<evtype, DataElemVec>& elem_data,
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
                     ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
-    const index_t ncomp = PDEIntegrand::FiniteElementSpace::ncomp;
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -705,27 +705,27 @@ class FiniteElement {
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
-        // typename PDEIntegrand::JacVecProduct jvp(pde, weight * detJ,
+        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
         // data.get(j), gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDEIntegrand::QMatType jac;
+        typename Integrand::QMatType jac;
 
         // Temporary vectors
-        typename PDEIntegrand::FiniteElementSpace pref, p, Jp;
+        typename Integrand::FiniteElementSpace pref, p, Jp;
 
         double weight = Quadrature::get_weight(j);
 
@@ -736,8 +736,8 @@ class FiniteElement {
           transform.transform(pref, p);
 
           // Allocate the Jacobian-vector product functor
-          typename PDEIntegrand::JacVecProduct jvp(pde, weight * detJ,
-                                                   data.get(j), gref, s);
+          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                                data.get(j), gref, s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -760,7 +760,7 @@ class FiniteElement {
 
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemMat>
-  void add_jacobian_new(PDEIntegrand& pde,
+  void add_jacobian_new(Integrand& integrand,
                         ElementVectorBase<evtype, DataElemVec>& elem_data,
                         ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                         ElementVectorBase<evtype, ElemVec>& elem_sol,
@@ -799,24 +799,25 @@ class FiniteElement {
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
         // Compute the Jacobian for the weak form at the quadrature point
         double weight = Quadrature::get_weight(j);
-        typename PDEIntegrand::QMatType jac_ref, jac;
-        pde.jacobian(weight * detJ, data.get(j), gref, s, jac);
+        typename Integrand::QMatType jac_ref, jac;
+        integrand.jacobian(weight * detJ, data.get(j), gref, s, jac);
 
         // Transform second derivatives from w.r.t. x to w.r.t. xi
-        transform.template jtransform<PDEIntegrand>(jac, jac_ref);
+        transform.template jtransform<typename Integrand::FiniteElementSpace>(
+            jac, jac_ref);
 
         // Add the results of the outer product
         Basis::template add_outer<Quadrature>(j, jac_ref, element_mat);
@@ -827,41 +828,40 @@ class FiniteElement {
   }
 
   template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_geo_derivative(PDEIntegrand& pde, DataElemVec& elem_data,
+  void add_geo_derivative(Integrand& integrand, DataElemVec& elem_data,
                           GeoElemVec& elem_geo, ElemVec& elem_sol,
                           GeoElemVec& geo_deriv) {}
 
   template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_adjoint_residual_geo_derivative(PDEIntegrand& pde,
+  void add_adjoint_residual_geo_derivative(Integrand& integrand,
                                            DataElemVec& elem_data,
                                            GeoElemVec& elem_geo,
                                            ElemVec& elem_sol, ElemVec& elem_adj,
                                            GeoElemVec& geo_deriv) {}
 };
 
-template <typename T, class PDEIntegrand, class Quadrature, class DataBasis,
+template <typename T, class Integrand, class Quadrature, class DataBasis,
           class GeoBasis, class Basis>
 class MatrixFree {
  public:
   // Quadrature point object for the data space
-  using QDataSpace = QptSpace<Quadrature, typename PDEIntegrand::DataSpace>;
+  using QDataSpace = QptSpace<Quadrature, typename Integrand::DataSpace>;
 
   // Quadrature point object for the geometry
   using QGeoSpace =
-      QptSpace<Quadrature, typename PDEIntegrand::FiniteElementGeometry>;
+      QptSpace<Quadrature, typename Integrand::FiniteElementGeometry>;
 
   // Quadrature point object for the finite-element space
-  using QSpace =
-      QptSpace<Quadrature, typename PDEIntegrand::FiniteElementSpace>;
+  using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
 
   // Quadrature point view of the Jacobian-matrices
-  using QMatSpace = QptSpace<Quadrature, typename PDEIntegrand::QMatType>;
+  using QMatSpace = QptSpace<Quadrature, typename Integrand::QMatType>;
 
   MatrixFree() {}
 
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  void initialize(PDEIntegrand& pde,
+  void initialize(Integrand& integrand,
                   ElementVectorBase<evtype, DataElemVec>& elem_data,
                   ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                   ElementVectorBase<evtype, ElemVec>& elem_sol) {
@@ -873,7 +873,7 @@ class MatrixFree {
     }
 
     // Number of components at the quadrature point
-    const index_t ncomp = PDEIntegrand::FiniteElementSpace::ncomp;
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
 
     // Get the number of quadrature points
     const index_t num_quadrature_points = Quadrature::get_num_points();
@@ -906,27 +906,27 @@ class MatrixFree {
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDEIntegrand::FiniteElementSpace& sref = sol.get(j);
-        typename PDEIntegrand::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDEIntegrand::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform the solution the physical element
-        typename PDEIntegrand::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
-        // typename PDEIntegrand::JacVecProduct jvp(pde, weight * detJ,
+        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
         // data.get(j), gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDEIntegrand::QMatType& jac = qmat[i].get(j);
+        typename Integrand::QMatType& jac = qmat[i].get(j);
 
         // Temporary vectors
-        typename PDEIntegrand::FiniteElementSpace pref, p, Jp;
+        typename Integrand::FiniteElementSpace pref, p, Jp;
 
         for (index_t k = 0; k < ncomp; k++) {
           // Set the value into the matrix
@@ -936,8 +936,8 @@ class MatrixFree {
 
           // Allocate the Jacobian-vector product functor
           double weight = Quadrature::get_weight(j);
-          typename PDEIntegrand::JacVecProduct jvp(pde, weight * detJ,
-                                                   data.get(j), gref, s);
+          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                                data.get(j), gref, s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -959,7 +959,7 @@ class MatrixFree {
       ElementVectorBase<evtype, ElemVec>& elem_yvec) {
     const index_t num_elements = qmat.size();
     const index_t num_quadrature_points = Quadrature::get_num_points();
-    const index_t ncomp = PDEIntegrand::FiniteElementSpace::ncomp;
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_xvec.get_values();
@@ -982,11 +982,11 @@ class MatrixFree {
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDEIntegrand::FiniteElementSpace& yref = ysol.get(j);
-        typename PDEIntegrand::FiniteElementSpace& xref = xsol.get(j);
+        typename Integrand::FiniteElementSpace& yref = ysol.get(j);
+        typename Integrand::FiniteElementSpace& xref = xsol.get(j);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDEIntegrand::QMatType& jac = qmat[i].get(j);
+        typename Integrand::QMatType& jac = qmat[i].get(j);
 
         // Matrix-vector product at the quadrature point
         yref.zero();
@@ -1014,23 +1014,23 @@ class MatrixFree {
 };
 
 /**
- * @brief Test the implementation of the PDEIntegrand to check if the
+ * @brief Test the implementation of the Integrand to check if the
  * derivatives are consistent with the weak form.
  *
  * @tparam T Solution type
- * @tparam PDEIntegrand Type of PDEIntegrand object to test
- * @param pde Instance of the PDEIntegrand object to test
+ * @tparam Integrand Type of Integrand object to test
+ * @param integrand Instance of the Integrand object to test
  * @param dh Finite-difference or complex-step step size
  */
-template <typename T, class PDEIntegrand>
-void TestPDEImplementation(PDEIntegrand& pde, double dh = 1e-7) {
+template <typename T, class Integrand>
+void TestPDEImplementation(Integrand& integrand, double dh = 1e-7) {
   Timer timer("TestPDEImplementation()");
-  typename PDEIntegrand::DataSpace data;
-  typename PDEIntegrand::FiniteElementGeometry geo;
-  typename PDEIntegrand::FiniteElementSpace s, sref;
-  typename PDEIntegrand::FiniteElementSpace p, pref;
-  typename PDEIntegrand::FiniteElementSpace coef, cref, cref0;
-  typename PDEIntegrand::FiniteElementSpace Jp, Jpref;
+  typename Integrand::DataSpace data;
+  typename Integrand::FiniteElementGeometry geo;
+  typename Integrand::FiniteElementSpace s, sref;
+  typename Integrand::FiniteElementSpace p, pref;
+  typename Integrand::FiniteElementSpace coef, cref, cref0;
+  typename Integrand::FiniteElementSpace Jp, Jpref;
 
   // Generate random data
   std::random_device rd;
@@ -1038,49 +1038,49 @@ void TestPDEImplementation(PDEIntegrand& pde, double dh = 1e-7) {
   std::uniform_real_distribution<> distr(-1.0, 1.0);
 
   // Set random values for the data
-  if constexpr (PDEIntegrand::DataSpace::ncomp > 0) {
-    for (index_t i = 0; i < PDEIntegrand::DataSpace::ncomp; i++) {
+  if constexpr (Integrand::DataSpace::ncomp > 0) {
+    for (index_t i = 0; i < Integrand::DataSpace::ncomp; i++) {
       data[i] = distr(gen);
     }
   }
 
   // Set random values for the geometry
-  for (index_t i = 0; i < PDEIntegrand::FiniteElementGeometry::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementGeometry::ncomp; i++) {
     geo[i] = distr(gen);
   }
 
   // Set the random values
-  for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
     sref[i] = distr(gen);
     pref[i] = distr(gen);
   }
 
   // Initialize the transform object
   T detJ;
-  typename PDEIntegrand::SolutionMapping transform(geo, detJ);
+  typename Integrand::SolutionMapping transform(geo, detJ);
 
   // Compute the coefficients
   transform.transform(sref, s);
-  pde.weak(detJ, data, geo, s, coef);
+  integrand.weak(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref0);
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       sref[i] = sref[i] + dh * pref[i] * std::complex<double>(0.0, 1.0);
     }
   } else {
-    for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       sref[i] = sref[i] + dh * pref[i];
     }
   }
 
   // Compute the coefficients
   transform.transform(sref, s);
-  pde.weak(detJ, data, geo, s, coef);
+  integrand.weak(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref);
 
   // Compute the Jacobian-vector product
-  typename PDEIntegrand::JacVecProduct jvp(pde, detJ, data, geo, s);
+  typename Integrand::JacVecProduct jvp(integrand, detJ, data, geo, s);
 
   // Compute the Jacobian-vector product
   transform.transform(pref, p);
@@ -1088,19 +1088,19 @@ void TestPDEImplementation(PDEIntegrand& pde, double dh = 1e-7) {
   transform.rtransform(Jp, Jpref);
 
   // Compute the finite-difference value
-  typename PDEIntegrand::FiniteElementSpace fd;
+  typename Integrand::FiniteElementSpace fd;
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       fd[i] = std::imag(cref[i]) / dh;
     }
   } else {
-    for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       fd[i] = (cref[i] - cref0[i]) / dh;
     }
   }
 
-  for (index_t i = 0; i < PDEIntegrand::FiniteElementSpace::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
     std::cout << "fd[" << std::setw(2) << i << "]: " << std::setw(12)
               << std::real(fd[i]) << " Jpref[" << std::setw(2) << i
               << "]: " << std::setw(12) << std::real(Jpref[i]) << " err["

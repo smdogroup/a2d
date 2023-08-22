@@ -83,10 +83,10 @@ class NonlinearElasticity {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const NonlinearElasticity<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    A2D_INLINE_FUNCTION JacVecProduct(
+        const NonlinearElasticity<T, D>& integrand, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),
           lambda(data[1]),
@@ -138,10 +138,10 @@ class NonlinearElasticity {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const NonlinearElasticity<T, D>& pde,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    A2D_INLINE_FUNCTION AdjVecProduct(
+        const NonlinearElasticity<T, D>& integrand, T wdetJ,
+        const DataSpace& data, const FiniteElementGeometry& geo,
+        const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),
           lambda(data[1]),

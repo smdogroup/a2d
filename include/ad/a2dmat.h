@@ -14,6 +14,8 @@ class Mat {
   typedef T type;
 
   static const index_t num_components = M * N;
+  static const int nrows = M;
+  static const int ncols = N;
 
   A2D_INLINE_FUNCTION Mat() {
     for (int i = 0; i < M * N; i++) {
@@ -83,6 +85,8 @@ class SymMat {
  public:
   typedef T type;
   static const int MAT_SIZE = (N * (N + 1)) / 2;
+  static constexpr int nrows = N;
+  static constexpr int ncols = N;
 
   static const index_t num_components = MAT_SIZE;
 

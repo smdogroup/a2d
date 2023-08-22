@@ -5,7 +5,7 @@
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/heat_conduction.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/integrand_poisson.h"
@@ -109,11 +109,11 @@ class MixedHelmholtz {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const MixedHelmholtz<T, D>& pde, T wdetJ,
-                                      const DataSpace& data,
+    A2D_INLINE_FUNCTION JacVecProduct(const MixedHelmholtz<T, D>& integrand,
+                                      T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
-        : wdetJ(wdetJ), r(pde.r) {}
+        : wdetJ(wdetJ), r(integrand.r) {}
 
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
@@ -320,7 +320,7 @@ class HelmholtzSphere {
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
   static constexpr I var_dim =
-      1;  // dimension of the PDEIntegrand solution variable
+      1;  // dimension of the Integrand solution variable
   static constexpr I data_dim = 1;    // dimension of material data
   static constexpr I low_degree = 1;  // low order preconditinoer mesh degree
   static constexpr I block_size = var_dim;  // block size for BSR matrix
@@ -331,8 +331,8 @@ class HelmholtzSphere {
   // Null-space size
   static constexpr I null_size = 1;
 
-  // Problem PDEIntegrand
-  using PDEIntegrand = MixedHelmholtz<T, spatial_dim>;
+  // Problem Integrand
+  using Integrand = MixedHelmholtz<T, spatial_dim>;
 
   // The type of solution vector to use
   using BasisVecType = A2D::SolutionVector<T>;
@@ -360,17 +360,17 @@ class HelmholtzSphere {
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
   // FE type
-  using FE_PDE = A2D::FiniteElement<T, PDEIntegrand, Quadrature, DataBasis,
-                                    GeoBasis, Basis>;
+  using FE_PDE =
+      A2D::FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
   using LOrderFE =
-      A2D::FiniteElement<T, PDEIntegrand, LOrderQuadrature, LOrderDataBasis,
+      A2D::FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
                          LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      A2D::MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Static condensation matrix information
   using SDMatType =
@@ -407,7 +407,7 @@ class HelmholtzSphere {
         // Store the static condensation matrix
         elem_mat(lorder_mesh),
 
-        pde(r),
+        integrand(r),
 
         amg_nlevels(amg_nlevels),
         cg_it(cg_it),
@@ -426,7 +426,7 @@ class HelmholtzSphere {
    */
   void solve() {
     // Initialie the Jacobian matrix
-    lorder_fe.add_jacobian(pde, lorder_elem_data, lorder_elem_geo,
+    lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
                            lorder_elem_sol, elem_mat);
 
     // Apply Boundary conditions to the matrix
@@ -436,7 +436,7 @@ class HelmholtzSphere {
     elem_mat.factor();
 
     // Initialize the matrix-free data
-    matfree.initialize(pde, elem_data, elem_geo, elem_sol);
+    matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
     A2D::SolutionVector<T> xvec(mesh.get_num_dof());
@@ -483,7 +483,7 @@ class HelmholtzSphere {
     // Assemble the body force contribution
     A2D::SolutionVector<T> res(mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
-    fe.add_residual(pde, elem_data, elem_geo, elem_sol, elem_res);
+    fe.add_residual(integrand, elem_data, elem_geo, elem_sol, elem_res);
 
     // Set the right-hand-side
     for (I i = 0; i < sol.get_num_dof(); i++) {
@@ -537,10 +537,10 @@ class HelmholtzSphere {
 
   void tovtk(const std::string filename) {
     A2D::write_hex_to_vtk<5, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol, filename,
-        [](I k, typename PDEIntegrand::DataSpace& d,
-           typename PDEIntegrand::FiniteElementGeometry& g,
-           typename PDEIntegrand::FiniteElementSpace& s) { return s[k]; });
+        integrand, elem_data, elem_geo, elem_sol, filename,
+        [](I k, typename Integrand::DataSpace& d,
+           typename Integrand::FiniteElementGeometry& g,
+           typename Integrand::FiniteElementSpace& s) { return s[k]; });
   }
 
  private:
@@ -569,7 +569,7 @@ class HelmholtzSphere {
   // Matrix type
   SDMatType elem_mat;
 
-  PDEIntegrand pde;
+  Integrand integrand;
   FE_PDE fe;
 
   LOrderFE lorder_fe;

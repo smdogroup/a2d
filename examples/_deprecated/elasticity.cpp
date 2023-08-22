@@ -1,10 +1,9 @@
-#include "fem/integrand_elasticity.h"
-
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
 
 #include "a2d.h"
+#include "fem/integrand_elasticity.h"
 
 using namespace A2D;
 

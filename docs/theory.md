@@ -27,19 +27,19 @@ Below is a short list of pitfalls I stepped into.
 |$\xi, \eta, \zeta $|spatial coordinates in the local (computational) coordinate system|
 |$\mathbf{x} $| $\mathbf{x} = (x, y, z)^T$|
 |$\boldsymbol{\xi} $| $\boldsymbol{\xi} = (\xi, \eta, \zeta)^T$|
-|$\Omega $| spatial domain where the PDEIntegrand is defined|
+|$\Omega $| spatial domain where the PDE is defined|
 |$\Omega _ e $| spatial domain for $e$-th finite element|
-|$p$|the PDEIntegrand operator, $p(u;\mathbf{x}) = 0$ gives the PDEIntegrand for state u, derivatives are with respect to $\mathbf{x}$|
-|$f$| integration functional of the weak form derived from the original PDEIntegrand $p(u)=0$|
-|$u(\mathbf{x}) $|PDEIntegrand solution function (infinite-dimensional, defined everywhere within the domain)|
+|$p$|the PDE operator, $p(u;\mathbf{x}) = 0$ gives the PDE for state u, derivatives are with respect to $\mathbf{x}$|
+|$f$| integration functional of the weak form derived from the original PDE $p(u)=0$|
+|$u(\mathbf{x}) $|PDE solution function (infinite-dimensional, defined everywhere within the domain)|
 |$w(\mathbf{x}) $| test function (infinite-dimensional, defined everywhere within the domain)|
 |$N _ e(\mathbf{x}) $|A collection of basis function values at location $\mathbf{x}$, row vector, $n _ \text{dof,e}$ entries|
 |$\nabla N _ e(\mathbf{x}) $|A collection of basis function derivatives at location $\mathbf{x}$, 3-by- $n _ {\text{dof,e}}$ matrix|
 |$\tilde{u} _ e(\mathbf{x}) $|solution functions approximated by bases of $e$-th finite element|
 |$\tilde{w} _ e(\mathbf{x}) $|test functions approximated by bases of $e$-th finite element|
-|$u _ h $|discretized nodal PDEIntegrand solution (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
+|$u _ h $|discretized nodal PDE solution (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
 |$w _ h $|discretized nodal test function (finite-dimensional, defined on basis nodes), $\in \mathbb{R}^{n _ \text{dof}}$|
-|$u _ {h,e} $|discretized nodal PDEIntegrand solution on element e, $\in \mathbb{R}^{n _ \text{dof,e}}$|
+|$u _ {h,e} $|discretized nodal PDE solution on element e, $\in \mathbb{R}^{n _ \text{dof,e}}$|
 |$w _ {h,e} $|discretized nodal test function on element e, $\in \mathbb{R}^{n _ \text{dof,e}}$|
 |$I $| exact weak form integral|
 |$\tilde{I} $|numerically approximated weak form integral|
@@ -72,7 +72,7 @@ for $x \in \mathbb{R}^m$ and $y \in \mathbb{R}^n$
 ### Abstract
 A2D is a library to perform discretizations for general partial differential
 equations (PDEs) using finite element method.
-In a nutshell, it converts the following PDEIntegrand
+In a nutshell, it converts the following PDE
 $$
 p\left(u(\mathbf{x})\right) = 0
 $$
@@ -80,7 +80,7 @@ to a discretized form
 $$
 R _ h (u _ h) = 0
 $$
-where $p$ is the PDEIntegrand operator, $u$ is the solution variable ("the unknown"),
+where $p$ is the PDE operator, $u$ is the solution variable ("the unknown"),
 $\mathbf{x}$ is the independent variables that the derivatives are taken with
 respect to (e.g. spatial coordinates), $u_h$ is the discretized solution vector,
 $R_h$ is the discretized residual vector.
@@ -117,9 +117,9 @@ where we define $\dfrac{\partial R _ h}{\partial u _ h}$ as the adjoint Jacobian
 
 
 
-### PDEIntegrand and weak form
+### PDE and weak form
 
-Consider the following PDEIntegrand
+Consider the following PDE
 
 $$
 p\left(u(\mathbf{x})\right) = 0
@@ -131,7 +131,7 @@ $$
 I = \int _ {\Omega} f(u, w) d \mathbf{x} = 0
 $$
 
-where $p _ \mathbf{x}$ is the PDEIntegrand operator, $u$ is the exact solution function,
+where $p _ \mathbf{x}$ is the PDE operator, $u$ is the exact solution function,
 $w$ is and arbitrary test function.
 $f$ is the weak form integral derived from $p$ (e.g. via integration by parts).
 A2D solves the weak form by solving the following (potentially nonlinear)

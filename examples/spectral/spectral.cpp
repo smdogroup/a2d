@@ -6,9 +6,9 @@
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/integrand_poisson.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "multiphysics/qhdiv_hex_basis.h"
@@ -291,8 +291,8 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   delete[] Ah;
   delete[] eigvals;
 
-  // write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis>(
-  //     integrand, elem_data, elem_geo, elem_sol,
+  // write_hex_to_vtk<1, degree, T, DataBasis, GeoBasis, Basis, Integrand>(
+  //     elem_data, elem_geo, elem_sol,
   //     [](index_t k, typename Integrand::DataSpace &data,
   //        typename Integrand::FiniteElementGeometry &geo,
   //        typename Integrand::FiniteElementSpace &sol) {

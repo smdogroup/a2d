@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
     TopoElasticityAnalysis2D<T, degree> prob(conn, bcinfo, nquad, quad.data(),
                                              Xloc.data(), traction_label,
                                              tx_traction);
+    prob.set_design_vars(0.8);
     double t2 = watch.lap();
 
     CSCMat<T> &csc_mat = prob.get_csc_matrix();

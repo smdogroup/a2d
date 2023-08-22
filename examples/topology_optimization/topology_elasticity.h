@@ -723,8 +723,8 @@ class TopoElasticityAnalysis {
   }
 
   void tovtk(const std::string filename) {
-    write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
-        integrand, elem_data, elem_geo, elem_sol, filename,
+    write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis, Integrand>(
+        elem_data, elem_geo, elem_sol, filename,
         [](I k, typename Integrand::DataSpace &d,
            typename Integrand::FiniteElementGeometry &g,
            typename Integrand::FiniteElementSpace &s) {

@@ -109,9 +109,9 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
 template <index_t outputs, index_t degree, typename T, class DataBasis,
           class GeoBasis, class Basis, class Integrand, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>
-void write_hex_to_vtk(Integrand &integrand, DataElemVec &elem_data,
-                      GeoElemVec &elem_geo, ElemVec &elem_sol,
-                      const std::string filename, const FunctorType &func) {
+void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
+                      ElemVec &elem_sol, const std::string filename,
+                      const FunctorType &func) {
   Timer timer("write_hex_to_vtk()");
   using ET = ElementTypes;
   const index_t nex = degree;
@@ -212,9 +212,9 @@ void write_hex_to_vtk(Integrand &integrand, DataElemVec &elem_data,
 template <index_t outputs, index_t degree, typename T, class DataBasis,
           class GeoBasis, class Basis, class Integrand, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>
-void write_quad_to_vtk(Integrand &integrand, DataElemVec &elem_data,
-                       GeoElemVec &elem_geo, ElemVec &elem_sol,
-                       const std::string filename, const FunctorType &func) {
+void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
+                       ElemVec &elem_sol, const std::string filename,
+                       const FunctorType &func) {
   Timer timer("write_quad_to_vtk()");
   using ET = ElementTypes;
   const index_t nex = degree;

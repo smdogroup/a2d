@@ -99,8 +99,8 @@ class TopoElasticityAnalysis2D {
   ElementMesh<Basis> &get_mesh() { return mesh; }
 
   void tovtk(const std::string filename) {
-    A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
-        integrand, elem_data, elem_geo, elem_sol, filename,
+    write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis, Integrand>(
+        elem_data, elem_geo, elem_sol, filename,
         [](index_t k, typename Integrand::DataSpace &d,
            typename Integrand::FiniteElementGeometry &g,
            typename Integrand::FiniteElementSpace &s) {
@@ -161,10 +161,10 @@ int main(int argc, char *argv[]) {
       boundary_verts[j] = node_num(0, j);
     }
 
-    A2D::index_t bc_label =
+    index_t bc_label =
         conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
 
-    A2D::DirichletBCInfo bcinfo;
+    DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
     TopoElasticityAnalysis2D<T, degree> prob(conn, nquad, quad.data(),

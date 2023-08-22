@@ -13,9 +13,9 @@ namespace A2D {
 template <typename T>
 class SolutionVector {
  public:
-  SolutionVector(A2D::index_t ndof) : ndof(ndof), x(ndof, T(0.0)) {}
-  T& operator[](A2D::index_t index) { return x[index]; }
-  const T& operator[](A2D::index_t index) const { return x[index]; }
+  SolutionVector(index_t ndof) : ndof(ndof), x(ndof, T(0.0)) {}
+  T& operator[](index_t index) { return x[index]; }
+  const T& operator[](index_t index) const { return x[index]; }
 
   index_t get_num_dof() const { return ndof; }
 
@@ -23,7 +23,7 @@ class SolutionVector {
   void fill(T val) { std::fill(x.begin(), x.end(), val); }
 
  private:
-  const A2D::index_t ndof;
+  const index_t ndof;
   std::vector<T> x;
 };
 

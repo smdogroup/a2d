@@ -609,8 +609,8 @@ template <int nnodes_per_elem, int spatial_dim, typename T, typename I>
 class ReadVTK {
  public:
   static_assert(spatial_dim == 2 or spatial_dim == 3);
-  using ConnArray_t = A2D::MultiArrayNew<I* [nnodes_per_elem]>;
-  using NodeArray_t = A2D::MultiArrayNew<T* [spatial_dim]>;
+  using ConnArray_t = MultiArrayNew<I* [nnodes_per_elem]>;
+  using NodeArray_t = MultiArrayNew<T* [spatial_dim]>;
 
   ReadVTK() {}
 

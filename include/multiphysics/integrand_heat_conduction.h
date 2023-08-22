@@ -25,25 +25,25 @@ class HeatConduction {
       : kappa(kappa), q(q), heat_source(heat_source) {}
 
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // No data associated with this element
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>> DataSpace;
+  typedef FESpace<T, data_dim, L2Space<T, data_dim, dim>> DataSpace;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, 1, dim>> FiniteElementSpace;
+  typedef FESpace<T, dim, H1Space<T, 1, dim>> FiniteElementSpace;
 
   // Space for the element geometry - parametrized by H1
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+  typedef FESpace<T, dim, H1Space<T, dim, dim>> FiniteElementGeometry;
 
   // The type of matrix used to store data at each quadrature point
-  typedef A2D::SymMat<T, FiniteElementSpace::ncomp> QMatType;
+  typedef SymMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+  using SolutionMapping = InteriorMapping<T, dim>;
 
   // Data for the element
   T kappa;        // Thermal conductivity
@@ -79,8 +79,8 @@ class HeatConduction {
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::Vec<T, dim>& tx = s.template get<0>().get_grad();
-    A2D::Vec<T, dim>& cx = coef.template get<0>().get_grad();
+    const Vec<T, dim>& tx = s.template get<0>().get_grad();
+    Vec<T, dim>& cx = coef.template get<0>().get_grad();
     T& c = coef.template get<0>().get_value();
     c = -wdetJ * heat_source;  // Add a constant heat source here
 
@@ -116,8 +116,8 @@ class HeatConduction {
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
-      const A2D::Vec<T, dim>& tx = p.template get<0>().get_grad();
-      A2D::Vec<T, dim>& cx = Jp.template get<0>().get_grad();
+      const Vec<T, dim>& tx = p.template get<0>().get_grad();
+      Vec<T, dim>& cx = Jp.template get<0>().get_grad();
 
       for (index_t k = 0; k < dim; k++) {
         cx(k) = wdetJ * kappa * penalty * rho * tx(k);
@@ -156,7 +156,7 @@ class HeatConduction {
       T denom = (1.0 + q * (1.0 - rho));
       T dprhodrho = (q + 1.0) / (denom * denom);
 
-      const A2D::Vec<T, dim>& psi = p.template get<0>().get_grad();
+      const Vec<T, dim>& psi = p.template get<0>().get_grad();
 
       for (index_t k = 0; k < dim; k++) {
         dfdx[0] += wdetJ * kappa * dprhodrho * tx(k) * psi(k);
@@ -169,7 +169,7 @@ class HeatConduction {
     T rho;
     T q;
     T penalty;
-    const A2D::Vec<T, dim>& tx;
+    const Vec<T, dim>& tx;
   };
 };
 
@@ -177,14 +177,14 @@ class HeatConduction {
  * @brief Compute the right-hand-side of the adjoint equation for thermal
  * compliance function.
  */
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class AdjRHS {
  public:
   // Number of dimensions
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // Number of data dimensions
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
   using DataSpace = typename HeatConduction<T, D>::DataSpace;
@@ -197,7 +197,7 @@ class AdjRHS {
   using FiniteElementSpace = typename HeatConduction<T, D>::FiniteElementSpace;
 
   // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+  using SolutionMapping = InteriorMapping<T, dim>;
 
   T heat_source;
 
@@ -240,31 +240,31 @@ class AdjRHS {
 
   The weak coefficients must be provided by the function "weak".
 */
-template <typename T, A2D::index_t D>
+template <typename T, index_t D>
 class MixedHeatConduction {
  public:
   // Spatial dimension
-  static const A2D::index_t dim = D;
+  static const index_t dim = D;
 
   // No data associated with this element
-  static const A2D::index_t data_dim = 1;
+  static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  typedef A2D::FESpace<T, data_dim, A2D::L2Space<T, data_dim, dim>> DataSpace;
+  typedef FESpace<T, data_dim, L2Space<T, data_dim, dim>> DataSpace;
 
   // Finite element space
-  typedef A2D::FESpace<T, dim, A2D::HdivSpace<T, dim>, A2D::L2Space<T, 1, dim>>
+  typedef FESpace<T, dim, HdivSpace<T, dim>, L2Space<T, 1, dim>>
       FiniteElementSpace;
 
   // Space for the element geometry - parametrized by H1
-  typedef A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>> FiniteElementGeometry;
+  typedef FESpace<T, dim, H1Space<T, dim, dim>> FiniteElementGeometry;
 
   // The type of matrix used to store data at each quadrature point
-  typedef A2D::SymMat<T, FiniteElementSpace::ncomp> QMatType;
+  typedef SymMat<T, FiniteElementSpace::ncomp> QMatType;
 
   // Mapping of the solution from the reference element to the physical
   // element
-  using SolutionMapping = A2D::InteriorMapping<T, dim>;
+  using SolutionMapping = InteriorMapping<T, dim>;
 
   /**
    * @brief Evaluate the weak form of the coefficients for nonlinear
@@ -281,12 +281,12 @@ class MixedHeatConduction {
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
     // Field objects for solution functions
-    const A2D::Vec<T, dim>& q = s.template get<0>().get_value();
+    const Vec<T, dim>& q = s.template get<0>().get_value();
     const T& div = s.template get<0>().get_div();
     const T& temp = s.template get<1>().get_value();
 
     // Test function values
-    A2D::Vec<T, dim>& qb = coef.template get<0>().get_value();
+    Vec<T, dim>& qb = coef.template get<0>().get_value();
     T& divb = coef.template get<0>().get_div();
     T& tempb = coef.template get<1>().get_value();
 
@@ -321,12 +321,12 @@ class MixedHeatConduction {
     A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
-      const A2D::Vec<T, dim>& q = p.template get<0>().get_value();
+      const Vec<T, dim>& q = p.template get<0>().get_value();
       const T& div = p.template get<0>().get_div();
       const T& temp = p.template get<1>().get_value();
 
       // Test function values
-      A2D::Vec<T, dim>& qb = Jp.template get<0>().get_value();
+      Vec<T, dim>& qb = Jp.template get<0>().get_value();
       T& divb = Jp.template get<0>().get_div();
       T& tempb = Jp.template get<1>().get_value();
 

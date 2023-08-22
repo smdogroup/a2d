@@ -19,20 +19,21 @@
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 
+using namespace A2D;
+
 /**
  * @brief Performs elasticity analysis for topology optimization.
  */
-template <typename T, A2D::index_t degree, A2D::index_t filter_degree>
+template <typename T, index_t degree, index_t filter_degree>
 class TopoElasticityAnalysis {
  public:
   // Alias templates
   template <class... Args>
-  using ElementVector = A2D::ElementVector_Parallel<Args...>;
-  using ElementVectorEmpty =
-      A2D::ElementVector_Empty<A2D::ElemVecType::Parallel>;
+  using ElementVector = ElementVector_Parallel<Args...>;
+  using ElementVectorEmpty = ElementVector_Empty<ElemVecType::Parallel>;
 
   // Basic types
-  using I = A2D::index_t;
+  using I = index_t;
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
@@ -43,100 +44,93 @@ class TopoElasticityAnalysis {
   static constexpr I block_size = var_dim;  // block size for BSR matrix
 
   // The type of solution vector to use
-  using BasisVecType = A2D::SolutionVector<T>;
+  using BasisVecType = SolutionVector<T>;
 
   // Quadrature, basis and element views for original mesh
-  using Quadrature = A2D::HexGaussQuadrature<degree + 1>;
-  using DataBasis =
-      A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, degree - 1>>;
-  using GeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
+  using Quadrature = HexGaussQuadrature<degree + 1>;
+  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
   using DataElemVec = ElementVector<T, DataBasis, BasisVecType>;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
 
   // Quadrature, basis and element views for low order preconditioner mesh
-  using LOrderQuadrature = A2D::HexGaussQuadrature<low_degree + 1>;
+  using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis =
-      A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, low_degree - 1>>;
+      FEBasis<T, LagrangeL2HexBasis<T, data_dim, low_degree - 1>>;
   using LOrderGeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
-  using LOrderBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, low_degree>>;
+      FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
+  using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, low_degree>>;
   using LOrderDataElemVec = ElementVector<T, LOrderDataBasis, BasisVecType>;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
   // Quadrature, basis and element views for high-order surface traction
-  using TractionQuadrature = A2D::QuadGaussQuadrature<degree + 1>;
-  using TractionDataBasis = A2D::FEBasis<T>;
+  using TractionQuadrature = QuadGaussQuadrature<degree + 1>;
+  using TractionDataBasis = FEBasis<T>;
   using TractionGeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, spatial_dim, degree>>;
-  using TractionBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+      FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
+  using TractionBasis = FEBasis<T, LagrangeH1QuadBasis<T, spatial_dim, degree>>;
   using TractionDataElemVec = ElementVector<T, TractionDataBasis, BasisVecType>;
   using TractionGeoElemVec = ElementVector<T, TractionGeoBasis, BasisVecType>;
   using TractionElemVec = ElementVector<T, TractionBasis, BasisVecType>;
 
   // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
+  using BSRMatType = BSRMat<T, block_size, block_size>;
 
   /* Problem specific types */
 
   // Problem Integrand
-  using Integrand = A2D::IntegrandTopoLinearElasticity<T, spatial_dim>;
-  using BodyForce = A2D::IntegrandTopoBodyForce<T, spatial_dim>;
-  using TractionPDE = A2D::IntegrandTopoSurfaceTraction<T, spatial_dim>;
+  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using BodyForce = IntegrandTopoBodyForce<T, spatial_dim>;
+  using TractionPDE = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
   // Finite element functional
   using FE_PDE =
-      A2D::FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_BodyForce =
-      A2D::FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
-      A2D::FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
-                         TractionGeoBasis, TractionBasis>;
+      FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
+                    TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE =
-      A2D::FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
-                         LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+                                 LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 6;
-  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
+  using BSRMatAmgType = BSRMatAmg<T, block_size, null_size>;
 
   // Filter information
   // Use the Gauss quadrature points here so that the filter can be evaluated at
   // the Gauss points for the DataBasis
-  using FilterQuadrature = A2D::HexGaussQuadrature<degree>;
+  using FilterQuadrature = HexGaussQuadrature<degree>;
 
   // Use a continuous H1 space for the filter
   using FilterSpace =
-      A2D::FESpace<T, spatial_dim, A2D::H1Space<T, data_dim, spatial_dim>>;
+      FESpace<T, spatial_dim, H1Space<T, data_dim, spatial_dim>>;
 
   // Use Bernstein points for the design vector on a lower-order mesh
-  using FilterBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, data_dim, filter_degree,
-                                              A2D::BERNSTEIN_INTERPOLATION>>;
+  using FilterBasis = FEBasis<T, LagrangeH1HexBasis<T, data_dim, filter_degree,
+                                                    BERNSTEIN_INTERPOLATION>>;
 
   // The design variable element mesh
   using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
 
   // Functional definitions
-  using VolumePDE =
-      A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
+  using VolumePDE = IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
 
   using VolumeFunctional =
-      A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using AggregationFunctional =
-      A2D::FiniteElement<T, A2D::IntegrandTopoVonMisesKS<T, spatial_dim>,
-                         Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, IntegrandTopoVonMisesKS<T, spatial_dim>, Quadrature,
+                    DataBasis, GeoBasis, Basis>;
 
   /**
    * @brief The elasticity topology analysis class.
@@ -157,12 +151,11 @@ class TopoElasticityAnalysis {
    * @param cg_rtol relative error tolerance for conjugate gradient solver
    * @param cg_atol absolute error tolerance for conjugate gradient solver
    */
-  TopoElasticityAnalysis(A2D::MeshConnectivity3D &conn,
-                         A2D::DirichletBCInfo &bcinfo, T E, T nu, T q,
-                         const T tx_bodyforce[], A2D::index_t traction_label,
-                         const T tx_traction[], const T x0_torque[],
-                         const T tx_torque[], bool verbose, int amg_nlevels,
-                         int cg_it, double cg_rtol,
+  TopoElasticityAnalysis(MeshConnectivity3D &conn, DirichletBCInfo &bcinfo, T E,
+                         T nu, T q, const T tx_bodyforce[],
+                         index_t traction_label, const T tx_traction[],
+                         const T x0_torque[], const T tx_torque[], bool verbose,
+                         int amg_nlevels, int cg_it, double cg_rtol,
                          double cg_atol)
       :  // Material parameters and penalization
         E(E),
@@ -234,15 +227,15 @@ class TopoElasticityAnalysis {
   GeoElemVec &get_geometry() { return elem_geo; }
 
   void reset_geometry() {
-    A2D::SolutionVector<T> x(mesh.get_num_dof());
-    A2D::SolutionVector<T> y(mesh.get_num_dof());
-    A2D::SolutionVector<T> z(mesh.get_num_dof());
+    SolutionVector<T> x(mesh.get_num_dof());
+    SolutionVector<T> y(mesh.get_num_dof());
+    SolutionVector<T> z(mesh.get_num_dof());
 
     ElemVec elem_x(mesh, x);
     ElemVec elem_y(mesh, y);
     ElemVec elem_z(mesh, z);
 
-    A2D::DOFCoordinates<T, Integrand, GeoBasis, Basis> coords;
+    DOFCoordinates<T, Integrand, GeoBasis, Basis> coords;
     coords.get_dof_coordinates(elem_geo, elem_x, elem_y, elem_z);
 
     // Initialize the near null-space to an appropriate vector
@@ -280,10 +273,9 @@ class TopoElasticityAnalysis {
    *
    */
   void solve() {
-    A2D::Timer timer("TopoElasticityAnalysis::solve()");
+    Timer timer("TopoElasticityAnalysis::solve()");
     // Create a view of the low-order element matrix
-    A2D::ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh,
-                                                                *mat);
+    ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh, *mat);
 
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
@@ -298,13 +290,13 @@ class TopoElasticityAnalysis {
     matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
-    A2D::SolutionVector<T> xvec(mesh.get_num_dof());
-    A2D::SolutionVector<T> yvec(mesh.get_num_dof());
+    SolutionVector<T> xvec(mesh.get_num_dof());
+    SolutionVector<T> yvec(mesh.get_num_dof());
     ElemVec elem_xvec(mesh, xvec);
     ElemVec elem_yvec(mesh, yvec);
 
-    auto mat_vec = [&](A2D::MultiArrayNew<T *[block_size]> &in,
-                       A2D::MultiArrayNew<T *[block_size]> &out) -> void {
+    auto mat_vec = [&](MultiArrayNew<T *[block_size]> &in,
+                       MultiArrayNew<T *[block_size]> &out) -> void {
       xvec.zero();
       yvec.zero();
       for (I i = 0; i < xvec.get_num_dof(); i++) {
@@ -339,8 +331,8 @@ class TopoElasticityAnalysis {
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
-    A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-    A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
+    MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
+    MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
     // Zero the solution
     sol.zero();
@@ -349,14 +341,14 @@ class TopoElasticityAnalysis {
     ElementVectorEmpty elem_traction_data;
 
     // Assemble the force contribution
-    A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
+    SolutionVector<T> traction_res(mesh.get_num_dof());
     TractionElemVec elem_traction_res(traction_mesh, traction_res);
     traction.add_residual(traction_integrand, elem_traction_data,
                           elem_traction_geo, elem_traction_sol,
                           elem_traction_res);
 
     // Assemble the body force contribution
-    A2D::SolutionVector<T> res(mesh.get_num_dof());
+    SolutionVector<T> res(mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
     feb.add_residual(bodyforce, elem_data, elem_geo, elem_sol, elem_res);
 
@@ -366,8 +358,8 @@ class TopoElasticityAnalysis {
     }
 
     // Zero out the boundary conditions
-    for (A2D::index_t i = 0; i < nbcs; i++) {
-      A2D::index_t dof = bc_dofs[i];
+    for (index_t i = 0; i < nbcs; i++) {
+      index_t dof = bc_dofs[i];
       rhs_vec(dof / block_size, dof % block_size) = 0.0;
     }
 
@@ -399,44 +391,42 @@ class TopoElasticityAnalysis {
   template <class VecType>
   void filter_interp(const VecType &xvec) {
     // Copy the design variables to the filter data
-    for (A2D::index_t i = 0; i < filtermesh.get_num_dof(); i++) {
+    for (index_t i = 0; i < filtermesh.get_num_dof(); i++) {
       filter_data[i] = xvec[i];
     }
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh
-    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+    const index_t num_elements = elem_filter_data.get_num_elements();
 
-    if constexpr (decltype(elem_filter_data)::evtype ==
-                  A2D::ElemVecType::Parallel) {
+    if constexpr (decltype(elem_filter_data)::evtype == ElemVecType::Parallel) {
       elem_filter_data.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Interpolate the data from the Bernstein filter
       typename FilterElemVec::FEDof filter_dof(i, elem_filter_data);
-      if constexpr (decltype(elem_filter_data)::evtype ==
-                    A2D::ElemVecType::Serial) {
+      if constexpr (decltype(elem_filter_data)::evtype == ElemVecType::Serial) {
         elem_filter_data.get_element_values(i, filter_dof);
       }
 
       // Interpolate from the filter degrees of freedom to the high-order
       // quadrature points
-      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
+      QptSpace<FilterQuadrature, FilterSpace> qdata;
       FilterBasis::template interp(filter_dof, qdata);
 
       typename DataElemVec::FEDof data_dof(i, elem_data);
 
       // Set the data values into the data space for the high-order GLL mesh
-      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+      for (index_t j = 0; j < DataBasis::ndof; j++) {
         data_dof[j] = qdata.get(j)[0];
       }
 
-      if constexpr (decltype(elem_data)::evtype == A2D::ElemVecType::Serial) {
+      if constexpr (decltype(elem_data)::evtype == ElemVecType::Serial) {
         elem_data.set_element_values(i, data_dof);
       }
     }
-    if constexpr (decltype(elem_data)::evtype == A2D::ElemVecType::Parallel) {
+    if constexpr (decltype(elem_data)::evtype == ElemVecType::Parallel) {
       elem_data.set_values();
     }
   }
@@ -444,28 +434,28 @@ class TopoElasticityAnalysis {
   /**
    * @brief Add the values back to the design variable vector
    */
-  template <A2D::ElemVecType evtype, class VecType, class DataDerivElemVec>
-  void filter_add(A2D::ElementVectorBase<evtype, DataDerivElemVec> &elem_dfdx,
+  template <ElemVecType evtype, class VecType, class DataDerivElemVec>
+  void filter_add(ElementVectorBase<evtype, DataDerivElemVec> &elem_dfdx,
                   VecType &dfdx) {
     ElementVector<T, FilterBasis, VecType> filter_dfdx(filtermesh, dfdx);
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh
-    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
+    const index_t num_elements = elem_filter_data.get_num_elements();
 
-    if constexpr (evtype == A2D::ElemVecType::Parallel) {
+    if constexpr (evtype == ElemVecType::Parallel) {
       elem_dfdx.get_values();
       filter_dfdx.get_zero_values();
     }
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       typename DataDerivElemVec::FEDof data_dof(i, elem_dfdx);
-      if constexpr (evtype == A2D::ElemVecType::Serial) {
+      if constexpr (evtype == ElemVecType::Serial) {
         elem_dfdx.get_element_values(i, data_dof);
       }
 
       // Set the data values into the data space for the high-order GLL mesh
-      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
-      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+      QptSpace<FilterQuadrature, FilterSpace> qdata;
+      for (index_t j = 0; j < DataBasis::ndof; j++) {
         qdata.get(j)[0] = data_dof[j];
       }
 
@@ -473,11 +463,11 @@ class TopoElasticityAnalysis {
       typename ElementVector<T, FilterBasis, VecType>::FEDof filter_dof(
           i, filter_dfdx);
       FilterBasis::template add(qdata, filter_dof);
-      if constexpr (evtype == A2D::ElemVecType::Serial) {
+      if constexpr (evtype == ElemVecType::Serial) {
         filter_dfdx.add_element_values(i, filter_dof);
       }
     }
-    if constexpr (evtype == A2D::ElemVecType::Parallel) {
+    if constexpr (evtype == ElemVecType::Parallel) {
       filter_dfdx.add_values();
     }
   }
@@ -487,7 +477,7 @@ class TopoElasticityAnalysis {
    *
    * @return The number of design variables
    */
-  A2D::index_t get_num_design_vars() { return filtermesh.get_num_dof(); }
+  index_t get_num_design_vars() { return filtermesh.get_num_dof(); }
 
   /**
    * @brief Get the number of degrees of freedom
@@ -514,7 +504,7 @@ class TopoElasticityAnalysis {
    * @brief Evaluate the compliance
    */
   T eval_compliance() {
-    A2D::Timer timer("TopoElasticityAnalysis::eval_compliance()");
+    Timer timer("TopoElasticityAnalysis::eval_compliance()");
     return fe.integrate(integrand, elem_data, elem_geo, elem_sol);
   }
 
@@ -524,7 +514,7 @@ class TopoElasticityAnalysis {
    */
   template <class VecType>
   void add_compliance_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoElasticityAnalysis::add_compliance_gradient()");
+    Timer timer("TopoElasticityAnalysis::add_compliance_gradient()");
 
     BasisVecType dfdrho(datamesh.get_num_dof());
     DataElemVec elem_dfdrho(datamesh, dfdrho);
@@ -552,7 +542,7 @@ class TopoElasticityAnalysis {
    * @return The volume of the parametrized topology
    */
   T eval_volume() {
-    A2D::Timer timer("TopoElasticityAnalysis::eval_volume()");
+    Timer timer("TopoElasticityAnalysis::eval_volume()");
     VolumeFunctional functional;
     VolumePDE volume;
     T vol = functional.integrate(volume, elem_data, elem_geo, elem_sol);
@@ -568,7 +558,7 @@ class TopoElasticityAnalysis {
    */
   template <class VecType>
   void add_volume_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoElasticityAnalysis::add_volume_gradient()");
+    Timer timer("TopoElasticityAnalysis::add_volume_gradient()");
     VolumeFunctional functional;
     VolumePDE volume;
 
@@ -589,10 +579,10 @@ class TopoElasticityAnalysis {
    * @return The aggregation functional value
    */
   T eval_aggregation(T design_stress, T ks_penalty) {
-    A2D::Timer timer("TopoElasticityAnalysis::eval_aggregation()");
+    Timer timer("TopoElasticityAnalysis::eval_aggregation()");
     AggregationFunctional functional;
-    A2D::IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(
-        E, nu, q, design_stress, ks_penalty);
+    IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(E, nu, q, design_stress,
+                                                        ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
     aggregation.set_max_failure_index(max_value);
@@ -613,10 +603,10 @@ class TopoElasticityAnalysis {
    */
   template <class VecType>
   void add_aggregation_gradient(T design_stress, T ks_penalty, VecType &dfdx) {
-    A2D::Timer timer("TopoElasticityAnalysis::add_aggregation_gradient()");
+    Timer timer("TopoElasticityAnalysis::add_aggregation_gradient()");
     AggregationFunctional functional;
-    A2D::IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(
-        E, nu, q, design_stress, ks_penalty);
+    IntegrandTopoVonMisesKS<T, spatial_dim> aggregation(E, nu, q, design_stress,
+                                                        ks_penalty);
 
     T max_value = functional.max(aggregation, elem_data, elem_geo, elem_sol);
     aggregation.set_max_failure_index(max_value);
@@ -632,16 +622,15 @@ class TopoElasticityAnalysis {
     functional.add_data_derivative(aggregation, elem_data, elem_geo, elem_sol,
                                    elem_dfdrho);
 
-    A2D::SolutionVector<T> dfdu(mesh.get_num_dof());
-    ElementVector<T, Basis, A2D::SolutionVector<T>> elem_dfdu(mesh, dfdu);
+    SolutionVector<T> dfdu(mesh.get_num_dof());
+    ElementVector<T, Basis, SolutionVector<T>> elem_dfdu(mesh, dfdu);
 
     // Set up and solve the adjoint equations...
     functional.add_residual(aggregation, elem_data, elem_geo, elem_sol,
                             elem_dfdu);
 
     //  Create a view of the low-order element matrix
-    A2D::ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh,
-                                                                *mat);
+    ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh, *mat);
 
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
@@ -656,13 +645,13 @@ class TopoElasticityAnalysis {
     matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
-    A2D::SolutionVector<T> xvec(mesh.get_num_dof());
-    A2D::SolutionVector<T> yvec(mesh.get_num_dof());
+    SolutionVector<T> xvec(mesh.get_num_dof());
+    SolutionVector<T> yvec(mesh.get_num_dof());
     ElemVec elem_xvec(mesh, xvec);
     ElemVec elem_yvec(mesh, yvec);
 
-    auto mat_vec = [&](A2D::MultiArrayNew<T *[block_size]> &in,
-                       A2D::MultiArrayNew<T *[block_size]> &out) -> void {
+    auto mat_vec = [&](MultiArrayNew<T *[block_size]> &in,
+                       MultiArrayNew<T *[block_size]> &out) -> void {
       xvec.zero();
       yvec.zero();
       for (I i = 0; i < xvec.get_num_dof(); i++) {
@@ -696,8 +685,8 @@ class TopoElasticityAnalysis {
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
-    A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-    A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
+    MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
+    MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
     // Set the right-hand-side
     for (I i = 0; i < dfdu.get_num_dof(); i++) {
@@ -734,7 +723,7 @@ class TopoElasticityAnalysis {
   }
 
   void tovtk(const std::string filename) {
-    A2D::write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
+    write_hex_to_vtk<4, degree, T, DataBasis, GeoBasis, Basis>(
         integrand, elem_data, elem_geo, elem_sol, filename,
         [](I k, typename Integrand::DataSpace &d,
            typename Integrand::FiniteElementGeometry &g,
@@ -751,23 +740,23 @@ class TopoElasticityAnalysis {
  private:
   T E, nu, q;
 
-  A2D::ElementMesh<Basis> mesh;
-  A2D::ElementMesh<GeoBasis> geomesh;
-  A2D::ElementMesh<DataBasis> datamesh;
-  A2D::ElementMesh<FilterBasis> filtermesh;
-  A2D::ElementMesh<TractionBasis> traction_mesh;
-  A2D::ElementMesh<TractionGeoBasis> traction_geomesh;
+  ElementMesh<Basis> mesh;
+  ElementMesh<GeoBasis> geomesh;
+  ElementMesh<DataBasis> datamesh;
+  ElementMesh<FilterBasis> filtermesh;
+  ElementMesh<TractionBasis> traction_mesh;
+  ElementMesh<TractionGeoBasis> traction_geomesh;
 
-  A2D::DirichletBCs<Basis> bcs;
+  DirichletBCs<Basis> bcs;
 
-  A2D::ElementMesh<LOrderBasis> lorder_mesh;
-  A2D::ElementMesh<LOrderGeoBasis> lorder_geomesh;
-  A2D::ElementMesh<LOrderDataBasis> lorder_datamesh;
+  ElementMesh<LOrderBasis> lorder_mesh;
+  ElementMesh<LOrderGeoBasis> lorder_geomesh;
+  ElementMesh<LOrderDataBasis> lorder_datamesh;
 
-  A2D::SolutionVector<T> sol;
-  A2D::SolutionVector<T> geo;
-  A2D::SolutionVector<T> data;
-  A2D::SolutionVector<T> filter_data;
+  SolutionVector<T> sol;
+  SolutionVector<T> geo;
+  SolutionVector<T> data;
+  SolutionVector<T> filter_data;
 
   ElemVec elem_sol;
   GeoElemVec elem_geo;
@@ -792,7 +781,7 @@ class TopoElasticityAnalysis {
   MatFree matfree;
 
   // The near null-space to an appropriate vector
-  A2D::MultiArrayNew<T *[block_size][null_size]> B;
+  MultiArrayNew<T *[block_size][null_size]> B;
 
   // System matrix
   std::shared_ptr<BSRMatType> mat;

@@ -90,7 +90,7 @@ class BSRMat {
   A2D_INLINE_FUNCTION ~BSRMat() = default;
 
   // Zero the entries of the matrix
-  A2D_INLINE_FUNCTION void zero() { A2D::BLAS::zero(vals); }
+  A2D_INLINE_FUNCTION void zero() { BLAS::zero(vals); }
 
   /**
    * @brief Find the value index of a block given indices (row, col) of a block

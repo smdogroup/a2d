@@ -117,7 +117,7 @@ class MesherRect2D {
     }
 
     // Set connectivity
-    using ET = A2D::ElementTypes;
+    using ET = ElementTypes;
     for (I j = 0, e = 0; j < ny; j++) {
       for (I i = 0; i < nx; i++, e++) {
         for (I ii = 0; ii < ET::QUAD_NVERTS; ii++) {
@@ -191,7 +191,7 @@ class MesherRect2D {
    */
   template <class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual) {
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
     (*residual)(nx, 1) = -1e2;
     model->zero_bcs(residual);
   }
@@ -298,7 +298,7 @@ class MesherBrick3D {
     }
 
     // Set connectivity
-    using ET = A2D::ElementTypes;
+    using ET = ElementTypes;
     for (I k = 0, e = 0; k < nz; k++) {
       for (I j = 0; j < ny; j++) {
         for (I i = 0; i < nx; i++, e++) {
@@ -364,7 +364,7 @@ class MesherBrick3D {
   template <class Model, class RhsArray>
   void set_force(Model model, RhsArray& residual) {
     Timer t("MesherBrick3D::set_force()");
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);
       (*residual)(node, 1) = -1e2;
@@ -457,7 +457,7 @@ class MesherFromVTK3D {
 
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
 
     for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
       (*residual)(*it, 1) = -force / T(nforces_y);

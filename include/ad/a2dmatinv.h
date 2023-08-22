@@ -29,8 +29,8 @@ class MatInvExpr {
  private:
   using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
 
-  static constexpr A2D::MatOp NORMAL = A2D::MatOp::NORMAL;
-  static constexpr A2D::MatOp TRANSPOSE = A2D::MatOp::TRANSPOSE;
+  static constexpr MatOp NORMAL = MatOp::NORMAL;
+  static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
  public:
   A2D_INLINE_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {

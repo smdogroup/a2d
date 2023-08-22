@@ -176,7 +176,7 @@ class IntegrandTopoLinearElasticity {
 
       // Set k-th column of the Hessian
       Ux.get_hvalue((Jp.template get<0>()).get_grad());
-      for (A2D::index_t m = 0; m < ncomp; m++) {
+      for (index_t m = 0; m < ncomp; m++) {
         jac(m, k) = Jp[m];
       }
     }

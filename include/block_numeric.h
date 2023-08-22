@@ -253,7 +253,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
     a = A.data();
   }
 
-  if constexpr (A2D::is_complex<T>::value) {
+  if constexpr (is_complex<T>::value) {
     int ipiv[N];
     zgetrf_(&m, &n, a, &lda, ipiv, &fail);
     zgetri_(&n, a, &lda, ipiv, work, &lwork, &fail);

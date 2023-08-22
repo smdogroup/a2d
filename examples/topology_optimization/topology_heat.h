@@ -10,25 +10,27 @@
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_amg.h"
 #include "utils/a2dprofiler.h"
 
+using namespace A2D;
+
 /**
  * @brief Performs heat conduction analysis for topology optimization.
  */
-template <typename T, A2D::index_t degree, A2D::index_t filter_degree>
+template <typename T, index_t degree, index_t filter_degree>
 class TopoHeatAnalysis {
  public:
   // Alias templates
   template <class... Args>
-  using ElementVector = A2D::ElementVector_Serial<Args...>;
+  using ElementVector = ElementVector_Serial<Args...>;
 
   // Basic types
-  using I = A2D::index_t;
+  using I = index_t;
 
   // Magic integers
   static constexpr I spatial_dim = 3;  // spatial dimension
@@ -39,81 +41,75 @@ class TopoHeatAnalysis {
   static constexpr I block_size = var_dim;  // block size for BSR matrix
 
   // The type of solution vector to use
-  using BasisVecType = A2D::SolutionVector<T>;
+  using BasisVecType = SolutionVector<T>;
 
   // Quadrature, basis and element views for original mesh
-  using Quadrature = A2D::HexGaussQuadrature<degree + 1>;
-  using DataBasis =
-      A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, degree - 1>>;
-  using GeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
+  using Quadrature = HexGaussQuadrature<degree + 1>;
+  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
   using DataElemVec = ElementVector<T, DataBasis, BasisVecType>;
   using GeoElemVec = ElementVector<T, GeoBasis, BasisVecType>;
   using ElemVec = ElementVector<T, Basis, BasisVecType>;
 
   // Quadrature, basis and element views for low order preconditioner mesh
-  using LOrderQuadrature = A2D::HexGaussQuadrature<low_degree + 1>;
+  using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis =
-      A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, low_degree - 1>>;
+      FEBasis<T, LagrangeL2HexBasis<T, data_dim, low_degree - 1>>;
   using LOrderGeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
-  using LOrderBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, low_degree>>;
+      FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
+  using LOrderBasis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, low_degree>>;
   using LOrderDataElemVec = ElementVector<T, LOrderDataBasis, BasisVecType>;
   using LOrderGeoElemVec = ElementVector<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = ElementVector<T, LOrderBasis, BasisVecType>;
 
   // Block compressed row sparse matrix
-  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
+  using BSRMatType = BSRMat<T, block_size, block_size>;
 
   /* Problem specific types */
 
   // Problem Integrand
-  using Integrand = A2D::HeatConduction<T, spatial_dim>;
-  using AdjRHS = A2D::AdjRHS<T, spatial_dim>;
+  using Integrand = HeatConduction<T, spatial_dim>;
+  using AdjRHS = AdjRHS<T, spatial_dim>;
 
   using FE_PDE =
-      A2D::FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_AdjRHS =
-      A2D::FiniteElement<T, AdjRHS, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, AdjRHS, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE =
-      A2D::FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
-                         LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+                                 LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
-      A2D::MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      MatrixFree<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Algebraic multigrid solver
   static constexpr I null_size = 1;
-  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
+  using BSRMatAmgType = BSRMatAmg<T, block_size, null_size>;
 
   // Filter information
   // Use the Gauss quadrature points here so that the filter can be evaluated at
   // the Gauss points for the DataBasis
-  using FilterQuadrature = A2D::HexGaussQuadrature<degree>;
+  using FilterQuadrature = HexGaussQuadrature<degree>;
 
   // Use a continuous H1 space for the filter
   using FilterSpace =
-      A2D::FESpace<T, spatial_dim, A2D::H1Space<T, data_dim, spatial_dim>>;
+      FESpace<T, spatial_dim, H1Space<T, data_dim, spatial_dim>>;
 
   // Use Bernstein points for the design vector on a lower-order mesh
-  using FilterBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, data_dim, filter_degree,
-                                              A2D::BERNSTEIN_INTERPOLATION>>;
+  using FilterBasis = FEBasis<T, LagrangeH1HexBasis<T, data_dim, filter_degree,
+                                                    BERNSTEIN_INTERPOLATION>>;
 
   // The design variable element mesh
   using FilterElemVec = ElementVector<T, FilterBasis, BasisVecType>;
 
   // Functional definitions
-  using VolumePDE =
-      A2D::IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
+  using VolumePDE = IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
 
   using VolumeFunctional =
-      A2D::FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
 
   /**
    * @brief The heat conduction topology analysis class.
@@ -130,9 +126,9 @@ class TopoHeatAnalysis {
    * @param cg_rtol relative error tolerance for conjugate gradient solver
    * @param cg_atol absolute error tolerance for conjugate gradient solver
    */
-  TopoHeatAnalysis(A2D::MeshConnectivity3D &conn, A2D::DirichletBCInfo &bcinfo,
-                   T kappa, T heat_source, T bc_temp, T q, bool verbose,
-                   int amg_nlevels, int cg_it, double cg_rtol,
+  TopoHeatAnalysis(MeshConnectivity3D &conn, DirichletBCInfo &bcinfo, T kappa,
+                   T heat_source, T bc_temp, T q, bool verbose, int amg_nlevels,
+                   int cg_it, double cg_rtol,
                    double cg_atol)
       :  // Material parameters and penalization
         kappa(kappa),
@@ -186,7 +182,7 @@ class TopoHeatAnalysis {
     }
 
     // Create near null sapce
-    A2D::BLAS::fill(B, T(1.0));
+    BLAS::fill(B, T(1.0));
 
     // Create the matrix for the low-order mesh
     I nrows;
@@ -210,11 +206,10 @@ class TopoHeatAnalysis {
    *
    */
   void solve() {
-    A2D::Timer timer("TopoHeatAnalysis::solve()");
+    Timer timer("TopoHeatAnalysis::solve()");
 
     // Create a view of the low-order element matrix
-    A2D::ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh,
-                                                                *mat);
+    ElementMat_Serial<T, LOrderBasis, BSRMatType> elem_mat(lorder_mesh, *mat);
 
     // Initialie the Jacobian matrix
     lorder_fe.add_jacobian(integrand, lorder_elem_data, lorder_elem_geo,
@@ -229,13 +224,13 @@ class TopoHeatAnalysis {
     matfree.initialize(integrand, elem_data, elem_geo, elem_sol);
 
     // Allocate space for temporary variables with the matrix-vector code
-    A2D::SolutionVector<T> xvec(mesh.get_num_dof());
-    A2D::SolutionVector<T> yvec(mesh.get_num_dof());
+    SolutionVector<T> xvec(mesh.get_num_dof());
+    SolutionVector<T> yvec(mesh.get_num_dof());
     ElemVec elem_xvec(mesh, xvec);
     ElemVec elem_yvec(mesh, yvec);
 
-    auto mat_vec = [&](A2D::MultiArrayNew<T *[block_size]> &in,
-                       A2D::MultiArrayNew<T *[block_size]> &out) -> void {
+    auto mat_vec = [&](MultiArrayNew<T *[block_size]> &in,
+                       MultiArrayNew<T *[block_size]> &out) -> void {
       xvec.zero();
       yvec.zero();
       for (I i = 0; i < xvec.get_num_dof(); i++) {
@@ -269,10 +264,10 @@ class TopoHeatAnalysis {
 
     // Create the solution and right-hand-side vectors
     I size = sol.get_num_dof() / block_size;
-    A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-    A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
+    MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
+    MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
-    A2D::SolutionVector<T> res(mesh.get_num_dof());
+    SolutionVector<T> res(mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
     sol.zero();
     fe.add_residual(integrand, elem_data, elem_geo, elem_sol, elem_res);
@@ -316,27 +311,27 @@ class TopoHeatAnalysis {
   template <class VecType>
   void filter_interp(const VecType &xvec) {
     // Copy the design variables to the filter data
-    for (A2D::index_t i = 0; i < filtermesh.get_num_dof(); i++) {
+    for (index_t i = 0; i < filtermesh.get_num_dof(); i++) {
       filter_data[i] = xvec[i];
     }
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh
-    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    const index_t num_elements = elem_filter_data.get_num_elements();
+    for (index_t i = 0; i < num_elements; i++) {
       // Interpolate the data from the Bernstein filter
       typename FilterElemVec::FEDof filter_dof(i, elem_filter_data);
       elem_filter_data.get_element_values(i, filter_dof);
 
       // Interpolate from the filter degrees of freedom to the high-order
       // quadrature points
-      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
+      QptSpace<FilterQuadrature, FilterSpace> qdata;
       FilterBasis::template interp(filter_dof, qdata);
 
       typename DataElemVec::FEDof data_dof(i, elem_data);
 
       // Set the data values into the data space for the high-order GLL mesh
-      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+      for (index_t j = 0; j < DataBasis::ndof; j++) {
         data_dof[j] = qdata.get(j)[0];
       }
 
@@ -353,14 +348,14 @@ class TopoHeatAnalysis {
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh
-    const A2D::index_t num_elements = elem_filter_data.get_num_elements();
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    const index_t num_elements = elem_filter_data.get_num_elements();
+    for (index_t i = 0; i < num_elements; i++) {
       typename DataDerivElemVec::FEDof data_dof(i, elem_dfdx);
       elem_dfdx.get_element_values(i, data_dof);
 
       // Set the data values into the data space for the high-order GLL mesh
-      A2D::QptSpace<FilterQuadrature, FilterSpace> qdata;
-      for (A2D::index_t j = 0; j < DataBasis::ndof; j++) {
+      QptSpace<FilterQuadrature, FilterSpace> qdata;
+      for (index_t j = 0; j < DataBasis::ndof; j++) {
         qdata.get(j)[0] = data_dof[j];
       }
 
@@ -402,7 +397,7 @@ class TopoHeatAnalysis {
    * @brief Evaluate the compliance
    */
   T eval_compliance() {
-    A2D::Timer timer("TopoHeatAnalysis::eval_compliance()");
+    Timer timer("TopoHeatAnalysis::eval_compliance()");
     return fe.integrate(integrand, elem_data, elem_geo, elem_sol);
   }
 
@@ -412,7 +407,7 @@ class TopoHeatAnalysis {
    */
   template <class VecType>
   void add_compliance_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoHeatAnalysis::add_compliance_gradient()");
+    Timer timer("TopoHeatAnalysis::add_compliance_gradient()");
     BasisVecType dfdrho(datamesh.get_num_dof());
     DataElemVec elem_dfdrho(datamesh, dfdrho);
 
@@ -433,7 +428,7 @@ class TopoHeatAnalysis {
    * @return The volume of the parametrized topology
    */
   T eval_volume() {
-    A2D::Timer timer("TopoHeatAnalysis::eval_volume()");
+    Timer timer("TopoHeatAnalysis::eval_volume()");
     VolumeFunctional functional;
     VolumePDE volume;
     T vol = functional.integrate(volume, elem_data, elem_geo, elem_sol);
@@ -449,7 +444,7 @@ class TopoHeatAnalysis {
    */
   template <class VecType>
   void add_volume_gradient(VecType &dfdx) {
-    A2D::Timer timer("TopoHeatAnalysis::add_volume_gradient()");
+    Timer timer("TopoHeatAnalysis::add_volume_gradient()");
     VolumeFunctional functional;
     VolumePDE volume;
 
@@ -463,7 +458,7 @@ class TopoHeatAnalysis {
   }
 
   void tovtk(const std::string filename) {
-    A2D::write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
+    write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
         integrand, elem_data, elem_geo, elem_sol, filename,
         [](I k, typename Integrand::DataSpace &d,
            typename Integrand::FiniteElementGeometry &g,
@@ -479,21 +474,21 @@ class TopoHeatAnalysis {
  private:
   T kappa, heat_source, bc_temp, q;
 
-  A2D::ElementMesh<Basis> mesh;
-  A2D::ElementMesh<GeoBasis> geomesh;
-  A2D::ElementMesh<DataBasis> datamesh;
-  A2D::ElementMesh<FilterBasis> filtermesh;
+  ElementMesh<Basis> mesh;
+  ElementMesh<GeoBasis> geomesh;
+  ElementMesh<DataBasis> datamesh;
+  ElementMesh<FilterBasis> filtermesh;
 
-  A2D::DirichletBCs<Basis> bcs;
+  DirichletBCs<Basis> bcs;
 
-  A2D::ElementMesh<LOrderBasis> lorder_mesh;
-  A2D::ElementMesh<LOrderGeoBasis> lorder_geomesh;
-  A2D::ElementMesh<LOrderDataBasis> lorder_datamesh;
+  ElementMesh<LOrderBasis> lorder_mesh;
+  ElementMesh<LOrderGeoBasis> lorder_geomesh;
+  ElementMesh<LOrderDataBasis> lorder_datamesh;
 
-  A2D::SolutionVector<T> sol;
-  A2D::SolutionVector<T> geo;
-  A2D::SolutionVector<T> data;
-  A2D::SolutionVector<T> filter_data;
+  SolutionVector<T> sol;
+  SolutionVector<T> geo;
+  SolutionVector<T> data;
+  SolutionVector<T> filter_data;
 
   DataElemVec elem_data;
   GeoElemVec elem_geo;
@@ -514,7 +509,7 @@ class TopoHeatAnalysis {
   MatFree matfree;
 
   // The near null-space to an appropriate vector
-  A2D::MultiArrayNew<T *[block_size][null_size]> B;
+  MultiArrayNew<T *[block_size][null_size]> B;
 
   // System matrix
   std::shared_ptr<BSRMatType> mat;
@@ -543,30 +538,28 @@ void test_heat_analysis(int argc, char *argv[]) {
 
   // Basic type
   using T = double;
-  using I = A2D::index_t;
+  using I = index_t;
 
   // Quadrature and basis
-  using Quadrature = A2D::HexGaussQuadrature<order>;
-  using Basis = A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, var_dim, degree>>;
-  using GeoBasis =
-      A2D::FEBasis<T, A2D::LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using DataBasis =
-      A2D::FEBasis<T, A2D::LagrangeL2HexBasis<T, data_dim, degree - 1>>;
+  using Quadrature = HexGaussQuadrature<order>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
+  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
 
   // Block sparse compressed row matrix
-  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
+  using BSRMatType = BSRMat<T, block_size, block_size>;
 
   // Element-centric views
-  using GlobalVecType = A2D::SolutionVector<T>;
-  using ElemVec = A2D::ElementVector_Serial<T, Basis, GlobalVecType>;
-  using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, GlobalVecType>;
-  using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, GlobalVecType>;
-  using ElemMat = A2D::ElementMat_Serial<T, Basis, BSRMatType>;
+  using GlobalVecType = SolutionVector<T>;
+  using ElemVec = ElementVector_Serial<T, Basis, GlobalVecType>;
+  using GeoElemVec = ElementVector_Serial<T, GeoBasis, GlobalVecType>;
+  using DataElemVec = ElementVector_Serial<T, DataBasis, GlobalVecType>;
+  using ElemMat = ElementMat_Serial<T, Basis, BSRMatType>;
 
   // Physics and functional
-  using Integrand = A2D::HeatConduction<T, spatial_dim>;
+  using Integrand = HeatConduction<T, spatial_dim>;
   using FE =
-      A2D::FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   /* Load mesh and boundary vertices from vtk */
 
@@ -575,7 +568,7 @@ void test_heat_analysis(int argc, char *argv[]) {
   if (argc > 1) {
     vtk_name = argv[1];
   }
-  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
+  ReadVTK3D<I, T> readvtk(vtk_name);
 
   // Get connectivity for each element type
   T *Xloc = readvtk.get_Xloc();
@@ -586,17 +579,17 @@ void test_heat_analysis(int argc, char *argv[]) {
   I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
 
   // Construct connectivity
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
+  MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
+                          pyrmd);
 
   // Extract boundary vertices
   std::vector<int> ids{100};
   std::vector<I> bc_verts = readvtk.get_verts_given_cell_entity_id(ids);
 
   // Construct A2D mesh objects
-  A2D::ElementMesh<Basis> mesh(conn);
-  A2D::ElementMesh<GeoBasis> geomesh(conn);
-  A2D::ElementMesh<DataBasis> datamesh(conn);
+  ElementMesh<Basis> mesh(conn);
+  ElementMesh<GeoBasis> geomesh(conn);
+  ElementMesh<DataBasis> datamesh(conn);
 
   /* Construct solution, data and X vectors and their element views */
 
@@ -614,7 +607,7 @@ void test_heat_analysis(int argc, char *argv[]) {
 
   // Populate data and geo
   data.fill(1.0);
-  A2D::set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
+  set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
 
   /* Construct the Jacobian matrix */
 
@@ -635,10 +628,10 @@ void test_heat_analysis(int argc, char *argv[]) {
   mat->write_mtx("heat_jacobian_nobc.mtx");
 
   // Apply boundary condition
-  A2D::DirichletBCInfo bcinfo;
+  DirichletBCInfo bcinfo;
   bcinfo.add_boundary_condition(
       conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data()));
-  A2D::DirichletBCs<Basis> bcs(conn, mesh, bcinfo);
+  DirichletBCs<Basis> bcs(conn, mesh, bcinfo);
   const I *bc_dofs;
   I nbcs = bcs.get_bcs(&bc_dofs);
   mat->zero_rows(nbcs, bc_dofs);
@@ -651,8 +644,8 @@ void test_heat_analysis(int argc, char *argv[]) {
   fe.add_residual(integrand, elem_data, elem_geo, elem_sol, elem_res);
 
   I size = sol.get_num_dof() / block_size;
-  A2D::MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
-  A2D::MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
+  MultiArrayNew<T *[block_size]> sol_vec("sol_vec", size);
+  MultiArrayNew<T *[block_size]> rhs_vec("rhs_vec", size);
 
   for (I i = 0; i < sol.get_num_dof(); i++) {
     rhs_vec(i / block_size, i % block_size) = -res[i];
@@ -667,21 +660,21 @@ void test_heat_analysis(int argc, char *argv[]) {
   /* Construct the AMG solver and solve the problem */
 
   // Create amg
-  A2D::index_t num_levels = 3;
+  index_t num_levels = 3;
   double omega = 4.0 / 3.0;
   double epsilon = 0.0;
   bool print_info = true;
   const int null_size = 1;
-  A2D::MultiArrayNew<T *[block_size][null_size]> B(
-      "B", sol.get_num_dof() / block_size);
-  A2D::BLAS::fill(B, 1.0);
-  A2D::BSRMatAmg<T, block_size, null_size> amg(num_levels, omega, epsilon, mat,
-                                               B, print_info);
+  MultiArrayNew<T *[block_size][null_size]> B("B",
+                                              sol.get_num_dof() / block_size);
+  BLAS::fill(B, 1.0);
+  BSRMatAmg<T, block_size, null_size> amg(num_levels, omega, epsilon, mat, B,
+                                          print_info);
 
   // Solve
-  auto mat_vec = [&](A2D::MultiArrayNew<T *[block_size]> &in,
-                     A2D::MultiArrayNew<T *[block_size]> &out) -> void {
-    A2D::BSRMatVecMult<T, block_size, block_size>(*mat, in, out);
+  auto mat_vec = [&](MultiArrayNew<T *[block_size]> &in,
+                     MultiArrayNew<T *[block_size]> &out) -> void {
+    BSRMatVecMult<T, block_size, block_size>(*mat, in, out);
   };
 
   amg.cg(mat_vec, rhs_vec, sol_vec, 5, 100);
@@ -692,9 +685,9 @@ void test_heat_analysis(int argc, char *argv[]) {
   }
 
   // Write result to vtk
-  A2D::write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
+  write_hex_to_vtk<2, degree, T, DataBasis, GeoBasis, Basis>(
       integrand, elem_data, elem_geo, elem_sol, "heat_analysis.vtk",
-      [](A2D::index_t k, typename Integrand::DataSpace &d,
+      [](index_t k, typename Integrand::DataSpace &d,
          typename Integrand::FiniteElementGeometry &g,
          typename Integrand::FiniteElementSpace &s) {
         if (k == 0) {

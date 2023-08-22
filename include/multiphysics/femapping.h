@@ -18,10 +18,10 @@ class InteriorMapping {
   InteriorMapping(const FiniteElementGeometry& geo, T& detJ)
       : J(geo.template get<0>().get_grad()), detJ(detJ) {
     // Compute the inverse of the transformation
-    A2D::MatInverse(J, Jinv);
+    MatInverse(J, Jinv);
 
     // Compute the determinant of the Jacobian matrix
-    A2D::MatDet(J, detJ);
+    MatDet(J, detJ);
   }
 
   template <class FiniteElementSpace>
@@ -63,8 +63,8 @@ class InteriorMapping {
   }
 
  private:
-  const A2D::Mat<T, dim, dim>& J;
-  A2D::Mat<T, dim, dim> Jinv;
+  const Mat<T, dim, dim>& J;
+  Mat<T, dim, dim> Jinv;
   T& detJ;
 };
 
@@ -78,8 +78,8 @@ class SurfaceMapping {
 
   template <class FiniteElementGeometry>
   SurfaceMapping(const FiniteElementGeometry& geo, T& detJ) : detJ(detJ) {
-    const A2D::Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
-    A2D::Vec<T, dim> x, y, nA;
+    const Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
+    Vec<T, dim> x, y, nA;
     if constexpr (dim == 2) {
       // Find the nA = vector of the distorted bound
       nA(0) = Jxi(0, 0);
@@ -118,7 +118,7 @@ class SurfaceMapping {
   T& detJ;
 
   // J with the normal direction added
-  A2D::Mat<T, dim_surf, dim_surf> J, Jinv;  // TODO
+  Mat<T, dim_surf, dim_surf> J, Jinv;  // TODO
 };
 
 }  // namespace A2D

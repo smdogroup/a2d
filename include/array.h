@@ -135,7 +135,7 @@ typename View::value_type norm(const View& x) {
   using T = typename View::value_type;
   T* data = x.data();
   size_t len = x.size();
-  return A2D::sqrt(std::inner_product(data, data + len, data, T(0)));
+  return sqrt(std::inner_product(data, data + len, data, T(0)));
 }
 
 /*

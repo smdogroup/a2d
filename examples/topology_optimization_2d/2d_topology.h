@@ -148,7 +148,7 @@ class TopoElasticityAnalysis2D {
 
     // Set up right-hand-side
     ElementVector_Empty<ElemVecType::Serial> elem_traction_data;
-    A2D::SolutionVector<T> traction_res(mesh.get_num_dof());
+    SolutionVector<T> traction_res(mesh.get_num_dof());
     TElemVec elem_traction_res(traction_mesh, traction_res);
 
     traction.add_residual(traction_integrand, elem_traction_data,
@@ -171,7 +171,7 @@ class TopoElasticityAnalysis2D {
   }
 
   void tovtk(const std::string filename) {
-    A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
+    write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
         integrand, elem_data, elem_geo, elem_sol, filename,
         [](index_t k, typename Integrand::DataSpace &d,
            typename Integrand::FiniteElementGeometry &g,

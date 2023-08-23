@@ -300,9 +300,9 @@ class ElementVector_Serial
 /**
  * @brief Parallel element vector implementation
  *
- * This class allocates a heavy-weight 2-dimensional array to store
- * (potentially duplicated) local degrees of freedom to realize a
- * between-element parallelization.
+ * This class allocates a heavy-weight 2-dimensional array to store (potentially
+ * duplicated) local degrees of freedom to achieve parallelization among
+ * elements.
  *
  * global to local dof population is done in parallel, local to global dof add
  * is done by atomic operation to resolve write conflicts.
@@ -399,8 +399,8 @@ class ElementVector_Parallel
         Kokkos::atomic_add(&vec[dof_index], sign * elem_vec_array(elem_idx, dof_idx));
 
       } else if constexpr (op == ELEM_VALS_OP::SET) {
-        // Note: we encounter race condition here but it's (assumed) fine for now as we assume data
-        // consistency across elements
+        // Note: we encounter race condition here but it's (assumed) fine for
+        // now as we assume data consistency across elements
         vec[dof_index] = sign * elem_vec_array(elem_idx, dof_idx);
       }
     }

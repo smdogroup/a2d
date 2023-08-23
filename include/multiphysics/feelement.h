@@ -460,7 +460,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemResVec>
-  void add_residual(Integrand& integrand,
+  void add_residual(const Integrand& integrand,
                     ElementVectorBase<evtype, DataElemVec>& elem_data,
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
@@ -476,7 +476,11 @@ class FiniteElement {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+      // Kokkos::parallel_for(
+      //     "parallel_add_residual", num_elements, A2D_LAMBDA(const index_t i)
+      //     {
+      // Get the data, geometry and solution for this element and
+      // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -493,8 +497,8 @@ class FiniteElement {
 
       // Evaluate values (and potentially derivatives) for all quadrature
       // points
-      // Note: derivatives computed at this point are all w.r.t. computational
-      // coordinates!
+      // Note: derivatives computed at this point are all w.r.t.
+      // computational coordinates!
       DataBasis::template interp(data_dof, data);
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
@@ -527,15 +531,17 @@ class FiniteElement {
         transform.rtransform(coef, cref);
       }
 
-      // Add the residual from the quadrature points back to the finite-element
-      // mesh
+      // Add the residual from the quadrature points back to the
+      // finite-element mesh
       typename ElemVec::FEDof res_dof(i, elem_res);
       Basis::template add(res, res_dof);
 
       if constexpr (evtype == ElemVecType::Serial) {
         elem_res.add_element_values(i, res_dof);
       }
+      // });
     }
+
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_res.add_values();
     }

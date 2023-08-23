@@ -60,7 +60,7 @@ class HeatConduction {
    * @return T The integrand contribution
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     return wdetJ * (s.template get<0>()).get_value() * heat_source;
   }
 
@@ -77,7 +77,7 @@ class HeatConduction {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const Vec<T, dim>& tx = s.template get<0>().get_grad();
     Vec<T, dim>& cx = coef.template get<0>().get_grad();
@@ -206,7 +206,7 @@ class AdjRHS {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     T& c = coef.template get<0>().get_value();
     c = -wdetJ * heat_source;
   }
@@ -279,7 +279,7 @@ class MixedHeatConduction {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const Vec<T, dim>& q = s.template get<0>().get_value();
     const T& div = s.template get<0>().get_div();

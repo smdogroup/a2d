@@ -54,7 +54,7 @@ class IntegrandTopoLinearElasticity {
    * @return T The integrand contribution
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -87,7 +87,7 @@ class IntegrandTopoLinearElasticity {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -124,7 +124,7 @@ class IntegrandTopoLinearElasticity {
   A2D_INLINE_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
                                     const FiniteElementGeometry& geo,
                                     const FiniteElementSpace& s,
-                                    QMatType& jac) {
+                                    QMatType& jac) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -346,7 +346,7 @@ class IntegrandTopoVolume {
    * @return T The integrand contribution
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     return wdetJ * data[0];
   }
 
@@ -361,7 +361,7 @@ class IntegrandTopoVolume {
    */
   void data_derivative(T wdetJ, const DataSpace& data,
                        const FiniteElementGeometry& geo,
-                       const FiniteElementSpace& s, DataSpace& dfdx) {
+                       const FiniteElementSpace& s, DataSpace& dfdx) const {
     dfdx.zero();
     dfdx[0] = wdetJ;
   }
@@ -399,7 +399,7 @@ class IntegrandTopoBodyForce {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
 
@@ -598,7 +598,7 @@ class IntegrandTopoVonMisesKS {
    * @param coef Output weak form coefficients of the test space
    */
   void weak(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-            const FiniteElementSpace& s, FiniteElementSpace& coef) {
+            const FiniteElementSpace& s, FiniteElementSpace& coef) const {
     Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
     SymMat<T, dim> E0, Eb;
@@ -653,7 +653,7 @@ class IntegrandTopoVonMisesKS {
    */
   void data_derivative(T wdetJ, const DataSpace& data,
                        const FiniteElementGeometry& geo,
-                       const FiniteElementSpace& s, DataSpace& dfdx) {
+                       const FiniteElementSpace& s, DataSpace& dfdx) const {
     const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
     SymMat<T, dim> E, S;
     T trS, trSS;
@@ -758,7 +758,7 @@ class IntegrandTopoSurfaceTraction {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     // Extract the solution
     Vec<T, dim>& U = (coef.template get<0>()).get_value();
     for (index_t i = 0; i < dim; i++) {

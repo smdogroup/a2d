@@ -50,7 +50,7 @@ class Poisson {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     const H1Space<T, 1, dim>& u = s.template get<0>();
     const Vec<T, dim>& u_grad = u.get_grad();
 
@@ -144,7 +144,7 @@ class MixedPoisson {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const HdivSpace<T, dim>& sigma = s.template get<0>();
     const L2Space<T, 1, dim>& u = s.template get<1>();

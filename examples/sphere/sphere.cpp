@@ -139,7 +139,7 @@ class PoissonForSphere {
   A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                                FiniteElementSpace& coef) const {
     const H1Space<T, 1, dim>& u = s.template get<0>();
     const Vec<T, dim>& u_grad = u.get_grad();
 

@@ -73,14 +73,14 @@ class TopoElasticityAnalysis {
   using IntegrandVMKS = IntegrandTopoVonMisesKS<T, spatial_dim>;
 
   // Element operations
-  using ElemOpsElas = FiniteElement<T, IntegrandElas, QuadratureElas,
-                                    DataBasisElas, GeoBasisElas, BasisElas>;
-  using ElemOpsTrac = FiniteElement<T, IntegrandTrac, QuadratureTrac,
-                                    DataBasisTrac, GeoBasisTrac, BasisTrac>;
-  using ElemOpsVol = FiniteElement<T, IntegrandVol, QuadratureElas,
-                                   DataBasisElas, GeoBasisElas, BasisElas>;
-  using ElemOpsVMKS = FiniteElement<T, IntegrandVMKS, QuadratureElas,
-                                    DataBasisElas, GeoBasisElas, BasisElas>;
+  using FEElas = FiniteElement<T, IntegrandElas, QuadratureElas, DataBasisElas,
+                               GeoBasisElas, BasisElas>;
+  using FETrac = FiniteElement<T, IntegrandTrac, QuadratureTrac, DataBasisTrac,
+                               GeoBasisTrac, BasisTrac>;
+  using FEVol = FiniteElement<T, IntegrandVol, QuadratureElas, DataBasisElas,
+                              GeoBasisElas, BasisElas>;
+  using FEVMKS = FiniteElement<T, IntegrandVMKS, QuadratureElas, DataBasisElas,
+                               GeoBasisElas, BasisElas>;
 
   TopoElasticityAnalysis(MeshConnectivityBase &conn, DirichletBCInfo &bcinfo,
                          index_t nelems, index_t *elem, double *Xloc,
@@ -383,10 +383,10 @@ class TopoElasticityAnalysis {
   IntegrandVol integrand_vol;
   IntegrandVMKS integrand_vmks;
 
-  ElemOpsElas fe_elas;
-  ElemOpsTrac fe_trac;
-  ElemOpsVol fe_vol;
-  ElemOpsVMKS fe_vmks;
+  FEElas fe_elas;
+  FETrac fe_trac;
+  FEVol fe_vol;
+  FEVMKS fe_vmks;
 
   // System matrices
   index_t nrows;

@@ -9,10 +9,11 @@
 
 namespace A2D {
 
-template <class GeoBasis, typename I, typename T, class GeoElemVec,
-          ElemVecType evtype>
+template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
-                            ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
+                            GeoElemVec &elem_geo) {
+  constexpr ElemVecType evtype = GeoElemVec::evtype;
+
   for (int e = 0; e < nhex; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -65,6 +66,8 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
                              const T Xloc[], GeoElemVec &elem_geo) {
+  constexpr ElemVecType evtype = GeoElemVec::evtype;
+
   for (int e = 0; e < nquad; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);

@@ -235,7 +235,7 @@ class PoissonSphere {
   // Alias templates
   template <class... Args>
   using ElementVector = ElementVector_Serial<Args...>;
-  using ElementVectorEmpty = ElementVector_Empty<ElemVecType::Serial>;
+  using ElementVectorEmpty = ElementVector_Empty;
 
   // Basic types
   using I = index_t;

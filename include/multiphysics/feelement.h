@@ -44,11 +44,15 @@ class DOFCoordinates {
   using QGeoSpace =
       QptSpace<DOFQuadrature, typename Integrand::FiniteElementGeometry>;
 
-  template <ElemVecType evtype, class GeoElemVec, class ElemVec>
-  void get_dof_coordinates(ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                           ElementVectorBase<evtype, ElemVec>& elem_x,
-                           ElementVectorBase<evtype, ElemVec>& elem_y,
-                           ElementVectorBase<evtype, ElemVec>& elem_z) {
+  template <class GeoElemVec, class ElemVec>
+  void get_dof_coordinates(GeoElemVec& elem_geo, ElemVec& elem_x,
+                           ElemVec& elem_y, ElemVec& elem_z) {
+    using same_evtype = have_same_evtype<GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
 
     if constexpr (evtype == ElemVecType::Parallel) {
@@ -123,12 +127,15 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @return The integral over the element
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  T integrate(const Integrand& integrand,
-              ElementVectorBase<evtype, DataElemVec>& elem_data,
-              ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-              ElementVectorBase<evtype, ElemVec>& elem_sol) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  T integrate(const Integrand& integrand, DataElemVec& elem_data,
+              GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -196,12 +203,15 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @return The maximum value over the domain
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  T max(const Integrand& integrand,
-        ElementVectorBase<evtype, DataElemVec>& elem_data,
-        ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-        ElementVectorBase<evtype, ElemVec>& elem_sol) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  T max(const Integrand& integrand, DataElemVec& elem_data,
+        GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -275,14 +285,18 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_deriv Output derivative of the functional w.r.t. data
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class DataDerivElemVec>
-  void add_data_derivative(
-      const Integrand& integrand,
-      ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class DataDerivElemVec>
+  void add_data_derivative(const Integrand& integrand, DataElemVec& elem_data,
+                           GeoElemVec& elem_geo, ElemVec& elem_sol,
+                           DataDerivElemVec& elem_deriv) {
+    using same_evtype =
+        have_same_evtype<DataElemVec, GeoElemVec, ElemVec, DataDerivElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -365,15 +379,18 @@ class FiniteElement {
    * @param elem_adj Element adjoint vector
    * @param elem_deriv Data derivative
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemAdjVec, class DataDerivElemVec>
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemAdjVec, class DataDerivElemVec>
   void add_adjoint_residual_data_derivative(
-      const Integrand& integrand,
-      ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
-      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
+      const Integrand& integrand, DataElemVec& elem_data, GeoElemVec& elem_geo,
+      ElemVec& elem_sol, ElemAdjVec& elem_adj, DataDerivElemVec& elem_deriv) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec,
+                                         ElemAdjVec, DataDerivElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -466,17 +483,16 @@ class FiniteElement {
   void add_residual(const Integrand& integrand, DataElemVec& elem_data,
                     GeoElemVec& elem_geo, ElemVec& elem_sol,
                     ElemResVec& elem_res) {
-    constexpr ElemVecType evtype = ElemVecType::Parallel;
+    using same_evtype =
+        have_same_evtype<DataElemVec, GeoElemVec, ElemVec, ElemResVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial element vector at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
 
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_data.get_values();
-      elem_geo.get_values();
-      elem_sol.get_values();
-      elem_res.get_zero_values();
-    }
     auto loop_body = A2D_LAMBDA(const index_t i) {
       // Get the data, geometry and solution for this element and
       // interpolate it
@@ -540,16 +556,21 @@ class FiniteElement {
       }
     };
 
-    if constexpr (evtype == ElemVecType::Serial) {
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_res.get_zero_values();
+
+      Kokkos::parallel_for("add_residual", num_elements, loop_body);
+
+      elem_res.add_values();
+    } else {
+      static_assert(evtype == ElemVecType::Serial,
+                    "invalid ElemVecType deduced.");
       for (index_t i = 0; i < num_elements; i++) {
         loop_body(i);
       }
-    } else {
-      Kokkos::parallel_for("add_residual", num_elements, loop_body);
-    }
-
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_res.add_values();
     }
   }
 
@@ -566,15 +587,17 @@ class FiniteElement {
    * @param elem_xvec Element solution vector for storing x-components
    * @param elem_yvec Output element solution vector storing y-components
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  void add_jacobian_vector_product(
-      const Integrand& integrand,
-      ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, ElemVec>& elem_xvec,
-      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void add_jacobian_vector_product(const Integrand& integrand,
+                                   DataElemVec& elem_data, GeoElemVec& elem_geo,
+                                   ElemVec& elem_sol, ElemVec& elem_xvec,
+                                   ElemVec& elem_yvec) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -660,8 +683,8 @@ class FiniteElement {
    * @brief Assemble element Jacobian matrices based on the data, geometry and
    * solution vectors.
    *
-   * WARNING: This is intended only for the lowest order elements, ie. p = 1. It
-   * scales O(p^9) so it is unsuitable for high-order elements!
+   * WARNING: This is intended only for the lowest order elements, ie. p = 1.
+   * It scales O(p^9) so it is unsuitable for high-order elements!
    *
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
@@ -676,14 +699,18 @@ class FiniteElement {
    * Note: this function uses Jacobian-vector product, which is deprecated and
    * will be removed soon
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemMat>
-  void add_jacobian(const Integrand& integrand,
-                    ElementVectorBase<evtype, DataElemVec>& elem_data,
-                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
+  void add_jacobian(const Integrand& integrand, DataElemVec& elem_data,
+                    GeoElemVec& elem_geo, ElemVec& elem_sol,
                     ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
+
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
@@ -773,13 +800,16 @@ class FiniteElement {
     }
   }
 
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemMat>
-  void add_jacobian_new(const Integrand& integrand,
-                        ElementVectorBase<evtype, DataElemVec>& elem_data,
-                        ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                        ElementVectorBase<evtype, ElemVec>& elem_sol,
+  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
+  void add_jacobian_new(const Integrand& integrand, DataElemVec& elem_data,
+                        GeoElemVec& elem_geo, ElemVec& elem_sol,
                         ElemMat& elem_mat) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -875,12 +905,15 @@ class MatrixFree {
 
   MatrixFree() {}
 
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  void initialize(const Integrand& integrand,
-                  ElementVectorBase<evtype, DataElemVec>& elem_data,
-                  ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                  ElementVectorBase<evtype, ElemVec>& elem_sol) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void initialize(const Integrand& integrand, DataElemVec& elem_data,
+                  GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     Timer timer("MatrixFree::initialize()");
     // Re-size the vector as needed
     const index_t num_elements = elem_geo.get_num_elements();
@@ -970,10 +1003,10 @@ class MatrixFree {
     }
   }
 
-  template <ElemVecType evtype, class ElemVec>
-  void add_jacobian_vector_product(
-      ElementVectorBase<evtype, ElemVec>& elem_xvec,
-      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
+  template <class ElemVec>
+  void add_jacobian_vector_product(ElemVec& elem_xvec, ElemVec& elem_yvec) {
+    constexpr ElemVecType evtype = ElemVec::evtype;
+
     const index_t num_elements = qmat.size();
     const index_t num_quadrature_points = Quadrature::get_num_points();
     const index_t ncomp = Integrand::FiniteElementSpace::ncomp;

@@ -182,7 +182,7 @@ class TopoElasticityAnalysis {
 
   void solve() {
     // Set up right-hand-side
-    ElementVector_Empty<ElemVecType::Serial> elem_data_trac;
+    ElementVector_Empty elem_data_trac;
     SolutionVector<T> traction_res(elem_mesh_elas.get_num_dof());
     ElemVecTrac elem_res_trac(elem_mesh_trac, traction_res);
 

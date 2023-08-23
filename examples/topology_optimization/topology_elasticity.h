@@ -30,7 +30,7 @@ class TopoElasticityAnalysis {
   // Alias templates
   template <class... Args>
   using ElementVector = ElementVector_Parallel<Args...>;
-  using ElementVectorEmpty = ElementVector_Empty<ElemVecType::Parallel>;
+  using ElementVectorEmpty = ElementVector_Empty;
 
   // Basic types
   using I = index_t;
@@ -93,11 +93,11 @@ class TopoElasticityAnalysis {
       FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
-                 TractionGeoBasis, TractionBasis>;
+                    TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
-                              LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
+                                 LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
@@ -130,7 +130,7 @@ class TopoElasticityAnalysis {
       FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using AggregationFunctional =
       FiniteElement<T, IntegrandTopoVonMisesKS<T, spatial_dim>, Quadrature,
-                 DataBasis, GeoBasis, Basis>;
+                    DataBasis, GeoBasis, Basis>;
 
   /**
    * @brief The elasticity topology analysis class.
@@ -390,6 +390,12 @@ class TopoElasticityAnalysis {
    */
   template <class VecType>
   void filter_interp(const VecType &xvec) {
+    using same_evtype = have_same_evtype<FilterElemVec, DataElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial element vector at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
     // Copy the design variables to the filter data
     for (index_t i = 0; i < filtermesh.get_num_dof(); i++) {
       filter_data[i] = xvec[i];
@@ -399,14 +405,14 @@ class TopoElasticityAnalysis {
     // mesh
     const index_t num_elements = elem_filter_data.get_num_elements();
 
-    if constexpr (decltype(elem_filter_data)::evtype == ElemVecType::Parallel) {
+    if constexpr (evtype == ElemVecType::Parallel) {
       elem_filter_data.get_values();
     }
 
     for (index_t i = 0; i < num_elements; i++) {
       // Interpolate the data from the Bernstein filter
       typename FilterElemVec::FEDof filter_dof(i, elem_filter_data);
-      if constexpr (decltype(elem_filter_data)::evtype == ElemVecType::Serial) {
+      if constexpr (evtype == ElemVecType::Serial) {
         elem_filter_data.get_element_values(i, filter_dof);
       }
 
@@ -422,11 +428,11 @@ class TopoElasticityAnalysis {
         data_dof[j] = qdata.get(j)[0];
       }
 
-      if constexpr (decltype(elem_data)::evtype == ElemVecType::Serial) {
+      if constexpr (evtype == ElemVecType::Serial) {
         elem_data.set_element_values(i, data_dof);
       }
     }
-    if constexpr (decltype(elem_data)::evtype == ElemVecType::Parallel) {
+    if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.set_values();
     }
   }
@@ -434,10 +440,15 @@ class TopoElasticityAnalysis {
   /**
    * @brief Add the values back to the design variable vector
    */
-  template <ElemVecType evtype, class VecType, class DataDerivElemVec>
-  void filter_add(ElementVectorBase<evtype, DataDerivElemVec> &elem_dfdx,
-                  VecType &dfdx) {
+  template <class VecType, class DataDerivElemVec>
+  void filter_add(DataDerivElemVec &elem_dfdx, VecType &dfdx) {
     ElementVector<T, FilterBasis, VecType> filter_dfdx(filtermesh, dfdx);
+    using same_evtype =
+        have_same_evtype<DataDerivElemVec, decltype(filter_dfdx)>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial element vector at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
 
     // Loop over the elements and interpolate the values to the refined data
     // mesh

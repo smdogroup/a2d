@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   {
     using T = double;
 
-    constexpr bool smoke_test = true;
+    constexpr bool smoke_test = false;
 
     // Number of elements in each dimension
     const index_t degree = smoke_test ? 1 : 4;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    T gravity[2] = {0.0, -9.8};
+    T gravity[2] = {2.5, -9.8};
     TopoElasticityAnalysis<T, degree> prob(conn, nquad, quad.data(),
                                            Xloc.data(), bcinfo, gravity);
 

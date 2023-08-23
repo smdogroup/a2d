@@ -439,6 +439,50 @@ void test_parallel_for() {
   }
 }
 
+class ElemVec {
+ public:
+  using T = double;
+  ElemVec(A2D::index_t n) : array("array", n) {}
+
+  T get(A2D::index_t i) const { return array(i); }
+  void set(A2D::index_t i, const T val) const { array(i) = val; }
+
+ private:
+  A2D::MultiArrayNew<T*> array;
+};
+
+// class ElemVec2 {
+//  public:
+//   using T = double;
+//   ElemVec2(A2D::index_t n) : array(n) {}
+
+//   T get(A2D::index_t i) const { return array[i]; }
+//   void set(A2D::index_t i, const T val) const { array[i] = val; }
+
+//  private:
+//   std::vector<T> array;
+// };
+
+class ElemVec3 {
+ public:
+  using T = double;
+  using array_t = A2D::MultiArrayNew<T*>;
+
+  ElemVec3(array_t& array) : array(array) {}
+
+  T get(A2D::index_t i) const { return array(i); }
+  void set(A2D::index_t i, const T val) const { array(i) = val; }
+
+ private:
+  array_t& array;
+};
+
+void test_modify_view_from_const_lambda() {
+  const ElemVec elem_vec(42);
+  elem_vec.set(0, 2.3);
+  std::cout << elem_vec.get(0) << "\n";
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
@@ -452,7 +496,8 @@ int main(int argc, char* argv[]) {
      // test_view_is_allocated();
      // test_smart_pointer_behavior();
      // test_copy();
-    test_parallel_for();
+     // test_parallel_for();
+    test_modify_view_from_const_lambda();
   }
   Kokkos::finalize();
 }

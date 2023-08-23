@@ -563,6 +563,7 @@ class FiniteElement {
       elem_res.get_zero_values();
 
       Kokkos::parallel_for("add_residual", num_elements, loop_body);
+      Kokkos::fence();
 
       elem_res.add_values();
     } else {
@@ -1017,8 +1018,6 @@ class MatrixFree {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Kokkos::parallel_for(
-      //     num_elements, A2D_LAMBDA(index_t i) {
       // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
       if constexpr (evtype == ElemVecType::Serial) {

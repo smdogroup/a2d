@@ -483,6 +483,91 @@ void test_modify_view_from_const_lambda() {
   std::cout << elem_vec.get(0) << "\n";
 }
 
+struct Alpha {
+  constexpr static double value = 0.01;
+};
+
+void test_cuda_axpy(int argc, char* argv[]) {
+  using ViewDevice_t = Kokkos::View<T*, Kokkos::LayoutRight, Kokkos::CudaSpace>;
+  if (argc == 1) {
+    std::printf("axpy\nusage: ./scratchpad N, where mat size = 2^N\n");
+    return;
+  }
+
+  // Allocate x and y on host
+  I N = pow(2, atoi(argv[1]));
+  I bytes = N * sizeof(T);
+  double Mbytes = (double)bytes / 1024 / 1024;
+
+  std::printf("Allocating x[%d] on host, size: %.2f MB\n", N, Mbytes);
+  std::printf("Allocating y[%d] on host, size: %.2f MB\n", N, Mbytes);
+
+  // Allocate x and y on device
+  ViewDevice_t x_device("x_device", N);
+  ViewDevice_t y_device("y_device", N);
+
+  // Initialize x and y on host
+  ViewDevice_t::HostMirror x = Kokkos::create_mirror_view(x_device);
+  ViewDevice_t::HostMirror y = Kokkos::create_mirror_view(y_device);
+
+  for (I i = 0; i < N; i++) {
+    x(i) = 2.4;
+    y(i) = 0.1;
+  }
+
+  // Copy value to device
+  Kokkos::deep_copy(x_device, x);
+  Kokkos::deep_copy(y_device, y);
+  Kokkos::fence();
+
+  // Perform 100 axpy operations on device and time
+  Kokkos::Timer timer;
+  int repeat = 100;
+  T alpha = 0.01;
+  for (int i = 0; i < repeat; i++) {
+    Kokkos::parallel_for(
+        "axpy", N, KOKKOS_LAMBDA(const I index) {
+          // y_device(index) += alpha * x_device(index);
+          y_device(index) += Alpha::value * x_device(index);
+        });
+    Kokkos::fence();
+  }
+
+  double elapse = timer.seconds();
+  printf("averaged time: %.8f ms\n", elapse * 1e3);
+
+  // Compute bandwidth:
+  // x is read once, y is read once and written once
+  double bandwidth = 3 * Mbytes / 1024 * repeat / elapse;
+  printf("averaged bandwidth: %.8f GB/s\n", bandwidth);
+
+  // Copy results back to host
+  Kokkos::deep_copy(y, y_device);
+  Kokkos::fence();
+
+  // Print values
+  int len = 10;
+  if (N < len) {
+    len = N;
+  }
+
+  for (I i = 0; i < len; i++) {
+    printf("x[%2d]: %8.2f  y[%2d]: %8.2f\n", i, x(i), i, y(i));
+  }
+
+  // Check maximum error
+  T max_err = T(0);
+  T val = T(0);
+  for (I i = 0; i < N; i++) {
+    val = fabs(repeat * alpha * 2.4 + 0.1 - y(i));
+    if (val > max_err) {
+      max_err = val;
+    }
+  }
+
+  printf("Maximum error: %20.10e\n", max_err);
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
@@ -497,7 +582,8 @@ int main(int argc, char* argv[]) {
      // test_smart_pointer_behavior();
      // test_copy();
      // test_parallel_for();
-    test_modify_view_from_const_lambda();
+    // test_modify_view_from_const_lambda();
+    test_cuda_axpy(argc, argv);
   }
   Kokkos::finalize();
 }

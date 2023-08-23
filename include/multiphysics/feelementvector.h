@@ -272,7 +272,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
   /**
    * @brief Get number of elements
    */
-  index_t get_num_elements() const { return mesh.get_num_elements(); }
+  A2D_INLINE_FUNCTION index_t get_num_elements() const { return mesh.get_num_elements(); }
 
   /**
    * @brief Initialize local dof values to zero
@@ -292,6 +292,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
     // }
 
     Kokkos::parallel_for("get_values", mesh.get_num_elements(), loop_body);
+    Kokkos::fence();
   }
 
   /**
@@ -308,6 +309,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
     // }
 
     Kokkos::parallel_for("set_values", mesh.get_num_elements(), loop_body);
+    Kokkos::fence();
   }
 
   /**
@@ -322,6 +324,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
     //   loop_body(elem);
     // }
     Kokkos::parallel_for("add_values", mesh.get_num_elements(), loop_body);
+    Kokkos::fence();
   }
 
  private:
@@ -334,7 +337,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @param elem_idx element index
    */
   template <ELEM_VALS_OP op, index_t nbasis>
-  void operate_element_values(const index_t& elem_idx) const {
+  A2D_INLINE_FUNCTION void operate_element_values(const index_t& elem_idx) const {
     for (index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.template get_global_dof_sign<nbasis - 1>(elem_idx, i);
       const index_t& dof_index = mesh.template get_global_dof<nbasis - 1>(elem_idx, i);

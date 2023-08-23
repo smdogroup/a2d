@@ -360,10 +360,10 @@ class HelmholtzSphere {
 
   // FE type
   using FE_PDE =
-      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature,
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
                                  LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
@@ -523,7 +523,7 @@ class HelmholtzSphere {
   T compute_solution_error() {
     // Compute and print out the solution error
     HelmholtzForSphereError<T, spatial_dim> error;
-    ElementOps<T, HelmholtzForSphereError<T, spatial_dim>,
+    FiniteElement<T, HelmholtzForSphereError<T, spatial_dim>,
                   HexGaussQuadrature<degree + 10>, DataBasis, GeoBasis, Basis>
         functional;
 

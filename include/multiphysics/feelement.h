@@ -96,7 +96,7 @@ class DOFCoordinates {
 // A set of element-wise operations that operate on all elements at once
 template <typename T, class Integrand, class Quadrature, class DataBasis,
           class GeoBasis, class Basis>
-class ElementOps {
+class FiniteElement {
  public:
   // Quadrature point object for the data space
   using QDataSpace = QptSpace<Quadrature, typename Integrand::DataSpace>;
@@ -108,7 +108,7 @@ class ElementOps {
   // Quadrature point object for the finite-element space
   using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
 
-  ElementOps() {}
+  FiniteElement() {}
 
   /**
    * @brief Compute the value of an integral functional over the finite-element
@@ -670,7 +670,7 @@ class ElementOps {
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
                     ElemMat& elem_mat) {
-    Timer timer("ElementOps::add_jacobian()");
+    Timer timer("FiniteElement::add_jacobian()");
     const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();

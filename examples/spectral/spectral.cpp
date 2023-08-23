@@ -113,7 +113,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
   using FE =
-      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
 
   using LOrderQuadrature = HexGaussQuadrature<low_degree + 1>;
   using LOrderDataBasis = FEBasis<T>;
@@ -125,7 +125,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
       A2D::ElementVector_Serial<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = A2D::ElementVector_Serial<T, LOrderBasis, BasisVecType>;
 
-  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature,
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature,
                                  LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
 
   /** Create mesh for a single element

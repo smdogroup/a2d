@@ -73,14 +73,14 @@ class TopoElasticityAnalysis {
   using IntegrandVMKS = IntegrandTopoVonMisesKS<T, spatial_dim>;
 
   // Element operations
-  using ElemOpsElas = ElementOps<T, IntegrandElas, QuadratureElas,
-                                 DataBasisElas, GeoBasisElas, BasisElas>;
-  using ElemOpsTrac = ElementOps<T, IntegrandTrac, QuadratureTrac,
-                                 DataBasisTrac, GeoBasisTrac, BasisTrac>;
-  using ElemOpsVol = ElementOps<T, IntegrandVol, QuadratureElas, DataBasisElas,
-                                GeoBasisElas, BasisElas>;
-  using ElemOpsVMKS = ElementOps<T, IntegrandVMKS, QuadratureElas,
-                                 DataBasisElas, GeoBasisElas, BasisElas>;
+  using ElemOpsElas = FiniteElement<T, IntegrandElas, QuadratureElas,
+                                    DataBasisElas, GeoBasisElas, BasisElas>;
+  using ElemOpsTrac = FiniteElement<T, IntegrandTrac, QuadratureTrac,
+                                    DataBasisTrac, GeoBasisTrac, BasisTrac>;
+  using ElemOpsVol = FiniteElement<T, IntegrandVol, QuadratureElas,
+                                   DataBasisElas, GeoBasisElas, BasisElas>;
+  using ElemOpsVMKS = FiniteElement<T, IntegrandVMKS, QuadratureElas,
+                                    DataBasisElas, GeoBasisElas, BasisElas>;
 
   TopoElasticityAnalysis(MeshConnectivityBase &conn, DirichletBCInfo &bcinfo,
                          index_t nelems, index_t *elem, double *Xloc,
@@ -155,8 +155,8 @@ class TopoElasticityAnalysis {
     ElementMat_Serial<T, BasisElas, BSRMat_t> elem_mat(elem_mesh_elas, bsr_mat);
 
     // Populate the system matrix
-    elem_ops_elas.add_jacobian(integrand_elas, elem_data_elas, elem_geo_elas,
-                               elem_sol_elas, elem_mat);
+    fe_elas.add_jacobian(integrand_elas, elem_data_elas, elem_geo_elas,
+                         elem_sol_elas, elem_mat);
 
     // Apply boundary conditions to each row
     const index_t *bc_dofs;
@@ -186,8 +186,8 @@ class TopoElasticityAnalysis {
     SolutionVector<T> traction_res(elem_mesh_elas.get_num_dof());
     ElemVecTrac elem_res_trac(elem_mesh_trac, traction_res);
 
-    elem_ops_trac.add_residual(integrand_trac, elem_data_trac, elem_geo_trac,
-                               elem_sol_trac, elem_res_trac);
+    fe_trac.add_residual(integrand_trac, elem_data_trac, elem_geo_trac,
+                         elem_sol_trac, elem_res_trac);
 
     std::vector<T> rhs(sol.get_num_dof());
     for (index_t i = 0; i < sol.get_num_dof(); i++) {
@@ -215,21 +215,21 @@ class TopoElasticityAnalysis {
   }
 
   T eval_compliance() {
-    return elem_ops_elas.integrate(integrand_elas, elem_data_elas,
-                                   elem_geo_elas, elem_sol_elas);
+    return fe_elas.integrate(integrand_elas, elem_data_elas, elem_geo_elas,
+                             elem_sol_elas);
   }
 
   T eval_volume() {
-    return elem_ops_vol.integrate(integrand_vol, elem_data_elas, elem_geo_elas,
-                                  elem_sol_elas);
+    return fe_vol.integrate(integrand_vol, elem_data_elas, elem_geo_elas,
+                            elem_sol_elas);
   }
 
   T eval_vmks() {
-    T max_value = elem_ops_vmks.max(integrand_vmks, elem_data_elas,
-                                    elem_geo_elas, elem_sol_elas);
+    T max_value = fe_vmks.max(integrand_vmks, elem_data_elas, elem_geo_elas,
+                              elem_sol_elas);
     integrand_vmks.set_max_failure_index(max_value);
-    T integral = elem_ops_vmks.integrate(integrand_vmks, elem_data_elas,
-                                         elem_geo_elas, elem_sol_elas);
+    T integral = fe_vmks.integrate(integrand_vmks, elem_data_elas,
+                                   elem_geo_elas, elem_sol_elas);
     T value = integrand_vmks.evaluate_functional(integral);
     return value;
   }
@@ -252,9 +252,9 @@ class TopoElasticityAnalysis {
     }
 
     // Gather dfdx from all elements
-    elem_ops_elas.add_adjoint_residual_data_derivative(
-        integrand_elas, elem_data_elas, elem_geo_elas, elem_sol_elas,
-        elem_adjoint, elem_dfdx);
+    fe_elas.add_adjoint_residual_data_derivative(integrand_elas, elem_data_elas,
+                                                 elem_geo_elas, elem_sol_elas,
+                                                 elem_adjoint, elem_dfdx);
     return;
   }
 
@@ -262,31 +262,31 @@ class TopoElasticityAnalysis {
   void add_volume_gradient(VecType &dfdx) {
     ElementVector_Serial<T, DataBasisElas, VecType> elem_dfdx(
         elem_datamesh_elas, dfdx);
-    elem_ops_vol.add_data_derivative(integrand_vol, elem_data_elas,
-                                     elem_geo_elas, elem_sol_elas, elem_dfdx);
+    fe_vol.add_data_derivative(integrand_vol, elem_data_elas, elem_geo_elas,
+                               elem_sol_elas, elem_dfdx);
     return;
   }
 
   template <class VecType>
   void add_vmks_gradient(VecType &dfdx) {
-    T max_value = elem_ops_vmks.max(integrand_vmks, elem_data_elas,
-                                    elem_geo_elas, elem_sol_elas);
+    T max_value = fe_vmks.max(integrand_vmks, elem_data_elas, elem_geo_elas,
+                              elem_sol_elas);
     integrand_vmks.set_max_failure_index(max_value);
-    T integral = elem_ops_vmks.integrate(integrand_vmks, elem_data_elas,
-                                         elem_geo_elas, elem_sol_elas);
+    T integral = fe_vmks.integrate(integrand_vmks, elem_data_elas,
+                                   elem_geo_elas, elem_sol_elas);
     T value = integrand_vmks.evaluate_functional(integral);
 
     ElementVector_Serial<T, DataBasisElas, VecType> elem_dfdx(
         elem_datamesh_elas, dfdx);
-    elem_ops_vmks.add_data_derivative(integrand_vmks, elem_data_elas,
-                                      elem_geo_elas, elem_sol_elas, elem_dfdx);
+    fe_vmks.add_data_derivative(integrand_vmks, elem_data_elas, elem_geo_elas,
+                                elem_sol_elas, elem_dfdx);
 
     // Set up and solve the adjoint equations
     index_t ndof = elem_mesh_elas.get_num_dof();
     Vec_t dfdu(ndof);
     ElemVecElas elem_dfdu(elem_mesh_elas, dfdu);
-    elem_ops_vmks.add_residual(integrand_vmks, elem_data_elas, elem_geo_elas,
-                               elem_sol_elas, elem_dfdu);
+    fe_vmks.add_residual(integrand_vmks, elem_data_elas, elem_geo_elas,
+                         elem_sol_elas, elem_dfdu);
 
     std::vector<T> rhs(ndof);
     for (index_t i = 0; i < ndof; i++) {
@@ -313,9 +313,9 @@ class TopoElasticityAnalysis {
     }
 
     // Compute total derivatives
-    elem_ops_elas.add_adjoint_residual_data_derivative(
-        integrand_elas, elem_data_elas, elem_geo_elas, elem_sol_elas,
-        elem_adjoint, elem_dfdx);
+    fe_elas.add_adjoint_residual_data_derivative(integrand_elas, elem_data_elas,
+                                                 elem_geo_elas, elem_sol_elas,
+                                                 elem_adjoint, elem_dfdx);
     return;
   }
 
@@ -383,10 +383,10 @@ class TopoElasticityAnalysis {
   IntegrandVol integrand_vol;
   IntegrandVMKS integrand_vmks;
 
-  ElemOpsElas elem_ops_elas;
-  ElemOpsTrac elem_ops_trac;
-  ElemOpsVol elem_ops_vol;
-  ElemOpsVMKS elem_ops_vmks;
+  ElemOpsElas fe_elas;
+  ElemOpsTrac fe_trac;
+  ElemOpsVol fe_vol;
+  ElemOpsVMKS fe_vmks;
 
   // System matrices
   index_t nrows;

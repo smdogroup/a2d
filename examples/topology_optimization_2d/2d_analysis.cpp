@@ -53,9 +53,9 @@ class TopoElasticityAnalysis {
   using Traction = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
   using FE_PDE =
-      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
-      ElementOps<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
+      FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
   TopoElasticityAnalysis(MeshConnectivityBase &conn, index_t nquad,
                          const index_t quad[], const double Xloc[],

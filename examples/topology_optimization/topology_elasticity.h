@@ -88,15 +88,15 @@ class TopoElasticityAnalysis {
 
   // Finite element functional
   using FE_PDE =
-      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_BodyForce =
-      ElementOps<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
-      ElementOps<T, TractionPDE, TractionQuadrature, TractionDataBasis,
+      FiniteElement<T, TractionPDE, TractionQuadrature, TractionDataBasis,
                  TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature, LOrderDataBasis,
+  using LOrderFE = FiniteElement<T, Integrand, LOrderQuadrature, LOrderDataBasis,
                               LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
@@ -127,9 +127,9 @@ class TopoElasticityAnalysis {
   using VolumePDE = IntegrandTopoVolume<T, var_dim, spatial_dim, Integrand>;
 
   using VolumeFunctional =
-      ElementOps<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
+      FiniteElement<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using AggregationFunctional =
-      ElementOps<T, IntegrandTopoVonMisesKS<T, spatial_dim>, Quadrature,
+      FiniteElement<T, IntegrandTopoVonMisesKS<T, spatial_dim>, Quadrature,
                  DataBasis, GeoBasis, Basis>;
 
   /**

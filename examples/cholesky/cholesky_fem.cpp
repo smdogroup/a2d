@@ -33,8 +33,7 @@ class FEProb {
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
   using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
 
-  using FE =
-      ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE = ElementOps<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using DataElemVec = ElementVector_Serial<T, DataBasis, Vec_t>;
   using GeoElemVec = ElementVector_Serial<T, GeoBasis, Vec_t>;
   using ElemVec = ElementVector_Serial<T, Basis, Vec_t>;

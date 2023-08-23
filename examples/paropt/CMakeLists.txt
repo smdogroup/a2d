@@ -1,7 +1,6 @@
 # include A2D headers
 include_directories(${A2D_ROOT_DIR}/include)
 
-
 # Include MPI and ParOpt headers
 include_directories(${MPI_INCLUDE_PATH})
 include_directories($ENV{HOME}/git/paropt/src)

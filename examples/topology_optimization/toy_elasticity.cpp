@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   T vol = topo.eval_volume();
   topo.add_volume_gradient(*dvdx);
 
-  printf("v:      %20.10f\n", vol);
+  printf("vol:    %20.10f\n", vol);
   printf("|dvdx|: %20.10f\n", A2D::BLAS::norm(*dvdx));
 
   // Write the solution to a vtk file

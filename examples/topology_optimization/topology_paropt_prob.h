@@ -28,6 +28,9 @@ class TopOptProb : public ParOptProblem {
         opt_iter(0),
         verbose(verbose),
         vtk_freq(vtk_freq) {
+    if (!std::filesystem::is_directory(prefix)) {
+      std::filesystem::create_directory(prefix);
+    }
     setProblemSizes(nvars, ncon, 0);
     setNumInequalities(nineq, 0);
   }

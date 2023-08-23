@@ -1,6 +1,7 @@
 #ifndef A2D_ELASTICITY_H
 #define A2D_ELASTICITY_H
 
+#include "a2denum.h"
 #include "a2dmatops2d.h"
 #include "a2dmatops3d.h"
 #include "multiphysics/femapping.h"
@@ -332,6 +333,8 @@ class IntegrandTopoVolume {
 
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = typename Integrand::SolutionMapping;
+
+  IntegrandTopoVolume() = default;
 
   /**
    * @brief Compute the integrand for this functional
@@ -690,20 +693,6 @@ class IntegrandTopoVonMisesKS {
  */
 template <typename T, index_t D>
 class IntegrandTopoSurfaceTraction {
- private:
-  template <index_t dim>
-  struct torque_dim;
-
-  template <>
-  struct torque_dim<3> {
-    static const int value = 3;
-  };
-
-  template <>
-  struct torque_dim<2> {
-    static const int value = 1;
-  };
-
  public:
   IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
                                const T torx_[] = nullptr,
@@ -750,9 +739,10 @@ class IntegrandTopoSurfaceTraction {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = SurfaceMapping<T, dim>;
 
-  T tx[dim];                       // surface traction vector
-  T torx[torque_dim<dim>::value];  // surface  torque vector
-  T x0[dim];                       // torque origin
+  T tx[dim];  // surface traction vector
+  T torx[conditional_value<index_t, dim == 3, 3, 1>::value];  // surface torque
+                                                              // vector
+  T x0[dim];                                                  // torque origin
   bool has_traction;
   bool has_torque;
 

@@ -93,11 +93,11 @@ class TopoElasticityAnalysis {
       ElementOps<T, BodyForce, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       ElementOps<T, TractionPDE, TractionQuadrature, TractionDataBasis,
-                    TractionGeoBasis, TractionBasis>;
+                 TractionGeoBasis, TractionBasis>;
 
   // Finite element functional for low order preconditioner mesh
-  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature,
-                                 LOrderDataBasis, LOrderGeoBasis, LOrderBasis>;
+  using LOrderFE = ElementOps<T, Integrand, LOrderQuadrature, LOrderDataBasis,
+                              LOrderGeoBasis, LOrderBasis>;
 
   // Matrix-free operator
   using MatFree =
@@ -130,7 +130,7 @@ class TopoElasticityAnalysis {
       ElementOps<T, VolumePDE, Quadrature, DataBasis, GeoBasis, Basis>;
   using AggregationFunctional =
       ElementOps<T, IntegrandTopoVonMisesKS<T, spatial_dim>, Quadrature,
-                    DataBasis, GeoBasis, Basis>;
+                 DataBasis, GeoBasis, Basis>;
 
   /**
    * @brief The elasticity topology analysis class.

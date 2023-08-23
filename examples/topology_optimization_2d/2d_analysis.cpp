@@ -20,7 +20,7 @@ using namespace A2D;
  * @tparam degree polynomial degree
  */
 template <typename T, index_t degree>
-class TopoElasticityAnalysis2D {
+class TopoElasticityAnalysis {
  public:
   static constexpr int spatial_dim = 2;
   static constexpr int order = degree + 1;  // Spline order, = degree + 1
@@ -57,10 +57,10 @@ class TopoElasticityAnalysis2D {
   using FE_Traction =
       ElementOps<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
-  TopoElasticityAnalysis2D(MeshConnectivityBase &conn, index_t nquad,
-                           const index_t quad[], const double Xloc[],
-                           DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
-                           T q = 5.0)
+  TopoElasticityAnalysis(MeshConnectivityBase &conn, index_t nquad,
+                         const index_t quad[], const double Xloc[],
+                         DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
+                         T q = 5.0)
       : E(E),
         nu(nu),
         q(q),
@@ -91,7 +91,6 @@ class TopoElasticityAnalysis2D {
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
     fe.add_jacobian(integrand, elem_data, elem_geo, elem_sol, elem_mat);
-    bsr_mat.write_mtx("Jacobian.mtx");
 
     return bsr_mat;
   }
@@ -167,17 +166,17 @@ int main(int argc, char *argv[]) {
     DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    TopoElasticityAnalysis2D<T, degree> prob(conn, nquad, quad.data(),
-                                             Xloc.data(), bcinfo);
+    TopoElasticityAnalysis<T, degree> prob(conn, nquad, quad.data(),
+                                           Xloc.data(), bcinfo);
 
     // Save mesh
     prob.tovtk("mesh.vtk");
 
     // Create bsr mat and zero bcs rows
-    TopoElasticityAnalysis2D<T, degree>::BSRMat_t bsr_mat =
+    TopoElasticityAnalysis<T, degree>::BSRMat_t bsr_mat =
         prob.create_fea_bsr_matrix();
     const index_t *bc_dofs;
-    DirichletBCs<TopoElasticityAnalysis2D<T, degree>::Basis> bcs(
+    DirichletBCs<TopoElasticityAnalysis<T, degree>::Basis> bcs(
         conn, prob.get_mesh(), bcinfo);
     index_t nbcs = bcs.get_bcs(&bc_dofs);
     bsr_mat.zero_rows(nbcs, bc_dofs);

@@ -414,18 +414,45 @@ void test_smart_pointer_behavior() {
   return;
 }
 
+void test_copy() {
+  using T = double;
+  A2D::MultiArrayNew<T* [5]> array1("array1", 20);
+  array1(0, 0) = 4.2;
+
+  A2D::MultiArrayNew<T* [5]> array2;
+
+  array2 = array1;
+  std::cout << array2(0, 0) << "\n";
+}
+
+void test_parallel_for() {
+  constexpr int N = 10;
+  using T = double;
+  A2D::MultiArrayNew<T*> array("array", N);
+  A2D::MultiArrayNew<T*> array2("array", N);
+
+  Kokkos::parallel_for(
+      "Loop", N, KOKKOS_LAMBDA(const int i) { array(i) = 4.2; });
+
+  for (int i = 0; i < N; i++) {
+    std::cout << array(i) << "\n";
+  }
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
-    // test_matvec(argc, argv);
-    // test_unordered_set();
-    // test_subview();
-    // test_sort();
-    // test_is_same_layout();
-    // test_complex();
-    // test_is_complex();
-    // test_view_is_allocated();
-    test_smart_pointer_behavior();
+     // test_matvec(argc, argv);
+     // test_unordered_set();
+     // test_subview();
+     // test_sort();
+     // test_is_same_layout();
+     // test_complex();
+     // test_is_complex();
+     // test_view_is_allocated();
+     // test_smart_pointer_behavior();
+     // test_copy();
+    test_parallel_for();
   }
   Kokkos::finalize();
 }

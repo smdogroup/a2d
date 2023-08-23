@@ -62,11 +62,9 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
   }
 }
 
-template <class GeoBasis, typename I, typename T, class GeoElemVec,
-          ElemVecType evtype>
+template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
-                             const T Xloc[],
-                             ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
+                             const T Xloc[], GeoElemVec &elem_geo) {
   for (int e = 0; e < nquad; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -97,13 +95,13 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
       }
     }
 
-    if constexpr (evtype == ElemVecType::Serial) {
-      elem_geo.set_element_values(e, geo_dof);
-    }
+    // if constexpr (evtype == ElemVecType::Serial) {
+    elem_geo.set_element_values(e, geo_dof);
+    // }
   }
-  if constexpr (evtype == ElemVecType::Parallel) {
-    elem_geo.set_values();
-  }
+  // if constexpr (evtype == ElemVecType::Parallel) {
+  elem_geo.set_values();
+  // }
 }
 
 template <index_t outputs, index_t degree, typename T, class DataBasis,

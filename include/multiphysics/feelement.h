@@ -461,13 +461,13 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemResVec>
-  void add_residual(const Integrand& integrand,
-                    ElementVectorBase<evtype, DataElemVec>& elem_data,
-                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                    ElementVectorBase<evtype, ElemVec>& elem_sol,
-                    ElementVectorBase<evtype, ElemResVec>& elem_res) {
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemResVec>
+  void add_residual(const Integrand& integrand, DataElemVec& elem_data,
+                    GeoElemVec& elem_geo, ElemVec& elem_sol,
+                    ElemResVec& elem_res) {
+    constexpr ElemVecType evtype = ElemVecType::Parallel;
+
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
@@ -477,11 +477,7 @@ class FiniteElement {
       elem_sol.get_values();
       elem_res.get_zero_values();
     }
-
-    for (index_t i = 0; i < num_elements; i++) {
-      // Kokkos::parallel_for(
-      //     "parallel_add_residual", num_elements, A2D_LAMBDA(const index_t i)
-      //     {
+    auto loop_body = A2D_LAMBDA(const index_t i) {
       // Get the data, geometry and solution for this element and
       // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
@@ -536,13 +532,20 @@ class FiniteElement {
 
       // Add the residual from the quadrature points back to the
       // finite-element mesh
-      typename ElemVec::FEDof res_dof(i, elem_res);
+      typename ElemResVec::FEDof res_dof(i, elem_res);
       Basis::template add(res, res_dof);
 
       if constexpr (evtype == ElemVecType::Serial) {
         elem_res.add_element_values(i, res_dof);
       }
-      // });
+    };
+
+    if constexpr (evtype == ElemVecType::Serial) {
+      for (index_t i = 0; i < num_elements; i++) {
+        loop_body(i);
+      }
+    } else {
+      Kokkos::parallel_for("add_residual", num_elements, loop_body);
     }
 
     if constexpr (evtype == ElemVecType::Parallel) {
@@ -584,8 +587,8 @@ class FiniteElement {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry, solution and input vector for this element and
-      // interpolate it
+      // Get the data, geometry, solution and input vector for this element
+      // and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -640,8 +643,8 @@ class FiniteElement {
         transform.rtransform(y, yref);
       }
 
-      // Add the values from the quadrature points back into the finite-element
-      // problem
+      // Add the values from the quadrature points back into the
+      // finite-element problem
       typename ElemVec::FEDof y_dof(i, elem_yvec);
       Basis::template add(ysol, y_dof);
       if constexpr (evtype == ElemVecType::Serial) {
@@ -692,7 +695,8 @@ class FiniteElement {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate
+      // it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -786,7 +790,8 @@ class FiniteElement {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate
+      // it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -896,7 +901,8 @@ class MatrixFree {
     }
 
     for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+      // Get the data, geometry and solution for this element and interpolate
+      // it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);

@@ -51,7 +51,7 @@ namespace A2D {
   empty function if the values are stored directly.
 */
 
-enum class ElemVecType { Serial, Parallel };
+enum class ElemVecType { Serial, Parallel, Empty };
 
 /**
  * @brief Base class for the vector-centric view of the degrees of freedom.
@@ -74,8 +74,8 @@ class ElementVectorBase {
   static constexpr ElemVecType evtype = _evtype;
 
   /**
-   * @brief Placeholder for a helper lightweight object to access DOFs associated with the
-   * element(s)
+   * @brief Placeholder for a helper lightweight object to access DOFs
+   * associated with the element(s)
    *
    * @tparam T numeric type
    * @tparam FEDofImpl the actual implementation class
@@ -163,31 +163,31 @@ class ElementVectorBase {
 /*
   Element vector implementation for empty values - does nothing
 */
-template <ElemVecType evtype>
-class ElementVector_Empty : public ElementVectorBase<evtype, ElementVector_Empty<evtype>> {
- private:
-  using base_t = ElementVectorBase<evtype, ElementVector_Empty<evtype>>;
-  struct null_t {};
-
+class ElementVector_Empty {
  public:
-  ElementVector_Empty() {}
-  class FEDof : public base_t::template FEDofBase<null_t, FEDof> {
+  static constexpr ElemVecType evtype = ElemVecType::Empty;
+  ElementVector_Empty() = default;
+
+  // All implementations should have FEDof and get_num_elements
+  class FEDof {
    public:
-    FEDof(index_t elem, base_t& elem_vec) {}
+    FEDof(index_t elem, ElementVector_Empty& elem_vec) {}
   };
-
- private:
-  using base_fedof_t = typename base_t::template FEDofBase<null_t, FEDof>;
-
- public:
   index_t get_num_elements() const { return 0; }
+
+  // Parallel implementation should have these four methods
   void get_zero_values() {}
   void get_values() {}
   void add_values() {}
   void set_values() {}
-  void get_element_values(index_t elem, base_fedof_t& dof) {}
-  void add_element_values(index_t elem, const base_fedof_t& dof) {}
-  void set_element_values(index_t elem, const base_fedof_t& dof) {}
+
+  // Serial implementation should have these three methods
+  template <class Dof>
+  void get_element_values(index_t elem, Dof& dof) const {}
+  template <class Dof>
+  void add_element_values(index_t elem, const Dof& dof) const {}
+  template <class Dof>
+  void set_element_values(index_t elem, const Dof& dof) const {}
 };
 
 /**
@@ -197,18 +197,17 @@ class ElementVector_Empty : public ElementVectorBase<evtype, ElementVector_Empty
  * @tparam VecType type of the solution vector, e.g. SolutionVector<...>
  */
 template <typename T, class Basis, class VecType>
-class ElementVector_Serial
-    : public ElementVectorBase<ElemVecType::Serial, ElementVector_Serial<T, Basis, VecType>> {
- private:
-  using base_t = ElementVectorBase<ElemVecType::Serial, ElementVector_Serial<T, Basis, VecType>>;
-
+class ElementVector_Serial : public ElementVector_Empty {
  public:
+  static constexpr ElemVecType evtype = ElemVecType::Serial;
   ElementVector_Serial(ElementMesh<Basis>& mesh, VecType& vec) : mesh(mesh), vec(vec) {}
 
   // Required DOF container object
-  class FEDof : public base_t::template FEDofBase<T, FEDof> {
+  class FEDof {
    public:
-    FEDof(index_t elem, base_t& elem_vec) { std::fill(dof, dof + Basis::ndof, T(0.0)); }
+    FEDof(index_t elem, const ElementVector_Serial& elem_vec) {
+      std::fill(dof, dof + Basis::ndof, T(0.0));
+    }
 
     /**
      * @brief Get a reference to the underlying element data
@@ -223,9 +222,6 @@ class ElementVector_Serial
     T dof[Basis::ndof];
   };
 
- private:
-  using base_fedof_t = typename base_t::template FEDofBase<T, FEDof>;
-
  public:
   /**
    * @brief Get the number of elements
@@ -238,9 +234,9 @@ class ElementVector_Serial
    * @param elem the element index
    * @param dof the object that stores a reference to the degrees of freedom
    */
-  void get_element_values(index_t elem, base_fedof_t& dof) {
+  void get_element_values(index_t elem, FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
-      operate_element_values_<ELEM_VALS_OP::GET, 0>(elem, dof);
+      operate_element_values<ELEM_VALS_OP::GET, 0>(elem, dof);
     }
   }
 
@@ -251,9 +247,9 @@ class ElementVector_Serial
    * @param dof the FEDof object that stores a reference to the degrees of
    * freedom
    */
-  void add_element_values(index_t elem, const base_fedof_t& dof) {
+  void add_element_values(index_t elem, const FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
-      operate_element_values_<ELEM_VALS_OP::ADD, 0>(elem, dof);
+      operate_element_values<ELEM_VALS_OP::ADD, 0>(elem, dof);
     }
   }
 
@@ -264,9 +260,9 @@ class ElementVector_Serial
    * @param dof the FEDof object that stores a reference to the degrees of
    * freedom
    */
-  void set_element_values(index_t elem, const base_fedof_t& dof) {
+  void set_element_values(index_t elem, const FEDof& dof) {
     if constexpr (Basis::nbasis > 0) {
-      operate_element_values_<ELEM_VALS_OP::SET, 0>(elem, dof);
+      operate_element_values<ELEM_VALS_OP::SET, 0>(elem, dof);
     }
   }
 
@@ -274,9 +270,9 @@ class ElementVector_Serial
   enum class ELEM_VALS_OP { GET, ADD, SET };
 
   template <ELEM_VALS_OP op, index_t basis>
-  void operate_element_values_(index_t elem,
-                               typename std::conditional<op == ELEM_VALS_OP::GET, base_fedof_t,
-                                                         const base_fedof_t>::type& dof) {
+  void operate_element_values(
+      index_t elem,
+      typename std::conditional<op == ELEM_VALS_OP::GET, FEDof, const FEDof>::type& dof) {
     for (index_t i = 0; i < Basis::template get_ndof<basis>(); i++) {
       const int sign = mesh.template get_global_dof_sign<basis>(elem, i);
       const index_t dof_index = mesh.template get_global_dof<basis>(elem, i);
@@ -289,7 +285,7 @@ class ElementVector_Serial
       }
     }
     if constexpr (basis + 1 < Basis::nbasis) {
-      operate_element_values_<op, basis + 1>(elem, dof);
+      operate_element_values<op, basis + 1>(elem, dof);
     }
   }
 
@@ -311,33 +307,26 @@ class ElementVector_Serial
  * @tparam VecType type of the solution vector, e.g. SolutionVector<...>
  */
 template <typename T, class Basis, class VecType>
-class ElementVector_Parallel
-    : public ElementVectorBase<ElemVecType::Parallel, ElementVector_Parallel<T, Basis, VecType>> {
- private:
-  using base_t =
-      ElementVectorBase<ElemVecType::Parallel, ElementVector_Parallel<T, Basis, VecType>>;
-  using this_t = ElementVector_Parallel<T, Basis, VecType>;
+class ElementVector_Parallel : public ElementVector_Empty {
   using ElemVecArray_t = MultiArrayNew<T * [Basis::ndof]>;
 
  public:
+  static constexpr ElemVecType evtype = ElemVecType::Parallel;
   ElementVector_Parallel(ElementMesh<Basis>& mesh, VecType& vec)
       : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", mesh.get_num_elements()) {}
 
-  class FEDof : public base_t::template FEDofBase<T, FEDof> {
+  class FEDof {
    public:
-    FEDof(index_t elem, base_t& elem_vec)
-        : elem(elem), elem_vec_array(static_cast<this_t*>(&elem_vec)->elem_vec_array) {}
+    FEDof(index_t elem, const ElementVector_Parallel& elem_vec)
+        : elem(elem), elem_vec_array(elem_vec.elem_vec_array) {}
 
     T& operator[](const int index) { return elem_vec_array(elem, index); }
     const T& operator[](const int index) const { return elem_vec_array(elem, index); }
 
    private:
     const index_t elem;
-    ElemVecArray_t& elem_vec_array;
+    ElemVecArray_t elem_vec_array;
   };
-
- private:
-  using base_fedof_t = typename base_t::template FEDofBase<T, FEDof>;
 
  public:
   /**
@@ -354,9 +343,15 @@ class ElementVector_Parallel
    * @brief Populate element-view data from global data for all elements
    */
   void get_values() {
-    for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    auto loop_body = A2D_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::GET, Basis::nbasis>(elem);
-    }
+    };
+
+    // for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    //   loop_body(elem);
+    // }
+
+    Kokkos::parallel_for("get_values", mesh.get_num_elements(), loop_body);
   }
 
   /**
@@ -364,18 +359,29 @@ class ElementVector_Parallel
    * Note: Data consistency is assumed
    */
   void set_values() {
-    for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    auto loop_body = A2D_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::SET, Basis::nbasis>(elem);
-    }
+    };
+
+    // for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    //   loop_body(elem);
+    // }
+
+    Kokkos::parallel_for("set_values", mesh.get_num_elements(), loop_body);
   }
 
   /**
    * @brief Add global data from element-view data for all elements
    */
   void add_values() {
-    for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    auto loop_body = A2D_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::ADD, Basis::nbasis>(elem);
-    }
+    };
+
+    // for (index_t elem = 0; elem < mesh.get_num_elements(); elem++) {
+    //   loop_body(elem);
+    // }
+    Kokkos::parallel_for("add_values", mesh.get_num_elements(), loop_body);
   }
 
  private:

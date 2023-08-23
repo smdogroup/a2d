@@ -213,7 +213,7 @@ class PoissonForSphereError {
   PoissonForSphereError(T R = 1.0) : R(R) {}
 
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     T u = (s.template get<0>()).get_value();
 
     // Compute the right-hand-side

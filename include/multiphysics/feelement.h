@@ -125,7 +125,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  T integrate(Integrand& integrand,
+  T integrate(const Integrand& integrand,
               ElementVectorBase<evtype, DataElemVec>& elem_data,
               ElementVectorBase<evtype, GeoElemVec>& elem_geo,
               ElementVectorBase<evtype, ElemVec>& elem_sol) {
@@ -198,7 +198,8 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  T max(Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
+  T max(const Integrand& integrand,
+        ElementVectorBase<evtype, DataElemVec>& elem_data,
         ElementVectorBase<evtype, GeoElemVec>& elem_geo,
         ElementVectorBase<evtype, ElemVec>& elem_sol) {
     const index_t num_elements = elem_geo.get_num_elements();
@@ -277,7 +278,8 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class DataDerivElemVec>
   void add_data_derivative(
-      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      const Integrand& integrand,
+      ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
@@ -366,7 +368,8 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemAdjVec, class DataDerivElemVec>
   void add_adjoint_residual_data_derivative(
-      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      const Integrand& integrand,
+      ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
@@ -563,7 +566,8 @@ class FiniteElement {
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
   void add_jacobian_vector_product(
-      Integrand& integrand, ElementVectorBase<evtype, DataElemVec>& elem_data,
+      const Integrand& integrand,
+      ElementVectorBase<evtype, DataElemVec>& elem_data,
       ElementVectorBase<evtype, GeoElemVec>& elem_geo,
       ElementVectorBase<evtype, ElemVec>& elem_sol,
       ElementVectorBase<evtype, ElemVec>& elem_xvec,
@@ -671,7 +675,7 @@ class FiniteElement {
    */
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemMat>
-  void add_jacobian(Integrand& integrand,
+  void add_jacobian(const Integrand& integrand,
                     ElementVectorBase<evtype, DataElemVec>& elem_data,
                     ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                     ElementVectorBase<evtype, ElemVec>& elem_sol,
@@ -767,7 +771,7 @@ class FiniteElement {
 
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec, class ElemMat>
-  void add_jacobian_new(Integrand& integrand,
+  void add_jacobian_new(const Integrand& integrand,
                         ElementVectorBase<evtype, DataElemVec>& elem_data,
                         ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                         ElementVectorBase<evtype, ElemVec>& elem_sol,
@@ -835,12 +839,12 @@ class FiniteElement {
   }
 
   template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_geo_derivative(Integrand& integrand, DataElemVec& elem_data,
+  void add_geo_derivative(const Integrand& integrand, DataElemVec& elem_data,
                           GeoElemVec& elem_geo, ElemVec& elem_sol,
                           GeoElemVec& geo_deriv) {}
 
   template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_adjoint_residual_geo_derivative(Integrand& integrand,
+  void add_adjoint_residual_geo_derivative(const Integrand& integrand,
                                            DataElemVec& elem_data,
                                            GeoElemVec& elem_geo,
                                            ElemVec& elem_sol, ElemVec& elem_adj,
@@ -868,7 +872,7 @@ class MatrixFree {
 
   template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
             class ElemVec>
-  void initialize(Integrand& integrand,
+  void initialize(const Integrand& integrand,
                   ElementVectorBase<evtype, DataElemVec>& elem_data,
                   ElementVectorBase<evtype, GeoElemVec>& elem_geo,
                   ElementVectorBase<evtype, ElemVec>& elem_sol) {

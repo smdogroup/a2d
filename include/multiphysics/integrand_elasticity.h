@@ -528,7 +528,7 @@ class IntegrandTopoVonMisesKS {
    * @return T The integrand contribution
    */
   T max(const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s) {
+        const FiniteElementSpace& s) const {
     const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
     SymMat<T, dim> E, S;
     T trS, trSS;
@@ -563,7 +563,7 @@ class IntegrandTopoVonMisesKS {
    * @return T The integrand contribution
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
     SymMat<T, dim> E, S;
     T trS, trSS;

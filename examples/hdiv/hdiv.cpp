@@ -166,7 +166,7 @@ class HelmholtzForSphereError {
   HelmholtzForSphereError() {}
 
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) {
+              const FiniteElementSpace& s) const {
     T u = (s.template get<1>()).get_value();
 
     // Compute the right-hand-side

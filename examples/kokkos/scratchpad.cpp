@@ -488,6 +488,7 @@ struct Alpha {
 };
 
 void test_cuda_axpy(int argc, char* argv[]) {
+#ifdef KOKKOS_ENABLE_CUDA
   using ViewDevice_t = Kokkos::View<T*, Kokkos::LayoutRight, Kokkos::CudaSpace>;
   if (argc == 1) {
     std::printf("axpy\nusage: ./scratchpad N, where mat size = 2^N\n");
@@ -566,6 +567,7 @@ void test_cuda_axpy(int argc, char* argv[]) {
   }
 
   printf("Maximum error: %20.10e\n", max_err);
+#endif
 }
 
 int main(int argc, char* argv[]) {

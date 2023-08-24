@@ -2,8 +2,10 @@
 #define A2D_VEC_OPS_H
 
 #include "a2dobjs.h"
-#include "a2dtypes.h"
 #include "a2dveccore3d.h"
+#include "ad/a2dmat.h"
+#include "ad/a2dscalar.h"
+#include "ad/a2dvec.h"
 
 namespace A2D {
 

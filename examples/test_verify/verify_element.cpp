@@ -1,5 +1,7 @@
 #include "a2dobjs.h"
-#include "a2dtypes.h"
+#include "ad/a2dmat.h"
+#include "ad/a2dscalar.h"
+#include "ad/a2dvec.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"

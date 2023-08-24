@@ -110,7 +110,7 @@ class ElementVector_Empty {
   // All implementations should have FEDof and get_num_elements
   class FEDof {
    public:
-    FEDof(index_t elem, ElementVector_Empty elem_vec) {}
+    KOKKOS_FUNCTION FEDof(index_t elem, ElementVector_Empty elem_vec) {}
   };
 
   index_t get_num_elements() const { return 0; }
@@ -123,11 +123,11 @@ class ElementVector_Empty {
 
   // Serial implementation should have these three methods
   template <class Dof>
-  void get_element_values(index_t elem, Dof& dof) const {}
+  KOKKOS_FUNCTION void get_element_values(index_t elem, Dof& dof) const {}
   template <class Dof>
-  void add_element_values(index_t elem, const Dof& dof) const {}
+  KOKKOS_FUNCTION void add_element_values(index_t elem, const Dof& dof) const {}
   template <class Dof>
-  void set_element_values(index_t elem, const Dof& dof) const {}
+  KOKKOS_FUNCTION void set_element_values(index_t elem, const Dof& dof) const {}
 };
 
 /**
@@ -257,11 +257,13 @@ class ElementVector_Parallel : public ElementVector_Empty {
 
   class FEDof {
    public:
-    FEDof(index_t elem, const ElementVector_Parallel& elem_vec)
+    KOKKOS_FUNCTION FEDof(index_t elem, const ElementVector_Parallel& elem_vec)
         : elem(elem), elem_vec_array(elem_vec.elem_vec_array) {}
 
-    T& operator[](const int index) { return elem_vec_array(elem, index); }
-    const T& operator[](const int index) const { return elem_vec_array(elem, index); }
+    KOKKOS_FUNCTION T& operator[](const int index) { return elem_vec_array(elem, index); }
+    KOKKOS_FUNCTION const T& operator[](const int index) const {
+      return elem_vec_array(elem, index);
+    }
 
    private:
     const index_t elem;
@@ -272,7 +274,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
   /**
    * @brief Get number of elements
    */
-  KOKKOS_FUNCTION index_t get_num_elements() const { return mesh.get_num_elements(); }
+  index_t get_num_elements() const { return mesh.get_num_elements(); }
 
   /**
    * @brief Initialize local dof values to zero

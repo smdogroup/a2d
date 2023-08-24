@@ -14,18 +14,13 @@ namespace A2D {
 template <typename T>
 class SolutionVector {
  public:
-  KOKKOS_FUNCTION SolutionVector(index_t ndof)
-      : ndof(ndof), array("array", ndof) {
-    zero();
-  }
-  KOKKOS_FUNCTION T& operator[](index_t index) const {
-    return array(index);
-  }
+  SolutionVector(index_t ndof) : ndof(ndof), array("array", ndof) { zero(); }
+  KOKKOS_FUNCTION T& operator[](index_t index) const { return array(index); }
   // KOKKOS_FUNCTION const T& operator[](index_t index) const {
   //   return array(index);
   // }
 
-  KOKKOS_FUNCTION index_t get_num_dof() const { return ndof; }
+  index_t get_num_dof() const { return ndof; }
 
   KOKKOS_FUNCTION void zero() { BLAS::zero(array); }
   KOKKOS_FUNCTION void fill(T val) { BLAS::fill(array, val); }

@@ -15,7 +15,7 @@ template <typename T, index_t dim>
 class InteriorMapping {
  public:
   template <class FiniteElementGeometry>
-  InteriorMapping(const FiniteElementGeometry& geo, T& detJ)
+  KOKKOS_FUNCTION InteriorMapping(const FiniteElementGeometry& geo, T& detJ)
       : J(geo.template get<0>().get_grad()), detJ(detJ) {
     // Compute the inverse of the transformation
     MatInverse(J, Jinv);
@@ -25,18 +25,20 @@ class InteriorMapping {
   }
 
   template <class FiniteElementSpace>
-  void transform(const FiniteElementSpace& in, FiniteElementSpace& out) {
+  KOKKOS_FUNCTION void transform(const FiniteElementSpace& in,
+                                 FiniteElementSpace& out) {
     in.transform(detJ, J, Jinv, out);
   }
 
   template <class FiniteElementSpace>
-  void rtransform(const FiniteElementSpace& in, FiniteElementSpace& out) {
+  KOKKOS_FUNCTION void rtransform(const FiniteElementSpace& in,
+                                  FiniteElementSpace& out) {
     in.rtransform(detJ, J, Jinv, out);
   }
 
   // TODO: maybe the best way is to put jtransform in FESpace?
   template <class FiniteElementSpace, class QMatType>
-  void jtransform(const QMatType& mat_in, QMatType& mat_out) {
+  KOKKOS_FUNCTION void jtransform(const QMatType& mat_in, QMatType& mat_out) {
     constexpr index_t ncomp = QMatType::nrows;
 
     FiniteElementSpace pref, p, Jp;
@@ -77,7 +79,8 @@ class SurfaceMapping {
   static const index_t dim_surf = dim - 1;
 
   template <class FiniteElementGeometry>
-  SurfaceMapping(const FiniteElementGeometry& geo, T& detJ) : detJ(detJ) {
+  KOKKOS_FUNCTION SurfaceMapping(const FiniteElementGeometry& geo, T& detJ)
+      : detJ(detJ) {
     const Mat<T, dim, dim>& Jxi = geo.template get<0>().get_grad();
     Vec<T, dim> x, y, nA;
     if constexpr (dim == 2) {
@@ -104,12 +107,14 @@ class SurfaceMapping {
   }
 
   template <class FiniteElementSpace>
-  void transform(const FiniteElementSpace& in, FiniteElementSpace& out) {
+  KOKKOS_FUNCTION void transform(const FiniteElementSpace& in,
+                                 FiniteElementSpace& out) {
     in.transform(detJ, J, Jinv, out);
   }
 
   template <class FiniteElementSpace>
-  void rtransform(const FiniteElementSpace& in, FiniteElementSpace& out) {
+  KOKKOS_FUNCTION void rtransform(const FiniteElementSpace& in,
+                                  FiniteElementSpace& out) {
     in.rtransform(detJ, J, Jinv, out);
   }
 

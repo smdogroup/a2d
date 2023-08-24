@@ -14,12 +14,14 @@ const double TrianglePts3[] = {1.0 / 6.0, 1.0 / 6.0, 2.0 / 3.0,
 
 class TriQuadrature3 {
  public:
-  static index_t get_num_points() { return 3; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() { return 3; }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     pt[0] = TrianglePts3[2 * n];
     pt[1] = TrianglePts3[2 * n + 1];
   }
-  static double get_weight(const index_t n) { return TriangleWts3[n]; }
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
+    return TriangleWts3[n];
+  }
 };
 
 template <index_t order>
@@ -31,13 +33,13 @@ class LineGaussQuadrature {
   /// @brief The total number of quadrature points
   static const index_t num_quad_points = order;
 
-  static index_t get_num_points() { return order; }
+  KOKKOS_FUNCTION static index_t get_num_points() { return order; }
 
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n];
   }
@@ -63,7 +65,8 @@ class QuadGaussQuadrature {
    * @param pt The point along the direction
    * @return The quadrature point along the direction
    */
-  static double get_tensor_point(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_point(const index_t dim,
+                                                 const index_t pt) {
     const double* pts = get_gauss_quadrature_pts<order>();
     return pts[pt];
   }
@@ -75,7 +78,8 @@ class QuadGaussQuadrature {
    * @param pt The point along the direction
    * @return The weight factor along the direction
    */
-  static double get_tensor_weight(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_weight(const index_t dim,
+                                                  const index_t pt) {
     const double* wts = get_gauss_quadrature_wts<order>();
     return wts[pt];
   }
@@ -87,17 +91,18 @@ class QuadGaussQuadrature {
    * @param q1 Quadrature index along 1-direction
    * @return The quadrature index
    */
-  static index_t get_tensor_index(const index_t q0, const index_t q1) {
+  KOKKOS_FUNCTION static index_t get_tensor_index(const index_t q0,
+                                                  const index_t q1) {
     return q0 + order * q1;
   }
 
-  static index_t get_num_points() { return order * order; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() { return order * order; }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[n / order];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[n / order];
   }
@@ -124,7 +129,8 @@ class HexGaussQuadrature {
    * @param pt The point along the direction
    * @return The quadrature point along the direction
    */
-  static double get_tensor_point(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_point(const index_t dim,
+                                                 const index_t pt) {
     const double* pts = get_gauss_quadrature_pts<order>();
     return pts[pt];
   }
@@ -136,7 +142,8 @@ class HexGaussQuadrature {
    * @param pt The point along the direction
    * @return The weight factor along the direction
    */
-  static double get_tensor_weight(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_weight(const index_t dim,
+                                                  const index_t pt) {
     const double* wts = get_gauss_quadrature_wts<order>();
     return wts[pt];
   }
@@ -149,19 +156,22 @@ class HexGaussQuadrature {
    * @param q2 Quadrature index along 2-direction
    * @return The quadrature index
    */
-  static index_t get_tensor_index(const index_t q0, const index_t q1,
-                                  const index_t q2) {
+  KOKKOS_FUNCTION static index_t get_tensor_index(const index_t q0,
+                                                  const index_t q1,
+                                                  const index_t q2) {
     return q0 + order * (q1 + order * q2);
   }
 
-  static index_t get_num_points() { return order * order * order; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() {
+    return order * order * order;
+  }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];
@@ -177,12 +187,12 @@ class LineGaussLobattoQuadrature {
   /// @brief The total number of quadrature points
   static const index_t num_quad_points = order;
 
-  static index_t get_num_points() { return order; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() { return order; }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n];
   }
@@ -208,7 +218,8 @@ class QuadGaussLobattoQuadrature {
    * @param pt The point along the direction
    * @return The quadrature point along the direction
    */
-  static double get_tensor_point(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_point(const index_t dim,
+                                                 const index_t pt) {
     const double* pts = get_gauss_lobatto_pts<order>();
     return pts[pt];
   }
@@ -220,7 +231,8 @@ class QuadGaussLobattoQuadrature {
    * @param pt The point along the direction
    * @return The weight factor along the direction
    */
-  static double get_tensor_weight(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_weight(const index_t dim,
+                                                  const index_t pt) {
     const double* wts = get_gauss_lobatto_wts<order>();
     return wts[pt];
   }
@@ -232,17 +244,18 @@ class QuadGaussLobattoQuadrature {
    * @param q1 Quadrature index along 1-direction
    * @return The quadrature index
    */
-  static index_t get_tensor_index(const index_t q0, const index_t q1) {
+  KOKKOS_FUNCTION static index_t get_tensor_index(const index_t q0,
+                                                  const index_t q1) {
     return q0 + order * q1;
   }
 
-  static index_t get_num_points() { return order * order; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() { return order * order; }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[n / order];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n % order] * wts[n / order];
   }
@@ -269,7 +282,8 @@ class HexGaussLobattoQuadrature {
    * @param pt The point along the direction
    * @return The quadrature point along the direction
    */
-  static double get_tensor_point(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_point(const index_t dim,
+                                                 const index_t pt) {
     const double* pts = get_gauss_lobatto_pts<order>();
     return pts[pt];
   }
@@ -281,7 +295,8 @@ class HexGaussLobattoQuadrature {
    * @param pt The point along the direction
    * @return The weight factor along the direction
    */
-  static double get_tensor_weight(const index_t dim, const index_t pt) {
+  KOKKOS_FUNCTION static double get_tensor_weight(const index_t dim,
+                                                  const index_t pt) {
     const double* wts = get_gauss_lobatto_wts<order>();
     return wts[pt];
   }
@@ -294,19 +309,22 @@ class HexGaussLobattoQuadrature {
    * @param q2 Quadrature index along 2-direction
    * @return The quadrature index
    */
-  static index_t get_tensor_index(const index_t q0, const index_t q1,
-                                  const index_t q2) {
+  KOKKOS_FUNCTION static index_t get_tensor_index(const index_t q0,
+                                                  const index_t q1,
+                                                  const index_t q2) {
     return q0 + order * (q1 + order * q2);
   }
 
-  static index_t get_num_points() { return order * order * order; }
-  static void get_point(const index_t n, double pt[]) {
+  KOKKOS_FUNCTION static index_t get_num_points() {
+    return order * order * order;
+  }
+  KOKKOS_FUNCTION static void get_point(const index_t n, double pt[]) {
     const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
-  static double get_weight(const index_t n) {
+  KOKKOS_FUNCTION static double get_weight(const index_t n) {
     const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];

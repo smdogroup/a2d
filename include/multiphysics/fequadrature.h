@@ -34,11 +34,11 @@ class LineGaussQuadrature {
   static index_t get_num_points() { return order; }
 
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n];
   }
 };
@@ -64,7 +64,7 @@ class QuadGaussQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    const double* pts = get_gauss_quadrature_pts<order>();
     return pts[pt];
   }
 
@@ -76,7 +76,7 @@ class QuadGaussQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    const double* wts = get_gauss_quadrature_wts<order>();
     return wts[pt];
   }
 
@@ -93,12 +93,12 @@ class QuadGaussQuadrature {
 
   static index_t get_num_points() { return order * order; }
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[n / order];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[n / order];
   }
 };
@@ -125,7 +125,7 @@ class HexGaussQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    const double* pts = get_gauss_quadrature_pts<order>();
     return pts[pt];
   }
 
@@ -137,7 +137,7 @@ class HexGaussQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    const double* wts = get_gauss_quadrature_wts<order>();
     return wts[pt];
   }
 
@@ -156,13 +156,13 @@ class HexGaussQuadrature {
 
   static index_t get_num_points() { return order * order * order; }
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    const double* pts = get_gauss_quadrature_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    const double* wts = get_gauss_quadrature_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];
   }
@@ -179,11 +179,11 @@ class LineGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order; }
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n];
   }
 };
@@ -209,7 +209,7 @@ class QuadGaussLobattoQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
     return pts[pt];
   }
 
@@ -221,7 +221,7 @@ class QuadGaussLobattoQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    const double* wts = get_gauss_lobatto_wts<order>();
     return wts[pt];
   }
 
@@ -238,12 +238,12 @@ class QuadGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order * order; }
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[n / order];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n % order] * wts[n / order];
   }
 };
@@ -270,7 +270,7 @@ class HexGaussLobattoQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
     return pts[pt];
   }
 
@@ -282,7 +282,7 @@ class HexGaussLobattoQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    const double* wts = get_gauss_lobatto_wts<order>();
     return wts[pt];
   }
 
@@ -301,13 +301,13 @@ class HexGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order * order * order; }
   static void get_point(const index_t n, double pt[]) {
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
     pt[0] = pts[n % order];
     pt[1] = pts[(n % (order * order)) / order];
     pt[2] = pts[n / (order * order)];
   }
   static double get_weight(const index_t n) {
-    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    const double* wts = get_gauss_lobatto_wts<order>();
     return wts[n % order] * wts[(n % (order * order)) / order] *
            wts[n / (order * order)];
     return 0.0;

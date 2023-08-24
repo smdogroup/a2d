@@ -346,7 +346,7 @@ class LagrangeH1HypercubeBasis {
    */
   A2D_INLINE_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+     const double* pts = get_interpolation_pts<order, interp_type>();
     index_t n = index / C;
 
     if constexpr (dim == 1) {
@@ -1144,7 +1144,7 @@ class LagrangeL2HypercubeBasis {
    */
   A2D_INLINE_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+     const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
 

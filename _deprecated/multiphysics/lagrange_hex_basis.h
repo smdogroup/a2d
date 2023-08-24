@@ -204,7 +204,7 @@ class LagrangeH1HexBasis {
    */
   static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+     const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];
@@ -790,7 +790,7 @@ class LagrangeL2HexBasis {
    */
   static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+     const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
     pt[0] = pts[n % order];

@@ -322,7 +322,7 @@ class FEBasis {
    */
   template <class Quadrature, class FEDof, class FiniteElementSpace>
   KOKKOS_FUNCTION static void interp_basis(index_t pt, const FEDof& dof,
-                                               FiniteElementSpace& s) {
+                                           FiniteElementSpace& s) {
     // Evaluate the basis functions
     double N[basis_size];
     eval_basis<Quadrature, Basis...>(pt, N);
@@ -339,9 +339,8 @@ class FEBasis {
    * @param dof The degree of freedom object that values are added to
    */
   template <class Quadrature, class FiniteElementSpace, class FEDof>
-  KOKKOS_FUNCTION static void add_basis(index_t pt,
-                                            const FiniteElementSpace& s,
-                                            FEDof& dof) {
+  KOKKOS_FUNCTION static void add_basis(index_t pt, const FiniteElementSpace& s,
+                                        FEDof& dof) {
     // Evaluate the basis functions
     double N[basis_size];
     eval_basis<Quadrature, Basis...>(pt, N);
@@ -361,8 +360,7 @@ class FEBasis {
    * @param mat The element Jacobian matrix
    */
   template <class Quadrature, class QMat, class Mat>
-  KOKKOS_FUNCTION static void add_outer(index_t pt, const QMat& jac,
-                                            Mat& mat) {
+  KOKKOS_FUNCTION static void add_outer(index_t pt, const QMat& jac, Mat& mat) {
     // Evaluate the basis functions
     double N[basis_size];
     eval_basis<Quadrature, Basis...>(pt, N);
@@ -380,8 +378,8 @@ class FEBasis {
    * @return The number of degrees of freedom
    */
   KOKKOS_FUNCTION static index_t get_entity_ndof(index_t basis,
-                                                     ET::ElementEntity entity,
-                                                     index_t index) {
+                                                 ET::ElementEntity entity,
+                                                 index_t index) {
     if constexpr (sizeof...(Basis) == 0) {
       return 0;
     } else {
@@ -400,10 +398,10 @@ class FEBasis {
    */
   template <class ElemDof, class EntityDof>
   KOKKOS_FUNCTION static void get_entity_dof(index_t basis,
-                                                 ET::ElementEntity entity,
-                                                 index_t index,
-                                                 const ElemDof& element_dof,
-                                                 EntityDof& entity_dof) {
+                                             ET::ElementEntity entity,
+                                             index_t index,
+                                             const ElemDof& element_dof,
+                                             EntityDof& entity_dof) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
@@ -424,10 +422,10 @@ class FEBasis {
    */
   template <class EntityDof, class ElemDof>
   KOKKOS_FUNCTION static void set_entity_dof(index_t basis,
-                                                 ET::ElementEntity entity,
-                                                 index_t index, index_t orient,
-                                                 const EntityDof& entity_dof,
-                                                 ElemDof& element_dof) {
+                                             ET::ElementEntity entity,
+                                             index_t index, index_t orient,
+                                             const EntityDof& entity_dof,
+                                             ElemDof& element_dof) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
@@ -445,15 +443,16 @@ class FEBasis {
    * @param orient Orientation flag indicating the relative orientation
    * @param elem_signs Degrees of freedom for this element
    */
+  template <class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(index_t basis,
-                                                   ET::ElementEntity entity,
-                                                   index_t index,
-                                                   index_t orient,
-                                                   int elem_signs[]) {
+                                               ET::ElementEntity entity,
+                                               index_t index, index_t orient,
+                                               ElemSign& elem_signs) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
-      set_entity_signs<0, Basis...>(basis, entity, index, orient, elem_signs);
+      set_entity_signs<0, ElemSign, Basis...>(basis, entity, index, orient,
+                                              elem_signs);
     }
   }
 
@@ -480,8 +479,8 @@ class FEBasis {
    */
   template <class HOrderDof, class LOrderDof>
   KOKKOS_FUNCTION static void get_lorder_dof(const index_t n,
-                                                 const HOrderDof& hdof,
-                                                 LOrderDof& ldof) {
+                                             const HOrderDof& hdof,
+                                             LOrderDof& ldof) {
     if constexpr (sizeof...(Basis) > 0) {
       get_lorder_dof_<0, 0, HOrderDof, LOrderDof, Basis...>(n, hdof, ldof);
     }
@@ -496,8 +495,8 @@ class FEBasis {
    * @param lorder_signs The output signs for the low-order element
    */
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                                   const int horder_signs[],
-                                                   int lorder_signs[]) {
+                                               const int horder_signs[],
+                                               int lorder_signs[]) {
     if constexpr (sizeof...(Basis) > 0) {
       get_lorder_signs_<0, 0, Basis...>(n, horder_signs, lorder_signs);
     }
@@ -608,9 +607,8 @@ class FEBasis {
   // Interpolate with the basis functions evaluated
   template <class FEDof, class FiniteElementSpace, index_t index, class First,
             class... Remain>
-  KOKKOS_FUNCTION static void interp_basis_(const double N[],
-                                                const FEDof& dof,
-                                                FiniteElementSpace& s) {
+  KOKKOS_FUNCTION static void interp_basis_(const double N[], const FEDof& dof,
+                                            FiniteElementSpace& s) {
     T value[First::ncomp];
     for (index_t icomp = 0; icomp < First::ncomp; icomp++) {
       value[icomp] = 0.0;
@@ -636,16 +634,15 @@ class FEBasis {
   }
 
   template <class FEDof, class FiniteElementSpace, index_t index>
-  KOKKOS_FUNCTION static void interp_basis_(const double N[],
-                                                const FEDof& dof,
-                                                FiniteElementSpace& s) {}
+  KOKKOS_FUNCTION static void interp_basis_(const double N[], const FEDof& dof,
+                                            FiniteElementSpace& s) {}
 
   // Interpolate with the basis functions evaluated
   template <class FiniteElementSpace, class FEDof, index_t index, class First,
             class... Remain>
   KOKKOS_FUNCTION static void add_basis_(const double N[],
-                                             const FiniteElementSpace& s,
-                                             FEDof& dof) {
+                                         const FiniteElementSpace& s,
+                                         FEDof& dof) {
     T values[First::ncomp];
     for (index_t icomp = 0; icomp < First::ncomp; icomp++) {
       values[icomp] = s[get_comp_offset<index>() + icomp];
@@ -668,12 +665,12 @@ class FEBasis {
 
   template <class FiniteElementSpace, class FEDof, index_t index>
   KOKKOS_FUNCTION static void add_basis_(const double N[],
-                                             const FiniteElementSpace& s,
-                                             FEDof& dof) {}
+                                         const FiniteElementSpace& s,
+                                         FEDof& dof) {}
 
   template <class QMat, class Mat, index_t index, class First, class... Remain>
   KOKKOS_FUNCTION static void add_outer_(const double N0[], const QMat& jac,
-                                             Mat& mat) {
+                                         Mat& mat) {
     const double* N = &N0[get_basis_size_offset<index>()];
 
     index_t idof = get_dof_offset<index>();
@@ -703,12 +700,12 @@ class FEBasis {
 
   template <class QMat, class Mat, index_t index>
   KOKKOS_FUNCTION static void add_outer_(const double N0[], const QMat& jac,
-                                             Mat& mat) {}
+                                         Mat& mat) {}
 
   template <class Mat, index_t index, class First, class... Remain>
   KOKKOS_FUNCTION static void add_outer_row_(const index_t idof,
-                                                 const double N[],
-                                                 const T values[], Mat& mat) {
+                                             const double N[], const T values[],
+                                             Mat& mat) {
     index_t jdof = get_dof_offset<index>();
     for (index_t idx = 0; idx < First::ndof_per_stride; idx++) {
       const T* v = &values[get_comp_offset<index>()];
@@ -731,13 +728,13 @@ class FEBasis {
 
   template <class Mat, index_t index>
   KOKKOS_FUNCTION static void add_outer_row_(const index_t idof,
-                                                 const double N[],
-                                                 const T values[], Mat& mat) {}
+                                             const double N[], const T values[],
+                                             Mat& mat) {}
 
   template <index_t r, class First, class... Remain>
   KOKKOS_FUNCTION static index_t get_entity_ndof(index_t basis,
-                                                     ET::ElementEntity entity,
-                                                     index_t index) {
+                                                 ET::ElementEntity entity,
+                                                 index_t index) {
     if (basis == r) {
       return First::get_entity_ndof(entity, index);
     }
@@ -751,10 +748,10 @@ class FEBasis {
   template <index_t r, class ElemDof, class EntityDof, class First,
             class... Remain>
   KOKKOS_FUNCTION static void get_entity_dof(index_t basis,
-                                                 ET::ElementEntity entity,
-                                                 index_t index,
-                                                 const ElemDof& element_dof,
-                                                 EntityDof& entity_dof) {
+                                             ET::ElementEntity entity,
+                                             index_t index,
+                                             const ElemDof& element_dof,
+                                             EntityDof& entity_dof) {
     if (basis == r) {
       First::template get_entity_dof<get_dof_offset<r>(), ElemDof, EntityDof>(
           entity, index, element_dof, entity_dof);
@@ -771,10 +768,10 @@ class FEBasis {
   template <index_t r, class EntityDof, class ElemDof, class First,
             class... Remain>
   KOKKOS_FUNCTION static void set_entity_dof(index_t basis,
-                                                 ET::ElementEntity entity,
-                                                 index_t index, index_t orient,
-                                                 const EntityDof& entity_dof,
-                                                 ElemDof& element_dof) {
+                                             ET::ElementEntity entity,
+                                             index_t index, index_t orient,
+                                             const EntityDof& entity_dof,
+                                             ElemDof& element_dof) {
     if (basis == r) {
       First::template set_entity_dof<get_dof_offset<r>(), EntityDof, ElemDof>(
           entity, index, orient, entity_dof, element_dof);
@@ -788,22 +785,21 @@ class FEBasis {
     }
   }
 
-  template <index_t r, class First, class... Remain>
+  template <index_t r, class ElemSign, class First, class... Remain>
   KOKKOS_FUNCTION static void set_entity_signs(index_t basis,
-                                                   ET::ElementEntity entity,
-                                                   index_t index,
-                                                   index_t orient,
-                                                   int elem_signs[]) {
+                                               ET::ElementEntity entity,
+                                               index_t index, index_t orient,
+                                               ElemSign& elem_signs) {
     if (basis == r) {
-      First::template set_entity_signs<get_dof_offset<r>()>(entity, index,
-                                                            orient, elem_signs);
+      First::template set_entity_signs<get_dof_offset<r>(), ElemSign>(
+          entity, index, orient, elem_signs);
     }
     if constexpr (sizeof...(Remain) == 0) {
-      First::template set_entity_signs<get_dof_offset<r>()>(entity, index,
-                                                            orient, elem_signs);
+      First::template set_entity_signs<get_dof_offset<r>(), ElemSign>(
+          entity, index, orient, elem_signs);
     } else {
-      set_entity_signs<r + 1, Remain...>(basis, entity, index, orient,
-                                         elem_signs);
+      set_entity_signs<r + 1, ElemSign, Remain...>(basis, entity, index, orient,
+                                                   elem_signs);
     }
   }
 
@@ -870,8 +866,8 @@ class FEBasis {
   template <index_t hoffset, index_t loffset, class HOrderDof, class LOrderDof,
             class First, class... Remain>
   KOKKOS_FUNCTION static void get_lorder_dof_(const index_t n,
-                                                  const HOrderDof& hdof,
-                                                  LOrderDof& ldof) {
+                                              const HOrderDof& hdof,
+                                              LOrderDof& ldof) {
     First::template get_lorder_dof<hoffset, loffset, HOrderDof, LOrderDof>(
         n, hdof, ldof);
     if constexpr (sizeof...(Remain) > 0) {
@@ -882,8 +878,8 @@ class FEBasis {
 
   template <index_t hoffset, index_t loffset, class First, class... Remain>
   KOKKOS_FUNCTION static void get_lorder_signs_(const index_t n,
-                                                    const int horder_signs[],
-                                                    int lorder_signs[]) {
+                                                const int horder_signs[],
+                                                int lorder_signs[]) {
     First::template get_lorder_signs<hoffset, loffset>(n, horder_signs,
                                                        lorder_signs);
     if constexpr (sizeof...(Remain) > 0) {

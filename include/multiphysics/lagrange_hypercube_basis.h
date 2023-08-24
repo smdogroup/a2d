@@ -224,10 +224,10 @@ class LagrangeH1HypercubeBasis {
    * @param orient Orientation of the entity relative to the reference
    * @param signs Array of sign values
    */
-  template <index_t offset>
+  template <index_t offset, class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int signs[]) {
+                                               ElemSign& signs) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {
@@ -1051,10 +1051,10 @@ class LagrangeL2HypercubeBasis {
    * @param orient Orientation of the entity relative to the reference
    * @param signs Array of sign values
    */
-  template <index_t offset>
+  template <index_t offset, class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int signs[]) {
+                                               ElemSign& signs) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {

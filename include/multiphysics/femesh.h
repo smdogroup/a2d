@@ -439,6 +439,10 @@ class ElementMesh {
   // Number of degrees of freedom for each element
   static const index_t ndof_per_element = Basis::ndof;
 
+  // Mult-dimensional array type
+  using ElementDofArray = MultiArrayNew<index_t* [ndof_per_element]>;
+  using ElementSignArray = MultiArrayNew<int* [ndof_per_element]>;
+
   // Constructors
   ElementMesh(MeshConnectivityBase& conn);
   template <class InteriorBasis>
@@ -453,20 +457,20 @@ class ElementMesh {
     return num_dof_offset[basis];
   }
 
+  // Needed for parallel element execution
   template <index_t basis>
   int get_global_dof_sign(index_t elem, index_t index);
   template <index_t basis>
   index_t get_global_dof(index_t elem, index_t index);
 
   // Get the degrees of freedom associated with this element
-  KOKKOS_FUNCTION void get_element_dof(const index_t elem,
-                                       const index_t* dof[]) {
-    *dof = &element_dof[ndof_per_element * elem];
+  KOKKOS_FUNCTION auto get_element_dof(const index_t elem) {
+    return Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
   }
 
   // Get the signs associated with the degrees of freedom
-  void get_element_signs(const index_t elem, const int* signs[]) {
-    *signs = &element_sign[ndof_per_element * elem];
+  auto get_element_signs(const index_t elem) {
+    return Kokkos::subview(element_sign_new, elem, Kokkos::ALL);
   }
 
   template <index_t M, index_t basis_offset = Basis::nbasis>
@@ -480,8 +484,8 @@ class ElementMesh {
                                           // freedom each basis
 
   // Store the degrees of freedom for each element and the element sign
-  index_t* element_dof;
-  int* element_sign;
+  ElementDofArray element_dof_new;
+  ElementSignArray element_sign_new;
 };
 
 template <class Basis>

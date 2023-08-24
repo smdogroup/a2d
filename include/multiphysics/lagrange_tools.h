@@ -542,15 +542,20 @@ struct GaussQuadData<32> {
 };
 
 template <index_t order>
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_quadrature_wts() {
+  static_assert(order <= 32, "order > 32 is not yet supported");
+  return GaussQuadData<order>::Wts;
+}
+
+template <index_t order>
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_quadrature_pts() {
+  static_assert(order <= 32, "order > 32 is not yet supported");
+  return GaussQuadData<order>::Pts;
+}
+
+template <index_t order>
 struct GaussLobattoQuadData {};
 
-// Note: Gauss-Lobatto quadrature has 2 points minimum, this order=1 class
-// is defined just for convenience
-template <>
-struct GaussLobattoQuadData<1> {
-  static constexpr double Pts[] = {0.0000000000000000e+00};
-  static constexpr double Wts[] = {2.0000000000000000e+00};
-};
 template <>
 struct GaussLobattoQuadData<2> {
   static constexpr double Pts[] = {-1.0000000000000000e+00,
@@ -1079,61 +1084,37 @@ struct GaussLobattoQuadData<32> {
       1.2398106501373839e-02, 2.0161290322580020e-03};
 };
 
-/**
- * @brief Interpolation type
- *
- * GLL interpolation: Interpolate from the Gauss-Legendre-Lobatto nodes
- *
- * Gauss interpolation: Interpolate from the Gauss quadrature points using
- * Lagrange interpolation
- *
- * Bernstein: Interpolate with Bernstein polynomials
- */
-enum InterpolationType {
-  GLL_INTERPOLATION,
-  GAUSS_INTERPOLATION,
-  BERNSTEIN_INTERPOLATION
-};
+template <index_t order>
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_lobatto_wts() {
+  static_assert(order <= 32, "order > 32 is not yet supported");
+  if constexpr (order == 1) {
+    return GaussQuadData<1>::Wts;
+  } else {
+    return GaussLobattoQuadData<2>::Wts;
+  }
+}
 
-/**
- * @brief Get the struct type given an interpolation type
- *
- * Usage:
- *   using QuadratureData = get_interpolation<order, interp_type>;
- *   QuadratureData::Pts[...] ...;
- *   QuadratureData::Wts[...] ...;
- *
- * Note: for Bernstein interpolation, we use Gauss-Lobatto quadratures
- *
- * @tparam order number of knots
- * @tparam interp_type Gauss, Gauss-Lobatto or Bernstein
- */
-template <index_t order, InterpolationType interp_type>
-using get_interpolation = typename std::conditional<
-    interp_type == GLL_INTERPOLATION or interp_type == BERNSTEIN_INTERPOLATION,
-    GaussLobattoQuadData<order>, GaussQuadData<order>>::type;
+template <index_t order>
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_lobatto_pts() {
+  static_assert(order <= 32, "order > 32 is not yet supported");
+  if constexpr (order == 1) {
+    return GaussQuadData<1>::Pts;
+  } else {
+    return GaussLobattoQuadData<2>::Pts;
+  }
+}
 
 /**
  * @brief Compute the Lagrange basis with the given knots
  *
  * @tparam order Number of points
- * @tparam interp_type Gauss points or Gauss-Lobatto points
  * @param knots Knot points
  * @param pt Point to compute the interpolant
  * @param N Lagrange basis function values
  */
-template <index_t order, InterpolationType interp_type>
-KOKKOS_FUNCTION void lagrange_basis_knots(const double pt, double N[]) {
-  static_assert(
-      interp_type == GLL_INTERPOLATION or interp_type == GAUSS_INTERPOLATION,
-      "invalid interpolation type");
-
-  using QuadratureData = get_interpolation<order, interp_type>;
-  double knots[order];
-  for (index_t i = 0; i < order; i++) {
-    knots[i] = QuadratureData::Pts[i];
-  }
-
+template <index_t order>
+A2D_INLINE_FUNCTION void lagrange_basis(const double knots[], const double pt,
+                                        double N[]) {
   // Loop over the shape functions
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -1151,24 +1132,13 @@ KOKKOS_FUNCTION void lagrange_basis_knots(const double pt, double N[]) {
  *
  * @tparam order Number of points
  * @param knots Knot points
- * @tparam interp_type Gauss points or Gauss-Lobatto points
  * @param pt Point to compute the interpolant
  * @param N Lagrange basis function values
  * @param N Derivative of the Lagrange basis function values
  */
-template <index_t order, InterpolationType interp_type>
-KOKKOS_FUNCTION void lagrange_basis_knots(const double pt, double N[],
-                                          double Nx[]) {
-  static_assert(
-      interp_type == GLL_INTERPOLATION or interp_type == GAUSS_INTERPOLATION,
-      "invalid interpolation type");
-
-  using QuadratureData = get_interpolation<order, interp_type>;
-  double knots[order];
-  for (index_t i = 0; i < order; i++) {
-    knots[i] = QuadratureData::Pts[i];
-  }
-
+template <index_t order>
+A2D_INLINE_FUNCTION void lagrange_basis(const double knots[], const double pt,
+                                        double N[], double Nx[]) {
   // Loop over the shape function knot locations
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -1203,7 +1173,7 @@ KOKKOS_FUNCTION void lagrange_basis_knots(const double pt, double N[],
  * @param N the values of the shape functions at u
  */
 template <index_t order>
-KOKKOS_FUNCTION void bernstein_basis(const double u, double* N) {
+A2D_INLINE_FUNCTION void bernstein_basis(const double u, double* N) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -1229,7 +1199,8 @@ KOKKOS_FUNCTION void bernstein_basis(const double u, double* N) {
  * @param Nd the derivative of the shape functions at u
  */
 template <index_t order>
-KOKKOS_FUNCTION void bernstein_basis(const double u, double* N, double* Nd) {
+A2D_INLINE_FUNCTION void bernstein_basis(const double u, double* N,
+                                         double* Nd) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -1261,43 +1232,46 @@ KOKKOS_FUNCTION void bernstein_basis(const double u, double* N, double* Nd) {
 }
 
 template <index_t order>
-KOKKOS_FUNCTION void lagrange_basis(const double pt, double N[]) {
-  lagrange_basis_knots<order, GLL_INTERPOLATION>(pt, N);
+A2D_INLINE_FUNCTION void lagrange_basis(const double pt, double N[]) {
+  constexpr const double* knots = get_gauss_lobatto_pts<order>();
+  lagrange_basis<order>(knots, pt, N);
 }
 
 template <index_t order>
-KOKKOS_FUNCTION void lagrange_basis(const double pt, double N[], double Nx[]) {
-  lagrange_basis_knots<order, GLL_INTERPOLATION>(pt, N, Nx);
+A2D_INLINE_FUNCTION void lagrange_basis(const double pt, double N[],
+                                        double Nx[]) {
+  constexpr const double* knots = get_gauss_lobatto_pts<order>();
+  lagrange_basis<order>(knots, pt, N, Nx);
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<1u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<1u>(const double pt, double N[]) {
   N[0] = 1.0;
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<2u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<2u>(const double pt, double N[]) {
   N[0] = 0.5 * (1.0 - pt);
   N[1] = 0.5 * (1.0 + pt);
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<3u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<3u>(const double pt, double N[]) {
   N[0] = -0.5 * pt * (1.0 - pt);
   N[1] = (1.0 - pt) * (1.0 + pt);
   N[2] = 0.5 * (1.0 + pt) * pt;
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<1u>(const double pt, double N[],
-                                        double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<1u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = 1.0;
   Nx[0] = 0.0;
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<2u>(const double pt, double N[],
-                                        double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<2u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = 0.5 * (1.0 - pt);
   N[1] = 0.5 * (1.0 + pt);
 
@@ -1306,8 +1280,8 @@ KOKKOS_FUNCTION void lagrange_basis<2u>(const double pt, double N[],
 }
 
 template <>
-KOKKOS_FUNCTION void lagrange_basis<3u>(const double pt, double N[],
-                                        double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<3u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = -0.5 * pt * (1.0 - pt);
   N[1] = (1.0 - pt) * (1.0 + pt);
   N[2] = 0.5 * (1.0 + pt) * pt;
@@ -1317,24 +1291,57 @@ KOKKOS_FUNCTION void lagrange_basis<3u>(const double pt, double N[],
   Nx[2] = 0.5 + pt;
 }
 
+/**
+ * @brief Interpolation type
+ *
+ * GLL interpolation: Interpolate from the Gauss-Legendre-Lobatto nodes
+ *
+ * Gauss interpolation: Interpolate from the Gauss quadrature points using
+ * Lagrange interpolation
+ *
+ * Bernstein: Interpolate with Bernstein polynomials
+ */
+enum InterpolationType {
+  GLL_INTERPOLATION,
+  GAUSS_INTERPOLATION,
+  BERNSTEIN_INTERPOLATION
+};
+
 template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
-KOKKOS_FUNCTION void interpolation_basis(const double pt, double N[]) {
-  if constexpr (interp_type == GLL_INTERPOLATION or
-                interp_type == GAUSS_INTERPOLATION) {
-    lagrange_basis_knots<order, interp_type>(pt, N);
+A2D_INLINE_FUNCTION void interpolation_basis(const double pt, double N[]) {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_lobatto_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_quadrature_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
   } else {  // interp_type == BERNSTEIN_INTERPOLATION
     bernstein_basis<order>(pt, N);
   }
 }
 
 template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
-KOKKOS_FUNCTION void interpolation_basis(const double pt, double N[],
-                                         double Nx[]) {
-  if constexpr (interp_type == GLL_INTERPOLATION or
-                interp_type == GAUSS_INTERPOLATION) {
-    lagrange_basis_knots<order, interp_type>(pt, N, Nx);
+A2D_INLINE_FUNCTION void interpolation_basis(const double pt, double N[],
+                                             double Nx[]) {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_lobatto_pts<order>();
+    lagrange_basis<order>(knots, pt, N, Nx);
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    constexpr const double* knots = get_gauss_quadrature_pts<order>();
+    lagrange_basis<order>(knots, pt, N);
   } else {  // interp_type == BERNSTEIN_INTERPOLATION
     bernstein_basis<order>(pt, N, Nx);
+  }
+}
+
+template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
+A2D_INLINE_FUNCTION constexpr const double* get_interpolation_pts() {
+  if constexpr (interp_type == GLL_INTERPOLATION) {
+    return get_gauss_lobatto_pts<order>();
+  } else if constexpr (interp_type == GAUSS_INTERPOLATION) {
+    return get_gauss_quadrature_pts<order>();
+  } else {  // interp_type == BERNSTEIN_INTERPOLATION
+    return get_gauss_lobatto_pts<order>();
   }
 }
 

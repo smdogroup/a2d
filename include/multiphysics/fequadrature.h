@@ -34,12 +34,12 @@ class LineGaussQuadrature {
   static index_t get_num_points() { return order; }
 
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n];
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n];
   }
   static double get_weight(const index_t n) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Wts[n];
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n];
   }
 };
 
@@ -64,8 +64,8 @@ class QuadGaussQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Pts[pt];
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    return pts[pt];
   }
 
   /**
@@ -76,8 +76,8 @@ class QuadGaussQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Wts[pt];
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[pt];
   }
 
   /**
@@ -93,13 +93,13 @@ class QuadGaussQuadrature {
 
   static index_t get_num_points() { return order * order; }
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n % order];
-    pt[1] = QuadratureData::Pts[n / order];
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[n / order];
   }
   static double get_weight(const index_t n) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Wts[n % order] * QuadratureData::Wts[n / order];
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n % order] * wts[n / order];
   }
 };
 
@@ -125,8 +125,8 @@ class HexGaussQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Pts[pt];
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    return pts[pt];
   }
 
   /**
@@ -137,8 +137,8 @@ class HexGaussQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Wts[pt];
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[pt];
   }
 
   /**
@@ -156,16 +156,15 @@ class HexGaussQuadrature {
 
   static index_t get_num_points() { return order * order * order; }
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n % order];
-    pt[1] = QuadratureData::Pts[(n % (order * order)) / order];
-    pt[2] = QuadratureData::Pts[n / (order * order)];
+    constexpr const double* pts = get_gauss_quadrature_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % (order * order)) / order];
+    pt[2] = pts[n / (order * order)];
   }
   static double get_weight(const index_t n) {
-    using QuadratureData = get_interpolation<order, GAUSS_INTERPOLATION>;
-    return QuadratureData::Wts[n % order] *
-           QuadratureData::Wts[(n % (order * order)) / order] *
-           QuadratureData::Wts[n / (order * order)];
+    constexpr const double* wts = get_gauss_quadrature_wts<order>();
+    return wts[n % order] * wts[(n % (order * order)) / order] *
+           wts[n / (order * order)];
   }
 };
 
@@ -180,11 +179,12 @@ class LineGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order; }
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GLL_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n];
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n];
   }
   static double get_weight(const index_t n) {
-    return GaussLobattoQuadData<order>::Wts[n];
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[n];
   }
 };
 
@@ -209,8 +209,8 @@ class QuadGaussLobattoQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GLL_INTERPOLATION>;
-    return QuadratureData::Pts[pt];
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    return pts[pt];
   }
 
   /**
@@ -221,7 +221,8 @@ class QuadGaussLobattoQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    return GaussLobattoQuadData<order>::Wts[pt];
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[pt];
   }
 
   /**
@@ -237,13 +238,13 @@ class QuadGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order * order; }
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GLL_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n % order];
-    pt[1] = QuadratureData::Pts[n / order];
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[n / order];
   }
   static double get_weight(const index_t n) {
-    return GaussLobattoQuadData<order>::Wts[n % order] *
-           GaussLobattoQuadData<order>::Wts[n / order];
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[n % order] * wts[n / order];
   }
 };
 
@@ -269,8 +270,8 @@ class HexGaussLobattoQuadrature {
    * @return The quadrature point along the direction
    */
   static double get_tensor_point(const index_t dim, const index_t pt) {
-    using QuadratureData = get_interpolation<order, GLL_INTERPOLATION>;
-    return QuadratureData::Pts[pt];
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    return pts[pt];
   }
 
   /**
@@ -281,7 +282,8 @@ class HexGaussLobattoQuadrature {
    * @return The weight factor along the direction
    */
   static double get_tensor_weight(const index_t dim, const index_t pt) {
-    return GaussLobattoQuadData<order>::Wts[pt];
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[pt];
   }
 
   /**
@@ -299,15 +301,15 @@ class HexGaussLobattoQuadrature {
 
   static index_t get_num_points() { return order * order * order; }
   static void get_point(const index_t n, double pt[]) {
-    using QuadratureData = get_interpolation<order, GLL_INTERPOLATION>;
-    pt[0] = QuadratureData::Pts[n % order];
-    pt[1] = QuadratureData::Pts[(n % (order * order)) / order];
-    pt[2] = QuadratureData::Pts[n / (order * order)];
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    pt[0] = pts[n % order];
+    pt[1] = pts[(n % (order * order)) / order];
+    pt[2] = pts[n / (order * order)];
   }
   static double get_weight(const index_t n) {
-    return GaussLobattoQuadData<order>::Wts[n % order] *
-           GaussLobattoQuadData<order>::Wts[(n % (order * order)) / order] *
-           GaussLobattoQuadData<order>::Wts[n / (order * order)];
+    constexpr const double* wts = get_gauss_lobatto_wts<order>();
+    return wts[n % order] * wts[(n % (order * order)) / order] *
+           wts[n / (order * order)];
     return 0.0;
   }
 };

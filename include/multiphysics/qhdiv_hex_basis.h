@@ -321,24 +321,23 @@ class QHdivHexBasis {
    * @param pt The parametric point location of dimension dim
    */
   static void get_dof_point(index_t index, double pt[]) {
-    using QuadratureKnots = get_interpolation<degree, GAUSS_INTERPOLATION>;
-    using QuadraturePts = get_interpolation<order, GLL_INTERPOLATION>;
+    const double* knots = get_gauss_quadrature_pts<degree>();
+    constexpr const double* pts = get_gauss_lobatto_pts<order>();
 
     if (index < order * (order - 1) * (order - 1)) {
-      pt[0] = QuadraturePts::Pts[index % order];
-      pt[1] = QuadratureKnots::Pts[(index % (order * (order - 1))) / order];
-      pt[2] = QuadratureKnots::Pts[index / (order * (order - 1))];
+      pt[0] = pts[index % order];
+      pt[1] = knots[(index % (order * (order - 1))) / order];
+      pt[2] = knots[index / (order * (order - 1))];
     } else if (index < 2 * order * (order - 1) * (order - 1)) {
       index = index - order * (order - 1) * (order - 1);
-      pt[0] = QuadratureKnots::Pts[index % (order - 1)];
-      pt[1] = QuadraturePts::Pts[(index % ((order - 1) * order)) / (order - 1)];
-      pt[2] = QuadratureKnots::Pts[index / ((order - 1) * order)];
+      pt[0] = knots[index % (order - 1)];
+      pt[1] = pts[(index % ((order - 1) * order)) / (order - 1)];
+      pt[2] = knots[index / ((order - 1) * order)];
     } else {
       index = index - 2 * order * (order - 1) * (order - 1);
-      pt[0] = QuadratureKnots::Pts[index % (order - 1)];
-      pt[1] = QuadratureKnots::Pts[(index % ((order - 1) * (order - 1))) /
-                                   (order - 1)];
-      pt[2] = QuadraturePts::Pts[index / ((order - 1) * (order - 1))];
+      pt[0] = knots[index % (order - 1)];
+      pt[1] = knots[(index % ((order - 1) * (order - 1))) / (order - 1)];
+      pt[2] = pts[index / ((order - 1) * (order - 1))];
     }
   }
 
@@ -393,12 +392,14 @@ class QHdivHexBasis {
       u.zero();
       div = 0.0;
 
+      const double* knots = get_gauss_quadrature_pts<degree>();
+
       // Evaluate the basis functions
       double dx[order];
       double n1[order], n2[order], n3[order];
       lagrange_basis<order>(pt[0], n1, dx);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
       // Flip the first basis function on the negative bound
       n1[0] *= -1.0;
@@ -414,9 +415,9 @@ class QHdivHexBasis {
         }
       }
 
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
       lagrange_basis<order>(pt[1], n2, dx);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
       // Flip the first basis function on the negative bound
       n2[0] *= -1.0;
@@ -431,8 +432,8 @@ class QHdivHexBasis {
         }
       }
 
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order>(pt[2], n3, dx);
 
       // Flip the first basis function on the negative bound
@@ -496,12 +497,14 @@ class QHdivHexBasis {
       const Vec<T, dim>& u = hdiv.get_value();
       const T& div = hdiv.get_div();
 
+      const double* knots = get_gauss_quadrature_pts<degree>();
+
       // Evaluate the basis functions
       double dx[order];
       double n1[order], n2[order], n3[order];
       lagrange_basis<order>(pt[0], n1, dx);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
       // Flip the first basis function on the negative bound
       n1[0] *= -1.0;
@@ -517,9 +520,9 @@ class QHdivHexBasis {
         }
       }
 
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
       lagrange_basis<order>(pt[1], n2, dx);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+      lagrange_basis<order - 1>(knots, pt[2], n3);
 
       // Flip the first basis function on the negative bound
       n2[0] *= -1.0;
@@ -534,8 +537,8 @@ class QHdivHexBasis {
         }
       }
 
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
-      lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
+      lagrange_basis<order - 1>(knots, pt[0], n1);
+      lagrange_basis<order - 1>(knots, pt[1], n2);
       lagrange_basis<order>(pt[2], n3, dx);
 
       // Flip the first basis function on the negative bound
@@ -571,12 +574,14 @@ class QHdivHexBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
+    const double* knots = get_gauss_quadrature_pts<degree>();
+
     // Evaluate the basis functions
     double dx[order];
     double n1[order], n2[order], n3[order];
     lagrange_basis<order>(pt[0], n1, dx);
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+    lagrange_basis<order - 1>(knots, pt[1], n2);
+    lagrange_basis<order - 1>(knots, pt[2], n3);
 
     // Flip the first basis function on the negative bound
     n1[0] *= -1.0;
@@ -594,9 +599,9 @@ class QHdivHexBasis {
       }
     }
 
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
+    lagrange_basis<order - 1>(knots, pt[0], n1);
     lagrange_basis<order>(pt[1], n2, dx);
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[2], n3);
+    lagrange_basis<order - 1>(knots, pt[2], n3);
 
     // Flip the first basis function on the negative bound
     n2[0] *= -1.0;
@@ -613,8 +618,8 @@ class QHdivHexBasis {
       }
     }
 
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[0], n1);
-    lagrange_basis_knots<order - 1, GAUSS_INTERPOLATION>(pt[1], n2);
+    lagrange_basis<order - 1>(knots, pt[0], n1);
+    lagrange_basis<order - 1>(knots, pt[1], n2);
     lagrange_basis<order>(pt[2], n3, dx);
 
     // Flip the first basis function on the negative bound

@@ -346,18 +346,19 @@ class LagrangeH1HypercubeBasis {
    */
   A2D_INLINE_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+    using QuadratureData = get_interpolation<order, interp_type>;
+
     index_t n = index / C;
 
     if constexpr (dim == 1) {
-      pt[0] = pts[n];
+      pt[0] = QuadratureData::Pts[n];
     } else if constexpr (dim == 2) {
-      pt[0] = pts[n % order];
-      pt[1] = pts[n / order];
+      pt[0] = QuadratureData::Pts[n % order];
+      pt[1] = QuadratureData::Pts[n / order];
     } else {  // dim == 3
-      pt[0] = pts[n % order];
-      pt[1] = pts[(n % (order * order)) / order];
-      pt[2] = pts[n / (order * order)];
+      pt[0] = QuadratureData::Pts[n % order];
+      pt[1] = QuadratureData::Pts[(n % (order * order)) / order];
+      pt[2] = QuadratureData::Pts[n / (order * order)];
     }
   }
 
@@ -1144,19 +1145,19 @@ class LagrangeL2HypercubeBasis {
    */
   A2D_INLINE_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+    using QuadratureData = get_interpolation<order, interp_type>;
 
     index_t n = index / C;
 
     if constexpr (dim == 1) {
-      pt[0] = pts[n];
+      pt[0] = QuadratureData::Pts[n];
     } else if constexpr (dim == 2) {
-      pt[0] = pts[n % order];
-      pt[1] = pts[n / order];
+      pt[0] = QuadratureData::Pts[n % order];
+      pt[1] = QuadratureData::Pts[n / order];
     } else {
-      pt[0] = pts[n % order];
-      pt[1] = pts[(n % (order * order)) / order];
-      pt[2] = pts[n / (order * order)];
+      pt[0] = QuadratureData::Pts[n % order];
+      pt[1] = QuadratureData::Pts[(n % (order * order)) / order];
+      pt[2] = QuadratureData::Pts[n / (order * order)];
     }
   }
 

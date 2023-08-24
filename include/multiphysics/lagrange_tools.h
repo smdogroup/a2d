@@ -445,7 +445,7 @@ struct GaussQuadData {
 };
 
 template <index_t order>
-constexpr const double* get_gauss_quadrature_wts() {
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_quadrature_wts() {
   if constexpr (order == 1) {
     return GaussQuadData::GaussQuadWts1;
   } else if constexpr (order == 2) {
@@ -515,7 +515,7 @@ constexpr const double* get_gauss_quadrature_wts() {
 }
 
 template <index_t order>
-constexpr const double* get_gauss_quadrature_pts() {
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_quadrature_pts() {
   if constexpr (order == 1) {
     return GaussQuadData::GaussQuadPts1;
   } else if constexpr (order == 2) {
@@ -1022,7 +1022,7 @@ struct GaussLobattoQuadData {
 };
 
 template <index_t order>
-constexpr const double* get_gauss_lobatto_wts() {
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_lobatto_wts() {
   if constexpr (order == 1) {
     return GaussQuadData::GaussQuadWts1;
   } else if constexpr (order == 2) {
@@ -1092,7 +1092,7 @@ constexpr const double* get_gauss_lobatto_wts() {
 }
 
 template <index_t order>
-constexpr const double* get_gauss_lobatto_pts() {
+A2D_INLINE_FUNCTION constexpr const double* get_gauss_lobatto_pts() {
   if constexpr (order == 1) {
     return GaussQuadData::GaussQuadPts1;
   } else if constexpr (order == 2) {
@@ -1170,7 +1170,8 @@ constexpr const double* get_gauss_lobatto_pts() {
  * @param N Lagrange basis function values
  */
 template <index_t order>
-void lagrange_basis(const double knots[], const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis(const double knots[], const double pt,
+                                        double N[]) {
   // Loop over the shape functions
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -1193,8 +1194,8 @@ void lagrange_basis(const double knots[], const double pt, double N[]) {
  * @param N Derivative of the Lagrange basis function values
  */
 template <index_t order>
-void lagrange_basis(const double knots[], const double pt, double N[],
-                    double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis(const double knots[], const double pt,
+                                        double N[], double Nx[]) {
   // Loop over the shape function knot locations
   for (int i = 0; i < order; i++) {
     N[i] = 1.0;
@@ -1229,7 +1230,7 @@ void lagrange_basis(const double knots[], const double pt, double N[],
  * @param N the values of the shape functions at u
  */
 template <index_t order>
-inline void bernstein_basis(const double u, double* N) {
+A2D_INLINE_FUNCTION void bernstein_basis(const double u, double* N) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -1255,7 +1256,8 @@ inline void bernstein_basis(const double u, double* N) {
  * @param Nd the derivative of the shape functions at u
  */
 template <index_t order>
-inline void bernstein_basis(const double u, double* N, double* Nd) {
+A2D_INLINE_FUNCTION void bernstein_basis(const double u, double* N,
+                                         double* Nd) {
   double u1 = 0.5 * (1.0 - u);
   double u2 = 0.5 * (u + 1.0);
 
@@ -1287,43 +1289,46 @@ inline void bernstein_basis(const double u, double* N, double* Nd) {
 }
 
 template <index_t order>
-void lagrange_basis(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis(const double pt, double N[]) {
   constexpr const double* knots = get_gauss_lobatto_pts<order>();
   lagrange_basis<order>(knots, pt, N);
 }
 
 template <index_t order>
-void lagrange_basis(const double pt, double N[], double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis(const double pt, double N[],
+                                        double Nx[]) {
   constexpr const double* knots = get_gauss_lobatto_pts<order>();
   lagrange_basis<order>(knots, pt, N, Nx);
 }
 
 template <>
-void lagrange_basis<1u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<1u>(const double pt, double N[]) {
   N[0] = 1.0;
 }
 
 template <>
-void lagrange_basis<2u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<2u>(const double pt, double N[]) {
   N[0] = 0.5 * (1.0 - pt);
   N[1] = 0.5 * (1.0 + pt);
 }
 
 template <>
-void lagrange_basis<3u>(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<3u>(const double pt, double N[]) {
   N[0] = -0.5 * pt * (1.0 - pt);
   N[1] = (1.0 - pt) * (1.0 + pt);
   N[2] = 0.5 * (1.0 + pt) * pt;
 }
 
 template <>
-void lagrange_basis<1u>(const double pt, double N[], double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<1u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = 1.0;
   Nx[0] = 0.0;
 }
 
 template <>
-void lagrange_basis<2u>(const double pt, double N[], double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<2u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = 0.5 * (1.0 - pt);
   N[1] = 0.5 * (1.0 + pt);
 
@@ -1332,7 +1337,8 @@ void lagrange_basis<2u>(const double pt, double N[], double Nx[]) {
 }
 
 template <>
-void lagrange_basis<3u>(const double pt, double N[], double Nx[]) {
+A2D_INLINE_FUNCTION void lagrange_basis<3u>(const double pt, double N[],
+                                            double Nx[]) {
   N[0] = -0.5 * pt * (1.0 - pt);
   N[1] = (1.0 - pt) * (1.0 + pt);
   N[2] = 0.5 * (1.0 + pt) * pt;
@@ -1359,7 +1365,7 @@ enum InterpolationType {
 };
 
 template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
-inline void interpolation_basis(const double pt, double N[]) {
+A2D_INLINE_FUNCTION void interpolation_basis(const double pt, double N[]) {
   if constexpr (interp_type == GLL_INTERPOLATION) {
     constexpr const double* knots = get_gauss_lobatto_pts<order>();
     lagrange_basis<order>(knots, pt, N);
@@ -1372,7 +1378,8 @@ inline void interpolation_basis(const double pt, double N[]) {
 }
 
 template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
-inline void interpolation_basis(const double pt, double N[], double Nx[]) {
+A2D_INLINE_FUNCTION void interpolation_basis(const double pt, double N[],
+                                             double Nx[]) {
   if constexpr (interp_type == GLL_INTERPOLATION) {
     constexpr const double* knots = get_gauss_lobatto_pts<order>();
     lagrange_basis<order>(knots, pt, N, Nx);
@@ -1385,7 +1392,7 @@ inline void interpolation_basis(const double pt, double N[], double Nx[]) {
 }
 
 template <index_t order, InterpolationType interp_type = GLL_INTERPOLATION>
-constexpr const double* get_interpolation_pts() {
+A2D_INLINE_FUNCTION constexpr const double* get_interpolation_pts() {
   if constexpr (interp_type == GLL_INTERPOLATION) {
     return get_gauss_lobatto_pts<order>();
   } else if constexpr (interp_type == GAUSS_INTERPOLATION) {

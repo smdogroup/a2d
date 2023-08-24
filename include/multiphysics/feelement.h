@@ -493,19 +493,10 @@ class FiniteElement {
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
-    auto loop_body = A2D_LAMBDA(const index_t i) {
-      // Get the data, geometry and solution for this element and
-      // interpolate it
-      typename DataElemVec::FEDof data_dof(i, elem_data);
-      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      typename ElemVec::FEDof sol_dof(i, elem_sol);
-
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_data.get_element_values(i, data_dof);
-        elem_geo.get_element_values(i, geo_dof);
-        elem_sol.get_element_values(i, sol_dof);
-      }
-
+    auto loop_core =
+        A2D_LAMBDA(const index_t i, typename DataElemVec::FEDof& data_dof,
+                   typename GeoElemVec::FEDof& geo_dof,
+                   typename ElemVec::FEDof& sol_dof, QSpace& res) {
       QDataSpace data;
       QGeoSpace geo;
       QSpace sol;
@@ -517,9 +508,6 @@ class FiniteElement {
       DataBasis::template interp(data_dof, data);
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
-
-      // Allocate space for the residual values at each quadrature point
-      QSpace res;
 
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
@@ -545,15 +533,48 @@ class FiniteElement {
         typename Integrand::FiniteElementSpace& cref = res.get(j);
         transform.rtransform(coef, cref);
       }
+    };
+
+    auto loop_body_serial = [=](const index_t i) {
+      // Get the data, geometry and solution for this element and
+      // interpolate it
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+
+      elem_data.get_element_values(i, data_dof);
+      elem_geo.get_element_values(i, geo_dof);
+      elem_sol.get_element_values(i, sol_dof);
+
+      // Allocate space for the residual values at each quadrature point
+      QSpace res;
+
+      loop_core(i, data_dof, geo_dof, sol_dof, res);
 
       // Add the residual from the quadrature points back to the
       // finite-element mesh
       typename ElemResVec::FEDof res_dof(i, elem_res);
       Basis::template add(res, res_dof);
 
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_res.add_element_values(i, res_dof);
-      }
+      elem_res.add_element_values(i, res_dof);
+    };
+
+    auto loop_body_parallel = A2D_LAMBDA(const index_t i) {
+      // Get the data, geometry and solution for this element and
+      // interpolate it
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+
+      // Allocate space for the residual values at each quadrature point
+      QSpace res;
+
+      loop_core(i, data_dof, geo_dof, sol_dof, res);
+
+      // Add the residual from the quadrature points back to the
+      // finite-element mesh
+      typename ElemResVec::FEDof res_dof(i, elem_res);
+      Basis::template add(res, res_dof);
     };
 
     if constexpr (evtype == ElemVecType::Parallel) {
@@ -562,7 +583,7 @@ class FiniteElement {
       elem_sol.get_values();
       elem_res.get_zero_values();
 
-      Kokkos::parallel_for("add_residual", num_elements, loop_body);
+      Kokkos::parallel_for("add_residual", num_elements, loop_body_parallel);
       Kokkos::fence();
 
       elem_res.add_values();
@@ -570,7 +591,7 @@ class FiniteElement {
       static_assert(evtype == ElemVecType::Serial,
                     "invalid ElemVecType deduced.");
       for (index_t i = 0; i < num_elements; i++) {
-        loop_body(i);
+        loop_body_serial(i);
       }
     }
   }

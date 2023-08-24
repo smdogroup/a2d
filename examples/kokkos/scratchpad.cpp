@@ -484,8 +484,15 @@ void test_modify_view_from_const_lambda() {
 }
 
 struct Alpha {
-  constexpr static double value = 0.01;
+  constexpr static T value = 0.01;
+  constexpr static T value_array[] = {0.01, 0.02};
+
+  KOKKOS_INLINE_FUNCTION static const T* get_alpha_array() {
+    return Alpha::value_array;
+  };
 };
+
+KOKKOS_INLINE_FUNCTION T get_alpha() { return Alpha::value; };
 
 void test_cuda_axpy(int argc, char* argv[]) {
 #ifdef KOKKOS_ENABLE_CUDA
@@ -528,8 +535,9 @@ void test_cuda_axpy(int argc, char* argv[]) {
   for (int i = 0; i < repeat; i++) {
     Kokkos::parallel_for(
         "axpy", N, KOKKOS_LAMBDA(const I index) {
-          // y_device(index) += alpha * x_device(index);
-          y_device(index) += Alpha::value * x_device(index);
+          // T alpha = Alpha::get_alpha_array()[0];  // This doesn't work
+          T alpha = Alpha::value_array[0];  // This works
+          y_device(index) += alpha * x_device(index);
         });
     Kokkos::fence();
   }

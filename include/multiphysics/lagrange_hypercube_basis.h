@@ -685,14 +685,18 @@ class LagrangeH1HypercubeBasis {
         T u1[u1size];
         T u1x[u1size];
         T u1y[u1size];  // not used for dim == 2
-        std::fill(u1, u1 + u1size, T(0.0));
-        std::fill(u1x, u1x + u1size, T(0.0));
-        std::fill(u1y, u1y + u1size, T(0.0));
+        for (index_t i = 0; i < u1size; i++) {
+          u1[i] = T(0.0);
+          u1x[i] = T(0.0);
+          u1y[i] = T(0.0);
+        }
 
         T u0[u0size];
         T u0x[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
-        std::fill(u0x, u0x + u0size, T(0.0));
+        for (index_t i = 0; i < u0size; i++) {
+          u0[i] = T(0.0);
+          u0x[i] = T(0.0);
+        }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;
         for (index_t q2 = 0; q2 < qouter; q2++) {
@@ -1418,9 +1422,14 @@ class LagrangeL2HypercubeBasis {
         }
 
         T u0[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
+        for (index_t i = 0; i < u0size; i++) {
+          u0[i] = T(0.0);
+        }
+
         T u1[u1size];
-        std::fill(u1, u1 + u1size, T(0.0));
+        for (index_t i = 0; i < u1size; i++) {
+          u1[i] = T(0.0);
+        }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;
         for (index_t q2 = 0; q2 < qouter; q2++) {

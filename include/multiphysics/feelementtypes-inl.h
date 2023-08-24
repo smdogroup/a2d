@@ -19,8 +19,9 @@ namespace A2D {
  */
 template <index_t offset, index_t ndof, index_t nx, class ElemDof,
           class EntityDof>
-void ElementTypes::get_line_bound_dof(index_t b, const ElemDof& element,
-                                      EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_line_bound_dof(index_t b,
+                                                      const ElemDof& element,
+                                                      EntityDof& entity) {
   const index_t start = offset + ndof * (nx - 1) * b;
   for (index_t i = 0; i < ndof; i++) {
     entity[i] = element[start + i];
@@ -41,9 +42,10 @@ void ElementTypes::get_line_bound_dof(index_t b, const ElemDof& element,
  */
 template <index_t offset, index_t ndof, index_t nx, class EntityDof,
           class ElemDof>
-void ElementTypes::set_line_bound_dof(index_t b, const index_t orient,
-                                      const EntityDof& entity,
-                                      ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_line_bound_dof(index_t b,
+                                                      const index_t orient,
+                                                      const EntityDof& entity,
+                                                      ElemDof& element) {
   const index_t start = offset + ndof * (nx - 1) * ((b + orient) % 2);
   for (index_t i = 0; i < ndof; i++) {
     element[start + i] = entity[i];
@@ -64,8 +66,8 @@ void ElementTypes::set_line_bound_dof(index_t b, const index_t orient,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,
           class EntityDof>
-void ElementTypes::get_line_domain_dof(const ElemDof& element,
-                                       EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_line_domain_dof(const ElemDof& element,
+                                                       EntityDof& entity) {
   if constexpr (ends) {
     for (index_t j = 0; j < nx; j++) {
       for (index_t i = 0; i < ndof; i++) {
@@ -95,9 +97,9 @@ void ElementTypes::get_line_domain_dof(const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, class EntityDof,
           class ElemDof>
-void ElementTypes::set_line_domain_dof(const index_t orient,
-                                       const EntityDof& entity,
-                                       ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_line_domain_dof(const index_t orient,
+                                                       const EntityDof& entity,
+                                                       ElemDof& element) {
   index_t index;
   if constexpr (ends) {
     for (index_t j = 0; j < nx; j++) {
@@ -129,7 +131,7 @@ void ElementTypes::set_line_domain_dof(const index_t orient,
  * @param domain_verts
  * @return index_t
  */
-inline index_t ElementTypes::get_quad_domain_orientation(
+KOKKOS_FUNCTION inline index_t ElementTypes::get_quad_domain_orientation(
     const index_t ref_domain_verts[], const index_t domain_verts[]) {
   index_t orient = 0;
   for (; orient < NUM_QUAD_DOMAIN_ORIENTATIONS; orient++) {
@@ -158,7 +160,7 @@ inline index_t ElementTypes::get_quad_domain_orientation(
  * @param u The 1st coordinate on the reference face
  * @param v The 2nd coordinate on the reference face
  */
-inline void ElementTypes::get_coords_on_quad_ref_element(
+KOKKOS_FUNCTION inline void ElementTypes::get_coords_on_quad_ref_element(
     const index_t orient, const index_t hx, const index_t hy, const index_t x,
     const index_t y, index_t* u, index_t* v) {
   if (orient == 0) {
@@ -191,11 +193,9 @@ inline void ElementTypes::get_coords_on_quad_ref_element(
   }
 }
 
-inline index_t ElementTypes::get_index_on_quad_ref_element(const index_t orient,
-                                                           const index_t hx,
-                                                           const index_t hy,
-                                                           const index_t x,
-                                                           const index_t y) {
+KOKKOS_FUNCTION inline index_t ElementTypes::get_index_on_quad_ref_element(
+    const index_t orient, const index_t hx, const index_t hy, const index_t x,
+    const index_t y) {
   if (orient == 0) {
     // *u = x;
     // *v = y;
@@ -243,7 +243,7 @@ inline index_t ElementTypes::get_index_on_quad_ref_element(const index_t orient,
  * @param j Index along the y-direction
  */
 template <index_t nx, index_t ny>
-int ElementTypes::get_quad_node(const int i, const int j) {
+KOKKOS_FUNCTION int ElementTypes::get_quad_node(const int i, const int j) {
   return i + nx * j;
 }
 
@@ -259,8 +259,8 @@ int ElementTypes::get_quad_node(const int i, const int j) {
  * @return The number of nodes along the edge
  */
 template <index_t nx, index_t ny>
-index_t ElementTypes::get_quad_bound_length(const index_t v0,
-                                            const index_t v1) {
+KOKKOS_FUNCTION index_t ElementTypes::get_quad_bound_length(const index_t v0,
+                                                            const index_t v1) {
   if (QUAD_VERTS_CART[v0][0] != QUAD_VERTS_CART[v1][0]) {
     return nx;
   } else {
@@ -283,8 +283,9 @@ index_t ElementTypes::get_quad_bound_length(const index_t v0,
  */
 template <index_t offset, index_t ndof, index_t nx, index_t ny, class ElemDof,
           class EntityDof>
-void ElementTypes::get_quad_vert_dof(index_t v, const ElemDof& element,
-                                     EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_quad_vert_dof(index_t v,
+                                                     const ElemDof& element,
+                                                     EntityDof& entity) {
   const index_t node = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[v][0],
                                              (ny - 1) * QUAD_VERTS_CART[v][1]);
 
@@ -309,8 +310,9 @@ void ElementTypes::get_quad_vert_dof(index_t v, const ElemDof& element,
  */
 template <index_t offset, index_t ndof, index_t nx, index_t ny, class EntityDof,
           class ElemDof>
-void ElementTypes::set_quad_vert_dof(index_t v, const EntityDof& entity,
-                                     ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_quad_vert_dof(index_t v,
+                                                     const EntityDof& entity,
+                                                     ElemDof& element) {
   const index_t node = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[v][0],
                                              (ny - 1) * QUAD_VERTS_CART[v][1]);
 
@@ -336,8 +338,9 @@ void ElementTypes::set_quad_vert_dof(index_t v, const EntityDof& entity,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class ElemDof, class EntityDof>
-void ElementTypes::get_quad_bound_dof(const index_t b, const ElemDof& element,
-                                      EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_quad_bound_dof(const index_t b,
+                                                      const ElemDof& element,
+                                                      EntityDof& entity) {
   // Get the first and last vertices on the edge
   const index_t v0 = QUAD_BOUND_VERTS[b][0];
   const index_t v1 = QUAD_BOUND_VERTS[b][1];
@@ -397,9 +400,10 @@ void ElementTypes::get_quad_bound_dof(const index_t b, const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class EntityDof, class ElemDof>
-void ElementTypes::set_quad_bound_dof(const index_t b, const index_t orient,
-                                      const EntityDof& entity,
-                                      ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_quad_bound_dof(const index_t b,
+                                                      const index_t orient,
+                                                      const EntityDof& entity,
+                                                      ElemDof& element) {
   // Get the first and last vertices on the edge
   const index_t v0 = QUAD_BOUND_VERTS[b][orient];
   const index_t v1 = QUAD_BOUND_VERTS[b][(orient + 1) % 2];
@@ -454,8 +458,8 @@ void ElementTypes::set_quad_bound_dof(const index_t b, const index_t orient,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class ElemDof, class EntityDof>
-void ElementTypes::get_quad_domain_dof(const ElemDof& element,
-                                       EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_quad_domain_dof(const ElemDof& element,
+                                                       EntityDof& entity) {
   if constexpr (ends) {
     for (index_t v = 0; v < ny; v++) {
       for (index_t u = 0; u < nx; u++) {
@@ -498,9 +502,9 @@ void ElementTypes::get_quad_domain_dof(const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           class EntityDof, class ElemDof>
-void ElementTypes::set_quad_domain_dof(const index_t orient,
-                                       const EntityDof& entity,
-                                       ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_quad_domain_dof(const index_t orient,
+                                                       const EntityDof& entity,
+                                                       ElemDof& element) {
   if constexpr (ends) {
     for (index_t v = 0; v < ny; v++) {
       for (index_t u = 0; u < nx; u++) {
@@ -544,7 +548,8 @@ void ElementTypes::set_quad_domain_dof(const index_t orient,
  * @param k Index along the z-direction
  */
 template <index_t nx, index_t ny, index_t nz>
-int ElementTypes::get_hex_node(const int i, const int j, const int k) {
+KOKKOS_FUNCTION int ElementTypes::get_hex_node(const int i, const int j,
+                                               const int k) {
   return i + nx * (j + ny * k);
 }
 
@@ -561,7 +566,8 @@ int ElementTypes::get_hex_node(const int i, const int j, const int k) {
  * @return The number of nodes along the edge
  */
 template <index_t nx, index_t ny, index_t nz>
-index_t ElementTypes::get_hex_edge_length(const index_t v0, const index_t v1) {
+KOKKOS_FUNCTION index_t ElementTypes::get_hex_edge_length(const index_t v0,
+                                                          const index_t v1) {
   if (HEX_VERTS_CART[v0][0] != HEX_VERTS_CART[v1][0]) {
     return nx;
   } else if (HEX_VERTS_CART[v0][1] != HEX_VERTS_CART[v1][1]) {
@@ -587,8 +593,9 @@ index_t ElementTypes::get_hex_edge_length(const index_t v0, const index_t v1) {
  */
 template <index_t offset, index_t ndof, index_t nx, index_t ny, index_t nz,
           class ElemDof, class EntityDof>
-void ElementTypes::get_hex_vert_dof(index_t v, const ElemDof& element,
-                                    EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_hex_vert_dof(index_t v,
+                                                    const ElemDof& element,
+                                                    EntityDof& entity) {
   const index_t node = get_hex_node<nx, ny, nz>(
       (nx - 1) * HEX_VERTS_CART[v][0], (ny - 1) * HEX_VERTS_CART[v][1],
       (nz - 1) * HEX_VERTS_CART[v][2]);
@@ -615,8 +622,9 @@ void ElementTypes::get_hex_vert_dof(index_t v, const ElemDof& element,
  */
 template <index_t offset, index_t ndof, index_t nx, index_t ny, index_t nz,
           class EntityDof, class ElemDof>
-void ElementTypes::set_hex_vert_dof(index_t v, const EntityDof& entity,
-                                    ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_hex_vert_dof(index_t v,
+                                                    const EntityDof& entity,
+                                                    ElemDof& element) {
   const index_t node = get_hex_node<nx, ny, nz>(
       (nx - 1) * HEX_VERTS_CART[v][0], (ny - 1) * HEX_VERTS_CART[v][1],
       (nz - 1) * HEX_VERTS_CART[v][2]);
@@ -644,8 +652,9 @@ void ElementTypes::set_hex_vert_dof(index_t v, const EntityDof& entity,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class ElemDof, class EntityDof>
-void ElementTypes::get_hex_edge_dof(const index_t e, const ElemDof& element,
-                                    EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_hex_edge_dof(const index_t e,
+                                                    const ElemDof& element,
+                                                    EntityDof& entity) {
   // Get the first and last vertices on the edge
   const index_t v0 = HEX_EDGE_VERTS[e][0];
   const index_t v1 = HEX_EDGE_VERTS[e][1];
@@ -708,8 +717,10 @@ void ElementTypes::get_hex_edge_dof(const index_t e, const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class EntityDof, class ElemDof>
-void ElementTypes::set_hex_edge_dof(const index_t e, const index_t orient,
-                                    const EntityDof& entity, ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_hex_edge_dof(const index_t e,
+                                                    const index_t orient,
+                                                    const EntityDof& entity,
+                                                    ElemDof& element) {
   // Get the first and last vertices on the edge
   const index_t v0 = HEX_EDGE_VERTS[e][orient];
   const index_t v1 = HEX_EDGE_VERTS[e][(orient + 1) % 2];
@@ -768,8 +779,9 @@ void ElementTypes::set_hex_edge_dof(const index_t e, const index_t orient,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class ElemDof, class EntityDof>
-void ElementTypes::get_hex_bound_dof(const index_t b, const ElemDof& element,
-                                     EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_hex_bound_dof(const index_t b,
+                                                     const ElemDof& element,
+                                                     EntityDof& entity) {
   // Get the origin and bound vert directions
   const index_t v0 = HEX_BOUND_VERTS[b][0];  // Root vertex
   const index_t v1 = HEX_BOUND_VERTS[b][1];  // Vertex along the bound u dir
@@ -842,9 +854,10 @@ void ElementTypes::get_hex_bound_dof(const index_t b, const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class EntityDof, class ElemDof>
-void ElementTypes::set_hex_bound_dof(const index_t b, const index_t orient,
-                                     const EntityDof& entity,
-                                     ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_hex_bound_dof(const index_t b,
+                                                     const index_t orient,
+                                                     const EntityDof& entity,
+                                                     ElemDof& element) {
   // Get the origin and bound vert directions
   const index_t v0 = HEX_BOUND_VERTS[b][0];  // Root vertex
   const index_t v1 = HEX_BOUND_VERTS[b][1];  // Vertex along the bound u dir
@@ -918,8 +931,8 @@ void ElementTypes::set_hex_bound_dof(const index_t b, const index_t orient,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class ElemDof, class EntityDof>
-void ElementTypes::get_hex_domain_dof(const ElemDof& element,
-                                      EntityDof& entity) {
+KOKKOS_FUNCTION void ElementTypes::get_hex_domain_dof(const ElemDof& element,
+                                                      EntityDof& entity) {
   if constexpr (ends) {
     for (index_t w = 0; w < nz; w++) {
       for (index_t v = 0; v < ny; v++) {
@@ -967,8 +980,8 @@ void ElementTypes::get_hex_domain_dof(const ElemDof& element,
  */
 template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
           index_t nz, class EntityDof, class ElemDof>
-void ElementTypes::set_hex_domain_dof(const EntityDof& entity,
-                                      ElemDof& element) {
+KOKKOS_FUNCTION void ElementTypes::set_hex_domain_dof(const EntityDof& entity,
+                                                      ElemDof& element) {
   if constexpr (ends) {
     for (index_t w = 0; w < nz; w++) {
       for (index_t v = 0; v < ny; v++) {

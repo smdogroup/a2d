@@ -72,25 +72,30 @@ class ElementTypes {
   // Get the degrees of freedom associated with the bound
   template <index_t offset, index_t ndof, index_t nx, class ElemDof,
             class EntityDof>
-  static void get_line_bound_dof(index_t b, const ElemDof& element,
-                                 EntityDof& entity);
+  KOKKOS_FUNCTION static void get_line_bound_dof(index_t b,
+                                                 const ElemDof& element,
+                                                 EntityDof& entity);
 
   // Get the degrees of freedom associated with a bound
   template <index_t offset, index_t ndof, index_t nx, class EntityDof,
             class ElemDof>
-  static void set_line_bound_dof(index_t b, const index_t orient,
-                                 const EntityDof& entity, ElemDof& element);
+  KOKKOS_FUNCTION static void set_line_bound_dof(index_t b,
+                                                 const index_t orient,
+                                                 const EntityDof& entity,
+                                                 ElemDof& element);
 
   // Get the degrees of freedom from the domain
   template <index_t offset, bool ends, index_t ndof, index_t nx, class ElemDof,
             class EntityDof>
-  static void get_line_domain_dof(const ElemDof& element, EntityDof& entity);
+  KOKKOS_FUNCTION static void get_line_domain_dof(const ElemDof& element,
+                                                  EntityDof& entity);
 
   // Set the degrees of freedom from the domain
   template <index_t offset, bool ends, index_t ndof, index_t nx,
             class EntityDof, class ElemDof>
-  static void set_line_domain_dof(const index_t orient, const EntityDof& entity,
-                                  ElemDof& element);
+  KOKKOS_FUNCTION static void set_line_domain_dof(const index_t orient,
+                                                  const EntityDof& entity,
+                                                  ElemDof& element);
 
   /**
    * @brief Triangle element
@@ -174,65 +179,69 @@ class ElementTypes {
       {0, 3, 2, 1}, {3, 2, 1, 0}, {2, 1, 0, 3}, {1, 0, 3, 2}};
 
   // Given a reference domain, find the orientation
-  static index_t get_quad_domain_orientation(const index_t ref_domain_verts[],
-                                             const index_t domain_verts[]);
+  KOKKOS_FUNCTION static index_t get_quad_domain_orientation(
+      const index_t ref_domain_verts[], const index_t domain_verts[]);
 
   // Get the coords on quad ref element object
-  static void get_coords_on_quad_ref_element(const index_t orient,
-                                             const index_t hx, const index_t hy,
-                                             const index_t x, const index_t y,
-                                             index_t* u, index_t* v);
+  KOKKOS_FUNCTION static void get_coords_on_quad_ref_element(
+      const index_t orient, const index_t hx, const index_t hy, const index_t x,
+      const index_t y, index_t* u, index_t* v);
 
-  static index_t get_index_on_quad_ref_element(const index_t orient,
-                                               const index_t hx,
-                                               const index_t hy,
-                                               const index_t x,
-                                               const index_t y);
+  KOKKOS_FUNCTION static index_t get_index_on_quad_ref_element(
+      const index_t orient, const index_t hx, const index_t hy, const index_t x,
+      const index_t y);
 
   // Get the local node index (without offset) for a node on an element
   // with nx and ny nodes along the local directions
   template <index_t nx, index_t ny>
-  static inline int get_quad_node(const int i, const int j);
+  KOKKOS_FUNCTION static inline int get_quad_node(const int i, const int j);
 
   // Get the bound length between the vertices v1 and v2
   template <index_t nx, index_t ny>
-  static inline index_t get_quad_bound_length(const index_t v0,
-                                              const index_t v1);
+  KOKKOS_FUNCTION static inline index_t get_quad_bound_length(const index_t v0,
+                                                              const index_t v1);
 
   // Get the degrees of freedom associated with the vertex
   template <index_t offset, index_t ndof, index_t nx, index_t ny, class ElemDof,
             class EntityDof>
-  static void get_quad_vert_dof(index_t v, const ElemDof& element,
-                                EntityDof& entity);
+  KOKKOS_FUNCTION static void get_quad_vert_dof(index_t v,
+                                                const ElemDof& element,
+                                                EntityDof& entity);
 
   // Get the degrees of freedom associated with the vertex
   template <index_t offset, index_t ndof, index_t nx, index_t ny,
             class EntityDof, class ElemDof>
-  static void set_quad_vert_dof(index_t v, const EntityDof& entity,
-                                ElemDof& element);
+  KOKKOS_FUNCTION static void set_quad_vert_dof(index_t v,
+                                                const EntityDof& entity,
+                                                ElemDof& element);
 
   // Get the degrees of freedom from the bound
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             class ElemDof, class EntityDof>
-  static void get_quad_bound_dof(const index_t b, const ElemDof& element,
-                                 EntityDof& entity);
+  KOKKOS_FUNCTION static void get_quad_bound_dof(const index_t b,
+                                                 const ElemDof& element,
+                                                 EntityDof& entity);
 
   // Set the degrees of freedom from the bound
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             class EntityDof, class ElemDof>
-  static void set_quad_bound_dof(const index_t b, const index_t orient,
-                                 const EntityDof& entity, ElemDof& element);
+  KOKKOS_FUNCTION static void set_quad_bound_dof(const index_t b,
+                                                 const index_t orient,
+                                                 const EntityDof& entity,
+                                                 ElemDof& element);
 
   // Get the degrees of freedom from the quad domain
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             class ElemDof, class EntityDof>
-  static void get_quad_domain_dof(const ElemDof& element, EntityDof& entity);
+  KOKKOS_FUNCTION static void get_quad_domain_dof(const ElemDof& element,
+                                                  EntityDof& entity);
 
   // Set the degrees of freedom from the domain into the element
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             class EntityDof, class ElemDof>
-  static void set_quad_domain_dof(const index_t orient, const EntityDof& entity,
-                                  ElemDof& element);
+  KOKKOS_FUNCTION static void set_quad_domain_dof(const index_t orient,
+                                                  const EntityDof& entity,
+                                                  ElemDof& element);
 
   /**
    * @brief Tetrahedral properties
@@ -373,57 +382,69 @@ class ElementTypes {
   // Get the local node index (without offset) for a node on an element
   // with nx, ny and nz nodes along the local directions
   template <index_t nx, index_t ny, index_t nz>
-  static int get_hex_node(const int i, const int j, const int k);
+  KOKKOS_FUNCTION static int get_hex_node(const int i, const int j,
+                                          const int k);
 
   // Get the edge length between the verties v1 and v2
   template <index_t nx, index_t ny, index_t nz>
-  static index_t get_hex_edge_length(const index_t v0, const index_t v1);
+  KOKKOS_FUNCTION static index_t get_hex_edge_length(const index_t v0,
+                                                     const index_t v1);
 
   // Get the degrees of freedom associated with the vertex
   template <index_t offset, index_t ndof, index_t nx, index_t ny, index_t nz,
             class ElemDof, class EntityDof>
-  static void get_hex_vert_dof(index_t v, const ElemDof& element,
-                               EntityDof& entity);
+  KOKKOS_FUNCTION static void get_hex_vert_dof(index_t v,
+                                               const ElemDof& element,
+                                               EntityDof& entity);
 
   // Get the degrees of freedom associated with the vertex
   template <index_t offset, index_t ndof, index_t nx, index_t ny, index_t nz,
             class EntityDof, class ElemDof>
-  static void set_hex_vert_dof(index_t v, const EntityDof& entity,
-                               ElemDof& element);
+  KOKKOS_FUNCTION static void set_hex_vert_dof(index_t v,
+                                               const EntityDof& entity,
+                                               ElemDof& element);
 
   // Get the degrees of freedom from the edge
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class ElemDof, class EntityDof>
-  static void get_hex_edge_dof(const index_t e, const ElemDof& element,
-                               EntityDof& entity);
+  KOKKOS_FUNCTION static void get_hex_edge_dof(const index_t e,
+                                               const ElemDof& element,
+                                               EntityDof& entity);
 
   // Set the degrees of freedom from the edge
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class EntityDof, class ElemDof>
-  static void set_hex_edge_dof(const index_t e, const index_t orient,
-                               const EntityDof& entity, ElemDof& element);
+  KOKKOS_FUNCTION static void set_hex_edge_dof(const index_t e,
+                                               const index_t orient,
+                                               const EntityDof& entity,
+                                               ElemDof& element);
 
   // Get the degrees of freedom from the hex bound
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class ElemDof, class EntityDof>
-  static void get_hex_bound_dof(const index_t f, const ElemDof& element,
-                                EntityDof& entity);
+  KOKKOS_FUNCTION static void get_hex_bound_dof(const index_t f,
+                                                const ElemDof& element,
+                                                EntityDof& entity);
 
   // Set the degrees of freedom from the bound into the element
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class EntityDof, class ElemDof>
-  static void set_hex_bound_dof(const index_t f, const index_t orient,
-                                const EntityDof& entity, ElemDof& element);
+  KOKKOS_FUNCTION static void set_hex_bound_dof(const index_t f,
+                                                const index_t orient,
+                                                const EntityDof& entity,
+                                                ElemDof& element);
 
   // Get the degrees of freedom from the domain
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class ElemDof, class EntityDof>
-  static void get_hex_domain_dof(const ElemDof& element, EntityDof& entity);
+  KOKKOS_FUNCTION static void get_hex_domain_dof(const ElemDof& element,
+                                                 EntityDof& entity);
 
   // Set the degrees of freedom into the element array
   template <index_t offset, bool ends, index_t ndof, index_t nx, index_t ny,
             index_t nz, class EntityDof, class ElemDof>
-  static void set_hex_domain_dof(const EntityDof& entity, ElemDof& element);
+  KOKKOS_FUNCTION static void set_hex_domain_dof(const EntityDof& entity,
+                                                 ElemDof& element);
 
   /**
    * @brief Wedge properties

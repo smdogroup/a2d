@@ -459,9 +459,9 @@ class ElementMesh {
 
   // Needed for parallel element execution
   template <index_t basis>
-  int get_global_dof_sign(index_t elem, index_t index);
+  KOKKOS_FUNCTION int get_global_dof_sign(index_t elem, index_t index);
   template <index_t basis>
-  index_t get_global_dof(index_t elem, index_t index);
+  KOKKOS_FUNCTION index_t get_global_dof(index_t elem, index_t index);
 
   // Get the degrees of freedom associated with this element
   KOKKOS_FUNCTION auto get_element_dof(const index_t elem) {

@@ -6,7 +6,7 @@
 namespace A2D {
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2SymmMultCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2SymmMultCore(const AMatType& A,
                                              const BMatType& B, CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) = (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -15,7 +15,7 @@ A2D_INLINE_FUNCTION void Symm2x2SymmMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2SymmMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2SymmMultScaleCore(T scale, const AMatType& A,
                                                   const BMatType& B,
                                                   CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -25,7 +25,7 @@ A2D_INLINE_FUNCTION void Symm2x2SymmMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2SymmMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2SymmMultAddCore(const AMatType& A,
                                                 const BMatType& B,
                                                 CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -35,7 +35,7 @@ A2D_INLINE_FUNCTION void Symm2x2SymmMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2SymmMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2SymmMultSubCore(const AMatType& A,
                                                 const BMatType& B,
                                                 CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -45,7 +45,7 @@ A2D_INLINE_FUNCTION void Symm2x2SymmMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2SymmMultAddScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2SymmMultAddScaleCore(T scale, const AMatType& A,
                                                      const BMatType& B,
                                                      CMatType& C) {
   C(0, 0) += scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -55,7 +55,7 @@ A2D_INLINE_FUNCTION void Symm2x2SymmMultAddScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatMultCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatMultCore(const AMatType& A,
                                             const BMatType& B, CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) = (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -64,7 +64,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatMultScaleCore(T scale, const AMatType& A,
                                                  const BMatType& B,
                                                  CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -74,7 +74,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatMultAddCore(const AMatType& A,
                                                const BMatType& B, CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) += (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -83,7 +83,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatMultSubCore(const AMatType& A,
                                                const BMatType& B, CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) -= (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -92,7 +92,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatMultAddScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatMultAddScaleCore(T scale, const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) += scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -102,7 +102,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatMultAddScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatTransMultCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatTransMultCore(const AMatType& A,
                                                  const BMatType& B,
                                                  CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -112,7 +112,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatTransMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatTransMultScaleCore(T scale,
+KOKKOS_FUNCTION void Symm2x2MatTransMultScaleCore(T scale,
                                                       const AMatType& A,
                                                       const BMatType& B,
                                                       CMatType& C) {
@@ -123,7 +123,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatTransMultScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatTransMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatTransMultAddCore(const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -133,7 +133,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatTransMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatTransMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Symm2x2MatTransMultSubCore(const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -143,7 +143,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatTransMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Symm2x2MatTransMultAddScaleCore(T scale,
+KOKKOS_FUNCTION void Symm2x2MatTransMultAddScaleCore(T scale,
                                                          const AMatType& A,
                                                          const BMatType& B,
                                                          CMatType& C) {
@@ -154,7 +154,7 @@ A2D_INLINE_FUNCTION void Symm2x2MatTransMultAddScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2SymmMultCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2SymmMultCore(const AMatType& A,
                                             const BMatType& B, CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) = (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -163,7 +163,7 @@ A2D_INLINE_FUNCTION void Mat2x2SymmMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2SymmMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2SymmMultScaleCore(T scale, const AMatType& A,
                                                  const BMatType& B,
                                                  CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -173,7 +173,7 @@ A2D_INLINE_FUNCTION void Mat2x2SymmMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2SymmMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2SymmMultAddCore(const AMatType& A,
                                                const BMatType& B, CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) += (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -182,7 +182,7 @@ A2D_INLINE_FUNCTION void Mat2x2SymmMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2SymmMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2SymmMultSubCore(const AMatType& A,
                                                const BMatType& B, CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) -= (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -191,7 +191,7 @@ A2D_INLINE_FUNCTION void Mat2x2SymmMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2SymmMultAddScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2SymmMultAddScaleCore(T scale, const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) += scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -201,7 +201,7 @@ A2D_INLINE_FUNCTION void Mat2x2SymmMultAddScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2SymmMultCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2SymmMultCore(const AMatType& A,
                                                  const BMatType& B,
                                                  CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -211,7 +211,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2SymmMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2SymmMultScaleCore(T scale,
+KOKKOS_FUNCTION void MatTrans2x2SymmMultScaleCore(T scale,
                                                       const AMatType& A,
                                                       const BMatType& B,
                                                       CMatType& C) {
@@ -222,7 +222,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2SymmMultScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2SymmMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2SymmMultAddCore(const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -232,7 +232,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2SymmMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2SymmMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2SymmMultSubCore(const AMatType& A,
                                                     const BMatType& B,
                                                     CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -242,7 +242,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2SymmMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2SymmMultAddScaleCore(T scale,
+KOKKOS_FUNCTION void MatTrans2x2SymmMultAddScaleCore(T scale,
                                                          const AMatType& A,
                                                          const BMatType& B,
                                                          CMatType& C) {
@@ -253,7 +253,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2SymmMultAddScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatMultCore(const AMatType& A, const BMatType& B,
+KOKKOS_FUNCTION void Mat2x2MatMultCore(const AMatType& A, const BMatType& B,
                                            CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) = (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -262,7 +262,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatMultCore(const AMatType& A, const BMatType& B,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatMultScaleCore(T scale, const AMatType& A,
                                                 const BMatType& B,
                                                 CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -272,7 +272,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatMultAddCore(const AMatType& A,
                                               const BMatType& B, CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) += (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -281,7 +281,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatMultSubCore(const AMatType& A,
                                               const BMatType& B, CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
   C(0, 1) -= (A(0, 0) * B(0, 1) + A(0, 1) * B(1, 1));
@@ -290,7 +290,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatMultAddScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatMultAddScaleCore(T scale, const AMatType& A,
                                                    const BMatType& B,
                                                    CMatType& C) {
   C(0, 0) += scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(1, 0));
@@ -300,7 +300,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatMultAddScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatTransMultCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatTransMultCore(const AMatType& A,
                                                 const BMatType& B,
                                                 CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -310,7 +310,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatTransMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatTransMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatTransMultScaleCore(T scale, const AMatType& A,
                                                      const BMatType& B,
                                                      CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -320,7 +320,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatTransMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatTransMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatTransMultAddCore(const AMatType& A,
                                                    const BMatType& B,
                                                    CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -330,7 +330,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatTransMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatTransMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void Mat2x2MatTransMultSubCore(const AMatType& A,
                                                    const BMatType& B,
                                                    CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(0, 1) * B(0, 1));
@@ -340,7 +340,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatTransMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void Mat2x2MatTransMultAddScaleCore(T scale,
+KOKKOS_FUNCTION void Mat2x2MatTransMultAddScaleCore(T scale,
                                                         const AMatType& A,
                                                         const BMatType& B,
                                                         CMatType& C) {
@@ -351,7 +351,7 @@ A2D_INLINE_FUNCTION void Mat2x2MatTransMultAddScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatMultCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatMultCore(const AMatType& A,
                                                 const BMatType& B,
                                                 CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -361,7 +361,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatMultScaleCore(T scale, const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatMultScaleCore(T scale, const AMatType& A,
                                                      const BMatType& B,
                                                      CMatType& C) {
   C(0, 0) = scale * (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -371,7 +371,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatMultScaleCore(T scale, const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatMultAddCore(const AMatType& A,
                                                    const BMatType& B,
                                                    CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -381,7 +381,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatMultSubCore(const AMatType& A,
                                                    const BMatType& B,
                                                    CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(1, 0) * B(1, 0));
@@ -391,7 +391,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatMultAddScaleCore(T scale,
+KOKKOS_FUNCTION void MatTrans2x2MatMultAddScaleCore(T scale,
                                                         const AMatType& A,
                                                         const BMatType& B,
                                                         CMatType& C) {
@@ -402,7 +402,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatMultAddScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatTransMultCore(const AMatType& A,
                                                      const BMatType& B,
                                                      CMatType& C) {
   C(0, 0) = (A(0, 0) * B(0, 0) + A(1, 0) * B(0, 1));
@@ -412,7 +412,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultScaleCore(T scale,
+KOKKOS_FUNCTION void MatTrans2x2MatTransMultScaleCore(T scale,
                                                           const AMatType& A,
                                                           const BMatType& B,
                                                           CMatType& C) {
@@ -423,7 +423,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultScaleCore(T scale,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultAddCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatTransMultAddCore(const AMatType& A,
                                                         const BMatType& B,
                                                         CMatType& C) {
   C(0, 0) += (A(0, 0) * B(0, 0) + A(1, 0) * B(0, 1));
@@ -433,7 +433,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultAddCore(const AMatType& A,
 }
 
 template <class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultSubCore(const AMatType& A,
+KOKKOS_FUNCTION void MatTrans2x2MatTransMultSubCore(const AMatType& A,
                                                         const BMatType& B,
                                                         CMatType& C) {
   C(0, 0) -= (A(0, 0) * B(0, 0) + A(1, 0) * B(0, 1));
@@ -443,7 +443,7 @@ A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultSubCore(const AMatType& A,
 }
 
 template <typename T, class AMatType, class BMatType, class CMatType>
-A2D_INLINE_FUNCTION void MatTrans2x2MatTransMultAddScaleCore(T scale,
+KOKKOS_FUNCTION void MatTrans2x2MatTransMultAddScaleCore(T scale,
                                                              const AMatType& A,
                                                              const BMatType& B,
                                                              CMatType& C) {

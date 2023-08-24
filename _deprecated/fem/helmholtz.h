@@ -87,14 +87,14 @@ class HelmholtzElement
 
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Uq,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
                    A2D::Vec<T, 1> & Ub)
             ->void { Ub(0) = wdetJ * (U0(0) - data(i, j, 0)); },
         elem_res);
 
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv,
                    A2D::Mat<T, 1, SPATIAL_DIM> & Uxi,
                    A2D::Mat<T, 1, SPATIAL_DIM> & Uxib)
@@ -147,14 +147,14 @@ class HelmholtzElement
 
     BasisOps::template jacobians<T, vars_per_node>(
         detJ, Uq,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
                    A2D::SymmMat<T, 1> & jac)
             ->void { jac(0, 0) = wdetJ; },
         elem_jac);
 
     BasisOps::template jacobians<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv,
                    A2D::Mat<T, 1, SPATIAL_DIM> & Uxi,
                    A2D::Mat<T, 1, SPATIAL_DIM> & Uxib,
@@ -200,7 +200,7 @@ class HelmholtzElement
     // Compute the product
     BasisOps::template adjoint_product<T, vars_per_node>(
         detJ, Uq, psiq,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ, A2D::Vec<T, 1> & U0,
                    A2D::Vec<T, 1> & Psi) { dfdx(i, j, 0) -= wdetJ * Psi(0); });
   }
 };

@@ -459,7 +459,8 @@ class ElementMesh {
   index_t get_global_dof(index_t elem, index_t index);
 
   // Get the degrees of freedom associated with this element
-  void get_element_dof(const index_t elem, const index_t* dof[]) {
+  KOKKOS_FUNCTION void get_element_dof(const index_t elem,
+                                       const index_t* dof[]) {
     *dof = &element_dof[ndof_per_element * elem];
   }
 

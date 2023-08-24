@@ -1,6 +1,7 @@
 #ifndef A2D_SPARSE_CHOLESKY_H
 #define A2D_SPARSE_CHOLESKY_H
 
+#include "a2dobjs.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dlapack.h"
@@ -36,12 +37,14 @@ class SparseCholesky {
   SparseCholesky(int _size, const int *Acolp, const int *Arows,
                  CholOrderingType order = CholOrderingType::ND,
                  const int *_perm = nullptr) {
+    check_type_and_warn();
     construct_cholesky(_size, Acolp, Arows, order, _perm);
   }
 
   SparseCholesky(CSCMat<T> csc_mat,
                  CholOrderingType order = CholOrderingType::ND,
                  const int *_perm = nullptr, bool set_values = true) {
+    check_type_and_warn();
     construct_cholesky(csc_mat.nrows, (const int *)csc_mat.colp.data(),
                        (const int *)csc_mat.rows.data(), order, _perm);
     setValues(csc_mat);
@@ -68,6 +71,15 @@ class SparseCholesky {
   void getInfo(int *_size, int *_num_snodes, int *_nnzL);
 
  private:
+  void check_type_and_warn() {
+    if constexpr (is_complex<T>::value) {
+      std::cerr << "====================================================\n";
+      std::cerr << "[Warning] Complex type detected for Cholesky solver!\n"
+                   "Cholesky factorization won't work if matrix A != A.H\n";
+      std::cerr << "====================================================\n";
+    }
+  }
+
   // Construct the class
   void construct_cholesky(int _size, const int *Acolp, const int *Arows,
                           CholOrderingType order = CholOrderingType::ND,

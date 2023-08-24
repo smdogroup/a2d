@@ -29,7 +29,7 @@ template <typename T, index_t block_size, index_t basis_offset, class Basis,
 class StaticCondensationMat {
  public:
   // Definition for the index type
-  using I = A2D::index_t;
+  using I = index_t;
 
   // Define the sizes of the element-wise block matrices
   static const constexpr I bsize =
@@ -37,14 +37,14 @@ class StaticCondensationMat {
   static const constexpr I csize = Basis::ndof - bsize;
 
   // Definitions for the matrix types
-  using BSRMatType = A2D::BSRMat<T, block_size, block_size>;
-  using BSRMatAmgType = A2D::BSRMatAmg<T, block_size, null_size>;
-  using BMatType = A2D::Mat<T, bsize, bsize>;
-  using CMatType = A2D::Mat<T, csize, csize>;
-  using EMatType = A2D::Mat<T, bsize, csize>;
-  using FMatType = A2D::Mat<T, csize, bsize>;
+  using BSRMatType = BSRMat<T, block_size, block_size>;
+  using BSRMatAmgType = BSRMatAmg<T, block_size, null_size>;
+  using BMatType = Mat<T, bsize, bsize>;
+  using CMatType = Mat<T, csize, csize>;
+  using EMatType = Mat<T, bsize, csize>;
+  using FMatType = Mat<T, csize, bsize>;
 
-  StaticCondensationMat(A2D::ElementMesh<Basis> &mesh)
+  StaticCondensationMat(ElementMesh<Basis> &mesh)
       : mesh(mesh),
         bnull("bnull", mesh.get_num_dof() / block_size),
         x("x", mesh.get_num_cumulative_dof(basis_offset - 1)),
@@ -161,7 +161,7 @@ class StaticCondensationMat {
 
   // Apply boundary conditions
   template <class BcBasisType>
-  void zero_bcs(const A2D::DirichletBCs<BcBasisType> &bcs) {
+  void zero_bcs(const DirichletBCs<BcBasisType> &bcs) {
     std::vector<I> is_bc(mesh.get_num_dof(), 0);
 
     const I *bc_dofs = NULL;
@@ -222,11 +222,11 @@ class StaticCondensationMat {
       // Form B - E * C^{-1} * F before assembling it into the global matrix
       // Compute and store C^{-1} in the C array of matrices
       CMatType copy(C[elem]);
-      A2D::Vec<I, csize> ipiv;
+      Vec<I, csize> ipiv;
       blockInverse<T, csize>(copy, C[elem], ipiv);
 
       // Mulitply temp = C^{-1} * F
-      A2D::Mat<T, csize, bsize> temp;
+      Mat<T, csize, bsize> temp;
       blockGemm<T, csize, csize, bsize>(C[elem], F[elem], temp);
 
       // Compute B = B - E * temp = B - E * C^{-1} * F
@@ -265,10 +265,10 @@ class StaticCondensationMat {
    * @param in The input vector
    * @param out The output vector
    */
-  void apply_factor(A2D::MultiArrayNew<T *[block_size]> &in,
-                    A2D::MultiArrayNew<T *[block_size]> &out) {
+  void apply_factor(MultiArrayNew<T *[block_size]> &in,
+                    MultiArrayNew<T *[block_size]> &out) {
     // Compute f = b - E * C^{-1} * d
-    A2D::BLAS::zero(f);
+    BLAS::zero(f);
     for (I elem = 0; elem < mesh.get_num_elements(); elem++) {
       I dof[Basis::ndof];
       int sign[Basis::ndof];
@@ -277,17 +277,17 @@ class StaticCondensationMat {
       }
 
       // Extract b and d
-      A2D::Vec<T, bsize> b;
+      Vec<T, bsize> b;
       for (I i = 0; i < bsize; i++) {
         b(i) = in(dof[i] / block_size, dof[i] % block_size);
       }
 
-      A2D::Vec<T, csize> d;
+      Vec<T, csize> d;
       for (I i = 0; i < csize; i++) {
         d(i) = in(dof[i + bsize] / block_size, dof[i + bsize] % block_size);
       }
 
-      A2D::Vec<T, csize> t;  // t = C^{-1} * d
+      Vec<T, csize> t;  // t = C^{-1} * d
       blockGemv<T, csize, csize>(C[elem], d, t);
 
       // b = b - E * t = b - E * C^{-1} * d
@@ -300,7 +300,7 @@ class StaticCondensationMat {
     }
 
     // Apply the preconditioner B * x = f
-    A2D::BLAS::zero(x);
+    BLAS::zero(x);
     amg->applyFactor(f, x);
 
     // Solve for the remaining dof: y = C^{-1} * (d - F * x)
@@ -312,12 +312,12 @@ class StaticCondensationMat {
       }
 
       // Extract the element solution xelem
-      A2D::Vec<T, bsize> xelem;
+      Vec<T, bsize> xelem;
       for (I i = 0; i < bsize; i++) {
         xelem(i) = x(dof[i] / block_size, dof[i] % block_size);
       }
 
-      A2D::Vec<T, csize> d;
+      Vec<T, csize> d;
       for (I i = 0; i < csize; i++) {
         d(i) = in(dof[i + bsize] / block_size, dof[i + bsize] % block_size);
       }
@@ -326,7 +326,7 @@ class StaticCondensationMat {
       blockGemvSub<T, csize, bsize>(F[elem], xelem, d);
 
       // Compute y = C^{-1} * (d - F * xe)
-      A2D::Vec<T, csize> yelem;
+      Vec<T, csize> yelem;
       blockGemv<T, csize, csize>(C[elem], d, yelem);
 
       // Set the variables into the solution
@@ -360,9 +360,9 @@ class StaticCondensationMat {
     }
   }
 
-  A2D::ElementMesh<Basis> &mesh;
-  A2D::MultiArrayNew<T *[block_size][null_size]> bnull;
-  A2D::MultiArrayNew<T *[block_size]> x, f;
+  ElementMesh<Basis> &mesh;
+  MultiArrayNew<T *[block_size][null_size]> bnull;
+  MultiArrayNew<T *[block_size]> x, f;
 
   std::vector<BMatType> B;
   std::vector<CMatType> C;

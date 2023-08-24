@@ -1,7 +1,7 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#include "fem/elasticity.h"
+#include "fem/integrand_elasticity.h"
 #include "fem/functional.h"
 #include "fem/helmholtz.h"
 #include "fem/model.h"
@@ -41,12 +41,12 @@ typedef ElementFunctional<Itype, Ttype,
                           ElasticityPDEInfo<SPATIAL_DIM, Itype, Ttype>>
     Elasticity_ElementFunctional;
 
-typedef TopoVolume<Itype, Ttype, Basis_C3D8> TopoVolume_C3D8;
-typedef TopoVolume<Itype, Ttype, Basis_C3D10> TopoVolume_C3D10;
+typedef IntegrandTopoVolume<Itype, Ttype, Basis_C3D8> TopoVolume_C3D8;
+typedef IntegrandTopoVolume<Itype, Ttype, Basis_C3D10> TopoVolume_C3D10;
 
-typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D8>
+typedef IntegrandTopoVonMisesKS<Itype, Ttype, Basis_C3D8>
     TopoVonMisesAggregation_C3D8;
-typedef TopoVonMisesAggregation<Itype, Ttype, Basis_C3D10>
+typedef IntegrandTopoVonMisesKS<Itype, Ttype, Basis_C3D10>
     TopoVonMisesAggregation_C3D10;
 
 typedef ConstitutiveBase<Itype, Ttype,

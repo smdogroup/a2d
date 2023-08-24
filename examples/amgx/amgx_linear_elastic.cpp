@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
   // Set up the stress functional
   auto functional = std::make_shared<Functional<I, T, ElasticityPDE>>();
   auto agg_functional =
-      std::make_shared<TopoVonMisesAggregation<I, T, Basis>>(constitutive);
+      std::make_shared<IntegrandTopoVonMisesKS<I, T, Basis>>(constitutive);
   functional->add_functional(agg_functional);
 
   // ================================================================

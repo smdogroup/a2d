@@ -1,15 +1,15 @@
 #include <iostream>
 #include <memory>
 
-#include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
-#include "multiphysics/heat_conduction.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_heat_conduction.h"
+#include "multiphysics/integrand_poisson.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
-#include "multiphysics/poisson.h"
 #include "multiphysics/qhdiv_hex_basis.h"
 #include "sparse/sparse_amg.h"
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Topology linear elasticity\n";
   T E = 70e3, nu = 0.3, q = 5.0;
-  A2D::TopoLinearElasticity<std::complex<T>, dim> elasticity(E, nu, q);
+  A2D::IntegrandTopoLinearElasticity<std::complex<T>, dim> elasticity(E, nu, q);
   A2D::TestPDEImplementation<std::complex<T>>(elasticity);
 
   std::cout << "Heat conduction\n";

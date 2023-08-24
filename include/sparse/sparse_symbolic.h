@@ -374,8 +374,8 @@ BSRMat<T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<T, M, M>& A,
   IdxArray1D_t perm_("perm_", A.nbrows);
 
   // Copy the values to rowp and cols
-  A2D::BLAS::copy(rowp, A.rowp);
-  A2D::BLAS::copy(cols, A.cols);
+  BLAS::copy(rowp, A.rowp);
+  BLAS::copy(cols, A.cols);
 
   // Compute the re-ordering
   int* interface_nodes = NULL;
@@ -397,7 +397,7 @@ BSRMat<T, M, M>* BSRMatAMDFactorSymbolic(BSRMat<T, M, M>& A,
   // Set the permutation array
   IdxArray1D_t perm("perm", A.nbrows);
   IdxArray1D_t iperm("iperm", A.nbrows);
-  A2D::BLAS::copy(perm, perm_);
+  BLAS::copy(perm, perm_);
 
   for (index_t i = 0; i < A.nbrows; i++) {
     iperm[perm[i]] = i;

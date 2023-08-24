@@ -1,16 +1,15 @@
-#include "fem/elasticity.h"
-
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
 
 #include "a2d.h"
+#include "fem/integrand_elasticity.h"
 
 using namespace A2D;
 
-template <typename I, typename T, class PDE, class Basis>
-void test_data_adjoint_product(typename PDE::SolutionArray& u,
-                               ElementBasis<I, T, PDE, Basis>& element,
+template <typename I, typename T, class PDEIntegrand, class Basis>
+void test_data_adjoint_product(typename PDEIntegrand::SolutionArray& u,
+                               ElementBasis<I, T, PDEIntegrand, Basis>& element,
                                double dh = 1e-30) {
   auto data = element.get_quad_data();
   auto dfddata = data.duplicate();
@@ -38,9 +37,9 @@ void test_data_adjoint_product(typename PDE::SolutionArray& u,
   std::printf("Adjoint-data result: %20.20e\n", result.real());
 }
 
-template <typename I, typename T, class PDE, class DesignArray>
+template <typename I, typename T, class PDEIntegrand, class DesignArray>
 void test_adjoint_product(DesignArray& x,
-                          std::shared_ptr<FEModel<I, T, PDE>> model,
+                          std::shared_ptr<FEModel<I, T, PDEIntegrand>> model,
                           double dh = 1e-30) {
   auto res = model->new_solution();
   auto adj = model->new_solution();
@@ -78,7 +77,7 @@ void main_body() {
   using I = index_t;
   using T = A2D_complex_t<double>;
   using Basis = BasisOps<3, HexTriLinearBasisFunc, Hex8ptQuadrature>;
-  using PDE = ElasticityPDEInfo<3, I, T>;
+  using PDEIntegrand = ElasticityPDEInfo<3, I, T>;
 
   const index_t nx = 32;
   const index_t ny = 32;
@@ -87,7 +86,7 @@ void main_body() {
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
 
-  auto model = std::make_shared<FEModel<I, T, PDE>>(nnodes, nbcs);
+  auto model = std::make_shared<FEModel<I, T, PDEIntegrand>>(nnodes, nbcs);
   auto element = std::make_shared<LinElasticityElement<I, T, Basis>>(nelems);
   model->add_element(element);
 
@@ -172,9 +171,9 @@ void main_body() {
   model->set_design_vars(x);
 
   // Set up the stress functional
-  auto functional = std::make_shared<Functional<I, T, PDE>>();
+  auto functional = std::make_shared<Functional<I, T, PDEIntegrand>>();
   auto agg_functional =
-      std::make_shared<TopoVonMisesAggregation<I, T, Basis>>(constitutive);
+      std::make_shared<IntegrandTopoVonMisesKS<I, T, Basis>>(constitutive);
   functional->add_functional(agg_functional);
 
   // Compute the Jacobian matrix

@@ -20,7 +20,7 @@ namespace A2D {
 */
 
 template <typename T, int N>
-A2D_INLINE_FUNCTION void MatInv(Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
+KOKKOS_FUNCTION void MatInv(Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
   MatInvCore<T, N>(get_data(A), get_data(Ainv));
 }
 
@@ -29,16 +29,16 @@ class MatInvExpr {
  private:
   using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
 
-  static constexpr A2D::MatOp NORMAL = A2D::MatOp::NORMAL;
-  static constexpr A2D::MatOp TRANSPOSE = A2D::MatOp::TRANSPOSE;
+  static constexpr MatOp NORMAL = MatOp::NORMAL;
+  static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
  public:
-  A2D_INLINE_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {
+  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {
     MatInvCore<T, N>(get_data(A), get_data(Ainv));
   }
 
   template <ADorder forder>
-  A2D_INLINE_FUNCTION void forward() {
+  KOKKOS_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -52,7 +52,7 @@ class MatInvExpr {
         T(-1.0), temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv));
   }
 
-  A2D_INLINE_FUNCTION void reverse() {
+  KOKKOS_FUNCTION void reverse() {
     T temp[N * N];
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
         get_data(Ainv), GetSeed<ADseed::b>::get_data(Ainv), temp);
@@ -60,7 +60,7 @@ class MatInvExpr {
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A));
   }
 
-  A2D_INLINE_FUNCTION void hreverse() {
+  KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
@@ -91,13 +91,13 @@ class MatInvExpr {
 };
 
 template <typename T, int N>
-A2D_INLINE_FUNCTION auto MatInv(ADMat<Mat<T, N, N>>& A,
+KOKKOS_FUNCTION auto MatInv(ADMat<Mat<T, N, N>>& A,
                                 ADMat<Mat<T, N, N>>& Ainv) {
   return MatInvExpr<T, N, ADorder::FIRST>(A, Ainv);
 }
 
 template <typename T, int N>
-A2D_INLINE_FUNCTION auto MatInv(A2DMat<Mat<T, N, N>>& A,
+KOKKOS_FUNCTION auto MatInv(A2DMat<Mat<T, N, N>>& A,
                                 A2DMat<Mat<T, N, N>>& Ainv) {
   return MatInvExpr<T, N, ADorder::SECOND>(A, Ainv);
 }

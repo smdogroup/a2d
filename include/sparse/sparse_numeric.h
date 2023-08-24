@@ -20,13 +20,13 @@ namespace A2D {
 template <class ConnArray, class NodeArray, class ElementArray>
 void VecElementScatter(ConnArray &conn, NodeArray &X, ElementArray &Xe) {
   // Loop over the elements
-  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
+  for (index_t i = 0; i < conn.extent(0); i++) {
     // Loop over each element nodes
-    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
-      const A2D::index_t index = conn(i, j);
+    for (index_t j = 0; j < conn.extent(1); j++) {
+      const index_t index = conn(i, j);
 
       // Loop over the variables
-      for (A2D::index_t k = 0; k < X.extent(1); k++) {
+      for (index_t k = 0; k < X.extent(1); k++) {
         Xe(i, j, k) = X(index, k);
       }
     }
@@ -40,13 +40,13 @@ void VecElementScatter(ConnArray &conn, NodeArray &X, ElementArray &Xe) {
 template <class ConnArray, class ElementArray, class NodeArray>
 void VecElementGatherAdd(ConnArray &conn, ElementArray &Xe, NodeArray &X) {
   // Loop over the elements
-  for (A2D::index_t i = 0; i < conn.extent(0); i++) {
+  for (index_t i = 0; i < conn.extent(0); i++) {
     // Loop over each element nodes
-    for (A2D::index_t j = 0; j < conn.extent(1); j++) {
-      const A2D::index_t index = conn(i, j);
+    for (index_t j = 0; j < conn.extent(1); j++) {
+      const index_t index = conn(i, j);
 
       // Loop over the variables
-      for (A2D::index_t k = 0; k < X.extent(1); k++) {
+      for (index_t k = 0; k < X.extent(1); k++) {
         X(index, k) += Xe(i, j, k);
       }
     }
@@ -89,8 +89,8 @@ void BSRMatAddElementMatrices(ConnArray &conn, JacArray &jac,
 template <typename T, index_t M, index_t N>
 void BSRMatVecMult(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                    MultiArrayNew<T *[M]> &y) {
-  A2D::parallel_for(
-      A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
+  parallel_for(
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t ii = 0; ii < M; ii++) {
           y(i, ii) = T(0);
         }
@@ -110,8 +110,8 @@ void BSRMatVecMult(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
 template <typename T, index_t M, index_t N>
 void BSRMatVecMultAdd(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                       MultiArrayNew<T *[M]> &y) {
-  A2D::parallel_for(
-      A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
+  parallel_for(
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         const index_t jp_end = A.rowp[i + 1];
         for (index_t jp = A.rowp[i]; jp < jp_end; jp++) {
           index_t j = A.cols[jp];
@@ -127,8 +127,8 @@ void BSRMatVecMultAdd(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
 template <typename T, index_t M, index_t N>
 void BSRMatVecMultSub(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                       MultiArrayNew<T *[M]> &y) {
-  A2D::parallel_for(
-      A.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
+  parallel_for(
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         const index_t jp_end = A.rowp[i + 1];
         for (index_t jp = A.rowp[i]; jp < jp_end; jp++) {
           index_t j = A.cols[jp];
@@ -148,8 +148,8 @@ void BSRMatMatMult(BSRMat<T, M, N> &A, BSRMat<T, N, P> &B, BSRMat<T, M, P> &C) {
   // C_{ik} = A_{ij} B_{jk}
   // for (index_t i = 0; i < C.nbrows; i++) {
   C.zero();
-  A2D::parallel_for(
-      C.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
+  parallel_for(
+      C.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           index_t j = A.cols[jp];
 
@@ -183,8 +183,8 @@ template <typename T, index_t M, index_t N, index_t P>
 void BSRMatMatMultAddScale(T scale, BSRMat<T, M, N> &A, BSRMat<T, N, P> &B,
                            BSRMat<T, M, P> &C) {
   // C_{ik} = A_{ij} B_{jk}
-  A2D::parallel_for(
-      C.nbrows, A2D_LAMBDA(A2D::index_t i)->void {
+  parallel_for(
+      C.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           index_t j = A.cols[jp];
 
@@ -339,10 +339,10 @@ void VecZeroBCRows(BCArray &bcs, MultiArrayNew<T *[M][N]> &x) {
 */
 template <typename T, index_t M>
 void BSRMatFactor(BSRMat<T, M, M> &A) {
-  using IdxArray1D_t = A2D::MultiArrayNew<index_t *>;
+  using IdxArray1D_t = MultiArrayNew<index_t *>;
 
-  A2D::Vec<index_t, M> ipiv;
-  A2D::Mat<T, M, M> D;
+  Vec<index_t, M> ipiv;
+  Mat<T, M, M> D;
 
   // Store the diagonal entries
   IdxArray1D_t diag;
@@ -454,7 +454,7 @@ void BSRMatApplyLower(BSRMat<T, M, M> &A, MultiArrayNew<T *[M]> &y) {
 */
 template <typename T, index_t M>
 void BSRMatApplyUpper(BSRMat<T, M, M> &A, MultiArrayNew<T *[M]> &y) {
-  A2D::Vec<T, M> ty;
+  Vec<T, M> ty;
 
   if (A.perm.is_allocated() && A.iperm.is_allocated()) {
     for (index_t i = A.nbrows; i > 0; i--) {
@@ -535,8 +535,8 @@ BSRMat<T, M, M> *BSRMatExtractBlockDiagonal(BSRMat<T, M, M> &A,
   BSRMat<T, M, M> *D = new BSRMat<T, M, M>(nrows, ncols, nnz, rowp, cols);
 
   // Now extract the real matrix and set the true non-zero pattern
-  A2D::Mat<T, M, M> Dinv;
-  A2D::Vec<index_t, M> ipiv;
+  Mat<T, M, M> Dinv;
+  Vec<index_t, M> ipiv;
 
   D->nnz = 0;
   D->rowp[0] = 0;
@@ -596,12 +596,12 @@ void BSRApplySOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
       const index_t count = A.color_count[color];
 
       // for (index_t irow = 0; irow < count; irow++) {
-      A2D::parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+      parallel_for(
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values
-            A2D::Vec<T, M> t;
+            Vec<T, M> t;
             for (index_t m = 0; m < M; m++) {
               t(m) = b(i, m);
             }
@@ -626,7 +626,7 @@ void BSRApplySOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
       offset += count;
     }
   } else {
-    A2D::Vec<T, M> t;
+    Vec<T, M> t;
 
     for (index_t i = 0; i < nrows; i++) {
       // Copy over the values
@@ -664,12 +664,12 @@ void BSRApplySSOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
     for (index_t color = 0, offset = 0; color < A.num_colors; color++) {
       const index_t count = A.color_count[color];
 
-      A2D::parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+      parallel_for(
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values
-            A2D::Vec<T, M> t;
+            Vec<T, M> t;
             for (index_t m = 0; m < M; m++) {
               t(m) = b(i, m);
             }
@@ -698,12 +698,12 @@ void BSRApplySSOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
     for (index_t color = A.num_colors; color > 0; color--) {
       const index_t count = A.color_count[color - 1];
 
-      A2D::parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+      parallel_for(
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values
-            A2D::Vec<T, M> t;
+            Vec<T, M> t;
             for (index_t m = 0; m < M; m++) {
               t(m) = b(i, m);
             }
@@ -729,7 +729,7 @@ void BSRApplySSOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
       }
     }
   } else {
-    A2D::Vec<T, M> t;
+    Vec<T, M> t;
 
     for (index_t i = 0; i < nrows; i++) {
       // Copy over the values
@@ -841,9 +841,9 @@ T BSRMatArnoldiSpectralRadius(BSRMat<T, M, M> &A, index_t size = 15) {
   W[0] = MultiArrayNew<T *[M]>("W[0]", A.nbrows);
 
   // Create an initial random vector
-  A2D::BLAS::random(W[0]);
-  auto norm = A2D::RealPart(A2D::BLAS::norm(W[0]));
-  A2D::BLAS::scale(W[0], 1.0 / norm);
+  BLAS::random(W[0]);
+  auto norm = RealPart(BLAS::norm(W[0]));
+  BLAS::scale(W[0], 1.0 / norm);
 
   for (index_t i = 0; i < size; i++) {
     // Allocate the next vector
@@ -857,14 +857,14 @@ T BSRMatArnoldiSpectralRadius(BSRMat<T, M, M> &A, index_t size = 15) {
     // Orthogonalize against the existing subspace
     for (index_t j = 0; j <= i; j++) {
       index_t index = i + j * size;  // row-major index for entry H(j, i)
-      H[index] = A2D::RealPart(A2D::BLAS::dot(W[i + 1], W[j]));
-      A2D::BLAS::axpy(W[i + 1], -H[index], W[j]);
+      H[index] = RealPart(BLAS::dot(W[i + 1], W[j]));
+      BLAS::axpy(W[i + 1], -H[index], W[j]);
     }
 
     // Add the term to the matrix
     index_t index = i + 1 + i * size;  // row-major index for entry H(i + 1, i)
-    H[index] = A2D::RealPart(A2D::BLAS::norm(W[i + 1]));
-    A2D::BLAS::scale(W[i + 1], 1.0 / H[index]);
+    H[index] = RealPart(BLAS::norm(W[i + 1]));
+    BLAS::scale(W[i + 1], 1.0 / H[index]);
   }
 
   // Allocate space for the real/complex eigenvalue
@@ -893,7 +893,7 @@ T BSRMatArnoldiSpectralRadius(BSRMat<T, M, M> &A, index_t size = 15) {
   T rho = 0.0;
   for (int i = 0; i < size; i++) {
     double val = sqrt(eigreal[i] * eigreal[i] + eigimag[i] * eigimag[i]);
-    if (val > A2D::absfunc(rho)) {
+    if (val > absfunc(rho)) {
       rho = val;
     }
   }

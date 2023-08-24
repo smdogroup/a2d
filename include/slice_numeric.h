@@ -24,7 +24,7 @@ namespace A2D {
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
                                         const xType& x, const int xj, yType& y,
                                         const int yk) {
   for (int i = 0; i < M; i++) {
@@ -44,7 +44,7 @@ A2D_INLINE_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
                                         const xType& x, yType& y,
                                         const int yk) {
   for (int i = 0; i < M; i++) {
@@ -64,7 +64,7 @@ A2D_INLINE_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvAddSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemvAddSlice(const AType& A, const int Ai,
                                            const xType& x, const int xj,
                                            yType& y, const int yk) {
   for (int i = 0; i < M; i++) {
@@ -84,7 +84,7 @@ A2D_INLINE_FUNCTION void blockGemvAddSlice(const AType& A, const int Ai,
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
+KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
                                                 const int Ai, const xType& x,
                                                 const int xj, yType& y,
                                                 const int yk) {
@@ -105,7 +105,7 @@ A2D_INLINE_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
+KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
                                                 const int Ai, const xType& x,
                                                 yType& y, const int yk) {
   for (int i = 0; i < M; i++) {
@@ -125,7 +125,7 @@ A2D_INLINE_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
   y is K x M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
                                            const xType& x, const int xj,
                                            yType& y, const int yk) {
   for (int i = 0; i < M; i++) {
@@ -145,7 +145,7 @@ A2D_INLINE_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
   y is M
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
                                            const xType& x, const int xj,
                                            yType& y) {
   for (int i = 0; i < M; i++) {
@@ -166,7 +166,7 @@ A2D_INLINE_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
                                         const BType& B, const int Bj, CType& C,
                                         const int Ck) {
   for (int i = 0; i < M; i++) {
@@ -189,7 +189,7 @@ A2D_INLINE_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
                                         const BType& B, const int Bj,
                                         CType& C) {
   for (int i = 0; i < M; i++) {
@@ -212,7 +212,7 @@ A2D_INLINE_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmAddSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemmAddSlice(const AType& A, const int Ai,
                                            const BType& B, const int Bj,
                                            CType& C, const int Ck) {
   for (int i = 0; i < M; i++) {
@@ -235,7 +235,7 @@ A2D_INLINE_FUNCTION void blockGemmAddSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmAddScaleSlice(const T scale, const AType& A,
+KOKKOS_FUNCTION void blockGemmAddScaleSlice(const T scale, const AType& A,
                                                 const int Ai, const BType& B,
                                                 const int Bj, CType& C,
                                                 const int Ck) {
@@ -259,7 +259,7 @@ A2D_INLINE_FUNCTION void blockGemmAddScaleSlice(const T scale, const AType& A,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmSubSlice(const AType& A, const int Ai,
+KOKKOS_FUNCTION void blockGemmSubSlice(const AType& A, const int Ai,
                                            const BType& B, const int Bj,
                                            CType& C, const int Ck) {
   for (int i = 0; i < M; i++) {
@@ -282,7 +282,7 @@ A2D_INLINE_FUNCTION void blockGemmSubSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmSubSlice(const AType& A, const BType& B,
+KOKKOS_FUNCTION void blockGemmSubSlice(const AType& A, const BType& B,
                                            const int Bj, CType& C,
                                            const int Ck) {
   for (int i = 0; i < M; i++) {

@@ -5,7 +5,9 @@
 #include "topology_paropt_prob.h"
 #include "utils/a2dparser.h"
 
-using I = A2D::index_t;
+using namespace A2D;
+
+using I = index_t;
 using T = ParOptScalar;
 using fspath = std::filesystem::path;
 
@@ -23,7 +25,7 @@ void verts_to_vtk(I nverts, std::vector<I> &bc_verts,
     labels[3 * (*it) + 1] = 1.0;  // traction verts
   }
   {
-    A2D::VectorFieldToVTK fieldtovtk(
+    VectorFieldToVTK fieldtovtk(
         nverts, Xloc, labels.data(),
         fspath(prefix) / fspath("bc_traction_verts.vtk"));
   }
@@ -90,7 +92,7 @@ create_analysis_vtk(std::string prefix, std::string vtk_name,
                     double cg_rtol, double cg_atol, bool verbose, int maxit,
                     int vtk_freq, double ramp_q, bool check_grad_and_exit) {
   // Load vtk
-  A2D::ReadVTK3D<I, T> readvtk(vtk_name);
+  ReadVTK3D<I, T> readvtk(vtk_name);
   T *Xloc = readvtk.get_Xloc();
   I nverts = readvtk.get_nverts();
   I nhex = readvtk.get_nhex();
@@ -99,8 +101,8 @@ create_analysis_vtk(std::string prefix, std::string vtk_name,
   I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
 
   // Construct connectivity
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
+  MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
+                          pyrmd);
 
   // Find bc vertices
   std::vector<int> ids{100};  // Fix the left surface of domain
@@ -117,8 +119,8 @@ create_analysis_vtk(std::string prefix, std::string vtk_name,
   T ymax = lower[1] + vb_traction_frac * (upper[1] - lower[1]);
   T zmin = lower[2];
   T zmax = upper[2];
-  std::vector<I> traction_verts = A2D::get_verts_within_box(
-      nverts, Xloc, xmin, xmax, ymin, ymax, zmin, zmax);
+  std::vector<I> traction_verts =
+      get_verts_within_box(nverts, Xloc, xmin, xmax, ymin, ymax, zmin, zmax);
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
 
@@ -130,7 +132,7 @@ create_analysis_vtk(std::string prefix, std::string vtk_name,
   T tx_body[3] = {0.0, 0.0, 0.0};
 
   // Set up boundary condition information
-  A2D::DirichletBCInfo bcinfo;
+  DirichletBCInfo bcinfo;
   bcinfo.add_boundary_condition(bc_label);
 
   // Initialize the analysis instance
@@ -141,7 +143,7 @@ create_analysis_vtk(std::string prefix, std::string vtk_name,
           nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
 
   auto elem_geo = analysis->get_geometry();
-  A2D::set_geo_from_hex_nodes<
+  set_geo_from_hex_nodes<
       typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   analysis->reset_geometry();
@@ -173,7 +175,7 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
   T Xloc[3 * nverts];
 
   // Populate hex
-  using ET = A2D::ElementTypes;
+  using ET = ElementTypes;
   for (int k = 0, e = 0; k < b_nz; k++) {
     for (int j = 0; j < b_ny; j++) {
       for (int i = 0; i < b_nx; i++, e++) {
@@ -200,17 +202,17 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
   // Create A2D's connectivity object
   I ntets = 0, nwedge = 0, npyrmd = 0;
   I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge,
-                               npyrmd, pyrmd);
+  MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd,
+                          pyrmd);
 
   // Find bc verts
   std::vector<I> bc_verts =
-      A2D::get_verts_within_box(nverts, Xloc, 0.0, 0.0, 0.0, b_ly, 0.0, b_lz);
+      get_verts_within_box(nverts, Xloc, 0.0, 0.0, 0.0, b_ly, 0.0, b_lz);
   I bc_label =
       conn.add_boundary_label_from_verts(bc_verts.size(), bc_verts.data());
 
   // Find traction verts
-  std::vector<I> traction_verts = A2D::get_verts_within_box(
+  std::vector<I> traction_verts = get_verts_within_box(
       nverts, Xloc, b_lx, b_lx, 0.0, vb_traction_frac * b_ly, 0.0, b_lz);
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
                                                         traction_verts.data());
@@ -223,7 +225,7 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
   verts_to_vtk(nverts, bc_verts, traction_verts, Xloc, prefix);
 
   // Set up boundary condition information
-  A2D::DirichletBCInfo bcinfo;
+  DirichletBCInfo bcinfo;
   bcinfo.add_boundary_condition(bc_label);
 
   // Initialize the analysis instance
@@ -234,14 +236,14 @@ create_analysis_box(std::string prefix, double vb_traction_frac, int b_nx,
           nullptr, nullptr, verbose, amg_nlevels, cg_it, cg_rtol, cg_atol);
 
   auto elem_geo = analysis->get_geometry();
-  A2D::set_geo_from_hex_nodes<
+  set_geo_from_hex_nodes<
       typename TopoElasticityAnalysis<T, degree, filter_degree>::GeoBasis>(
       nhex, hex, Xloc, elem_geo);
   analysis->reset_geometry();
 
   // Save mesh
-  A2D::ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd,
-               Xloc, fspath(prefix) / fspath("box_low_order_mesh.vtk"));
+  ToVTK3D(nverts, ntets, tets, nhex, hex, nwedge, wedge, npyrmd, pyrmd, Xloc,
+          fspath(prefix) / fspath("box_low_order_mesh.vtk"));
   analysis->tovtk(fspath(prefix) / fspath("box_high_order_mesh.vtk"));
 
   return analysis;
@@ -267,7 +269,7 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
                          bool check_grad_and_exit) {
   // constants
   constexpr double pi = 3.141592653589793238462643383279502884;
-  using ET = A2D::ElementTypes;
+  using ET = ElementTypes;
 
   // Dimension data
   I nhex = nelems_c * nelems_r * nelems_h;
@@ -313,11 +315,10 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
   // Construct connectivity
   I ntets = 0, nwedge = 0, npyrmd = 0;
   I *tets = nullptr, *wedge = nullptr, *pyrmd = nullptr;
-  A2D::MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex.data(), nwedge,
-                               wedge, npyrmd, pyrmd);
-  A2D::ToVTK3D(nverts, ntets, tets, nhex, hex.data(), nwedge, wedge, npyrmd,
-               pyrmd, Xloc.data(),
-               fspath(prefix) / fspath("cylinder_low_order_mesh.vtk"));
+  MeshConnectivity3D conn(nverts, ntets, tets, nhex, hex.data(), nwedge, wedge,
+                          npyrmd, pyrmd);
+  ToVTK3D(nverts, ntets, tets, nhex, hex.data(), nwedge, wedge, npyrmd, pyrmd,
+          Xloc.data(), fspath(prefix) / fspath("cylinder_low_order_mesh.vtk"));
 
   // Set points to apply bc and traction
   double dtheta =
@@ -328,9 +329,9 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
   // Find traction vertices
   std::vector<I> traction_verts;
   for (double theta : thetas) {
-    std::vector<I> tor_v = A2D::get_verts_cylindrical_coords(
-        nverts, Xloc.data(), theta, theta + dtheta, rin, rout, height, height,
-        1e-3);
+    std::vector<I> tor_v =
+        get_verts_cylindrical_coords(nverts, Xloc.data(), theta, theta + dtheta,
+                                     rin, rout, height, height, 1e-3);
     traction_verts.insert(traction_verts.end(), tor_v.begin(), tor_v.end());
   }
   I traction_label = conn.add_boundary_label_from_verts(traction_verts.size(),
@@ -339,7 +340,7 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
   // Find bc vertices - use same pattern as traction vertices
   std::vector<I> bc_verts;
   for (double theta : thetas) {
-    std::vector<I> bc_v = A2D::get_verts_cylindrical_coords(
+    std::vector<I> bc_v = get_verts_cylindrical_coords(
         nverts, Xloc.data(), theta, theta + dtheta, rin, rout, 0.0, 0.0, 1e-3);
     bc_verts.insert(bc_verts.end(), bc_v.begin(), bc_v.end());
   }
@@ -357,7 +358,7 @@ create_analysis_cylinder(std::string prefix, double rout, double rin,
   T x0_torque[3] = {0.0, 0.0, height};
 
   // Set up boundary condition information
-  A2D::DirichletBCInfo bcinfo;
+  DirichletBCInfo bcinfo;
   bcinfo.add_boundary_condition(bc_label);
 
   // Initialize the analysis instance
@@ -391,8 +392,8 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   constexpr int filter_degree = degree - 1;
 
   // Set up profiler
-  A2D::Timer::set_log_path(fspath(prefix) / fspath("profile.log"));
-  A2D::Timer timer("main_body()");
+  Timer::set_log_path(fspath(prefix) / fspath("profile.log"));
+  Timer timer("main_body()");
 
   // Create mesh: either load vtk or generate by code
   std::shared_ptr<TopoElasticityAnalysis<T, degree, filter_degree>> analysis;
@@ -514,29 +515,12 @@ void main_body(std::string prefix, std::string domain, std::string vtk_name,
   return;
 }
 
-/**
- * @brief Check if target equals one of valid_vals
- */
-template <typename EntryType>
-void assert_option_in(std::string target, std::vector<EntryType> valid_vals) {
-  auto domain_it = std::find(valid_vals.begin(), valid_vals.end(), target);
-  if (domain_it == valid_vals.end()) {
-    std::printf("Agrument value %s is invalid! Valid options are: ",
-                target.c_str());
-    for (auto it = valid_vals.begin(); it != valid_vals.end(); it++) {
-      std::printf("%s, ", it->c_str());
-    }
-    std::printf("\b\b.\n");
-    exit(-1);
-  }
-}
-
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   Kokkos::initialize();
   {
     // Initialize argument parser
-    A2D::ArgumentParser parser(argc, argv);
+    ArgumentParser parser(argc, argv);
 
     // Set up cmd arguments and defaults
 
@@ -599,7 +583,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Save cmd arguments to txt
-    A2D::save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
+    save_cmd(argc, argv, (fspath(prefix) / fspath("cmd.txt")));
 
     // Execute
     switch (degree) {

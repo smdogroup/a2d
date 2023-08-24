@@ -11,7 +11,7 @@
 namespace A2D {
 
 template <typename T, int M>
-A2D_INLINE_FUNCTION T MatTraceCore(const T* A) {
+KOKKOS_FUNCTION T MatTraceCore(const T* A) {
   T trace = T(0.0);
   for (int i = 0; i < M; i++) {
     trace += A[0];
@@ -21,7 +21,7 @@ A2D_INLINE_FUNCTION T MatTraceCore(const T* A) {
 }
 
 template <typename T, int M>
-A2D_INLINE_FUNCTION void MatAddDiagCore(const T diag, T* A) {
+KOKKOS_FUNCTION void MatAddDiagCore(const T diag, T* A) {
   for (int i = 0; i < M; i++) {
     A[0] += diag;
     A += M + 1;
@@ -29,7 +29,7 @@ A2D_INLINE_FUNCTION void MatAddDiagCore(const T diag, T* A) {
 }
 
 template <typename T, int M>
-A2D_INLINE_FUNCTION void MatTrace(Mat<T, M, M>& A, T& trace) {
+KOKKOS_FUNCTION void MatTrace(Mat<T, M, M>& A, T& trace) {
   trace = MatTraceCore<T, M>(get_data(A));
 }
 
@@ -40,12 +40,12 @@ class MatTraceExpr {
   using ScalarType = ADScalarType<ADiffType::ACTIVE, order, T>;
 
  public:
-  A2D_INLINE_FUNCTION MatTraceExpr(Atype& A, ScalarType& tr) : A(A), tr(tr) {
+  KOKKOS_FUNCTION MatTraceExpr(Atype& A, ScalarType& tr) : A(A), tr(tr) {
     get_data(tr) = MatTraceCore<T, M>(get_data(A));
   }
 
   template <ADorder forder>
-  A2D_INLINE_FUNCTION void forward() {
+  KOKKOS_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -57,14 +57,14 @@ class MatTraceExpr {
     }
   }
 
-  A2D_INLINE_FUNCTION void reverse() {
+  KOKKOS_FUNCTION void reverse() {
     if constexpr (adA == ADiffType::ACTIVE) {
       MatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
                            GetSeed<ADseed::b>::get_data(A));
     }
   }
 
-  A2D_INLINE_FUNCTION void hreverse() {
+  KOKKOS_FUNCTION void hreverse() {
     if constexpr (adA == ADiffType::ACTIVE) {
       MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
                            GetSeed<ADseed::h>::get_data(A));
@@ -77,11 +77,11 @@ class MatTraceExpr {
 };
 
 template <typename T, int M>
-A2D_INLINE_FUNCTION auto MatTrace(ADMat<Mat<T, M, M>>& A, ADScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(ADMat<Mat<T, M, M>>& A, ADScalar<T>& tr) {
   return MatTraceExpr<T, M, ADorder::FIRST, ADiffType::ACTIVE>(A, tr);
 }
 template <typename T, int M>
-A2D_INLINE_FUNCTION auto MatTrace(A2DMat<Mat<T, M, M>>& A, A2DScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(A2DMat<Mat<T, M, M>>& A, A2DScalar<T>& tr) {
   return MatTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(A, tr);
 }
 

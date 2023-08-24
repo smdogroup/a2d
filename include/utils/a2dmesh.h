@@ -9,6 +9,7 @@
 #ifndef A2D_MESH_H
 #define A2D_MESH_H
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -30,6 +31,7 @@ class MesherRect2D {
    * @param ny number of elements along y direction
    * @param lx length along x direction
    * @param ly length along y direction
+   * @param randomize if we randomly perturb nodal locations or not
    */
   MesherRect2D(int nx, int ny, double lx, double ly)
       : nx(nx), ny(ny), lx(lx), ly(ly) {}
@@ -84,20 +86,38 @@ class MesherRect2D {
    * @param hex connectivity for hexahedral elements, size: 3 * nquad
    */
   template <typename I, typename T>
-  void set_X_conn(T* Xloc, I* quad) {
+  void set_X_conn(T* Xloc, I* quad, bool randomize = false,
+                  unsigned int random_seed = 0, double fraction = 0.1) {
     // Helper lambda
     auto node_num = [this](I i, I j) { return i + j * (this->nx + 1); };
+
+    T dx = lx / nx;
+    T dy = ly / ny;
+
+    if (randomize) {
+      std::srand(random_seed);
+    }
 
     // Set X
     for (I j = 0; j < ny + 1; j++) {
       for (I i = 0; i < nx + 1; i++) {
-        Xloc[2 * node_num(i, j)] = (lx * i) / nx;
-        Xloc[2 * node_num(i, j) + 1] = (ly * j) / ny;
+        T px = 0.0;
+        T py = 0.0;
+
+        if (randomize) {
+          if (i and j and (i - nx) and (j - ny)) {
+            px = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dx;
+            py = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dy;
+          }
+        }
+
+        Xloc[2 * node_num(i, j)] = (lx * i) / nx + px;
+        Xloc[2 * node_num(i, j) + 1] = (ly * j) / ny + py;
       }
     }
 
     // Set connectivity
-    using ET = A2D::ElementTypes;
+    using ET = ElementTypes;
     for (I j = 0, e = 0; j < ny; j++) {
       for (I i = 0; i < nx; i++, e++) {
         for (I ii = 0; ii < ET::QUAD_NVERTS; ii++) {
@@ -171,7 +191,7 @@ class MesherRect2D {
    */
   template <class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual) {
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
     (*residual)(nx, 1) = -1e2;
     model->zero_bcs(residual);
   }
@@ -278,7 +298,7 @@ class MesherBrick3D {
     }
 
     // Set connectivity
-    using ET = A2D::ElementTypes;
+    using ET = ElementTypes;
     for (I k = 0, e = 0; k < nz; k++) {
       for (I j = 0; j < ny; j++) {
         for (I i = 0; i < nx; i++, e++) {
@@ -335,7 +355,8 @@ class MesherBrick3D {
   }
 
   /**
-   * @brief Set the system residual given a PDE model with boundary conditions
+   * @brief Set the system residual given a PDE model with boundary
+   * conditions
    *
    * @param model the PDE model
    * @param residual the residual multiarray
@@ -343,7 +364,7 @@ class MesherBrick3D {
   template <class Model, class RhsArray>
   void set_force(Model model, RhsArray& residual) {
     Timer t("MesherBrick3D::set_force()");
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
     for (int k = nz / 4; k < 3 * nz / 4; k++) {
       int node = nx + (nx + 1) * (0 + (ny + 1) * k);
       (*residual)(node, 1) = -1e2;
@@ -436,7 +457,7 @@ class MesherFromVTK3D {
 
   template <class Type, class Model, class RhsArray>
   void set_force(Model& model, RhsArray& residual, const Type force) {
-    A2D::BLAS::zero(*residual);
+    BLAS::zero(*residual);
 
     for (auto it = force_nodes_y.begin(); it != force_nodes_y.end(); it++) {
       (*residual)(*it, 1) = -force / T(nforces_y);

@@ -6,6 +6,8 @@
 #include "ParOptOptimizer.h"
 #include "utils/a2dprofiler.h"
 
+namespace A2D {
+
 template <class Analysis>
 class TopOptProb : public ParOptProblem {
  public:
@@ -26,6 +28,9 @@ class TopOptProb : public ParOptProblem {
         opt_iter(0),
         verbose(verbose),
         vtk_freq(vtk_freq) {
+    if (!std::filesystem::is_directory(prefix)) {
+      std::filesystem::create_directory(prefix);
+    }
     setProblemSizes(nvars, ncon, 0);
     setNumInequalities(nineq, 0);
   }
@@ -52,7 +57,7 @@ class TopOptProb : public ParOptProblem {
 
   // Note: constraints > 0
   int evalObjCon(ParOptVec *xvec, ParOptScalar *fobj, ParOptScalar *cons) {
-    A2D::Timer timer("TopOptProb::evalObjCon()");
+    Timer timer("TopOptProb::evalObjCon()");
     // Set design variables by paropt
     ParOptScalar *x;
     xvec->getArray(&x);
@@ -84,7 +89,7 @@ class TopOptProb : public ParOptProblem {
   }
 
   int evalObjConGradient(ParOptVec *xvec, ParOptVec *gvec, ParOptVec **Ac) {
-    A2D::Timer timer("TopOptProb::evalObjConGradient()");
+    Timer timer("TopOptProb::evalObjConGradient()");
     ParOptScalar *x, *g, *c;
 
     // Set design variables
@@ -124,5 +129,7 @@ class TopOptProb : public ParOptProblem {
   bool verbose;
   int vtk_freq;
 };
+
+}  // namespace A2D
 
 #endif

@@ -322,7 +322,7 @@ class QHdivHexBasis {
    */
   static void get_dof_point(index_t index, double pt[]) {
     const double* knots = get_gauss_quadrature_pts<degree>();
-    constexpr const double* pts = get_gauss_lobatto_pts<order>();
+    const double* pts = get_gauss_lobatto_pts<order>();
 
     if (index < order * (order - 1) * (order - 1)) {
       pt[0] = pts[index % order];

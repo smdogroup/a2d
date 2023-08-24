@@ -9,10 +9,11 @@
 
 namespace A2D {
 
-template <class GeoBasis, typename I, typename T, class GeoElemVec,
-          ElemVecType evtype>
+template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
-                            ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
+                            GeoElemVec &elem_geo) {
+  constexpr ElemVecType evtype = GeoElemVec::evtype;
+
   for (int e = 0; e < nhex; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -62,11 +63,11 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
   }
 }
 
-template <class GeoBasis, typename I, typename T, class GeoElemVec,
-          ElemVecType evtype>
+template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
-                             const T Xloc[],
-                             ElementVectorBase<evtype, GeoElemVec> &elem_geo) {
+                             const T Xloc[], GeoElemVec &elem_geo) {
+  constexpr ElemVecType evtype = GeoElemVec::evtype;
+
   for (int e = 0; e < nquad; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -97,19 +98,19 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
       }
     }
 
-    if constexpr (evtype == ElemVecType::Serial) {
-      elem_geo.set_element_values(e, geo_dof);
-    }
+    // if constexpr (evtype == ElemVecType::Serial) {
+    elem_geo.set_element_values(e, geo_dof);
+    // }
   }
-  if constexpr (evtype == ElemVecType::Parallel) {
-    elem_geo.set_values();
-  }
+  // if constexpr (evtype == ElemVecType::Parallel) {
+  elem_geo.set_values();
+  // }
 }
 
 template <index_t outputs, index_t degree, typename T, class DataBasis,
-          class GeoBasis, class Basis, class PDE, class DataElemVec,
+          class GeoBasis, class Basis, class Integrand, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>
-void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
+void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
                       ElemVec &elem_sol, const std::string filename,
                       const FunctorType &func) {
   Timer timer("write_hex_to_vtk()");
@@ -133,19 +134,19 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
     // Get the data values
     typename DataElemVec::FEDof data_dof(n, elem_data);
     elem_data.get_element_values(n, data_dof);
-    QptSpace<QuadPts, typename PDE::DataSpace> data;
+    QptSpace<QuadPts, typename Integrand::DataSpace> data;
     DataBasis::template interp(data_dof, data);
 
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(n, elem_geo);
     elem_geo.get_element_values(n, geo_dof);
-    QptSpace<QuadPts, typename PDE::FiniteElementGeometry> geo;
+    QptSpace<QuadPts, typename Integrand::FiniteElementGeometry> geo;
     GeoBasis::template interp(geo_dof, geo);
 
     // Get the degrees of freedom for the element
     typename ElemVec::FEDof sol_dof(n, elem_sol);
     elem_sol.get_element_values(n, sol_dof);
-    QptSpace<QuadPts, typename PDE::FiniteElementSpace> sol;
+    QptSpace<QuadPts, typename Integrand::FiniteElementSpace> sol;
     Basis::template interp(sol_dof, sol);
 
     const index_t off = n * (nex + 1) * (nex + 1) * (nex + 1);
@@ -156,15 +157,15 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
           const index_t index = vtk_node_num(i, j, k);
           const index_t node = off + index;
 
-          typename PDE::FiniteElementSpace &sref = sol.get(index);
-          typename PDE::FiniteElementGeometry &gref = geo.get(index);
+          typename Integrand::FiniteElementSpace &sref = sol.get(index);
+          typename Integrand::FiniteElementGeometry &gref = geo.get(index);
 
           // Initialize the transform object
           T detJ;
-          typename PDE::SolutionMapping transform(gref, detJ);
+          typename Integrand::SolutionMapping transform(gref, detJ);
 
           // Transform the solution the physical element
-          typename PDE::FiniteElementSpace x, s;
+          typename Integrand::FiniteElementSpace x, s;
           transform.transform(sref, s);
 
           auto X = gref.template get<0>().get_value();
@@ -210,9 +211,9 @@ void write_hex_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
 }
 
 template <index_t outputs, index_t degree, typename T, class DataBasis,
-          class GeoBasis, class Basis, class PDE, class DataElemVec,
+          class GeoBasis, class Basis, class Integrand, class DataElemVec,
           class GeoElemVec, class ElemVec, class FunctorType>
-void write_quad_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
+void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
                        ElemVec &elem_sol, const std::string filename,
                        const FunctorType &func) {
   Timer timer("write_quad_to_vtk()");
@@ -234,19 +235,19 @@ void write_quad_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
     // Get the data values
     typename DataElemVec::FEDof data_dof(n, elem_data);
     elem_data.get_element_values(n, data_dof);
-    QptSpace<QuadPts, typename PDE::DataSpace> data;
+    QptSpace<QuadPts, typename Integrand::DataSpace> data;
     DataBasis::template interp(data_dof, data);
 
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(n, elem_geo);
     elem_geo.get_element_values(n, geo_dof);
-    QptSpace<QuadPts, typename PDE::FiniteElementGeometry> geo;
+    QptSpace<QuadPts, typename Integrand::FiniteElementGeometry> geo;
     GeoBasis::template interp(geo_dof, geo);
 
     // Get the degrees of freedom for the element
     typename ElemVec::FEDof sol_dof(n, elem_sol);
     elem_sol.get_element_values(n, sol_dof);
-    QptSpace<QuadPts, typename PDE::FiniteElementSpace> sol;
+    QptSpace<QuadPts, typename Integrand::FiniteElementSpace> sol;
     Basis::template interp(sol_dof, sol);
 
     const index_t off = n * (nex + 1) * (nex + 1);
@@ -256,15 +257,15 @@ void write_quad_to_vtk(PDE &pde, DataElemVec &elem_data, GeoElemVec &elem_geo,
         const index_t index = vtk_node_num(i, j);
         const index_t node = off + index;
 
-        typename PDE::FiniteElementSpace &sref = sol.get(index);
-        typename PDE::FiniteElementGeometry &gref = geo.get(index);
+        typename Integrand::FiniteElementSpace &sref = sol.get(index);
+        typename Integrand::FiniteElementGeometry &gref = geo.get(index);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform the solution the physical element
-        typename PDE::FiniteElementSpace x, s;
+        typename Integrand::FiniteElementSpace x, s;
         transform.transform(sref, s);
 
         auto X = gref.template get<0>().get_value();

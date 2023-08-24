@@ -94,7 +94,7 @@ void main_body(int argc, char* argv[]) {
   double lz = p.lz;
   MesherBrick3D mesher(nx, ny, nz, lx, ly, lz);
 
-  // Set PDE model and element
+  // Set PDEIntegrand model and element
   const index_t nnodes = (nx + 1) * (ny + 1) * (nz + 1);
   const index_t nelems = nx * ny * nz;
   const index_t nbcs = (ny + 1) * (nz + 1);
@@ -134,7 +134,7 @@ void main_body(int argc, char* argv[]) {
   // Set up the stress functional
   auto functional = std::make_shared<Functional<I, T, ElasticityPDE>>();
   auto agg_functional =
-      std::make_shared<TopoVonMisesAggregation<I, T, Basis>>(constitutive);
+      std::make_shared<IntegrandTopoVonMisesKS<I, T, Basis>>(constitutive);
   functional->add_functional(agg_functional);
 
   // Compute the Jacobian matrix

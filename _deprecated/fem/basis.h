@@ -48,7 +48,7 @@ class BasisOps {
       BasisFunc::evalBasis(pt, N);
 
       const A2D::index_t npts = input.extent(0);
-      auto lam = A2D_LAMBDA(A2D::index_t i)->void {
+      auto lam = KOKKOS_LAMBDA(A2D::index_t i)->void {
         for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
           output(i, j, ii) = 0.0;
           for (index_t kk = 0; kk < NUM_NODES; kk++) {
@@ -82,7 +82,7 @@ class BasisOps {
 
       const A2D::index_t npts = input.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             for (index_t ii = 0; ii < ndata_per_nodes; ii++) {
               for (index_t kk = 0; kk < NUM_NODES; kk++) {
                 output(i, kk, ii) += N[kk] * input(i, j, ii);
@@ -118,7 +118,7 @@ class BasisOps {
 
       const A2D::index_t npts = X.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             // Compute the Jacobian transformation
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> J;
             for (index_t ii = 0; ii < SPATIAL_DIM; ii++) {
@@ -173,7 +173,7 @@ class BasisOps {
 
       const A2D::index_t npts = U.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               for (index_t idim = 0; idim < SPATIAL_DIM; idim++) {
                 Uxi(i, j, ii, idim) = 0.0;
@@ -362,7 +362,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Ub;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -417,7 +417,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
             A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Uxib;
 
@@ -482,7 +482,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Ub;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -546,7 +546,7 @@ class BasisOps {
 
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i) {
+          npts, KOKKOS_LAMBDA(A2D::index_t i) {
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
             A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Uxib;
 
@@ -619,7 +619,7 @@ class BasisOps {
       double weight = Quadrature::getQuadWeight(j);
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             A2D::Vec<T, vars_per_node> U0, Psi0;
             for (index_t ii = 0; ii < vars_per_node; ii++) {
               U0(ii) = Uq(i, j, ii);
@@ -667,7 +667,7 @@ class BasisOps {
       double weight = Quadrature::getQuadWeight(j);
       const A2D::index_t npts = detJ.extent(0);
       A2D::parallel_for(
-          npts, A2D_LAMBDA(A2D::index_t i)->void {
+          npts, KOKKOS_LAMBDA(A2D::index_t i)->void {
             A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Jinv0;
             A2D::Mat<T, vars_per_node, SPATIAL_DIM> Uxi0, Psi0;
 

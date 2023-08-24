@@ -8,23 +8,26 @@
 namespace A2D {
 
 /*
-  The solution vector
+  The solution vector, TODO: we actually don't need this, drop this and use
+  Kokkos::view dierctly
 */
 template <typename T>
 class SolutionVector {
  public:
-  SolutionVector(A2D::index_t ndof) : ndof(ndof), x(ndof, T(0.0)) {}
-  T& operator[](A2D::index_t index) { return x[index]; }
-  const T& operator[](A2D::index_t index) const { return x[index]; }
+  SolutionVector(index_t ndof) : ndof(ndof), array("array", ndof) { zero(); }
+  KOKKOS_FUNCTION T& operator[](index_t index) const { return array(index); }
+  // KOKKOS_FUNCTION const T& operator[](index_t index) const {
+  //   return array(index);
+  // }
 
   index_t get_num_dof() const { return ndof; }
 
-  void zero() { std::fill(x.begin(), x.end(), T(0.0)); }
-  void fill(T val) { std::fill(x.begin(), x.end(), val); }
+  KOKKOS_FUNCTION void zero() { BLAS::zero(array); }
+  KOKKOS_FUNCTION void fill(T val) { BLAS::fill(array, val); }
 
  private:
-  const A2D::index_t ndof;
-  std::vector<T> x;
+  const index_t ndof;
+  MultiArrayNew<T*> array;
 };
 
 }  // namespace A2D

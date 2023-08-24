@@ -106,7 +106,7 @@ class NonlinElasticityElement
 
     T engry = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0)
             ->T {
@@ -138,7 +138,7 @@ class NonlinElasticityElement
 
     BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxib)
@@ -181,7 +181,7 @@ class NonlinElasticityElement
 
     BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxib,
@@ -256,7 +256,7 @@ class NonlinElasticityElement
     // Compute the product
     BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Pxi0)
@@ -333,7 +333,7 @@ class LinElasticityElement
 
     T elem_energy = BasisOps::template integrate<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> Uxi0)
             ->T {
@@ -365,7 +365,7 @@ class LinElasticityElement
 
     BasisOps::template residuals<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxib)
@@ -407,7 +407,7 @@ class LinElasticityElement
 
     BasisOps::template jacobians<T, NUM_VARS>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxib,
@@ -482,7 +482,7 @@ class LinElasticityElement
     // Compute the product
     BasisOps::template adjoint_product<T, NUM_VARS>(
         detJ, Jinv, Uxi, pxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Pxi0)
@@ -690,7 +690,7 @@ class TopoVolume
     auto xq = con->get_quad_design();
 
     T integral = BasisOps::template integrate<T>(
-        detJ, A2D_LAMBDA(index_t i, index_t j, T wdetJ)->T {
+        detJ, KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ)->T {
           return xq(i, j, 0) * wdetJ;
         });
 
@@ -706,7 +706,7 @@ class TopoVolume
         "dfdxq", element->nelems);
 
     T integral = BasisOps::template integrate<T>(
-        detJ, A2D_LAMBDA(index_t i, index_t j, T wdetJ)->T {
+        detJ, KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ)->T {
           dfdxq(i, j, 0) = wdetJ;
           return xq(i, j, 0) * wdetJ;
         });
@@ -767,7 +767,7 @@ class TopoVonMisesAggregation
     // Compute the maximum value over all quadrature points
     offset = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0)
             ->T {
@@ -810,7 +810,7 @@ class TopoVonMisesAggregation
     // Compute the maximum value over all quadrature points
     integral = BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0)
             ->T {
@@ -860,7 +860,7 @@ class TopoVonMisesAggregation
 
     BasisOps::template residuals<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxib)
@@ -928,7 +928,7 @@ class TopoVonMisesAggregation
 
     BasisOps::template maximum<T, vars_per_node>(
         detJ, Jinv, Uxi,
-        A2D_LAMBDA(index_t i, index_t j, T wdetJ,
+        KOKKOS_LAMBDA(index_t i, index_t j, T wdetJ,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Jinv0,
                    A2D::Mat<T, SPATIAL_DIM, SPATIAL_DIM> & Uxi0)
             ->T {

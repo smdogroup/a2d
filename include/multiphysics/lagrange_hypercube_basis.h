@@ -1,6 +1,7 @@
 #ifndef A2D_LAGRANGE_HEX_BASIS_H
 #define A2D_LAGRANGE_HEX_BASIS_H
 
+#include "a2denum.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelementtypes.h"
 #include "multiphysics/lagrange_tools.h"
@@ -55,7 +56,8 @@ class LagrangeH1HypercubeBasis {
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom on a given entity
    */
-  static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
+  KOKKOS_FUNCTION static index_t get_entity_ndof(ET::ElementEntity entity,
+                                                 index_t index) {
     switch (entity) {
       case ET::Vertex:
         return C;
@@ -88,9 +90,10 @@ class LagrangeH1HypercubeBasis {
    * @param entity_dof Entity DOF in the global orientation
    */
   template <index_t offset, class ElemDof, class EntityDof>
-  static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             const ElemDof& element_dof,
-                             EntityDof& entity_dof) {
+  KOKKOS_FUNCTION static void get_entity_dof(ET::ElementEntity entity,
+                                             index_t index,
+                                             const ElemDof& element_dof,
+                                             EntityDof& entity_dof) {
     switch (entity) {
       case ET::Vertex:
         if constexpr (dim == 2) {
@@ -154,9 +157,10 @@ class LagrangeH1HypercubeBasis {
    * @param element_dof Degrees of freedom for this element
    */
   template <index_t offset, class EntityDof, class ElemDof>
-  static void set_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const EntityDof& entity_dof,
-                             ElemDof& element_dof) {
+  KOKKOS_FUNCTION static void set_entity_dof(ET::ElementEntity entity,
+                                             index_t index, index_t orient,
+                                             const EntityDof& entity_dof,
+                                             ElemDof& element_dof) {
     switch (entity) {
       case ET::Vertex:
         if constexpr (dim == 2) {
@@ -221,8 +225,9 @@ class LagrangeH1HypercubeBasis {
    * @param signs Array of sign values
    */
   template <index_t offset>
-  static void set_entity_signs(ET::ElementEntity entity, index_t index,
-                               index_t orient, int signs[]) {
+  KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
+                                               index_t index, index_t orient,
+                                               int signs[]) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {
@@ -236,7 +241,7 @@ class LagrangeH1HypercubeBasis {
   /**
    * @brief Get the number of low order elements defined by this basis
    */
-  constexpr static index_t get_num_lorder_elements() {
+  KOKKOS_FUNCTION constexpr static index_t get_num_lorder_elements() {
     return indexpow<degree, dim>::value;  // degree ** dim
   }
 
@@ -253,8 +258,9 @@ class LagrangeH1HypercubeBasis {
    */
   template <index_t horder_offset, index_t lorder_offset, class HOrderDof,
             class LOrderDof>
-  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
-                             LOrderDof& ldof) {
+  KOKKOS_FUNCTION static void get_lorder_dof(const index_t n,
+                                             const HOrderDof& hdof,
+                                             LOrderDof& ldof) {
     if constexpr (dim == 1) {
       // lorder element index:
       // n = i
@@ -319,8 +325,9 @@ class LagrangeH1HypercubeBasis {
    * @param signs The signs relative to the high-order element
    */
   template <index_t horder_offset, index_t lorder_offset>
-  static void get_lorder_signs(const index_t n, const int horder_signs[],
-                               int signs[]) {
+  KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
+                                               const int horder_signs[],
+                                               int signs[]) {
     for (index_t p = 0; p < indexpow<2, dim>::value * C; p++) {
       signs[lorder_offset + p] = 1;
     }
@@ -336,9 +343,9 @@ class LagrangeH1HypercubeBasis {
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
    */
-  static void get_dof_point(index_t index, double pt[]) {
+  KOKKOS_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+    const double* pts = get_interpolation_pts<order, interp_type>();
     index_t n = index / C;
 
     if constexpr (dim == 1) {
@@ -371,8 +378,9 @@ class LagrangeH1HypercubeBasis {
    */
   template <index_t space, class QptGeoSpace, class Quadrature,
             class FiniteElementSpace, index_t offset, class SolnType>
-  static void interp(const QptGeoSpace& geo, const SolnType& sol,
-                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+  KOKKOS_FUNCTION static void interp(
+      const QptGeoSpace& geo, const SolnType& sol,
+      QptSpace<Quadrature, FiniteElementSpace>& out) {
     interp<space, Quadrature, FiniteElementSpace, offset, SolnType>(sol, out);
   }
 
@@ -389,8 +397,8 @@ class LagrangeH1HypercubeBasis {
    */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
-  static void interp(const SolnType& sol,
-                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+  KOKKOS_FUNCTION static void interp(
+      const SolnType& sol, QptSpace<Quadrature, FiniteElementSpace>& out) {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
@@ -631,8 +639,8 @@ class LagrangeH1HypercubeBasis {
    */
   template <index_t space, class QptGeoSpace, class Quadrature,
             class FiniteElementSpace, index_t offset, class SolnType>
-  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
-                  SolnType& res) {
+  KOKKOS_FUNCTION static void add(
+      const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
     add<space, Quadrature, FiniteElementSpace, offset, SolnType>(in, res);
   }
 
@@ -650,8 +658,8 @@ class LagrangeH1HypercubeBasis {
    */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
-  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
-                  SolnType& res) {
+  KOKKOS_FUNCTION static void add(
+      const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
@@ -662,14 +670,17 @@ class LagrangeH1HypercubeBasis {
 
       for (index_t i = 0; i < C; i++) {
         // Interpolate along the 2-direction
-        index_t u0size, u1size;
-        if constexpr (dim == 2) {
-          u0size = order * q0dim;
-          u1size = order * q0dim;
-        } else {
-          u0size = order * order * q0dim;
-          u1size = order * q0dim * q1dim;
-        }
+        // index_t u0size, u1size;
+        // if constexpr (dim == 2) {
+        //   u0size = order * q0dim;
+        //   u1size = order * q0dim;
+        // } else {
+        //   u0size = order * order * q0dim;
+        //   u1size = order * q0dim * q1dim;
+        // }
+
+        constexpr index_t u0size = order * order * q0dim;
+        constexpr index_t u1size = order * q0dim * q1dim;
 
         T u1[u1size];
         T u1x[u1size];
@@ -889,7 +900,7 @@ class LagrangeH1HypercubeBasis {
    * @param N The basis functions
    */
   template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
+  KOKKOS_FUNCTION static void basis(index_t n, BasisType N) {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
@@ -966,7 +977,7 @@ class LagrangeL2HypercubeBasis {
   static const index_t ncomp = L2Space<T, C, dim>::ncomp;
 
   // Get the type of basis class implemented
-  static constexpr BasisType get_basis_type() { return L2; }
+  KOKKOS_FUNCTION static constexpr BasisType get_basis_type() { return L2; }
 
   // Define the equivalent low-order basis class if any
   using LOrderBasis = LagrangeL2HypercubeBasis<T, dim, C, 0, interp_type>;
@@ -978,7 +989,8 @@ class LagrangeL2HypercubeBasis {
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
-  static index_t get_entity_ndof(ET::ElementEntity entity, index_t index) {
+  KOKKOS_FUNCTION static index_t get_entity_ndof(ET::ElementEntity entity,
+                                                 index_t index) {
     if (entity == ET::Domain) {
       return ndof;
     }
@@ -996,9 +1008,10 @@ class LagrangeL2HypercubeBasis {
    * @param entity_dof Entity DOF in the global orientation
    */
   template <index_t offset, class ElemDof, class EntityDof>
-  static void get_entity_dof(ET::ElementEntity entity, index_t index,
-                             const ElemDof& element_dof,
-                             EntityDof& entity_dof) {
+  KOKKOS_FUNCTION static void get_entity_dof(ET::ElementEntity entity,
+                                             index_t index,
+                                             const ElemDof& element_dof,
+                                             EntityDof& entity_dof) {
     if (entity == ET::Domain) {
       for (index_t i = 0; i < ndof; i++) {
         entity_dof[i] = element_dof[offset + i];
@@ -1018,9 +1031,10 @@ class LagrangeL2HypercubeBasis {
    * @param element_sign Sign indices for each degree of freedom
    */
   template <index_t offset, class EntityDof, class ElemDof>
-  static void set_entity_dof(ET::ElementEntity entity, index_t index,
-                             index_t orient, const EntityDof& entity_dof,
-                             ElemDof& element_dof) {
+  KOKKOS_FUNCTION static void set_entity_dof(ET::ElementEntity entity,
+                                             index_t index, index_t orient,
+                                             const EntityDof& entity_dof,
+                                             ElemDof& element_dof) {
     if (entity == ET::Domain) {
       for (index_t i = 0; i < ndof; i++) {
         element_dof[offset + i] = entity_dof[i];
@@ -1038,8 +1052,9 @@ class LagrangeL2HypercubeBasis {
    * @param signs Array of sign values
    */
   template <index_t offset>
-  static void set_entity_signs(ET::ElementEntity entity, index_t index,
-                               index_t orient, int signs[]) {
+  KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
+                                               index_t index, index_t orient,
+                                               int signs[]) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {
@@ -1053,7 +1068,7 @@ class LagrangeL2HypercubeBasis {
   /**
    * @brief Get the number of low order elements defined by this basis
    */
-  constexpr static index_t get_num_lorder_elements() {
+  KOKKOS_FUNCTION constexpr static index_t get_num_lorder_elements() {
     return indexpow<order, dim>::value;
   }
 
@@ -1070,8 +1085,9 @@ class LagrangeL2HypercubeBasis {
    */
   template <index_t horder_offset, index_t lorder_offset, class HOrderDof,
             class LOrderDof>
-  static void get_lorder_dof(const index_t n, const HOrderDof& hdof,
-                             LOrderDof& ldof) {
+  KOKKOS_FUNCTION static void get_lorder_dof(const index_t n,
+                                             const HOrderDof& hdof,
+                                             LOrderDof& ldof) {
     index_t hnode;
 
     if constexpr (dim == 1) {
@@ -1109,8 +1125,9 @@ class LagrangeL2HypercubeBasis {
    * @param signs The signs relative to the high-order element
    */
   template <index_t horder_offset, index_t lorder_offset>
-  static void get_lorder_signs(const index_t n, const int horder_signs[],
-                               int signs[]) {
+  KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
+                                               const int horder_signs[],
+                                               int signs[]) {
     for (index_t p = 0; p < C; p++) {
       signs[lorder_offset + p] = 1;
     }
@@ -1123,9 +1140,9 @@ class LagrangeL2HypercubeBasis {
    * @param index The index for the dof
    * @param pt The parametric point location of dimension dim
    */
-  static void get_dof_point(index_t index, double pt[]) {
+  KOKKOS_FUNCTION static void get_dof_point(index_t index, double pt[]) {
     // Get the quadrature knot locations
-    constexpr const double* pts = get_interpolation_pts<order, interp_type>();
+    const double* pts = get_interpolation_pts<order, interp_type>();
 
     index_t n = index / C;
 
@@ -1159,8 +1176,9 @@ class LagrangeL2HypercubeBasis {
    */
   template <index_t space, class QptGeoSpace, class Quadrature,
             class FiniteElementSpace, index_t offset, class SolnType>
-  static void interp(const QptGeoSpace& geo, const SolnType& sol,
-                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+  KOKKOS_FUNCTION static void interp(
+      const QptGeoSpace& geo, const SolnType& sol,
+      QptSpace<Quadrature, FiniteElementSpace>& out) {
     interp<space, Quadrature, FiniteElementSpace, offset, SolnType>(sol, out);
   }
 
@@ -1177,8 +1195,8 @@ class LagrangeL2HypercubeBasis {
    */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
-  static void interp(const SolnType& sol,
-                     QptSpace<Quadrature, FiniteElementSpace>& out) {
+  KOKKOS_FUNCTION static void interp(
+      const SolnType& sol, QptSpace<Quadrature, FiniteElementSpace>& out) {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
@@ -1358,8 +1376,8 @@ class LagrangeL2HypercubeBasis {
    */
   template <index_t space, class QptGeoSpace, class Quadrature,
             class FiniteElementSpace, index_t offset, class SolnType>
-  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
-                  SolnType& res) {
+  KOKKOS_FUNCTION static void add(
+      const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
     add<space, Quadrature, FiniteElementSpace, offset, SolnType>(in, res);
   }
 
@@ -1377,8 +1395,8 @@ class LagrangeL2HypercubeBasis {
    */
   template <index_t space, class Quadrature, class FiniteElementSpace,
             index_t offset, class SolnType>
-  static void add(const QptSpace<Quadrature, FiniteElementSpace>& in,
-                  SolnType& res) {
+  KOKKOS_FUNCTION static void add(
+      const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
     if constexpr (Quadrature::is_tensor_product) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
@@ -1559,7 +1577,7 @@ class LagrangeL2HypercubeBasis {
 
   // Compute the full matrix of basis functions
   template <class Quadrature, class BasisType>
-  static void basis(index_t n, BasisType N) {
+  KOKKOS_FUNCTION static void basis(index_t n, BasisType N) {
     double pt[dim];
     Quadrature::get_point(n, pt);
 

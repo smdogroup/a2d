@@ -33,14 +33,14 @@ void main_body() {
   static const int nnodes_per_elem = 4;
   static const int vtk_type_id = 10;  // 3D tetrahedral element
 
-  // Define basis and PDE info
+  // Define basis and PDEIntegrand info
   using Basis = BasisOps<SPATIAL_DIM, TetraLinearBasisFunc, Tetra4ptQuadrature>;
   using ElasticityPDE = ElasticityPDEInfo<SPATIAL_DIM, I, T>;
 
   // Create the vtk loader
   MesherFromVTK3D<nnodes_per_elem, T, I> mesher("rigid_body.vtk");
 
-  // Set PDE model and element
+  // Set PDEIntegrand model and element
   I nnodes = mesher.get_nnodes();
   I nelems = mesher.get_nelems();
   I nbcs = mesher.get_nbcs();

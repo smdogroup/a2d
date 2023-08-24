@@ -1,15 +1,15 @@
 #include <iostream>
 
-#include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/fequadrature.h"
+#include "multiphysics/integrand_elasticity.h"
 
 using namespace A2D;
 
 void main_body() {
   using T = double;
-  using PDE = NonlinearElasticity<T, 2>;
+  using PDEIntegrand = NonlinearElasticity<T, 2>;
   using Quadrature = TriQuadrature3;
   using DataBasis = FEBasis<T, LagrangeTri0<T, 2>>;
   using GeoBasis = FEBasis<T, LagrangeTri1<T, 2>>;
@@ -17,8 +17,8 @@ void main_body() {
 
   // constexpr bool use_parallel_elemvec = false;
   constexpr bool use_parallel_elemvec = true;
-  using FE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis,
-                           use_parallel_elemvec>;
+  using FE = FiniteElement<T, PDEIntegrand, Quadrature, DataBasis, GeoBasis,
+                           Basis, use_parallel_elemvec>;
 
   // Set the node locations
   index_t nx = 10, ny = 10;

@@ -11,8 +11,8 @@ int main(int argc, char *argv[]) {
   const A2D::index_t filter_degree = 2;
 
   std::cout << "Topology linear elasticity\n";
-  A2D::TopoLinearElasticity<std::complex<double>, dim> elasticity(70e3, 0.3,
-                                                                  5.0);
+  A2D::IntegrandTopoLinearElasticity<std::complex<double>, dim> elasticity(
+      70e3, 0.3, 5.0);
   A2D::TestPDEImplementation<std::complex<double>>(elasticity);
 
   using T = std::complex<double>;

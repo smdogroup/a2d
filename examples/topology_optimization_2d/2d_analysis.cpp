@@ -1,13 +1,13 @@
 #include <vector>
 
 #include "a2dobjs.h"
-#include "multiphysics/elasticity.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
 #include "multiphysics/femesh.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_elasticity.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
@@ -20,7 +20,7 @@ using namespace A2D;
  * @tparam degree polynomial degree
  */
 template <typename T, index_t degree>
-class TopoElasticityAnalysis2D {
+class TopoElasticityAnalysis {
  public:
   static constexpr int spatial_dim = 2;
   static constexpr int order = degree + 1;  // Spline order, = degree + 1
@@ -49,21 +49,22 @@ class TopoElasticityAnalysis2D {
   using TGeoElemVec = ElementVector_Serial<T, TGeoBasis, Vec_t>;
   using TElemVec = ElementVector_Serial<T, TBasis, Vec_t>;
 
-  using PDE = TopoLinearElasticity<T, spatial_dim>;
-  using Traction = TopoSurfaceTraction<T, spatial_dim>;
+  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
+  using Traction = IntegrandTopoSurfaceTraction<T, spatial_dim>;
 
-  using FE_PDE = FiniteElement<T, PDE, Quadrature, DataBasis, GeoBasis, Basis>;
+  using FE_PDE =
+      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
   using FE_Traction =
       FiniteElement<T, Traction, TQuadrature, TDataBasis, TGeoBasis, TBasis>;
 
-  TopoElasticityAnalysis2D(MeshConnectivityBase &conn, index_t nquad,
-                           const index_t quad[], const double Xloc[],
-                           DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
-                           T q = 5.0)
+  TopoElasticityAnalysis(MeshConnectivityBase &conn, index_t nquad,
+                         const index_t quad[], const double Xloc[],
+                         DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
+                         T q = 5.0)
       : E(E),
         nu(nu),
         q(q),
-        pde(E, nu, q),
+        integrand(E, nu, q),
         mesh(conn),
         geomesh(conn),
         datamesh(conn),
@@ -89,7 +90,7 @@ class TopoElasticityAnalysis2D {
     FE_PDE fe;
 
     ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
-    fe.add_jacobian(pde, elem_data, elem_geo, elem_sol, elem_mat);
+    fe.add_jacobian(integrand, elem_data, elem_geo, elem_sol, elem_mat);
 
     return bsr_mat;
   }
@@ -97,11 +98,11 @@ class TopoElasticityAnalysis2D {
   ElementMesh<Basis> &get_mesh() { return mesh; }
 
   void tovtk(const std::string filename) {
-    A2D::write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis>(
-        pde, elem_data, elem_geo, elem_sol, filename,
-        [](index_t k, typename PDE::DataSpace &d,
-           typename PDE::FiniteElementGeometry &g,
-           typename PDE::FiniteElementSpace &s) {
+    write_quad_to_vtk<3, degree, T, DataBasis, GeoBasis, Basis, Integrand>(
+        elem_data, elem_geo, elem_sol, filename,
+        [](index_t k, typename Integrand::DataSpace &d,
+           typename Integrand::FiniteElementGeometry &g,
+           typename Integrand::FiniteElementSpace &s) {
           if (k == 2) {  // write data
             return (d.template get<0>()).get_value();
           } else {  // write solution components
@@ -113,7 +114,7 @@ class TopoElasticityAnalysis2D {
 
  private:
   T E, nu, q;
-  PDE pde;
+  Integrand integrand;
   ElementMesh<Basis> mesh;
   ElementMesh<GeoBasis> geomesh;
   ElementMesh<DataBasis> datamesh;
@@ -142,7 +143,11 @@ int main(int argc, char *argv[]) {
     std::vector<index_t> quad(4 * nquad);
     std::vector<double> Xloc(2 * nverts);
     MesherRect2D mesher(nx, ny, lx, ly);
-    mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data());
+    bool randomize = true;
+    unsigned int seed = 0;
+    double fraction = 0.2;
+    mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data(), randomize,
+                                       seed, fraction);
 
     MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
     // Set up bcs
@@ -155,23 +160,23 @@ int main(int argc, char *argv[]) {
       boundary_verts[j] = node_num(0, j);
     }
 
-    A2D::index_t bc_label =
+    index_t bc_label =
         conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
 
-    A2D::DirichletBCInfo bcinfo;
+    DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    TopoElasticityAnalysis2D<T, degree> prob(conn, nquad, quad.data(),
-                                             Xloc.data(), bcinfo);
+    TopoElasticityAnalysis<T, degree> prob(conn, nquad, quad.data(),
+                                           Xloc.data(), bcinfo);
 
     // Save mesh
     prob.tovtk("mesh.vtk");
 
     // Create bsr mat and zero bcs rows
-    TopoElasticityAnalysis2D<T, degree>::BSRMat_t bsr_mat =
+    TopoElasticityAnalysis<T, degree>::BSRMat_t bsr_mat =
         prob.create_fea_bsr_matrix();
     const index_t *bc_dofs;
-    DirichletBCs<TopoElasticityAnalysis2D<T, degree>::Basis> bcs(
+    DirichletBCs<TopoElasticityAnalysis<T, degree>::Basis> bcs(
         conn, prob.get_mesh(), bcinfo);
     index_t nbcs = bcs.get_bcs(&bc_dofs);
     bsr_mat.zero_rows(nbcs, bc_dofs);

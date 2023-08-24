@@ -26,7 +26,7 @@ namespace A2D {
  * @tparam GeoBasis Geometry basis type
  * @tparam Basis Solution basis type
  */
-template <typename T, class PDE, class GeoBasis, class Basis>
+template <typename T, class Integrand, class GeoBasis, class Basis>
 class DOFCoordinates {
  public:
   // Set the quadrature point
@@ -42,19 +42,23 @@ class DOFCoordinates {
 
   // Quadrature point object for the geometry
   using QGeoSpace =
-      QptSpace<DOFQuadrature, typename PDE::FiniteElementGeometry>;
+      QptSpace<DOFQuadrature, typename Integrand::FiniteElementGeometry>;
 
-  template <ElemVecType evtype, class GeoElemVec, class ElemVec>
-  void get_dof_coordinates(ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                           ElementVectorBase<evtype, ElemVec>& elem_x,
-                           ElementVectorBase<evtype, ElemVec>& elem_y,
-                           ElementVectorBase<evtype, ElemVec>& elem_z) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
+  template <class GeoElemVec, class ElemVec>
+  void get_dof_coordinates(GeoElemVec& elem_geo, ElemVec& elem_x,
+                           ElemVec& elem_y, ElemVec& elem_z) {
+    using same_evtype = have_same_evtype<GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_geo.get_values();
     }
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the geometry values and interpolate them at all quadrature points
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       if constexpr (evtype == ElemVecType::Serial) {
@@ -69,10 +73,10 @@ class DOFCoordinates {
       typename ElemVec::FEDof z_dof(i, elem_z);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < Basis::ndof; j++) {
+      for (index_t j = 0; j < Basis::ndof; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
-        A2D::Vec<T, PDE::dim>& X = gref.template get<0>().get_value();
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
+        Vec<T, Integrand::dim>& X = gref.template get<0>().get_value();
 
         x_dof[j] = X(0);
         y_dof[j] = X(1);
@@ -93,41 +97,47 @@ class DOFCoordinates {
   }
 };
 
-template <typename T, class PDE, class Quadrature, class DataBasis,
+// A set of element-wise operations that operate on all elements at once
+template <typename T, class Integrand, class Quadrature, class DataBasis,
           class GeoBasis, class Basis>
 class FiniteElement {
  public:
   // Quadrature point object for the data space
-  using QDataSpace = QptSpace<Quadrature, typename PDE::DataSpace>;
+  using QDataSpace = QptSpace<Quadrature, typename Integrand::DataSpace>;
 
   // Quadrature point object for the geometry
-  using QGeoSpace = QptSpace<Quadrature, typename PDE::FiniteElementGeometry>;
+  using QGeoSpace =
+      QptSpace<Quadrature, typename Integrand::FiniteElementGeometry>;
 
   // Quadrature point object for the finite-element space
-  using QSpace = QptSpace<Quadrature, typename PDE::FiniteElementSpace>;
+  using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
 
   FiniteElement() {}
 
   /**
-   * @brief Compute the value of an integral functional over the finite-elemen
+   * @brief Compute the value of an integral functional over the finite-element
    * domain
    *
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @return The integral over the element
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  T integrate(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-              ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-              ElementVectorBase<evtype, ElemVec>& elem_sol) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  T integrate(const Integrand& integrand, DataElemVec& elem_data,
+              GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     T value = 0.0;
 
@@ -137,7 +147,7 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -158,23 +168,23 @@ class FiniteElement {
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDE
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDE::FiniteElementSpace coef;
-        value += pde.integrand(weight * detJ, data.get(j), gref, s);
+        typename Integrand::FiniteElementSpace coef;
+        value += integrand.integrand(weight * detJ, data.get(j), gref, s);
       }
     }
 
@@ -187,19 +197,23 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @return The maximum value over the domain
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  T max(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-        ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-        ElementVectorBase<evtype, ElemVec>& elem_sol) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  T max(const Integrand& integrand, DataElemVec& elem_data,
+        GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     // TODO: Need to make this more robust?
     T max_value = -1e20;
@@ -210,7 +224,7 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -231,23 +245,23 @@ class FiniteElement {
       Basis::template interp(sol_dof, sol);
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDE
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDE::FiniteElementSpace coef;
-        T value = pde.max(data.get(j), gref, s);
+        typename Integrand::FiniteElementSpace coef;
+        T value = integrand.max(data.get(j), gref, s);
         if (std::real(value) > std::real(max_value)) {
           max_value = value;
         }
@@ -265,21 +279,26 @@ class FiniteElement {
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
    * @tparam DataDerivElemVec Element vector class for the derivative
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_deriv Output derivative of the functional w.r.t. data
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class DataDerivElemVec>
-  void add_data_derivative(
-      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class DataDerivElemVec>
+  void add_data_derivative(const Integrand& integrand, DataElemVec& elem_data,
+                           GeoElemVec& elem_geo, ElemVec& elem_sol,
+                           DataDerivElemVec& elem_deriv) {
+    using same_evtype =
+        have_same_evtype<DataElemVec, GeoElemVec, ElemVec, DataDerivElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -288,7 +307,7 @@ class FiniteElement {
       elem_deriv.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get the data, geometry and solution for this element and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -312,22 +331,23 @@ class FiniteElement {
       QDataSpace deriv;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDE
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        pde.data_derivative(weight * detJ, data.get(j), gref, s, deriv.get(j));
+        integrand.data_derivative(weight * detJ, data.get(j), gref, s,
+                                  deriv.get(j));
       }
 
       // Add the derivative of the data back to the data space
@@ -352,23 +372,27 @@ class FiniteElement {
    * @tparam ElemVec Element vector class for the solution
    * @tparam ElemAdjVec Element vector class for the adjoint
    * @tparam DataDerivElemVec Element vector class for the derivative
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_adj Element adjoint vector
    * @param elem_deriv Data derivative
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemAdjVec, class DataDerivElemVec>
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemAdjVec, class DataDerivElemVec>
   void add_adjoint_residual_data_derivative(
-      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, ElemAdjVec>& elem_adj,
-      ElementVectorBase<evtype, DataDerivElemVec>& elem_deriv) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+      const Integrand& integrand, DataElemVec& elem_data, GeoElemVec& elem_geo,
+      ElemVec& elem_sol, ElemAdjVec& elem_adj, DataDerivElemVec& elem_deriv) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec,
+                                         ElemAdjVec, DataDerivElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -378,7 +402,7 @@ class FiniteElement {
       elem_deriv.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Get data, geo, sol and adj for this element and interpolate them
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
@@ -406,25 +430,25 @@ class FiniteElement {
       QDataSpace deriv;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementSpace& aref = adj.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementSpace& aref = adj.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s, a;
+        typename Integrand::FiniteElementSpace s, a;
         transform.transform(sref, s);
         transform.transform(aref, a);
 
         // Allocate the Jacobian-adjoint product functor
         double weight = Quadrature::get_weight(j);
-        typename PDE::AdjVecProduct ajp(pde, weight * detJ, data.get(j), gref,
-                                        s);
+        typename Integrand::AdjVecProduct ajp(integrand, weight * detJ,
+                                              data.get(j), gref, s);
 
         ajp(a, deriv.get(j));
       }
@@ -448,44 +472,48 @@ class FiniteElement {
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution
    * @tparam ElemResVec Element vector class for the residual
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemResVec>
-  void add_residual(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                    ElementVectorBase<evtype, ElemVec>& elem_sol,
-                    ElementVectorBase<evtype, ElemResVec>& elem_res) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  template <class DataElemVec, class GeoElemVec, class ElemVec,
+            class ElemResVec>
+  void add_residual(const Integrand& integrand, DataElemVec& elem_data,
+                    GeoElemVec& elem_geo, ElemVec& elem_sol,
+                    ElemResVec& elem_res) {
+    using same_evtype =
+        have_same_evtype<DataElemVec, GeoElemVec, ElemVec, ElemResVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial element vector at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
 
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_data.get_values();
-      elem_geo.get_values();
-      elem_sol.get_values();
-      elem_res.get_zero_values();
-    }
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+    auto loop_body = KOKKOS_LAMBDA(const index_t i) {
+      // Get the data, geometry and solution for this element and
+      // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
 
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_data.get_element_values(i, data_dof);
-        elem_geo.get_element_values(i, geo_dof);
-        elem_sol.get_element_values(i, sol_dof);
-      }
+      // Serialized scatter - only effective for a serialized element vector
+      // implementation
+      elem_data.get_element_values(i, data_dof);
+      elem_geo.get_element_values(i, geo_dof);
+      elem_sol.get_element_values(i, sol_dof);
 
       QDataSpace data;
       QGeoSpace geo;
       QSpace sol;
 
+      // Evaluate values (and potentially derivatives) for all quadrature
+      // points
+      // Note: derivatives computed at this point are all w.r.t.
+      // computational coordinates!
       DataBasis::template interp(data_dof, data);
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
@@ -494,40 +522,57 @@ class FiniteElement {
       QSpace res;
 
       // Compute the weak coefficients at all quadrature points
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
-        // Get the solution/geometry in the reference domain
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+      for (index_t j = 0; j < num_quadrature_points; j++) {
+        // Get the solution/geometry and derivatives in the reference domain
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref =
+            geo.get(j);  // this has J
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // Compute the coefficients for the weak form of the PDE
+        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename PDE::FiniteElementSpace coef;
-        pde.weak(weight * detJ, data.get(j), gref, s, coef);
+        typename Integrand::FiniteElementSpace coef;
+        integrand.weak(weight * detJ, data.get(j), gref, s, coef);
 
         // Transform the coefficients back to the reference element
-        typename PDE::FiniteElementSpace& cref = res.get(j);
+        typename Integrand::FiniteElementSpace& cref = res.get(j);
         transform.rtransform(coef, cref);
       }
 
-      // Add the residual from the quadrature points back to the finite-element
-      // mesh
-      typename ElemVec::FEDof res_dof(i, elem_res);
+      // Add the residual from the quadrature points back to the
+      // finite-element mesh
+      typename ElemResVec::FEDof res_dof(i, elem_res);
       Basis::template add(res, res_dof);
 
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_res.add_element_values(i, res_dof);
-      }
-    }
+      // Serialized gather - only effective for a serialized element vector
+      // implementation
+      elem_res.add_element_values(i, res_dof);
+    };
+
+    // Execution
     if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+      elem_res.get_zero_values();
+
+      Kokkos::parallel_for("add_residual", num_elements, loop_body);
+      Kokkos::fence();
+
       elem_res.add_values();
+    } else {
+      static_assert(evtype == ElemVecType::Serial,
+                    "invalid ElemVecType deduced.");
+      for (index_t i = 0; i < num_elements; i++) {
+        loop_body(i);
+      }
     }
   }
 
@@ -537,23 +582,26 @@ class FiniteElement {
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
-   * @param pde Instance of the PDE
+   * @param integrand Instance of the Integrand
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_xvec Element solution vector for storing x-components
    * @param elem_yvec Output element solution vector storing y-components
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  void add_jacobian_vector_product(
-      PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-      ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-      ElementVectorBase<evtype, ElemVec>& elem_sol,
-      ElementVectorBase<evtype, ElemVec>& elem_xvec,
-      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void add_jacobian_vector_product(const Integrand& integrand,
+                                   DataElemVec& elem_data, GeoElemVec& elem_geo,
+                                   ElemVec& elem_sol, ElemVec& elem_xvec,
+                                   ElemVec& elem_yvec) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -563,9 +611,9 @@ class FiniteElement {
       elem_yvec.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry, solution and input vector for this element and
-      // interpolate it
+    for (index_t i = 0; i < num_elements; i++) {
+      // Get the data, geometry, solution and input vector for this element
+      // and interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -591,37 +639,37 @@ class FiniteElement {
       // Allocate space for the output vector
       QSpace ysol;
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementSpace& xref = xsol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementSpace& xref = xsol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace x, s;
+        typename Integrand::FiniteElementSpace x, s;
         transform.transform(sref, s);
         transform.transform(xref, x);
 
         // Allocate the Jacobian-vector product functor
         double weight = Quadrature::get_weight(j);
-        typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
-                                        s);
+        typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                              data.get(j), gref, s);
 
         // Compute the Jacobian-vector product
-        typename PDE::FiniteElementSpace y;
+        typename Integrand::FiniteElementSpace y;
         jvp(x, y);
 
         // Transform to back to the reference element
-        typename PDE::FiniteElementSpace& yref = ysol.get(j);
+        typename Integrand::FiniteElementSpace& yref = ysol.get(j);
         transform.rtransform(y, yref);
       }
 
-      // Add the values from the quadrature points back into the finite-element
-      // problem
+      // Add the values from the quadrature points back into the
+      // finite-element problem
       typename ElemVec::FEDof y_dof(i, elem_yvec);
       Basis::template add(ysol, y_dof);
       if constexpr (evtype == ElemVecType::Serial) {
@@ -637,29 +685,37 @@ class FiniteElement {
    * @brief Assemble element Jacobian matrices based on the data, geometry and
    * solution vectors.
    *
-   * WARNING: This is intended only for the lowest order elements, ie. p = 1. It
-   * scales O(p^9) so it is unsuitable for high-order elements!
+   * WARNING: This is intended only for the lowest order elements, ie. p = 1.
+   * It scales O(p^9) so it is unsuitable for high-order elements!
    *
    * @tparam DataElemVec Element vector class for the data
    * @tparam GeoElemVec Element vector class for the geometry
    * @tparam ElemVec Element vector class for the solution/residual
    * @tparam ElemMat The element matrix
-   * @param pde The PDE instance
+   * @param integrand The Integrand instance
    * @param elem_data Element vector for the data
    * @param elem_geo Element vector for the geometry
    * @param elem_sol Element solution vector
    * @param elem_mat Element matrix output
+   *
+   * Note: this function uses Jacobian-vector product, which is deprecated and
+   * will be removed soon
    */
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec, class ElemMat>
-  void add_jacobian(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-                    ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                    ElementVectorBase<evtype, ElemVec>& elem_sol,
+  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
+  void add_jacobian(const Integrand& integrand, DataElemVec& elem_data,
+                    GeoElemVec& elem_geo, ElemVec& elem_sol,
                     ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -667,8 +723,9 @@ class FiniteElement {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+    for (index_t i = 0; i < num_elements; i++) {
+      // Get the data, geometry and solution for this element and interpolate
+      // it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -690,40 +747,41 @@ class FiniteElement {
       // Initialize the element matrix
       typename ElemMat::FEMat element_mat(i, elem_mat);
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform from the reference element to the physical space
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
-        // typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j),
-        // gref, s);
+        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+        // data.get(j), gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDE::QMatType jac;
+        typename Integrand::QMatType jac;
 
         // Temporary vectors
-        typename PDE::FiniteElementSpace pref, p, Jp;
+        typename Integrand::FiniteElementSpace pref, p, Jp;
 
-        for (A2D::index_t k = 0; k < ncomp; k++) {
+        double weight = Quadrature::get_weight(j);
+
+        for (index_t k = 0; k < ncomp; k++) {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
           transform.transform(pref, p);
 
           // Allocate the Jacobian-vector product functor
-          double weight = Quadrature::get_weight(j);
-          typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
-                                          s);
+          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                                data.get(j), gref, s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -731,7 +789,7 @@ class FiniteElement {
           // Transform to back to the reference element
           transform.rtransform(Jp, pref);
 
-          for (A2D::index_t m = 0; m < ncomp; m++) {
+          for (index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
           }
         }
@@ -744,53 +802,18 @@ class FiniteElement {
     }
   }
 
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_geo_derivative(PDE& pde, DataElemVec& elem_data,
-                          GeoElemVec& elem_geo, ElemVec& elem_sol,
-                          GeoElemVec& geo_deriv) {}
+  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
+  void add_jacobian_new(const Integrand& integrand, DataElemVec& elem_data,
+                        GeoElemVec& elem_geo, ElemVec& elem_sol,
+                        ElemMat& elem_mat) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
 
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_adjoint_residual_geo_derivative(PDE& pde, DataElemVec& elem_data,
-                                           GeoElemVec& elem_geo,
-                                           ElemVec& elem_sol, ElemVec& elem_adj,
-                                           GeoElemVec& geo_deriv) {}
-};
-
-template <typename T, class PDE, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis>
-class MatrixFree {
- public:
-  // Quadrature point object for the data space
-  using QDataSpace = QptSpace<Quadrature, typename PDE::DataSpace>;
-
-  // Quadrature point object for the geometry
-  using QGeoSpace = QptSpace<Quadrature, typename PDE::FiniteElementGeometry>;
-
-  // Quadrature point object for the finite-element space
-  using QSpace = QptSpace<Quadrature, typename PDE::FiniteElementSpace>;
-
-  // Quadrature point view of the Jacobian-matrices
-  using QMatSpace = QptSpace<Quadrature, typename PDE::QMatType>;
-
-  MatrixFree() {}
-
-  template <ElemVecType evtype, class DataElemVec, class GeoElemVec,
-            class ElemVec>
-  void initialize(PDE& pde, ElementVectorBase<evtype, DataElemVec>& elem_data,
-                  ElementVectorBase<evtype, GeoElemVec>& elem_geo,
-                  ElementVectorBase<evtype, ElemVec>& elem_sol) {
-    Timer timer("MatrixFree::initialize()");
-    // Re-size the vector as needed
-    const A2D::index_t num_elements = elem_geo.get_num_elements();
-    if (qmat.size() != num_elements) {
-      qmat.resize(num_elements);
-    }
-
-    // Number of components at the quadrature point
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
-
-    // Get the number of quadrature points
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t num_elements = elem_geo.get_num_elements();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_data.get_values();
@@ -798,8 +821,9 @@ class MatrixFree {
       elem_sol.get_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate it
+    for (index_t i = 0; i < num_elements; i++) {
+      // Get the data, geometry and solution for this element and interpolate
+      // it
       typename DataElemVec::FEDof data_dof(i, elem_data);
       typename GeoElemVec::FEDof geo_dof(i, elem_geo);
       typename ElemVec::FEDof sol_dof(i, elem_sol);
@@ -818,31 +842,145 @@ class MatrixFree {
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      // Initialize the element matrix
+      typename ElemMat::FEMat element_mat(i, elem_mat);
+
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace& sref = sol.get(j);
-        typename PDE::FiniteElementGeometry& gref = geo.get(j);
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
 
         // Initialize the transform object
         T detJ;
-        typename PDE::SolutionMapping transform(gref, detJ);
+        typename Integrand::SolutionMapping transform(gref, detJ);
+
+        // Transform from the reference element to the physical space
+        typename Integrand::FiniteElementSpace s;
+        transform.transform(sref, s);
+
+        // Compute the Jacobian for the weak form at the quadrature point
+        double weight = Quadrature::get_weight(j);
+        typename Integrand::QMatType jac_ref, jac;
+        integrand.jacobian(weight * detJ, data.get(j), gref, s, jac);
+
+        // Transform second derivatives from w.r.t. x to w.r.t. xi
+        transform.template jtransform<typename Integrand::FiniteElementSpace>(
+            jac, jac_ref);
+
+        // Add the results of the outer product
+        Basis::template add_outer<Quadrature>(j, jac_ref, element_mat);
+      }
+
+      elem_mat.add_element_values(i, element_mat);
+    }
+  }
+
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void add_geo_derivative(const Integrand& integrand, DataElemVec& elem_data,
+                          GeoElemVec& elem_geo, ElemVec& elem_sol,
+                          GeoElemVec& geo_deriv) {}
+
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void add_adjoint_residual_geo_derivative(const Integrand& integrand,
+                                           DataElemVec& elem_data,
+                                           GeoElemVec& elem_geo,
+                                           ElemVec& elem_sol, ElemVec& elem_adj,
+                                           GeoElemVec& geo_deriv) {}
+};
+
+template <typename T, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis>
+class MatrixFree {
+ public:
+  // Quadrature point object for the data space
+  using QDataSpace = QptSpace<Quadrature, typename Integrand::DataSpace>;
+
+  // Quadrature point object for the geometry
+  using QGeoSpace =
+      QptSpace<Quadrature, typename Integrand::FiniteElementGeometry>;
+
+  // Quadrature point object for the finite-element space
+  using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
+
+  // Quadrature point view of the Jacobian-matrices
+  using QMatSpace = QptSpace<Quadrature, typename Integrand::QMatType>;
+
+  MatrixFree() {}
+
+  template <class DataElemVec, class GeoElemVec, class ElemVec>
+  void initialize(const Integrand& integrand, DataElemVec& elem_data,
+                  GeoElemVec& elem_geo, ElemVec& elem_sol) {
+    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
+    static_assert(same_evtype::value,
+                  "Cannot mix up different element vector types (e.g. using "
+                  "parallel and serial at the same time)");
+    constexpr ElemVecType evtype = same_evtype::evtype;
+
+    Timer timer("MatrixFree::initialize()");
+    // Re-size the vector as needed
+    const index_t num_elements = elem_geo.get_num_elements();
+    if (qmat.size() != num_elements) {
+      qmat.resize(num_elements);
+    }
+
+    // Number of components at the quadrature point
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
+
+    // Get the number of quadrature points
+    const index_t num_quadrature_points = Quadrature::get_num_points();
+
+    if constexpr (evtype == ElemVecType::Parallel) {
+      elem_data.get_values();
+      elem_geo.get_values();
+      elem_sol.get_values();
+    }
+
+    for (index_t i = 0; i < num_elements; i++) {
+      // Get the data, geometry and solution for this element and interpolate
+      // it
+      typename DataElemVec::FEDof data_dof(i, elem_data);
+      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
+      typename ElemVec::FEDof sol_dof(i, elem_sol);
+
+      if constexpr (evtype == ElemVecType::Serial) {
+        elem_data.get_element_values(i, data_dof);
+        elem_geo.get_element_values(i, geo_dof);
+        elem_sol.get_element_values(i, sol_dof);
+      }
+
+      QDataSpace data;
+      QGeoSpace geo;
+      QSpace sol;
+
+      DataBasis::template interp(data_dof, data);
+      GeoBasis::template interp(geo_dof, geo);
+      Basis::template interp(sol_dof, sol);
+
+      for (index_t j = 0; j < num_quadrature_points; j++) {
+        // Transform to the local coordinate system
+        typename Integrand::FiniteElementSpace& sref = sol.get(j);
+        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
+
+        // Initialize the transform object
+        T detJ;
+        typename Integrand::SolutionMapping transform(gref, detJ);
 
         // Transform the solution the physical element
-        typename PDE::FiniteElementSpace s;
+        typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
         // // Allocate the Jacobian-vector product functor
         // double weight = Quadrature::get_weight(j);
-        // typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j),
-        // gref, s);
+        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+        // data.get(j), gref, s);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDE::QMatType& jac = qmat[i].get(j);
+        typename Integrand::QMatType& jac = qmat[i].get(j);
 
         // Temporary vectors
-        typename PDE::FiniteElementSpace pref, p, Jp;
+        typename Integrand::FiniteElementSpace pref, p, Jp;
 
-        for (A2D::index_t k = 0; k < ncomp; k++) {
+        for (index_t k = 0; k < ncomp; k++) {
           // Set the value into the matrix
           pref.zero();
           pref[k] = T(1.0);
@@ -850,8 +988,8 @@ class MatrixFree {
 
           // Allocate the Jacobian-vector product functor
           double weight = Quadrature::get_weight(j);
-          typename PDE::JacVecProduct jvp(pde, weight * detJ, data.get(j), gref,
-                                          s);
+          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
+                                                data.get(j), gref, s);
 
           // Compute the Jacobian-vector product
           jvp(p, Jp);
@@ -859,7 +997,7 @@ class MatrixFree {
           // Transform to back to the reference element
           transform.rtransform(Jp, pref);
 
-          for (A2D::index_t m = 0; m < ncomp; m++) {
+          for (index_t m = 0; m < ncomp; m++) {
             jac(m, k) = pref[m];
           }
         }
@@ -867,22 +1005,20 @@ class MatrixFree {
     }
   }
 
-  template <ElemVecType evtype, class ElemVec>
-  void add_jacobian_vector_product(
-      ElementVectorBase<evtype, ElemVec>& elem_xvec,
-      ElementVectorBase<evtype, ElemVec>& elem_yvec) {
-    const A2D::index_t num_elements = qmat.size();
-    const A2D::index_t num_quadrature_points = Quadrature::get_num_points();
-    const A2D::index_t ncomp = PDE::FiniteElementSpace::ncomp;
+  template <class ElemVec>
+  void add_jacobian_vector_product(ElemVec& elem_xvec, ElemVec& elem_yvec) {
+    constexpr ElemVecType evtype = ElemVec::evtype;
+
+    const index_t num_elements = qmat.size();
+    const index_t num_quadrature_points = Quadrature::get_num_points();
+    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
 
     if constexpr (evtype == ElemVecType::Parallel) {
       elem_xvec.get_values();
       elem_yvec.get_zero_values();
     }
 
-    for (A2D::index_t i = 0; i < num_elements; i++) {
-      // Kokkos::parallel_for(
-      //     num_elements, A2D_LAMBDA(index_t i) {
+    for (index_t i = 0; i < num_elements; i++) {
       // Set up the values for the input vector
       typename ElemVec::FEDof x_dof(i, elem_xvec);
       if constexpr (evtype == ElemVecType::Serial) {
@@ -894,18 +1030,18 @@ class MatrixFree {
       // Allocate space for the output vector
       QSpace ysol;
 
-      for (A2D::index_t j = 0; j < num_quadrature_points; j++) {
+      for (index_t j = 0; j < num_quadrature_points; j++) {
         // Transform to the local coordinate system
-        typename PDE::FiniteElementSpace& yref = ysol.get(j);
-        typename PDE::FiniteElementSpace& xref = xsol.get(j);
+        typename Integrand::FiniteElementSpace& yref = ysol.get(j);
+        typename Integrand::FiniteElementSpace& xref = xsol.get(j);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename PDE::QMatType& jac = qmat[i].get(j);
+        typename Integrand::QMatType& jac = qmat[i].get(j);
 
         // Matrix-vector product at the quadrature point
         yref.zero();
-        for (A2D::index_t ii = 0; ii < ncomp; ii++) {
-          for (A2D::index_t jj = 0; jj < ncomp; jj++) {
+        for (index_t ii = 0; ii < ncomp; ii++) {
+          for (index_t jj = 0; jj < ncomp; jj++) {
             yref[ii] += jac(ii, jj) * xref[jj];
           }
         }
@@ -928,23 +1064,23 @@ class MatrixFree {
 };
 
 /**
- * @brief Test the implementation of the PDE to check if the derivatives are
- * consistent with the weak form.
+ * @brief Test the implementation of the Integrand to check if the
+ * derivatives are consistent with the weak form.
  *
  * @tparam T Solution type
- * @tparam PDE Type of PDE object to test
- * @param pde Instance of the PDE object to test
+ * @tparam Integrand Type of Integrand object to test
+ * @param integrand Instance of the Integrand object to test
  * @param dh Finite-difference or complex-step step size
  */
-template <typename T, class PDE>
-void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
+template <typename T, class Integrand>
+void TestPDEImplementation(Integrand& integrand, double dh = 1e-7) {
   Timer timer("TestPDEImplementation()");
-  typename PDE::DataSpace data;
-  typename PDE::FiniteElementGeometry geo;
-  typename PDE::FiniteElementSpace s, sref;
-  typename PDE::FiniteElementSpace p, pref;
-  typename PDE::FiniteElementSpace coef, cref, cref0;
-  typename PDE::FiniteElementSpace Jp, Jpref;
+  typename Integrand::DataSpace data;
+  typename Integrand::FiniteElementGeometry geo;
+  typename Integrand::FiniteElementSpace s, sref;
+  typename Integrand::FiniteElementSpace p, pref;
+  typename Integrand::FiniteElementSpace coef, cref, cref0;
+  typename Integrand::FiniteElementSpace Jp, Jpref;
 
   // Generate random data
   std::random_device rd;
@@ -952,49 +1088,49 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
   std::uniform_real_distribution<> distr(-1.0, 1.0);
 
   // Set random values for the data
-  if constexpr (PDE::DataSpace::ncomp > 0) {
-    for (index_t i = 0; i < PDE::DataSpace::ncomp; i++) {
+  if constexpr (Integrand::DataSpace::ncomp > 0) {
+    for (index_t i = 0; i < Integrand::DataSpace::ncomp; i++) {
       data[i] = distr(gen);
     }
   }
 
   // Set random values for the geometry
-  for (index_t i = 0; i < PDE::FiniteElementGeometry::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementGeometry::ncomp; i++) {
     geo[i] = distr(gen);
   }
 
   // Set the random values
-  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
     sref[i] = distr(gen);
     pref[i] = distr(gen);
   }
 
   // Initialize the transform object
   T detJ;
-  typename PDE::SolutionMapping transform(geo, detJ);
+  typename Integrand::SolutionMapping transform(geo, detJ);
 
   // Compute the coefficients
   transform.transform(sref, s);
-  pde.weak(detJ, data, geo, s, coef);
+  integrand.weak(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref0);
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       sref[i] = sref[i] + dh * pref[i] * std::complex<double>(0.0, 1.0);
     }
   } else {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       sref[i] = sref[i] + dh * pref[i];
     }
   }
 
   // Compute the coefficients
   transform.transform(sref, s);
-  pde.weak(detJ, data, geo, s, coef);
+  integrand.weak(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref);
 
   // Compute the Jacobian-vector product
-  typename PDE::JacVecProduct jvp(pde, detJ, data, geo, s);
+  typename Integrand::JacVecProduct jvp(integrand, detJ, data, geo, s);
 
   // Compute the Jacobian-vector product
   transform.transform(pref, p);
@@ -1002,19 +1138,19 @@ void TestPDEImplementation(PDE& pde, double dh = 1e-7) {
   transform.rtransform(Jp, Jpref);
 
   // Compute the finite-difference value
-  typename PDE::FiniteElementSpace fd;
+  typename Integrand::FiniteElementSpace fd;
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       fd[i] = std::imag(cref[i]) / dh;
     }
   } else {
-    for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+    for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
       fd[i] = (cref[i] - cref0[i]) / dh;
     }
   }
 
-  for (index_t i = 0; i < PDE::FiniteElementSpace::ncomp; i++) {
+  for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
     std::cout << "fd[" << std::setw(2) << i << "]: " << std::setw(12)
               << std::real(fd[i]) << " Jpref[" << std::setw(2) << i
               << "]: " << std::setw(12) << std::real(Jpref[i]) << " err["

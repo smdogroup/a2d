@@ -8,26 +8,26 @@ namespace A2D {
 template <class A>
 class ADExpression {
  public:
-  A2D_INLINE_FUNCTION A& cast() { return static_cast<A&>(*this); }
-  A2D_INLINE_FUNCTION const A& cast() const {
+  KOKKOS_FUNCTION A& cast() { return static_cast<A&>(*this); }
+  KOKKOS_FUNCTION const A& cast() const {
     return static_cast<const A&>(*this);
   }
 
-  A2D_INLINE_FUNCTION void forward() { cast().forward(); }
-  A2D_INLINE_FUNCTION void reverse() { cast().reverse(); }
+  KOKKOS_FUNCTION void forward() { cast().forward(); }
+  KOKKOS_FUNCTION void reverse() { cast().reverse(); }
 };
 
 template <class A>
 class A2DExpression {
  public:
-  A2D_INLINE_FUNCTION A& cast() { return static_cast<A&>(*this); }
-  A2D_INLINE_FUNCTION const A& cast() const {
+  KOKKOS_FUNCTION A& cast() { return static_cast<A&>(*this); }
+  KOKKOS_FUNCTION const A& cast() const {
     return static_cast<const A&>(*this);
   }
 
-  A2D_INLINE_FUNCTION void reverse() { cast().reverse(); }
-  A2D_INLINE_FUNCTION void hforward() { cast().hforward(); }
-  A2D_INLINE_FUNCTION void hreverse() { cast().hreverse(); }
+  KOKKOS_FUNCTION void reverse() { cast().reverse(); }
+  KOKKOS_FUNCTION void hforward() { cast().hforward(); }
+  KOKKOS_FUNCTION void hreverse() { cast().hreverse(); }
 };
 
 }  // namespace A2D

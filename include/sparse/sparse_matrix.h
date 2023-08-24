@@ -71,7 +71,7 @@ class BSRMat {
   /**
    * @brief Copy constructor (shallow copy)
    */
-  A2D_INLINE_FUNCTION BSRMat(const BSRMat &src)
+  KOKKOS_FUNCTION BSRMat(const BSRMat &src)
       : nbrows(src.nbrows),
         nbcols(src.nbcols),
         nnz(src.nnz),
@@ -87,10 +87,10 @@ class BSRMat {
   /**
    * @brief Default destructor
    */
-  A2D_INLINE_FUNCTION ~BSRMat() = default;
+  KOKKOS_FUNCTION ~BSRMat() = default;
 
   // Zero the entries of the matrix
-  A2D_INLINE_FUNCTION void zero() { BLAS::zero(vals); }
+  KOKKOS_FUNCTION void zero() { BLAS::zero(vals); }
 
   /**
    * @brief Find the value index of a block given indices (row, col) of a block

@@ -47,7 +47,7 @@ class Poisson {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -76,13 +76,13 @@ class Poisson {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const Poisson<T, D>& integrand, T wdetJ,
+    KOKKOS_FUNCTION JacVecProduct(const Poisson<T, D>& integrand, T wdetJ,
                                       const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       const H1Space<T, 1, dim>& u = p.template get<0>();
       const Vec<T, dim>& u_grad = u.get_grad();
@@ -141,7 +141,7 @@ class MixedPoisson {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -183,13 +183,13 @@ class MixedPoisson {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand,
+    KOKKOS_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand,
                                       T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const HdivSpace<T, dim>& sigma = p.template get<0>();

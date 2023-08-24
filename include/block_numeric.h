@@ -10,7 +10,7 @@ namespace A2D {
   Compute y = A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemv(const AType& A, const xType& x, yType& y) {
+KOKKOS_FUNCTION void blockGemv(const AType& A, const xType& x, yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -24,7 +24,7 @@ A2D_INLINE_FUNCTION void blockGemv(const AType& A, const xType& x, yType& y) {
   Compute y += A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvAdd(const AType& A, const xType& x,
+KOKKOS_FUNCTION void blockGemvAdd(const AType& A, const xType& x,
                                       yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
@@ -39,7 +39,7 @@ A2D_INLINE_FUNCTION void blockGemvAdd(const AType& A, const xType& x,
   Compute y -= A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvSub(const AType& A, const xType& x,
+KOKKOS_FUNCTION void blockGemvSub(const AType& A, const xType& x,
                                       yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
@@ -54,7 +54,7 @@ A2D_INLINE_FUNCTION void blockGemvSub(const AType& A, const xType& x,
   Compute y = scale * A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvScale(T scale, const AType& A, const xType& x,
+KOKKOS_FUNCTION void blockGemvScale(T scale, const AType& A, const xType& x,
                                         yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
@@ -69,7 +69,7 @@ A2D_INLINE_FUNCTION void blockGemvScale(T scale, const AType& A, const xType& x,
   Compute y += scale * A * x
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
-A2D_INLINE_FUNCTION void blockGemvAddScale(T scale, const AType& A,
+KOKKOS_FUNCTION void blockGemvAddScale(T scale, const AType& A,
                                            const xType& x, yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
@@ -89,7 +89,7 @@ A2D_INLINE_FUNCTION void blockGemvAddScale(T scale, const AType& A,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemm(const AType& A, const BType& B, CType& C) {
+KOKKOS_FUNCTION void blockGemm(const AType& A, const BType& B, CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -110,7 +110,7 @@ A2D_INLINE_FUNCTION void blockGemm(const AType& A, const BType& B, CType& C) {
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmAdd(const AType& A, const BType& B,
+KOKKOS_FUNCTION void blockGemmAdd(const AType& A, const BType& B,
                                       CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
@@ -132,7 +132,7 @@ A2D_INLINE_FUNCTION void blockGemmAdd(const AType& A, const BType& B,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmSub(const AType& A, const BType& B,
+KOKKOS_FUNCTION void blockGemmSub(const AType& A, const BType& B,
                                       CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
@@ -154,7 +154,7 @@ A2D_INLINE_FUNCTION void blockGemmSub(const AType& A, const BType& B,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmScale(T scale, const AType& A, const BType& B,
+KOKKOS_FUNCTION void blockGemmScale(T scale, const AType& A, const BType& B,
                                         CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
@@ -176,7 +176,7 @@ A2D_INLINE_FUNCTION void blockGemmScale(T scale, const AType& A, const BType& B,
 */
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
-A2D_INLINE_FUNCTION void blockGemmAddScale(T scale, const AType& A,
+KOKKOS_FUNCTION void blockGemmAddScale(T scale, const AType& A,
                                            const BType& B, CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {

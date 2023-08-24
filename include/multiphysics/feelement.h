@@ -493,7 +493,7 @@ class FiniteElement {
     const index_t num_elements = elem_geo.get_num_elements();
     const index_t num_quadrature_points = Quadrature::get_num_points();
 
-    auto loop_body = A2D_LAMBDA(const index_t i) {
+    auto loop_body = KOKKOS_LAMBDA(const index_t i) {
       // Get the data, geometry and solution for this element and
       // interpolate it
       typename DataElemVec::FEDof data_dof(i, elem_data);

@@ -272,7 +272,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
   /**
    * @brief Get number of elements
    */
-  A2D_INLINE_FUNCTION index_t get_num_elements() const { return mesh.get_num_elements(); }
+  KOKKOS_FUNCTION index_t get_num_elements() const { return mesh.get_num_elements(); }
 
   /**
    * @brief Initialize local dof values to zero
@@ -283,7 +283,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @brief Populate element-view data from global data for all elements
    */
   void get_values() const {
-    auto loop_body = A2D_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::GET, Basis::nbasis>(elem);
     };
 
@@ -300,7 +300,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * Note: Data consistency is assumed
    */
   void set_values() const {
-    auto loop_body = A2D_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::SET, Basis::nbasis>(elem);
     };
 
@@ -316,7 +316,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @brief Add global data from element-view data for all elements
    */
   void add_values() const {
-    auto loop_body = A2D_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::ADD, Basis::nbasis>(elem);
     };
 
@@ -337,7 +337,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @param elem_idx element index
    */
   template <ELEM_VALS_OP op, index_t nbasis>
-  A2D_INLINE_FUNCTION void operate_element_values(const index_t& elem_idx) const {
+  KOKKOS_FUNCTION void operate_element_values(const index_t& elem_idx) const {
     for (index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
       const int& sign = mesh.template get_global_dof_sign<nbasis - 1>(elem_idx, i);
       const index_t& dof_index = mesh.template get_global_dof<nbasis - 1>(elem_idx, i);

@@ -57,7 +57,7 @@ namespace BLAS {
   Zero all elements in the array
 */
 template <class View>
-A2D_INLINE_FUNCTION void zero(const View& x) {
+KOKKOS_FUNCTION void zero(const View& x) {
   using T = typename View::value_type;
   assert(x.span_is_contiguous());
   T* data = x.data();
@@ -68,7 +68,7 @@ A2D_INLINE_FUNCTION void zero(const View& x) {
   Fill all the values in the array with the specified value
 */
 template <class View>
-A2D_INLINE_FUNCTION void fill(const View& x,
+KOKKOS_FUNCTION void fill(const View& x,
                               typename View::const_value_type& value) {
   using T = typename View::value_type;
   assert(x.span_is_contiguous());
@@ -88,7 +88,7 @@ void copy(const DestView& dest, const SrcView& src) {
   Scale the array
 */
 template <class View>
-A2D_INLINE_FUNCTION void scale(const View& x,
+KOKKOS_FUNCTION void scale(const View& x,
                                typename View::const_value_type& alpha) {
   using T = typename View::value_type;
   assert(x.span_is_contiguous());

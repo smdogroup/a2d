@@ -90,7 +90,7 @@ template <typename T, index_t M, index_t N>
 void BSRMatVecMult(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                    MultiArrayNew<T *[M]> &y) {
   parallel_for(
-      A.nbrows, A2D_LAMBDA(index_t i)->void {
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t ii = 0; ii < M; ii++) {
           y(i, ii) = T(0);
         }
@@ -111,7 +111,7 @@ template <typename T, index_t M, index_t N>
 void BSRMatVecMultAdd(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                       MultiArrayNew<T *[M]> &y) {
   parallel_for(
-      A.nbrows, A2D_LAMBDA(index_t i)->void {
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         const index_t jp_end = A.rowp[i + 1];
         for (index_t jp = A.rowp[i]; jp < jp_end; jp++) {
           index_t j = A.cols[jp];
@@ -128,7 +128,7 @@ template <typename T, index_t M, index_t N>
 void BSRMatVecMultSub(BSRMat<T, M, N> &A, MultiArrayNew<T *[N]> &x,
                       MultiArrayNew<T *[M]> &y) {
   parallel_for(
-      A.nbrows, A2D_LAMBDA(index_t i)->void {
+      A.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         const index_t jp_end = A.rowp[i + 1];
         for (index_t jp = A.rowp[i]; jp < jp_end; jp++) {
           index_t j = A.cols[jp];
@@ -149,7 +149,7 @@ void BSRMatMatMult(BSRMat<T, M, N> &A, BSRMat<T, N, P> &B, BSRMat<T, M, P> &C) {
   // for (index_t i = 0; i < C.nbrows; i++) {
   C.zero();
   parallel_for(
-      C.nbrows, A2D_LAMBDA(index_t i)->void {
+      C.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           index_t j = A.cols[jp];
 
@@ -184,7 +184,7 @@ void BSRMatMatMultAddScale(T scale, BSRMat<T, M, N> &A, BSRMat<T, N, P> &B,
                            BSRMat<T, M, P> &C) {
   // C_{ik} = A_{ij} B_{jk}
   parallel_for(
-      C.nbrows, A2D_LAMBDA(index_t i)->void {
+      C.nbrows, KOKKOS_LAMBDA(index_t i)->void {
         for (index_t jp = A.rowp[i]; jp < A.rowp[i + 1]; jp++) {
           index_t j = A.cols[jp];
 
@@ -597,7 +597,7 @@ void BSRApplySOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
 
       // for (index_t irow = 0; irow < count; irow++) {
       parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values
@@ -665,7 +665,7 @@ void BSRApplySSOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
       const index_t count = A.color_count[color];
 
       parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values
@@ -699,7 +699,7 @@ void BSRApplySSOR(BSRMat<T, M, M> &Dinv, BSRMat<T, M, M> &A, T omega,
       const index_t count = A.color_count[color - 1];
 
       parallel_for(
-          count, A2D_LAMBDA(index_t irow)->void {
+          count, KOKKOS_LAMBDA(index_t irow)->void {
             index_t i = A.perm[irow + offset];
 
             // Copy over the values

@@ -13,33 +13,33 @@ class Vec {
 
   static const index_t num_components = N;
 
-  A2D_INLINE_FUNCTION Vec() {
+  KOKKOS_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {
       V[i] = 0.0;
     }
   }
-  A2D_INLINE_FUNCTION Vec(const T* vals) {
+  KOKKOS_FUNCTION Vec(const T* vals) {
     for (int i = 0; i < N; i++) {
       V[i] = vals[i];
     }
   }
   template <class VecType>
-  A2D_INLINE_FUNCTION Vec(const VecType& vec) {
+  KOKKOS_FUNCTION Vec(const VecType& vec) {
     for (int i = 0; i < N; i++) {
       V[i] = vec(i);
     }
   }
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     for (int i = 0; i < N; i++) {
       V[i] = 0.0;
     }
   }
   template <class IdxType>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType i) {
+  KOKKOS_FUNCTION T& operator()(const IdxType i) {
     return V[i];
   }
   template <class IdxType>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType i) const {
+  KOKKOS_FUNCTION const T& operator()(const IdxType i) const {
     return V[i];
   }
 
@@ -48,11 +48,11 @@ class Vec {
   // private:
 
   template <typename I>
-  A2D_INLINE_FUNCTION T& operator[](const I i) {
+  KOKKOS_FUNCTION T& operator[](const I i) {
     return V[i];
   }
   template <typename I>
-  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+  KOKKOS_FUNCTION const T& operator[](const I i) const {
     return V[i];
   }
 
@@ -62,13 +62,13 @@ class Vec {
 template <class VecType>
 class ADVec {
  public:
-  A2D_INLINE_FUNCTION ADVec(VecType& V, VecType& Vb) : V(V), Vb(Vb) {}
+  KOKKOS_FUNCTION ADVec(VecType& V, VecType& Vb) : V(V), Vb(Vb) {}
 
-  A2D_INLINE_FUNCTION VecType& value() { return V; }
-  A2D_INLINE_FUNCTION const VecType& value() const { return V; }
+  KOKKOS_FUNCTION VecType& value() { return V; }
+  KOKKOS_FUNCTION const VecType& value() const { return V; }
 
-  A2D_INLINE_FUNCTION VecType& bvalue() { return Vb; }
-  A2D_INLINE_FUNCTION const VecType& bvalue() const { return Vb; }
+  KOKKOS_FUNCTION VecType& bvalue() { return Vb; }
+  KOKKOS_FUNCTION const VecType& bvalue() const { return Vb; }
 
   VecType& V;   // Vector
   VecType& Vb;  // Reverse mode derivative value
@@ -77,28 +77,28 @@ class ADVec {
 template <class VecType>
 class A2DVec {
  public:
-  A2D_INLINE_FUNCTION A2DVec() {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& V) : V(V) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb)
+  KOKKOS_FUNCTION A2DVec() {}
+  KOKKOS_FUNCTION A2DVec(const VecType& V) : V(V) {}
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb)
       : V(V), Vb(Vb) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
                              const VecType& Vp)
       : V(V), Vb(Vb), Vp(Vp) {}
-  A2D_INLINE_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
                              const VecType& Vp, const VecType& Vh)
       : V(V), Vb(Vb), Vp(Vp), Vh(Vh) {}
 
-  A2D_INLINE_FUNCTION VecType& value() { return V; }
-  A2D_INLINE_FUNCTION const VecType& value() const { return V; }
+  KOKKOS_FUNCTION VecType& value() { return V; }
+  KOKKOS_FUNCTION const VecType& value() const { return V; }
 
-  A2D_INLINE_FUNCTION VecType& bvalue() { return Vb; }
-  A2D_INLINE_FUNCTION const VecType& bvalue() const { return Vb; }
+  KOKKOS_FUNCTION VecType& bvalue() { return Vb; }
+  KOKKOS_FUNCTION const VecType& bvalue() const { return Vb; }
 
-  A2D_INLINE_FUNCTION VecType& pvalue() { return Vp; }
-  A2D_INLINE_FUNCTION const VecType& pvalue() const { return Vp; }
+  KOKKOS_FUNCTION VecType& pvalue() { return Vp; }
+  KOKKOS_FUNCTION const VecType& pvalue() const { return Vp; }
 
-  A2D_INLINE_FUNCTION VecType& hvalue() { return Vh; }
-  A2D_INLINE_FUNCTION const VecType& hvalue() const { return *Vh; }
+  KOKKOS_FUNCTION VecType& hvalue() { return Vh; }
+  KOKKOS_FUNCTION const VecType& hvalue() const { return *Vh; }
 
   VecType V;
   VecType Vb;
@@ -110,37 +110,37 @@ class A2DVec {
  * @brief Get data pointers from Mat/ADMat/A2DMat objects
  */
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_data(Vec<T, n>& vec) {
+KOKKOS_FUNCTION T* get_data(Vec<T, n>& vec) {
   return vec.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, n>>& vec) {
   return vec.V.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_data(A2DVec<Vec<T, n>>& vec) {
   return vec.V.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_bdata(ADVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_bdata(ADVec<Vec<T, n>>& vec) {
   return vec.Vb.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_bdata(A2DVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_bdata(A2DVec<Vec<T, n>>& vec) {
   return vec.Vb.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_pdata(A2DVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_pdata(A2DVec<Vec<T, n>>& vec) {
   return vec.Vp.V;
 }
 
 template <typename T, int n>
-A2D_INLINE_FUNCTION T* get_hdata(A2DVec<Vec<T, n>>& vec) {
+KOKKOS_FUNCTION T* get_hdata(A2DVec<Vec<T, n>>& vec) {
   return vec.Vh.V;
 }
 

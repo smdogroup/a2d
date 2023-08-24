@@ -74,7 +74,7 @@ class HeatConduction {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -104,7 +104,7 @@ class HeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const HeatConduction<T, D>& integrand,
+    KOKKOS_FUNCTION JacVecProduct(const HeatConduction<T, D>& integrand,
                                       T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
@@ -113,7 +113,7 @@ class HeatConduction {
           rho(data[0]),
           penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const Vec<T, dim>& tx = p.template get<0>().get_grad();
@@ -140,7 +140,7 @@ class HeatConduction {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(const HeatConduction<T, D>& integrand,
+    KOKKOS_FUNCTION AdjVecProduct(const HeatConduction<T, D>& integrand,
                                       T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
@@ -151,7 +151,7 @@ class HeatConduction {
           penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))),
           tx(s.template get<0>().get_grad()) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         DataSpace& dfdx) {
       T denom = (1.0 + q * (1.0 - rho));
       T dprhodrho = (q + 1.0) / (denom * denom);
@@ -203,7 +203,7 @@ class AdjRHS {
 
   AdjRHS(T heat_source) : heat_source(heat_source) {}
 
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -276,7 +276,7 @@ class MixedHeatConduction {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -312,13 +312,13 @@ class MixedHeatConduction {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(
+    KOKKOS_FUNCTION JacVecProduct(
         const MixedHeatConduction<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
         : wdetJ(wdetJ), kappa(data[0]) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const Vec<T, dim>& q = p.template get<0>().get_value();

@@ -39,7 +39,7 @@ class NonlinearElasticity {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) {
@@ -83,7 +83,7 @@ class NonlinearElasticity {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(
+    KOKKOS_FUNCTION JacVecProduct(
         const NonlinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
@@ -107,7 +107,7 @@ class NonlinearElasticity {
       strain.reverse();
     }
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
@@ -138,7 +138,7 @@ class NonlinearElasticity {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(
+    KOKKOS_FUNCTION AdjVecProduct(
         const NonlinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
@@ -162,7 +162,7 @@ class NonlinearElasticity {
       strain.reverse();
     }
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         DataSpace& dfdx) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 

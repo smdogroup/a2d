@@ -104,7 +104,7 @@ class FLayout {
   /**
    * @brief Default constructor
    */
-  A2D_INLINE_FUNCTION FLayout() {}
+  KOKKOS_FUNCTION FLayout() {}
 
   /**
    * @brief Regular constructor
@@ -116,7 +116,7 @@ class FLayout {
   /**
    * @brief Copy constructor (light-weight shallow copy)
    */
-  A2D_INLINE_FUNCTION FLayout(const FLayout<dims...>& src)
+  KOKKOS_FUNCTION FLayout(const FLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
     size = dim0 * static_size;
   }
@@ -124,12 +124,12 @@ class FLayout {
   /**
    * @brief Destructor
    */
-  A2D_INLINE_FUNCTION ~FLayout() {}
+  KOKKOS_FUNCTION ~FLayout() {}
 
   /**
    * @brief Assignment operator
    */
-  A2D_INLINE_FUNCTION FLayout<dims...>& operator=(const FLayout<dims...>& src) {
+  KOKKOS_FUNCTION FLayout<dims...>& operator=(const FLayout<dims...>& src) {
     dim0 = src.dim0;
     size = src.size;
     for (index_t i = 0; i != rank - 1; i++) {
@@ -141,24 +141,24 @@ class FLayout {
   /**
    * @brief Get number of dimensions of the multiarray layout
    */
-  A2D_INLINE_FUNCTION static index_t get_rank() { return rank; }
+  KOKKOS_FUNCTION static index_t get_rank() { return rank; }
 
   /**
    * @brief compute dim * dim1 * dim2 * dim3 ...
    */
-  A2D_INLINE_FUNCTION static index_t get_size(index_t dim) {
+  KOKKOS_FUNCTION static index_t get_size(index_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
   /**
    * @brief Get number of entries of the multiarray
    */
-  A2D_INLINE_FUNCTION index_t get_size() { return size; }
+  KOKKOS_FUNCTION index_t get_size() { return size; }
 
   /**
    * @brief Get the extent given the dimension index
    */
-  A2D_INLINE_FUNCTION index_t get_extent(index_t index) const {
+  KOKKOS_FUNCTION index_t get_extent(index_t index) const {
     if (index == 0) {
       return dim0;
     }
@@ -166,7 +166,7 @@ class FLayout {
   }
 
   template <class Idx>
-  A2D_INLINE_FUNCTION index_t compute_index(Idx i1) const {
+  KOKKOS_FUNCTION index_t compute_index(Idx i1) const {
     return i1;
   }
 
@@ -175,7 +175,7 @@ class FLayout {
    * (i1, i2, i3, ...)
    */
   template <class Idx, class... IdxType>
-  A2D_INLINE_FUNCTION index_t compute_index(Idx i1, IdxType... idx) const {
+  KOKKOS_FUNCTION index_t compute_index(Idx i1, IdxType... idx) const {
     return i1 + dim0 * __compute_index<0>(idx...);
   }
 
@@ -185,7 +185,7 @@ class FLayout {
    * This is a static method used in MultiArraySlice.
    */
   template <class... IdxType>
-  A2D_INLINE_FUNCTION static index_t compute_slice_offset(IdxType... idx) {
+  KOKKOS_FUNCTION static index_t compute_slice_offset(IdxType... idx) {
     return __compute_index<0>(idx...);
   }
 
@@ -194,13 +194,13 @@ class FLayout {
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  A2D_INLINE_FUNCTION static index_t __compute_index(Idx i, IdxType... idx) {
+  KOKKOS_FUNCTION static index_t __compute_index(Idx i, IdxType... idx) {
     return i +
            ___get_extent<r, dims...>::extent * __compute_index<r + 1>(idx...);
   }
 
   template <int r, class Idx>
-  A2D_INLINE_FUNCTION static index_t __compute_index(Idx i) {
+  KOKKOS_FUNCTION static index_t __compute_index(Idx i) {
     return i;
   }
 };
@@ -232,7 +232,7 @@ class CLayout {
   /**
    * @brief Default constructor
    */
-  A2D_INLINE_FUNCTION CLayout() {}
+  KOKKOS_FUNCTION CLayout() {}
 
   /**
    * @brief Regular constructor
@@ -244,7 +244,7 @@ class CLayout {
   /**
    * @brief Copy constructor (light-weight shallow copy)
    */
-  A2D_INLINE_FUNCTION CLayout(const CLayout<dims...>& src)
+  KOKKOS_FUNCTION CLayout(const CLayout<dims...>& src)
       : dim0(src.dim0), static_extents{dims...} {
     size = dim0 * static_size;
   }
@@ -252,12 +252,12 @@ class CLayout {
   /**
    * @brief Destructor
    */
-  A2D_INLINE_FUNCTION ~CLayout() {}
+  KOKKOS_FUNCTION ~CLayout() {}
 
   /**
    * @brief Assignment operator
    */
-  A2D_INLINE_FUNCTION CLayout<dims...>& operator=(const CLayout<dims...>& src) {
+  KOKKOS_FUNCTION CLayout<dims...>& operator=(const CLayout<dims...>& src) {
     dim0 = src.dim0;
     size = src.size;
     for (index_t i = 0; i != rank - 1; i++) {
@@ -269,24 +269,24 @@ class CLayout {
   /**
    * @brief Get number of dimensions of the multiarray layout
    */
-  A2D_INLINE_FUNCTION static index_t get_rank() { return rank; }
+  KOKKOS_FUNCTION static index_t get_rank() { return rank; }
 
   /**
    * @brief compute dim * dim1 * dim2 * dim3 ...
    */
-  A2D_INLINE_FUNCTION static index_t get_size(index_t dim) {
+  KOKKOS_FUNCTION static index_t get_size(index_t dim) {
     return dim * __get_size<dims...>::size;
   }
 
   /**
    * @brief Get number of entries of the multiarray
    */
-  A2D_INLINE_FUNCTION index_t get_size() { return size; }
+  KOKKOS_FUNCTION index_t get_size() { return size; }
 
   /**
    * @brief Get the extent given the dimension index
    */
-  A2D_INLINE_FUNCTION index_t get_extent(index_t index) const {
+  KOKKOS_FUNCTION index_t get_extent(index_t index) const {
     if (index == 0) {
       return dim0;
     }
@@ -294,7 +294,7 @@ class CLayout {
   }
 
   template <class Idx>
-  A2D_INLINE_FUNCTION index_t compute_index(Idx i1) const {
+  KOKKOS_FUNCTION index_t compute_index(Idx i1) const {
     return i1;
   }
 
@@ -303,7 +303,7 @@ class CLayout {
    * (i1, i2, i3, ...)
    */
   template <class Idx, class... IdxType>
-  A2D_INLINE_FUNCTION static index_t compute_index(Idx i1, IdxType... idx) {
+  KOKKOS_FUNCTION static index_t compute_index(Idx i1, IdxType... idx) {
     return __compute_index<0>(i1, idx...);
   }
 
@@ -312,7 +312,7 @@ class CLayout {
    * (i1, 0, 0, ...). This is a static method used in MultiArraySlice.
    */
   template <class... IdxType>
-  A2D_INLINE_FUNCTION static index_t compute_slice_offset(IdxType... idx) {
+  KOKKOS_FUNCTION static index_t compute_slice_offset(IdxType... idx) {
     return __compute_index<0>(0, idx...);
   }
 
@@ -321,14 +321,14 @@ class CLayout {
   index_t static_extents[rank - 1];
 
   template <int r, class Idx, class... IdxType>
-  A2D_INLINE_FUNCTION static index_t __compute_index(const index_t index, Idx i,
+  KOKKOS_FUNCTION static index_t __compute_index(const index_t index, Idx i,
                                                      IdxType... idx) {
     return __compute_index<r + 1>(index * ___get_extent<r, dims...>::extent + i,
                                   idx...);
   }
 
   template <int r, class Idx>
-  A2D_INLINE_FUNCTION static index_t __compute_index(const index_t index,
+  KOKKOS_FUNCTION static index_t __compute_index(const index_t index,
                                                      Idx i) {
     return index * ___get_extent<r, dims...>::extent + i;
   }
@@ -370,7 +370,7 @@ class MultiArray {
   /**
    * @brief Copy constructor: shallow copy is performed
    */
-  A2D_INLINE_FUNCTION MultiArray(const MultiArray<T, Layout>& src) {
+  KOKKOS_FUNCTION MultiArray(const MultiArray<T, Layout>& src) {
     layout = src.layout;
     view = src.view;
     data = src.data;
@@ -379,7 +379,7 @@ class MultiArray {
   /**
    * @brief Assignment operator: shallow copy is performed
    */
-  A2D_INLINE_FUNCTION MultiArray& operator=(const MultiArray<T, Layout>& src) {
+  KOKKOS_FUNCTION MultiArray& operator=(const MultiArray<T, Layout>& src) {
     layout = src.layout;
     view = src.view;
     data = src.data;
@@ -390,19 +390,19 @@ class MultiArray {
    * @brief Destructor - memory is managed by Kokkos, hence no explicit
    * delete/free is needed
    */
-  A2D_INLINE_FUNCTION ~MultiArray() {}
+  KOKKOS_FUNCTION ~MultiArray() {}
 
   /*
     Constant access to array elements, note: defining member function as const
     gives it better flexibility
   */
   template <class... IdxType>
-  A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
+  KOKKOS_FUNCTION T& operator()(IdxType... idx) const {
     return view(idx...);
   }
 
   template <class... IdxType>
-  A2D_INLINE_FUNCTION T& operator[](IdxType... idx) const {
+  KOKKOS_FUNCTION T& operator[](IdxType... idx) const {
     return view(idx...);
   }
 
@@ -419,19 +419,19 @@ class MultiArray {
   /*
     Get the rank of the the multi-dimensional array
   */
-  A2D_INLINE_FUNCTION index_t get_rank() const { return layout.get_rank(); }
+  KOKKOS_FUNCTION index_t get_rank() const { return layout.get_rank(); }
 
   /*
     Get the extent of one of the dimensions
   */
-  A2D_INLINE_FUNCTION index_t extent(index_t index) const {
+  KOKKOS_FUNCTION index_t extent(index_t index) const {
     return layout.get_extent(index);
   }
 
   /*
     Zero all elements in the array
   */
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     const index_t len = layout.get_size();
     for (index_t i = 0; i != len; i++) {
       data[i] = T(0);
@@ -441,7 +441,7 @@ class MultiArray {
   /*
     Fill all the values in the array with the specified value
   */
-  A2D_INLINE_FUNCTION void fill(T value) {
+  KOKKOS_FUNCTION void fill(T value) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i != len; i++) {
       data[i] = value;
@@ -451,7 +451,7 @@ class MultiArray {
   /*
     Copy elements from the source to this vector
   */
-  A2D_INLINE_FUNCTION void copy(MultiArray<T, Layout>& src) {
+  KOKKOS_FUNCTION void copy(MultiArray<T, Layout>& src) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i != len; i++) {
       data[i] = src.data[i];
@@ -461,7 +461,7 @@ class MultiArray {
   /*
     Copy elements from the source to this vector
   */
-  A2D_INLINE_FUNCTION void scale(T alpha) {
+  KOKKOS_FUNCTION void scale(T alpha) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] *= alpha;
@@ -491,7 +491,7 @@ class MultiArray {
   /*
     Take the dot product with the source vector data
   */
-  A2D_INLINE_FUNCTION T dot(MultiArray<T, Layout>& src) {
+  KOKKOS_FUNCTION T dot(MultiArray<T, Layout>& src) {
     const index_t len = layout.get_size();
     T result = T(0);
     for (index_t i = 0; i < len; i++) {
@@ -503,7 +503,7 @@ class MultiArray {
   /*
     Norm of the array
   */
-  A2D_INLINE_FUNCTION T norm() {
+  KOKKOS_FUNCTION T norm() {
     const index_t len = layout.get_size();
     T result = T(0);
     for (index_t i = 0; i < len; i++) {
@@ -515,7 +515,7 @@ class MultiArray {
   /*
     Axpy: this = alpha * x + this
   */
-  A2D_INLINE_FUNCTION void axpy(T alpha, MultiArray<T, Layout>& x) {
+  KOKKOS_FUNCTION void axpy(T alpha, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] += alpha * x.data[i];
@@ -525,7 +525,7 @@ class MultiArray {
   /*
     Axpby: this = alpha * x + beta * this
   */
-  A2D_INLINE_FUNCTION void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
+  KOKKOS_FUNCTION void axpby(T alpha, T beta, MultiArray<T, Layout>& x) {
     const index_t len = layout.get_size();
     for (index_t i = 0; i < len; i++) {
       data[i] = alpha * x.data[i] + beta * data[i];
@@ -749,7 +749,7 @@ class MultiArraySlice<T, FLayout<dims...>> {
   using Layout = FLayout<dims...>;
 
   template <class IdxType>
-  A2D_INLINE_FUNCTION MultiArraySlice(
+  KOKKOS_FUNCTION MultiArraySlice(
       const MultiArray<T, FLayout<dims...>>& array, const IdxType idx)
       : dim0(array.layout.dim0) {
     data = &array.data[idx];
@@ -760,14 +760,14 @@ class MultiArraySlice<T, FLayout<dims...>> {
     gives it better flexibility
   */
   template <class... IdxType>
-  A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
+  KOKKOS_FUNCTION T& operator()(IdxType... idx) const {
     return data[dim0 * FLayout<dims...>::template compute_slice_offset(idx...)];
   }
 
   /*
     Zero the entries of the slice
   */
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     for (index_t i = 0; i < FLayout<dims...>::static_size; i++) {
       data[dim0 * i] = 0.0;
     }
@@ -776,7 +776,7 @@ class MultiArraySlice<T, FLayout<dims...>> {
   /**
    * Get the underlying data pointer
    */
-  A2D_INLINE_FUNCTION T* get_data() { return data; }
+  KOKKOS_FUNCTION T* get_data() { return data; }
 
  private:
   T* data;
@@ -792,7 +792,7 @@ class MultiArraySlice<T, CLayout<dims...>> {
   using Layout = CLayout<dims...>;
 
   template <class IdxType>
-  A2D_INLINE_FUNCTION MultiArraySlice(
+  KOKKOS_FUNCTION MultiArraySlice(
       const MultiArray<T, CLayout<dims...>>& array, const IdxType idx)
       : dim0(array.layout.dim0) {
     data = &array.data[array.layout.get_size(idx)];
@@ -803,14 +803,14 @@ class MultiArraySlice<T, CLayout<dims...>> {
     gives it better flexibility
   */
   template <class... IdxType>
-  A2D_INLINE_FUNCTION T& operator()(IdxType... idx) const {
+  KOKKOS_FUNCTION T& operator()(IdxType... idx) const {
     return data[CLayout<dims...>::template compute_slice_offset(idx...)];
   }
 
   /*
     Zero the entries of the slice
   */
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     for (index_t i = 0; i < CLayout<dims...>::static_size; i++) {
       data[i] = 0.0;
     }
@@ -819,7 +819,7 @@ class MultiArraySlice<T, CLayout<dims...>> {
   /**
    * Get the underlying data pointer
    */
-  A2D_INLINE_FUNCTION T* get_data() { return data; }
+  KOKKOS_FUNCTION T* get_data() { return data; }
 
  private:
   T* data;
@@ -830,7 +830,7 @@ class MultiArraySlice<T, CLayout<dims...>> {
  * @brief Create a MultiArraySlice
  */
 template <typename T, typename IdxType, class Layout>
-A2D_INLINE_FUNCTION MultiArraySlice<T, Layout> MakeSlice(
+KOKKOS_FUNCTION MultiArraySlice<T, Layout> MakeSlice(
     const MultiArray<T, Layout>& array, IdxType idx) {
   return MultiArraySlice<T, Layout>(array, idx);
 }

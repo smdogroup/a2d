@@ -9,7 +9,7 @@ namespace A2D {
 template <class T>
 class ADScalar {
  public:
-  A2D_INLINE_FUNCTION ADScalar(T value = 0.0, T bvalue = 0.0)
+  KOKKOS_FUNCTION ADScalar(T value = 0.0, T bvalue = 0.0)
       : value(value), bvalue(bvalue) {}
 
   T value;
@@ -19,7 +19,7 @@ class ADScalar {
 template <class T>
 class A2DScalar {
  public:
-  A2D_INLINE_FUNCTION A2DScalar(T value = 0.0, T bvalue = 0.0, T pvalue = 0.0,
+  KOKKOS_FUNCTION A2DScalar(T value = 0.0, T bvalue = 0.0, T pvalue = 0.0,
                                 T hvalue = 0.0)
       : value(value), bvalue(bvalue), pvalue(pvalue), hvalue(hvalue) {}
 

@@ -62,7 +62,7 @@ class MixedHelmholtz {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -109,13 +109,13 @@ class MixedHelmholtz {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const MixedHelmholtz<T, D>& integrand,
+    KOKKOS_FUNCTION JacVecProduct(const MixedHelmholtz<T, D>& integrand,
                                       T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ), r(integrand.r) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const HdivSpace<T, dim>& sigma = p.template get<0>();

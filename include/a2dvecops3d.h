@@ -15,7 +15,7 @@ namespace A2D {
   normObj = ||xObj||
 */
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Norm(const Vec<T, 3>& x, T& norm) {
+KOKKOS_FUNCTION void Vec3Norm(const Vec<T, 3>& x, T& norm) {
   norm = Vec3NormCore<T>(x);
 }
 
@@ -56,7 +56,7 @@ class ADVec3NormExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3NormExpr<T> Vec3Norm(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3NormExpr<T> Vec3Norm(ADVec<Vec<T, 3>>& x,
                                                ADScalar<T>& norm) {
   return ADVec3NormExpr<T>(x, norm);
 }
@@ -67,7 +67,7 @@ A2D_INLINE_FUNCTION ADVec3NormExpr<T> Vec3Norm(ADVec<Vec<T, 3>>& x,
   yObj = aObj * xObj
 */
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Scale(const Vec<T, 3>& x, const T& a,
+KOKKOS_FUNCTION void Vec3Scale(const Vec<T, 3>& x, const T& a,
                                    Vec<T, 3>& v) {
   Vec3ScaleCore(a, x, v);
 }
@@ -107,7 +107,7 @@ class ADVec3ScaleExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ScaleExpr<T> Vec3Scale(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3ScaleExpr<T> Vec3Scale(ADVec<Vec<T, 3>>& x,
                                                  const T& a,
                                                  ADVec<Vec<T, 3>>& v) {
   return ADVec3ScaleExpr<T>(x, a, v);
@@ -147,7 +147,7 @@ class Vec3ADScaleExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION Vec3ADScaleExpr<T> Vec3Scale(const Vec<T, 3>& x,
+KOKKOS_FUNCTION Vec3ADScaleExpr<T> Vec3Scale(const Vec<T, 3>& x,
                                                  ADScalar<T>& a,
                                                  ADVec<Vec<T, 3>>& v) {
   return Vec3ADScaleExpr<T>(x, a, v);
@@ -196,7 +196,7 @@ class ADVec3ADScaleExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ADScaleExpr<T> Vec3Scale(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3ADScaleExpr<T> Vec3Scale(ADVec<Vec<T, 3>>& x,
                                                    ADScalar<T>& a,
                                                    ADVec<Vec<T, 3>>& v) {
   return ADVec3ADScaleExpr<T>(x, a, v);
@@ -389,62 +389,62 @@ class ADVec3AxpyExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Axpy(const T& alpha, const Vec<T, 3>& x,
+KOKKOS_FUNCTION void Vec3Axpy(const T& alpha, const Vec<T, 3>& x,
                                   const Vec<T, 3>& y, Vec<T, 3>& v) {
   Vec3AXPYCore(alpha, x, y, v);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Axpy(const T& scale, const T& alpha,
+KOKKOS_FUNCTION void Vec3Axpy(const T& scale, const T& alpha,
                                   const Vec<T, 3>& x, const Vec<T, 3>& y,
                                   Vec<T, 3>& v) {
   Vec3AXPYCore(scale * alpha, x, y, v);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION Vec3VecADScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION Vec3VecADScalarAxpyExpr<T> Vec3Axpy(
     ADScalar<T>& aobj, const Vec<T, 3>& x, const Vec<T, 3>& y,
     ADVec<Vec<T, 3>>& vobj) {
   return Vec3VecADScalarAxpyExpr<T>(aobj, x, y, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION Vec3VecADScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION Vec3VecADScalarAxpyExpr<T> Vec3Axpy(
     const T& scale, ADScalar<T>& aobj, const Vec<T, 3>& x, const Vec<T, 3>& y,
     ADVec<Vec<T, 3>>& vobj) {
   return Vec3VecADScalarAxpyExpr<T>(scale, aobj, x, y, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3VecADScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION ADVec3VecADScalarAxpyExpr<T> Vec3Axpy(
     ADScalar<T>& aobj, ADVec<Vec<T, 3>>& xobj, const Vec<T, 3>& y,
     ADVec<Vec<T, 3>>& vobj) {
   return ADVec3VecADScalarAxpyExpr<T>(aobj, xobj, y, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3VecADScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION ADVec3VecADScalarAxpyExpr<T> Vec3Axpy(
     const T& scale, ADScalar<T>& aobj, ADVec<Vec<T, 3>>& xobj,
     const Vec<T, 3>& y, ADVec<Vec<T, 3>>& vobj) {
   return ADVec3VecADScalarAxpyExpr<T>(scale, aobj, xobj, y, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ADVecScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION ADVec3ADVecScalarAxpyExpr<T> Vec3Axpy(
     const T& alpha, ADVec<Vec<T, 3>>& xobj, ADVec<Vec<T, 3>>& yobj,
     ADVec<Vec<T, 3>>& vobj) {
   return ADVec3ADVecScalarAxpyExpr<T>(alpha, xobj, yobj, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ADVecScalarAxpyExpr<T> Vec3Axpy(
+KOKKOS_FUNCTION ADVec3ADVecScalarAxpyExpr<T> Vec3Axpy(
     const T& scale, const T& alpha, ADVec<Vec<T, 3>>& xobj,
     ADVec<Vec<T, 3>>& yobj, ADVec<Vec<T, 3>>& vobj) {
   return ADVec3ADVecScalarAxpyExpr<T>(scale, alpha, xobj, yobj, vobj);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(ADScalar<T>& aobj,
+KOKKOS_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(ADScalar<T>& aobj,
                                                ADVec<Vec<T, 3>>& xobj,
                                                ADVec<Vec<T, 3>>& yobj,
                                                ADVec<Vec<T, 3>>& vobj) {
@@ -452,7 +452,7 @@ A2D_INLINE_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(ADScalar<T>& aobj,
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(const T& scale,
+KOKKOS_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(const T& scale,
                                                ADScalar<T>& aobj,
                                                ADVec<Vec<T, 3>>& xobj,
                                                ADVec<Vec<T, 3>>& yobj,
@@ -468,7 +468,7 @@ A2D_INLINE_FUNCTION ADVec3AxpyExpr<T> Vec3Axpy(const T& scale,
   alpha = xObj @ yObj (in numpy notation)
 */
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Dot(const Vec<T, 3>& x, const Vec<T, 3>& y, T& a) {
+KOKKOS_FUNCTION void Vec3Dot(const Vec<T, 3>& x, const Vec<T, 3>& y, T& a) {
   a = Vec3DotCore<T>(x, y);
 }
 
@@ -507,7 +507,7 @@ class ADVec3DotVecExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3DotVecExpr<T> Vec3Dot(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3DotVecExpr<T> Vec3Dot(ADVec<Vec<T, 3>>& x,
                                                 const Vec<T, 3>& y,
                                                 ADScalar<T>& a) {
   return ADVec3DotVecExpr<T>(x, y, a);
@@ -556,7 +556,7 @@ class ADVec3DotADVecExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3DotADVecExpr<T> Vec3Dot(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3DotADVecExpr<T> Vec3Dot(ADVec<Vec<T, 3>>& x,
                                                   ADVec<Vec<T, 3>>& y,
                                                   ADScalar<T>& a) {
   return ADVec3DotADVecExpr<T>(x, y, a);
@@ -605,13 +605,13 @@ class ADVec3CrossProductExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Cross(const Vec<T, 3>& x, const Vec<T, 3>& y,
+KOKKOS_FUNCTION void Vec3Cross(const Vec<T, 3>& x, const Vec<T, 3>& y,
                                    Vec<T, 3>& v) {
   Vec3CrossProductCore(x, y, v);
 }
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3CrossProductExpr<T> Vec3Cross(
+KOKKOS_FUNCTION ADVec3CrossProductExpr<T> Vec3Cross(
     ADVec<Vec<T, 3>>& xobj, ADVec<Vec<T, 3>>& yobj, ADVec<Vec<T, 3>>& vobj) {
   return ADVec3CrossProductExpr<T>(xobj, yobj, vobj);
 }
@@ -622,7 +622,7 @@ A2D_INLINE_FUNCTION ADVec3CrossProductExpr<T> Vec3Cross(
   vObj = xObj / ||xObj||
 */
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3Normalize(const Vec<T, 3>& x, Vec<T, 3>& v) {
+KOKKOS_FUNCTION void Vec3Normalize(const Vec<T, 3>& x, Vec<T, 3>& v) {
   Vec3ScaleCore(1 / Vec3NormCore<T>(x), x, v);
 }
 
@@ -672,7 +672,7 @@ class ADVec3NormalizeExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3NormalizeExpr<T> Vec3Normalize(ADVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION ADVec3NormalizeExpr<T> Vec3Normalize(ADVec<Vec<T, 3>>& x,
                                                          ADVec<Vec<T, 3>>& v) {
   return ADVec3NormalizeExpr<T>(x, v);
 }
@@ -683,7 +683,7 @@ A2D_INLINE_FUNCTION ADVec3NormalizeExpr<T> Vec3Normalize(ADVec<Vec<T, 3>>& x,
   sObj = aObj * xObj . (xObj^T)
 */
 template <typename T>
-A2D_INLINE_FUNCTION void Vec3ScaleSymmetricOuterProduct(const T& a,
+KOKKOS_FUNCTION void Vec3ScaleSymmetricOuterProduct(const T& a,
                                                         const Vec<T, 3>& x,
                                                         Mat<T, 3, 3>& S) {
   Vec3OuterProductScaleCore(a, x, x, S);
@@ -729,7 +729,7 @@ class ADVec3ScaleSymmetricOuterProductExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ScaleSymmetricOuterProductExpr<T>
+KOKKOS_FUNCTION ADVec3ScaleSymmetricOuterProductExpr<T>
 Vec3ScaleSymmetricOuterProduct(const T& a, ADVec<Vec<T, 3>>& x,
                                ADMat<Mat<T, 3, 3>>& S) {
   return ADVec3ScaleSymmetricOuterProductExpr<T>(a, x, S);
@@ -771,7 +771,7 @@ class Vec3ADScaleSymmetricOuterProductExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION Vec3ADScaleSymmetricOuterProductExpr<T>
+KOKKOS_FUNCTION Vec3ADScaleSymmetricOuterProductExpr<T>
 Vec3ScaleSymmetricOuterProduct(ADScalar<T>& a, const Vec<T, 3>& x,
                                ADMat<Mat<T, 3, 3>>& S) {
   return Vec3ADScaleSymmetricOuterProductExpr<T>(a, x, S);
@@ -825,7 +825,7 @@ class ADVec3ADScaleSymmetricOuterProductExpr {
 };
 
 template <typename T>
-A2D_INLINE_FUNCTION ADVec3ADScaleSymmetricOuterProductExpr<T>
+KOKKOS_FUNCTION ADVec3ADScaleSymmetricOuterProductExpr<T>
 Vec3ScaleSymmetricOuterProduct(ADScalar<T>& a, ADVec<Vec<T, 3>>& x,
                                ADMat<Mat<T, 3, 3>>& S) {
   return ADVec3ADScaleSymmetricOuterProductExpr<T>(a, x, S);
@@ -941,7 +941,7 @@ class A2DVec3NormExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3NormExpr<N, T> Vec3Norm(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3NormExpr<N, T> Vec3Norm(A2DVec<Vec<T, 3>>& x,
                                                    A2DScalar<T>& norm) {
   return A2DVec3NormExpr<N, T>(x, norm);
 }
@@ -1001,7 +1001,7 @@ class A2DVec3ScaleExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3ScaleExpr<N, T> Vec3Scale(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3ScaleExpr<N, T> Vec3Scale(A2DVec<Vec<T, 3>>& x,
                                                      const T& a,
                                                      A2DVec<Vec<T, 3>>& v) {
   return A2DVec3ScaleExpr<N, T>(x, a, v);
@@ -1055,7 +1055,7 @@ class Vec3A2DScaleExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3A2DScaleExpr<N, T> Vec3Scale(const Vec<T, 3>& x,
+KOKKOS_FUNCTION Vec3A2DScaleExpr<N, T> Vec3Scale(const Vec<T, 3>& x,
                                                      A2DScalar<T>& a,
                                                      A2DVec<Vec<T, 3>>& v) {
   return Vec3A2DScaleExpr<N, T>(x, a, v);
@@ -1126,7 +1126,7 @@ class A2DVec3A2DScaleExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3A2DScaleExpr<N, T> Vec3Scale(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3A2DScaleExpr<N, T> Vec3Scale(A2DVec<Vec<T, 3>>& x,
                                                         A2DScalar<T>& a,
                                                         A2DVec<Vec<T, 3>>& v) {
   return A2DVec3A2DScaleExpr<N, T>(x, a, v);
@@ -1185,7 +1185,7 @@ class Vec3VecA2DScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION Vec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(
     A2DScalar<T>& a, const Vec<T, 3>& x, const Vec<T, 3>& y,
     A2DVec<Vec<T, 3>>& v) {
   return Vec3VecA2DScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1242,7 +1242,7 @@ class A2DVec3VecScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3VecScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION A2DVec3VecScalarAxpyExpr<N, T> Vec3Axpy(
     const T& a, A2DVec<Vec<T, 3>>& x, const Vec<T, 3>& y,
     A2DVec<Vec<T, 3>>& v) {
   return A2DVec3VecScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1305,7 +1305,7 @@ class Vec3A2DVecScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION Vec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(
     const T& a, const Vec<T, 3>& x, A2DVec<Vec<T, 3>>& y,
     A2DVec<Vec<T, 3>>& v) {
   return Vec3A2DVecScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1377,7 +1377,7 @@ class A2DVec3VecA2DScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION A2DVec3VecA2DScalarAxpyExpr<N, T> Vec3Axpy(
     A2DScalar<T>& a, A2DVec<Vec<T, 3>>& x, const Vec<T, 3>& y,
     A2DVec<Vec<T, 3>>& v) {
   return A2DVec3VecA2DScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1443,7 +1443,7 @@ class Vec3A2DVecA2DScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION Vec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(
     A2DScalar<T>& a, const Vec<T, 3>& x, A2DVec<Vec<T, 3>>& y,
     A2DVec<Vec<T, 3>>& v) {
   return Vec3A2DVecA2DScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1513,7 +1513,7 @@ class A2DVec3A2DVecScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION A2DVec3A2DVecScalarAxpyExpr<N, T> Vec3Axpy(
     const T& a, A2DVec<Vec<T, 3>>& x, A2DVec<Vec<T, 3>>& y,
     A2DVec<Vec<T, 3>>& v) {
   return A2DVec3A2DVecScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1598,7 +1598,7 @@ class A2DVec3A2DVecA2DScalarAxpyExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(
+KOKKOS_FUNCTION A2DVec3A2DVecA2DScalarAxpyExpr<N, T> Vec3Axpy(
     A2DScalar<T>& a, A2DVec<Vec<T, 3>>& x, A2DVec<Vec<T, 3>>& y,
     A2DVec<Vec<T, 3>>& v) {
   return A2DVec3A2DVecA2DScalarAxpyExpr<N, T>(a, x, y, v);
@@ -1658,7 +1658,7 @@ class A2DVec3DotVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3DotVecExpr<N, T> Vec3Dot(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3DotVecExpr<N, T> Vec3Dot(A2DVec<Vec<T, 3>>& x,
                                                     const Vec<T, 3>& y,
                                                     A2DScalar<T>& a) {
   return A2DVec3DotVecExpr<N, T>(x, y, a);
@@ -1711,7 +1711,7 @@ class Vec3DotA2DVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3DotA2DVecExpr<N, T> Vec3Dot(const Vec<T, 3>& x,
+KOKKOS_FUNCTION Vec3DotA2DVecExpr<N, T> Vec3Dot(const Vec<T, 3>& x,
                                                     A2DVec<Vec<T, 3>>& y,
                                                     A2DScalar<T>& a) {
   return Vec3DotA2DVecExpr<N, T>(x, y, a);
@@ -1782,7 +1782,7 @@ class A2DVec3DotA2DVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3DotA2DVecExpr<N, T> Vec3Dot(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3DotA2DVecExpr<N, T> Vec3Dot(A2DVec<Vec<T, 3>>& x,
                                                        A2DVec<Vec<T, 3>>& y,
                                                        A2DScalar<T>& a) {
   return A2DVec3DotA2DVecExpr<N, T>(x, y, a);
@@ -1842,7 +1842,7 @@ class A2DVec3CrossVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3CrossVecExpr<N, T> Vec3Cross(A2DVec<Vec<T, 3>>& x,
+KOKKOS_FUNCTION A2DVec3CrossVecExpr<N, T> Vec3Cross(A2DVec<Vec<T, 3>>& x,
                                                         const Vec<T, 3>& y,
                                                         A2DVec<Vec<T, 3>>& v) {
   return A2DVec3CrossVecExpr<N, T>(x, y, v);
@@ -1898,7 +1898,7 @@ class Vec3CrossA2DVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3CrossA2DVecExpr<N, T> Vec3Cross(const Vec<T, 3>& x,
+KOKKOS_FUNCTION Vec3CrossA2DVecExpr<N, T> Vec3Cross(const Vec<T, 3>& x,
                                                         A2DVec<Vec<T, 3>>& y,
                                                         A2DVec<Vec<T, 3>>& v) {
   return Vec3CrossA2DVecExpr<N, T>(x, y, v);
@@ -1974,7 +1974,7 @@ class A2DVec3CrossA2DVecExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3CrossA2DVecExpr<N, T> Vec3Cross(
+KOKKOS_FUNCTION A2DVec3CrossA2DVecExpr<N, T> Vec3Cross(
     A2DVec<Vec<T, 3>>& x, A2DVec<Vec<T, 3>>& y, A2DVec<Vec<T, 3>>& v) {
   return A2DVec3CrossA2DVecExpr<N, T>(x, y, v);
 }
@@ -2055,7 +2055,7 @@ class A2DVec3NormalizeExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3NormalizeExpr<N, T> Vec3Normalize(
+KOKKOS_FUNCTION A2DVec3NormalizeExpr<N, T> Vec3Normalize(
     A2DVec<Vec<T, 3>>& x, A2DVec<Vec<T, 3>>& v) {
   return A2DVec3NormalizeExpr<N, T>(x, v);
 }
@@ -2130,7 +2130,7 @@ class A2DVec3ScaleSymmetricOuterProductExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3ScaleSymmetricOuterProductExpr<N, T>
+KOKKOS_FUNCTION A2DVec3ScaleSymmetricOuterProductExpr<N, T>
 Vec3ScaleSymmetricOuterProduct(const T& a, A2DVec<Vec<T, 3>>& x,
                                A2DMat<Mat<T, 3, 3>>& S) {
   return A2DVec3ScaleSymmetricOuterProductExpr<N, T>(a, x, S);
@@ -2182,7 +2182,7 @@ class Vec3A2DScaleSymmetricOuterProductExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION Vec3A2DScaleSymmetricOuterProductExpr<N, T>
+KOKKOS_FUNCTION Vec3A2DScaleSymmetricOuterProductExpr<N, T>
 Vec3ScaleSymmetricOuterProduct(A2DScalar<T>& a, const Vec<T, 3>& x,
                                A2DMat<Mat<T, 3, 3>>& S) {
   return Vec3A2DScaleSymmetricOuterProductExpr<N, T>(a, x, S);
@@ -2266,7 +2266,7 @@ class A2DVec3A2DScaleSymmetricOuterProductExpr {
 };
 
 template <int N, typename T>
-A2D_INLINE_FUNCTION A2DVec3A2DScaleSymmetricOuterProductExpr<N, T>
+KOKKOS_FUNCTION A2DVec3A2DScaleSymmetricOuterProductExpr<N, T>
 Vec3ScaleSymmetricOuterProduct(A2DScalar<T>& a, A2DVec<Vec<T, 3>>& x,
                                A2DMat<Mat<T, 3, 3>>& S) {
   return A2DVec3A2DScaleSymmetricOuterProductExpr<N, T>(a, x, S);

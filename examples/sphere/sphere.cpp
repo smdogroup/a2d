@@ -136,7 +136,7 @@ class PoissonForSphere {
   using QMatType = SymMat<T, FiniteElementSpace::ncomp>;
   using SolutionMapping = InteriorMapping<T, dim>;
 
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -171,13 +171,13 @@ class PoissonForSphere {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(const PoissonForSphere<T, D>& integrand,
+    KOKKOS_FUNCTION JacVecProduct(const PoissonForSphere<T, D>& integrand,
                                       T wdetJ, const DataSpace& data,
                                       const FiniteElementGeometry& geo,
                                       const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       const H1Space<T, 1, dim>& u = p.template get<0>();
       const Vec<T, dim>& u_grad = u.get_grad();

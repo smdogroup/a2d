@@ -84,7 +84,7 @@ class IntegrandTopoLinearElasticity {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -121,7 +121,7 @@ class IntegrandTopoLinearElasticity {
   }
 
   // Evaluate the second order derivatives of the integral
-  A2D_INLINE_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
                                     const FiniteElementGeometry& geo,
                                     const FiniteElementSpace& s,
                                     QMatType& jac) const {
@@ -194,7 +194,7 @@ class IntegrandTopoLinearElasticity {
    */
   class JacVecProduct {
    public:
-    A2D_INLINE_FUNCTION JacVecProduct(
+    KOKKOS_FUNCTION JacVecProduct(
         const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
@@ -220,7 +220,7 @@ class IntegrandTopoLinearElasticity {
       strain.reverse();
     }
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         FiniteElementSpace& Jp) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
@@ -252,7 +252,7 @@ class IntegrandTopoLinearElasticity {
    */
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(
+    KOKKOS_FUNCTION AdjVecProduct(
         const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
@@ -281,7 +281,7 @@ class IntegrandTopoLinearElasticity {
       strain.reverse();
     }
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& p,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
                                         DataSpace& dfdx) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
@@ -396,7 +396,7 @@ class IntegrandTopoBodyForce {
     }
   }
 
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
@@ -412,7 +412,7 @@ class IntegrandTopoBodyForce {
 
   class AdjVecProduct {
    public:
-    A2D_INLINE_FUNCTION AdjVecProduct(
+    KOKKOS_FUNCTION AdjVecProduct(
         const IntegrandTopoBodyForce<T, dim>& integrand, T wdetJ,
         const DataSpace& data, const FiniteElementGeometry& geo,
         const FiniteElementSpace& s)
@@ -422,7 +422,7 @@ class IntegrandTopoBodyForce {
       }
     }
 
-    A2D_INLINE_FUNCTION void operator()(const FiniteElementSpace& psi,
+    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& psi,
                                         DataSpace& dfdx) {
       const Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
       T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
@@ -755,7 +755,7 @@ class IntegrandTopoSurfaceTraction {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  A2D_INLINE_FUNCTION void weak(T wdetJ, const DataSpace& data,
+  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {

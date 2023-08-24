@@ -17,31 +17,31 @@ class Mat {
   static const int nrows = M;
   static const int ncols = N;
 
-  A2D_INLINE_FUNCTION Mat() {
+  KOKKOS_FUNCTION Mat() {
     for (int i = 0; i < M * N; i++) {
       A[i] = 0.0;
     }
   }
-  A2D_INLINE_FUNCTION Mat(const T* vals) {
+  KOKKOS_FUNCTION Mat(const T* vals) {
     for (int i = 0; i < M * N; i++) {
       A[i] = vals[i];
     }
   }
   template <class MatType>
-  A2D_INLINE_FUNCTION Mat(const MatType& mat) {
+  KOKKOS_FUNCTION Mat(const MatType& mat) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         A[N * i + j] = mat(i, j);
       }
     }
   }
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     for (int i = 0; i < M * N; i++) {
       A[i] = 0.0;
     }
   }
   template <class MatType>
-  A2D_INLINE_FUNCTION void set(const MatType& mat) {
+  KOKKOS_FUNCTION void set(const MatType& mat) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         A[N * i + j] = mat(i, j);
@@ -49,7 +49,7 @@ class Mat {
     }
   }
   template <class MatType>
-  A2D_INLINE_FUNCTION void get(MatType& mat) {
+  KOKKOS_FUNCTION void get(MatType& mat) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         mat(i, j) = A[N * i + j];
@@ -57,11 +57,11 @@ class Mat {
     }
   }
   template <class IdxType1, class IdxType2>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
+  KOKKOS_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     return A[N * i + j];
   }
   template <class IdxType1, class IdxType2>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+  KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
                                           const IdxType2 j) const {
     return A[N * i + j];
   }
@@ -69,11 +69,11 @@ class Mat {
   T* data() { return A; }
 
   template <typename I>
-  A2D_INLINE_FUNCTION T& operator[](const I i) {
+  KOKKOS_FUNCTION T& operator[](const I i) {
     return A[i];
   }
   template <typename I>
-  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+  KOKKOS_FUNCTION const T& operator[](const I i) const {
     return A[i];
   }
 
@@ -90,23 +90,23 @@ class SymMat {
 
   static const index_t num_components = MAT_SIZE;
 
-  A2D_INLINE_FUNCTION SymMat() {
+  KOKKOS_FUNCTION SymMat() {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = 0.0;
     }
   }
-  A2D_INLINE_FUNCTION SymMat(const T* vals) {
+  KOKKOS_FUNCTION SymMat(const T* vals) {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = vals[i];
     }
   }
-  A2D_INLINE_FUNCTION void zero() {
+  KOKKOS_FUNCTION void zero() {
     for (int i = 0; i < MAT_SIZE; i++) {
       A[i] = 0.0;
     }
   }
   template <class SymMat>
-  A2D_INLINE_FUNCTION void set(const SymMat& mat) {
+  KOKKOS_FUNCTION void set(const SymMat& mat) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
         A[i + j * (j + 1) / 2] = mat(i, j);
@@ -114,7 +114,7 @@ class SymMat {
     }
   }
   template <class SymMat>
-  A2D_INLINE_FUNCTION void get(SymMat& mat) {
+  KOKKOS_FUNCTION void get(SymMat& mat) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
         mat(i, j) = A[i + j * (j + 1) / 2];
@@ -123,7 +123,7 @@ class SymMat {
   }
 
   template <class IdxType1, class IdxType2>
-  A2D_INLINE_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
+  KOKKOS_FUNCTION T& operator()(const IdxType1 i, const IdxType2 j) {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
@@ -131,7 +131,7 @@ class SymMat {
     }
   }
   template <class IdxType1, class IdxType2>
-  A2D_INLINE_FUNCTION const T& operator()(const IdxType1 i,
+  KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
                                           const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
@@ -143,11 +143,11 @@ class SymMat {
   T* data() { return A; }
 
   template <typename I>
-  A2D_INLINE_FUNCTION T& operator[](const I i) {
+  KOKKOS_FUNCTION T& operator[](const I i) {
     return A[i];
   }
   template <typename I>
-  A2D_INLINE_FUNCTION const T& operator[](const I i) const {
+  KOKKOS_FUNCTION const T& operator[](const I i) const {
     return A[i];
   }
 
@@ -157,13 +157,13 @@ class SymMat {
 template <class MatType>
 class ADMat {
  public:
-  A2D_INLINE_FUNCTION ADMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
+  KOKKOS_FUNCTION ADMat(MatType& A, MatType& Ab) : A(A), Ab(Ab) {}
 
-  A2D_INLINE_FUNCTION MatType& value() { return A; }
-  A2D_INLINE_FUNCTION const MatType& value() const { return A; }
+  KOKKOS_FUNCTION MatType& value() { return A; }
+  KOKKOS_FUNCTION const MatType& value() const { return A; }
 
-  A2D_INLINE_FUNCTION MatType& bvalue() { return Ab; }
-  A2D_INLINE_FUNCTION const MatType& bvalue() const { return Ab; }
+  KOKKOS_FUNCTION MatType& bvalue() { return Ab; }
+  KOKKOS_FUNCTION const MatType& bvalue() const { return Ab; }
 
   MatType& A;   // Matrix
   MatType& Ab;  // Reverse mode derivative value
@@ -172,34 +172,34 @@ class ADMat {
 template <class MatType>
 class A2DMat {
  public:
-  A2D_INLINE_FUNCTION A2DMat() {}
-  A2D_INLINE_FUNCTION A2DMat(const MatType& A) : A(A) {}
-  A2D_INLINE_FUNCTION A2DMat(const MatType& A, const MatType& Ab)
+  KOKKOS_FUNCTION A2DMat() {}
+  KOKKOS_FUNCTION A2DMat(const MatType& A) : A(A) {}
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab)
       : A(A), Ab(Ab) {}
-  A2D_INLINE_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
                              const MatType& Ap)
       : A(A), Ab(Ab), Ap(Ap) {}
-  A2D_INLINE_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
                              const MatType& Ap, const MatType& Ah)
       : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
 
-  A2D_INLINE_FUNCTION MatType& value() { return A; }
-  A2D_INLINE_FUNCTION const MatType& value() const { return A; }
+  KOKKOS_FUNCTION MatType& value() { return A; }
+  KOKKOS_FUNCTION const MatType& value() const { return A; }
 
-  A2D_INLINE_FUNCTION void set_bvalue(const MatType& val) { Ab.set(val); }
-  A2D_INLINE_FUNCTION void get_bvalue(MatType& val) { Ab.get(val); }
-  A2D_INLINE_FUNCTION MatType& bvalue() { return Ab; }
-  A2D_INLINE_FUNCTION const MatType& bvalue() const { return Ab; }
+  KOKKOS_FUNCTION void set_bvalue(const MatType& val) { Ab.set(val); }
+  KOKKOS_FUNCTION void get_bvalue(MatType& val) { Ab.get(val); }
+  KOKKOS_FUNCTION MatType& bvalue() { return Ab; }
+  KOKKOS_FUNCTION const MatType& bvalue() const { return Ab; }
 
-  A2D_INLINE_FUNCTION void set_pvalue(const MatType& val) { Ap.set(val); }
-  A2D_INLINE_FUNCTION void get_pvalue(MatType& val) { Ap.get(val); }
-  A2D_INLINE_FUNCTION MatType& pvalue() { return Ap; }
-  A2D_INLINE_FUNCTION const MatType& pvalue() const { return Ap; }
+  KOKKOS_FUNCTION void set_pvalue(const MatType& val) { Ap.set(val); }
+  KOKKOS_FUNCTION void get_pvalue(MatType& val) { Ap.get(val); }
+  KOKKOS_FUNCTION MatType& pvalue() { return Ap; }
+  KOKKOS_FUNCTION const MatType& pvalue() const { return Ap; }
 
-  A2D_INLINE_FUNCTION void set_hvalue(const MatType& val) { Ah.set(val); }
-  A2D_INLINE_FUNCTION void get_hvalue(MatType& val) { Ah.get(val); }
-  A2D_INLINE_FUNCTION MatType& hvalue() { return Ah; }
-  A2D_INLINE_FUNCTION const MatType& hvalue() const { return Ah; }
+  KOKKOS_FUNCTION void set_hvalue(const MatType& val) { Ah.set(val); }
+  KOKKOS_FUNCTION void get_hvalue(MatType& val) { Ah.get(val); }
+  KOKKOS_FUNCTION MatType& hvalue() { return Ah; }
+  KOKKOS_FUNCTION const MatType& hvalue() const { return Ah; }
 
   MatType A;   // Matrix
   MatType Ab;  // Reverse mode derivative value
@@ -211,32 +211,32 @@ class A2DMat {
  * @brief Get data pointers from Mat/ADMat/A2DMat objects
  */
 template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(Mat<T, m, n>& mat) {
+KOKKOS_FUNCTION T* get_data(Mat<T, m, n>& mat) {
   return mat.A;
 }
 
 template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
+KOKKOS_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
 
 template <typename T, int m, int n>
-A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
+KOKKOS_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
 
 template <typename T, int m>
-A2D_INLINE_FUNCTION T* get_data(SymMat<T, m>& mat) {
+KOKKOS_FUNCTION T* get_data(SymMat<T, m>& mat) {
   return mat.A;
 }
 
 template <typename T, int m>
-A2D_INLINE_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
+KOKKOS_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
   return mat.A;
 }
 
 template <typename T, int m>
-A2D_INLINE_FUNCTION T* get_data(A2DMat<SymMat<T, m>>& mat) {
+KOKKOS_FUNCTION T* get_data(A2DMat<SymMat<T, m>>& mat) {
   return mat.A;
 }
 
@@ -248,13 +248,13 @@ template <ADseed seed>
 class GetSeed {
  public:
   template <typename T>
-  static A2D_INLINE_FUNCTION T& get_data(ADScalar<T>& value) {
+  static KOKKOS_FUNCTION T& get_data(ADScalar<T>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
     return value.bvalue;
   }
 
   template <typename T>
-  static A2D_INLINE_FUNCTION T& get_data(A2DScalar<T>& value) {
+  static KOKKOS_FUNCTION T& get_data(A2DScalar<T>& value) {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DScalar");
     if constexpr (seed == ADseed::b) {
@@ -267,13 +267,13 @@ class GetSeed {
   }
 
   template <typename T, int N>
-  static A2D_INLINE_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
+  static KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
     return value.Vb;
   }
 
   template <typename T, int N>
-  static A2D_INLINE_FUNCTION T* get_data(A2DVec<Vec<T, N>>& value) {
+  static KOKKOS_FUNCTION T* get_data(A2DVec<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DScalar");
     if constexpr (seed == ADseed::b) {
@@ -286,13 +286,13 @@ class GetSeed {
   }
 
   template <typename T, int m, int n>
-  static A2D_INLINE_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
+  static KOKKOS_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
     return mat.Ab.A;
   }
 
   template <typename T, int m, int n>
-  static A2D_INLINE_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
+  static KOKKOS_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DMat");
     if constexpr (seed == ADseed::b) {

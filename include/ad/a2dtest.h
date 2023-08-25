@@ -9,7 +9,7 @@ namespace A2D {
 
 namespace Test {
 
-template <typename T, class... Inputs>
+template <typename T, class Output, class... Inputs>
 class A2DTest {
  public:
   /**
@@ -32,20 +32,29 @@ class A2DTest {
   virtual void get_point(VarTuple<T, Inputs...>& x) { x.set_rand(); }
 
   /**
-   * @brief Evaluate the outputs as a function of the inputs
+   * @brief Get the name of the test
+   *
+   * @returns The name of the test
+   */
+  virtual std::string name() = 0;
+
+  /**
+   * @brief Evaluate the output as a function of the inputs
    *
    * @param x Variable tuple for the input
-   * @return The value of the parameter
+   * @return The output value
    */
-  virtual T eval(const VarTuple<T, Inputs...>& x) = 0;
+  virtual VarTuple<T, Output> eval(const VarTuple<T, Inputs...>& x) = 0;
 
   /**
    * @brief Compute the derivative of the output as a function of the inputs
    *
+   * @param seed The seed value for the input
    * @param x Variable tuple for the input
    * @param g Derivative of the output w.r.t. the input
    */
-  virtual void deriv(const VarTuple<T, Inputs...>& x,
+  virtual void deriv(const VarTuple<T, Output>& seed,
+                     const VarTuple<T, Inputs...>& x,
                      VarTuple<T, Inputs...>& g) = 0;
 
   /**
@@ -54,7 +63,9 @@ class A2DTest {
    * @param x Variable tuple for the input
    * @param g Derivative of the output w.r.t. the input
    */
-  virtual void hprod(const VarTuple<T, Inputs...>& x,
+  virtual void hprod(const VarTuple<T, Output>& seed,
+                     const VarTuple<T, Output>& hvalue,
+                     const VarTuple<T, Inputs...>& x,
                      const VarTuple<T, Inputs...>& p,
                      VarTuple<T, Inputs...>& h) = 0;
 
@@ -91,16 +102,16 @@ class A2DTest {
     T abs_err = fabs(std::real(test_value - ref_value));
     T rel_err = fabs(std::real((test_value - ref_value) / ref_value));
 
+    out << std::scientific << std::setprecision(9) << str
+        << " AD: " << std::setw(17) << std::real(test_value)
+        << " CS: " << std::setw(17) << std::real(ref_value)
+        << " Rel Err: " << std::setw(17) << std::real(rel_err)
+        << " Abs Err: " << std::setw(17) << std::real(abs_err);
     if (passed) {
-      out << str << " PASSED.";
+      out << "  PASSED." << std::endl;
     } else {
-      out << str << " FAILED.";
+      out << "  FAILED." << std::endl;
     }
-    out << std::scientific << std::setprecision(9) << " AD: " << std::setw(17)
-        << std::real(test_value) << " CS: " << std::setw(17)
-        << std::real(ref_value) << " Rel Err: " << std::setw(17)
-        << std::real(rel_err) << " Abs Err: " << std::setw(17)
-        << std::real(abs_err) << std::endl;
   }
 
  private:
@@ -109,11 +120,18 @@ class A2DTest {
   double atol;  // absolute tolerance
 };
 
-// Perform a complex step test
-template <typename T, class... Inputs>
-bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
+/**
+ * Run the AD test
+ */
+template <typename T, class Output, class... Inputs>
+bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test) {
   // Declare all of the variables needed
   VarTuple<std::complex<T>, Inputs...> x, g, x1, p, h;
+  VarTuple<std::complex<T>, Output> seed, hvalue;
+
+  // Set a random seed input
+  seed.set_rand();
+  hvalue.set_rand();
 
   // Get the starting point
   test.get_point(x);
@@ -122,8 +140,8 @@ bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
   p.set_rand();
 
   // Evaluate the function and its derivatives
-  test.deriv(x, g);
-  test.hprod(x, p, h);
+  test.deriv(seed, x, g);
+  test.hprod(seed, hvalue, x, p, h);
 
   // Set x1 = x + dh * p1
   double dh = test.get_step_size();
@@ -132,7 +150,11 @@ bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
   }
 
   // Compute the complex-step result: fd = p^{T} * df/dx
-  T fd = std::imag(test.eval(x1)) / dh;
+  VarTuple<std::complex<T>, Output> value = test.eval(x1);
+  T fd = 0.0;
+  for (index_t i = 0; i < value.get_num_components(); i++) {
+    fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
+  }
 
   // Compute the solution from the AD
   T ans = 0.0;
@@ -142,17 +164,22 @@ bool RunADTest(A2DTest<std::complex<T>, Inputs...>& test) {
 
   bool passed = test.is_close(ans, fd);
 
-  test.write_result("First-order", std::cout, ans, fd);
+  std::string str = test.name();
+  test.write_result(str + " first-order", std::cout, ans, fd);
 
-  // Compute the derivative at the point (x + dh * p)
-  test.deriv(x1, g);
+  // Set the seed and include the second-derivative parts
+  for (index_t i = 0; i < seed.get_num_components(); i++) {
+    seed[i] = seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+  }
+  test.deriv(seed, x1, g);
 
   for (index_t i = 0; i < x.get_num_components(); i++) {
     T ans = std::real(h[i]);
     T fd = std::imag(g[i]) / dh;
+
     passed = passed && test.is_close(ans, fd);
 
-    test.write_result("Second-order", std::cout, ans, fd);
+    test.write_result(str + " second-order", std::cout, ans, fd);
   }
 
   return passed;

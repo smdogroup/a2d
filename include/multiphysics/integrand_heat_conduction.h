@@ -75,9 +75,9 @@ class HeatConduction {
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const Vec<T, dim>& tx = s.template get<0>().get_grad();
     Vec<T, dim>& cx = coef.template get<0>().get_grad();
@@ -105,16 +105,16 @@ class HeatConduction {
   class JacVecProduct {
    public:
     KOKKOS_FUNCTION JacVecProduct(const HeatConduction<T, D>& integrand,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ),
           kappa(integrand.kappa),
           rho(data[0]),
           penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const Vec<T, dim>& tx = p.template get<0>().get_grad();
       Vec<T, dim>& cx = Jp.template get<0>().get_grad();
@@ -141,9 +141,9 @@ class HeatConduction {
   class AdjVecProduct {
    public:
     KOKKOS_FUNCTION AdjVecProduct(const HeatConduction<T, D>& integrand,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ),
           kappa(integrand.kappa),
           rho(data[0]),
@@ -152,7 +152,7 @@ class HeatConduction {
           tx(s.template get<0>().get_grad()) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        DataSpace& dfdx) {
+                                    DataSpace& dfdx) {
       T denom = (1.0 + q * (1.0 - rho));
       T dprhodrho = (q + 1.0) / (denom * denom);
 
@@ -204,9 +204,9 @@ class AdjRHS {
   AdjRHS(T heat_source) : heat_source(heat_source) {}
 
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     T& c = coef.template get<0>().get_value();
     c = -wdetJ * heat_source;
   }
@@ -277,9 +277,9 @@ class MixedHeatConduction {
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const Vec<T, dim>& q = s.template get<0>().get_value();
     const T& div = s.template get<0>().get_div();
@@ -312,14 +312,14 @@ class MixedHeatConduction {
    */
   class JacVecProduct {
    public:
-    KOKKOS_FUNCTION JacVecProduct(
-        const MixedHeatConduction<T, D>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
+    KOKKOS_FUNCTION JacVecProduct(const MixedHeatConduction<T, D>& integrand,
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ), kappa(data[0]) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const Vec<T, dim>& q = p.template get<0>().get_value();
       const T& div = p.template get<0>().get_div();

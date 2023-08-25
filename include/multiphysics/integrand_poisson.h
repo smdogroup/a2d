@@ -48,9 +48,9 @@ class Poisson {
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     const H1Space<T, 1, dim>& u = s.template get<0>();
     const Vec<T, dim>& u_grad = u.get_grad();
 
@@ -77,13 +77,13 @@ class Poisson {
   class JacVecProduct {
    public:
     KOKKOS_FUNCTION JacVecProduct(const Poisson<T, D>& integrand, T wdetJ,
-                                      const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+                                  const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       const H1Space<T, 1, dim>& u = p.template get<0>();
       const Vec<T, dim>& u_grad = u.get_grad();
 
@@ -142,9 +142,9 @@ class MixedPoisson {
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const HdivSpace<T, dim>& sigma = s.template get<0>();
     const L2Space<T, 1, dim>& u = s.template get<1>();
@@ -183,14 +183,14 @@ class MixedPoisson {
    */
   class JacVecProduct {
    public:
-    KOKKOS_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+    KOKKOS_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand, T wdetJ,
+                                  const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       // Field objects for solution functions
       const HdivSpace<T, dim>& sigma = p.template get<0>();
       const L2Space<T, 1, dim>& u = p.template get<1>();

@@ -106,9 +106,9 @@ class VarTuple {
   template <typename I, index_t index, class First, class... Remain>
   T& get_value(const I comp) {
     if constexpr (__is_scalar_type<First>::value) {
-      if constexpr (sizeof...(Remain) == 0) {
+      if (comp == 0) {
         return std::get<index>(var);
-      } else if (comp == 0) {
+      } else if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var);
       } else {
         return get_value<I, index + 1, Remain...>(comp - 1);

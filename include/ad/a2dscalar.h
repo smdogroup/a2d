@@ -20,7 +20,7 @@ template <class T>
 class A2DScalar {
  public:
   KOKKOS_FUNCTION A2DScalar(T value = 0.0, T bvalue = 0.0, T pvalue = 0.0,
-                                T hvalue = 0.0)
+                            T hvalue = 0.0)
       : value(value), bvalue(bvalue), pvalue(pvalue), hvalue(hvalue) {}
 
   T value;

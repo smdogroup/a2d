@@ -62,7 +62,7 @@ class Mat {
   }
   template <class IdxType1, class IdxType2>
   KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
-                                          const IdxType2 j) const {
+                                      const IdxType2 j) const {
     return A[N * i + j];
   }
 
@@ -132,7 +132,7 @@ class SymMat {
   }
   template <class IdxType1, class IdxType2>
   KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
-                                          const IdxType2 j) const {
+                                      const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
@@ -174,13 +174,11 @@ class A2DMat {
  public:
   KOKKOS_FUNCTION A2DMat() {}
   KOKKOS_FUNCTION A2DMat(const MatType& A) : A(A) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab)
-      : A(A), Ab(Ab) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
-                             const MatType& Ap)
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab) : A(A), Ab(Ab) {}
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab, const MatType& Ap)
       : A(A), Ab(Ab), Ap(Ap) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
-                             const MatType& Ap, const MatType& Ah)
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab, const MatType& Ap,
+                         const MatType& Ah)
       : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
 
   KOKKOS_FUNCTION MatType& value() { return A; }

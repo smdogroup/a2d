@@ -11,7 +11,7 @@ namespace A2D {
  */
 template <class VecType>
 KOKKOS_FUNCTION void Vec3AddCore(const VecType& x, const VecType& y,
-                                     VecType& v) {
+                                 VecType& v) {
   v(0) = x(0) + y(0);
   v(1) = x(1) + y(1);
   v(2) = x(2) + y(2);
@@ -40,8 +40,7 @@ KOKKOS_FUNCTION void Vec3AddInPlaceCore(const VecType& x, VecType& v) {
  */
 template <typename T, class VecType>
 KOKKOS_FUNCTION void Vec3AXPBYCore(const T alpha, const VecType& x,
-                                       const T beta, const VecType& y,
-                                       VecType& v) {
+                                   const T beta, const VecType& y, VecType& v) {
   v(0) = (alpha * x(0)) + (beta * y(0));
   v(1) = (alpha * x(1)) + (beta * y(1));
   v(2) = (alpha * x(2)) + (beta * y(2));
@@ -55,7 +54,7 @@ KOKKOS_FUNCTION void Vec3AXPBYCore(const T alpha, const VecType& x,
  */
 template <typename T, class VecType>
 KOKKOS_FUNCTION void Vec3AddThenScaleCore(const T alpha, const VecType& x,
-                                              VecType& v) {
+                                          VecType& v) {
   v(0) = alpha * (x(0) + v(0));
   v(1) = alpha * (x(1) + v(1));
   v(2) = alpha * (x(2) + v(2));
@@ -69,7 +68,7 @@ KOKKOS_FUNCTION void Vec3AddThenScaleCore(const T alpha, const VecType& x,
  */
 template <typename T, class VecType>
 KOKKOS_FUNCTION void Vec3ScaleAndAddCore(const T alpha, const VecType& x,
-                                             VecType& v) {
+                                         VecType& v) {
   v(0) += alpha * x(0);
   v(1) += alpha * x(1);
   v(2) += alpha * x(2);
@@ -87,7 +86,7 @@ KOKKOS_FUNCTION T Vec3NormCore(const VecType& x) {
 
 template <typename T, class VecType>
 KOKKOS_FUNCTION void Vec3ScaleCore(const T alpha, const VecType& x,
-                                       VecType& v) {
+                                   VecType& v) {
   v(0) = alpha * x(0);
   v(1) = alpha * x(1);
   v(2) = alpha * x(2);
@@ -95,31 +94,31 @@ KOKKOS_FUNCTION void Vec3ScaleCore(const T alpha, const VecType& x,
 
 template <typename T, class VecType>
 KOKKOS_FUNCTION void Vec3AXPYCore(const T alpha, const VecType& x,
-                                      const VecType& y, VecType& v) {
+                                  const VecType& y, VecType& v) {
   v(0) = alpha * x(0) + y(0);
   v(1) = alpha * x(1) + y(1);
   v(2) = alpha * x(2) + y(2);
 }
 
 template <class VecType>
-KOKKOS_FUNCTION void Vec3CrossProductCore(const VecType& x,
-                                              const VecType& y, VecType& v) {
+KOKKOS_FUNCTION void Vec3CrossProductCore(const VecType& x, const VecType& y,
+                                          VecType& v) {
   v(0) = x(1) * y(2) - x(2) * y(1);
   v(1) = x(2) * y(0) - x(0) * y(2);
   v(2) = x(0) * y(1) - x(1) * y(0);
 }
 
 template <class VecType>
-KOKKOS_FUNCTION void Vec3CrossProductAddCore(const VecType& x,
-                                                 const VecType& y, VecType& v) {
+KOKKOS_FUNCTION void Vec3CrossProductAddCore(const VecType& x, const VecType& y,
+                                             VecType& v) {
   v(0) += x(1) * y(2) - x(2) * y(1);
   v(1) += x(2) * y(0) - x(0) * y(2);
   v(2) += x(0) * y(1) - x(1) * y(0);
 }
 
 template <class VecType, class MatType>
-KOKKOS_FUNCTION void Vec3OuterProductCore(const VecType& x,
-                                              const VecType& y, MatType& A) {
+KOKKOS_FUNCTION void Vec3OuterProductCore(const VecType& x, const VecType& y,
+                                          MatType& A) {
   A(0, 0) = x(0) * y(0);
   A(0, 1) = x(0) * y(1);
   A(0, 2) = x(0) * y(2);
@@ -132,8 +131,8 @@ KOKKOS_FUNCTION void Vec3OuterProductCore(const VecType& x,
 }
 
 template <class VecType, class MatType>
-KOKKOS_FUNCTION void Vec3OuterProductAddCore(const VecType& x,
-                                                 const VecType& y, MatType& A) {
+KOKKOS_FUNCTION void Vec3OuterProductAddCore(const VecType& x, const VecType& y,
+                                             MatType& A) {
   A(0, 0) += x(0) * y(0);
   A(0, 1) += x(0) * y(1);
   A(0, 2) += x(0) * y(2);
@@ -146,10 +145,8 @@ KOKKOS_FUNCTION void Vec3OuterProductAddCore(const VecType& x,
 }
 
 template <typename T, class VecType, class MatType>
-KOKKOS_FUNCTION void Vec3OuterProductScaleCore(const T scale,
-                                                   const VecType& x,
-                                                   const VecType& y,
-                                                   MatType& A) {
+KOKKOS_FUNCTION void Vec3OuterProductScaleCore(const T scale, const VecType& x,
+                                               const VecType& y, MatType& A) {
   A(0, 0) = scale * x(0) * y(0);
   A(0, 1) = scale * x(0) * y(1);
   A(0, 2) = scale * x(0) * y(2);
@@ -163,9 +160,9 @@ KOKKOS_FUNCTION void Vec3OuterProductScaleCore(const T scale,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION void Vec3OuterProductAddScaleCore(const T scale,
-                                                      const VecType& x,
-                                                      const VecType& y,
-                                                      MatType& A) {
+                                                  const VecType& x,
+                                                  const VecType& y,
+                                                  MatType& A) {
   A(0, 0) += scale * x(0) * y(0);
   A(0, 1) += scale * x(0) * y(1);
   A(0, 2) += scale * x(0) * y(2);
@@ -179,7 +176,7 @@ KOKKOS_FUNCTION void Vec3OuterProductAddScaleCore(const T scale,
 
 template <class VecType, class MatType>
 KOKKOS_FUNCTION void Mat3x3VecMultCore(const MatType& A, const VecType& x,
-                                           VecType& y) {
+                                       VecType& y) {
   y(0) = A(0, 0) * x(0) + A(0, 1) * x(1) + A(0, 2) * x(2);
   y(1) = A(1, 0) * x(0) + A(1, 1) * x(1) + A(1, 2) * x(2);
   y(2) = A(2, 0) * x(0) + A(2, 1) * x(1) + A(2, 2) * x(2);
@@ -187,33 +184,31 @@ KOKKOS_FUNCTION void Mat3x3VecMultCore(const MatType& A, const VecType& x,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION void Mat3x3VecMultScaleCore(const T scale, const MatType& A,
-                                                const VecType& x, VecType& y) {
+                                            const VecType& x, VecType& y) {
   y(0) = scale * (A(0, 0) * x(0) + A(0, 1) * x(1) + A(0, 2) * x(2));
   y(1) = scale * (A(1, 0) * x(0) + A(1, 1) * x(1) + A(1, 2) * x(2));
   y(2) = scale * (A(2, 0) * x(0) + A(2, 1) * x(1) + A(2, 2) * x(2));
 }
 
 template <typename T, class VecType, class MatType>
-KOKKOS_FUNCTION void Mat3x3VecMultAddCore(const MatType& A,
-                                              const VecType& x, VecType& y) {
+KOKKOS_FUNCTION void Mat3x3VecMultAddCore(const MatType& A, const VecType& x,
+                                          VecType& y) {
   y(0) += A(0, 0) * x(0) + A(0, 1) * x(1) + A(0, 2) * x(2);
   y(1) += A(1, 0) * x(0) + A(1, 1) * x(1) + A(1, 2) * x(2);
   y(2) += A(2, 0) * x(0) + A(2, 1) * x(1) + A(2, 2) * x(2);
 }
 
 template <typename T, class VecType, class MatType>
-KOKKOS_FUNCTION void Mat3x3VecMultAddScaleCore(const T scale,
-                                                   const MatType& A,
-                                                   const VecType& x,
-                                                   VecType& y) {
+KOKKOS_FUNCTION void Mat3x3VecMultAddScaleCore(const T scale, const MatType& A,
+                                               const VecType& x, VecType& y) {
   y(0) += scale * (A(0, 0) * x(0) + A(0, 1) * x(1) + A(0, 2) * x(2));
   y(1) += scale * (A(1, 0) * x(0) + A(1, 1) * x(1) + A(1, 2) * x(2));
   y(2) += scale * (A(2, 0) * x(0) + A(2, 1) * x(1) + A(2, 2) * x(2));
 }
 
 template <class VecType, class MatType>
-KOKKOS_FUNCTION void MatTrans3x3VecMultCore(const MatType& A,
-                                                const VecType& x, VecType& y) {
+KOKKOS_FUNCTION void MatTrans3x3VecMultCore(const MatType& A, const VecType& x,
+                                            VecType& y) {
   y(0) = A(0, 0) * x(0) + A(1, 0) * x(1) + A(2, 0) * x(2);
   y(1) = A(0, 1) * x(0) + A(1, 1) * x(1) + A(2, 1) * x(2);
   y(2) = A(0, 2) * x(0) + A(1, 2) * x(1) + A(2, 2) * x(2);
@@ -221,9 +216,8 @@ KOKKOS_FUNCTION void MatTrans3x3VecMultCore(const MatType& A,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION void MatTrans3x3VecMultScaleCore(const T scale,
-                                                     const MatType& A,
-                                                     const VecType& x,
-                                                     VecType& y) {
+                                                 const MatType& A,
+                                                 const VecType& x, VecType& y) {
   y(0) = scale * (A(0, 0) * x(0) + A(1, 0) * x(1) + A(2, 0) * x(2));
   y(1) = scale * (A(0, 1) * x(0) + A(1, 1) * x(1) + A(2, 1) * x(2));
   y(2) = scale * (A(0, 2) * x(0) + A(1, 2) * x(1) + A(2, 2) * x(2));
@@ -231,8 +225,7 @@ KOKKOS_FUNCTION void MatTrans3x3VecMultScaleCore(const T scale,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION void MatTrans3x3VecMultAddCore(const MatType& A,
-                                                   const VecType& x,
-                                                   VecType& y) {
+                                               const VecType& x, VecType& y) {
   y(0) += A(0, 0) * x(0) + A(1, 0) * x(1) + A(2, 0) * x(2);
   y(1) += A(0, 1) * x(0) + A(1, 1) * x(1) + A(2, 1) * x(2);
   y(2) += A(0, 2) * x(0) + A(1, 2) * x(1) + A(2, 2) * x(2);
@@ -240,9 +233,9 @@ KOKKOS_FUNCTION void MatTrans3x3VecMultAddCore(const MatType& A,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION void MatTrans3x3VecMultAddScaleCore(const T scale,
-                                                        const MatType& A,
-                                                        const VecType& x,
-                                                        VecType& y) {
+                                                    const MatType& A,
+                                                    const VecType& x,
+                                                    VecType& y) {
   y(0) += scale * (A(0, 0) * x(0) + A(1, 0) * x(1) + A(2, 0) * x(2));
   y(1) += scale * (A(0, 1) * x(0) + A(1, 1) * x(1) + A(2, 1) * x(2));
   y(2) += scale * (A(0, 2) * x(0) + A(1, 2) * x(1) + A(2, 2) * x(2));
@@ -250,7 +243,7 @@ KOKKOS_FUNCTION void MatTrans3x3VecMultAddScaleCore(const T scale,
 
 template <typename T, class VecType, class MatType>
 KOKKOS_FUNCTION T Mat3x3InnerProductCore(const MatType& A, const VecType& x,
-                                             const VecType& y) {
+                                         const VecType& y) {
   return x(0) * (A(0, 0) * y(0) + A(0, 1) * y(1) + A(0, 2) * y(2)) +
          x(1) * (A(1, 0) * y(0) + A(1, 1) * y(1) + A(1, 2) * y(2)) +
          x(2) * (A(2, 0) * y(0) + A(2, 1) * y(1) + A(2, 2) * y(2));

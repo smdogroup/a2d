@@ -15,8 +15,8 @@ namespace A2D {
 // MatMatMult
 template <typename ScalarType, bool AT = false, bool BT = false>
 KOKKOS_FUNCTION void MatMatMult(const Mat<ScalarType, 3, 3>& A,
-                                    const Mat<ScalarType, 3, 3>& B,
-                                    Mat<ScalarType, 3, 3>& C) {
+                                const Mat<ScalarType, 3, 3>& B,
+                                Mat<ScalarType, 3, 3>& C) {
   if (AT && BT) {
     MatTrans3x3MatTransMultCore(A, B, C);
   } else if (AT) {
@@ -33,8 +33,8 @@ class ADMat3x3MatMultExpr
     : public ADExpression<ADMat3x3MatMultExpr<ScalarType, AT, BT>> {
  public:
   KOKKOS_FUNCTION ADMat3x3MatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                                          ADMat<Mat<ScalarType, 3, 3>>& BObj,
-                                          ADMat<Mat<ScalarType, 3, 3>>& CObj)
+                                      ADMat<Mat<ScalarType, 3, 3>>& BObj,
+                                      ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -112,8 +112,8 @@ class A2DMat3x3MatMultExpr
     : public A2DExpression<A2DMat3x3MatMultExpr<ScalarType, AT, BT>> {
  public:
   KOKKOS_FUNCTION A2DMat3x3MatMultExpr(A2DMat<Mat<ScalarType, 3, 3>>& AObj,
-                                           A2DMat<Mat<ScalarType, 3, 3>>& BObj,
-                                           A2DMat<Mat<ScalarType, 3, 3>>& CObj)
+                                       A2DMat<Mat<ScalarType, 3, 3>>& BObj,
+                                       A2DMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     const Mat<ScalarType, 3, 3>& B = BObj.value();
@@ -256,8 +256,8 @@ class ADpMat3x3MatMultExpr
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
   KOKKOS_FUNCTION ADpMat3x3MatMultExpr(Mat3x3& A,
-                                           ADMat<Mat<ScalarType, 3, 3>>& BObj,
-                                           ADMat<Mat<ScalarType, 3, 3>>& CObj)
+                                       ADMat<Mat<ScalarType, 3, 3>>& BObj,
+                                       ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : A(A), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& B = BObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -322,8 +322,8 @@ class ADMat3x3pMatMultExpr
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
   KOKKOS_FUNCTION ADMat3x3pMatMultExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                                           Mat3x3& B,
-                                           ADMat<Mat<ScalarType, 3, 3>>& CObj)
+                                       Mat3x3& B,
+                                       ADMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), B(B), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -388,8 +388,8 @@ class A2DpMat3x3MatMultExpr
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
   KOKKOS_FUNCTION A2DpMat3x3MatMultExpr(Mat3x3& A,
-                                            A2DMat<Mat<ScalarType, 3, 3>>& BObj,
-                                            A2DMat<Mat<ScalarType, 3, 3>>& CObj)
+                                        A2DMat<Mat<ScalarType, 3, 3>>& BObj,
+                                        A2DMat<Mat<ScalarType, 3, 3>>& CObj)
       : A(A), BObj(BObj), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& B = BObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -469,8 +469,8 @@ class A2DMat3x3pMatMultExpr
   typedef Mat<ScalarType, 3, 3> Mat3x3;
 
   KOKKOS_FUNCTION A2DMat3x3pMatMultExpr(A2DMat<Mat<ScalarType, 3, 3>>& AObj,
-                                            Mat3x3& B,
-                                            A2DMat<Mat<ScalarType, 3, 3>>& CObj)
+                                        Mat3x3& B,
+                                        A2DMat<Mat<ScalarType, 3, 3>>& CObj)
       : AObj(AObj), B(B), CObj(CObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& C = CObj.value();
@@ -545,8 +545,7 @@ KOKKOS_FUNCTION A2DMat3x3pMatMultExpr<ScalarType, AT, BT> MatMatMult(
 
 // Mat3x3Det
 template <typename ScalarType>
-KOKKOS_FUNCTION void MatDet(const Mat<ScalarType, 3, 3>& A,
-                                ScalarType& det) {
+KOKKOS_FUNCTION void MatDet(const Mat<ScalarType, 3, 3>& A, ScalarType& det) {
   det = (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
          A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
          A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
@@ -556,7 +555,7 @@ template <class ScalarType>
 class ADMat3x3DetExpr : public ADExpression<ADMat3x3DetExpr<ScalarType>> {
  public:
   KOKKOS_FUNCTION ADMat3x3DetExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                                      ADScalar<ScalarType>& detObj)
+                                  ADScalar<ScalarType>& detObj)
       : AObj(AObj), detObj(detObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
 
@@ -610,7 +609,7 @@ template <class ScalarType>
 class A2DMat3x3DetExpr : public ADExpression<A2DMat3x3DetExpr<ScalarType>> {
  public:
   KOKKOS_FUNCTION A2DMat3x3DetExpr(A2DMat<Mat<ScalarType, 3, 3>>& AObj,
-                                       A2DScalar<ScalarType>& detObj)
+                                   A2DScalar<ScalarType>& detObj)
       : AObj(AObj), detObj(detObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
 
@@ -709,7 +708,7 @@ KOKKOS_FUNCTION A2DMat3x3DetExpr<ScalarType> MatDet(
 // Mat3x3Inverse
 template <typename ScalarType>
 KOKKOS_FUNCTION void MatInverse(const Mat<ScalarType, 3, 3>& A,
-                                    Mat<ScalarType, 3, 3>& Ainv) {
+                                Mat<ScalarType, 3, 3>& Ainv) {
   ScalarType det = (A(2, 2) * (A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1)) -
                     A(2, 1) * (A(0, 0) * A(1, 2) - A(1, 0) * A(0, 2)) +
                     A(2, 0) * (A(0, 1) * A(1, 2) - A(0, 2) * A(1, 1)));
@@ -733,7 +732,7 @@ class ADMat3x3InverseExpr
     : public ADExpression<ADMat3x3InverseExpr<ScalarType>> {
  public:
   KOKKOS_FUNCTION ADMat3x3InverseExpr(ADMat<Mat<ScalarType, 3, 3>>& AObj,
-                                          ADMat<Mat<ScalarType, 3, 3>>& AinvObj)
+                                      ADMat<Mat<ScalarType, 3, 3>>& AinvObj)
       : AObj(AObj), AinvObj(AinvObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
@@ -790,9 +789,8 @@ template <typename ScalarType>
 class A2DMat3x3InverseExpr
     : public A2DExpression<A2DMat3x3InverseExpr<ScalarType>> {
  public:
-  KOKKOS_FUNCTION A2DMat3x3InverseExpr(
-      A2DMat<Mat<ScalarType, 3, 3>>& AObj,
-      A2DMat<Mat<ScalarType, 3, 3>>& AinvObj)
+  KOKKOS_FUNCTION A2DMat3x3InverseExpr(A2DMat<Mat<ScalarType, 3, 3>>& AObj,
+                                       A2DMat<Mat<ScalarType, 3, 3>>& AinvObj)
       : AObj(AObj), AinvObj(AinvObj) {
     const Mat<ScalarType, 3, 3>& A = AObj.value();
     Mat<ScalarType, 3, 3>& Ainv = AinvObj.value();
@@ -877,7 +875,7 @@ KOKKOS_FUNCTION A2DMat3x3InverseExpr<ScalarType> MatInverse(
 // SymmTrace
 template <typename ScalarType>
 KOKKOS_FUNCTION void SymmTrace(const SymMat<ScalarType, 3>& S,
-                                   ScalarType& trace) {
+                               ScalarType& trace) {
   trace = S(0, 0) + S(1, 1) + S(2, 2);
 }
 
@@ -885,7 +883,7 @@ template <class ScalarType>
 class ADSymm3x3TraceExpr : public ADExpression<ADSymm3x3TraceExpr<ScalarType>> {
  public:
   KOKKOS_FUNCTION ADSymm3x3TraceExpr(ADMat<SymMat<ScalarType, 3>>& SObj,
-                                         ADScalar<ScalarType>& output)
+                                     ADScalar<ScalarType>& output)
       : SObj(SObj), output(output) {
     const SymMat<ScalarType, 3>& S = SObj.value();
     output.value = S(0, 0) + S(1, 1) + S(2, 2);
@@ -919,7 +917,7 @@ class A2DSymm3x3TraceExpr
     : public A2DExpression<A2DSymm3x3TraceExpr<ScalarType>> {
  public:
   KOKKOS_FUNCTION A2DSymm3x3TraceExpr(A2DMat<SymMat<ScalarType, 3>>& SObj,
-                                          A2DScalar<ScalarType>& output)
+                                      A2DScalar<ScalarType>& output)
       : SObj(SObj), output(output) {
     const SymMat<ScalarType, 3>& S = SObj.value();
     output.value = S(0, 0) + S(1, 1) + S(2, 2);
@@ -960,8 +958,8 @@ KOKKOS_FUNCTION A2DSymm3x3TraceExpr<ScalarType> SymmTrace(
 // Symm3x3SymmMultTrace
 template <typename ScalarType>
 KOKKOS_FUNCTION void SymmSymmMultTrace(const SymMat<ScalarType, 3>& S,
-                                           const SymMat<ScalarType, 3>& E,
-                                           ScalarType& trace) {
+                                       const SymMat<ScalarType, 3>& E,
+                                       ScalarType& trace) {
   trace = (S(0, 0) * E(0, 0) + S(1, 1) * E(1, 1) + S(2, 2) * E(2, 2) +
            2.0 * (S(0, 1) * E(0, 1) + S(0, 2) * E(0, 2) + S(1, 2) * E(1, 2)));
 }
@@ -970,9 +968,9 @@ template <class ScalarType>
 class ADSymm3x3SymmMultTraceExpr
     : public ADExpression<ADSymm3x3SymmMultTraceExpr<ScalarType>> {
  public:
-  KOKKOS_FUNCTION ADSymm3x3SymmMultTraceExpr(
-      ADMat<SymMat<ScalarType, 3>>& SObj, ADMat<SymMat<ScalarType, 3>>& EObj,
-      ADScalar<ScalarType>& output)
+  KOKKOS_FUNCTION ADSymm3x3SymmMultTraceExpr(ADMat<SymMat<ScalarType, 3>>& SObj,
+                                             ADMat<SymMat<ScalarType, 3>>& EObj,
+                                             ADScalar<ScalarType>& output)
       : SObj(SObj), EObj(EObj), output(output) {
     const SymMat<ScalarType, 3>& S = SObj.value();
     const SymMat<ScalarType, 3>& E = EObj.value();
@@ -1131,9 +1129,10 @@ KOKKOS_FUNCTION A2DSymm3x3SymmMultTraceExpr<ScalarType> SymmSymmMultTrace(
 }
 
 template <class ScalarType>
-KOKKOS_FUNCTION void SymmIsotropicConstitutive(
-    const ScalarType& mu, const ScalarType& lambda,
-    const SymMat<ScalarType, 3>& E, SymMat<ScalarType, 3>& S) {
+KOKKOS_FUNCTION void SymmIsotropicConstitutive(const ScalarType& mu,
+                                               const ScalarType& lambda,
+                                               const SymMat<ScalarType, 3>& E,
+                                               SymMat<ScalarType, 3>& S) {
   ScalarType tr = lambda * (E(0, 0) + E(1, 1) + E(2, 2));
   ScalarType mu2 = 2.0 * mu;
   S(0, 0) = mu2 * E(0, 0) + tr;
@@ -1284,9 +1283,9 @@ SymmIsotropicConstitutive(const ScalarType& mu, const ScalarType& lambda,
 
 template <class ScalarType>
 KOKKOS_FUNCTION void SymmIsotropicEnergy(const ScalarType& mu,
-                                             const ScalarType& lambda,
-                                             const SymMat<ScalarType, 3>& E,
-                                             ScalarType& output) {
+                                         const ScalarType& lambda,
+                                         const SymMat<ScalarType, 3>& E,
+                                         ScalarType& output) {
   ScalarType tr = (E(0, 0) + E(1, 1) + E(2, 2));
   ScalarType trE =
       E(0, 0) * E(0, 0) + E(1, 1) * E(1, 1) + E(2, 2) * E(2, 2) +
@@ -1347,10 +1346,9 @@ class ADSymm3x3IsotropicEnergyExpr
 };
 
 template <class ScalarType>
-KOKKOS_FUNCTION ADSymm3x3IsotropicEnergyExpr<ScalarType>
-SymmIsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
-                    ADMat<SymMat<ScalarType, 3>>& E,
-                    ADScalar<ScalarType>& output) {
+KOKKOS_FUNCTION ADSymm3x3IsotropicEnergyExpr<ScalarType> SymmIsotropicEnergy(
+    const ScalarType& mu, const ScalarType& lambda,
+    ADMat<SymMat<ScalarType, 3>>& E, ADScalar<ScalarType>& output) {
   return ADSymm3x3IsotropicEnergyExpr<ScalarType>(mu, lambda, E, output);
 }
 
@@ -1417,10 +1415,9 @@ class ADSymm3x3ADIsotropicEnergyExpr
 };
 
 template <class ScalarType>
-KOKKOS_FUNCTION ADSymm3x3ADIsotropicEnergyExpr<ScalarType>
-SymmIsotropicEnergy(ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
-                    ADMat<SymMat<ScalarType, 3>>& E,
-                    ADScalar<ScalarType>& output) {
+KOKKOS_FUNCTION ADSymm3x3ADIsotropicEnergyExpr<ScalarType> SymmIsotropicEnergy(
+    ADScalar<ScalarType>& mu, ADScalar<ScalarType>& lambda,
+    ADMat<SymMat<ScalarType, 3>>& E, ADScalar<ScalarType>& output) {
   return ADSymm3x3ADIsotropicEnergyExpr<ScalarType>(mu, lambda, E, output);
 }
 
@@ -1505,10 +1502,9 @@ class A2DSymm3x3IsotropicEnergyExpr
 };
 
 template <class ScalarType>
-KOKKOS_FUNCTION A2DSymm3x3IsotropicEnergyExpr<ScalarType>
-SymmIsotropicEnergy(const ScalarType& mu, const ScalarType& lambda,
-                    A2DMat<SymMat<ScalarType, 3>>& E,
-                    A2DScalar<ScalarType>& output) {
+KOKKOS_FUNCTION A2DSymm3x3IsotropicEnergyExpr<ScalarType> SymmIsotropicEnergy(
+    const ScalarType& mu, const ScalarType& lambda,
+    A2DMat<SymMat<ScalarType, 3>>& E, A2DScalar<ScalarType>& output) {
   return A2DSymm3x3IsotropicEnergyExpr<ScalarType>(mu, lambda, E, output);
 }
 
@@ -1638,7 +1634,7 @@ SymmIsotropicEnergy(A2DScalar<ScalarType>& mu, A2DScalar<ScalarType>& lambda,
 
 template <class ScalarType>
 KOKKOS_FUNCTION void MatGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
-                                        SymMat<ScalarType, 3>& E) {
+                                    SymMat<ScalarType, 3>& E) {
   E(0, 0) = Ux(0, 0) + 0.5 * (Ux(0, 0) * Ux(0, 0) + Ux(1, 0) * Ux(1, 0) +
                               Ux(2, 0) * Ux(2, 0));
   E(1, 1) = Ux(1, 1) + 0.5 * (Ux(0, 1) * Ux(0, 1) + Ux(1, 1) * Ux(1, 1) +
@@ -1658,8 +1654,8 @@ template <typename ScalarType>
 class ADMat3x3GreenStrainExpr
     : public ADExpression<ADMat3x3GreenStrainExpr<ScalarType>> {
  public:
-  KOKKOS_FUNCTION ADMat3x3GreenStrainExpr(
-      ADMat<Mat<ScalarType, 3, 3>>& UxObj, ADMat<SymMat<ScalarType, 3>>& EObj)
+  KOKKOS_FUNCTION ADMat3x3GreenStrainExpr(ADMat<Mat<ScalarType, 3, 3>>& UxObj,
+                                          ADMat<SymMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymMat<ScalarType, 3>& E = EObj.value();
@@ -1746,8 +1742,8 @@ template <typename ScalarType>
 class A2DMat3x3GreenStrainExpr
     : public A2DExpression<A2DMat3x3GreenStrainExpr<ScalarType>> {
  public:
-  KOKKOS_FUNCTION A2DMat3x3GreenStrainExpr(
-      A2DMat<Mat<ScalarType, 3, 3>>& UxObj, A2DMat<SymMat<ScalarType, 3>>& EObj)
+  KOKKOS_FUNCTION A2DMat3x3GreenStrainExpr(A2DMat<Mat<ScalarType, 3, 3>>& UxObj,
+                                           A2DMat<SymMat<ScalarType, 3>>& EObj)
       : UxObj(UxObj), EObj(EObj) {
     const Mat<ScalarType, 3, 3>& Ux = UxObj.value();
     SymMat<ScalarType, 3>& E = EObj.value();
@@ -1883,7 +1879,7 @@ KOKKOS_FUNCTION A2DMat3x3GreenStrainExpr<ScalarType> MatGreenStrain(
 
 template <class ScalarType>
 KOKKOS_FUNCTION void MatLinearGreenStrain(const Mat<ScalarType, 3, 3>& Ux,
-                                              SymMat<ScalarType, 3>& E) {
+                                          SymMat<ScalarType, 3>& E) {
   E(0, 0) = Ux(0, 0);
   E(1, 1) = Ux(1, 1);
   E(2, 2) = Ux(2, 2);
@@ -1947,9 +1943,8 @@ class ADMat3x3LinearGreenStrainExpr
 };
 
 template <typename ScalarType>
-KOKKOS_FUNCTION ADMat3x3LinearGreenStrainExpr<ScalarType>
-MatLinearGreenStrain(ADMat<Mat<ScalarType, 3, 3>>& Ux,
-                     ADMat<SymMat<ScalarType, 3>>& E) {
+KOKKOS_FUNCTION ADMat3x3LinearGreenStrainExpr<ScalarType> MatLinearGreenStrain(
+    ADMat<Mat<ScalarType, 3, 3>>& Ux, ADMat<SymMat<ScalarType, 3>>& E) {
   return ADMat3x3LinearGreenStrainExpr<ScalarType>(Ux, E);
 }
 
@@ -2024,9 +2019,8 @@ class A2DMat3x3LinearGreenStrainExpr
 };
 
 template <typename ScalarType>
-KOKKOS_FUNCTION A2DMat3x3LinearGreenStrainExpr<ScalarType>
-MatLinearGreenStrain(A2DMat<Mat<ScalarType, 3, 3>>& Ux,
-                     A2DMat<SymMat<ScalarType, 3>>& E) {
+KOKKOS_FUNCTION A2DMat3x3LinearGreenStrainExpr<ScalarType> MatLinearGreenStrain(
+    A2DMat<Mat<ScalarType, 3, 3>>& Ux, A2DMat<SymMat<ScalarType, 3>>& E) {
   return A2DMat3x3LinearGreenStrainExpr<ScalarType>(Ux, E);
 }
 

@@ -85,6 +85,74 @@ KOKKOS_FUNCTION auto MatTrace(A2DMat<Mat<T, M, M>>& A, A2DScalar<T>& tr) {
   return MatTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(A, tr);
 }
 
+namespace Test {
+
+template <typename T, int N>
+class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
+ public:
+  using Input = VarTuple<T, Mat<T, N, N>>;
+  using Output = VarTuple<T, T>;
+
+  // Assemble a string to describe the test
+  std::string name() {
+    std::stringstream s;
+    s << "MatTrace<" << N << "," << N << ">";
+    return s.str();
+  }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input& x) {
+    T trace;
+    Mat<T, N, N> A;
+    x.get_values(A);
+    MatTrace(A, trace);
+    return MakeVarTuple<T>(trace);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    ADScalar<T> trace;
+    Mat<T, N, N> A0, Ab;
+    ADMat<Mat<T, N, N>> A(A0, Ab);
+
+    x.get_values(A0);
+    auto op = MatTrace(A, trace);
+    auto stack = MakeStack(op);
+    seed.get_values(trace.bvalue);
+    stack.reverse();
+    g.set_values(Ab);
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DScalar<T> trace;
+    A2DMat<Mat<T, N, N>> A;
+    x.get_values(A.value());
+    p.get_values(A.pvalue());
+
+    auto op = MatTrace(A, trace);
+    auto stack = MakeStack(op);
+
+    seed.get_values(trace.bvalue);
+    hval.get_values(trace.hvalue);
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(A.hvalue());
+  }
+};
+
+void MatTraceTestAll() {
+  using Tc = std::complex<double>;
+  MatTraceTest<Tc, 2> test1;
+  Run(test1);
+  MatTraceTest<Tc, 4> test2;
+  Run(test2);
+}
+
+}  // namespace Test
+
 }  // namespace A2D
 
 #endif  // A2D_MAT_TRACE_H

@@ -91,16 +91,84 @@ class MatInvExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto MatInv(ADMat<Mat<T, N, N>>& A,
-                                ADMat<Mat<T, N, N>>& Ainv) {
+KOKKOS_FUNCTION auto MatInv(ADMat<Mat<T, N, N>>& A, ADMat<Mat<T, N, N>>& Ainv) {
   return MatInvExpr<T, N, ADorder::FIRST>(A, Ainv);
 }
 
 template <typename T, int N>
 KOKKOS_FUNCTION auto MatInv(A2DMat<Mat<T, N, N>>& A,
-                                A2DMat<Mat<T, N, N>>& Ainv) {
+                            A2DMat<Mat<T, N, N>>& Ainv) {
   return MatInvExpr<T, N, ADorder::SECOND>(A, Ainv);
 }
+
+namespace Test {
+
+template <typename T, int N>
+class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
+ public:
+  using Input = VarTuple<T, Mat<T, N, N>>;
+  using Output = VarTuple<T, Mat<T, N, N>>;
+
+  // Assemble a string to describe the test
+  std::string name() {
+    std::stringstream s;
+    s << "MatInv<" << N << "," << N << ">";
+    return s.str();
+  }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input& x) {
+    Mat<T, N, N> A;
+    Mat<T, N, N> B;
+    x.get_values(A);
+    MatInv(A, B);
+    return MakeVarTuple<T>(B);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    Mat<T, N, N> A0, Ab;
+    Mat<T, N, N> B0, Bb;
+    ADMat<Mat<T, N, N>> A(A0, Ab);
+    ADMat<Mat<T, N, N>> B(B0, Bb);
+
+    x.get_values(A0);
+    auto op = MatInv(A, B);
+    auto stack = MakeStack(op);
+    seed.get_values(Bb);
+    stack.reverse();
+    g.set_values(Ab);
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DMat<Mat<T, N, N>> A;
+    A2DMat<Mat<T, N, N>> B;
+    x.get_values(A.value());
+    p.get_values(A.pvalue());
+
+    auto op = MatInv(A, B);
+    auto stack = MakeStack(op);
+
+    seed.get_values(B.bvalue());
+    hval.get_values(B.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(A.hvalue());
+  }
+};
+
+void MatInvTestAll() {
+  using Tc = std::complex<double>;
+  MatInvTest<Tc, 2> test1;
+  Run(test1);
+  MatInvTest<Tc, 3> test2;
+  Run(test2);
+}
+
+}  // namespace Test
 
 }  // namespace A2D
 

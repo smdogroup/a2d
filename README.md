@@ -24,7 +24,7 @@ A2D is a header only c++ templated library with python binding created with
     - [ ] ```a2dobjs.h``` drop ```A2D::fill()``` and use Kokkos kernel
     - [ ] ```integrand_[poisson/elasticity/heat_conduction].h``` rename ```weak()``` -> ```residual()```
     - [ ] ```integrand_[poisson/elasticity/heat_conduction].h``` drop Jacobian vector product functor and Adjoint jacobian product functor, compute second order derivative matrices directly using ```jtransform()``` (see ```IntegrandTopoLinearElasticity::jacobian()``` for example)
-    - [ ]```feelement.h``` change ```add_jacobian()```, ```add_jacobian_vector_product()```, etc. accordingly
+    - [ ] ```feelement.h``` change ```add_jacobian()```, ```add_jacobian_vector_product()```, etc. accordingly
 
 
 

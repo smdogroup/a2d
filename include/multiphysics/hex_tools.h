@@ -284,8 +284,8 @@ void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
 
         for (index_t ii = 0; ii < ET::QUAD_NVERTS; ii++) {
           vtk_conn(counter, ii) =
-              off + vtk_node_num(i + ET::QUAD_VERTS_CART[ii][0],
-                                 j + ET::QUAD_VERTS_CART[ii][1]);
+              off + vtk_node_num(i + ET::get_quad_verts_cart(ii, 0),
+                                 j + ET::get_quad_verts_cart(ii, 1));
         }
       }
     }

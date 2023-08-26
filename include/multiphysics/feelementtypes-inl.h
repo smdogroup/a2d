@@ -133,6 +133,10 @@ KOKKOS_FUNCTION void ElementTypes::set_line_domain_dof(const index_t orient,
  */
 KOKKOS_FUNCTION inline index_t ElementTypes::get_quad_domain_orientation(
     const index_t ref_domain_verts[], const index_t domain_verts[]) {
+  static const index_t QUAD_DOMAIN_ORIENTATIONS[][4] = {
+      {0, 1, 2, 3}, {3, 0, 1, 2}, {2, 3, 0, 1}, {1, 2, 3, 0},
+      {0, 3, 2, 1}, {3, 2, 1, 0}, {2, 1, 0, 3}, {1, 0, 3, 2}};
+
   index_t orient = 0;
   for (; orient < NUM_QUAD_DOMAIN_ORIENTATIONS; orient++) {
     if (ref_domain_verts[0] ==
@@ -261,7 +265,7 @@ KOKKOS_FUNCTION int ElementTypes::get_quad_node(const int i, const int j) {
 template <index_t nx, index_t ny>
 KOKKOS_FUNCTION index_t ElementTypes::get_quad_bound_length(const index_t v0,
                                                             const index_t v1) {
-  if (QUAD_VERTS_CART[v0][0] != QUAD_VERTS_CART[v1][0]) {
+  if (get_quad_verts_cart(v0, 0) != get_quad_verts_cart(v1, 0)) {
     return nx;
   } else {
     return ny;
@@ -286,8 +290,9 @@ template <index_t offset, index_t ndof, index_t nx, index_t ny, class ElemDof,
 KOKKOS_FUNCTION void ElementTypes::get_quad_vert_dof(index_t v,
                                                      const ElemDof& element,
                                                      EntityDof& entity) {
-  const index_t node = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[v][0],
-                                             (ny - 1) * QUAD_VERTS_CART[v][1]);
+  const index_t node =
+      get_quad_node<nx, ny>((nx - 1) * get_quad_verts_cart(v, 0),
+                            (ny - 1) * get_quad_verts_cart(v, 1));
 
   const index_t start = offset + ndof * node;
   for (index_t i = 0; i < ndof; i++) {
@@ -313,8 +318,9 @@ template <index_t offset, index_t ndof, index_t nx, index_t ny, class EntityDof,
 KOKKOS_FUNCTION void ElementTypes::set_quad_vert_dof(index_t v,
                                                      const EntityDof& entity,
                                                      ElemDof& element) {
-  const index_t node = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[v][0],
-                                             (ny - 1) * QUAD_VERTS_CART[v][1]);
+  const index_t node =
+      get_quad_node<nx, ny>((nx - 1) * get_quad_verts_cart(v, 0),
+                            (ny - 1) * get_quad_verts_cart(v, 1));
 
   const index_t start = offset + ndof * node;
   for (index_t i = 0; i < ndof; i++) {
@@ -346,16 +352,17 @@ KOKKOS_FUNCTION void ElementTypes::get_quad_bound_dof(const index_t b,
   const index_t v1 = QUAD_BOUND_VERTS[b][1];
 
   // Get the starting index on the element
-  const index_t start = get_quad_node<nx, ny>(
-      (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
+  const index_t start =
+      get_quad_node<nx, ny>((nx - 1) * get_quad_verts_cart(v0, 0),
+                            (ny - 1) * get_quad_verts_cart(v0, 1));
 
   // Find the number of nodes along the u-edge
   const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
-  const int incr =
-      get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
-                            QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
+  const int incr = get_quad_node<nx, ny>(
+      get_quad_verts_cart(v1, 0) - get_quad_verts_cart(v0, 0),
+      get_quad_verts_cart(v1, 1) - get_quad_verts_cart(v0, 1));
 
   if constexpr (ends) {
     index_t index = start;
@@ -409,16 +416,17 @@ KOKKOS_FUNCTION void ElementTypes::set_quad_bound_dof(const index_t b,
   const index_t v1 = QUAD_BOUND_VERTS[b][(orient + 1) % 2];
 
   // Get the starting index on the element
-  const index_t start = get_quad_node<nx, ny>(
-      (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
+  const index_t start =
+      get_quad_node<nx, ny>((nx - 1) * get_quad_verts_cart(v0, 0),
+                            (ny - 1) * get_quad_verts_cart(v0, 1));
 
   // Find the number of nodes along the u-edge
   const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
-  const int incr =
-      get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
-                            QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
+  const int incr = get_quad_node<nx, ny>(
+      get_quad_verts_cart(v1, 0) - get_quad_verts_cart(v0, 0),
+      get_quad_verts_cart(v1, 1) - get_quad_verts_cart(v0, 1));
 
   if constexpr (ends) {
     index_t index = start;

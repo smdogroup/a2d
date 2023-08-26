@@ -324,10 +324,11 @@ class LagrangeH1HypercubeBasis {
    * @param horder_signs The signs for the high-order degrees of freedom
    * @param signs The signs relative to the high-order element
    */
-  template <index_t horder_offset, index_t lorder_offset>
+  template <index_t horder_offset, index_t lorder_offset, class HOrderSign,
+            class LOrderSign>
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                               const int horder_signs[],
-                                               int signs[]) {
+                                               const HOrderSign& horder_signs,
+                                               LOrderSign& signs) {
     for (index_t p = 0; p < indexpow<2, dim>::value * C; p++) {
       signs[lorder_offset + p] = 1;
     }
@@ -1128,10 +1129,11 @@ class LagrangeL2HypercubeBasis {
    * @param horder_signs The signs for the high-order degrees of freedom
    * @param signs The signs relative to the high-order element
    */
-  template <index_t horder_offset, index_t lorder_offset>
+  template <index_t horder_offset, index_t lorder_offset, class HOrderSign,
+            class LOrderSign>
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                               const int horder_signs[],
-                                               int signs[]) {
+                                               const HOrderSign& horder_signs,
+                                               LOrderSign& signs) {
     for (index_t p = 0; p < C; p++) {
       signs[lorder_offset + p] = 1;
     }

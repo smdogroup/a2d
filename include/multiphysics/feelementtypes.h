@@ -170,13 +170,13 @@ class ElementTypes {
       {1, 2, NO_INDEX, NO_INDEX}};
 
   // Cartesian coordinates of the vertices in the reference element
-  static constexpr index_t QUAD_VERTS_CART[][2] = {
-      {0, 0}, {1, 0}, {1, 1}, {0, 1}};
+  static index_t get_quad_verts_cart(index_t i, index_t j) {
+    static const index_t QUAD_VERTS_CART[][2] = {
+        {0, 0}, {1, 0}, {1, 1}, {0, 1}};
+    return QUAD_VERTS_CART[i][j];
+  }
 
   static const index_t NUM_QUAD_DOMAIN_ORIENTATIONS = 8;
-  static constexpr index_t QUAD_DOMAIN_ORIENTATIONS[][4] = {
-      {0, 1, 2, 3}, {3, 0, 1, 2}, {2, 3, 0, 1}, {1, 2, 3, 0},
-      {0, 3, 2, 1}, {3, 2, 1, 0}, {2, 1, 0, 3}, {1, 0, 3, 2}};
 
   // Given a reference domain, find the orientation
   KOKKOS_FUNCTION static index_t get_quad_domain_orientation(

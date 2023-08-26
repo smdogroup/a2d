@@ -121,8 +121,8 @@ class MesherRect2D {
     for (I j = 0, e = 0; j < ny; j++) {
       for (I i = 0; i < nx; i++, e++) {
         for (I ii = 0; ii < ET::QUAD_NVERTS; ii++) {
-          quad[4 * e + ii] = node_num(i + ET::QUAD_VERTS_CART[ii][0],
-                                      j + ET::QUAD_VERTS_CART[ii][1]);
+          quad[4 * e + ii] = node_num(i + ET::get_quad_verts_cart(ii, 0),
+                                      j + ET::get_quad_verts_cart(ii, 1));
         }
       }
     }

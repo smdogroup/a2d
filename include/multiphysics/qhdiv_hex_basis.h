@@ -273,9 +273,10 @@ class QHdivHexBasis {
    * @param horder_signs The signs for the high-order degrees of freedom
    * @param signs The signs relative to the high-order element
    */
-  template <index_t horder_offset, index_t lorder_offset>
-  static void get_lorder_signs(const index_t n, const int horder_signs[],
-                               int signs[]) {
+  template <index_t horder_offset, index_t lorder_offset, class HOrderSign,
+            class LOrderSign>
+  static void get_lorder_signs(const index_t n, const HOrderSign& horder_signs,
+                               LOrderSign& signs) {
     const index_t i = n % degree;
     const index_t j = (n % (degree * degree)) / degree;
     const index_t k = n / (degree * degree);

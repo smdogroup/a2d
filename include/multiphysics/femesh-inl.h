@@ -1699,8 +1699,7 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
       conn.get_bound_elements(bound, &elem, &e2);
 
       // Get the degrees of freedom for this element
-      const index_t* elem_dof;
-      mesh.get_element_dof(elem, &elem_dof);
+      auto elem_dof = mesh.get_element_dof(elem);
 
       // Array of dof that may be extracted
       index_t dof[Basis::ndof];

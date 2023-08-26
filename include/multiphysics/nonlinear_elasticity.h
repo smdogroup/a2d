@@ -40,9 +40,9 @@ class NonlinearElasticity {
    * @param coef Output weak form coefficients of the test space
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) {
     // Get the constitutive data at the points
     T mu = data[0];
     T lambda = data[1];
@@ -83,10 +83,10 @@ class NonlinearElasticity {
    */
   class JacVecProduct {
    public:
-    KOKKOS_FUNCTION JacVecProduct(
-        const NonlinearElasticity<T, D>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
+    KOKKOS_FUNCTION JacVecProduct(const NonlinearElasticity<T, D>& integrand,
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),
           lambda(data[1]),
@@ -108,7 +108,7 @@ class NonlinearElasticity {
     }
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
       strain.hforward();
@@ -138,10 +138,10 @@ class NonlinearElasticity {
    */
   class AdjVecProduct {
    public:
-    KOKKOS_FUNCTION AdjVecProduct(
-        const NonlinearElasticity<T, D>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
+    KOKKOS_FUNCTION AdjVecProduct(const NonlinearElasticity<T, D>& integrand,
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         :  // Initialize constitutive data
           mu(data[0]),
           lambda(data[1]),
@@ -163,7 +163,7 @@ class NonlinearElasticity {
     }
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        DataSpace& dfdx) {
+                                    DataSpace& dfdx) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
       strain.hforward();

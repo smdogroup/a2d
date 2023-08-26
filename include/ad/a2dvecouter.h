@@ -44,8 +44,7 @@ class ADVecOuterExpr {
   using AType = ADMat<Mat<T, M, N>>;
 
  public:
-  KOKKOS_FUNCTION ADVecOuterExpr(alphaType& alpha, xType& x, yType& y,
-                                     AType& A)
+  KOKKOS_FUNCTION ADVecOuterExpr(alphaType& alpha, xType& x, yType& y, AType& A)
       : alpha(alpha), x(x), y(y), A(A) {
     VecOuterCore<T, M, N>(get_data(alpha), get_data(x), get_data(y),
                           get_data(A));

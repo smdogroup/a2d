@@ -64,6 +64,74 @@ KOKKOS_FUNCTION auto MatDet(A2DMat<Mat<T, N, N>>& A, A2DScalar<T>& det) {
   return MatDetExpr<T, N, ADorder::SECOND>(A, det);
 }
 
+namespace Test {
+
+template <typename T, int N>
+class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
+ public:
+  using Input = VarTuple<T, Mat<T, N, N>>;
+  using Output = VarTuple<T, T>;
+
+  // Assemble a string to describe the test
+  std::string name() {
+    std::stringstream s;
+    s << "MatDet<" << N << "," << N << ">";
+    return s.str();
+  }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input& x) {
+    T det;
+    Mat<T, N, N> A;
+    x.get_values(A);
+    MatDet(A, det);
+    return MakeVarTuple<T>(det);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    ADScalar<T> det;
+    Mat<T, N, N> A0, Ab;
+    ADMat<Mat<T, N, N>> A(A0, Ab);
+
+    x.get_values(A0);
+    auto op = MatDet(A, det);
+    auto stack = MakeStack(op);
+    seed.get_values(det.bvalue);
+    stack.reverse();
+    g.set_values(Ab);
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DScalar<T> det;
+    A2DMat<Mat<T, N, N>> A;
+    x.get_values(A.value());
+    p.get_values(A.pvalue());
+
+    auto op = MatDet(A, det);
+    auto stack = MakeStack(op);
+
+    seed.get_values(det.bvalue);
+    hval.get_values(det.hvalue);
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(A.hvalue());
+  }
+};
+
+void MatDetTestAll() {
+  using Tc = std::complex<double>;
+  MatDetTest<Tc, 2> test1;
+  Run(test1);
+  MatDetTest<Tc, 3> test2;
+  Run(test2);
+}
+
+}  // namespace Test
+
 }  // namespace A2D
 
 #endif  //  A2D_MAT_DET_H

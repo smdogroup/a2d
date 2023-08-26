@@ -25,8 +25,8 @@ namespace A2D {
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
-                                        const xType& x, const int xj, yType& y,
-                                        const int yk) {
+                                    const xType& x, const int xj, yType& y,
+                                    const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -45,8 +45,7 @@ KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
-                                        const xType& x, yType& y,
-                                        const int yk) {
+                                    const xType& x, yType& y, const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -65,8 +64,8 @@ KOKKOS_FUNCTION void blockGemvSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvAddSlice(const AType& A, const int Ai,
-                                           const xType& x, const int xj,
-                                           yType& y, const int yk) {
+                                       const xType& x, const int xj, yType& y,
+                                       const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -85,9 +84,9 @@ KOKKOS_FUNCTION void blockGemvAddSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
-                                                const int Ai, const xType& x,
-                                                const int xj, yType& y,
-                                                const int yk) {
+                                            const int Ai, const xType& x,
+                                            const int xj, yType& y,
+                                            const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -106,8 +105,8 @@ KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
-                                                const int Ai, const xType& x,
-                                                yType& y, const int yk) {
+                                            const int Ai, const xType& x,
+                                            yType& y, const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -126,8 +125,8 @@ KOKKOS_FUNCTION void blockGemvAddScaleSlice(const T scale, const AType& A,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
-                                           const xType& x, const int xj,
-                                           yType& y, const int yk) {
+                                       const xType& x, const int xj, yType& y,
+                                       const int yk) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -146,8 +145,7 @@ KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
 */
 template <typename T, int M, int N, class AType, class xType, class yType>
 KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
-                                           const xType& x, const int xj,
-                                           yType& y) {
+                                       const xType& x, const int xj, yType& y) {
   for (int i = 0; i < M; i++) {
     T prod = 0.0;
     for (int j = 0; j < N; j++) {
@@ -167,8 +165,8 @@ KOKKOS_FUNCTION void blockGemvSubSlice(const AType& A, const int Ai,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
-                                        const BType& B, const int Bj, CType& C,
-                                        const int Ck) {
+                                    const BType& B, const int Bj, CType& C,
+                                    const int Ck) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -190,8 +188,7 @@ KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
-                                        const BType& B, const int Bj,
-                                        CType& C) {
+                                    const BType& B, const int Bj, CType& C) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -213,8 +210,8 @@ KOKKOS_FUNCTION void blockGemmSlice(const AType& A, const int Ai,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmAddSlice(const AType& A, const int Ai,
-                                           const BType& B, const int Bj,
-                                           CType& C, const int Ck) {
+                                       const BType& B, const int Bj, CType& C,
+                                       const int Ck) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -236,9 +233,9 @@ KOKKOS_FUNCTION void blockGemmAddSlice(const AType& A, const int Ai,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmAddScaleSlice(const T scale, const AType& A,
-                                                const int Ai, const BType& B,
-                                                const int Bj, CType& C,
-                                                const int Ck) {
+                                            const int Ai, const BType& B,
+                                            const int Bj, CType& C,
+                                            const int Ck) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -260,8 +257,8 @@ KOKKOS_FUNCTION void blockGemmAddScaleSlice(const T scale, const AType& A,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmSubSlice(const AType& A, const int Ai,
-                                           const BType& B, const int Bj,
-                                           CType& C, const int Ck) {
+                                       const BType& B, const int Bj, CType& C,
+                                       const int Ck) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;
@@ -283,8 +280,7 @@ KOKKOS_FUNCTION void blockGemmSubSlice(const AType& A, const int Ai,
 template <typename T, int M, int N, int P, class AType, class BType,
           class CType>
 KOKKOS_FUNCTION void blockGemmSubSlice(const AType& A, const BType& B,
-                                           const int Bj, CType& C,
-                                           const int Ck) {
+                                       const int Bj, CType& C, const int Ck) {
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < P; j++) {
       T prod = 0.0;

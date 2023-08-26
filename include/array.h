@@ -69,7 +69,7 @@ KOKKOS_FUNCTION void zero(const View& x) {
 */
 template <class View>
 KOKKOS_FUNCTION void fill(const View& x,
-                              typename View::const_value_type& value) {
+                          typename View::const_value_type& value) {
   using T = typename View::value_type;
   assert(x.span_is_contiguous());
   T* data = x.data();
@@ -89,7 +89,7 @@ void copy(const DestView& dest, const SrcView& src) {
 */
 template <class View>
 KOKKOS_FUNCTION void scale(const View& x,
-                               typename View::const_value_type& alpha) {
+                           typename View::const_value_type& alpha) {
   using T = typename View::value_type;
   assert(x.span_is_contiguous());
   T* data = x.data();

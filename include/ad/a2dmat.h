@@ -62,7 +62,7 @@ class Mat {
   }
   template <class IdxType1, class IdxType2>
   KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
-                                          const IdxType2 j) const {
+                                      const IdxType2 j) const {
     return A[N * i + j];
   }
 
@@ -132,7 +132,7 @@ class SymMat {
   }
   template <class IdxType1, class IdxType2>
   KOKKOS_FUNCTION const T& operator()(const IdxType1 i,
-                                          const IdxType2 j) const {
+                                      const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {
@@ -174,13 +174,11 @@ class A2DMat {
  public:
   KOKKOS_FUNCTION A2DMat() {}
   KOKKOS_FUNCTION A2DMat(const MatType& A) : A(A) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab)
-      : A(A), Ab(Ab) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
-                             const MatType& Ap)
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab) : A(A), Ab(Ab) {}
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab, const MatType& Ap)
       : A(A), Ab(Ab), Ap(Ap) {}
-  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab,
-                             const MatType& Ap, const MatType& Ah)
+  KOKKOS_FUNCTION A2DMat(const MatType& A, const MatType& Ab, const MatType& Ap,
+                         const MatType& Ah)
       : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
 
   KOKKOS_FUNCTION MatType& value() { return A; }
@@ -232,12 +230,12 @@ KOKKOS_FUNCTION T* get_data(SymMat<T, m>& mat) {
 
 template <typename T, int m>
 KOKKOS_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
-  return mat.A;
+  return mat.A.A;
 }
 
 template <typename T, int m>
 KOKKOS_FUNCTION T* get_data(A2DMat<SymMat<T, m>>& mat) {
-  return mat.A;
+  return mat.A.A;
 }
 
 /**
@@ -293,6 +291,25 @@ class GetSeed {
 
   template <typename T, int m, int n>
   static KOKKOS_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DMat");
+    if constexpr (seed == ADseed::b) {
+      return mat.Ab.A;
+    } else if constexpr (seed == ADseed::p) {
+      return mat.Ap.A;
+    } else {  // seed == ADseed::h
+      return mat.Ah.A;
+    }
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
+    return mat.Ab.A;
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION T* get_data(A2DMat<SymMat<T, m>>& mat) {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DMat");
     if constexpr (seed == ADseed::b) {

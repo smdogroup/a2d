@@ -85,9 +85,9 @@ class IntegrandTopoLinearElasticity {
    * @param coef Output weak form coefficients of the test space
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -122,9 +122,9 @@ class IntegrandTopoLinearElasticity {
 
   // Evaluate the second order derivatives of the integral
   KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
-                                    const FiniteElementGeometry& geo,
-                                    const FiniteElementSpace& s,
-                                    QMatType& jac) const {
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                QMatType& jac) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -221,7 +221,7 @@ class IntegrandTopoLinearElasticity {
     }
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
       strain.hforward();
@@ -282,7 +282,7 @@ class IntegrandTopoLinearElasticity {
     }
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        DataSpace& dfdx) {
+                                    DataSpace& dfdx) {
       Ux.set_pvalue((p.template get<0>()).get_grad());
 
       strain.hforward();
@@ -397,9 +397,9 @@ class IntegrandTopoBodyForce {
   }
 
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
 
@@ -423,7 +423,7 @@ class IntegrandTopoBodyForce {
     }
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& psi,
-                                        DataSpace& dfdx) {
+                                    DataSpace& dfdx) {
       const Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
       T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
 
@@ -756,9 +756,9 @@ class IntegrandTopoSurfaceTraction {
    * @param coef Output weak form coefficients of the test space
    */
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     // Extract the solution
     Vec<T, dim>& U = (coef.template get<0>()).get_value();
     for (index_t i = 0; i < dim; i++) {

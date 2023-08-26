@@ -79,13 +79,11 @@ class A2DVec {
  public:
   KOKKOS_FUNCTION A2DVec() {}
   KOKKOS_FUNCTION A2DVec(const VecType& V) : V(V) {}
-  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb)
-      : V(V), Vb(Vb) {}
-  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
-                             const VecType& Vp)
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb) : V(V), Vb(Vb) {}
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb, const VecType& Vp)
       : V(V), Vb(Vb), Vp(Vp) {}
-  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb,
-                             const VecType& Vp, const VecType& Vh)
+  KOKKOS_FUNCTION A2DVec(const VecType& V, const VecType& Vb, const VecType& Vp,
+                         const VecType& Vh)
       : V(V), Vb(Vb), Vp(Vp), Vh(Vh) {}
 
   KOKKOS_FUNCTION VecType& value() { return V; }

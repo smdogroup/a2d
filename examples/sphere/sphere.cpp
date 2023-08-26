@@ -137,9 +137,9 @@ class PoissonForSphere {
   using SolutionMapping = InteriorMapping<T, dim>;
 
   KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
+                            const FiniteElementGeometry& geo,
+                            const FiniteElementSpace& s,
+                            FiniteElementSpace& coef) const {
     const H1Space<T, 1, dim>& u = s.template get<0>();
     const Vec<T, dim>& u_grad = u.get_grad();
 
@@ -172,13 +172,13 @@ class PoissonForSphere {
   class JacVecProduct {
    public:
     KOKKOS_FUNCTION JacVecProduct(const PoissonForSphere<T, D>& integrand,
-                                      T wdetJ, const DataSpace& data,
-                                      const FiniteElementGeometry& geo,
-                                      const FiniteElementSpace& s)
+                                  T wdetJ, const DataSpace& data,
+                                  const FiniteElementGeometry& geo,
+                                  const FiniteElementSpace& s)
         : wdetJ(wdetJ) {}
 
     KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                        FiniteElementSpace& Jp) {
+                                    FiniteElementSpace& Jp) {
       const H1Space<T, 1, dim>& u = p.template get<0>();
       const Vec<T, dim>& u_grad = u.get_grad();
 

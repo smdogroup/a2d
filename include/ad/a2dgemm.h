@@ -399,25 +399,34 @@ class MatMatMultTest
 };
 
 template <typename T, int N, int M, int K>
-void MatMatMultTestHelper() {
+bool MatMatMultTestHelper(bool component = false, bool write_output = true) {
   const MatOp NORMAL = MatOp::NORMAL;
   const MatOp TRANSPOSE = MatOp::TRANSPOSE;
   using Tc = std::complex<T>;
 
+  bool passed = true;
   MatMatMultTest<NORMAL, NORMAL, Tc, N, M, M, K, N, K> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatMatMultTest<NORMAL, TRANSPOSE, Tc, N, M, K, M, N, K> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
   MatMatMultTest<TRANSPOSE, NORMAL, Tc, N, M, N, K, M, K> test3;
-  Run(test3);
+  passed = passed && Run(test3, component, write_output);
   MatMatMultTest<TRANSPOSE, TRANSPOSE, Tc, N, M, K, N, M, K> test4;
-  Run(test4);
+  passed = passed && Run(test4, component, write_output);
+
+  return passed;
 }
 
-void MatMatMultTestAll() {
-  MatMatMultTestHelper<double, 3, 3, 3>();
-  MatMatMultTestHelper<double, 2, 3, 4>();
-  MatMatMultTestHelper<double, 5, 4, 2>();
+bool MatMatMultTestAll(bool component = false, bool write_output = true) {
+  bool passed = true;
+  passed =
+      passed && MatMatMultTestHelper<double, 3, 3, 3>(component, write_output);
+  passed =
+      passed && MatMatMultTestHelper<double, 2, 3, 4>(component, write_output);
+  passed =
+      passed && MatMatMultTestHelper<double, 5, 4, 2>(component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

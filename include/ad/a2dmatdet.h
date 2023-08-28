@@ -122,12 +122,16 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-void MatDetTestAll() {
+bool MatDetTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatDetTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatDetTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

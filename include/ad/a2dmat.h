@@ -214,6 +214,11 @@ KOKKOS_FUNCTION T* get_data(Mat<T, m, n>& mat) {
 }
 
 template <typename T, int m, int n>
+KOKKOS_FUNCTION const T* get_data(const Mat<T, m, n>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m, int n>
 KOKKOS_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
@@ -225,6 +230,11 @@ KOKKOS_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
 
 template <typename T, int m>
 KOKKOS_FUNCTION T* get_data(SymMat<T, m>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m>
+KOKKOS_FUNCTION const T* get_data(const SymMat<T, m>& mat) {
   return mat.A;
 }
 

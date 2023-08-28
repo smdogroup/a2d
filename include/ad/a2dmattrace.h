@@ -143,12 +143,16 @@ class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-void MatTraceTestAll() {
+bool MatTraceTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatTraceTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatTraceTest<Tc, 4> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

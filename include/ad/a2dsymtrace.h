@@ -135,15 +135,18 @@ class SymMatTraceTest : public A2DTest<T, T, SymMat<T, N>, SymMat<T, N>> {
   }
 };
 
-void SymMatTraceTestAll() {
+bool SymMatTraceTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
+  bool passed = true;
   SymMatTraceTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   SymMatTraceTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
   SymMatTraceTest<Tc, 4> test3;
-  Run(test3);
+  passed = passed && Run(test3, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

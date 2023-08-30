@@ -75,7 +75,7 @@ KOKKOS_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymIsotropic(const T& mu, const T& lambda,
+KOKKOS_FUNCTION void SymIsotropic(const T mu, const T lambda,
                                   const SymMat<T, N>& E, SymMat<T, N>& S) {
   SymIsotropicCore<T, N>(mu, lambda, get_data(E), get_data(S));
 }
@@ -85,12 +85,11 @@ template <typename T, int N, ADorder order,
           ADiffType Ediff = ADiffType::ACTIVE>
 class SymIsotropicExpr {
  public:
-  using mutype = ADScalarType<mudiff, order, T>;
+  using mutype = ADScalarInputType<mudiff, order, T>;
   using Etype = ADMatType<Ediff, order, SymMat<T, N>>;
   using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
 
-  KOKKOS_FUNCTION SymIsotropicExpr(mutype& mu, mutype& lambda, Etype& E,
-                                   Stype& S)
+  KOKKOS_FUNCTION SymIsotropicExpr(mutype mu, mutype lambda, Etype& E, Stype& S)
       : mu(mu), lambda(lambda), E(E), S(S) {
     SymIsotropicCore<T, N>(get_data(mu), get_data(lambda), get_data(E),
                            get_data(S));
@@ -157,29 +156,11 @@ class SymIsotropicExpr {
                                 GetSeed<ADseed::b>::get_data(lambda),
                                 GetSeed<ADseed::p>::get_data(S),
                                 GetSeed<ADseed::h>::get_data(E));
-
-      //   SymIsotropicAddCore<T, N>(GetSeed<ADseed::b>::get_data(mu),
-      //                             GetSeed<ADseed::b>::get_data(lambda),
-      //                             GetSeed<ADseed::p>::get_data(S),
-      //                             GetSeed<ADseed::h>::get_data(E));
-      //   SymIsotropicAddCore<T, N>(GetSeed<ADseed::p>::get_data(mu),
-      //                             GetSeed<ADseed::p>::get_data(lambda),
-      //                             GetSeed<ADseed::b>::get_data(S),
-      //                             GetSeed<ADseed::h>::get_data(E));
-
-      //   SymIsotropicReverseCoefCore<T, N>(GetSeed<ADseed::b>::get_data(E),
-      //                                     GetSeed<ADseed::p>::get_data(S),
-      //                                     GetSeed<ADseed::h>::get_data(mu),
-      //                                     GetSeed<ADseed::h>::get_data(lambda));
-      //   SymIsotropicReverseCoefCore<T, N>(GetSeed<ADseed::p>::get_data(E),
-      //                                     GetSeed<ADseed::b>::get_data(S),
-      //                                     GetSeed<ADseed::h>::get_data(mu),
-      //                                     GetSeed<ADseed::h>::get_data(lambda));
     }
   }
 
-  mutype& mu;
-  mutype& lambda;
+  mutype mu;
+  mutype lambda;
   Etype& E;
   Stype& S;
 };
@@ -192,13 +173,82 @@ KOKKOS_FUNCTION auto SymIsotropic(ADScalar<T>& mu, ADScalar<T>& lambda,
 }
 
 template <typename T, int N>
+KOKKOS_FUNCTION auto SymIsotropic(const T mu, const T lambda,
+                                  ADMat<SymMat<T, N>>& E,
+                                  ADMat<SymMat<T, N>>& S) {
+  return SymIsotropicExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE>(mu, lambda,
+                                                                    E, S);
+}
+
+template <typename T, int N>
 KOKKOS_FUNCTION auto SymIsotropic(A2DScalar<T>& mu, A2DScalar<T>& lambda,
                                   A2DMat<SymMat<T, N>>& E,
                                   A2DMat<SymMat<T, N>>& S) {
   return SymIsotropicExpr<T, N, ADorder::SECOND>(mu, lambda, E, S);
 }
 
+template <typename T, int N>
+KOKKOS_FUNCTION auto SymIsotropic(const T mu, const T lambda,
+                                  A2DMat<SymMat<T, N>>& E,
+                                  A2DMat<SymMat<T, N>>& S) {
+  return SymIsotropicExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE>(mu, lambda,
+                                                                     E, S);
+}
+
 namespace Test {
+
+template <typename T, int N>
+class SymIsotropicConstTest : public A2DTest<T, SymMat<T, N>, SymMat<T, N>> {
+ public:
+  using Input = VarTuple<T, SymMat<T, N>>;
+  using Output = VarTuple<T, SymMat<T, N>>;
+
+  std::string name() {
+    std::stringstream s;
+    s << "SymIsotropic<" << N << ">";
+    return s.str();
+  }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input& x) {
+    SymMat<T, N> E, S;
+    x.get_values(E);
+    SymIsotropic(T(0.314), T(0.731), E, S);
+    return MakeVarTuple<T>(S);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    SymMat<T, N> E0, Eb, S0, Sb;
+    ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+
+    x.get_values(E.value());
+    auto op = SymIsotropic(T(0.314), T(0.731), E, S);
+    auto stack = MakeStack(op);
+    seed.get_values(Sb);
+    stack.reverse();
+    g.set_values(E.bvalue());
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DMat<SymMat<T, N>> E, S;
+
+    x.get_values(E.value());
+    x.get_values(E.pvalue());
+
+    auto op = SymIsotropic(T(0.314), T(0.731), E, S);
+    auto stack = MakeStack(op);
+
+    seed.get_values(S.bvalue());
+    hval.get_values(S.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(E.hvalue());
+  }
+};
 
 template <typename T, int N>
 class SymIsotropicTest : public A2DTest<T, SymMat<T, N>, T, T, SymMat<T, N>> {
@@ -260,10 +310,15 @@ bool SymIsotropicTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;
-  SymIsotropicTest<Tc, 2> test1;
+  SymIsotropicConstTest<Tc, 2> test1;
   passed = passed && Run(test1, component, write_output);
-  SymIsotropicTest<Tc, 3> test2;
+  SymIsotropicConstTest<Tc, 3> test2;
   passed = passed && Run(test2, component, write_output);
+
+  SymIsotropicTest<Tc, 2> test3;
+  passed = passed && Run(test3, component, write_output);
+  SymIsotropicTest<Tc, 3> test4;
+  passed = passed && Run(test4, component, write_output);
 
   return passed;
 }

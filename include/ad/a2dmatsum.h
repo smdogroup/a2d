@@ -264,12 +264,12 @@ template <typename T, int N, int M, ADorder order, ADiffType ada, ADiffType adA,
           ADiffType adb, ADiffType adB, MatSymType sym>
 class MatSumScaleExpr {
  public:
-  using atype = ADScalarType<ada, order, T>;
+  using atype = ADScalarInputType<ada, order, T>;
   using Atype =
       ADMatType<adA, order,
                 typename std::conditional<sym == MatSymType::NORMAL,
                                           Mat<T, N, M>, SymMat<T, N>>::type>;
-  using btype = ADScalarType<adb, order, T>;
+  using btype = ADScalarInputType<adb, order, T>;
   using Btype =
       ADMatType<adB, order,
                 typename std::conditional<sym == MatSymType::NORMAL,
@@ -284,7 +284,7 @@ class MatSumScaleExpr {
                                             N * M, (N * (N + 1) / 2)>::value;
 
   KOKKOS_FUNCTION
-  MatSumScaleExpr(atype &alpha, Atype &A, btype &beta, Btype &B, Ctype &C)
+  MatSumScaleExpr(atype alpha, Atype &A, btype beta, Btype &B, Ctype &C)
       : alpha(alpha), A(A), beta(beta), B(B), C(C) {
     VecSumCore<T, size>(get_data(alpha), get_data(A), get_data(beta),
                         get_data(B), get_data(C));
@@ -294,6 +294,7 @@ class MatSumScaleExpr {
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
+
     if constexpr (ada == ADiffType::ACTIVE && adA == ADiffType::ACTIVE &&
                   adb == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
       VecSumCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(A),
@@ -329,18 +330,42 @@ class MatSumScaleExpr {
   KOKKOS_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     if constexpr (adA == ADiffType::ACTIVE) {
-      VecAddCore<T, size>(GetSeed<seed>::get_data(C),
+      VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(C),
                           GetSeed<seed>::get_data(A));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
-      VecAddCore<T, size>(GetSeed<seed>::get_data(C),
+      VecAddCore<T, size>(get_data(beta), GetSeed<seed>::get_data(C),
+                          GetSeed<seed>::get_data(B));
+    }
+    if constexpr (ada == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(alpha) +=
+          VecDotCore<T, size>(GetSeed<seed>::get_data(C), get_data(A));
+    }
+    if constexpr (adb == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(beta) +=
+          VecDotCore<T, size>(GetSeed<seed>::get_data(C), get_data(B));
+    }
+    if constexpr (adA == ADiffType::ACTIVE && ada == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(alpha) += VecDotCore<T, size>(
+          GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::p>::get_data(A));
+
+      VecAddCore<T, size>(GetSeed<ADseed::p>::get_data(alpha),
+                          GetSeed<ADseed::b>::get_data(C),
+                          GetSeed<seed>::get_data(A));
+    }
+    if constexpr (adB == ADiffType::ACTIVE && adb == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(beta) += VecDotCore<T, size>(
+          GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::p>::get_data(B));
+
+      VecAddCore<T, size>(GetSeed<ADseed::p>::get_data(beta),
+                          GetSeed<ADseed::b>::get_data(C),
                           GetSeed<seed>::get_data(B));
     }
   }
 
-  atype &alpha;
+  atype alpha;
   Atype &A;
-  btype &beta;
+  btype beta;
   Btype &B;
   Ctype &C;
 };
@@ -356,6 +381,15 @@ KOKKOS_FUNCTION auto MatSum(ADScalar<T> &alpha, ADMat<Mat<T, N, M>> &A,
                                                                 B, C);
 }
 
+template <typename T, int N, int M>
+KOKKOS_FUNCTION auto MatSum(const T alpha, ADMat<Mat<T, N, M>> &A, const T beta,
+                            ADMat<Mat<T, N, M>> &B, ADMat<Mat<T, N, M>> &C) {
+  return MatSumScaleExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
+                                                                B, C);
+}
+
 // Second-order AD
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, M>> &A,
@@ -363,6 +397,16 @@ KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, M>> &A,
                             A2DMat<Mat<T, N, M>> &C) {
   return MatSumScaleExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
                          ADiffType::ACTIVE, ADiffType::ACTIVE,
+                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
+                                                                B, C);
+}
+
+template <typename T, int N, int M>
+KOKKOS_FUNCTION auto MatSum(const T alpha, A2DMat<Mat<T, N, M>> &A,
+                            const T beta, A2DMat<Mat<T, N, M>> &B,
+                            A2DMat<Mat<T, N, M>> &C) {
+  return MatSumScaleExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, ADiffType::PASSIVE,
                          ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
                                                                 B, C);
 }

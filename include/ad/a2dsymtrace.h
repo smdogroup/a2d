@@ -21,9 +21,9 @@ template <typename T, int N, ADorder order>
 class SymMatTraceExpr {
  public:
   using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
-  using Scalar = ADScalarType<ADiffType::ACTIVE, order, T>;
+  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
-  KOKKOS_FUNCTION SymMatTraceExpr(Stype& S, Stype& E, Scalar& out)
+  KOKKOS_FUNCTION SymMatTraceExpr(Stype& S, Stype& E, dtype& out)
       : S(S), E(E), out(out) {
     get_data(out) = SymMatTraceCore<T, N>(get_data(S), get_data(E));
   }
@@ -61,7 +61,7 @@ class SymMatTraceExpr {
   }
 
   Stype &S, &E;
-  Scalar& out;
+  dtype& out;
 };
 
 template <typename T, int N>

@@ -167,6 +167,60 @@ KOKKOS_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
   }
 }
 
+template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
+KOKKOS_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
+  if constexpr (op == MatOp::NORMAL) {
+    // Ab = Sb * A
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < K; j++) {
+        int k = 0;
+        const T* s = &Sb[i * (i + 1) / 2];
+        const T* a = &A[j];
+
+        T val = 0.0;
+        for (; k < i; k++) {
+          val += s[0] * a[0];
+          a += K, s++;
+        }
+
+        for (; k < N; k++) {
+          val += s[0] * a[0];
+          a += K, s += k + 1;
+        }
+
+        val += A[K * i + j] * Sb[i + i * (i + 1) / 2];
+
+        Ab[0] += val;
+        Ab++;
+      }
+    }
+  } else {  // op == MatOp::TRANSPOSE
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < K; j++) {
+        int k = 0;
+        const T* a = &A[K * i];
+        const T* s = &Sb[j * (j + 1) / 2];
+
+        T val = 0.0;
+        for (; k < j; k++) {
+          val += s[0] * a[0];
+          a++, s++;
+        }
+
+        for (; k < K; k++) {
+          val += s[0] * a[0];
+          a++, s += k + 1;
+        }
+
+        val += A[K * i + j] * Sb[j + j * (j + 1) / 2];
+
+        Ab[0] += val;
+        Ab++;
+      }
+    }
+  }
+}
+
 template <MatOp op, typename T, int N, int K, int P>
 KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
   static_assert(
@@ -207,41 +261,19 @@ class SymMatRKExpr {
   }
 
   KOKKOS_FUNCTION void reverse() {
-    const SymMat<T, P>& Sb = S.bvalue();
-    const Mat<T, N, K>& Av = A.value();
-    Mat<T, N, K>& Ab = A.bvalue();
-
-    if constexpr (op == MatOp::NORMAL) {
-      // Ab = 2.0 * Sb * A
-      for (int i = 0; i < N; i++) {
-        for (int j = 0; j < K; j++) {
-          T val = 0.0;
-          for (int k = 0; k < N; k++) {
-            val += Sb(i, k) * Av(k, j);
-          }
-          val += Sb(i, i) * Av(i, j);
-          Ab(i, j) += val;
-        }
-      }
-    } else {  // op == MatOp::TRANSPOSE
-      // Ab = 2.0 * A * Sb
-      for (int i = 0; i < N; i++) {
-        for (int j = 0; j < K; j++) {
-          T val = 0.0;
-          for (int k = 0; k < K; k++) {
-            val += Av(i, k) * Sb(k, j);
-          }
-          val += Av(i, j) * Sb(j, j);
-          Ab(i, j) += val;
-        }
-      }
-    }
+    constexpr ADseed seed = ADseed::b;
+    SymMatRKCoreReverse<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(S),
+                                     GetSeed<seed>::get_data(A));
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    if constexpr (op == MatOp::NORMAL) {
-    } else {
-    }
+    SymMatRKCoreReverse<T, N, K, op>(get_data(A),
+                                     GetSeed<ADseed::h>::get_data(S),
+                                     GetSeed<ADseed::h>::get_data(A));
+
+    SymMatRKCoreReverse<T, N, K, op>(GetSeed<ADseed::p>::get_data(A),
+                                     GetSeed<ADseed::b>::get_data(S),
+                                     GetSeed<ADseed::h>::get_data(A));
   }
 
   Atype& A;

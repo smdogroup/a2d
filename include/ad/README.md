@@ -8,7 +8,9 @@ When using the AD routines, it is important to keep in mind that the first and s
 
 The matrix operations include the following set of operations
 
-1. Matrix multiplication: given $A \in \mathbb{R}^{n \times m}$ and $A \in \mathbb{R}^{m \times k}$, compute $C = A B$
+### Matrix multiplication
+
+Given $A \in \mathbb{R}^{n \times m}$ and $A \in \mathbb{R}^{m \times k}$, compute $C = A B$
 
 ```c++
 MatMatMult(A, B, C);
@@ -22,7 +24,9 @@ MatMatMult<MatOp::TRANSPOSE, MatOpt::NORMAL>(A, B, C);
 
 Note that the matrices must be the correct size.
 
-2. Matrix addition: given $A, B \in \mathbb{R}^{n \times m}$, compute $C = A + B$
+### Matrix addition
+
+Given $A, B \in \mathbb{R}^{n \times m}$, compute $C = A + B$
 
 ```c++
 MatSum(A, B, C);
@@ -34,7 +38,9 @@ More generally matrix sums can be performed with scalar multiples $\alpha$ and $
 MatSum(alpha, A, beta, B, C);
 ```
 
-3. Symmetrix matrix multiplication: given $A \in \mathbb{R}^{n \times k}$, compute the symmetric often rank-k matrix $S$ as $S = A A^{T}$
+### Symmetrix matrix multiplication
+
+Given $A \in \mathbb{R}^{n \times k}$, compute the symmetric often rank-k matrix $S$ as $S = A A^{T}$
 
 ```c++
 SymMatRK(A, S);
@@ -46,7 +52,9 @@ Similarly, $S = A^{T} A$ is
 SymMatRK<MatOpt::TRANSPOSE>(A, S);
 ```
 
-4. Symmetrix matrix addition: given $A \in \mathbb{R}^{n \times n}$, compute $S = A + A^{T}$
+### Symmetrix matrix addition
+
+Given $A \in \mathbb{R}^{n \times n}$, compute $S = A + A^{T}$
 
 ```c++
 SymMatSum(A, S);
@@ -58,13 +66,17 @@ Or, more generally, commpute $S = \alpha(A + A^{T})$ using
 SymMatSum(alpha, A, S);
 ```
 
-5. Matrix inverse: given $A \in \mathbb{R}^{n \times n}$, compute $B = A^{-1}$ for $n \le 3$
+### Matrix inverse
+
+Given $A \in \mathbb{R}^{n \times n}$, compute $B = A^{-1}$ for $n \le 3$
 
 ```c++
 MatInv(A, B);
 ```
 
-6. Matrix determinant: given $A \in \mathbb{R}^{n \times n}$, compute $\alpha = \text{det}(A)$
+### Matrix determinant
+
+Given $A \in \mathbb{R}^{n \times n}$, compute $\alpha = \text{det}(A)$
 
 ```c++
 MatDet(A, alpha);

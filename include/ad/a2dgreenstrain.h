@@ -15,7 +15,7 @@ namespace A2D {
 enum class GreenStrain { LINEAR, NONLINEAR };
 
 template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION void MatGreenStrain(Mat<T, N, N>& Ux, SymMat<T, N>& E) {
+KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   if constexpr (etype == GreenStrain::LINEAR) {
     LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
   } else {
@@ -162,18 +162,21 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
   }
 };
 
-void MatGreenStrainTestAll() {
+bool MatGreenStrainTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
+  bool passed = true;
   MatGreenStrainTest<GreenStrain::LINEAR, Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatGreenStrainTest<GreenStrain::NONLINEAR, Tc, 2> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
 
   MatGreenStrainTest<GreenStrain::LINEAR, Tc, 3> test3;
-  Run(test3);
+  passed = passed && Run(test3, component, write_output);
   MatGreenStrainTest<GreenStrain::NONLINEAR, Tc, 3> test4;
-  Run(test4);
+  passed = passed && Run(test4, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

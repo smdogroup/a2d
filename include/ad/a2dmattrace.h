@@ -37,10 +37,10 @@ template <typename T, int M, ADorder order, ADiffType adA>
 class MatTraceExpr {
  private:
   using Atype = ADMatType<adA, order, Mat<T, M, M>>;
-  using ScalarType = ADScalarType<ADiffType::ACTIVE, order, T>;
+  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
  public:
-  KOKKOS_FUNCTION MatTraceExpr(Atype& A, ScalarType& tr) : A(A), tr(tr) {
+  KOKKOS_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {
     get_data(tr) = MatTraceCore<T, M>(get_data(A));
   }
 
@@ -73,7 +73,7 @@ class MatTraceExpr {
 
  private:
   Atype& A;
-  ScalarType& tr;
+  dtype& tr;
 };
 
 template <typename T, int M>
@@ -143,12 +143,16 @@ class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-void MatTraceTestAll() {
+bool MatTraceTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatTraceTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatTraceTest<Tc, 4> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

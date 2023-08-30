@@ -160,12 +160,16 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 };
 
-void MatInvTestAll() {
+bool MatInvTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatInvTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatInvTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

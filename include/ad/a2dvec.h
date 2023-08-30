@@ -149,13 +149,12 @@ KOKKOS_FUNCTION T* get_hdata(A2DVec<Vec<T, n>>& vec) {
  * @tparam adiff_type passive or active
  * @tparam VecType the numeric type of the vector
  */
-template <ADiffType adiff_type, class VecType>
-using ADVecType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                            ADVec<VecType>, VecType>::type;
-
-template <ADiffType adiff_type, class VecType>
-using A2DVecType = typename std::conditional<adiff_type == ADiffType::ACTIVE,
-                                             A2DVec<VecType>, VecType>::type;
+template <ADiffType adiff_type, ADorder order, class VecType>
+using ADVecType = typename std::conditional<
+    adiff_type == ADiffType::ACTIVE,
+    typename std::conditional<order == ADorder::FIRST, ADVec<VecType>,
+                              A2DVec<VecType>>::type,
+    const VecType>::type;
 
 }  // namespace A2D
 #endif  // A2D_VEC_H

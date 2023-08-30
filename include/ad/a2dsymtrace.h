@@ -21,9 +21,9 @@ template <typename T, int N, ADorder order>
 class SymMatTraceExpr {
  public:
   using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
-  using Scalar = ADScalarType<ADiffType::ACTIVE, order, T>;
+  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
-  KOKKOS_FUNCTION SymMatTraceExpr(Stype& S, Stype& E, Scalar& out)
+  KOKKOS_FUNCTION SymMatTraceExpr(Stype& S, Stype& E, dtype& out)
       : S(S), E(E), out(out) {
     get_data(out) = SymMatTraceCore<T, N>(get_data(S), get_data(E));
   }
@@ -61,7 +61,7 @@ class SymMatTraceExpr {
   }
 
   Stype &S, &E;
-  Scalar& out;
+  dtype& out;
 };
 
 template <typename T, int N>
@@ -135,15 +135,18 @@ class SymMatTraceTest : public A2DTest<T, T, SymMat<T, N>, SymMat<T, N>> {
   }
 };
 
-void SymMatTraceTestAll() {
+bool SymMatTraceTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
+  bool passed = true;
   SymMatTraceTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   SymMatTraceTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
   SymMatTraceTest<Tc, 4> test3;
-  Run(test3);
+  passed = passed && Run(test3, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

@@ -11,8 +11,6 @@
 
 namespace A2D {
 
-enum class MatSymType { NORMAL, SYMMETRIC };
-
 template <typename T, int size>
 KOKKOS_FUNCTION void VecCopyCore(const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
@@ -82,24 +80,26 @@ KOKKOS_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
 }
 
 template <typename T, int N, int M>
-KOKKOS_FUNCTION void MatSum(Mat<T, N, M> &A, Mat<T, N, M> &B, Mat<T, N, M> &C) {
+KOKKOS_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
+                            Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N, int M>
-KOKKOS_FUNCTION void MatSum(T alpha, Mat<T, N, M> &A, T beta, Mat<T, N, M> &B,
-                            Mat<T, N, M> &C) {
+KOKKOS_FUNCTION void MatSum(const T alpha, const Mat<T, N, M> &A, const T beta,
+                            const Mat<T, N, M> &B, Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(alpha, get_data(A), beta, get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatSum(SymMat<T, N> &A, SymMat<T, N> &B, SymMat<T, N> &C) {
+KOKKOS_FUNCTION void MatSum(const SymMat<T, N> &A, const SymMat<T, N> &B,
+                            SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatSum(T alpha, SymMat<T, N> &A, T beta, SymMat<T, N> &B,
-                            SymMat<T, N> &C) {
+KOKKOS_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
+                            const SymMat<T, N> &B, SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(alpha, get_data(A), beta, get_data(B),
                                    get_data(C));
 }
@@ -304,6 +304,7 @@ class MatSumScaleExpr {
                              GetSeed<seed>::get_data(beta), get_data(B),
                              GetSeed<seed>::get_data(C));
     } else {
+      // This needs to be fixed..
     }
   }
 

@@ -8,6 +8,8 @@
 
 namespace A2D {
 
+enum class MatSymType { NORMAL, SYMMETRIC };
+
 template <typename T, int M, int N>
 class Mat {
  public:
@@ -351,7 +353,7 @@ using ADMatType = typename std::conditional<
     adiff_type == ADiffType::ACTIVE,
     typename std::conditional<order == ADorder::FIRST, ADMat<MatType>,
                               A2DMat<MatType>>::type,
-    MatType>::type;
+    const MatType>::type;
 }  // namespace A2D
 
 #endif  // A2D_MAT_H

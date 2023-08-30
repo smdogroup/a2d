@@ -6,6 +6,7 @@
 #include "a2denum.h"
 #include "a2dmat.h"
 #include "a2dobjs.h"
+#include "a2dtest.h"
 #include "ad/core/a2dgemmcore.h"
 
 namespace A2D {
@@ -377,6 +378,7 @@ bool SymMatRKTestAll(bool component = false, bool write_output = true) {
   passed = passed && SymMatRKTestHelper<double, 3, 3>(component, write_output);
   passed = passed && SymMatRKTestHelper<double, 2, 4>(component, write_output);
   passed = passed && SymMatRKTestHelper<double, 5, 2>(component, write_output);
+  passed = passed && SymMatRKTestHelper<double, 7, 5>(component, write_output);
 
   return passed;
 }

@@ -8,6 +8,7 @@
 #include "ad/a2dmatsum.h"
 #include "ad/a2dmattrace.h"
 #include "ad/a2dsymrk.h"
+#include "ad/a2dsymsum.h"
 #include "ad/a2dsymtrace.h"
 
 int main() {
@@ -23,9 +24,10 @@ int main() {
   tests.push_back(A2D::Test::MatTraceTestAll);
   tests.push_back(A2D::Test::MatGreenStrainTestAll);
   tests.push_back(A2D::Test::SymMatTraceTestAll);
-  // tests.push_back(A2D::Test::SymIsotropicTestAll);
+  tests.push_back(A2D::Test::SymIsotropicTestAll);
   tests.push_back(A2D::Test::MatSumTestAll);
   tests.push_back(A2D::Test::SymMatRKTestAll);
+  tests.push_back(A2D::Test::SymMatSumTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

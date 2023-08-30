@@ -349,7 +349,6 @@ class MatSumScaleExpr {
     if constexpr (adA == ADiffType::ACTIVE && ada == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(alpha) += VecDotCore<T, size>(
           GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::p>::get_data(A));
-
       VecAddCore<T, size>(GetSeed<ADseed::p>::get_data(alpha),
                           GetSeed<ADseed::b>::get_data(C),
                           GetSeed<seed>::get_data(A));
@@ -357,7 +356,6 @@ class MatSumScaleExpr {
     if constexpr (adB == ADiffType::ACTIVE && adb == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(beta) += VecDotCore<T, size>(
           GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::p>::get_data(B));
-
       VecAddCore<T, size>(GetSeed<ADseed::p>::get_data(beta),
                           GetSeed<ADseed::b>::get_data(C),
                           GetSeed<seed>::get_data(B));

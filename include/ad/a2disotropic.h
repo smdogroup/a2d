@@ -152,10 +152,10 @@ class SymIsotropicExpr {
                                 GetSeed<ADseed::p>::get_data(lambda),
                                 GetSeed<ADseed::b>::get_data(S),
                                 GetSeed<ADseed::h>::get_data(E));
-      SymIsotropicAddCore<T, N>(GetSeed<ADseed::b>::get_data(mu),
-                                GetSeed<ADseed::b>::get_data(lambda),
-                                GetSeed<ADseed::p>::get_data(S),
-                                GetSeed<ADseed::h>::get_data(E));
+      SymIsotropicReverseCoefCore<T, N>(GetSeed<ADseed::p>::get_data(E),
+                                        GetSeed<ADseed::b>::get_data(S),
+                                        GetSeed<ADseed::h>::get_data(mu),
+                                        GetSeed<ADseed::h>::get_data(lambda));
     }
   }
 
@@ -236,11 +236,9 @@ class SymIsotropicConstTest : public A2DTest<T, SymMat<T, N>, SymMat<T, N>> {
     A2DMat<SymMat<T, N>> E, S;
 
     x.get_values(E.value());
-    x.get_values(E.pvalue());
-
+    p.get_values(E.pvalue());
     auto op = SymIsotropic(T(0.314), T(0.731), E, S);
     auto stack = MakeStack(op);
-
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
@@ -292,11 +290,10 @@ class SymIsotropicTest : public A2DTest<T, SymMat<T, N>, T, T, SymMat<T, N>> {
     A2DMat<SymMat<T, N>> E, S;
 
     x.get_values(mu.value, lambda.value, E.value());
-    x.get_values(mu.pvalue, lambda.pvalue, E.pvalue());
+    p.get_values(mu.pvalue, lambda.pvalue, E.pvalue());
 
     auto op = SymIsotropic(mu, lambda, E, S);
     auto stack = MakeStack(op);
-
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();

@@ -10,7 +10,7 @@ The matrix operations include the following set of operations
 
 ### Matrix multiplication
 
-Given $A \in \mathbb{R}^{n \times m}$ and $A \in \mathbb{R}^{m \times k}$, compute $C = A B$
+Given $A \in \mathbb{R}^{n \times m}$ and $B \in \mathbb{R}^{m \times k}$, compute $C = A B$
 
 ```c++
 MatMatMult(A, B, C);
@@ -80,4 +80,28 @@ Given $A \in \mathbb{R}^{n \times n}$, compute $\alpha = \text{det}(A)$
 
 ```c++
 MatDet(A, alpha);
+```
+
+### Matrix trace
+
+Given $A \in \mathbb{R}^{n \times n}$, compute $\alpha = \text{tr}(A)$
+
+```c++
+MatTrace(A, alpha);
+```
+
+### Green strain
+
+Given $A \in \mathbb{R}^{n \times n}$, compute $E = \frac{1}{2} (A + A^{T} + A^{T} A)$
+
+```c++
+MatGreenStrain(A, E);
+```
+
+### Isotropic constitutive relationship
+
+Given $\mu$, $\lambda$ and $E$ compute $S = 2 \mu E + \lambda I \text{tr}(E)$
+
+```c++
+SymIsotropic(mu, lambda, E, S);
 ```

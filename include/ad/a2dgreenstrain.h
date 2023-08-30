@@ -15,7 +15,7 @@ namespace A2D {
 enum class GreenStrain { LINEAR, NONLINEAR };
 
 template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION void MatGreenStrain(Mat<T, N, N>& Ux, SymMat<T, N>& E) {
+KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   if constexpr (etype == GreenStrain::LINEAR) {
     LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
   } else {

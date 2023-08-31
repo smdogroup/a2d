@@ -12,6 +12,14 @@
 namespace A2D {
 
 template <typename T, int size>
+KOKKOS_FUNCTION void VecZero(T A[]) {
+  for (int i = 0; i < size; i++) {
+    A[0] = T(0.0);
+    A++;
+  }
+}
+
+template <typename T, int size>
 KOKKOS_FUNCTION void VecCopyCore(const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = A[0];
@@ -185,15 +193,15 @@ KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, ADMat<Mat<T, N, M>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, ADMat<Mat<T, N, M>> &B,
                             ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
                             ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
@@ -206,15 +214,15 @@ KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, ADMat<SymMat<T, N>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, ADMat<SymMat<T, N>> &B,
                             ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, SymMat<T, N> &B,
                             ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 // Second-order AD
@@ -228,15 +236,15 @@ KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, A2DMat<Mat<T, N, M>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, A2DMat<Mat<T, N, M>> &B,
                             A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
                             A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
@@ -249,15 +257,15 @@ KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, A2DMat<SymMat<T, N>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, A2DMat<SymMat<T, N>> &B,
                             A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, SymMat<T, N> &B,
                             A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M, ADorder order, ADiffType ada, ADiffType adA,
@@ -304,7 +312,24 @@ class MatSumScaleExpr {
                              GetSeed<seed>::get_data(beta), get_data(B),
                              GetSeed<seed>::get_data(C));
     } else {
-      // This needs to be fixed..
+      VecZero<T, size>(GetSeed<seed>::get_data(C));
+
+      if constexpr (adA == ADiffType::ACTIVE) {
+        VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(A),
+                            GetSeed<seed>::get_data(C));
+      }
+      if constexpr (adB == ADiffType::ACTIVE) {
+        VecAddCore<T, size>(get_data(beta), GetSeed<seed>::get_data(B),
+                            GetSeed<seed>::get_data(C));
+      }
+      if constexpr (ada == ADiffType::ACTIVE) {
+        VecAddCore<T, size>(GetSeed<seed>::get_data(alpha), get_data(A),
+                            GetSeed<seed>::get_data(C));
+      }
+      if constexpr (adb == ADiffType::ACTIVE) {
+        VecAddCore<T, size>(GetSeed<seed>::get_data(beta), get_data(B),
+                            GetSeed<seed>::get_data(C));
+      }
     }
   }
 
@@ -389,6 +414,25 @@ KOKKOS_FUNCTION auto MatSum(const T alpha, ADMat<Mat<T, N, M>> &A, const T beta,
                                                                 B, C);
 }
 
+template <typename T, int N>
+KOKKOS_FUNCTION auto MatSum(ADScalar<T> &alpha, ADMat<SymMat<T, N>> &A,
+                            ADScalar<T> &beta, ADMat<SymMat<T, N>> &B,
+                            ADMat<SymMat<T, N>> &C) {
+  return MatSumScaleExpr<T, N, N, ADorder::FIRST, ADiffType::ACTIVE,
+                         ADiffType::ACTIVE, ADiffType::ACTIVE,
+                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
+                                                                   beta, B, C);
+}
+
+template <typename T, int N>
+KOKKOS_FUNCTION auto MatSum(const T alpha, ADMat<SymMat<T, N>> &A, const T beta,
+                            ADMat<SymMat<T, N>> &B, ADMat<SymMat<T, N>> &C) {
+  return MatSumScaleExpr<T, N, N, ADorder::FIRST, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
+                                                                   beta, B, C);
+}
+
 // Second-order AD
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, M>> &A,
@@ -408,6 +452,26 @@ KOKKOS_FUNCTION auto MatSum(const T alpha, A2DMat<Mat<T, N, M>> &A,
                          ADiffType::ACTIVE, ADiffType::PASSIVE,
                          ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
                                                                 B, C);
+}
+
+template <typename T, int N>
+KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<SymMat<T, N>> &A,
+                            A2DScalar<T> &beta, A2DMat<SymMat<T, N>> &B,
+                            A2DMat<SymMat<T, N>> &C) {
+  return MatSumScaleExpr<T, N, N, ADorder::SECOND, ADiffType::ACTIVE,
+                         ADiffType::ACTIVE, ADiffType::ACTIVE,
+                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
+                                                                   beta, B, C);
+}
+
+template <typename T, int N>
+KOKKOS_FUNCTION auto MatSum(const T alpha, A2DMat<SymMat<T, N>> &A,
+                            const T beta, A2DMat<SymMat<T, N>> &B,
+                            A2DMat<SymMat<T, N>> &C) {
+  return MatSumScaleExpr<T, N, N, ADorder::SECOND, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, ADiffType::PASSIVE,
+                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
+                                                                   beta, B, C);
 }
 
 namespace Test {

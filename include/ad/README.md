@@ -2,7 +2,7 @@
 
 The core AD routines implement automatic differentiation on matrix and vector operations.
 
-When using the AD routines, it is important to keep in mind that the first and second-order derivatives are stored in place. As a result, overwriting intermediate varaibles in a solution procedure will produce incorrect derivative results. It is recommended to implement tests for all of your AD code. A2D has a test class that implements tests to ensure that the derivatives are correct.
+When using the AD routines, it is important to keep in mind that the first and second-order derivatives are stored in place. As a result, overwriting intermediate varaibles in an evaluation procedure will produce incorrect derivative results. It is recommended to implement tests for all of your AD code. A2D has a test class that implements tests to ensure that the derivatives are correct.
 
 ## Matrix operations
 
@@ -52,6 +52,14 @@ Similarly, $S = A^{T} A$ is
 SymMatRK<MatOpt::TRANSPOSE>(A, S);
 ```
 
+This operation can also be scaled as $S = \alpha A^{T} A$
+
+```c++
+SymMatRK<MatOpt::TRANSPOSE>(alpha, A, S);
+```
+
+For this operation, $\alpha$ must be a passive numeric constant.
+
 ### Symmetrix matrix addition
 
 Given $A \in \mathbb{R}^{n \times n}$, compute $S = A + A^{T}$
@@ -100,8 +108,129 @@ MatGreenStrain(A, E);
 
 ### Isotropic constitutive relationship
 
-Given $\mu$, $\lambda$ and $E$ compute $S = 2 \mu E + \lambda I \text{tr}(E)$
+Given $\mu$, $\lambda$ and $E$ compute $S = 2 \mu E + \lambda \text{tr}(E) I$
 
 ```c++
 SymIsotropic(mu, lambda, E, S);
+```
+
+### Symmetric multiplication with trace
+
+Given $E, S \in \mathbb{S}^{n}$, compute $\alpha = \text{tr}(E S)$
+
+```c++
+SymMatTrace(E, S, alpha);
+```
+
+## Example use of A2D routines
+
+The AD routines can be used in the following manner. Consider the computation of the strain energy given the displacement gradient in the computational coordinates $U_{\xi} \in \mathbb{R}^{n \times n}$ and the derivative of the physical coordinates with respect to the computational coordinates $J \in \mathbb{R}^{n \times n}$.
+
+This computation would involve the following steps:
+
+* Compute $J^{-1}$
+* Compute $U_{x} = U_{\xi} J^{-1}$
+* Compute $F = I + U_{x}$
+* Compute $E = \frac{1}{2} F^{T} F$
+* Compute $S = 2 \mu E + \lambda \text{tr}(E) I$
+* Compute $U = \text{tr}(E S)$
+
+Note that this computes two times the strain energy.
+
+In A2D, this could be implemented with the following sequence of steps:
+
+```c++
+Mat<T, N, N> Uxi, J; // Input
+T output;            // Output
+
+Mat<T, N, N> Jinv, Ux, F, Id;
+SymMat<T, N> E, S;
+
+MatInv(J, Jinv);
+MatMatMult(Uxi, Jinv, Ux);
+MatSum(Ux, Id, F);
+SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);
+SymIsotropic(T(0.35), T(0.51), E, S);
+SymMatTrace(E, S, output);
+```
+
+Here $T$ and $N$ are template parameters. The scalar, matrix and symmetric matrix types are all A2D types designed to be used directly for computations without AD information.
+
+To implement AD for first derivatives, A2D uses AD types within the code. The A2D operations support a mixture of AD types and regular types that represent passive variables.
+
+The first order AD types use a container where the data for the value and the first derivative must be passed into the constructor for matrix and vector types. For instance the constructor for `Uxi` takes the value and derivative `Uxi0` and `Uxib`.
+
+The stack of operations is created using a call to `MakeStack`. Once created, the stack can be used to execute the sequence of calls needed to perform reverse mode AD.
+
+The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`, and the call to `stack.reverse();` performs the reverse mode AD. After this call, the values `Uxib` and `Jb` contain the desired derivatives.
+
+```c++
+// Passive matrix (constant)
+Mat<T, N, N> Id;
+
+// Input and derivative output
+ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
+
+// Output
+ADScalar<T> output;
+
+// Intermediate values
+ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
+ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+
+auto stack = MakeStack(
+    MatInv(J, Jinv),
+    MatMatMult(Uxi, Jinv, Ux),
+    MatSum(Ux, Id, F),
+    SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
+    SymIsotropic(T(0.35), T(0.51), E, S),
+    SymMatTrace(E, S, output));
+
+// Set the seed value
+output.bvalue = 1.0;
+
+// Reverse mode AD through the stack
+stack.reverse();
+
+// Jb and Uxib contain the derivatives
+```
+
+For second derivatives, A2D uses Hessian-vector products that require a combination of forward and reverse mode.
+
+```c++
+// Passive matrix (constant)
+Mat<T, N, N> Id;
+
+// Input
+A2DMat<Mat<T, N, N>> Uxi, J;
+
+// Outputs
+A2DScalar<T> output;
+
+// Intermediate data
+A2DMat<Mat<T, N, N>> Jinv, Ux, F;
+A2DMat<SymMat<T, N>> E, S;
+
+auto stack = MakeStack(
+    MatInv(J, Jinv),
+    MatMatMult(Uxi, Jinv, Ux),
+    MatSum(Ux, Id, F),
+    SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
+    SymIsotropic(T(0.35), T(0.51), E, S),
+    SymMatTrace(E, S, output));
+
+// Set the seed value and the second derivative value
+output.bvalue = 1.0;
+stack.reverse();
+
+// Set values for the direction p
+// Set Uxi.pvalue();
+// Set J.pvalue();
+output.hvalue = 0.0;
+
+// Perform the forward and reverse passes
+stack.hforward();
+stack.hreverse();
+
+// Second derivatives are now available in Uxi.hvalue(); and J.hvalue();
 ```

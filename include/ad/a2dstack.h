@@ -9,7 +9,7 @@ class OperationRefStack {
   using StackTuple = std::tuple<Operations&...>;
   static constexpr index_t num_ops = sizeof...(Operations);
 
-  OperationRefStack(Operations&... s) : stack(std::tie(s...)) {}
+  OperationRefStack(Operations&... s) : stack(std::tie(s...)) { eval_<0>(); }
 
   // First-order AD
   void forward() { forward_<0>(); }
@@ -21,6 +21,14 @@ class OperationRefStack {
 
  private:
   StackTuple stack;
+
+  template <index_t index>
+  void eval_() {
+    std::get<index>(stack).eval();
+    if constexpr (index < num_ops - 1) {
+      eval_<index + 1>();
+    }
+  }
 
   template <index_t index>
   void forward_() {
@@ -61,7 +69,9 @@ class OperationStack {
   using StackTuple = std::tuple<Operations...>;
   static constexpr index_t num_ops = sizeof...(Operations);
 
-  OperationStack(Operations&&... s) : stack(std::forward<Operations>(s)...) {}
+  OperationStack(Operations&&... s) : stack(std::forward<Operations>(s)...) {
+    eval_<0>();
+  }
 
   // First-order AD
   void forward() { forward_<0>(); }
@@ -73,6 +83,14 @@ class OperationStack {
 
  private:
   StackTuple stack;
+
+  template <index_t index>
+  void eval_() {
+    std::get<index>(stack).eval();
+    if constexpr (index < num_ops - 1) {
+      eval_<index + 1>();
+    }
+  }
 
   template <index_t index>
   void forward_() {

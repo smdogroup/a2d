@@ -83,7 +83,9 @@ class MatMatMultExpr {
 
  public:
   KOKKOS_FUNCTION MatMatMultExpr(Atype& A, Btype& B, Ctype& C)
-      : A(A), B(B), C(C) {
+      : A(A), B(B), C(C) {}
+
+  KOKKOS_FUNCTION void eval() {
     MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                   get_data(C));
   }

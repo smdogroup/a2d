@@ -90,7 +90,9 @@ class SymIsotropicExpr {
   using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
 
   KOKKOS_FUNCTION SymIsotropicExpr(mutype mu, mutype lambda, Etype& E, Stype& S)
-      : mu(mu), lambda(lambda), E(E), S(S) {
+      : mu(mu), lambda(lambda), E(E), S(S) {}
+
+  KOKKOS_FUNCTION void eval() {
     SymIsotropicCore<T, N>(get_data(mu), get_data(lambda), get_data(E),
                            get_data(S));
   }

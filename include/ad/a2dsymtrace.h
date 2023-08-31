@@ -24,7 +24,9 @@ class SymMatTraceExpr {
   using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
   KOKKOS_FUNCTION SymMatTraceExpr(Stype& S, Stype& E, dtype& out)
-      : S(S), E(E), out(out) {
+      : S(S), E(E), out(out) {}
+
+  KOKKOS_FUNCTION void eval() {
     get_data(out) = SymMatTraceCore<T, N>(get_data(S), get_data(E));
   }
 

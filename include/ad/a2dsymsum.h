@@ -91,7 +91,9 @@ class SymMatSumExpr {
   using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
 
   KOKKOS_FUNCTION SymMatSumExpr(atype alpha, Atype &A, Stype &S)
-      : alpha(alpha), A(A), S(S) {
+      : alpha(alpha), A(A), S(S) {}
+
+  KOKKOS_FUNCTION void eval() {
     SymMatSumCore<T, N>(get_data(alpha), get_data(A), get_data(S));
   }
 

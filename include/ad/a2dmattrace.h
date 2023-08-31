@@ -40,7 +40,9 @@ class MatTraceExpr {
   using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
  public:
-  KOKKOS_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {
+  KOKKOS_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {}
+
+  KOKKOS_FUNCTION void eval() {
     get_data(tr) = MatTraceCore<T, M>(get_data(A));
   }
 

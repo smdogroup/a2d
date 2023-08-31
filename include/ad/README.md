@@ -100,8 +100,16 @@ MatGreenStrain(A, E);
 
 ### Isotropic constitutive relationship
 
-Given $\mu$, $\lambda$ and $E$ compute $S = 2 \mu E + \lambda I \text{tr}(E)$
+Given $\mu$, $\lambda$ and $E$ compute $S = 2 \mu E + \lambda \text{tr}(E) I$
 
 ```c++
 SymIsotropic(mu, lambda, E, S);
+```
+
+### Symmetric multiplication with trace
+
+Given $E, S \in \mathbb{S}^{n}$, compute $\alpha = \text{tr}(E S)$
+
+```c++
+SymMatTrace(E, S, alpha);
 ```

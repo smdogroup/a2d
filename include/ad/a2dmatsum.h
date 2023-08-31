@@ -8,84 +8,9 @@
 #include "a2dobjs.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
+#include "ad/core/a2dveccore.h"
 
 namespace A2D {
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecZero(T A[]) {
-  for (int i = 0; i < size; i++) {
-    A[0] = T(0.0);
-    A++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecCopyCore(const T A[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] = A[0];
-    C++, A++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecAddCore(const T A[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] += A[0];
-    C++, A++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecAddCore(const T alpha, const T A[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] += alpha * A[0];
-    C++, A++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION T VecDotCore(const T A[], const T B[]) {
-  T dot = 0.0;
-  for (int i = 0; i < size; i++) {
-    dot += A[0] * B[0];
-    A++, B++;
-  }
-  return dot;
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCore(const T A[], const T B[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] = A[0] + B[0];
-    C++, A++, B++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
-                                const T B[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] = alpha * A[0] + beta * B[0];
-    C++, A++, B++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] += A[0] + B[0];
-    C++, A++, B++;
-  }
-}
-
-template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
-                                   const T B[], T C[]) {
-  for (int i = 0; i < size; i++) {
-    C[0] += alpha * A[0] + beta * B[0];
-    C++, A++, B++;
-  }
-}
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
@@ -132,7 +57,9 @@ class MatSumExpr {
                                             N * M, (N * (N + 1) / 2)>::value;
 
   KOKKOS_FUNCTION
-  MatSumExpr(Atype &A, Btype &B, Ctype &C) : A(A), B(B), C(C) {
+  MatSumExpr(Atype &A, Btype &B, Ctype &C) : A(A), B(B), C(C) {}
+
+  KOKKOS_FUNCTION void eval() {
     VecSumCore<T, size>(get_data(A), get_data(B), get_data(C));
   }
 
@@ -293,7 +220,9 @@ class MatSumScaleExpr {
 
   KOKKOS_FUNCTION
   MatSumScaleExpr(atype alpha, Atype &A, btype beta, Btype &B, Ctype &C)
-      : alpha(alpha), A(A), beta(beta), B(B), C(C) {
+      : alpha(alpha), A(A), beta(beta), B(B), C(C) {}
+
+  KOKKOS_FUNCTION void eval() {
     VecSumCore<T, size>(get_data(alpha), get_data(A), get_data(beta),
                         get_data(B), get_data(C));
   }
@@ -312,8 +241,7 @@ class MatSumScaleExpr {
                              GetSeed<seed>::get_data(beta), get_data(B),
                              GetSeed<seed>::get_data(C));
     } else {
-      VecZero<T, size>(GetSeed<seed>::get_data(C));
-
+      VecZeroCore<T, size>(GetSeed<seed>::get_data(C));
       if constexpr (adA == ADiffType::ACTIVE) {
         VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(A),
                             GetSeed<seed>::get_data(C));

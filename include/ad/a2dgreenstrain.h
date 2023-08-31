@@ -29,7 +29,9 @@ class MatGreenStrainExpr {
   using Utype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
   using Etype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
 
-  KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {
+  KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
+
+  KOKKOS_FUNCTION void eval() {
     if constexpr (etype == GreenStrain::LINEAR) {
       LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
     } else {

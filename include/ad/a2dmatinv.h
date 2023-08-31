@@ -33,9 +33,9 @@ class MatInvExpr {
   static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
  public:
-  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {
-    MatInvCore<T, N>(get_data(A), get_data(Ainv));
-  }
+  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {}
+
+  KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {

@@ -6,7 +6,7 @@ When using the AD routines, it is important to keep in mind that the first and s
 
 ## Matrix operations
 
-The matrix operations include the following set of operations
+A2D implements the following set of matrix operations
 
 ### Matrix multiplication
 
@@ -122,6 +122,102 @@ Given $E, S \in \mathbb{S}^{n}$, compute $\alpha = \text{tr}(E S)$
 SymMatTrace(E, S, alpha);
 ```
 
+### Matrix scale
+
+- [ ] Complete operation
+
+Given $\alpha$ and $A \in \mathbb{R}^{n \times n}$, compute $B = \alpha A$
+
+```c++
+MatScale(alpha, A, B);
+```
+
+## Vector operations
+
+A2D implements the following set of vector operations
+
+### Norm
+
+- [ ] Complete operation
+
+$\alpha = ||x||_{2}$
+
+```c++
+VecNorm(x, alpha);
+```
+
+### Normalize
+
+- [ ] Complete operation
+
+$y = x / || x ||_{2}$
+
+```c++
+VecNormalize(x, y);
+```
+
+### Scale
+
+- [ ] Complete operation
+
+$y = \alpha x$
+
+```c++
+VecScale(alpha, x, y);
+```
+
+### Dot product
+
+- [ ] Complete operation
+
+$\alpha = x^{T} y$
+
+```c++
+VecDot(x, y, alpha);
+```
+
+### Vector sum
+
+- [ ] Complete operation
+
+$z = \alpha x + \beta y$
+
+```c++
+VecSum(alpha, x, beta, y, z);
+```
+
+### Cross-product ($n = 3$ only)
+
+- [ ] Complete operation
+
+$z = x \times y$
+
+```c++
+VecCross(x, y, z);
+```
+
+### Outer-product
+
+- [ ] Complete operation
+
+$A = x y^{T}$
+
+```c++
+VecOuterProduct(x, y, A);
+```
+
+### Symmetric outer-product
+
+- [ ] Complete operation
+
+$S = \alpha x x^{T}$
+
+```c++
+VecSymOuterProduct(alpha, x, S);
+```
+
+$\alpha$ is a passive numeric constant.
+
 ## Example use of A2D routines
 
 The AD routines can be used in the following manner. Consider the computation of the strain energy given the displacement gradient in the computational coordinates $U_{\xi} \in \mathbb{R}^{n \times n}$ and the derivative of the physical coordinates with respect to the computational coordinates $J \in \mathbb{R}^{n \times n}$.
@@ -234,3 +330,5 @@ stack.hreverse();
 
 // Second derivatives are now available in Uxi.hvalue(); and J.hvalue();
 ```
+
+## Testing AD expressions

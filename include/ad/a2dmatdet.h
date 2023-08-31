@@ -20,9 +20,9 @@ class MatDetExpr {
   using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
  public:
-  KOKKOS_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {
-    get_data(det) = MatDetCore<T, N>(get_data(A));
-  }
+  KOKKOS_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {}
+
+  KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {

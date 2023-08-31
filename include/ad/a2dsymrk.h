@@ -366,6 +366,9 @@ class SymMatRKExpr {
     static_assert(
         (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
         "SymMatRK matrix dimensions must agree");
+  }
+
+  KOKKOS_FUNCTION void eval() {
     SymMatRKCore<T, N, K, op>(get_data(A), get_data(S));
   }
 
@@ -420,6 +423,9 @@ class SymMatRKScaleExpr {
     static_assert(
         (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
         "SymMatRK matrix dimensions must agree");
+  }
+
+  KOKKOS_FUNCTION void eval() {
     SymMatRKCoreScale<T, N, K, op>(alpha, get_data(A), get_data(S));
   }
 

@@ -113,6 +113,11 @@ KOKKOS_FUNCTION T* get_data(Vec<T, n>& vec) {
 }
 
 template <typename T, int n>
+KOKKOS_FUNCTION const T* get_data(const Vec<T, n>& vec) {
+  return vec.V;
+}
+
+template <typename T, int n>
 KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, n>>& vec) {
   return vec.V.V;
 }

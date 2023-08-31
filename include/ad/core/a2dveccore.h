@@ -5,6 +5,20 @@
 
 namespace A2D {
 
+template <typename T>
+KOKKOS_FUNCTION void VecCrossCore(const T x[], const T y[], T v[]) {
+  v[0] = x[1] * y[2] - x[2] * y[1];
+  v[1] = x[2] * y[0] - x[0] * y[2];
+  v[2] = x[0] * y[1] - x[1] * y[0];
+}
+
+template <typename T>
+KOKKOS_FUNCTION void VecCrossCoreAdd(const T x[], const T y[], T v[]) {
+  v[0] += x[1] * y[2] - x[2] * y[1];
+  v[1] += x[2] * y[0] - x[0] * y[2];
+  v[2] += x[0] * y[1] - x[1] * y[0];
+}
+
 template <typename T, int size>
 KOKKOS_FUNCTION void VecZeroCore(T A[]) {
   for (int i = 0; i < size; i++) {

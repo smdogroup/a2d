@@ -279,7 +279,7 @@ class GetSeed {
   template <typename T, int N>
   static KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
-    return value.Vb;
+    return value.Vb.V;
   }
 
   template <typename T, int N>
@@ -287,11 +287,11 @@ class GetSeed {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DScalar");
     if constexpr (seed == ADseed::b) {
-      return value.Vb;
+      return value.Vb.V;
     } else if constexpr (seed == ADseed::p) {
-      return value.Vp;
+      return value.Vp.V;
     } else {  // seed == ADseed::h
-      return value.Vh;
+      return value.Vh.V;
     }
   }
 

@@ -10,6 +10,7 @@
 #include "ad/a2dsymrk.h"
 #include "ad/a2dsymsum.h"
 #include "ad/a2dsymtrace.h"
+#include "ad/a2dveccross.h"
 
 using namespace A2D;
 
@@ -247,6 +248,7 @@ int main() {
   tests.push_back(A2D::Test::MatSumTestAll);
   tests.push_back(A2D::Test::SymMatRKTestAll);
   tests.push_back(A2D::Test::SymMatSumTestAll);
+  tests.push_back(A2D::Test::VecCrossTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

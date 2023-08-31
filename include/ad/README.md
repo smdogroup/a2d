@@ -138,9 +138,7 @@ A2D implements the following set of vector operations
 
 ### Norm
 
-- [ ] Complete operation
-
-$\alpha = ||x||_{2}$
+Compute the 2-norm of the vector $x \in \mathbb{R}^{n}$ such that $\alpha = ||x||_{2}$
 
 ```c++
 VecNorm(x, alpha);
@@ -148,9 +146,9 @@ VecNorm(x, alpha);
 
 ### Normalize
 
-- [ ] Complete operation
+- [ ] Debugging required
 
-$y = x / || x ||_{2}$
+Normalize the input vector $x \in \mathbb{R}^{n}$ such that $y = \frac{1}{|| x ||_{2}} x$
 
 ```c++
 VecNormalize(x, y);
@@ -158,9 +156,7 @@ VecNormalize(x, y);
 
 ### Scale
 
-- [ ] Complete operation
-
-$y = \alpha x$
+Scale the input vector $x \in \mathbb{R}^{n}$ such that $y = \alpha x$
 
 ```c++
 VecScale(alpha, x, y);
@@ -168,9 +164,7 @@ VecScale(alpha, x, y);
 
 ### Dot product
 
-- [ ] Complete operation
-
-$\alpha = x^{T} y$
+Given the input vectors $x, y \in \mathbb{R}^{n}$ compute the scalar value $\alpha = x^{T} y$
 
 ```c++
 VecDot(x, y, alpha);
@@ -188,9 +182,7 @@ VecSum(alpha, x, beta, y, z);
 
 ### Cross-product ($n = 3$ only)
 
-- [ ] Complete operation
-
-$z = x \times y$
+Given the input vectors $x, y \in \mathbb{R}^{3}$ compute the output vector $z = x \times y$
 
 ```c++
 VecCross(x, y, z);

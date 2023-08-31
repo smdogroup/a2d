@@ -193,15 +193,15 @@ KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, ADMat<Mat<T, N, M>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, ADMat<Mat<T, N, M>> &B,
                             ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
                             ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
@@ -214,15 +214,15 @@ KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, ADMat<SymMat<T, N>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, ADMat<SymMat<T, N>> &B,
                             ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, SymMat<T, N> &B,
                             ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 // Second-order AD
@@ -236,15 +236,15 @@ KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, A2DMat<Mat<T, N, M>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, A2DMat<Mat<T, N, M>> &B,
                             A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
                             A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
 }
 
 template <typename T, int N, int M>
@@ -257,15 +257,15 @@ KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, A2DMat<SymMat<T, N>> &B,
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, A2DMat<SymMat<T, N>> &B,
                             A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
+                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M>
 KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, SymMat<T, N> &B,
                             A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
+                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
 }
 
 template <typename T, int N, int M, ADorder order, ADiffType ada, ADiffType adA,

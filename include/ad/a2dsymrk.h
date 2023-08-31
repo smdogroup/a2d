@@ -292,6 +292,72 @@ KOKKOS_FUNCTION auto SymMatRK(A2DMat<Mat<T, N, K>>& A,
   return SymMatRKExpr<T, N, K, P, ADorder::SECOND, op>(A, S);
 }
 
+template <typename T, int N, int K, int P, ADorder order, ADiffType ada,
+          ADiffType adA, MatOp op>
+class SymMatRKScaleExpr {
+ private:
+  using atype = ADScalarInputType<ada, order, T>;
+  using Atype = ADMatType<adA, order, Mat<T, N, K>>;
+  using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, P>>;
+
+ public:
+  KOKKOS_FUNCTION SymMatRKScaleExpr(atype& alpha, Atype& A, Stype& S)
+      : alpha(alpha), A(A), S(S) {
+    static_assert(
+        (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
+        "SymMatRK matrix dimensions must agree");
+    SymMatRKCore<T, N, K, op>(get_data(A), get_data(S));
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    SymMatR2KCore<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(A),
+                               GetSeed<seed>::get_data(S));
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    constexpr ADseed seed = ADseed::b;
+    SymMatRKCoreReverse<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(S),
+                                     GetSeed<seed>::get_data(A));
+  }
+
+  KOKKOS_FUNCTION void hreverse() {
+    SymMatRKCoreReverse<T, N, K, op>(get_data(A),
+                                     GetSeed<ADseed::h>::get_data(S),
+                                     GetSeed<ADseed::h>::get_data(A));
+
+    SymMatRKCoreReverse<T, N, K, op>(GetSeed<ADseed::p>::get_data(A),
+                                     GetSeed<ADseed::b>::get_data(S),
+                                     GetSeed<ADseed::h>::get_data(A));
+  }
+};
+
+template <MatOp op, typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(ADScalar<T>& alpha, ADMat<Mat<T, N, K>>& A,
+                              ADMat<SymMat<T, P>>& S) {
+  return SymMatRKScaleExpr<T, N, K, P, ADorder::FIRST, op>(alpha, A, S);
+}
+
+template <MatOp op, typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADMat<Mat<T, N, K>>& A,
+                              ADMat<SymMat<T, P>>& S) {
+  return SymMatRKScaleExpr<T, N, K, P, ADorder::FIRST, op>(alpha, A, S);
+}
+
+template <MatOp op, typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(ADScalar<T>& alpha, const Mat<T, N, K>& A,
+                              ADMat<SymMat<T, P>>& S) {
+  return SymMatRKScaleExpr<T, N, K, P, ADorder::FIRST, op>(alpha, A, S);
+}
+
+template <MatOp op, typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(A2DMat<Mat<T, N, K>>& A,
+                              A2DMat<SymMat<T, P>>& S) {
+  return SymMatRKExpr<T, N, K, P, ADorder::SECOND, op>(A, S);
+}
+
 namespace Test {
 
 template <MatOp op, typename T, int N, int M, int P>

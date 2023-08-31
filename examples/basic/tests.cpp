@@ -217,19 +217,26 @@ class DefGradTest
   }
 };
 
+bool MatIntegrationTests(bool component, bool write_output) {
+  bool passed = true;
+
+  StrainTest<std::complex<double>, 3> test1;
+  passed = passed && A2D::Test::Run(test1, component, write_output);
+
+  DefGradTest<std::complex<double>, 3> test2;
+  passed = passed && A2D::Test::Run(test2, component, write_output);
+
+  return passed;
+}
+
 int main() {
   bool component = false;     // Default to a projection test
   bool write_output = false;  // Don't write output;
 
-  StrainTest<std::complex<double>, 3> test1;
-  A2D::Test::Run(test1);
-
-  DefGradTest<std::complex<double>, 3> test2;
-  A2D::Test::Run(test2);
-
   typedef std::function<bool(bool, bool)> TestFunc;
   std::vector<TestFunc> tests;
 
+  tests.push_back(MatIntegrationTests);
   tests.push_back(A2D::Test::MatMatMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);

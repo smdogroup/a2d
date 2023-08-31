@@ -58,6 +58,8 @@ This operation can also be scaled as $S = \alpha A^{T} A$
 SymMatRK<MatOpt::TRANSPOSE>(alpha, A, S);
 ```
 
+For this operation, $\alpha$ must be a passive numeric constant.
+
 ### Symmetrix matrix addition
 
 Given $A \in \mathbb{R}^{n \times n}$, compute $S = A + A^{T}$

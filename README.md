@@ -9,6 +9,26 @@ AD".
 A2D is a header only c++ templated library with python binding created with
 [pybind11](https://pybind11.readthedocs.io/en/stable/).
 
+## TODO list
+- GPU support
+    - [ ] replace plain C-array with Kokkos array for all data that are needed from GPU
+    - [ ] decorate all functions that are needed from device
+    - [ ] make all element operations in ```feelement.h``` support GPU parallelization
+- AD
+    - [ ] complete core operations
+    - [ ] complete AD/A2D expressions
+    - [ ] unit test for core operations and AD/A2D expressions
+- General
+    - [ ] ```feelementmat.h``` add a parallel implementation of ElementMat (similar to ElementVector)
+    - [ ] ```array.h``` replace reference implementations under ```BLAS``` namespace with Kokkos kernel functions
+    - [ ] ```a2dobjs.h``` drop ```A2D::fill()``` and use Kokkos kernel
+    - [ ] ```integrand_[poisson/elasticity/heat_conduction].h``` rename ```weak()``` -> ```residual()```
+    - [ ] ```integrand_[poisson/elasticity/heat_conduction].h``` drop Jacobian vector product functor and Adjoint jacobian product functor, compute second order derivative matrices directly using ```jtransform()``` (see ```IntegrandTopoLinearElasticity::jacobian()``` for example)
+    - [ ] ```feelement.h``` change ```add_jacobian()```, ```add_jacobian_vector_product()```, etc. accordingly
+
+
+
+
 ## Theory
 [So, how does A2D solve PDEs?](docs/theory.md)
 

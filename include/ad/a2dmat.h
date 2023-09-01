@@ -8,6 +8,8 @@
 
 namespace A2D {
 
+enum class MatSymType { NORMAL, SYMMETRIC };
+
 template <typename T, int M, int N>
 class Mat {
  public:
@@ -214,6 +216,11 @@ KOKKOS_FUNCTION T* get_data(Mat<T, m, n>& mat) {
 }
 
 template <typename T, int m, int n>
+KOKKOS_FUNCTION const T* get_data(const Mat<T, m, n>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m, int n>
 KOKKOS_FUNCTION T* get_data(ADMat<Mat<T, m, n>>& mat) {
   return mat.A.A;
 }
@@ -225,6 +232,11 @@ KOKKOS_FUNCTION T* get_data(A2DMat<Mat<T, m, n>>& mat) {
 
 template <typename T, int m>
 KOKKOS_FUNCTION T* get_data(SymMat<T, m>& mat) {
+  return mat.A;
+}
+
+template <typename T, int m>
+KOKKOS_FUNCTION const T* get_data(const SymMat<T, m>& mat) {
   return mat.A;
 }
 
@@ -267,7 +279,7 @@ class GetSeed {
   template <typename T, int N>
   static KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
-    return value.Vb;
+    return value.Vb.V;
   }
 
   template <typename T, int N>
@@ -275,11 +287,11 @@ class GetSeed {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DScalar");
     if constexpr (seed == ADseed::b) {
-      return value.Vb;
+      return value.Vb.V;
     } else if constexpr (seed == ADseed::p) {
-      return value.Vp;
+      return value.Vp.V;
     } else {  // seed == ADseed::h
-      return value.Vh;
+      return value.Vh.V;
     }
   }
 
@@ -341,7 +353,7 @@ using ADMatType = typename std::conditional<
     adiff_type == ADiffType::ACTIVE,
     typename std::conditional<order == ADorder::FIRST, ADMat<MatType>,
                               A2DMat<MatType>>::type,
-    MatType>::type;
+    const MatType>::type;
 }  // namespace A2D
 
 #endif  // A2D_MAT_H

@@ -17,12 +17,12 @@ template <typename T, int N, ADorder order>
 class MatDetExpr {
  private:
   using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
-  using ScalarType = ADScalarType<ADiffType::ACTIVE, order, T>;
+  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
 
  public:
-  KOKKOS_FUNCTION MatDetExpr(Atype& A, ScalarType& det) : A(A), det(det) {
-    get_data(det) = MatDetCore<T, N>(get_data(A));
-  }
+  KOKKOS_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {}
+
+  KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
@@ -51,7 +51,7 @@ class MatDetExpr {
   }
 
   Atype& A;
-  ScalarType& det;
+  dtype& det;
 };
 
 template <typename T, int N>
@@ -122,12 +122,16 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-void MatDetTestAll() {
+bool MatDetTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatDetTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatDetTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

@@ -33,9 +33,9 @@ class MatInvExpr {
   static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
  public:
-  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {
-    MatInvCore<T, N>(get_data(A), get_data(Ainv));
-  }
+  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {}
+
+  KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
@@ -160,12 +160,16 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 };
 
-void MatInvTestAll() {
+bool MatInvTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
+
+  bool passed = true;
   MatInvTest<Tc, 2> test1;
-  Run(test1);
+  passed = passed && Run(test1, component, write_output);
   MatInvTest<Tc, 3> test2;
-  Run(test2);
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
 }
 
 }  // namespace Test

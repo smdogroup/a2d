@@ -29,9 +29,15 @@ class A2DScalar {
   T hvalue;
 };
 
+double get_data(const double value) { return value; }
+
 double& get_data(double& value) { return value; }
 
 std::complex<double>& get_data(std::complex<double>& value) { return value; }
+
+std::complex<double> get_data(const std::complex<double> value) {
+  return value;
+}
 
 template <typename T>
 T& get_data(ADScalar<T>& value) {
@@ -45,6 +51,22 @@ T& get_data(A2DScalar<T>& value) {
 
 /**
  * @brief Select type based on whether the scalar is passive or active (can be
+ * differentiated). This template is design for inputs to classes that may be
+ * numerical constants and includes the reference in the defintion.
+ *
+ * @tparam adiff_type passive or active
+ * @tparam order first (AD) or second (A2D)
+ * @tparam MatType the numeric type of the matrix
+ */
+template <ADiffType adiff_type, ADorder order, typename T>
+using ADScalarInputType = typename std::conditional<
+    adiff_type == ADiffType::ACTIVE,
+    typename std::conditional<order == ADorder::FIRST, ADScalar<T>&,
+                              A2DScalar<T>&>::type,
+    const T>::type;
+
+/**
+ * @brief Select type based on whether the scalar is passive or active (can be
  * differentiated)
  *
  * @tparam adiff_type passive or active
@@ -54,9 +76,9 @@ T& get_data(A2DScalar<T>& value) {
 template <ADiffType adiff_type, ADorder order, typename T>
 using ADScalarType = typename std::conditional<
     adiff_type == ADiffType::ACTIVE,
-    typename std::conditional<order == ADorder::FIRST, ADScalar<T>,
-                              A2DScalar<T>>::type,
-    T>::type;
+    typename std::conditional<order == ADorder::FIRST, ADScalar<T>&,
+                              A2DScalar<T>&>::type,
+    T&>::type;
 
 }  // namespace A2D
 

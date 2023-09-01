@@ -77,6 +77,15 @@ class VarTuple {
   }
 
   /**
+   * @brief Zero the coponents of the tuple
+   */
+  void zero() {
+    for (index_t i = 0; i < num_components; i++) {
+      (*this)[i] = 0.0;
+    }
+  }
+
+  /**
    * @brief Set a random set of values on an interval
    */
   void set_rand(T low = T(-1.0), T high = T(1.0)) {

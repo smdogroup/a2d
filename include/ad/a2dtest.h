@@ -124,7 +124,8 @@ class A2DTest {
  * Run the AD test
  */
 template <typename T, class Output, class... Inputs>
-bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test) {
+bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
+         bool component = false, bool write_output = true) {
   // Declare all of the variables needed
   VarTuple<std::complex<T>, Inputs...> x, g, x1, p, h;
   VarTuple<std::complex<T>, Output> seed, hvalue;
@@ -136,50 +137,136 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test) {
   // Get the starting point
   test.get_point(x);
 
-  // Set a random direction for the test
-  p.set_rand();
+  bool passed = true;
 
-  // Evaluate the function and its derivatives
-  test.deriv(seed, x, g);
-  test.hprod(seed, hvalue, x, p, h);
+  // Perform a component-by-component test for gradients and the Hessian-vector
+  // products
+  if (component) {
+    for (int k = 0; k < p.get_num_components(); k++) {
+      p.zero();
+      p[k] = 1.0;
 
-  // Set x1 = x + dh * p1
-  double dh = test.get_step_size();
-  for (index_t i = 0; i < x.get_num_components(); i++) {
-    x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
-  }
+      test.deriv(seed, x, g);
 
-  // Compute the complex-step result: fd = p^{T} * df/dx
-  VarTuple<std::complex<T>, Output> value = test.eval(x1);
-  T fd = 0.0;
-  for (index_t i = 0; i < value.get_num_components(); i++) {
-    fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
-  }
+      // Set x1 = x + dh * p1
+      double dh = test.get_step_size();
+      for (index_t i = 0; i < x.get_num_components(); i++) {
+        x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+      }
 
-  // Compute the solution from the AD
-  T ans = 0.0;
-  for (index_t i = 0; i < x.get_num_components(); i++) {
-    ans += std::real(g[i] * p[i]);
-  }
+      // Compute the complex-step result: fd = p^{T} * df/dx
+      VarTuple<std::complex<T>, Output> value = test.eval(x1);
+      T fd = 0.0;
+      for (index_t i = 0; i < value.get_num_components(); i++) {
+        fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
+      }
 
-  bool passed = test.is_close(ans, fd);
+      // Compute the solution from the AD
+      T ans = 0.0;
+      for (index_t i = 0; i < x.get_num_components(); i++) {
+        ans += std::real(g[i] * p[i]);
+      }
 
-  std::string str = test.name();
-  test.write_result(str + " first-order", std::cout, ans, fd);
+      passed = passed && test.is_close(ans, fd);
 
-  // Set the seed and include the second-derivative parts
-  for (index_t i = 0; i < seed.get_num_components(); i++) {
-    seed[i] = seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
-  }
-  test.deriv(seed, x1, g);
+      if (write_output) {
+        std::string str = test.name();
+        test.write_result(str + " first-order", std::cout, ans, fd);
+      }
+    }
 
-  for (index_t i = 0; i < x.get_num_components(); i++) {
-    T ans = std::real(h[i]);
-    T fd = std::imag(g[i]) / dh;
+    if (!passed) {
+      return passed;
+    }
 
-    passed = passed && test.is_close(ans, fd);
+    for (int k = 0; k < p.get_num_components(); k++) {
+      p.zero();
+      p[k] = 1.0;
 
-    test.write_result(str + " second-order", std::cout, ans, fd);
+      test.hprod(seed, hvalue, x, p, h);
+
+      // Set x1 = x + dh * p1
+      double dh = test.get_step_size();
+      for (index_t i = 0; i < x.get_num_components(); i++) {
+        x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+      }
+
+      // Set the seed and include the second-derivative parts
+      VarTuple<std::complex<T>, Output> seedh;
+      for (index_t i = 0; i < seed.get_num_components(); i++) {
+        seedh[i] =
+            seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+      }
+      test.deriv(seedh, x1, g);
+
+      for (index_t i = 0; i < x.get_num_components(); i++) {
+        T ans = std::real(h[i]);
+        T fd = std::imag(g[i]) / dh;
+
+        passed = passed && test.is_close(ans, fd);
+
+        if (write_output) {
+          std::stringstream s;
+          s << " second-order [" << i << "]";
+          std::string str = test.name() + s.str();
+          test.write_result(str, std::cout, ans, fd);
+        }
+      }
+      if (write_output) {
+        std::cout << " " << std::endl;
+      }
+    }
+  } else {
+    // Set a random direction for the test
+    p.set_rand();
+
+    // Evaluate the function and its derivatives
+    test.deriv(seed, x, g);
+    test.hprod(seed, hvalue, x, p, h);
+
+    // Set x1 = x + dh * p1
+    double dh = test.get_step_size();
+    for (index_t i = 0; i < x.get_num_components(); i++) {
+      x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+    }
+
+    // Compute the complex-step result: fd = p^{T} * df/dx
+    VarTuple<std::complex<T>, Output> value = test.eval(x1);
+    T fd = 0.0;
+    for (index_t i = 0; i < value.get_num_components(); i++) {
+      fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
+    }
+
+    // Compute the solution from the AD
+    T ans = 0.0;
+    for (index_t i = 0; i < x.get_num_components(); i++) {
+      ans += std::real(g[i] * p[i]);
+    }
+
+    passed = test.is_close(ans, fd);
+
+    if (write_output) {
+      std::string str = test.name();
+      test.write_result(str + " first-order", std::cout, ans, fd);
+    }
+
+    // Set the seed and include the second-derivative parts
+    for (index_t i = 0; i < seed.get_num_components(); i++) {
+      seed[i] = seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+    }
+    test.deriv(seed, x1, g);
+
+    for (index_t i = 0; i < x.get_num_components(); i++) {
+      T ans = std::real(h[i]);
+      T fd = std::imag(g[i]) / dh;
+
+      passed = passed && test.is_close(ans, fd);
+
+      if (write_output) {
+        std::string str = test.name();
+        test.write_result(str + " second-order", std::cout, ans, fd);
+      }
+    }
   }
 
   return passed;

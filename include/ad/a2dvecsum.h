@@ -11,7 +11,8 @@
 namespace A2D {
 
 template <typename T, int N>
-void VecSum(const Vec<T, N> &x, const Vec<T, N> &y, Vec<T, N> &z) {
+KOKKOS_FUNCTION void VecSum(const Vec<T, N> &x, const Vec<T, N> &y,
+                            Vec<T, N> &z) {
   VecSumCore<T, N>(get_data(x), get_data(y), get_data(z));
 }
 
@@ -69,44 +70,50 @@ class VecSumExpr {
 };
 
 template <typename T, int N>
-auto VecSum(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y, ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y,
+                            ADVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, z);
 }
 
 template <typename T, int N>
-auto VecSum(const Vec<T, N> &x, ADVec<Vec<T, N>> &y, ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, ADVec<Vec<T, N>> &y,
+                            ADVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-auto VecSum(ADVec<Vec<T, N>> &x, const Vec<T, N> &y, ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADVec<Vec<T, N>> &x, const Vec<T, N> &y,
+                            ADVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, z);
 }
 
 template <typename T, int N>
-auto VecSum(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y, A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y,
+                            A2DVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-auto VecSum(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y, A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y,
+                            A2DVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-auto VecSum(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y, A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y,
+                            A2DVec<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, z);
 }
 
 template <typename T, int N>
-void VecSum(const T alpha, const Vec<T, N> &x, const T beta, const Vec<T, N> &y,
-            Vec<T, N> &z) {
+KOKKOS_FUNCTION void VecSum(const T alpha, const Vec<T, N> &x, const T beta,
+                            const Vec<T, N> &y, Vec<T, N> &z) {
   VecSumCore<T, N>(alpha, get_data(x), beta, get_data(y), get_data(z));
 }
 

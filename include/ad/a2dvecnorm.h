@@ -11,7 +11,7 @@
 namespace A2D {
 
 template <typename T, int N>
-void VecNorm(const Vec<T, N> &x, T &alpha) {
+KOKKOS_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
   alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
 }
 
@@ -59,17 +59,17 @@ class VecNormExpr {
 };
 
 template <typename T, int N>
-auto VecNorm(ADVec<Vec<T, N>> &x, ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecNorm(ADVec<Vec<T, N>> &x, ADScalar<T> &alpha) {
   return VecNormExpr<T, N, ADorder::FIRST>(x, alpha);
 }
 
 template <typename T, int N>
-auto VecNorm(A2DVec<Vec<T, N>> &x, A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecNorm(A2DVec<Vec<T, N>> &x, A2DScalar<T> &alpha) {
   return VecNormExpr<T, N, ADorder::SECOND>(x, alpha);
 }
 
 template <typename T, int N>
-void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
+KOKKOS_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
   T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
   VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
 }
@@ -134,17 +134,17 @@ class VecNormalizeExpr {
 };
 
 template <typename T, int N>
-auto VecNormalize(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecNormalize(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
   return VecNormalizeExpr<T, N, ADorder::FIRST>(x, y);
 }
 
 template <typename T, int N>
-auto VecNormalize(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecNormalize(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
   return VecNormalizeExpr<T, N, ADorder::SECOND>(x, y);
 }
 
 template <typename T, int N>
-void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
+KOKKOS_FUNCTION void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
   VecScaleCore<T, N>(alpha, get_data(x), get_data(y));
 }
 
@@ -215,43 +215,49 @@ class VecScaleExpr {
 };
 
 template <typename T, int N>
-auto VecScale(ADScalar<T> &alpha, ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(ADScalar<T> &alpha, ADVec<Vec<T, N>> &x,
+                              ADVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-auto VecScale(const T alpha, ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(const T alpha, ADVec<Vec<T, N>> &x,
+                              ADVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-auto VecScale(ADScalar<T> alpha, const Vec<T, N> &x, ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(ADScalar<T> alpha, const Vec<T, N> &x,
+                              ADVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-auto VecScale(A2DScalar<T> &alpha, A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(A2DScalar<T> &alpha, A2DVec<Vec<T, N>> &x,
+                              A2DVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-auto VecScale(const T alpha, A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(const T alpha, A2DVec<Vec<T, N>> &x,
+                              A2DVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-auto VecScale(A2DScalar<T> &alpha, const Vec<T, N> &x, A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(A2DScalar<T> &alpha, const Vec<T, N> &x,
+                              A2DVec<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
+KOKKOS_FUNCTION void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
   alpha = VecDotCore<T, N>(get_data(x), get_data(y));
 }
 
@@ -323,37 +329,43 @@ class VecDotExpr {
 };
 
 template <typename T, int N>
-auto VecDot(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y, ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y,
+                            ADScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, alpha);
 }
 
 template <typename T, int N>
-auto VecDot(const Vec<T, N> &x, ADVec<Vec<T, N>> &y, ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, ADVec<Vec<T, N>> &y,
+                            ADScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-auto VecDot(ADVec<Vec<T, N>> &x, const Vec<T, N> &y, ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(ADVec<Vec<T, N>> &x, const Vec<T, N> &y,
+                            ADScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-auto VecDot(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y, A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y,
+                            A2DScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-auto VecDot(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y, A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y,
+                            A2DScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-auto VecDot(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y, A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y,
+                            A2DScalar<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, alpha);
 }

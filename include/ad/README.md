@@ -146,8 +146,6 @@ VecNorm(x, alpha);
 
 ### Normalize
 
-- [ ] Debugging required
-
 Normalize the input vector $x \in \mathbb{R}^{n}$ such that $y = \frac{1}{|| x ||_{2}} x$
 
 ```c++

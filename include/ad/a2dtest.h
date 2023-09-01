@@ -207,7 +207,7 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
 
         if (write_output) {
           std::stringstream s;
-          s << "second-order [" << i << "]";
+          s << " second-order [" << i << "]";
           std::string str = test.name() + s.str();
           test.write_result(str, std::cout, ans, fd);
         }

@@ -25,6 +25,7 @@ class VecNormExpr {
 
   KOKKOS_FUNCTION void eval() {
     get_data(alpha) = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+    inv = 1.0 / get_data(alpha);
   }
 
   template <ADorder forder>
@@ -32,21 +33,29 @@ class VecNormExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     GetSeed<seed>::get_data(alpha) =
-        VecDotCore<T, N>(GetSeed<seed>::get_data(x), get_data(x)) /
-        get_data(alpha);
+        inv * VecDotCore<T, N>(GetSeed<seed>::get_data(x), get_data(x));
   }
   KOKKOS_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
-    VecAddCore<T, N>(GetSeed<seed>::get_data(alpha) / get_data(alpha),
-                     get_data(x), GetSeed<seed>::get_data(x));
+    VecAddCore<T, N>(inv * GetSeed<seed>::get_data(alpha), get_data(x),
+                     GetSeed<seed>::get_data(x));
   }
   KOKKOS_FUNCTION void hreverse() {
-    VecAddCore<T, N>(GetSeed<ADseed::h>::get_data(alpha) / get_data(alpha),
-                     get_data(x), GetSeed<ADseed::h>::get_data(x));
+    VecAddCore<T, N>(inv * GetSeed<ADseed::h>::get_data(alpha), get_data(x),
+                     GetSeed<ADseed::h>::get_data(x));
+
+    VecAddCore<T, N>(inv * GetSeed<ADseed::b>::get_data(alpha),
+                     GetSeed<ADseed::p>::get_data(x),
+                     GetSeed<ADseed::h>::get_data(x));
+
+    T scale = -inv * inv * inv * GetSeed<ADseed::b>::get_data(alpha) *
+              VecDotCore<T, N>(GetSeed<ADseed::p>::get_data(x), get_data(x));
+    VecAddCore<T, N>(scale, get_data(x), GetSeed<ADseed::h>::get_data(x));
   }
 
   vtype &x;
   dtype &alpha;
+  T inv;
 };
 
 template <typename T, int N>
@@ -74,22 +83,65 @@ class VecNormalizeExpr {
   KOKKOS_FUNCTION VecNormalizeExpr(vtype &x, vtype &y) : x(x), y(y) {}
 
   KOKKOS_FUNCTION void eval() {
-    alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
-    VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
+    T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+    inv = 1.0 / alpha;
+    VecScaleCore<T, N>(inv, get_data(x), get_data(y));
   }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-  }
-  KOKKOS_FUNCTION void reverse() {}
-  KOKKOS_FUNCTION void hreverse() {}
+    // yp = inv * ( - (xp, y) * y + xp )
+    VecScaleCore<T, N>(inv, GetSeed<seed>::get_data(x),
+                       GetSeed<seed>::get_data(y));
 
-  T alpha;
+    T scale = -inv * VecDotCore<T, N>(GetSeed<seed>::get_data(x), get_data(y));
+    VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(y));
+  }
+  KOKKOS_FUNCTION void reverse() {
+    constexpr ADseed seed = ADseed::b;
+    // xb = inv * yb - inv * inv * (yb, x) * y
+    VecAddCore<T, N>(inv, GetSeed<seed>::get_data(y),
+                     GetSeed<seed>::get_data(x));
+    T scale =
+        -inv * inv * VecDotCore<T, N>(GetSeed<seed>::get_data(y), get_data(x));
+    VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(x));
+  }
+  KOKKOS_FUNCTION void hreverse() {
+    T tmp1 = VecDotCore<T, N>(GetSeed<ADseed::b>::get_data(y), get_data(y));
+    T tmp2 = VecDotCore<T, N>(GetSeed<ADseed::p>::get_data(x), get_data(y));
+    T tmp3 = VecDotCore<T, N>(GetSeed<ADseed::h>::get_data(y), get_data(x));
+    T tmp4 = VecDotCore<T, N>(GetSeed<ADseed::b>::get_data(y),
+                              GetSeed<ADseed::p>::get_data(x));
+
+    VecAddCore<T, N>(inv, GetSeed<ADseed::h>::get_data(y),
+                     GetSeed<ADseed::h>::get_data(x));
+
+    T inv2 = inv * inv;
+    VecAddCore<T, N>(-inv2 * tmp1, GetSeed<ADseed::p>::get_data(x),
+                     GetSeed<ADseed::h>::get_data(x));
+    VecAddCore<T, N>(-inv2 * tmp2, GetSeed<ADseed::b>::get_data(y),
+                     GetSeed<ADseed::h>::get_data(x));
+
+    T scale = inv2 * (3.0 * tmp1 * tmp2 - tmp3 - tmp4);
+    VecAddCore<T, N>(scale, get_data(y), GetSeed<ADseed::h>::get_data(x));
+  }
+
+  T inv;
   vtype &x;
   vtype &y;
 };
+
+template <typename T, int N>
+auto VecNormalize(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
+  return VecNormalizeExpr<T, N, ADorder::FIRST>(x, y);
+}
+
+template <typename T, int N>
+auto VecNormalize(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
+  return VecNormalizeExpr<T, N, ADorder::SECOND>(x, y);
+}
 
 template <typename T, int N>
 void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
@@ -425,6 +477,64 @@ bool VecScaleTestAll(bool component = false, bool write_output = true) {
   VecScaleTest<Tc, 3> test1;
   passed = passed && Run(test1, component, write_output);
   VecScaleTest<Tc, 6> test2;
+  passed = passed && Run(test2, component, write_output);
+
+  return passed;
+}
+
+template <typename T, int N>
+class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
+ public:
+  using Input = VarTuple<T, Vec<T, N>>;
+  using Output = VarTuple<T, Vec<T, N>>;
+
+  // Assemble a string to describe the test
+  std::string name() { return "VecNormalize"; }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input &X) {
+    Vec<T, N> x, y;
+    X.get_values(x);
+    VecNormalize(x, y);
+    return MakeVarTuple<T>(y);
+  }
+
+  // Compute the derivative
+  void deriv(const Output &seed, const Input &X, Input &g) {
+    Vec<T, N> x0, xb, y0, yb;
+    ADVec<Vec<T, N>> x(x0, xb), y(y0, yb);
+    X.get_values(x0);
+    auto op = VecNormalize(x, y);
+    auto stack = MakeStack(op);
+    seed.get_values(yb);
+    stack.reverse();
+    g.set_values(xb);
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output &seed, const Output &hval, const Input &X,
+             const Input &p, Input &h) {
+    A2DVec<Vec<T, N>> x, y;
+    X.get_values(x.value());
+    p.get_values(x.pvalue());
+    auto op = VecNormalize(x, y);
+    auto stack = MakeStack(op);
+    seed.get_values(y.bvalue());
+    hval.get_values(y.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(x.hvalue());
+  }
+};
+
+bool VecNormalizeTestAll(bool component = false, bool write_output = true) {
+  using Tc = std::complex<double>;
+
+  bool passed = true;
+  VecNormalizeTest<Tc, 3> test1;
+  passed = passed && Run(test1, component, write_output);
+  VecNormalizeTest<Tc, 6> test2;
   passed = passed && Run(test2, component, write_output);
 
   return passed;

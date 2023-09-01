@@ -262,6 +262,14 @@ Given $\alpha$ and $\beta$ compute $\gamma = \alpha \beta$
 Mult(alpha, beta, gamma);
 ```
 
+## Divide
+
+Given $\alpha$ and $\beta$ compute $\gamma = \alpha / \beta$
+
+```c++
+Divide(alpha, beta, gamma);
+```
+
 ## Sum
 
 Given $\alpha$ and $\beta$ compute $\gamma = \alpha + \beta$
@@ -388,5 +396,3 @@ stack.hreverse();
 
 // Second derivatives are now available in Uxi.hvalue(); and J.hvalue();
 ```
-
-## Testing AD expressions

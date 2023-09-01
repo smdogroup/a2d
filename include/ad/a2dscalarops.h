@@ -359,6 +359,115 @@ KOKKOS_FUNCTION auto Mult(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
 }
 
 template <typename T>
+KOKKOS_FUNCTION void Divide(const T a, const T b, T& c) {
+  c = a / b;
+}
+
+template <typename T, ADorder order, ADiffType ada, ADiffType adb>
+class DivideExpr {
+ public:
+  using atype = ADScalarInputType<ada, order, T>;
+  using btype = ADScalarInputType<adb, order, T>;
+  using ctype = ADScalarType<ADiffType::ACTIVE, order, T>;
+
+  KOKKOS_FUNCTION DivideExpr(atype a, btype b, ctype& c) : a(a), b(b), c(c) {}
+
+  KOKKOS_FUNCTION void eval() {
+    inv = 1.0 / get_data(b);
+    get_data(c) = inv * get_data(a);
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    if constexpr (ada == ADiffType::ACTIVE && adb == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(c) =
+          inv * (GetSeed<seed>::get_data(a) -
+                 inv * get_data(a) * GetSeed<seed>::get_data(b));
+    } else if constexpr (ada == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(c) = inv * GetSeed<seed>::get_data(a);
+    } else if constexpr (adb == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(c) =
+          -inv * inv * get_data(a) * GetSeed<seed>::get_data(b);
+    }
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    constexpr ADseed seed = ADseed::b;
+    if constexpr (ada == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(a) += inv * GetSeed<seed>::get_data(c);
+    }
+    if constexpr (adb == ADiffType::ACTIVE) {
+      GetSeed<seed>::get_data(b) -=
+          inv * inv * get_data(a) * GetSeed<seed>::get_data(c);
+    }
+  }
+
+  KOKKOS_FUNCTION void hreverse() {
+    if constexpr (ada == ADiffType::ACTIVE) {
+      GetSeed<ADseed::h>::get_data(a) += inv * GetSeed<ADseed::h>::get_data(c);
+    }
+    if constexpr (adb == ADiffType::ACTIVE) {
+      GetSeed<ADseed::h>::get_data(b) -=
+          inv * inv * get_data(a) * GetSeed<ADseed::h>::get_data(c);
+      GetSeed<ADseed::h>::get_data(b) += 2.0 * inv * inv * inv * get_data(a) *
+                                         GetSeed<ADseed::p>::get_data(b) *
+                                         GetSeed<ADseed::b>::get_data(c);
+    }
+    if constexpr (ada == ADiffType::ACTIVE && adb == ADiffType::ACTIVE) {
+      GetSeed<ADseed::h>::get_data(a) -= inv * inv *
+                                         GetSeed<ADseed::p>::get_data(b) *
+                                         GetSeed<ADseed::b>::get_data(c);
+      GetSeed<ADseed::h>::get_data(b) -= inv * inv *
+                                         GetSeed<ADseed::p>::get_data(a) *
+                                         GetSeed<ADseed::b>::get_data(c);
+    }
+  }
+
+  T inv;
+  atype a;
+  btype b;
+  ctype& c;
+};
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
+  return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
+      a, b, c);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(const T a, ADScalar<T>& b, ADScalar<T>& c) {
+  return DivideExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
+      a, b, c);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, const T b, ADScalar<T>& c) {
+  return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
+      a, b, c);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
+  return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
+      a, b, c);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
+  return DivideExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
+      a, b, c);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
+  return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
+      a, b, c);
+}
+
+template <typename T>
 KOKKOS_FUNCTION void Sum(const T a, const T b, T& c) {
   c = a + b;
 }
@@ -474,7 +583,7 @@ class SumScaleExpr {
                                               ADseed::b, ADseed::p>::value;
     if constexpr (ada == ADiffType::ACTIVE && adb == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(c) =
-          c1 * (GetSeed<seed>::get_data(a) + c2 * GetSeed<seed>::get_data(b));
+          c1 * GetSeed<seed>::get_data(a) + c2 * GetSeed<seed>::get_data(b);
     } else if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(c) = GetSeed<seed>::get_data(a);
     } else if constexpr (adb == ADiffType::ACTIVE) {
@@ -565,7 +674,7 @@ class ScalarTest : public A2DTest<T, T, T> {
 
   // Evaluate the matrix-matrix product
   Output eval(const Input& x) {
-    T a, b, c, d, e, f, q, r, s;
+    T a, b, c, d, e, f, q, r, s, t;
     x.get_values(a);
     Log(a, b);
     Sin(b, c);
@@ -575,23 +684,25 @@ class ScalarTest : public A2DTest<T, T, T> {
     Mult(c, f, q);
     Sum(d, q, r);
     Sum(T(-1.0), q, T(3.14), r, s);
+    Divide(q, s, t);
 
-    return MakeVarTuple<T>(s);
+    return MakeVarTuple<T>(t);
   }
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> a, b, c, d, e, f, q, r, s;
+    ADScalar<T> a, b, c, d, e, f, q, r, s, t;
     x.get_values(a.value);
-    auto stack = MakeStack(Log(a, b),          //
-                           Sin(b, c),          //
-                           Exp(c, d),          //
-                           Pow(d, T(3.5), e),  //
-                           Cos(e, f),          //
-                           Mult(c, f, q),      //
-                           Sum(d, q, r),       //
-                           Sum(T(-1.0), q, T(3.14), r, s));
-    seed.get_values(s.bvalue);
+    auto stack = MakeStack(Log(a, b),                       //
+                           Sin(b, c),                       //
+                           Exp(c, d),                       //
+                           Pow(d, T(3.5), e),               //
+                           Cos(e, f),                       //
+                           Mult(c, f, q),                   //
+                           Sum(d, q, r),                    //
+                           Sum(T(-1.0), q, T(3.14), r, s),  //
+                           Divide(q, s, t));
+    seed.get_values(t.bvalue);
     stack.reverse();
     g.set_values(a.bvalue);
   }
@@ -599,19 +710,20 @@ class ScalarTest : public A2DTest<T, T, T> {
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> a, b, c, d, e, f, q, r, s;
+    A2DScalar<T> a, b, c, d, e, f, q, r, s, t;
     x.get_values(a.value);
     p.get_values(a.pvalue);
-    auto stack = MakeStack(Log(a, b),          //
-                           Sin(b, c),          //
-                           Exp(c, d),          //
-                           Pow(d, T(3.5), e),  //
-                           Cos(e, f),          //
-                           Mult(c, f, q),      //
-                           Sum(d, q, r),       //
-                           Sum(T(-1.0), q, T(3.14), r, s));
-    seed.get_values(s.bvalue);
-    hval.get_values(s.hvalue);
+    auto stack = MakeStack(Log(a, b),                       //
+                           Sin(b, c),                       //
+                           Exp(c, d),                       //
+                           Pow(d, T(3.5), e),               //
+                           Cos(e, f),                       //
+                           Mult(c, f, q),                   //
+                           Sum(d, q, r),                    //
+                           Sum(T(-1.0), q, T(3.14), r, s),  //
+                           Divide(q, s, t));
+    seed.get_values(t.bvalue);
+    hval.get_values(t.hvalue);
     stack.reverse();
     stack.hforward();
     stack.hreverse();

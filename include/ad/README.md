@@ -170,9 +170,13 @@ VecDot(x, y, alpha);
 
 ### Vector sum
 
-- [ ] Complete operation
+Given the inputs $x, y \in \mathbb{R}^{n}$ and optionally scalar values $\alpha, \beta$ compute the output $z = \alpha x + \beta y$.
 
-$z = \alpha x + \beta y$
+```c++
+VecSum(x, y, z);
+```
+
+Or optionally
 
 ```c++
 VecSum(alpha, x, beta, y, z);

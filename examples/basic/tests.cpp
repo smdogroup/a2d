@@ -12,6 +12,7 @@
 #include "ad/a2dsymtrace.h"
 #include "ad/a2dveccross.h"
 #include "ad/a2dvecnorm.h"
+#include "ad/a2dvecsum.h"
 
 using namespace A2D;
 
@@ -254,6 +255,7 @@ int main() {
   tests.push_back(A2D::Test::VecDotTestAll);
   tests.push_back(A2D::Test::VecScaleTestAll);
   tests.push_back(A2D::Test::VecNormalizeTestAll);
+  tests.push_back(A2D::Test::VecSumTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

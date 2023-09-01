@@ -103,6 +103,90 @@ KOKKOS_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
   }
 }
 
+/*
+  Compute the outer product of two vectors
+
+  A = alpha * x * y^{T}
+
+  Or
+
+  A = A + alpha * x * y^{T}
+*/
+template <typename T, int M, int N, bool additive = false>
+KOKKOS_FUNCTION void VecOuterCore(const T x[], const T y[], T A[]) {
+  if constexpr (additive) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A[N * i + j] += x[i] * y[j];
+      }
+    }
+
+  } else {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A[N * i + j] += x[i] * y[j];
+      }
+    }
+  }
+}
+
+template <typename T, int M, int N, bool additive = false>
+KOKKOS_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[],
+                                  T A[]) {
+  if constexpr (additive) {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A[N * i + j] += alpha * x[i] * y[j];
+      }
+    }
+
+  } else {
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < N; j++) {
+        A[N * i + j] += alpha * x[i] * y[j];
+      }
+    }
+  }
+}
+
+template <typename T, int N, bool additive = false>
+KOKKOS_FUNCTION void VecSymOuterCore(const T x[], T S[]) {
+  if constexpr (additive) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        S[0] += x[i] * x[j];
+        S++;
+      }
+    }
+  } else {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        S[0] = x[i] * x[j];
+        S++;
+      }
+    }
+  }
+}
+
+template <typename T, int N, bool additive = false>
+KOKKOS_FUNCTION void VecSymOuterCore(const T alpha, const T x[], T S[]) {
+  if constexpr (additive) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        S[0] += alpha * x[i] * x[j];
+        S++;
+      }
+    }
+  } else {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        S[0] = alpha * x[i] * x[j];
+        S++;
+      }
+    }
+  }
+}
+
 }  // namespace A2D
 
 #endif  // A2D_VEC_CORE_H

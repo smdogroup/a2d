@@ -15,9 +15,9 @@ namespace A2D {
 */
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-inline void MatVecCore(const T A[], const T x[], T y[]) noexcept {
+KOKKOS_FUNCTION void MatVecCore(const T A[], const T x[], T y[]) noexcept {
   if constexpr (additive) {
-    if consexpr (opA == MatOp::NORMAL) {
+    if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         T value = 0.0;
         for (int j = 0; j < N; j++, A++) {
@@ -34,7 +34,7 @@ inline void MatVecCore(const T A[], const T x[], T y[]) noexcept {
       }
     }
   } else {
-    if consexpr (opA == MatOp::NORMAL) {
+    if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         T value = 0.0;
         for (int j = 0; j < N; j++, A++) {
@@ -60,10 +60,10 @@ inline void MatVecCore(const T A[], const T x[], T y[]) noexcept {
 
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-inline void MatVecCoreScale(const T alpha, const T A[], const T x[],
-                            T y[]) noexcept {
+KOKKOS_FUNCTION void MatVecCoreScale(const T alpha, const T A[], const T x[],
+                                     T y[]) noexcept {
   if constexpr (additive) {
-    if consexpr (opA == MatOp::NORMAL) {
+    if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         T value = 0.0;
         for (int j = 0; j < N; j++, A++) {
@@ -81,7 +81,7 @@ inline void MatVecCoreScale(const T alpha, const T A[], const T x[],
       }
     }
   } else {
-    if consexpr (opA == MatOp::NORMAL) {
+    if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         T value = 0.0;
         for (int j = 0; j < N; j++, A++) {
@@ -104,6 +104,18 @@ inline void MatVecCoreScale(const T alpha, const T A[], const T x[],
       }
     }
   }
+}
+
+template <typename T, int M, int N>
+KOKKOS_FUNCTION T MatInnerCore(const T A[], const T x[], const T y[]) noexcept {
+  T value = 0.0;
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      value += x[i] * A[0] * y[j];
+    }
+  }
+
+  return value;
 }
 
 }  // namespace A2D

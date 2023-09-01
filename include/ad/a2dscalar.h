@@ -30,14 +30,15 @@ class A2DScalar {
 };
 
 double get_data(const double value) { return value; }
-
 double& get_data(double& value) { return value; }
 
-std::complex<double>& get_data(std::complex<double>& value) { return value; }
+float get_data(const float value) { return value; }
+float& get_data(float& value) { return value; }
 
 std::complex<double> get_data(const std::complex<double> value) {
   return value;
 }
+std::complex<double>& get_data(std::complex<double>& value) { return value; }
 
 template <typename T>
 T& get_data(ADScalar<T>& value) {

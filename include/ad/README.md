@@ -212,6 +212,70 @@ VecSymOuterProduct(alpha, x, S);
 
 $\alpha$ is a passive numeric constant.
 
+## Scalar operations
+
+### Log
+
+Given $\alpha$ compute $\beta = \ln(\alpha)$
+
+```c++
+Log(alpha, beta);
+```
+
+## Exp
+
+Given $\alpha$ compute $\beta = e^{\alpha}$
+
+```c++
+Exp(alpha, beta);
+```
+
+## Sin
+
+Given $\alpha$ compute $\beta = \sin(\alpha)$
+
+```c++
+Sin(alpha, beta);
+```
+
+## Cos
+
+Given $\alpha$ compute $\beta = \cos(\alpha)$
+
+```c++
+Cos(alpha, beta);
+```
+
+## Pow
+
+Given $\alpha$ compute $\beta = \alpha^{p}$
+
+```c++
+Pow(alpha, p, beta);
+```
+
+## Mult
+
+Given $\alpha$ and $\beta$ compute $\gamma = \alpha \beta$
+
+```c++
+Mult(alpha, beta, gamma);
+```
+
+## Sum
+
+Given $\alpha$ and $\beta$ compute $\gamma = \alpha + \beta$
+
+```c++
+Sum(alpha, beta, gamma);
+```
+
+Given passive constants $c_1$ and $c_2$, compute  $\gamma = c_1 \alpha + c_2 \beta$
+
+```c++
+Sum(c1, alpha, c2, beta, gamma);
+```
+
 ## Example use of A2D routines
 
 The AD routines can be used in the following manner. Consider the computation of the strain energy given the displacement gradient in the computational coordinates $U_{\xi} \in \mathbb{R}^{n \times n}$ and the derivative of the physical coordinates with respect to the computational coordinates $J \in \mathbb{R}^{n \times n}$.

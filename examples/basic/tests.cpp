@@ -253,6 +253,7 @@ int main() {
   tests.push_back(A2D::Test::VecNormTestAll);
   tests.push_back(A2D::Test::VecDotTestAll);
   tests.push_back(A2D::Test::VecScaleTestAll);
+  tests.push_back(A2D::Test::VecNormalizeTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

@@ -7,6 +7,7 @@
 #include "ad/a2dmatinv.h"
 #include "ad/a2dmatsum.h"
 #include "ad/a2dmattrace.h"
+#include "ad/a2dscalarops.h"
 #include "ad/a2dsymrk.h"
 #include "ad/a2dsymsum.h"
 #include "ad/a2dsymtrace.h"
@@ -258,6 +259,7 @@ int main() {
   tests.push_back(A2D::Test::VecNormalizeTestAll);
   tests.push_back(A2D::Test::VecSumTestAll);
   tests.push_back(A2D::Test::VecOuterTestAll);
+  tests.push_back(A2D::Test::ScalarTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

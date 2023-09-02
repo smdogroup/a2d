@@ -123,6 +123,13 @@ class MooneyRivlin
   // Assemble a string to describe the test
   std::string name() { return std::string("MooneyRivlin"); }
 
+  void get_point(Input &x) {
+    x.set_rand();
+    for (int i = 0; i < 9; i++) {
+      x[i] *= 0.05;
+    }
+  }
+
   Output eval(const Input& x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);

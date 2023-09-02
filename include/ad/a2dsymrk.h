@@ -338,6 +338,20 @@ KOKKOS_FUNCTION void SymMatRKCoreReverseScale(const T alpha, const T A[],
   }
 }
 
+template <typename T, int N, int K, int P>
+KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
+  static_assert(P == N, "SymMatRK matrix dimensions must agree");
+  SymMatRKCore<T, N, K, MatOp::NORMAL>(get_data(A), get_data(S));
+}
+
+template <typename T, int N, int K, int P>
+KOKKOS_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
+                              SymMat<T, P>& S) {
+  static_assert(P == N, "SymMatRK matrix dimensions must agree");
+  SymMatRKCoreScale<T, N, K, MatOp::NORMAL>(get_data(alpha), get_data(A),
+                                            get_data(S));
+}
+
 template <MatOp op, typename T, int N, int K, int P>
 KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
   static_assert(
@@ -400,9 +414,20 @@ class SymMatRKExpr {
   Stype& S;
 };
 
+template <typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(ADMat<Mat<T, N, K>>& A, ADMat<SymMat<T, P>>& S) {
+  return SymMatRKExpr<T, N, K, P, ADorder::FIRST, MatOp::NORMAL>(A, S);
+}
+
 template <MatOp op, typename T, int N, int K, int P>
 KOKKOS_FUNCTION auto SymMatRK(ADMat<Mat<T, N, K>>& A, ADMat<SymMat<T, P>>& S) {
   return SymMatRKExpr<T, N, K, P, ADorder::FIRST, op>(A, S);
+}
+
+template <typename T, int N, int K, int P>
+KOKKOS_FUNCTION auto SymMatRK(A2DMat<Mat<T, N, K>>& A,
+                              A2DMat<SymMat<T, P>>& S) {
+  return SymMatRKExpr<T, N, K, P, ADorder::SECOND, MatOp::NORMAL>(A, S);
 }
 
 template <MatOp op, typename T, int N, int K, int P>

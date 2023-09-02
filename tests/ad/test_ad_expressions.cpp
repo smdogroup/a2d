@@ -31,7 +31,7 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
     return s.str();
   }
 
-  // Evaluate the matrix-matrix product
+  // Evaluate the function
   Output eval(const Input& x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);
@@ -112,6 +112,154 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 };
 
+template <typename T>
+class MooneyRivlin
+    : public A2D::Test::A2DTest<T, T, Mat<T, 3, 3>, Mat<T, 3, 3>> {
+ public:
+  using Input = VarTuple<T, Mat<T, 3, 3>, Mat<T, 3, 3>>;
+  using Output = VarTuple<T, T>;
+  static const int N = 3;
+
+  // Assemble a string to describe the test
+  std::string name() { return std::string("MooneyRivlin"); }
+
+  Output eval(const Input& x) {
+    Mat<T, N, N> Uxi, J;
+    x.get_values(Uxi, J);
+    T W;
+
+    // The intermediary values
+    Mat<T, N, N> Jinv, Ux, F;
+    SymMat<T, N> B;
+    T detF, trB, trB2, I2, I1bar, I2bar;
+    T t0, inv, t1;
+
+    // Set the entries of the identity matrix
+    Mat<T, N, N> Id;
+    for (int k = 0; k < N; k++) {
+      Id(k, k) = 1.0;
+    }
+
+    const T C1(0.1), C2(0.23);
+
+    MatInv(J, Jinv);                     // Jinv = J^{-1}
+    MatMatMult(Uxi, Jinv, Ux);           // Ux = Uxi * Jinv
+    MatSum(Id, Ux, F);                   // F = I + Ux
+    MatDet(F, detF);                     // detF = det(F)
+    SymMatRK(F, B);                      // B = F * F^{T}
+    MatTrace(B, trB);                    // trB = tr(B)
+    SymMatTrace(B, B, trB2);             // trB2 = tr(B * B)
+    Mult(trB, trB, t0);                  // t0 = trB * trB
+    Sum(T(0.5), t0, T(-0.5), trB2, I2);  // I2 = 0.5 * (trB * trB - tr(B * B))
+    Pow(detF, T(-2.0 / 3.0), inv);       // inv = (detF)^{-2/3}
+    Mult(inv, trB, I1bar);               // I1bar = inv * tr(B)
+    Mult(inv, I2, t1);                   // t1 = inv * I2
+    Mult(inv, t1, I2bar);                // I2 = inv * t1 = inv * inv * I2
+    Sum(C1, I1bar, C2, I2bar, W);        // W = C1 * I1bar + C2 * I2bar
+
+    return MakeVarTuple<T>(W);
+  }
+
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    // Input
+    Mat<T, N, N> Uxi0, Uxib, J0, Jb;
+    x.get_values(Uxi0, J0);
+    ADScalar<T> W;
+
+    // Set the entries of the identity matrix
+    Mat<T, N, N> Id;
+    for (int k = 0; k < N; k++) {
+      Id(k, k) = 1.0;
+    }
+
+    // Set the intermediary values
+    Mat<T, N, N> Jinv0, Jinvb, Ux0, Uxb, F0, Fb;
+    SymMat<T, N> B0, Bb;
+
+    // The AD objects
+    ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
+    ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
+    ADMat<SymMat<T, N>> B(B0, Bb);
+
+    ADScalar<T> detF, trB, trB2, I2, I1bar, I2bar;
+    ADScalar<T> t0, inv, t1;
+
+    const T C1(0.1), C2(0.23);
+
+    auto stack =
+        MakeStack(MatInv(J, Jinv),            // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),  // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),          // F = I + Ux
+                  MatDet(F, detF),            // detF = det(F)
+                  SymMatRK(F, B),             // B = F * F^{T}
+                  MatTrace(B, trB),           // trB = tr(B)
+                  SymMatTrace(B, B, trB2),    // trB2 = tr(B * B)
+                  Mult(trB, trB, t0),         // t0 = trB * trB
+                  Sum(T(0.5), t0, T(-0.5), trB2,
+                      I2),  // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
+                  Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
+                  Mult(inv, I2, t1),              // t1 = inv * I2
+                  Mult(inv, t1, I2bar),  // I2 = inv * t1 = inv * inv * I2
+                  Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
+        );
+
+    seed.get_values(W.bvalue);
+    stack.reverse();
+    g.set_values(Uxib, Jb);
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    // The AD objects
+    A2DMat<Mat<T, N, N>> Uxi, J;
+    A2DScalar<T> W;
+
+    // Intermediate values
+    A2DMat<Mat<T, N, N>> Jinv, Ux, F;
+    A2DMat<SymMat<T, N>> B;
+    A2DScalar<T> detF, trB, trB2, I2, I1bar, I2bar;
+    A2DScalar<T> t0, inv, t1;
+
+    // Set the entries of the identity matrix
+    Mat<T, N, N> Id;
+    for (int k = 0; k < N; k++) {
+      Id(k, k) = 1.0;
+    }
+
+    const T C1(0.1), C2(0.23);
+
+    x.get_values(Uxi.value(), J.value());
+    p.get_values(Uxi.pvalue(), J.pvalue());
+
+    auto stack =
+        MakeStack(MatInv(J, Jinv),            // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),  // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),          // F = I + Ux
+                  MatDet(F, detF),            // detF = det(F)
+                  SymMatRK(F, B),             // B = F * F^{T}
+                  MatTrace(B, trB),           // trB = tr(B)
+                  SymMatTrace(B, B, trB2),    // trB2 = tr(B * B)
+                  Mult(trB, trB, t0),         // t0 = trB * trB
+                  Sum(T(0.5), t0, T(-0.5), trB2,
+                      I2),  // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
+                  Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
+                  Mult(inv, I2, t1),              // t1 = inv * I2
+                  Mult(inv, t1, I2bar),  // I2 = inv * t1 = inv * inv * I2
+                  Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
+        );
+
+    seed.get_values(W.bvalue);
+    hval.get_values(W.hvalue);
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(Uxi.hvalue(), J.hvalue());
+  }
+};
+
 template <typename T, int N>
 class DefGradTest
     : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
@@ -126,7 +274,7 @@ class DefGradTest
     return s.str();
   }
 
-  // Evaluate the matrix-matrix product
+  // Evaluate the function
   Output eval(const Input& x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);
@@ -230,6 +378,9 @@ bool MatIntegrationTests(bool component, bool write_output) {
 
   DefGradTest<std::complex<double>, 3> test2;
   passed = passed && A2D::Test::Run(test2, component, write_output);
+
+  MooneyRivlin<std::complex<double>> test3;
+  passed = passed && A2D::Test::Run(test3, component, write_output);
 
   return passed;
 }

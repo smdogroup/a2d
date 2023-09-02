@@ -192,12 +192,10 @@ VecCross(x, y, z);
 
 ### Outer-product
 
-- [ ] Complete operation
-
-$A = x y^{T}$
+Given two vectors $x$ and $y$, compute the outer product $A = x y^{T}$
 
 ```c++
-VecOuterProduct(x, y, A);
+VecOuter(x, y, A);
 ```
 
 ### Symmetric outer-product

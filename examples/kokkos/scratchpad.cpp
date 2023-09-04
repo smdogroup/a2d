@@ -588,24 +588,96 @@ void subview() {
   auto elem_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
 }
 
+void test_cuda_axpy_with_UVM(int argc, char* argv[]) {
+#ifdef KOKKOS_ENABLE_CUDA
+  using ViewDevice_t =
+      Kokkos::View<T*, Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
+  if (argc == 1) {
+    std::printf("axpy\nusage: ./scratchpad N, where mat size = 2^N\n");
+    return;
+  }
+
+  // Allocate x and y on host
+  I N = pow(2, atoi(argv[1]));
+  I bytes = N * sizeof(T);
+  double Mbytes = (double)bytes / 1024 / 1024;
+
+  std::printf("Allocating x[%d] on host, size: %.2f MB\n", N, Mbytes);
+  std::printf("Allocating y[%d] on host, size: %.2f MB\n", N, Mbytes);
+
+  // Allocate x and y on device
+  ViewDevice_t x_device("x_device", N);
+  ViewDevice_t y_device("y_device", N);
+
+  for (I i = 0; i < N; i++) {
+    x_device(i) = 2.4;
+    y_device(i) = 0.1;
+  }
+
+  // Perform 100 axpy operations on device and time
+  Kokkos::Timer timer;
+  int repeat = 100;
+  T alpha = 0.01;
+  for (int i = 0; i < repeat; i++) {
+    Kokkos::parallel_for(
+        "axpy", N, KOKKOS_LAMBDA(const I index) {
+          // T alpha = Alpha::get_alpha_array()[0];  // This doesn't work
+          T alpha = Alpha::value_array[0];  // This works
+          auto x_slice = Kokkos::subview(x_device, Kokkos::ALL);
+          y_device(index) += alpha * x_slice(index);
+        });
+    Kokkos::fence();
+  }
+
+  double elapse = timer.seconds();
+  printf("averaged time: %.8f ms\n", elapse * 1e3);
+
+  // Compute bandwidth:
+  // x is read once, y is read once and written once
+  double bandwidth = 3 * Mbytes / 1024 * repeat / elapse;
+  printf("averaged bandwidth: %.8f GB/s\n", bandwidth);
+
+  // Print values
+  int len = 10;
+  if (N < len) {
+    len = N;
+  }
+
+  for (I i = 0; i < len; i++) {
+    printf("x[%2d]: %8.2f  y[%2d]: %8.2f\n", i, x_device(i), i, y_device(i));
+  }
+
+  // Check maximum error
+  T max_err = T(0);
+  T val = T(0);
+  for (I i = 0; i < N; i++) {
+    val = fabs(repeat * alpha * 2.4 + 0.1 - y_device(i));
+    if (val > max_err) {
+      max_err = val;
+    }
+  }
+
+  printf("Maximum error: %20.10e\n", max_err);
+#endif
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
      // test_matvec(argc, argv);
-     // test_unordered_set();
-     // test_subview();
-     // test_sort();
-     // test_is_same_layout();
-     // test_complex();
-     // test_is_complex();
-     // test_view_is_allocated();
-     // test_smart_pointer_behavior();
-     // test_copy();
-     // test_parallel_for();
-     // test_modify_view_from_const_lambda();
-     // test_cuda_axpy(argc, argv);
-
-    subview();
+    // test_unordered_set();
+    // test_subview();
+    // test_sort();
+    // test_is_same_layout();
+    // test_complex();
+    // test_is_complex();
+    // test_view_is_allocated();
+    // test_smart_pointer_behavior();
+    // test_copy();
+    // test_parallel_for();
+    // test_modify_view_from_const_lambda();
+    test_cuda_axpy(argc, argv);
+    // subview();
   }
   Kokkos::finalize();
 }

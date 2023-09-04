@@ -686,17 +686,17 @@ class LagrangeH1HypercubeBasis {
         T u1[u1size];
         T u1x[u1size];
         T u1y[u1size];  // not used for dim == 2
-        for (index_t i = 0; i < u1size; i++) {
-          u1[i] = T(0.0);
-          u1x[i] = T(0.0);
-          u1y[i] = T(0.0);
+        for (index_t k = 0; k < u1size; k++) {
+          u1[k] = T(0.0);
+          u1x[k] = T(0.0);
+          u1y[k] = T(0.0);
         }
 
         T u0[u0size];
         T u0x[u0size];
-        for (index_t i = 0; i < u0size; i++) {
-          u0[i] = T(0.0);
-          u0x[i] = T(0.0);
+        for (index_t k = 0; k < u0size; k++) {
+          u0[k] = T(0.0);
+          u0x[k] = T(0.0);
         }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;
@@ -1424,13 +1424,13 @@ class LagrangeL2HypercubeBasis {
         }
 
         T u0[u0size];
-        for (index_t i = 0; i < u0size; i++) {
-          u0[i] = T(0.0);
+        for (index_t k = 0; k < u0size; k++) {
+          u0[k] = T(0.0);
         }
 
         T u1[u1size];
-        for (index_t i = 0; i < u1size; i++) {
-          u1[i] = T(0.0);
+        for (index_t k = 0; k < u1size; k++) {
+          u1[k] = T(0.0);
         }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;

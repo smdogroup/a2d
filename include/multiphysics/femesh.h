@@ -112,7 +112,7 @@ class MetaDataFactory {
         char msg[256];
         std::snprintf(msg, 256,
                       "element enumerator %d does not represent a 2d element",
-                      element);
+                      (int)element);
         throw std::runtime_error(msg);
     }
   }
@@ -132,7 +132,7 @@ class MetaDataFactory {
         char msg[256];
         std::snprintf(msg, 256,
                       "element enumerator %d does not represent a 3d element",
-                      element);
+                      (int)element);
         throw std::runtime_error(msg);
     }
   }

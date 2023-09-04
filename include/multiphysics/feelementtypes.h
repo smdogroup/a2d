@@ -126,11 +126,12 @@ class ElementTypes {
   static const index_t TRI_NVERTS = 3;
 
   // Given bound index, return number of vertices/vertex indices
-  static const index_t* get_tri_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_tri_bound_nverts() {
     static constexpr index_t TRI_BOUND_NVERTS[] = {2, 2, 2};
     return TRI_BOUND_NVERTS;
   }
-  static const index_t (*get_tri_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_tri_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t TRI_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {1, 2, NO_INDEX, NO_INDEX},
         {2, 0, NO_INDEX, NO_INDEX},
@@ -168,11 +169,12 @@ class ElementTypes {
   static const index_t QUAD_NVERTS = 4;
 
   // Given bound index, return number of vertices/vertex indices
-  static const index_t* get_quad_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_quad_bound_nverts() {
     static constexpr index_t QUAD_BOUND_NVERTS[] = {2, 2, 2, 2};
     return QUAD_BOUND_NVERTS;
   }
-  static const index_t (*get_quad_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_quad_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t QUAD_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {0, 1, NO_INDEX, NO_INDEX},
         {3, 2, NO_INDEX, NO_INDEX},
@@ -182,7 +184,7 @@ class ElementTypes {
   }
 
   // Cartesian coordinates of the vertices in the reference element
-  static const index_t (*get_quad_verts_cart())[2] {
+  KOKKOS_FUNCTION static const index_t (*get_quad_verts_cart())[2] {
     static constexpr index_t QUAD_VERTS_CART[][2] = {
         {0, 0}, {1, 0}, {1, 1}, {0, 1}};
     return QUAD_VERTS_CART;
@@ -300,18 +302,19 @@ class ElementTypes {
   static const index_t TET_NVERTS = 4;
 
   // Given edge index, return edge vertex indices
-  static const index_t (*get_tet_edge_verts())[2] {
+  KOKKOS_FUNCTION static const index_t (*get_tet_edge_verts())[2] {
     static constexpr index_t TET_EDGE_VERTS[][2] = {{0, 1}, {1, 2}, {2, 0},
                                                     {0, 3}, {1, 3}, {2, 3}};
     return TET_EDGE_VERTS;
   }
 
   // Given bounds index, return edge indices
-  static const index_t* get_tet_bound_nedges() {
+  KOKKOS_FUNCTION static const index_t* get_tet_bound_nedges() {
     static constexpr index_t TET_BOUND_NEDGES[] = {3, 3, 3, 3};
     return TET_BOUND_NEDGES;
   }
-  static const index_t (*get_tet_bound_edges())[MAX_BOUND_EDGES] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_tet_bound_edges())[MAX_BOUND_EDGES] {
     static constexpr index_t TET_BOUND_EDGES[][MAX_BOUND_EDGES] = {
         {1, 5, 4, NO_INDEX},
         {3, 5, 2, NO_INDEX},
@@ -321,11 +324,12 @@ class ElementTypes {
   }
 
   // Given bounds index, return number of vertices/vertex indices
-  static const index_t* get_tet_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_tet_bound_nverts() {
     static constexpr index_t TET_BOUND_NVERTS[] = {3, 3, 3, 3};
     return TET_BOUND_NVERTS;
   }
-  static const index_t (*get_tet_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_tet_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t TET_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {1, 2, 3, NO_INDEX},
         {0, 3, 2, NO_INDEX},
@@ -385,7 +389,7 @@ class ElementTypes {
   static const index_t HEX_NVERTS = 8;
 
   // Given edge index, return edge vertex indices
-  static const index_t (*get_hex_edge_verts())[2] {
+  KOKKOS_FUNCTION static const index_t (*get_hex_edge_verts())[2] {
     static constexpr index_t HEX_EDGE_VERTS[][2] = {
         {0, 1}, {3, 2}, {4, 5}, {7, 6}, {0, 3}, {1, 2},
         {4, 7}, {5, 6}, {0, 4}, {1, 5}, {3, 7}, {2, 6}};
@@ -393,11 +397,12 @@ class ElementTypes {
   }
 
   // Given bound index, return edge indices
-  static const index_t* get_hex_bound_nedges() {
+  KOKKOS_FUNCTION static const index_t* get_hex_bound_nedges() {
     static constexpr index_t HEX_BOUND_NEDGES[] = {4, 4, 4, 4, 4, 4};
     return HEX_BOUND_NEDGES;
   }
-  static const index_t (*get_hex_bound_edges())[MAX_BOUND_EDGES] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_hex_bound_edges())[MAX_BOUND_EDGES] {
     static constexpr index_t HEX_BOUND_EDGES[][MAX_BOUND_EDGES] = {
         {8, 10, 4, 6},  {5, 7, 9, 11}, {0, 2, 8, 9},
         {1, 3, 11, 10}, {4, 5, 0, 1},  {2, 3, 6, 7}};
@@ -405,11 +410,12 @@ class ElementTypes {
   }
 
   // Given bound index, return number of vertices/vertex indices
-  static const index_t* get_hex_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_hex_bound_nverts() {
     static constexpr index_t HEX_BOUND_NVERTS[] = {4, 4, 4, 4, 4, 4};
     return HEX_BOUND_NVERTS;
   }
-  static const index_t (*get_hex_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_hex_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t HEX_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {0, 4, 7, 3}, {1, 2, 6, 5}, {0, 1, 5, 4},
         {3, 7, 6, 2}, {0, 3, 2, 1}, {4, 5, 6, 7}};
@@ -417,7 +423,7 @@ class ElementTypes {
   }
 
   // Cartesian coordinates of the vertices in the reference element
-  static const index_t (*get_hex_verts_cart())[3] {
+  KOKKOS_FUNCTION static const index_t (*get_hex_verts_cart())[3] {
     static constexpr index_t HEX_VERTS_CART[][3] = {
         {0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
         {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
@@ -535,18 +541,19 @@ class ElementTypes {
   static const index_t WEDGE_NVERTS = 6;
 
   // Given edge index, return edge vertex indices
-  static const index_t (*get_wedge_edge_verts())[2] {
+  KOKKOS_FUNCTION static const index_t (*get_wedge_edge_verts())[2] {
     static constexpr index_t WEDGE_EDGE_VERTS[][2] = {
         {0, 1}, {1, 2}, {2, 0}, {3, 4}, {4, 5}, {5, 3}, {0, 3}, {1, 4}, {2, 5}};
     return WEDGE_EDGE_VERTS;
   }
 
   // Given bound index, return edge indices
-  static const index_t* get_wedge_bound_nedges() {
+  KOKKOS_FUNCTION static const index_t* get_wedge_bound_nedges() {
     static constexpr index_t WEDGE_BOUND_NEDGES[] = {3, 3, 4, 4, 4};
     return WEDGE_BOUND_NEDGES;
   }
-  static const index_t (*get_wedge_bound_edges())[MAX_BOUND_EDGES] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_wedge_bound_edges())[MAX_BOUND_EDGES] {
     static constexpr index_t WEDGE_BOUND_EDGES[][MAX_BOUND_EDGES] = {
         {0, 1, 2, NO_INDEX},
         {3, 4, 5, NO_INDEX},
@@ -557,11 +564,12 @@ class ElementTypes {
   }
 
   // Given bound index, return number of vertices/vertex indices
-  static const index_t* get_wedge_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_wedge_bound_nverts() {
     static constexpr index_t WEDGE_BOUND_NVERTS[] = {3, 3, 4, 4, 4};
     return WEDGE_BOUND_NVERTS;
   }
-  static const index_t (*get_wedge_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_wedge_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t WEDGE_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {0, 1, 2, NO_INDEX},
         {3, 4, 5, NO_INDEX},
@@ -614,18 +622,19 @@ class ElementTypes {
   static const index_t PYRMD_NVERTS = 5;
 
   // Given edge index, return edge vertex indices
-  static const index_t (*get_pyrmd_edge_verts())[2] {
+  KOKKOS_FUNCTION static const index_t (*get_pyrmd_edge_verts())[2] {
     static constexpr index_t PYRMD_EDGE_VERTS[][2] = {
         {0, 1}, {1, 2}, {2, 3}, {3, 0}, {0, 4}, {1, 4}, {2, 4}, {3, 4}};
     return PYRMD_EDGE_VERTS;
   }
 
   // Given bound index, return edge indices
-  static const index_t* get_pyrmd_bound_nedges() {
+  KOKKOS_FUNCTION static const index_t* get_pyrmd_bound_nedges() {
     static constexpr index_t PYRMD_BOUND_NEDGES[] = {3, 3, 3, 3, 4};
     return PYRMD_BOUND_NEDGES;
   }
-  static const index_t (*get_pyrmd_bound_edges())[MAX_BOUND_EDGES] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_pyrmd_bound_edges())[MAX_BOUND_EDGES] {
     static constexpr index_t PYRMD_BOUND_EDGES[][MAX_BOUND_EDGES] = {
         {0, 5, 4, NO_INDEX},
         {1, 6, 5, NO_INDEX},
@@ -636,11 +645,12 @@ class ElementTypes {
   }
 
   // Given bound index, return number of vertices/vertex indices
-  static const index_t* get_pyrmd_bound_nverts() {
+  KOKKOS_FUNCTION static const index_t* get_pyrmd_bound_nverts() {
     static constexpr index_t PYRMD_BOUND_NVERTS[] = {3, 3, 3, 3, 4};
     return PYRMD_BOUND_NVERTS;
   }
-  static const index_t (*get_pyrmd_bound_verts())[MAX_BOUND_VERTS] {
+  KOKKOS_FUNCTION static const index_t (
+      *get_pyrmd_bound_verts())[MAX_BOUND_VERTS] {
     static constexpr index_t PYRMD_BOUND_VERTS[][MAX_BOUND_VERTS] = {
         {0, 1, 4, NO_INDEX},
         {1, 2, 4, NO_INDEX},

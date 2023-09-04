@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
   {
     using T = double;
 
-    constexpr bool smoke_test = false;
+    constexpr bool smoke_test = true;
 
     // Number of elements in each dimension
     const index_t degree = smoke_test ? 1 : 4;

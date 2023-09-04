@@ -12,8 +12,6 @@ namespace A2D {
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
                             GeoElemVec &elem_geo) {
-  constexpr ElemVecType evtype = GeoElemVec::evtype;
-
   for (int e = 0; e < nhex; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -54,20 +52,14 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
       }
     }
 
-    if constexpr (evtype == ElemVecType::Serial) {
-      elem_geo.set_element_values(e, geo_dof);
-    }
+    elem_geo.set_element_values(e, geo_dof);
   }
-  if constexpr (evtype == ElemVecType::Parallel) {
-    elem_geo.set_values();
-  }
+  elem_geo.set_values();
 }
 
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
                              const T Xloc[], GeoElemVec &elem_geo) {
-  constexpr ElemVecType evtype = GeoElemVec::evtype;
-
   for (int e = 0; e < nquad; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -98,13 +90,9 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
       }
     }
 
-    // if constexpr (evtype == ElemVecType::Serial) {
     elem_geo.set_element_values(e, geo_dof);
-    // }
   }
-  // if constexpr (evtype == ElemVecType::Parallel) {
   elem_geo.set_values();
-  // }
 }
 
 template <index_t outputs, index_t degree, typename T, class DataBasis,

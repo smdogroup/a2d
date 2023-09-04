@@ -465,12 +465,12 @@ class ElementMesh {
 
   // Get the degrees of freedom associated with this element
   KOKKOS_FUNCTION auto get_element_dof(const index_t elem) {
-    return Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
+    return Kokkos::subview(element_dof, elem, Kokkos::ALL);
   }
 
   // Get the signs associated with the degrees of freedom
   auto get_element_signs(const index_t elem) {
-    return Kokkos::subview(element_sign_new, elem, Kokkos::ALL);
+    return Kokkos::subview(element_sign, elem, Kokkos::ALL);
   }
 
   template <index_t M, index_t basis_offset = Basis::nbasis>
@@ -484,8 +484,8 @@ class ElementMesh {
                                           // freedom each basis
 
   // Store the degrees of freedom for each element and the element sign
-  ElementDofArray element_dof_new;
-  ElementSignArray element_sign_new;
+  ElementDofArray element_dof;
+  ElementSignArray element_sign;
 };
 
 template <class Basis>

@@ -583,9 +583,9 @@ void subview() {
   constexpr A2D::index_t ndof_per_element = 1;  // ok
   using ElementDofArray = A2D::MultiArrayNew<A2D::index_t* [ndof_per_element]>;
   A2D::index_t nelems = 10;
-  ElementDofArray element_dof_new("element_dof_new", nelems);
+  ElementDofArray element_dof("element_dof", nelems);
   A2D::index_t elem = 1;
-  auto elem_dof = Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
+  auto elem_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
 }
 
 int main(int argc, char* argv[]) {

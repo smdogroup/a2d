@@ -1211,9 +1211,9 @@ template <class Basis>
 ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     : nelems(conn.get_num_elements()), num_dof(0) {
   // Count up the number of degrees of freedom
-  element_dof_new = ElementDofArray("element_dof_new", nelems);
-  element_sign_new = ElementSignArray("element_sign_new", nelems);
-  BLAS::fill(element_dof_new, NO_INDEX);
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
+  BLAS::fill(element_dof, NO_INDEX);
 
   // Perform a sweep of the elements
   std::vector<index_t> ids(nelems, NO_INDEX), stack(nelems);
@@ -1264,8 +1264,8 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     for (index_t counter = nelems; counter > 0; counter--) {
       index_t elem = stack[counter - 1];
 
-      auto elem_dof = Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
-      auto elem_sign = Kokkos::subview(element_sign_new, elem, Kokkos::ALL);
+      auto elem_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
+      auto elem_sign = Kokkos::subview(element_sign, elem, Kokkos::ALL);
 
       // The domain DOF are always owned by the element - no need to check
       // for the element that owns them
@@ -1297,7 +1297,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           index_t nf_owner = conn.get_element_bounds(owner_elem, &owner_bounds);
 
           auto owner_elem_dof =
-              Kokkos::subview(element_dof_new, owner_elem, Kokkos::ALL);
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
 
           for (index_t i = 0; i < nf_owner; i++) {
             if (owner_bounds[i] == bound) {
@@ -1342,7 +1342,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           index_t ne_owner = conn.get_element_edges(owner_elem, &owner_edges);
 
           auto owner_elem_dof =
-              Kokkos::subview(element_dof_new, owner_elem, Kokkos::ALL);
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
 
           for (index_t i = 0; i < ne_owner; i++) {
             if (owner_edges[i] == edge) {
@@ -1383,7 +1383,7 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           index_t nv_owner = conn.get_element_verts(owner_elem, &owner_verts);
 
           auto owner_elem_dof =
-              Kokkos::subview(element_dof_new, owner_elem, Kokkos::ALL);
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
 
           for (index_t i = 0; i < nv_owner; i++) {
             if (owner_verts[i] == vert) {
@@ -1424,8 +1424,8 @@ template <class InteriorBasis>
 ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
                                 ElementMesh<InteriorBasis>& mesh)
     : nelems(conn.get_num_boundary_bounds_with_label(label)) {
-  element_dof_new = ElementDofArray("element_dof_new", nelems);
-  element_sign_new = ElementSignArray("element_sign_new", nelems);
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
 
   // Get the number of boundary bounds
   const index_t* boundary_bounds;
@@ -1455,9 +1455,9 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
       auto dof = mesh.get_element_dof(elem);
 
       // Set pointers for the entity dof
-      auto surf_dof = Kokkos::subview(element_dof_new, elem_count, Kokkos::ALL);
+      auto surf_dof = Kokkos::subview(element_dof, elem_count, Kokkos::ALL);
       auto surf_signs =
-          Kokkos::subview(element_sign_new, elem_count, Kokkos::ALL);
+          Kokkos::subview(element_sign, elem_count, Kokkos::ALL);
 
       // The degree of freedom indices for each entity
       index_t entity_dof[InteriorBasis::ndof];
@@ -1553,8 +1553,8 @@ template <class HOrderBasis>
 ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
     : nelems(HOrderBasis::get_num_lorder_elements() * mesh.get_num_elements()),
       num_dof(mesh.get_num_dof()) {
-  element_dof_new = ElementDofArray("element_dof_new", nelems);
-  element_sign_new = ElementSignArray("element_sign_new", nelems);
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
 
   for (index_t i = 0; i < Basis::nbasis; i++) {
     num_dof_offset[i] = mesh.get_num_cumulative_dof(i);
@@ -1571,8 +1571,8 @@ ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
       index_t elem = i + j * HOrderBasis::get_num_lorder_elements();
 
       // Index into the high-order element
-      auto lorder_dof = Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
-      auto lorder_signs = Kokkos::subview(element_sign_new, elem, Kokkos::ALL);
+      auto lorder_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
+      auto lorder_signs = Kokkos::subview(element_sign, elem, Kokkos::ALL);
       HOrderBasis::get_lorder_dof(i, horder_dof, lorder_dof);
 
       // Signs indicating any orientation flip
@@ -1584,14 +1584,14 @@ ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
 template <class Basis>
 template <index_t basis>
 int ElementMesh<Basis>::get_global_dof_sign(index_t elem, index_t index) {
-  return element_sign_new(elem,
+  return element_sign(elem,
                           Basis::template get_dof_offset<basis>() + index);
 }
 
 template <class Basis>
 template <index_t basis>
 index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) {
-  return element_dof_new(elem, Basis::template get_dof_offset<basis>() + index);
+  return element_dof(elem, Basis::template get_dof_offset<basis>() + index);
 }
 
 template <class Basis>
@@ -1608,9 +1608,9 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
     index_t dof_reduced[Basis::ndof];
     index_t n = 0;
     for (index_t j1 = 0; j1 < ndof_per_elem; j1++, n++) {
-      index_t row = element_dof_new(i, j1) / M;
+      index_t row = element_dof(i, j1) / M;
       while (j1 + 1 < ndof_per_elem &&
-             row == (element_dof_new(i, j1 + 1) / M)) {
+             row == (element_dof(i, j1 + 1) / M)) {
         j1++;
       }
       dof_reduced[n] = row;

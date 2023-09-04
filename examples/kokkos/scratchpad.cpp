@@ -578,6 +578,16 @@ void test_cuda_axpy(int argc, char* argv[]) {
 #endif
 }
 
+void subview() {
+  // constexpr A2D::index_t ndof_per_element = 0;  // won't work
+  constexpr A2D::index_t ndof_per_element = 1;  // ok
+  using ElementDofArray = A2D::MultiArrayNew<A2D::index_t* [ndof_per_element]>;
+  A2D::index_t nelems = 10;
+  ElementDofArray element_dof_new("element_dof_new", nelems);
+  A2D::index_t elem = 1;
+  auto elem_dof = Kokkos::subview(element_dof_new, elem, Kokkos::ALL);
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
@@ -592,8 +602,10 @@ int main(int argc, char* argv[]) {
      // test_smart_pointer_behavior();
      // test_copy();
      // test_parallel_for();
-    // test_modify_view_from_const_lambda();
-    test_cuda_axpy(argc, argv);
+     // test_modify_view_from_const_lambda();
+     // test_cuda_axpy(argc, argv);
+
+    subview();
   }
   Kokkos::finalize();
 }

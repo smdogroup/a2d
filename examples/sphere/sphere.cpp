@@ -24,10 +24,11 @@ void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
   T ulen = 2.0 / nx;
 
   T Xloc[3 * ET::HEX_NVERTS];
+  auto HEX_VERTS_CART = ET::get_hex_verts_cart();
   for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
-    T u = 1.0 * ET::HEX_VERTS_CART[ii][0];
-    T v = 1.0 * ET::HEX_VERTS_CART[ii][1];
-    T w = 1.0 * ET::HEX_VERTS_CART[ii][2];
+    T u = 1.0 * HEX_VERTS_CART[ii][0];
+    T v = 1.0 * HEX_VERTS_CART[ii][1];
+    T w = 1.0 * HEX_VERTS_CART[ii][2];
 
     Xloc[3 * ii] = (2.0 * u - 1.0) * a;
     Xloc[3 * ii + 1] = (2.0 * v - 1.0) * a;
@@ -64,6 +65,7 @@ void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
   }
 
   // We know the 2-direction will be radial...
+  auto HEX_BOUND_VERTS = ET::get_hex_bound_verts();
   for (index_t face = 0; face < ET::HEX_NBOUNDS; face++) {
     for (index_t k = 0; k < nx; k++) {
       for (index_t j = 0; j < nx; j++) {
@@ -91,9 +93,9 @@ void set_geo_spherical(const T alpha, const T R, GeoElemVec& elem_geo) {
             T z0 = 0.0;
 
             for (index_t jj = 0; jj < 4; jj++) {
-              x0 += N[jj] * Xloc[3 * ET::HEX_BOUND_VERTS[face][jj]];
-              y0 += N[jj] * Xloc[3 * ET::HEX_BOUND_VERTS[face][jj] + 1];
-              z0 += N[jj] * Xloc[3 * ET::HEX_BOUND_VERTS[face][jj] + 2];
+              x0 += N[jj] * Xloc[3 * HEX_BOUND_VERTS[face][jj]];
+              y0 += N[jj] * Xloc[3 * HEX_BOUND_VERTS[face][jj] + 1];
+              z0 += N[jj] * Xloc[3 * HEX_BOUND_VERTS[face][jj] + 2];
             }
             T norm = std::sqrt(x0 * x0 + y0 * y0 + z0 * z0);
 
@@ -546,11 +548,12 @@ void find_spherical_error(bool write_sphere = false) {
   }
 
   // For each face add the faces
+  auto HEX_BOUND_VERTS = ET::get_hex_bound_verts();
   for (index_t face = 0; face < ET::HEX_NBOUNDS; face++) {
     for (index_t i = 0; i < 4; i++) {
-      hex[(face + 1) * ET::HEX_NVERTS + i] = hex[ET::HEX_BOUND_VERTS[face][i]];
+      hex[(face + 1) * ET::HEX_NVERTS + i] = hex[HEX_BOUND_VERTS[face][i]];
       hex[(face + 1) * ET::HEX_NVERTS + i + 4] =
-          hex_ext[ET::HEX_BOUND_VERTS[face][i]];
+          hex_ext[HEX_BOUND_VERTS[face][i]];
     }
   }
 

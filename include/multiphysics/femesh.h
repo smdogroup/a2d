@@ -140,98 +140,98 @@ class MetaDataFactory {
  private:
   static ElemConnMetaData create_tri(index_t* const* tri_bounds,
                                      const index_t* const* tri_verts) {
-    return ElemConnMetaData(ET::TRI_NBOUNDS,       // NBOUNDS
-                            0,                     // NEDGES
-                            ET::TRI_NVERTS,        // NVERTS
-                            ET::TRI_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::TRI_BOUND_VERTS,   // BOUND_VERTS
-                            nullptr,               // BOUND_NEDGES
-                            nullptr,               // BOUND_EDGES
-                            nullptr,               // EDGE_VERTS
-                            tri_bounds,            // bounds
-                            nullptr,               // edges
-                            tri_verts              // verts
+    return ElemConnMetaData(ET::TRI_NBOUNDS,             // NBOUNDS
+                            0,                           // NEDGES
+                            ET::TRI_NVERTS,              // NVERTS
+                            ET::get_tri_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_tri_bound_verts(),   // BOUND_VERTS
+                            nullptr,                     // BOUND_NEDGES
+                            nullptr,                     // BOUND_EDGES
+                            nullptr,                     // EDGE_VERTS
+                            tri_bounds,                  // bounds
+                            nullptr,                     // edges
+                            tri_verts                    // verts
     );
   }
 
   static ElemConnMetaData create_quad(index_t* const* quad_bounds,
                                       const index_t* const* quad_verts) {
-    return ElemConnMetaData(ET::QUAD_NBOUNDS,       // NBOUNDS
-                            0,                      // NEDGES
-                            ET::QUAD_NVERTS,        // NVERTS
-                            ET::QUAD_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::QUAD_BOUND_VERTS,   // BOUND_VERTS
-                            nullptr,                // BOUND_NEDGES
-                            nullptr,                // BOUND_EDGES
-                            nullptr,                // EDGE_VERTS
-                            quad_bounds,            // bounds
-                            nullptr,                // edges
-                            quad_verts              // verts
+    return ElemConnMetaData(ET::QUAD_NBOUNDS,             // NBOUNDS
+                            0,                            // NEDGES
+                            ET::QUAD_NVERTS,              // NVERTS
+                            ET::get_quad_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_quad_bound_verts(),   // BOUND_VERTS
+                            nullptr,                      // BOUND_NEDGES
+                            nullptr,                      // BOUND_EDGES
+                            nullptr,                      // EDGE_VERTS
+                            quad_bounds,                  // bounds
+                            nullptr,                      // edges
+                            quad_verts                    // verts
     );
   }
 
   static ElemConnMetaData create_tet(index_t* const* tet_bounds,
                                      index_t* const* tet_edges,
                                      const index_t* const* tet_verts) {
-    return ElemConnMetaData(ET::TET_NBOUNDS,       // NBOUNDS
-                            ET::TET_NEDGES,        // NEDGES
-                            ET::TET_NVERTS,        // NVERTS
-                            ET::TET_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::TET_BOUND_VERTS,   // BOUND_VERTS
-                            ET::TET_BOUND_NEDGES,  // BOUND_NEDGES
-                            ET::TET_BOUND_EDGES,   // BOUND_EDGES
-                            ET::TET_EDGE_VERTS,    // EDGE_VERTS
-                            tet_bounds,            // bounds
-                            tet_edges,             // edges
-                            tet_verts              // verts
+    return ElemConnMetaData(ET::TET_NBOUNDS,             // NBOUNDS
+                            ET::TET_NEDGES,              // NEDGES
+                            ET::TET_NVERTS,              // NVERTS
+                            ET::get_tet_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_tet_bound_verts(),   // BOUND_VERTS
+                            ET::get_tet_bound_nedges(),  // BOUND_NEDGES
+                            ET::get_tet_bound_edges(),   // BOUND_EDGES
+                            ET::get_tet_edge_verts(),    // EDGE_VERTS
+                            tet_bounds,                  // bounds
+                            tet_edges,                   // edges
+                            tet_verts                    // verts
     );
   }
   static ElemConnMetaData create_hex(index_t* const* hex_bounds,
                                      index_t* const* hex_edges,
                                      const index_t* const* hex_verts) {
-    return ElemConnMetaData(ET::HEX_NBOUNDS,       // NBOUNDS
-                            ET::HEX_NEDGES,        // NEDGES
-                            ET::HEX_NVERTS,        // NVERTS
-                            ET::HEX_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::HEX_BOUND_VERTS,   // BOUND_VERTS
-                            ET::HEX_BOUND_NEDGES,  // BOUND_NEDGES
-                            ET::HEX_BOUND_EDGES,   // BOUND_EDGES
-                            ET::HEX_EDGE_VERTS,    // EDGE_VERTS
-                            hex_bounds,            // bounds
-                            hex_edges,             // edges
-                            hex_verts              // verts
+    return ElemConnMetaData(ET::HEX_NBOUNDS,             // NBOUNDS
+                            ET::HEX_NEDGES,              // NEDGES
+                            ET::HEX_NVERTS,              // NVERTS
+                            ET::get_hex_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_hex_bound_verts(),   // BOUND_VERTS
+                            ET::get_hex_bound_nedges(),  // BOUND_NEDGES
+                            ET::get_hex_bound_edges(),   // BOUND_EDGES
+                            ET::get_hex_edge_verts(),    // EDGE_VERTS
+                            hex_bounds,                  // bounds
+                            hex_edges,                   // edges
+                            hex_verts                    // verts
     );
   }
   static ElemConnMetaData create_wedge(index_t* const* wedge_bounds,
                                        index_t* const* wedge_edges,
                                        const index_t* const* wedge_verts) {
-    return ElemConnMetaData(ET::WEDGE_NBOUNDS,       // NBOUNDS
-                            ET::WEDGE_NEDGES,        // NEDGES
-                            ET::WEDGE_NVERTS,        // NVERTS
-                            ET::WEDGE_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::WEDGE_BOUND_VERTS,   // BOUND_VERTS
-                            ET::WEDGE_BOUND_NEDGES,  // BOUND_NEDGES
-                            ET::WEDGE_BOUND_EDGES,   // BOUND_EDGES
-                            ET::WEDGE_EDGE_VERTS,    // EDGE_VERTS
-                            wedge_bounds,            // bounds
-                            wedge_edges,             // edges
-                            wedge_verts              // verts
+    return ElemConnMetaData(ET::WEDGE_NBOUNDS,             // NBOUNDS
+                            ET::WEDGE_NEDGES,              // NEDGES
+                            ET::WEDGE_NVERTS,              // NVERTS
+                            ET::get_wedge_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_wedge_bound_verts(),   // BOUND_VERTS
+                            ET::get_wedge_bound_nedges(),  // BOUND_NEDGES
+                            ET::get_wedge_bound_edges(),   // BOUND_EDGES
+                            ET::get_wedge_edge_verts(),    // EDGE_VERTS
+                            wedge_bounds,                  // bounds
+                            wedge_edges,                   // edges
+                            wedge_verts                    // verts
     );
   }
   static ElemConnMetaData create_pyrmd(index_t* const* pyrmd_bounds,
                                        index_t* const* pyrmd_edges,
                                        const index_t* const* pyrmd_verts) {
-    return ElemConnMetaData(ET::PYRMD_NBOUNDS,       // NBOUNDS
-                            ET::PYRMD_NEDGES,        // NEDGES
-                            ET::PYRMD_NVERTS,        // NVERTS
-                            ET::PYRMD_BOUND_NVERTS,  // BOUND_NVERTS
-                            ET::PYRMD_BOUND_VERTS,   // BOUND_VERTS
-                            ET::PYRMD_BOUND_NEDGES,  // BOUND_NEDGES
-                            ET::PYRMD_BOUND_EDGES,   // BOUND_EDGES
-                            ET::PYRMD_EDGE_VERTS,    // EDGE_VERTS
-                            pyrmd_bounds,            // bounds
-                            pyrmd_edges,             // edges
-                            pyrmd_verts              // verts
+    return ElemConnMetaData(ET::PYRMD_NBOUNDS,             // NBOUNDS
+                            ET::PYRMD_NEDGES,              // NEDGES
+                            ET::PYRMD_NVERTS,              // NVERTS
+                            ET::get_pyrmd_bound_nverts(),  // BOUND_NVERTS
+                            ET::get_pyrmd_bound_verts(),   // BOUND_VERTS
+                            ET::get_pyrmd_bound_nedges(),  // BOUND_NEDGES
+                            ET::get_pyrmd_bound_edges(),   // BOUND_EDGES
+                            ET::get_pyrmd_edge_verts(),    // EDGE_VERTS
+                            pyrmd_bounds,                  // bounds
+                            pyrmd_edges,                   // edges
+                            pyrmd_verts                    // verts
     );
   }
 };

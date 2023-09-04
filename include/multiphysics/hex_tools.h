@@ -115,6 +115,7 @@ void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
                       const FunctorType &func) {
   Timer timer("write_hex_to_vtk()");
   using ET = ElementTypes;
+  auto HEX_VERTS_CART = ET::get_hex_verts_cart();
   const index_t nex = degree;
   using QuadPts = HexGaussLobattoQuadrature<nex + 1>;
 
@@ -187,9 +188,9 @@ void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
 
           for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
             vtk_conn(counter, ii) =
-                off + vtk_node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                   j + ET::HEX_VERTS_CART[ii][1],
-                                   k + ET::HEX_VERTS_CART[ii][2]);
+                off + vtk_node_num(i + HEX_VERTS_CART[ii][0],
+                                   j + HEX_VERTS_CART[ii][1],
+                                   k + HEX_VERTS_CART[ii][2]);
           }
         }
       }
@@ -278,14 +279,15 @@ void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
       }
     }
 
+    auto QUAD_VERTS_CART = ET::get_quad_verts_cart();
     for (index_t j = 0; j < nex; j++) {
       for (index_t i = 0; i < nex; i++, counter++) {
         index_t off = n * (nex + 1) * (nex + 1);
 
         for (index_t ii = 0; ii < ET::QUAD_NVERTS; ii++) {
           vtk_conn(counter, ii) =
-              off + vtk_node_num(i + ET::get_quad_verts_cart(ii, 0),
-                                 j + ET::get_quad_verts_cart(ii, 1));
+              off + vtk_node_num(i + QUAD_VERTS_CART[ii][0],
+                                 j + QUAD_VERTS_CART[ii][1]);
         }
       }
     }

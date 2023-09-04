@@ -32,14 +32,14 @@ int main(int argc, char *argv[]) {
   int hex[8 * nhex];
 
   using ET = A2D::ElementTypes;
-
+  auto HEX_VERTS_CART = ET::get_hex_verts_cart();
   for (int k = 0, e = 0; k < nz; k++) {
     for (int j = 0; j < ny; j++) {
       for (int i = 0; i < nx; i++, e++) {
         for (int ii = 0; ii < ET::HEX_NVERTS; ii++) {
-          hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                     j + ET::HEX_VERTS_CART[ii][1],
-                                     k + ET::HEX_VERTS_CART[ii][2]);
+          hex[8 * e + ii] =
+              node_num(i + HEX_VERTS_CART[ii][0], j + HEX_VERTS_CART[ii][1],
+                       k + HEX_VERTS_CART[ii][2]);
         }
       }
     }

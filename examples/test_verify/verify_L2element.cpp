@@ -91,13 +91,14 @@ void main_body() {
   index_t *tets = NULL, *wedge = NULL, *pyrmd = NULL;
   index_t hex[8 * nhex];
 
+  auto HEX_VERTS_CART = ET::get_hex_verts_cart();
   for (index_t k = 0, e = 0; k < nz; k++) {
     for (index_t j = 0; j < ny; j++) {
       for (index_t i = 0; i < nx; i++, e++) {
         for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
-          hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                     j + ET::HEX_VERTS_CART[ii][1],
-                                     k + ET::HEX_VERTS_CART[ii][2]);
+          hex[8 * e + ii] =
+              node_num(i + HEX_VERTS_CART[ii][0], j + HEX_VERTS_CART[ii][1],
+                       k + HEX_VERTS_CART[ii][2]);
         }
       }
     }
@@ -173,9 +174,9 @@ void main_body() {
 
         // Get the geometry values
         for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
-          index_t node = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                  j + ET::HEX_VERTS_CART[ii][1],
-                                  k + ET::HEX_VERTS_CART[ii][2]);
+          index_t node =
+              node_num(i + HEX_VERTS_CART[ii][0], j + HEX_VERTS_CART[ii][1],
+                       k + HEX_VERTS_CART[ii][2]);
 
           // Set the entity DOF
           index_t basis = 0;

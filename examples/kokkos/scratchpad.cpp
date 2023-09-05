@@ -619,13 +619,13 @@ void test_cuda_axpy_with_UVM(int argc, char* argv[]) {
   int repeat = 100;
   T alpha = 0.01;
   for (int i = 0; i < repeat; i++) {
-    Kokkos::parallel_for(
-        "axpy", N, KOKKOS_LAMBDA(const I index) {
-          // T alpha = Alpha::get_alpha_array()[0];  // This doesn't work
-          T alpha = Alpha::value_array[0];  // This works
-          auto x_slice = Kokkos::subview(x_device, Kokkos::ALL);
-          y_device(index) += alpha * x_slice(index);
-        });
+    auto loop_body = KOKKOS_LAMBDA(const I index) {
+      // T alpha = Alpha::get_alpha_array()[0];  // This doesn't work
+      T alpha = Alpha::value_array[0];  // This works
+      auto x_slice = Kokkos::subview(x_device, Kokkos::ALL);
+      y_device(index) += alpha * x_slice(index);
+    };
+    Kokkos::parallel_for("axpy", N, loop_body);
     Kokkos::fence();
   }
 
@@ -661,23 +661,84 @@ void test_cuda_axpy_with_UVM(int argc, char* argv[]) {
 #endif
 }
 
+class ParallelVector {
+#ifdef KOKKOS_ENABLE_CUDA
+  using MemSpace = Kokkos::CudaUVMSpace;
+#else
+  using MemSpace = Kokkos::HostSpace;
+#endif
+  using data_t = Kokkos::View<double*, Kokkos::LayoutRight, MemSpace>;
+
+  KOKKOS_FUNCTION void set_one_value(int i, double val) const { data(i) = val; }
+
+ public:
+  ParallelVector(int len) : len(len), data("data", len) {}
+
+  void set_values(double val) {
+    auto loop_body = KOKKOS_CLASS_LAMBDA(int i) { set_one_value(i, val); };
+
+    Kokkos::parallel_for("loop", len, loop_body);
+    Kokkos::fence();
+  }
+
+ private:
+  int len;
+  data_t data;
+};
+
+struct Head {
+  Head(double val) : val(val) {}
+  KOKKOS_FUNCTION double get_val() { return val; };
+
+ private:
+  double val;
+};
+struct Data {
+  Data(Head& head, double val, int id = 0) : head(head), val(val), id(id) {}
+  double val;
+  int id;
+  Head& head;
+};
+
+// This can build, won't work -  ``it is generally not valid to have any pointer
+// or reference members in the functor''
+void test_cuda_functor_pass_by_ref() {
+#ifdef KOKKOS_ENABLE_CUDA
+  Head head(5.6);
+  Data data(head, 4.2);
+  Kokkos::View<double*, Kokkos::LayoutRight, Kokkos::CudaUVMSpace> view("view",
+                                                                        10);
+  auto loop_body = [=] __device__(int i) { view(i) = data.head.get_val(); };
+  Kokkos::parallel_for("loop", 10, loop_body);
+  Kokkos::fence();
+
+  for (int i = 0; i < 10; i++) {
+    std::printf("view[%2d]: %.10f\n", i, view[i]);
+  }
+#endif
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
      // test_matvec(argc, argv);
-    // test_unordered_set();
-    // test_subview();
-    // test_sort();
-    // test_is_same_layout();
-    // test_complex();
-    // test_is_complex();
-    // test_view_is_allocated();
-    // test_smart_pointer_behavior();
-    // test_copy();
-    // test_parallel_for();
-    // test_modify_view_from_const_lambda();
-    test_cuda_axpy(argc, argv);
-    // subview();
+     // test_unordered_set();
+     // test_subview();
+     // test_sort();
+     // test_is_same_layout();
+     // test_complex();
+     // test_is_complex();
+     // test_view_is_allocated();
+     // test_smart_pointer_behavior();
+     // test_copy();
+     // test_parallel_for();
+     // test_modify_view_from_const_lambda();
+     // test_cuda_axpy(argc, argv);
+     // subview();
+     // test_cuda_axpy_with_UVM(argc, argv);
+     // ParallelVector pv(10);
+     // pv.set_values(4.2);
+     // test_cuda_functor_pass_by_ref();
   }
   Kokkos::finalize();
 }

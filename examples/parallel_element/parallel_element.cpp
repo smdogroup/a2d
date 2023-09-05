@@ -32,7 +32,7 @@ class TopoElasticityAnalysis {
   static constexpr int var_dim = spatial_dim;
   static constexpr int block_size = var_dim;
 
-  using Vec_t = SolutionVector<T>;
+  using Vec_t = MultiArrayNew<T *>;
   using BSRMat_t = BSRMat<T, block_size, block_size>;
 
   using Quadrature = QuadGaussQuadrature<order>;
@@ -74,9 +74,9 @@ class TopoElasticityAnalysis {
         mesh(conn),
         geomesh(conn),
         datamesh(conn),
-        sol(mesh.get_num_dof()),
-        geo(geomesh.get_num_dof()),
-        data(datamesh.get_num_dof()),
+        sol("sol", mesh.get_num_dof()),
+        geo("geo", geomesh.get_num_dof()),
+        data("data", datamesh.get_num_dof()),
         elem_sol(mesh, sol),
         elem_geo(geomesh, geo),
         elem_data(datamesh, data) {
@@ -111,7 +111,7 @@ class TopoElasticityAnalysis {
       N = 20;
     }
 
-    Vec_t res(mesh.get_num_dof());
+    Vec_t res("res", mesh.get_num_dof());
     ElemVec elem_res(mesh, res);
     StopWatch watch;
 

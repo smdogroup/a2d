@@ -137,7 +137,7 @@ class ElementVector_Empty {
  * @tparam VecType type of the solution vector, e.g. SolutionVector<...>
  */
 template <typename T, class Basis, class VecType>
-class ElementVector_Serial : public ElementVector_Empty {
+class ElementVector_Serial final : public ElementVector_Empty {
  public:
   static constexpr ElemVecType evtype = ElemVecType::Serial;
   ElementVector_Serial(ElementMesh<Basis>& mesh, VecType& vec) : mesh(mesh), vec(vec) {}
@@ -247,13 +247,19 @@ class ElementVector_Serial : public ElementVector_Empty {
  * @tparam VecType type of the solution vector, e.g. SolutionVector<...>
  */
 template <typename T, class Basis, class VecType>
-class ElementVector_Parallel : public ElementVector_Empty {
+class ElementVector_Parallel final : public ElementVector_Empty {
   using ElemVecArray_t = MultiArrayNew<T * [Basis::ndof]>;
 
  public:
   static constexpr ElemVecType evtype = ElemVecType::Parallel;
+
+  // Default and copy constructor
+  // Note: copy constructor is needed because we need to capture *this (i.e.
+  //  pass *this by value in the functor) in parallel dispatch
   ElementVector_Parallel(ElementMesh<Basis>& mesh, VecType& vec)
       : mesh(mesh), vec(vec), elem_vec_array("elem_vec_array", mesh.get_num_elements()) {}
+  KOKKOS_FUNCTION ElementVector_Parallel(const ElementVector_Parallel& other)
+      : mesh(other.mesh), vec(other.vec), elem_vec_array(other.elem_vec_array) {}
 
   class FEDof {
    public:
@@ -285,7 +291,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @brief Populate element-view data from global data for all elements
    */
   void get_values() const {
-    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_CLASS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::GET, Basis::nbasis>(elem);
     };
 
@@ -302,7 +308,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * Note: Data consistency is assumed
    */
   void set_values() const {
-    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_CLASS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::SET, Basis::nbasis>(elem);
     };
 
@@ -318,7 +324,7 @@ class ElementVector_Parallel : public ElementVector_Empty {
    * @brief Add global data from element-view data for all elements
    */
   void add_values() const {
-    auto loop_body = KOKKOS_LAMBDA(const index_t elem) {
+    auto loop_body = KOKKOS_CLASS_LAMBDA(const index_t elem) {
       operate_element_values<ELEM_VALS_OP::ADD, Basis::nbasis>(elem);
     };
 
@@ -341,8 +347,8 @@ class ElementVector_Parallel : public ElementVector_Empty {
   template <ELEM_VALS_OP op, index_t nbasis>
   KOKKOS_FUNCTION void operate_element_values(const index_t& elem_idx) const {
     for (index_t i = 0; i < Basis::template get_ndof<nbasis - 1>(); i++) {
-      const int& sign = mesh.template get_global_dof_sign<nbasis - 1>(elem_idx, i);
-      const index_t& dof_index = mesh.template get_global_dof<nbasis - 1>(elem_idx, i);
+      const int sign = mesh.template get_global_dof_sign<nbasis - 1>(elem_idx, i);
+      const index_t dof_index = mesh.template get_global_dof<nbasis - 1>(elem_idx, i);
       const index_t dof_idx = i + Basis::template get_dof_offset<nbasis - 1>();
       if constexpr (op == ELEM_VALS_OP::GET) {
         elem_vec_array(elem_idx, dof_idx) = sign * vec[dof_index];
@@ -361,8 +367,8 @@ class ElementVector_Parallel : public ElementVector_Empty {
     return;
   }
 
-  ElementMesh<Basis>& mesh;
-  VecType& vec;
+  ElementMesh<Basis> mesh;
+  VecType vec;
   ElemVecArray_t elem_vec_array;  // The heavy-weight storage
 };
 

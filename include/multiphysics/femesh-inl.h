@@ -1211,6 +1211,7 @@ template <class Basis>
 ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     : nelems(conn.get_num_elements()), num_dof(0) {
   // Count up the number of degrees of freedom
+  num_dof_offset = DofOffsetArray("num_dof_offset");
   element_dof = ElementDofArray("element_dof", nelems);
   element_sign = ElementSignArray("element_sign", nelems);
   BLAS::fill(element_dof, NO_INDEX);
@@ -1424,6 +1425,7 @@ template <class InteriorBasis>
 ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
                                 ElementMesh<InteriorBasis>& mesh)
     : nelems(conn.get_num_boundary_bounds_with_label(label)) {
+  num_dof_offset = DofOffsetArray("num_dof_offset");
   element_dof = ElementDofArray("element_dof", nelems);
   element_sign = ElementSignArray("element_sign", nelems);
 
@@ -1456,8 +1458,7 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
 
       // Set pointers for the entity dof
       auto surf_dof = Kokkos::subview(element_dof, elem_count, Kokkos::ALL);
-      auto surf_signs =
-          Kokkos::subview(element_sign, elem_count, Kokkos::ALL);
+      auto surf_signs = Kokkos::subview(element_sign, elem_count, Kokkos::ALL);
 
       // The degree of freedom indices for each entity
       index_t entity_dof[InteriorBasis::ndof];
@@ -1553,6 +1554,7 @@ template <class HOrderBasis>
 ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
     : nelems(HOrderBasis::get_num_lorder_elements() * mesh.get_num_elements()),
       num_dof(mesh.get_num_dof()) {
+  num_dof_offset = DofOffsetArray("num_dof_offset");
   element_dof = ElementDofArray("element_dof", nelems);
   element_sign = ElementSignArray("element_sign", nelems);
 
@@ -1583,14 +1585,13 @@ ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
 
 template <class Basis>
 template <index_t basis>
-int ElementMesh<Basis>::get_global_dof_sign(index_t elem, index_t index) {
-  return element_sign(elem,
-                          Basis::template get_dof_offset<basis>() + index);
+int ElementMesh<Basis>::get_global_dof_sign(index_t elem, index_t index) const {
+  return element_sign(elem, Basis::template get_dof_offset<basis>() + index);
 }
 
 template <class Basis>
 template <index_t basis>
-index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) {
+index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) const {
   return element_dof(elem, Basis::template get_dof_offset<basis>() + index);
 }
 
@@ -1609,8 +1610,7 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
     index_t n = 0;
     for (index_t j1 = 0; j1 < ndof_per_elem; j1++, n++) {
       index_t row = element_dof(i, j1) / M;
-      while (j1 + 1 < ndof_per_elem &&
-             row == (element_dof(i, j1 + 1) / M)) {
+      while (j1 + 1 < ndof_per_elem && row == (element_dof(i, j1 + 1) / M)) {
         j1++;
       }
       dof_reduced[n] = row;

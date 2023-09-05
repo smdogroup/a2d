@@ -440,6 +440,7 @@ class ElementMesh {
   static const index_t ndof_per_element = Basis::ndof;
 
   // Mult-dimensional array type
+  using DofOffsetArray = MultiArrayNew<index_t[Basis::nbasis]>;
   using ElementDofArray = MultiArrayNew<index_t* [ndof_per_element]>;
   using ElementSignArray = MultiArrayNew<int* [ndof_per_element]>;
 
@@ -451,17 +452,27 @@ class ElementMesh {
   template <class HOrderBasis>
   ElementMesh(ElementMesh<HOrderBasis>& mesh);
 
-  index_t get_num_elements() { return nelems; }
-  index_t get_num_dof() { return num_dof; }
-  index_t get_num_cumulative_dof(index_t basis) {
+  // Copy constructor, this is needed for parallel dispatch
+  KOKKOS_FUNCTION ElementMesh(const ElementMesh& other)
+      : nelems(other.nelems),
+        num_dof(other.num_dof),
+        num_dof_offset(other.num_dof_offset),
+        element_dof(other.element_dof),
+        element_sign(other.element_sign) {}
+
+  index_t get_num_elements() const { return nelems; }
+  index_t get_num_dof() const { return num_dof; }
+  index_t get_num_cumulative_dof(index_t basis) const {
     return num_dof_offset[basis];
   }
 
   // Needed for parallel element execution
   template <index_t basis>
-  KOKKOS_FUNCTION int get_global_dof_sign(index_t elem, index_t index);
+  KOKKOS_FUNCTION int get_global_dof_sign(const index_t elem,
+                                          const index_t index) const;
   template <index_t basis>
-  KOKKOS_FUNCTION index_t get_global_dof(index_t elem, index_t index);
+  KOKKOS_FUNCTION index_t get_global_dof(const index_t elem,
+                                         const index_t index) const;
 
   // Get the degrees of freedom associated with this element
   KOKKOS_FUNCTION auto get_element_dof(const index_t elem) {
@@ -478,10 +489,10 @@ class ElementMesh {
                         std::vector<index_t>& cols);
 
  private:
-  index_t nelems;                         // Total number of elements
-  index_t num_dof;                        // Total number of degrees of freedom
-  index_t num_dof_offset[Basis::nbasis];  // Cumulative number of degrees of
-                                          // freedom each basis
+  index_t nelems;                 // Total number of elements
+  index_t num_dof;                // Total number of degrees of freedom
+  DofOffsetArray num_dof_offset;  // Cumulative number of degrees of
+                                  // freedom each basis
 
   // Store the degrees of freedom for each element and the element sign
   ElementDofArray element_dof;

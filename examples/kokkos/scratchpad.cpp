@@ -694,7 +694,7 @@ struct Head {
   double val;
 };
 struct Data {
-  Data(Head& head, double val, int id = 0) : head(head), val(val), id(id) {}
+  Data(Head& head, double val, int id = 0) : val(val), id(id), head(head) {}
   double val;
   int id;
   Head& head;
@@ -715,6 +715,14 @@ void test_cuda_functor_pass_by_ref() {
   for (int i = 0; i < 10; i++) {
     std::printf("view[%2d]: %.10f\n", i, view[i]);
   }
+#endif
+}
+
+void test_KOKKOS_ENABLE_CXX17() {
+#ifdef KOKKOS_ENABLE_CXX17
+  printf("KOKKOS_ENABLE_CXX17 is defined\n");
+#else
+  printf("KOKKOS_ENABLE_CXX17 is not defined\n");
 #endif
 }
 
@@ -739,6 +747,7 @@ int main(int argc, char* argv[]) {
      // ParallelVector pv(10);
      // pv.set_values(4.2);
      // test_cuda_functor_pass_by_ref();
+    test_KOKKOS_ENABLE_CXX17();
   }
   Kokkos::finalize();
 }

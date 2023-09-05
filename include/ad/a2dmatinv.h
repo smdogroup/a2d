@@ -20,7 +20,7 @@ namespace A2D {
 */
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatInv(Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
+KOKKOS_FUNCTION void MatInv(const Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
   MatInvCore<T, N>(get_data(A), get_data(Ainv));
 }
 

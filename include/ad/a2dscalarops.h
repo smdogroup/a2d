@@ -218,26 +218,26 @@ class PowExpr {
   KOKKOS_FUNCTION PowExpr(atype& a, const T exponent, btype& b)
       : a(a), exponent(exponent), b(b) {}
 
-  KOKKOS_FUNCTION void eval() { get_data(b) = std::pow(get_data(a), exponent); }
+  KOKKOS_FUNCTION void eval() {
+    get_data(b) = std::pow(get_data(a), exponent);
+    inv = 1.0 / get_data(a);
+  }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    GetSeed<seed>::get_data(b) = exponent *
-                                 std::pow(get_data(a), exponent - 1.0) *
-                                 GetSeed<seed>::get_data(a);
+    GetSeed<seed>::get_data(b) =
+        exponent * inv * get_data(b) * GetSeed<seed>::get_data(a);
   }
 
   KOKKOS_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
-    T inv = 1.0 / get_data(a);
     GetSeed<seed>::get_data(a) +=
         exponent * inv * get_data(b) * GetSeed<seed>::get_data(b);
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    T inv = 1.0 / get_data(a);
     GetSeed<ADseed::h>::get_data(a) +=
         get_data(b) *
         (exponent * inv * GetSeed<ADseed::h>::get_data(b) +
@@ -245,6 +245,7 @@ class PowExpr {
              GetSeed<ADseed::b>::get_data(b) * GetSeed<ADseed::p>::get_data(a));
   }
 
+  T inv;
   atype& a;
   const T exponent;
   btype& b;
@@ -258,6 +259,59 @@ KOKKOS_FUNCTION auto Pow(ADScalar<T>& a, const T exponent, ADScalar<T>& b) {
 template <typename T>
 KOKKOS_FUNCTION auto Pow(A2DScalar<T>& a, const T exponent, A2DScalar<T>& b) {
   return PowExpr<T, ADorder::SECOND>(a, exponent, b);
+}
+
+template <typename T>
+KOKKOS_FUNCTION void Sqrt(const T a, T& b) {
+  b = std::sqrt(a);
+}
+
+template <typename T, ADorder order>
+class SqrtExpr {
+ public:
+  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+
+  KOKKOS_FUNCTION SqrtExpr(atype& a, btype& b) : a(a), b(b) {}
+
+  KOKKOS_FUNCTION void eval() {
+    get_data(b) = std::sqrt(get_data(a));
+    inv = T(1.0) / get_data(b);
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    GetSeed<seed>::get_data(b) = 0.5 * inv * GetSeed<seed>::get_data(a);
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    constexpr ADseed seed = ADseed::b;
+    GetSeed<seed>::get_data(a) += 0.5 * inv * GetSeed<seed>::get_data(b);
+  }
+
+  KOKKOS_FUNCTION void hreverse() {
+    GetSeed<ADseed::h>::get_data(a) +=
+        (0.5 * inv * GetSeed<ADseed::h>::get_data(b) -
+         0.25 * inv * inv * inv * GetSeed<ADseed::b>::get_data(b) *
+             GetSeed<ADseed::p>::get_data(a));
+  }
+
+  T inv;
+  atype& a;
+  const T exponent;
+  btype& b;
+};
+
+template <typename T>
+KOKKOS_FUNCTION auto Sqrt(ADScalar<T>& a, ADScalar<T>& b) {
+  return SqrtExpr<T, ADorder::FIRST>(a, b);
+}
+
+template <typename T>
+KOKKOS_FUNCTION auto Sqrt(A2DScalar<T>& a, A2DScalar<T>& b) {
+  return SqrtExpr<T, ADorder::SECOND>(a, b);
 }
 
 template <typename T>
@@ -674,7 +728,7 @@ class ScalarTest : public A2DTest<T, T, T> {
 
   // Evaluate the matrix-matrix product
   Output eval(const Input& x) {
-    T a, b, c, d, e, f, q, r, s, t;
+    T a, b, c, d, e, f, q, r, s, t, u;
     x.get_values(a);
     Log(a, b);
     Sin(b, c);
@@ -685,13 +739,14 @@ class ScalarTest : public A2DTest<T, T, T> {
     Sum(d, q, r);
     Sum(T(-1.0), q, T(3.14), r, s);
     Divide(q, s, t);
+    Sqrt(t, u);
 
-    return MakeVarTuple<T>(t);
+    return MakeVarTuple<T>(u);
   }
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> a, b, c, d, e, f, q, r, s, t;
+    ADScalar<T> a, b, c, d, e, f, q, r, s, t, u;
     x.get_values(a.value);
     auto stack = MakeStack(Log(a, b),                       //
                            Sin(b, c),                       //
@@ -701,8 +756,10 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Mult(c, f, q),                   //
                            Sum(d, q, r),                    //
                            Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t));
-    seed.get_values(t.bvalue);
+                           Divide(q, s, t),                 //
+                           Sqrt(t, u));
+
+    seed.get_values(u.bvalue);
     stack.reverse();
     g.set_values(a.bvalue);
   }
@@ -710,7 +767,7 @@ class ScalarTest : public A2DTest<T, T, T> {
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> a, b, c, d, e, f, q, r, s, t;
+    A2DScalar<T> a, b, c, d, e, f, q, r, s, t, u;
     x.get_values(a.value);
     p.get_values(a.pvalue);
     auto stack = MakeStack(Log(a, b),                       //
@@ -721,9 +778,10 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Mult(c, f, q),                   //
                            Sum(d, q, r),                    //
                            Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t));
-    seed.get_values(t.bvalue);
-    hval.get_values(t.hvalue);
+                           Divide(q, s, t),                 //
+                           Sqrt(t, u));
+    seed.get_values(u.bvalue);
+    hval.get_values(u.hvalue);
     stack.reverse();
     stack.hforward();
     stack.hreverse();

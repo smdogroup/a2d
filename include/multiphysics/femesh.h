@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <set>
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
 #include "a2dobjs.h"
 #include "multiphysics/feelementtypes.h"
 #include "sparse/sparse_matrix.h"

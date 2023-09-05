@@ -3,9 +3,7 @@
 
 #include <type_traits>
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
-#include "a2dobjs.h"
+#include "a2dcore.h"
 
 namespace A2D {
 

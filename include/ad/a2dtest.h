@@ -133,6 +133,7 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
   // Set a random seed input
   seed.set_rand();
   hvalue.set_rand();
+  hvalue.zero();
 
   // Get the starting point
   test.get_point(x);

@@ -447,10 +447,10 @@ class FiniteElement {
 
         // Allocate the Jacobian-adjoint product functor
         double weight = Quadrature::get_weight(j);
-        typename Integrand::AdjVecProduct ajp(integrand, weight * detJ,
-                                              data.get(j), gref, s);
 
-        ajp(a, deriv.get(j));
+        // Compute the adjoint-vector product at the quadrature point
+        integrand.data_adjoint_product(weight * detJ, data.get(j), gref, s, a,
+                                       deriv.get(j));
       }
 
       // Add the derivative of the data back to the data space
@@ -539,7 +539,7 @@ class FiniteElement {
         // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
         typename Integrand::FiniteElementSpace coef;
-        integrand.weak(weight * detJ, data.get(j), gref, s, coef);
+        integrand.residual(weight * detJ, data.get(j), gref, s, coef);
 
         // Transform the coefficients back to the reference element
         typename Integrand::FiniteElementSpace& cref = res.get(j);
@@ -577,111 +577,6 @@ class FiniteElement {
   }
 
   /**
-   * @brief Compute the matrix-free Jacobian-vector product y = y + J * x
-   *
-   * @tparam DataElemVec Element vector class for the data
-   * @tparam GeoElemVec Element vector class for the geometry
-   * @tparam ElemVec Element vector class for the solution/residual
-   * @param integrand Instance of the Integrand
-   * @param elem_data Element vector for the data
-   * @param elem_geo Element vector for the geometry
-   * @param elem_sol Element solution vector
-   * @param elem_xvec Element solution vector for storing x-components
-   * @param elem_yvec Output element solution vector storing y-components
-   */
-  template <class DataElemVec, class GeoElemVec, class ElemVec>
-  void add_jacobian_vector_product(const Integrand& integrand,
-                                   DataElemVec& elem_data, GeoElemVec& elem_geo,
-                                   ElemVec& elem_sol, ElemVec& elem_xvec,
-                                   ElemVec& elem_yvec) {
-    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
-    static_assert(same_evtype::value,
-                  "Cannot mix up different element vector types (e.g. using "
-                  "parallel and serial at the same time)");
-    constexpr ElemVecType evtype = same_evtype::evtype;
-
-    const index_t num_elements = elem_geo.get_num_elements();
-    const index_t num_quadrature_points = Quadrature::get_num_points();
-
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_data.get_values();
-      elem_geo.get_values();
-      elem_sol.get_values();
-      elem_xvec.get_values();
-      elem_yvec.get_zero_values();
-    }
-
-    for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry, solution and input vector for this element
-      // and interpolate it
-      typename DataElemVec::FEDof data_dof(i, elem_data);
-      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      typename ElemVec::FEDof sol_dof(i, elem_sol);
-      typename ElemVec::FEDof x_dof(i, elem_xvec);
-
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_data.get_element_values(i, data_dof);
-        elem_geo.get_element_values(i, geo_dof);
-        elem_sol.get_element_values(i, sol_dof);
-        elem_xvec.get_element_values(i, x_dof);
-      }
-
-      QDataSpace data;
-      QGeoSpace geo;
-      QSpace sol;
-      QSpace xsol;
-
-      DataBasis::template interp(data_dof, data);
-      GeoBasis::template interp(geo_dof, geo);
-      Basis::template interp(sol_dof, sol);
-      Basis::template interp(x_dof, xsol);
-
-      // Allocate space for the output vector
-      QSpace ysol;
-
-      for (index_t j = 0; j < num_quadrature_points; j++) {
-        // Transform to the local coordinate system
-        typename Integrand::FiniteElementSpace& sref = sol.get(j);
-        typename Integrand::FiniteElementSpace& xref = xsol.get(j);
-        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
-
-        // Initialize the transform object
-        T detJ;
-        typename Integrand::SolutionMapping transform(gref, detJ);
-
-        // Transform from the reference element to the physical space
-        typename Integrand::FiniteElementSpace x, s;
-        transform.transform(sref, s);
-        transform.transform(xref, x);
-
-        // Allocate the Jacobian-vector product functor
-        double weight = Quadrature::get_weight(j);
-        typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
-                                              data.get(j), gref, s);
-
-        // Compute the Jacobian-vector product
-        typename Integrand::FiniteElementSpace y;
-        jvp(x, y);
-
-        // Transform to back to the reference element
-        typename Integrand::FiniteElementSpace& yref = ysol.get(j);
-        transform.rtransform(y, yref);
-      }
-
-      // Add the values from the quadrature points back into the
-      // finite-element problem
-      typename ElemVec::FEDof y_dof(i, elem_yvec);
-      Basis::template add(ysol, y_dof);
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_yvec.add_element_values(i, y_dof);
-      }
-    }
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_yvec.add_values();
-    }
-  }
-
-  /**
    * @brief Assemble element Jacobian matrices based on the data, geometry and
    * solution vectors.
    *
@@ -707,105 +602,6 @@ class FiniteElement {
                     ElemMat& elem_mat) {
     Timer timer("FiniteElement::add_jacobian()");
 
-    using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
-    static_assert(same_evtype::value,
-                  "Cannot mix up different element vector types (e.g. using "
-                  "parallel and serial at the same time)");
-    constexpr ElemVecType evtype = same_evtype::evtype;
-
-    const index_t ncomp = Integrand::FiniteElementSpace::ncomp;
-    const index_t num_elements = elem_geo.get_num_elements();
-    const index_t num_quadrature_points = Quadrature::get_num_points();
-
-    if constexpr (evtype == ElemVecType::Parallel) {
-      elem_data.get_values();
-      elem_geo.get_values();
-      elem_sol.get_values();
-    }
-
-    for (index_t i = 0; i < num_elements; i++) {
-      // Get the data, geometry and solution for this element and interpolate
-      // it
-      typename DataElemVec::FEDof data_dof(i, elem_data);
-      typename GeoElemVec::FEDof geo_dof(i, elem_geo);
-      typename ElemVec::FEDof sol_dof(i, elem_sol);
-
-      if constexpr (evtype == ElemVecType::Serial) {
-        elem_data.get_element_values(i, data_dof);
-        elem_geo.get_element_values(i, geo_dof);
-        elem_sol.get_element_values(i, sol_dof);
-      }
-
-      QDataSpace data;
-      QGeoSpace geo;
-      QSpace sol;
-
-      DataBasis::template interp(data_dof, data);
-      GeoBasis::template interp(geo_dof, geo);
-      Basis::template interp(sol_dof, sol);
-
-      // Initialize the element matrix
-      typename ElemMat::FEMat element_mat(i, elem_mat);
-
-      for (index_t j = 0; j < num_quadrature_points; j++) {
-        // Transform to the local coordinate system
-        typename Integrand::FiniteElementSpace& sref = sol.get(j);
-        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
-
-        // Initialize the transform object
-        T detJ;
-        typename Integrand::SolutionMapping transform(gref, detJ);
-
-        // Transform from the reference element to the physical space
-        typename Integrand::FiniteElementSpace s;
-        transform.transform(sref, s);
-
-        // // Allocate the Jacobian-vector product functor
-        // double weight = Quadrature::get_weight(j);
-        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
-        // data.get(j), gref, s);
-
-        // The entries of the Jacobian matrix at the quadrature point
-        typename Integrand::QMatType jac;
-
-        // Temporary vectors
-        typename Integrand::FiniteElementSpace pref, p, Jp;
-
-        double weight = Quadrature::get_weight(j);
-
-        for (index_t k = 0; k < ncomp; k++) {
-          // Set the value into the matrix
-          pref.zero();
-          pref[k] = T(1.0);
-          transform.transform(pref, p);
-
-          // Allocate the Jacobian-vector product functor
-          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
-                                                data.get(j), gref, s);
-
-          // Compute the Jacobian-vector product
-          jvp(p, Jp);
-
-          // Transform to back to the reference element
-          transform.rtransform(Jp, pref);
-
-          for (index_t m = 0; m < ncomp; m++) {
-            jac(m, k) = pref[m];
-          }
-        }
-
-        // Add the results of the outer product
-        Basis::template add_outer<Quadrature>(j, jac, element_mat);
-      }
-
-      elem_mat.add_element_values(i, element_mat);
-    }
-  }
-
-  template <class DataElemVec, class GeoElemVec, class ElemVec, class ElemMat>
-  void add_jacobian_new(const Integrand& integrand, DataElemVec& elem_data,
-                        GeoElemVec& elem_geo, ElemVec& elem_sol,
-                        ElemMat& elem_mat) {
     using same_evtype = have_same_evtype<DataElemVec, GeoElemVec, ElemVec>;
     static_assert(same_evtype::value,
                   "Cannot mix up different element vector types (e.g. using "
@@ -969,38 +765,15 @@ class MatrixFree {
         typename Integrand::FiniteElementSpace s;
         transform.transform(sref, s);
 
-        // // Allocate the Jacobian-vector product functor
-        // double weight = Quadrature::get_weight(j);
-        // typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
-        // data.get(j), gref, s);
+        // Compute the Jacobian for the weak form at the quadrature point
+        double weight = Quadrature::get_weight(j);
+        typename Integrand::QMatType jac;
+        integrand.jacobian(weight * detJ, data.get(j), gref, s, jac);
 
-        // The entries of the Jacobian matrix at the quadrature point
-        typename Integrand::QMatType& jac = qmat[i].get(j);
-
-        // Temporary vectors
-        typename Integrand::FiniteElementSpace pref, p, Jp;
-
-        for (index_t k = 0; k < ncomp; k++) {
-          // Set the value into the matrix
-          pref.zero();
-          pref[k] = T(1.0);
-          transform.transform(pref, p);
-
-          // Allocate the Jacobian-vector product functor
-          double weight = Quadrature::get_weight(j);
-          typename Integrand::JacVecProduct jvp(integrand, weight * detJ,
-                                                data.get(j), gref, s);
-
-          // Compute the Jacobian-vector product
-          jvp(p, Jp);
-
-          // Transform to back to the reference element
-          transform.rtransform(Jp, pref);
-
-          for (index_t m = 0; m < ncomp; m++) {
-            jac(m, k) = pref[m];
-          }
-        }
+        // Transform second derivatives from w.r.t. x to w.r.t. xi
+        typename Integrand::QMatType& jac_ref = qmat[i].get(j);
+        transform.template jtransform<typename Integrand::FiniteElementSpace>(
+            jac, jac_ref);
       }
     }
   }

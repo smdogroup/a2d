@@ -276,6 +276,25 @@ class GetSeed {
     }
   }
 
+  template <typename T>
+  static KOKKOS_FUNCTION T& get_obj(ADScalar<T>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
+    return value.bvalue;
+  }
+
+  template <typename T>
+  static KOKKOS_FUNCTION T& get_obj(A2DScalar<T>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DScalar");
+    if constexpr (seed == ADseed::b) {
+      return value.bvalue;
+    } else if constexpr (seed == ADseed::p) {
+      return value.pvalue;
+    } else {  // seed == ADseed::h
+      return value.hvalue;
+    }
+  }
+
   template <typename T, int N>
   static KOKKOS_FUNCTION T* get_data(ADVec<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
@@ -292,6 +311,25 @@ class GetSeed {
       return value.Vp.V;
     } else {  // seed == ADseed::h
       return value.Vh.V;
+    }
+  }
+
+  template <typename T, int N>
+  static KOKKOS_FUNCTION Vec<T, N>& get_obj(ADVec<Vec<T, N>>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADScalar");
+    return value.Vb;
+  }
+
+  template <typename T, int N>
+  static KOKKOS_FUNCTION Vec<T, N>& get_obj(A2DVec<Vec<T, N>>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DScalar");
+    if constexpr (seed == ADseed::b) {
+      return value.Vb;
+    } else if constexpr (seed == ADseed::p) {
+      return value.Vp;
+    } else {  // seed == ADseed::h
+      return value.Vh;
     }
   }
 
@@ -314,6 +352,25 @@ class GetSeed {
     }
   }
 
+  template <typename T, int m, int n>
+  static KOKKOS_FUNCTION Mat<T, m, n>& get_obj(ADMat<Mat<T, m, n>>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
+    return mat.Ab;
+  }
+
+  template <typename T, int m, int n>
+  static KOKKOS_FUNCTION Mat<T, m, n>& get_obj(A2DMat<Mat<T, m, n>>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DMat");
+    if constexpr (seed == ADseed::b) {
+      return mat.Ab;
+    } else if constexpr (seed == ADseed::p) {
+      return mat.Ap;
+    } else {  // seed == ADseed::h
+      return mat.Ah;
+    }
+  }
+
   template <typename T, int m>
   static KOKKOS_FUNCTION T* get_data(ADMat<SymMat<T, m>>& mat) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
@@ -330,6 +387,25 @@ class GetSeed {
       return mat.Ap.A;
     } else {  // seed == ADseed::h
       return mat.Ah.A;
+    }
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION SymMat<T, m>& get_obj(ADMat<SymMat<T, m>>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADMat");
+    return mat.Ab;
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION SymMat<T, m>& get_obj(A2DMat<SymMat<T, m>>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DMat");
+    if constexpr (seed == ADseed::b) {
+      return mat.Ab;
+    } else if constexpr (seed == ADseed::p) {
+      return mat.Ap;
+    } else {  // seed == ADseed::h
+      return mat.Ah;
     }
   }
 };

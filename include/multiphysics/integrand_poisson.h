@@ -1,8 +1,7 @@
 #ifndef A2D_POISSON_H
 #define A2D_POISSON_H
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
+#include "a2dcore.h"
 #include "multiphysics/femapping.h"
 #include "multiphysics/fespace.h"
 
@@ -47,10 +46,10 @@ class Poisson {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& dobj,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     const H1Space<T, 1, dim>& u = s.template get<0>();
     const Vec<T, dim>& u_grad = u.get_grad();
 
@@ -64,7 +63,7 @@ class Poisson {
   }
 
   /**
-   * @brief Construct the JacVecProduct functor
+   * @brief Compute the Jacobian
    *
    * This functor computes a Jacobian-vector product of the weak form
    *
@@ -74,31 +73,10 @@ class Poisson {
    * @param geo The geometry at the quadrature point
    * @param s The solution at the quadrature point
    */
-  class JacVecProduct {
-   public:
-    KOKKOS_FUNCTION JacVecProduct(const Poisson<T, D>& integrand, T wdetJ,
-                                  const DataSpace& data,
-                                  const FiniteElementGeometry& geo,
-                                  const FiniteElementSpace& s)
-        : wdetJ(wdetJ) {}
-
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    FiniteElementSpace& Jp) {
-      const H1Space<T, 1, dim>& u = p.template get<0>();
-      const Vec<T, dim>& u_grad = u.get_grad();
-
-      H1Space<T, 1, dim>& v = Jp.template get<0>();
-      Vec<T, dim>& v_grad = v.get_grad();
-
-      // Set the terms from the variational statement
-      for (index_t k = 0; k < dim; k++) {
-        v_grad(k) = wdetJ * u_grad(k);
-      }
-    }
-
-   private:
-    T wdetJ;
-  };
+  KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                QMatType& jac) const {}
 };
 
 /**
@@ -141,10 +119,10 @@ class MixedPoisson {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& dobj,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const HdivSpace<T, dim>& sigma = s.template get<0>();
     const L2Space<T, 1, dim>& u = s.template get<1>();

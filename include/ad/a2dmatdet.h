@@ -9,7 +9,7 @@
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatDet(Mat<T, N, N>& A, T& det) {
+KOKKOS_FUNCTION void MatDet(const Mat<T, N, N>& A, T& det) {
   det = MatDetCore<T, N>(get_data(A));
 }
 

@@ -98,11 +98,16 @@ class MatMatMultExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     if constexpr (adA == ADiffType::ACTIVE) {
+      constexpr bool additive = true;
       MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(
           GetSeed<seed>::get_data(A), get_data(B), GetSeed<seed>::get_data(C));
-    }
-    if constexpr (adB == ADiffType::ACTIVE) {
-      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, adA == ADiffType::ACTIVE>(
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB, additive>(
+          get_data(A), GetSeed<seed>::get_data(B), GetSeed<seed>::get_data(C));
+    } else if constexpr (adA == ADiffType::ACTIVE) {
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(
+          GetSeed<seed>::get_data(A), get_data(B), GetSeed<seed>::get_data(C));
+    } else if constexpr (adB == ADiffType::ACTIVE) {
+      MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(
           get_data(A), GetSeed<seed>::get_data(B), GetSeed<seed>::get_data(C));
     }
   }

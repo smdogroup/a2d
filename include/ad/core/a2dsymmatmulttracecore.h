@@ -4,7 +4,7 @@
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION T SymMatTraceCore(const T S[], const T E[]) {
+KOKKOS_FUNCTION T SymMatMultTraceCore(const T S[], const T E[]) {
   if constexpr (N == 1) {
     return S[0] * E[0];
   } else if constexpr (N == 2) {
@@ -26,7 +26,8 @@ KOKKOS_FUNCTION T SymMatTraceCore(const T S[], const T E[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatTraceReverseCore(const T scale, const T S[], T E[]) {
+KOKKOS_FUNCTION void SymMatMultTraceReverseCore(const T scale, const T S[],
+                                                T E[]) {
   if constexpr (N == 1) {
     E[0] += scale * S[0];
   } else if constexpr (N == 2) {

@@ -1,8 +1,7 @@
 #ifndef A2D_FE_MAPPING_H
 #define A2D_FE_MAPPING_H
 
-#include "a2dobjs.h"
-// #include "a2dvecops3d.h"
+#include "a2dcore.h"
 #include "multiphysics/febasis.h"
 
 namespace A2D {
@@ -18,7 +17,7 @@ class InteriorMapping {
   KOKKOS_FUNCTION InteriorMapping(const FiniteElementGeometry& geo, T& detJ)
       : J(geo.template get<0>().get_grad()), detJ(detJ) {
     // Compute the inverse of the transformation
-    MatInverse(J, Jinv);
+    MatInv(J, Jinv);
 
     // Compute the determinant of the Jacobian matrix
     MatDet(J, detJ);
@@ -36,7 +35,6 @@ class InteriorMapping {
     in.rtransform(detJ, J, Jinv, out);
   }
 
-  // TODO: maybe the best way is to put jtransform in FESpace?
   template <class FiniteElementSpace, class QMatType>
   KOKKOS_FUNCTION void jtransform(const QMatType& mat_in, QMatType& mat_out) {
     constexpr index_t ncomp = QMatType::nrows;

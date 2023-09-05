@@ -119,7 +119,7 @@ SymIsotropic(mu, lambda, E, S);
 Given $E, S \in \mathbb{S}^{n}$, compute $\alpha = \text{tr}(E S)$
 
 ```c++
-SymMatTrace(E, S, alpha);
+SymMatMultTrace(E, S, alpha);
 ```
 
 ### Matrix scale
@@ -311,7 +311,7 @@ MatMatMult(Uxi, Jinv, Ux);
 MatSum(Ux, Id, F);
 SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);
 SymIsotropic(T(0.35), T(0.51), E, S);
-SymMatTrace(E, S, output);
+SymMatMultTrace(E, S, output);
 ```
 
 Here $T$ and $N$ are template parameters. The scalar, matrix and symmetric matrix types are all A2D types designed to be used directly for computations without AD information.
@@ -344,7 +344,7 @@ auto stack = MakeStack(
     MatSum(Ux, Id, F),
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
     SymIsotropic(T(0.35), T(0.51), E, S),
-    SymMatTrace(E, S, output));
+    SymMatMultTrace(E, S, output));
 
 // Set the seed value
 output.bvalue = 1.0;
@@ -377,7 +377,7 @@ auto stack = MakeStack(
     MatSum(Ux, Id, F),
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
     SymIsotropic(T(0.35), T(0.51), E, S),
-    SymMatTrace(E, S, output));
+    SymMatMultTrace(E, S, output));
 
 // Set the seed value and the second derivative value
 output.bvalue = 1.0;

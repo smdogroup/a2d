@@ -22,7 +22,7 @@ class A2DIntegrandAnalysisTest
   using Inputs = FiniteElementSpace;
   using Output = T;
 
-  A2DIntegrandTest(Integrand<T>& integrand)
+  A2DIntegrandAnalysisTest(Integrand<T>& integrand)
       : A2DTest<T, T, typename Integrand<T>::FiniteElementSpace>(
             TestType::SECOND_ORDER),
         integrand(integrand) {

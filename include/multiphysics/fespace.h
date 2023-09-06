@@ -521,7 +521,7 @@ struct __count_space_components<First, Remain...> {
   etc. and a list of the solution space objects. For instance, this class might
   look like this when declared:
 
-  FESpace<double, 3, H1Space, L2Space, Hdiv3DSpace>
+  FESpace<double, 3, H1Space, L2Space, HdivSpace>
 
   FESpace implements a static member ncomp as well as set_value(comp, val),
   get_value(comp) in an analogous manner to the solution spaces. However, the

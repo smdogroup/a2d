@@ -8,7 +8,7 @@ namespace A2D {
 namespace Test {
 
 template <template <typename> class Integrand, typename T>
-class A2DIntegrandTest
+class A2DIntegrandAnalysisTest
     : public A2DTest<T, T, typename Integrand<T>::FiniteElementSpace> {
  public:
   // Set the solution space data

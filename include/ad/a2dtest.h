@@ -9,14 +9,37 @@ namespace A2D {
 
 namespace Test {
 
+/*
+  Set the type of test to perform
+
+  FIRST/SECOND order tests test either only first derivatives or
+  first and second derivatives.
+
+  The integration tests test if the seed and hvalue are set correctly.
+  The regular first and second-order tests set seed = 1 and hvalue = 0.0,
+  respectively.
+*/
+enum class TestType {
+  FIRST_ORDER_INTEGRATION,
+  SECOND_ORDER_INTEGRATION,
+  FIRST_ORDER,
+  SECOND_ORDER
+};
+
 template <typename T, class Output, class... Inputs>
 class A2DTest {
  public:
   /**
    * @brief Construct the Test
    */
-  A2DTest(double dh = 1e-50, double rtol = 1e-10, double atol = 1e-30)
-      : dh(dh), rtol(rtol), atol(atol) {}
+  A2DTest(TestType test_type = TestType::SECOND_ORDER_INTEGRATION,
+          double dh = 1e-50, double rtol = 1e-10, double atol = 1e-30)
+      : test_type(test_type), dh(dh), rtol(rtol), atol(atol) {}
+
+  /**
+   * @brief Get the type of test to perform
+   */
+  TestType get_test_type() const { return test_type; }
 
   /**
    * @brief Get the complex-step step size
@@ -28,7 +51,6 @@ class A2DTest {
    *
    * @param x Variable tuple for the inputs
    */
-
   virtual void get_point(VarTuple<T, Inputs...>& x) { x.set_rand(); }
 
   /**
@@ -67,7 +89,23 @@ class A2DTest {
                      const VarTuple<T, Output>& hval,
                      const VarTuple<T, Inputs...>& x,
                      const VarTuple<T, Inputs...>& p,
-                     VarTuple<T, Inputs...>& h) = 0;
+                     VarTuple<T, Inputs...>& h) {}
+
+  /**
+   * @brief Set random values into an array
+   *
+   * @param size The size of the array
+   * @param array The array to set values into
+   * @param low The lower limit
+   * @param high The upper limit
+   */
+  template <typename Array>
+  void set_rand(const int size, Array& array, T low = T(-1.0),
+                T high = T(1.0)) {
+    for (int i = 0; i < size; i++) {
+      array[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
+    }
+  }
 
   /**
    * @brief Check whether two values are close to one another
@@ -115,6 +153,7 @@ class A2DTest {
   }
 
  private:
+  TestType test_type;
   double dh;    // Complex-step size
   double rtol;  // relative tolerance
   double atol;  // absolute tolerance
@@ -130,9 +169,18 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
   VarTuple<std::complex<T>, Inputs...> x, g, x1, p, h;
   VarTuple<std::complex<T>, Output> seed, hvalue;
 
-  // Set a random seed input
-  seed.set_rand();
-  hvalue.set_rand();
+  TestType test_type = test.get_test_type();
+  if (test_type == TestType::FIRST_ORDER_INTEGRATION ||
+      test_type == TestType::SECOND_ORDER_INTEGRATION) {
+    // Set a random seed input
+    seed.set_rand();
+    hvalue.set_rand();
+  } else {
+    for (int i = 0; i < seed.get_num_components(); i++) {
+      seed[i] = T(1.0);
+      hvalue[i] = T(0.0);
+    }
+  }
 
   // Get the starting point
   test.get_point(x);
@@ -144,7 +192,7 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
   if (component) {
     for (int k = 0; k < p.get_num_components(); k++) {
       p.zero();
-      p[k] = 1.0;
+      p[k] = T(1.0);
 
       test.deriv(seed, x, g);
 
@@ -179,41 +227,44 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
       return passed;
     }
 
-    for (int k = 0; k < p.get_num_components(); k++) {
-      p.zero();
-      p[k] = 1.0;
+    if (test_type == TestType::SECOND_ORDER ||
+        test_type == TestType::SECOND_ORDER_INTEGRATION) {
+      for (int k = 0; k < p.get_num_components(); k++) {
+        p.zero();
+        p[k] = 1.0;
 
-      test.hprod(seed, hvalue, x, p, h);
+        test.hprod(seed, hvalue, x, p, h);
 
-      // Set x1 = x + dh * p1
-      double dh = test.get_step_size();
-      for (index_t i = 0; i < x.get_num_components(); i++) {
-        x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
-      }
-
-      // Set the seed and include the second-derivative parts
-      VarTuple<std::complex<T>, Output> seedh;
-      for (index_t i = 0; i < seed.get_num_components(); i++) {
-        seedh[i] =
-            seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
-      }
-      test.deriv(seedh, x1, g);
-
-      for (index_t i = 0; i < x.get_num_components(); i++) {
-        T ans = std::real(h[i]);
-        T fd = std::imag(g[i]) / dh;
-
-        passed = passed && test.is_close(ans, fd);
-
-        if (write_output) {
-          std::stringstream s;
-          s << " second-order [" << i << "]";
-          std::string str = test.name() + s.str();
-          test.write_result(str, std::cout, ans, fd);
+        // Set x1 = x + dh * p1
+        double dh = test.get_step_size();
+        for (index_t i = 0; i < x.get_num_components(); i++) {
+          x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
         }
-      }
-      if (write_output) {
-        std::cout << " " << std::endl;
+
+        // Set the seed and include the second-derivative parts
+        VarTuple<std::complex<T>, Output> seedh;
+        for (index_t i = 0; i < seed.get_num_components(); i++) {
+          seedh[i] =
+              seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+        }
+        test.deriv(seedh, x1, g);
+
+        for (index_t i = 0; i < x.get_num_components(); i++) {
+          T ans = std::real(h[i]);
+          T fd = std::imag(g[i]) / dh;
+
+          passed = passed && test.is_close(ans, fd);
+
+          if (write_output) {
+            std::stringstream s;
+            s << " second-order [" << i << "]";
+            std::string str = test.name() + s.str();
+            test.write_result(str, std::cout, ans, fd);
+          }
+        }
+        if (write_output) {
+          std::cout << " " << std::endl;
+        }
       }
     }
   } else {
@@ -250,21 +301,25 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
       test.write_result(str + " first-order", std::cout, ans, fd);
     }
 
-    // Set the seed and include the second-derivative parts
-    for (index_t i = 0; i < seed.get_num_components(); i++) {
-      seed[i] = seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
-    }
-    test.deriv(seed, x1, g);
+    if (test_type == TestType::SECOND_ORDER ||
+        test_type == TestType::SECOND_ORDER_INTEGRATION) {
+      // Set the seed and include the second-derivative parts
+      for (index_t i = 0; i < seed.get_num_components(); i++) {
+        seed[i] =
+            seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+      }
+      test.deriv(seed, x1, g);
 
-    for (index_t i = 0; i < x.get_num_components(); i++) {
-      T ans = std::real(h[i]);
-      T fd = std::imag(g[i]) / dh;
+      for (index_t i = 0; i < x.get_num_components(); i++) {
+        T ans = std::real(h[i]);
+        T fd = std::imag(g[i]) / dh;
 
-      passed = passed && test.is_close(ans, fd);
+        passed = passed && test.is_close(ans, fd);
 
-      if (write_output) {
-        std::string str = test.name();
-        test.write_result(str + " second-order", std::cout, ans, fd);
+        if (write_output) {
+          std::string str = test.name();
+          test.write_result(str + " second-order", std::cout, ans, fd);
+        }
       }
     }
   }

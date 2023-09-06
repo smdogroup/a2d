@@ -16,7 +16,7 @@ bool TestIntegrands(bool component, bool write_output) {
   using Tc = std::complex<double>;
 
   TopoIntegrand<Tc> integrand(Tc(0.7), Tc(0.3), Tc(5.0));
-  A2D::Test::A2DIntegrandTest<TopoIntegrand, Tc> test1(integrand);
+  A2D::Test::A2DIntegrandAnalysisTest<TopoIntegrand, Tc> test1(integrand);
   passed = passed && A2D::Test::Run(test1, component, write_output);
 
   return passed;

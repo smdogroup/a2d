@@ -73,6 +73,7 @@ class Mat {
   KOKKOS_FUNCTION T& operator[](const I i) {
     return A[i];
   }
+
   template <typename I>
   KOKKOS_FUNCTION const T& operator[](const I i) const {
     return A[i];

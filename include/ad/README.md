@@ -329,14 +329,14 @@ The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`,
 Mat<T, N, N> Id;
 
 // Input and derivative output
-ADObj<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
+ADObj<Mat<T, N, N>> Uxi, J;
 
 // Output
 ADObj<T> output;
 
 // Intermediate values
-ADObj<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
-ADObj<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+ADObj<Mat<T, N, N>> Jinv, U, F;
+ADObj<SymMat<T, N>> E, S;
 
 auto stack = MakeStack(
     MatInv(J, Jinv),
@@ -347,7 +347,7 @@ auto stack = MakeStack(
     SymMatMultTrace(E, S, output));
 
 // Set the seed value
-output.bvalue = 1.0;
+output.bvalue() = 1.0;
 
 // Reverse mode AD through the stack
 stack.reverse();
@@ -380,13 +380,13 @@ auto stack = MakeStack(
     SymMatMultTrace(E, S, output));
 
 // Set the seed value and the second derivative value
-output.bvalue = 1.0;
+output.bvalue() = 1.0;
 stack.reverse();
 
 // Set values for the direction p
 // Set Uxi.pvalue();
 // Set J.pvalue();
-output.hvalue = 0.0;
+output.hvalue() = 0.0;
 
 // Perform the forward and reverse passes
 stack.hforward();

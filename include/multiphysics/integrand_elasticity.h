@@ -95,19 +95,12 @@ class IntegrandTopoLinearElasticity {
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
 
-    // Extract the trial solution gradient and the coefficient terms. Here
-    // Uxb is the output computed as the derivative of the strain energy
-    // w.r.t. Ux
-    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
-    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-
-    // The Green-Lagrange strain terms
-    SymMat<T, dim> E0, Eb, S0, Sb;
-    ADMat<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
+    // Create the values needed in the computation
+    ADObj<Mat<T, dim, dim>> Ux((s.template get<0>()).get_grad());
+    ADObj<SymMat<T, dim>> E, S;
 
     // The strain energy output
-    ADScalar<T> output;
+    ADObj<T> output;
 
     auto stack =
         MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
@@ -115,10 +108,14 @@ class IntegrandTopoLinearElasticity {
                   SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Seed the output value with the wdetJ
-    output.bvalue = 0.5 * wdetJ;
+    output.bvalue() = 0.5 * wdetJ;
 
     // Reverse the derivatives through the code
     stack.reverse();
+
+    // Set the derivative output value
+    Mat<T, dim, dim>& Uxb = (s.template get<0>()).get_grad();
+    Uxb.set(Ux.bvalue());
   }
 
   // Evaluate the second order derivatives of the integral
@@ -134,13 +131,13 @@ class IntegrandTopoLinearElasticity {
     T lambda = penalty * lambda0;
 
     // Extract displacement gradient
-    A2DMat<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
 
     // The Green-Lagrange strain terms
-    A2DMat<SymMat<T, dim>> E, S;
+    A2DObj<SymMat<T, dim>> E, S;
 
     // The strain energy output
-    A2DScalar<T> output;
+    A2DObj<T> output;
 
     auto stack =
         MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
@@ -148,7 +145,7 @@ class IntegrandTopoLinearElasticity {
                   SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Seed the output value with the wdetJ
-    output.bvalue = 0.5 * wdetJ;
+    output.bvalue() = 0.5 * wdetJ;
 
     // Reverse the derivatives through the code
     stack.reverse();
@@ -186,13 +183,13 @@ class IntegrandTopoLinearElasticity {
     // T lambda = penalty * lambda0;
 
     // // Extract displacement gradient
-    // A2DMat<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    // A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
 
     // // The Green-Lagrange strain terms
-    // A2DMat<SymMat<T, dim>> E, S;
+    // A2DObj<SymMat<T, dim>> E, S;
 
     // // The strain energy output
-    // A2DScalar<T> output;
+    // A2DObj<T> output;
 
     // auto stack =
     //     MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
@@ -200,7 +197,7 @@ class IntegrandTopoLinearElasticity {
     //               SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // // Seed the output value with the wdetJ
-    // output.bvalue = 0.5 * wdetJ;
+    // output.bvalue() = 0.5 * wdetJ;
 
     // // Reverse the derivatives through the code
     // stack.reverse();
@@ -541,21 +538,21 @@ class IntegrandTopoVonMisesKS {
     Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
 
-    ADScalar<T> rho(data[0]);
+    ADObj<T> rho(data[0]);
 
     // Intermediaries
     SymMat<T, dim> E0, Eb, S0, Sb;
-    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    ADMat<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
+    ADObj<Mat<T, dim, dim>> Ux(Ux0, Uxb);
+    ADObj<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
 
     // von Mises stress
-    ADScalar<T> trS, trSS, trS2, vm2, vm;
+    ADObj<T> trS, trSS, trS2, vm2, vm;
     // penalty
-    ADScalar<T> numer, denom, penalty;
+    ADObj<T> numer, denom, penalty;
 
     // Final output computation
-    ADScalar<T> relaxed_stress, failure_index;
-    ADScalar<T> exponent, output;
+    ADObj<T> relaxed_stress, failure_index;
+    ADObj<T> exponent, output;
 
     auto stack = MakeStack(
         // Compute the strain and stress
@@ -586,7 +583,7 @@ class IntegrandTopoVonMisesKS {
             T(1.0), exponent),  //
         Exp(exponent, output));
 
-    output.bvalue = wdetJ;
+    output.bvalue() = wdetJ;
 
     stack.reverse();
   }
@@ -607,21 +604,21 @@ class IntegrandTopoVonMisesKS {
     Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim> Uxb;
 
-    ADScalar<T> rho(data[0]);
+    ADObj<T> rho(data[0]);
 
     // Intermediaries
     SymMat<T, dim> E0, Eb, S0, Sb;
-    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    ADMat<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
+    ADObj<Mat<T, dim, dim>> Ux(Ux0, Uxb);
+    ADObj<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
 
     // von Mises stress
-    ADScalar<T> trS, trSS, trS2, vm2, vm;
+    ADObj<T> trS, trSS, trS2, vm2, vm;
     // penalty
-    ADScalar<T> numer, denom, penalty;
+    ADObj<T> numer, denom, penalty;
 
     // Final output computation
-    ADScalar<T> relaxed_stress, failure_index;
-    ADScalar<T> exponent, output;
+    ADObj<T> relaxed_stress, failure_index;
+    ADObj<T> exponent, output;
 
     auto stack = MakeStack(
         // Compute the strain and stress
@@ -652,7 +649,7 @@ class IntegrandTopoVonMisesKS {
             T(1.0), exponent),  //
         Exp(exponent, output));
 
-    output.bvalue = wdetJ;
+    output.bvalue() = wdetJ;
 
     stack.reverse();
 

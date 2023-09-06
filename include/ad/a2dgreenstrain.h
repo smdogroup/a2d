@@ -23,11 +23,25 @@ KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   }
 }
 
-template <GreenStrain etype, typename T, int N, ADorder order>
+template <GreenStrain etype, ADorder order, class Utype, class Etype>
 class MatGreenStrainExpr {
  public:
-  using Utype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
-  using Etype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Etype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int M = get_matrix_rows<Utype>::size;
+  static constexpr int K = get_matrix_columns<Utype>::size;
+  static constexpr int N = get_symmatrix_size<Etype>::size;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == K && N == M), "Matrix dimensions must agree");
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<Utype>::order == order,
+                "ADorder does not match");
+  static_assert(get_diff_order<Etype>::order == order,
+                "ADorder does not match");
 
   KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
 
@@ -86,16 +100,16 @@ class MatGreenStrainExpr {
   Etype& E;
 };
 
-template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(ADObj<Mat<T, N, N>>& Ux,
-                                    ADObj<SymMat<T, N>>& E) {
-  return MatGreenStrainExpr<etype, T, N, ADorder::FIRST>(Ux, E);
+template <GreenStrain etype, class UxMat, class EMat>
+KOKKOS_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
+  return MatGreenStrainExpr<etype, ADorder::FIRST, ADObj<UxMat>, ADObj<EMat>>(
+      Ux, E);
 }
 
-template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<Mat<T, N, N>>& Ux,
-                                    A2DObj<SymMat<T, N>>& E) {
-  return MatGreenStrainExpr<etype, T, N, ADorder::SECOND>(Ux, E);
+template <GreenStrain etype, class UxMat, class EMat>
+KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
+  return MatGreenStrainExpr<etype, ADorder::SECOND, A2DObj<UxMat>,
+                            A2DObj<EMat>>(Ux, E);
 }
 
 namespace Test {

@@ -130,8 +130,16 @@ class IntegrandTopoLinearElasticity {
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
 
+    FiniteElementSpace in, out;
+
+    // Set up the pointers into the input/output matrices
+    Mat<T, dim, dim> Ux0 = s.template get<0>().get_grad();
+    Mat<T, dim, dim> Uxb;
+    Mat<T, dim, dim>& Uxp = in.template get<0>().get_grad();
+    Mat<T, dim, dim>& Uxh = out.template get<0>().get_grad();
+
     // Extract displacement gradient
-    A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    A2DObj<Mat<T, dim, dim>&> Ux(Ux0, Uxb, Uxp, Uxh);
 
     // The Green-Lagrange strain terms
     A2DObj<SymMat<T, dim>> E, S;
@@ -151,10 +159,8 @@ class IntegrandTopoLinearElasticity {
     stack.reverse();
 
     // Create data for extracting the Hessian-vector product
-    constexpr index_t ncomp = dim * dim;
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
     auto inters = MakeTieTuple<T, ADseed::h>(S, E);
-    auto in = MakeTieTuple<T, ADseed::p>(Ux);
-    auto out = MakeTieTuple<T, ADseed::h>(Ux);
 
     // Extract the matrix
     stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);

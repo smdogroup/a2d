@@ -10,7 +10,12 @@ enum class ADiffType { PASSIVE, ACTIVE };
 /**
  * @brief Whether we compute first or second order derivatives
  */
-enum class ADorder { FIRST, SECOND };
+enum class ADorder { ZERO, FIRST, SECOND };
+
+/**
+ * @brief The class of object
+ */
+enum class ADObjType { SCALAR, VECTOR, MATRIX, SYMMAT };
 
 /**
  * @brief Is the matrix normal (not transposed) or transposed
@@ -18,9 +23,27 @@ enum class ADorder { FIRST, SECOND };
 enum class MatOp { NORMAL, TRANSPOSE };
 
 /**
+ * @brief The symmetry type of the matrix
+ */
+enum class MatSymType { NORMAL, SYMMETRIC };
+
+/**
  * @brief Specify bvalue, pvalue or hvalue
  */
 enum class ADseed { b, p, h };
+
+/**
+ * @brief compile-time conditional for type values
+ */
+template <bool B, class TrueType, class FalseType>
+struct conditional_type {
+  using type = TrueType;
+};
+
+template <class TrueType, class FalseType>
+struct conditional_type<false, TrueType, FalseType> {
+  using type = FalseType;
+};
 
 /**
  * @brief compile-time conditional for non-type values, works like
@@ -35,6 +58,7 @@ template <class T, bool B, T TrueVal, T FalseVal>
 struct conditional_value {
   static constexpr T value = FalseVal;
 };
+
 template <class T, T TrueVal, T FalseVal>
 struct conditional_value<T, true, TrueVal, FalseVal> {
   static constexpr T value = TrueVal;

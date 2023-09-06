@@ -10,7 +10,7 @@ template <typename T, int N>
 class Vec {
  public:
   typedef T type;
-
+  static const ADObjType obj_type = ADObjType::VECTOR;
   static const index_t ncomp = N;
 
   KOKKOS_FUNCTION Vec() {

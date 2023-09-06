@@ -7,9 +7,75 @@
 
 namespace A2D {
 
+/*
+  Check if a type is numeric or not
+*/
+template <class T>
+struct __is_numeric_type : std::is_floating_point<T> {};
+
+template <class T>
+struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
+
+/*
+  Get the numeric type of the object
+*/
+template <class T>
+struct __get_object_numeric_type {
+  using type = typename T::type;
+};
+
+template <>
+struct __get_object_numeric_type<double> {
+  using type = double;
+};
+
+template <>
+struct __get_object_numeric_type<std::complex<double>> {
+  using type = std::complex<double>;
+};
+
+/*
+  Get the numeric type of the underlying object.
+
+  All A2D numeric objects must either be scalar values (float, double,
+  std::complex) or must use a typedef statement to define the static scalar
+  type.
+*/
+template <class T>
+struct get_object_numeric_type
+    : __get_object_numeric_type<typename std::remove_reference<T>::type> {};
+
+/*
+  Get the type of object
+*/
+template <class T>
+struct __get_a2d_object_type {
+  static constexpr ADObjType value = T::obj_type;
+};
+
+template <>
+struct __get_a2d_object_type<double> {
+  static constexpr ADObjType value = ADObjType::SCALAR;
+};
+
+template <>
+struct __get_a2d_object_type<std::complex<double>> {
+  static constexpr ADObjType value = ADObjType::SCALAR;
+};
+
+template <class T>
+struct get_a2d_object_type
+    : __get_a2d_object_type<typename std::remove_reference<T>::type> {};
+
+/*
+  The base first-order AD class
+*/
 template <class ObjType>
 class ADObj {
  public:
+  typedef typename get_object_numeric_type<ObjType>::type type;
+  static constexpr ADObjType obj_type = get_a2d_object_type<ObjType>::value;
+
   KOKKOS_FUNCTION ADObj() {}
   KOKKOS_FUNCTION ADObj(const ObjType& A) : A(A) {}
   KOKKOS_FUNCTION ADObj(const ObjType& A, const ObjType& Ab) : A(A), Ab(Ab) {}
@@ -23,9 +89,15 @@ class ADObj {
   ObjType Ab;  // Reverse mode derivative value
 };
 
+/*
+  The base second-order AD class
+*/
 template <class ObjType>
 class A2DObj {
  public:
+  typedef typename get_object_numeric_type<ObjType>::type type;
+  static constexpr ADObjType obj_type = get_a2d_object_type<ObjType>::value;
+
   KOKKOS_FUNCTION A2DObj() {}
   KOKKOS_FUNCTION A2DObj(const ObjType& A) : A(A) {}
   KOKKOS_FUNCTION A2DObj(const ObjType& A, const ObjType& Ab) : A(A), Ab(Ab) {}
@@ -49,6 +121,144 @@ class A2DObj {
   ObjType Ab;  // Reverse mode derivative value
   ObjType Ap;  // Projected second derivative value
   ObjType Ah;  // Reverse mode second derivative
+};
+
+/*
+  Remove the A2D template wrapper remove_a2dobj<T>::type provides the base type
+*/
+template <class T>
+struct __remove_a2dobj {
+  typedef T type;
+};
+
+template <class T>
+struct __remove_a2dobj<ADObj<T>> {
+  typedef typename std::remove_reference<T>::type type;
+};
+
+template <class T>
+struct __remove_a2dobj<A2DObj<T>> {
+  typedef typename std::remove_reference<T>::type type;
+};
+
+template <class T>
+struct remove_a2dobj
+    : __remove_a2dobj<typename std::remove_reference<T>::type> {};
+
+/*
+  Get whether the type is passive or not...
+*/
+template <class T>
+struct get_diff_type {
+  static constexpr ADiffType diff_type = ADiffType::PASSIVE;
+};
+
+template <class T>
+struct get_diff_type<ADObj<T>> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
+
+template <class T>
+struct get_diff_type<A2DObj<T>> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
+
+/*
+  Get whether the type is passive or not...
+*/
+template <class T>
+struct get_diff_order {
+  static constexpr ADorder order = ADorder::ZERO;
+};
+
+template <class T>
+struct get_diff_order<ADObj<T>> {
+  static constexpr ADorder order = ADorder::FIRST;
+};
+
+template <class T>
+struct get_diff_order<A2DObj<T>> {
+  static constexpr ADorder order = ADorder::SECOND;
+};
+
+/*
+  Get the vector size
+*/
+template <class T>
+struct __get_vec_size {
+  static constexpr int size = 0;
+};
+
+// This will pick up vectors too...
+template <template <typename, int> class Vec, typename T, int N>
+struct __get_vec_size<Vec<T, N>> {
+  static constexpr int size = N;
+};
+
+template <class T>
+struct get_vec_size : __get_vec_size<typename remove_a2dobj<T>::type> {
+  static_assert(get_a2d_object_type<T>::value == ADObjType::VECTOR,
+                "get_symmatrix_size called on incorrect type");
+};
+
+/*
+  Get the symmetric matrix size
+*/
+template <class T>
+struct __get_symmatrix_size {
+  static constexpr int size = 0;
+};
+
+// This will pick up vectors too...
+template <template <typename, int> class SymMat, typename T, int N>
+struct __get_symmatrix_size<SymMat<T, N>> {
+  static constexpr int size = N;
+};
+
+template <class T>
+struct get_symmatrix_size
+    : __get_symmatrix_size<typename remove_a2dobj<T>::type> {
+  static_assert(get_a2d_object_type<T>::value == ADObjType::SYMMAT,
+                "get_symmatrix_size called on incorrect type");
+};
+
+/*
+  Get the number of matrix rows
+*/
+template <class T>
+struct __get_matrix_rows {
+  static constexpr int size = 0;
+};
+
+template <template <typename, int, int> class Mat, typename T, int N, int M>
+struct __get_matrix_rows<Mat<T, N, M>> {
+  static constexpr int size = N;
+};
+
+template <class T>
+struct get_matrix_rows : __get_matrix_rows<typename remove_a2dobj<T>::type> {
+  static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
+                "get_matrix_rows called on incorrect type");
+};
+
+/*
+  Get the number of matrix columns
+*/
+template <class T>
+struct __get_matrix_columns {
+  static constexpr int size = 0;
+};
+
+template <template <typename, int, int> class Mat, typename T, int N, int M>
+struct __get_matrix_columns<Mat<T, N, M>> {
+  static constexpr int size = M;
+};
+
+template <class T>
+struct get_matrix_columns
+    : __get_matrix_columns<typename remove_a2dobj<T>::type> {
+  static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
+                "get_matrix_rows called on incorrect type");
 };
 
 /**
@@ -116,15 +326,6 @@ using ADMatType = typename std::conditional<
     typename std::conditional<order == ADorder::FIRST, ADObj<MatType>,
                               A2DObj<MatType>>::type,
     const MatType>::type;
-
-/*
-  Check if a type is numeric or not
-*/
-template <class T>
-struct __is_numeric_type : std::is_floating_point<T> {};
-
-template <class T>
-struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
 
 /**
  * @brief Get objects and pointers to seed data (bvalue(), pvalue(), hvalue)
@@ -228,6 +429,63 @@ class GetSeed {
       return mat.hvalue().get_data();
     }
   }
+
+  template <typename T, int N>
+  static KOKKOS_FUNCTION T* get_data(ADObj<Vec<T, N>&>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
+    return value.bvalue().get_data();
+  }
+
+  template <typename T, int N>
+  static KOKKOS_FUNCTION T* get_data(A2DObj<Vec<T, N>&>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DObj");
+    if constexpr (seed == ADseed::b) {
+      return value.bvalue().get_data();
+    } else if constexpr (seed == ADseed::p) {
+      return value.pvalue().get_data();
+    } else {  // seed == ADseed::h
+      return value.hvalue().get_data();
+    }
+  }
+
+  template <typename T, int m, int n>
+  static KOKKOS_FUNCTION T* get_data(ADObj<Mat<T, m, n>&>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
+    return mat.bvalue().get_data();
+  }
+
+  template <typename T, int m, int n>
+  static KOKKOS_FUNCTION T* get_data(A2DObj<Mat<T, m, n>&>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DObj");
+    if constexpr (seed == ADseed::b) {
+      return mat.bvalue().get_data();
+    } else if constexpr (seed == ADseed::p) {
+      return mat.pvalue().get_data();
+    } else {  // seed == ADseed::h
+      return mat.hvalue().get_data();
+    }
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION T* get_data(ADObj<SymMat<T, m>&>& mat) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
+    return mat.bvalue().get_data();
+  }
+
+  template <typename T, int m>
+  static KOKKOS_FUNCTION T* get_data(A2DObj<SymMat<T, m>&>& mat) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DObj");
+    if constexpr (seed == ADseed::b) {
+      return mat.bvalue().get_data();
+    } else if constexpr (seed == ADseed::p) {
+      return mat.pvalue().get_data();
+    } else {  // seed == ADseed::h
+      return mat.hvalue().get_data();
+    }
+  }
 };
 
 template <typename T,
@@ -289,6 +547,16 @@ KOKKOS_FUNCTION T* get_data(A2DObj<Mat<T, m, n>>& mat) {
   return mat.value().get_data();
 }
 
+template <typename T, int m, int n>
+KOKKOS_FUNCTION T* get_data(ADObj<Mat<T, m, n>&>& mat) {
+  return mat.value().get_data();
+}
+
+template <typename T, int m, int n>
+KOKKOS_FUNCTION T* get_data(A2DObj<Mat<T, m, n>&>& mat) {
+  return mat.value().get_data();
+}
+
 template <typename T, int m>
 KOKKOS_FUNCTION T* get_data(SymMat<T, m>& mat) {
   return mat.get_data();
@@ -309,6 +577,16 @@ KOKKOS_FUNCTION T* get_data(A2DObj<SymMat<T, m>>& mat) {
   return mat.value().get_data();
 }
 
+template <typename T, int m>
+KOKKOS_FUNCTION T* get_data(ADObj<SymMat<T, m>&>& mat) {
+  return mat.value().get_data();
+}
+
+template <typename T, int m>
+KOKKOS_FUNCTION T* get_data(A2DObj<SymMat<T, m>&>& mat) {
+  return mat.value().get_data();
+}
+
 template <typename T, int n>
 KOKKOS_FUNCTION T* get_data(Vec<T, n>& vec) {
   return vec.get_data();
@@ -326,6 +604,16 @@ KOKKOS_FUNCTION T* get_data(ADObj<Vec<T, n>>& vec) {
 
 template <typename T, int n>
 KOKKOS_FUNCTION T* get_data(A2DObj<Vec<T, n>>& vec) {
+  return vec.value().get_data();
+}
+
+template <typename T, int n>
+KOKKOS_FUNCTION T* get_data(ADObj<Vec<T, n>&>& vec) {
+  return vec.value().get_data();
+}
+
+template <typename T, int n>
+KOKKOS_FUNCTION T* get_data(A2DObj<Vec<T, n>&>& vec) {
   return vec.value().get_data();
 }
 

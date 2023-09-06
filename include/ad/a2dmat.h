@@ -6,13 +6,11 @@
 
 namespace A2D {
 
-enum class MatSymType { NORMAL, SYMMETRIC };
-
 template <typename T, int M, int N>
 class Mat {
  public:
   typedef T type;
-
+  static const ADObjType obj_type = ADObjType::MATRIX;
   static const index_t ncomp = M * N;
   static const int nrows = M;
   static const int ncols = N;
@@ -87,11 +85,11 @@ template <typename T, int N>
 class SymMat {
  public:
   typedef T type;
+  static const ADObjType obj_type = ADObjType::SYMMAT;
   static const int MAT_SIZE = (N * (N + 1)) / 2;
+  static const index_t ncomp = MAT_SIZE;
   static constexpr int nrows = N;
   static constexpr int ncols = N;
-
-  static const index_t ncomp = MAT_SIZE;
 
   KOKKOS_FUNCTION SymMat() {
     for (int i = 0; i < MAT_SIZE; i++) {

@@ -10,6 +10,7 @@
 #define A2D_MESH_H
 
 #include <cstdlib>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -94,9 +95,9 @@ class MesherRect2D {
     T dx = lx / nx;
     T dy = ly / ny;
 
-    if (randomize) {
-      std::srand(random_seed);
-    }
+    // This is a portable rng engine
+    std::mt19937 engine(random_seed);
+    std::uniform_real_distribution<T> rng(-1.0, 1.0);
 
     // Set X
     for (I j = 0; j < ny + 1; j++) {
@@ -106,8 +107,8 @@ class MesherRect2D {
 
         if (randomize) {
           if (i and j and (i - nx) and (j - ny)) {
-            px = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dx;
-            py = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dy;
+            px = rng(engine) * fraction * dx;
+            py = rng(engine) * fraction * dy;
           }
         }
 

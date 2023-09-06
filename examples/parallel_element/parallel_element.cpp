@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     MesherRect2D mesher(nx, ny, lx, ly);
     bool randomize = true;
     unsigned int seed = 0;
-    double fraction = 0.2;
+    double fraction = 0.1;
     mesher.set_X_conn<index_t, double>(Xloc.data(), quad.data(), randomize,
                                        seed, fraction);
 

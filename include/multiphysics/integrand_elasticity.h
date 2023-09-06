@@ -114,7 +114,7 @@ class IntegrandTopoLinearElasticity {
     stack.reverse();
 
     // Set the derivative output value
-    Mat<T, dim, dim>& Uxb = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
     Uxb.set(Ux.bvalue());
   }
 
@@ -535,15 +535,14 @@ class IntegrandTopoVonMisesKS {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
-    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
 
     ADObj<T> rho(data[0]);
 
     // Intermediaries
-    SymMat<T, dim> E0, Eb, S0, Sb;
-    ADObj<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    ADObj<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
+    ADObj<Mat<T, dim, dim>> Ux(Ux0);
+    ADObj<SymMat<T, dim>> E, S;
 
     // von Mises stress
     ADObj<T> trS, trSS, trS2, vm2, vm;
@@ -586,6 +585,9 @@ class IntegrandTopoVonMisesKS {
     output.bvalue() = wdetJ;
 
     stack.reverse();
+
+    // Set the derivative values
+    Uxb.set(Ux.bvalue());
   }
 
   /**
@@ -601,15 +603,14 @@ class IntegrandTopoVonMisesKS {
                                        const FiniteElementGeometry& geo,
                                        const FiniteElementSpace& s,
                                        DataSpace& dfdx) const {
-    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim> Uxb;
 
     ADObj<T> rho(data[0]);
 
     // Intermediaries
-    SymMat<T, dim> E0, Eb, S0, Sb;
-    ADObj<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    ADObj<SymMat<T, dim>> E(E0, Eb), S(S0, Sb);
+    ADObj<Mat<T, dim, dim>> Ux(Ux0);
+    ADObj<SymMat<T, dim>> E, S;
 
     // von Mises stress
     ADObj<T> trS, trSS, trS2, vm2, vm;
@@ -653,7 +654,7 @@ class IntegrandTopoVonMisesKS {
 
     stack.reverse();
 
-    dfdx[0] = rho.bvalue;
+    dfdx[0] = rho.bvalue();
   }
 };
 

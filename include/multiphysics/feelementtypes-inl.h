@@ -355,16 +355,16 @@ KOKKOS_FUNCTION void ElementTypes::get_quad_bound_dof(const index_t b,
   const index_t v1 = get_quad_bound_verts()[b][1];
 
   // Get the starting index on the element
-  const index_t start = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[0][0],
-                                              (ny - 1) * QUAD_VERTS_CART[0][1]);
+  const index_t start = get_quad_node<nx, ny>(
+      (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
 
   // Find the number of nodes along the u-edge
   const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
   const int incr =
-      get_quad_node<nx, ny>(QUAD_VERTS_CART[1][0] - QUAD_VERTS_CART[0][0],
-                            QUAD_VERTS_CART[1][1] - QUAD_VERTS_CART[0][1]);
+      get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
+                            QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
 
   if constexpr (ends) {
     index_t index = start;
@@ -420,16 +420,16 @@ KOKKOS_FUNCTION void ElementTypes::set_quad_bound_dof(const index_t b,
   const index_t v1 = get_quad_bound_verts()[b][(orient + 1) % 2];
 
   // Get the starting index on the element
-  const index_t start = get_quad_node<nx, ny>((nx - 1) * QUAD_VERTS_CART[0][0],
-                                              (ny - 1) * QUAD_VERTS_CART[0][1]);
+  const index_t start = get_quad_node<nx, ny>(
+      (nx - 1) * QUAD_VERTS_CART[v0][0], (ny - 1) * QUAD_VERTS_CART[v0][1]);
 
   // Find the number of nodes along the u-edge
   const index_t nu = get_quad_bound_length<nx, ny>(v0, v1);
 
   // Get the increment
   const int incr =
-      get_quad_node<nx, ny>(QUAD_VERTS_CART[1][0] - QUAD_VERTS_CART[0][0],
-                            QUAD_VERTS_CART[1][1] - QUAD_VERTS_CART[0][1]);
+      get_quad_node<nx, ny>(QUAD_VERTS_CART[v1][0] - QUAD_VERTS_CART[v0][0],
+                            QUAD_VERTS_CART[v1][1] - QUAD_VERTS_CART[v0][1]);
 
   if constexpr (ends) {
     index_t index = start;

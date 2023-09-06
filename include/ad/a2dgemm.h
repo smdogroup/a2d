@@ -201,32 +201,32 @@ class MatMatMultExpr {
 // compute C = op(A) * op(B) and return an expression, where A and B are all
 // active variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, ADMat<Mat<T, K, L>>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(ADObj<Mat<T, N, M>>& A, ADObj<Mat<T, K, L>>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       A, B, C);
 }
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A,
-                                A2DMat<Mat<T, K, L>>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(A2DObj<Mat<T, N, M>>& A,
+                                A2DObj<Mat<T, K, L>>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, ADMat<Mat<T, K, L>>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(ADObj<Mat<T, N, M>>& A, ADObj<Mat<T, K, L>>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, opA, opB,
                         ADiffType::ACTIVE, ADiffType::ACTIVE>(A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A,
-                                A2DMat<Mat<T, K, L>>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(A2DObj<Mat<T, N, M>>& A,
+                                A2DObj<Mat<T, K, L>>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, opA, opB,
                         ADiffType::ACTIVE, ADiffType::ACTIVE>(A, B, C);
 }
@@ -234,30 +234,30 @@ KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A,
 // compute C = op(A) * op(B) and return an expression, where A is passive, B is
 // active variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, ADObj<Mat<T, K, L>>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       A, B, C);
 }
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, A2DMat<Mat<T, K, L>>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, A2DObj<Mat<T, K, L>>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, ADMat<Mat<T, K, L>>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, ADObj<Mat<T, K, L>>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, opA, opB,
                         ADiffType::PASSIVE, ADiffType::ACTIVE>(A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, A2DMat<Mat<T, K, L>>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, A2DObj<Mat<T, K, L>>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, opA, opB,
                         ADiffType::PASSIVE, ADiffType::ACTIVE>(A, B, C);
 }
@@ -265,30 +265,30 @@ KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, A2DMat<Mat<T, K, L>>& B,
 // compute C = op(A) * op(B) and return an expression, where A is active, B is
 // passive variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(ADObj<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       A, B, C);
 }
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(A2DObj<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(ADMat<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(ADObj<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, opA, opB,
                         ADiffType::ACTIVE, ADiffType::PASSIVE>(A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+KOKKOS_FUNCTION auto MatMatMult(A2DObj<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, opA, opB,
                         ADiffType::ACTIVE, ADiffType::PASSIVE>(A, B, C);
 }
@@ -299,14 +299,14 @@ KOKKOS_FUNCTION auto MatMatMult(A2DMat<Mat<T, N, M>>& A, const Mat<T, K, L>& B,
 // doesn't have meaningful implementation of forward(), reverse(), etc.
 template <typename T, int N, int M, int K, int L, int P, int Q>
 KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::PASSIVE>(
       A, B, C);
 }
 template <typename T, int N, int M, int K, int L, int P, int Q>
 KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, MatOp::NORMAL,
                         MatOp::NORMAL, ADiffType::PASSIVE, ADiffType::PASSIVE>(
       A, B, C);
@@ -314,14 +314,14 @@ KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, Mat<T, K, L>& B,
-                                ADMat<Mat<T, P, Q>>& C) {
+                                ADObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::FIRST, opA, opB,
                         ADiffType::PASSIVE, ADiffType::PASSIVE>(A, B, C);
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 KOKKOS_FUNCTION auto MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
-                                A2DMat<Mat<T, P, Q>>& C) {
+                                A2DObj<Mat<T, P, Q>>& C) {
   return MatMatMultExpr<T, N, M, K, L, P, Q, ADorder::SECOND, opA, opB,
                         ADiffType::PASSIVE, ADiffType::PASSIVE>(A, B, C);
 }
@@ -368,34 +368,27 @@ class MatMatMultTest
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    Mat<T, N, M> A0, Ab;
-    Mat<T, K, L> B0, Bb;
-    Mat<T, P, Q> C0, Cb;
-    ADMat<Mat<T, N, M>> A(A0, Ab);
-    ADMat<Mat<T, K, L>> B(B0, Bb);
-    ADMat<Mat<T, P, Q>> C(C0, Cb);
+    ADObj<Mat<T, N, M>> A;
+    ADObj<Mat<T, K, L>> B;
+    ADObj<Mat<T, P, Q>> C;
 
-    x.get_values(A0, B0);
-    auto mult = MatMatMult<opA, opB>(A, B, C);
-    auto stack = MakeStack(mult);
-    seed.get_values(Cb);
+    x.get_values(A.value(), B.value());
+    auto stack = MakeStack(MatMatMult<opA, opB>(A, B, C));
+    seed.get_values(C.bvalue());
     stack.reverse();
-    g.set_values(Ab, Bb);
+    g.set_values(A.bvalue(), B.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<Mat<T, N, M>> A;
-    A2DMat<Mat<T, K, L>> B;
-    A2DMat<Mat<T, P, Q>> C;
+    A2DObj<Mat<T, N, M>> A;
+    A2DObj<Mat<T, K, L>> B;
+    A2DObj<Mat<T, P, Q>> C;
 
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());
-
-    auto mult = MatMatMult<opA, opB>(A, B, C);
-    auto stack = MakeStack(mult);
-
+    auto stack = MakeStack(MatMatMult<opA, opB>(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
     stack.reverse();

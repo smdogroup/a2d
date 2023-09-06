@@ -47,12 +47,12 @@ class LogExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Log(ADScalar<T>& a, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Log(ADObj<T>& a, ADObj<T>& b) {
   return LogExpr<T, ADorder::FIRST>(a, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Log(A2DScalar<T>& a, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Log(A2DObj<T>& a, A2DObj<T>& b) {
   return LogExpr<T, ADorder::SECOND>(a, b);
 }
 
@@ -95,12 +95,12 @@ class ExpExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Exp(ADScalar<T>& a, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Exp(ADObj<T>& a, ADObj<T>& b) {
   return ExpExpr<T, ADorder::FIRST>(a, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Exp(A2DScalar<T>& a, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Exp(A2DObj<T>& a, A2DObj<T>& b) {
   return ExpExpr<T, ADorder::SECOND>(a, b);
 }
 
@@ -145,12 +145,12 @@ class SinExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Sin(ADScalar<T>& a, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Sin(ADObj<T>& a, ADObj<T>& b) {
   return SinExpr<T, ADorder::FIRST>(a, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sin(A2DScalar<T>& a, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Sin(A2DObj<T>& a, A2DObj<T>& b) {
   return SinExpr<T, ADorder::SECOND>(a, b);
 }
 
@@ -195,12 +195,12 @@ class CosExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Cos(ADScalar<T>& a, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Cos(ADObj<T>& a, ADObj<T>& b) {
   return CosExpr<T, ADorder::FIRST>(a, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Cos(A2DScalar<T>& a, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Cos(A2DObj<T>& a, A2DObj<T>& b) {
   return CosExpr<T, ADorder::SECOND>(a, b);
 }
 
@@ -252,12 +252,12 @@ class PowExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Pow(ADScalar<T>& a, const T exponent, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Pow(ADObj<T>& a, const T exponent, ADObj<T>& b) {
   return PowExpr<T, ADorder::FIRST>(a, exponent, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Pow(A2DScalar<T>& a, const T exponent, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Pow(A2DObj<T>& a, const T exponent, A2DObj<T>& b) {
   return PowExpr<T, ADorder::SECOND>(a, exponent, b);
 }
 
@@ -305,12 +305,12 @@ class SqrtExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Sqrt(ADScalar<T>& a, ADScalar<T>& b) {
+KOKKOS_FUNCTION auto Sqrt(ADObj<T>& a, ADObj<T>& b) {
   return SqrtExpr<T, ADorder::FIRST>(a, b);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sqrt(A2DScalar<T>& a, A2DScalar<T>& b) {
+KOKKOS_FUNCTION auto Sqrt(A2DObj<T>& a, A2DObj<T>& b) {
   return SqrtExpr<T, ADorder::SECOND>(a, b);
 }
 
@@ -377,37 +377,37 @@ class MultExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(ADObj<T>& a, ADObj<T>& b, ADObj<T>& c) {
   return MultExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
                                                                            c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(const T a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(const T a, ADObj<T>& b, ADObj<T>& c) {
   return MultExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(ADScalar<T>& a, const T b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(ADObj<T>& a, const T b, ADObj<T>& c) {
   return MultExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(A2DObj<T>& a, A2DObj<T>& b, A2DObj<T>& c) {
   return MultExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(const T a, A2DObj<T>& b, A2DObj<T>& c) {
   return MultExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Mult(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Mult(A2DObj<T>& a, const T b, A2DObj<T>& c) {
   return MultExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       a, b, c);
 }
@@ -486,37 +486,37 @@ class DivideExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(ADObj<T>& a, ADObj<T>& b, ADObj<T>& c) {
   return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(const T a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(const T a, ADObj<T>& b, ADObj<T>& c) {
   return DivideExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, const T b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(ADObj<T>& a, const T b, ADObj<T>& c) {
   return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(A2DObj<T>& a, A2DObj<T>& b, A2DObj<T>& c) {
   return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(const T a, A2DObj<T>& b, A2DObj<T>& c) {
   return DivideExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Divide(A2DObj<T>& a, const T b, A2DObj<T>& c) {
   return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       a, b, c);
 }
@@ -576,37 +576,37 @@ class SumExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(ADObj<T>& a, ADObj<T>& b, ADObj<T>& c) {
   return SumExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
                                                                           c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T a, ADScalar<T>& b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T a, ADObj<T>& b, ADObj<T>& c) {
   return SumExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(a, b,
                                                                            c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(ADScalar<T>& a, const T b, ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(ADObj<T>& a, const T b, ADObj<T>& c) {
   return SumExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(a, b,
                                                                            c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(A2DObj<T>& a, A2DObj<T>& b, A2DObj<T>& c) {
   return SumExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
                                                                            c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T a, A2DObj<T>& b, A2DObj<T>& c) {
   return SumExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       a, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(A2DObj<T>& a, const T b, A2DObj<T>& c) {
   return SumExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       a, b, c);
 }
@@ -672,43 +672,43 @@ class SumScaleExpr {
 };
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, ADScalar<T>& a, const T c2, ADScalar<T>& b,
-                         ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, ADObj<T>& a, const T c2, ADObj<T>& b,
+                         ADObj<T>& c) {
   return SumScaleExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       c1, a, c2, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, ADScalar<T>& b,
-                         ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, ADObj<T>& b,
+                         ADObj<T>& c) {
   return SumScaleExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       c1, a, c2, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, ADScalar<T>& a, const T c2, const T b,
-                         ADScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, ADObj<T>& a, const T c2, const T b,
+                         ADObj<T>& c) {
   return SumScaleExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       c1, a, c2, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, A2DScalar<T>& a, const T c2,
-                         A2DScalar<T>& b, A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, A2DObj<T>& a, const T c2, A2DObj<T>& b,
+                         A2DObj<T>& c) {
   return SumScaleExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       c1, a, c2, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, A2DScalar<T>& b,
-                         A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, A2DObj<T>& b,
+                         A2DObj<T>& c) {
   return SumScaleExpr<T, ADorder::SECOND, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(c1, a, c2, b, c);
 }
 
 template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, A2DScalar<T>& a, const T c2, const T b,
-                         A2DScalar<T>& c) {
+KOKKOS_FUNCTION auto Sum(const T c1, A2DObj<T>& a, const T c2, const T b,
+                         A2DObj<T>& c) {
   return SumScaleExpr<T, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(c1, a, c2, b, c);
 }
@@ -746,8 +746,8 @@ class ScalarTest : public A2DTest<T, T, T> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> a, b, c, d, e, f, q, r, s, t, u;
-    x.get_values(a.value);
+    ADObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    x.get_values(a.value());
     auto stack = MakeStack(Log(a, b),                       //
                            Sin(b, c),                       //
                            Exp(c, d),                       //
@@ -759,17 +759,17 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Divide(q, s, t),                 //
                            Sqrt(t, u));
 
-    seed.get_values(u.bvalue);
+    seed.get_values(u.bvalue());
     stack.reverse();
-    g.set_values(a.bvalue);
+    g.set_values(a.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> a, b, c, d, e, f, q, r, s, t, u;
-    x.get_values(a.value);
-    p.get_values(a.pvalue);
+    A2DObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    x.get_values(a.value());
+    p.get_values(a.pvalue());
     auto stack = MakeStack(Log(a, b),                       //
                            Sin(b, c),                       //
                            Exp(c, d),                       //
@@ -780,12 +780,12 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Sum(T(-1.0), q, T(3.14), r, s),  //
                            Divide(q, s, t),                 //
                            Sqrt(t, u));
-    seed.get_values(u.bvalue);
-    hval.get_values(u.hvalue);
+    seed.get_values(u.bvalue());
+    hval.get_values(u.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(a.hvalue);
+    h.set_values(a.hvalue());
   }
 };
 

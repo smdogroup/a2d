@@ -1,10 +1,13 @@
 #ifndef A2D_CORE_H
 #define A2D_CORE_H
 
+// Key objects
+
 #include "a2dobjs.h"
+#include "ad/a2dobj.h"
 #include "ad/a2dstack.h"
 
-//
+// Operations
 
 #include "ad/a2dgemm.h"
 #include "ad/a2dgreenstrain.h"

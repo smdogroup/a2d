@@ -45,23 +45,23 @@ class SymMatMultTraceExpr {
   }
 
   KOKKOS_FUNCTION void reverse() {
-    SymMatMultTraceReverseCore<T, N>(out.bvalue, get_data(S),
+    SymMatMultTraceReverseCore<T, N>(out.bvalue(), get_data(S),
                                      GetSeed<ADseed::b>::get_data(E));
-    SymMatMultTraceReverseCore<T, N>(out.bvalue, get_data(E),
+    SymMatMultTraceReverseCore<T, N>(out.bvalue(), get_data(E),
                                      GetSeed<ADseed::b>::get_data(S));
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    SymMatMultTraceReverseCore<T, N>(out.bvalue,
+    SymMatMultTraceReverseCore<T, N>(out.bvalue(),
                                      GetSeed<ADseed::p>::get_data(S),
                                      GetSeed<ADseed::h>::get_data(E));
-    SymMatMultTraceReverseCore<T, N>(out.hvalue, get_data(S),
+    SymMatMultTraceReverseCore<T, N>(out.hvalue(), get_data(S),
                                      GetSeed<ADseed::h>::get_data(E));
 
-    SymMatMultTraceReverseCore<T, N>(out.bvalue,
+    SymMatMultTraceReverseCore<T, N>(out.bvalue(),
                                      GetSeed<ADseed::p>::get_data(E),
                                      GetSeed<ADseed::h>::get_data(S));
-    SymMatMultTraceReverseCore<T, N>(out.hvalue, get_data(E),
+    SymMatMultTraceReverseCore<T, N>(out.hvalue(), get_data(E),
                                      GetSeed<ADseed::h>::get_data(S));
   }
 
@@ -70,16 +70,15 @@ class SymMatMultTraceExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatMultTrace(ADMat<SymMat<T, N>>& S,
-                                     ADMat<SymMat<T, N>>& E,
-                                     ADScalar<T>& output) {
+KOKKOS_FUNCTION auto SymMatMultTrace(ADObj<SymMat<T, N>>& S,
+                                     ADObj<SymMat<T, N>>& E, ADObj<T>& output) {
   return SymMatMultTraceExpr<T, N, ADorder::FIRST>(S, E, output);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatMultTrace(A2DMat<SymMat<T, N>>& S,
-                                     A2DMat<SymMat<T, N>>& E,
-                                     A2DScalar<T>& output) {
+KOKKOS_FUNCTION auto SymMatMultTrace(A2DObj<SymMat<T, N>>& S,
+                                     A2DObj<SymMat<T, N>>& E,
+                                     A2DObj<T>& output) {
   return SymMatMultTraceExpr<T, N, ADorder::SECOND>(S, E, output);
 }
 
@@ -109,31 +108,27 @@ class SymMatMultTraceTest : public A2DTest<T, T, SymMat<T, N>, SymMat<T, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> output;
-    SymMat<T, N> S0, Sb, E0, Eb;
-    ADMat<SymMat<T, N>> S(S0, Sb), E(E0, Eb);
+    ADObj<T> output;
+    ADObj<SymMat<T, N>> S, E;
 
-    x.get_values(S0, E0);
-    auto op = SymMatMultTrace(S, E, output);
-    auto stack = MakeStack(op);
-    seed.get_values(output.bvalue);
+    x.get_values(S.value(), E.value());
+    auto stack = MakeStack(SymMatMultTrace(S, E, output));
+    seed.get_values(output.bvalue());
     stack.reverse();
-    g.set_values(Sb, Eb);
+    g.set_values(S.bvalue(), E.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> output;
-    A2DMat<SymMat<T, N>> S, E;
+    A2DObj<T> output;
+    A2DObj<SymMat<T, N>> S, E;
+
     x.get_values(S.value(), E.value());
     p.get_values(S.pvalue(), E.pvalue());
-
-    auto op = SymMatMultTrace(S, E, output);
-    auto stack = MakeStack(op);
-
-    seed.get_values(output.bvalue);
-    hval.get_values(output.hvalue);
+    auto stack = MakeStack(SymMatMultTrace(S, E, output));
+    seed.get_values(output.bvalue());
+    hval.get_values(output.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

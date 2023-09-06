@@ -55,12 +55,12 @@ class MatDetExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto MatDet(ADMat<Mat<T, N, N>>& A, ADScalar<T>& det) {
+KOKKOS_FUNCTION auto MatDet(ADObj<Mat<T, N, N>>& A, ADObj<T>& det) {
   return MatDetExpr<T, N, ADorder::FIRST>(A, det);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto MatDet(A2DMat<Mat<T, N, N>>& A, A2DScalar<T>& det) {
+KOKKOS_FUNCTION auto MatDet(A2DObj<Mat<T, N, N>>& A, A2DObj<T>& det) {
   return MatDetExpr<T, N, ADorder::SECOND>(A, det);
 }
 
@@ -90,31 +90,26 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> det;
-    Mat<T, N, N> A0, Ab;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
+    ADObj<T> det;
+    ADObj<Mat<T, N, N>> A;
 
-    x.get_values(A0);
-    auto op = MatDet(A, det);
-    auto stack = MakeStack(op);
-    seed.get_values(det.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatDet(A, det));
+    seed.get_values(det.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> det;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<T> det;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatDet(A, det);
-    auto stack = MakeStack(op);
-
-    seed.get_values(det.bvalue);
-    hval.get_values(det.hvalue);
+    auto stack = MakeStack(MatDet(A, det));
+    seed.get_values(det.bvalue());
+    hval.get_values(det.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

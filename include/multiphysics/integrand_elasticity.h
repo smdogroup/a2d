@@ -154,7 +154,7 @@ class IntegrandTopoLinearElasticity {
     stack.reverse();
 
     // Create data for extracting the Hessian-vector product
-    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    constexpr index_t ncomp = dim * dim;
     auto inters = MakeTieTuple<T, ADseed::h>(S, E);
     auto in = MakeTieTuple<T, ADseed::p>(Ux);
     auto out = MakeTieTuple<T, ADseed::h>(Ux);

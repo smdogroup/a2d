@@ -59,12 +59,12 @@ class VecNormExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecNorm(ADVec<Vec<T, N>> &x, ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecNorm(ADObj<Vec<T, N>> &x, ADObj<T> &alpha) {
   return VecNormExpr<T, N, ADorder::FIRST>(x, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecNorm(A2DVec<Vec<T, N>> &x, A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecNorm(A2DObj<Vec<T, N>> &x, A2DObj<T> &alpha) {
   return VecNormExpr<T, N, ADorder::SECOND>(x, alpha);
 }
 
@@ -134,12 +134,12 @@ class VecNormalizeExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecNormalize(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecNormalize(ADObj<Vec<T, N>> &x, ADObj<Vec<T, N>> &y) {
   return VecNormalizeExpr<T, N, ADorder::FIRST>(x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecNormalize(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecNormalize(A2DObj<Vec<T, N>> &x, A2DObj<Vec<T, N>> &y) {
   return VecNormalizeExpr<T, N, ADorder::SECOND>(x, y);
 }
 
@@ -215,43 +215,43 @@ class VecScaleExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(ADScalar<T> &alpha, ADVec<Vec<T, N>> &x,
-                              ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<Vec<T, N>> &x,
+                              ADObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(const T alpha, ADVec<Vec<T, N>> &x,
-                              ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(const T alpha, ADObj<Vec<T, N>> &x,
+                              ADObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(ADScalar<T> alpha, const Vec<T, N> &x,
-                              ADVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(ADObj<T> alpha, const Vec<T, N> &x,
+                              ADObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(A2DScalar<T> &alpha, A2DVec<Vec<T, N>> &x,
-                              A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<Vec<T, N>> &x,
+                              A2DObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(const T alpha, A2DVec<Vec<T, N>> &x,
-                              A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(const T alpha, A2DObj<Vec<T, N>> &x,
+                              A2DObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(A2DScalar<T> &alpha, const Vec<T, N> &x,
-                              A2DVec<Vec<T, N>> &y) {
+KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, const Vec<T, N> &x,
+                              A2DObj<Vec<T, N>> &y) {
   return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(alpha, x, y);
 }
@@ -329,43 +329,43 @@ class VecDotExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y,
-                            ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(ADObj<Vec<T, N>> &x, ADObj<Vec<T, N>> &y,
+                            ADObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, ADVec<Vec<T, N>> &y,
-                            ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, ADObj<Vec<T, N>> &y,
+                            ADObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(ADVec<Vec<T, N>> &x, const Vec<T, N> &y,
-                            ADScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(ADObj<Vec<T, N>> &x, const Vec<T, N> &y,
+                            ADObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y,
-                            A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(A2DObj<Vec<T, N>> &x, A2DObj<Vec<T, N>> &y,
+                            A2DObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y,
-                            A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, A2DObj<Vec<T, N>> &y,
+                            A2DObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y,
-                            A2DScalar<T> &alpha) {
+KOKKOS_FUNCTION auto VecDot(A2DObj<Vec<T, N>> &x, const Vec<T, N> &y,
+                            A2DObj<T> &alpha) {
   return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, alpha);
 }
@@ -392,28 +392,25 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &X, Input &g) {
-    ADScalar<T> alpha;
-    Vec<T, N> x0, xb;
-    ADVec<Vec<T, N>> x(x0, xb);
-    X.get_values(x0);
-    auto op = VecNorm(x, alpha);
-    auto stack = MakeStack(op);
-    seed.get_values(alpha.bvalue);
+    ADObj<T> alpha;
+    ADObj<Vec<T, N>> x;
+    X.get_values(x.value());
+    auto stack = MakeStack(VecNorm(x, alpha));
+    seed.get_values(alpha.bvalue());
     stack.reverse();
-    g.set_values(xb);
+    g.set_values(x.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &X,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha;
-    A2DVec<Vec<T, N>> x;
+    A2DObj<T> alpha;
+    A2DObj<Vec<T, N>> x;
     X.get_values(x.value());
     p.get_values(x.pvalue());
-    auto op = VecNorm(x, alpha);
-    auto stack = MakeStack(op);
-    seed.get_values(alpha.bvalue);
-    hval.get_values(alpha.hvalue);
+    auto stack = MakeStack(VecNorm(x, alpha));
+    seed.get_values(alpha.bvalue());
+    hval.get_values(alpha.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -453,32 +450,29 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &X, Input &g) {
-    ADScalar<T> alpha;
-    Vec<T, N> x0, xb, y0, yb;
-    ADVec<Vec<T, N>> x(x0, xb), y(y0, yb);
-    X.get_values(alpha.value, x0);
-    auto op = VecScale(alpha, x, y);
-    auto stack = MakeStack(op);
-    seed.get_values(yb);
+    ADObj<T> alpha;
+    ADObj<Vec<T, N>> x, y;
+    X.get_values(alpha.value(), x.value());
+    auto stack = MakeStack(VecScale(alpha, x, y));
+    seed.get_values(y.bvalue());
     stack.reverse();
-    g.set_values(alpha.bvalue, xb);
+    g.set_values(alpha.bvalue(), x.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &X,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha;
-    A2DVec<Vec<T, N>> x, y;
-    X.get_values(alpha.value, x.value());
-    p.get_values(alpha.pvalue, x.pvalue());
-    auto op = VecScale(alpha, x, y);
-    auto stack = MakeStack(op);
+    A2DObj<T> alpha;
+    A2DObj<Vec<T, N>> x, y;
+    X.get_values(alpha.value(), x.value());
+    p.get_values(alpha.pvalue(), x.pvalue());
+    auto stack = MakeStack(VecScale(alpha, x, y));
     seed.get_values(y.bvalue());
     hval.get_values(y.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(alpha.hvalue, x.hvalue());
+    h.set_values(alpha.hvalue(), x.hvalue());
   }
 };
 
@@ -513,24 +507,21 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &X, Input &g) {
-    Vec<T, N> x0, xb, y0, yb;
-    ADVec<Vec<T, N>> x(x0, xb), y(y0, yb);
-    X.get_values(x0);
-    auto op = VecNormalize(x, y);
-    auto stack = MakeStack(op);
-    seed.get_values(yb);
+    ADObj<Vec<T, N>> x, y;
+    X.get_values(x.value());
+    auto stack = MakeStack(VecNormalize(x, y));
+    seed.get_values(y.bvalue());
     stack.reverse();
-    g.set_values(xb);
+    g.set_values(x.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &X,
              const Input &p, Input &h) {
-    A2DVec<Vec<T, N>> x, y;
+    A2DObj<Vec<T, N>> x, y;
     X.get_values(x.value());
     p.get_values(x.pvalue());
-    auto op = VecNormalize(x, y);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(VecNormalize(x, y));
     seed.get_values(y.bvalue());
     hval.get_values(y.hvalue());
     stack.reverse();
@@ -572,28 +563,25 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &X, Input &g) {
-    ADScalar<T> alpha;
-    Vec<T, N> x0, xb, y0, yb;
-    ADVec<Vec<T, N>> x(x0, xb), y(y0, yb);
-    X.get_values(x0, y0);
-    auto op = VecDot(x, y, alpha);
-    auto stack = MakeStack(op);
-    seed.get_values(alpha.bvalue);
+    ADObj<T> alpha;
+    ADObj<Vec<T, N>> x, y;
+    X.get_values(x.value(), y.value());
+    auto stack = MakeStack(VecDot(x, y, alpha));
+    seed.get_values(alpha.bvalue());
     stack.reverse();
-    g.set_values(xb, yb);
+    g.set_values(x.bvalue(), y.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &X,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha;
-    A2DVec<Vec<T, N>> x, y;
+    A2DObj<T> alpha;
+    A2DObj<Vec<T, N>> x, y;
     X.get_values(x.value(), y.value());
     p.get_values(x.pvalue(), y.pvalue());
-    auto op = VecDot(x, y, alpha);
-    auto stack = MakeStack(op);
-    seed.get_values(alpha.bvalue);
-    hval.get_values(alpha.hvalue);
+    auto stack = MakeStack(VecDot(x, y, alpha));
+    seed.get_values(alpha.bvalue());
+    hval.get_values(alpha.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

@@ -86,38 +86,38 @@ class VecCrossExpr {
 };
 
 template <typename T>
-auto VecCross(ADVec<Vec<T, 3>> &x, ADVec<Vec<T, 3>> &y, ADVec<Vec<T, 3>> &z) {
+auto VecCross(ADObj<Vec<T, 3>> &x, ADObj<Vec<T, 3>> &y, ADObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, z);
 }
 
 template <typename T>
-auto VecCross(const Vec<T, 3> &x, ADVec<Vec<T, 3>> &y, ADVec<Vec<T, 3>> &z) {
+auto VecCross(const Vec<T, 3> &x, ADObj<Vec<T, 3>> &y, ADObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
       x, y, z);
 }
 
 template <typename T>
-auto VecCross(ADVec<Vec<T, 3>> &x, const Vec<T, 3> &y, ADVec<Vec<T, 3>> &z) {
+auto VecCross(ADObj<Vec<T, 3>> &x, const Vec<T, 3> &y, ADObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
       x, y, z);
 }
 
 template <typename T>
-auto VecCross(A2DVec<Vec<T, 3>> &x, A2DVec<Vec<T, 3>> &y,
-              A2DVec<Vec<T, 3>> &z) {
+auto VecCross(A2DObj<Vec<T, 3>> &x, A2DObj<Vec<T, 3>> &y,
+              A2DObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, z);
 }
 
 template <typename T>
-auto VecCross(const Vec<T, 3> &x, A2DVec<Vec<T, 3>> &y, A2DVec<Vec<T, 3>> &z) {
+auto VecCross(const Vec<T, 3> &x, A2DObj<Vec<T, 3>> &y, A2DObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::SECOND, ADiffType::PASSIVE,
                       ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T>
-auto VecCross(A2DVec<Vec<T, 3>> &x, const Vec<T, 3> &y, A2DVec<Vec<T, 3>> &z) {
+auto VecCross(A2DObj<Vec<T, 3>> &x, const Vec<T, 3> &y, A2DObj<Vec<T, 3>> &z) {
   return VecCrossExpr<T, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::PASSIVE>(x, y, z);
 }
@@ -143,24 +143,21 @@ class VecCrossTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &X, Input &g) {
-    Vec<T, 3> x0, xb, y0, yb, z0, zb;
-    ADVec<Vec<T, 3>> x(x0, xb), y(y0, yb), z(z0, zb);
-    X.get_values(x0, y0);
-    auto op = VecCross(x, y, z);
-    auto stack = MakeStack(op);
-    seed.get_values(zb);
+    ADObj<Vec<T, 3>> x, y, z;
+    X.get_values(x.value(), y.value());
+    auto stack = MakeStack(VecCross(x, y, z));
+    seed.get_values(z.bvalue());
     stack.reverse();
-    g.set_values(xb, yb);
+    g.set_values(x.bvalue(), y.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &X,
              const Input &p, Input &h) {
-    A2DVec<Vec<T, 3>> x, y, z;
+    A2DObj<Vec<T, 3>> x, y, z;
     X.get_values(x.value(), y.value());
     p.get_values(x.pvalue(), y.pvalue());
-    auto op = VecCross(x, y, z);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(VecCross(x, y, z));
     seed.get_values(z.bvalue());
     hval.get_values(z.hvalue());
     stack.reverse();

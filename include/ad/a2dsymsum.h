@@ -153,57 +153,57 @@ class SymMatSumExpr {
 
 // First-order
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADMat<Mat<T, N, N>> &A, ADMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(ADObj<Mat<T, N, N>> &A, ADObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                        ADiffType::ACTIVE>(T(1.0), A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADScalar<T> &alpha, ADMat<Mat<T, N, N>> &A,
-                               ADMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(ADObj<T> &alpha, ADObj<Mat<T, N, N>> &A,
+                               ADObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                        ADiffType::ACTIVE>(alpha, A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(const T alpha, ADMat<Mat<T, N, N>> &A,
-                               ADMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(const T alpha, ADObj<Mat<T, N, N>> &A,
+                               ADObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                        ADiffType::ACTIVE>(alpha, A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADScalar<T> &alpha, Mat<T, N, N> &A,
-                               ADMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(ADObj<T> &alpha, Mat<T, N, N> &A,
+                               ADObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                        ADiffType::PASSIVE>(alpha, A, S);
 }
 
 // Second-order
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<Mat<T, N, N>> &A,
+                               A2DObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                        ADiffType::ACTIVE>(T(1.0), A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<T> &alpha, A2DObj<Mat<T, N, N>> &A,
+                               A2DObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                        ADiffType::ACTIVE>(alpha, A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(const T alpha, A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(const T alpha, A2DObj<Mat<T, N, N>> &A,
+                               A2DObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                        ADiffType::ACTIVE>(alpha, A, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DScalar<T> &alpha, Mat<T, N, N> &A,
-                               A2DMat<SymMat<T, N>> &S) {
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<T> &alpha, Mat<T, N, N> &A,
+                               A2DObj<SymMat<T, N>> &S) {
   return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                        ADiffType::PASSIVE>(alpha, A, S);
 }
@@ -234,27 +234,23 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    Mat<T, N, N> A0, Ab;
-    SymMat<T, N> S0, Sb;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
-    ADMat<SymMat<T, N>> S(S0, Sb);
-    x.get_values(A0);
-    auto op = SymMatSum(A, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    ADObj<Mat<T, N, N>> A;
+    ADObj<SymMat<T, N>> S;
+    x.get_values(A.value());
+    auto stack = MakeStack(SymMatSum(A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DMat<SymMat<T, N>> S;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<SymMat<T, N>> S;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-    auto op = SymMatSum(A, S);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(SymMatSum(A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
@@ -289,35 +285,31 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    ADScalar<T> alpha;
-    Mat<T, N, N> A0, Ab;
-    SymMat<T, N> S0, Sb;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
-    ADMat<SymMat<T, N>> S(S0, Sb);
-    x.get_values(alpha.value, A0);
-    auto op = SymMatSum(alpha, A, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    ADObj<T> alpha;
+    ADObj<Mat<T, N, N>> A;
+    ADObj<SymMat<T, N>> S;
+    x.get_values(alpha.value(), A.value());
+    auto stack = MakeStack(SymMatSum(alpha, A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(alpha.bvalue, Ab);
+    g.set_values(alpha.bvalue(), A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha;
-    A2DMat<SymMat<T, N>> S;
-    A2DMat<Mat<T, N, N>> A;
-    x.get_values(alpha.value, A.value());
-    p.get_values(alpha.pvalue, A.pvalue());
-    auto op = SymMatSum(alpha, A, S);
-    auto stack = MakeStack(op);
+    A2DObj<T> alpha;
+    A2DObj<SymMat<T, N>> S;
+    A2DObj<Mat<T, N, N>> A;
+    x.get_values(alpha.value(), A.value());
+    p.get_values(alpha.pvalue(), A.pvalue());
+    auto stack = MakeStack(SymMatSum(alpha, A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(alpha.hvalue, A.hvalue());
+    h.set_values(alpha.hvalue(), A.hvalue());
   }
 };
 

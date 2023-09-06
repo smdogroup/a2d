@@ -70,43 +70,43 @@ class VecSumExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(ADVec<Vec<T, N>> &x, ADVec<Vec<T, N>> &y,
-                            ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADObj<Vec<T, N>> &x, ADObj<Vec<T, N>> &y,
+                            ADObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
       x, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, ADVec<Vec<T, N>> &y,
-                            ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, ADObj<Vec<T, N>> &y,
+                            ADObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(ADVec<Vec<T, N>> &x, const Vec<T, N> &y,
-                            ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADObj<Vec<T, N>> &x, const Vec<T, N> &y,
+                            ADObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(A2DVec<Vec<T, N>> &x, A2DVec<Vec<T, N>> &y,
-                            A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DObj<Vec<T, N>> &x, A2DObj<Vec<T, N>> &y,
+                            A2DObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, A2DVec<Vec<T, N>> &y,
-                            A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const Vec<T, N> &x, A2DObj<Vec<T, N>> &y,
+                            A2DObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                     ADiffType::ACTIVE>(x, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(A2DVec<Vec<T, N>> &x, const Vec<T, N> &y,
-                            A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DObj<Vec<T, N>> &x, const Vec<T, N> &y,
+                            A2DObj<Vec<T, N>> &z) {
   return VecSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                     ADiffType::PASSIVE>(x, y, z);
 }
@@ -233,26 +233,25 @@ class VecSumScaleExpr {
 
 // First-order AD
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(ADScalar<T> &alpha, ADVec<Vec<T, N>> &x,
-                            ADScalar<T> &beta, ADVec<Vec<T, N>> &y,
-                            ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADObj<T> &alpha, ADObj<Vec<T, N>> &x,
+                            ADObj<T> &beta, ADObj<Vec<T, N>> &y,
+                            ADObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                          ADiffType::ACTIVE, ADiffType::ACTIVE,
                          ADiffType::ACTIVE>(alpha, x, beta, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(const T alpha, ADVec<Vec<T, N>> &x, const T beta,
-                            ADVec<Vec<T, N>> &y, ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const T alpha, ADObj<Vec<T, N>> &x, const T beta,
+                            ADObj<Vec<T, N>> &y, ADObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
                          ADiffType::ACTIVE, ADiffType::PASSIVE,
                          ADiffType::ACTIVE>(alpha, x, beta, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(ADScalar<T> &alpha, const Vec<T, N> &x,
-                            ADScalar<T> &beta, const Vec<T, N> &y,
-                            ADVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(ADObj<T> &alpha, const Vec<T, N> &x, ADObj<T> &beta,
+                            const Vec<T, N> &y, ADObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
                          ADiffType::PASSIVE, ADiffType::ACTIVE,
                          ADiffType::PASSIVE>(alpha, x, beta, y, z);
@@ -260,26 +259,26 @@ KOKKOS_FUNCTION auto VecSum(ADScalar<T> &alpha, const Vec<T, N> &x,
 
 // Second-order AD
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(A2DScalar<T> &alpha, A2DVec<Vec<T, N>> &x,
-                            A2DScalar<T> &beta, A2DVec<Vec<T, N>> &y,
-                            A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DObj<T> &alpha, A2DObj<Vec<T, N>> &x,
+                            A2DObj<T> &beta, A2DObj<Vec<T, N>> &y,
+                            A2DObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                          ADiffType::ACTIVE, ADiffType::ACTIVE,
                          ADiffType::ACTIVE>(alpha, x, beta, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(const T alpha, A2DVec<Vec<T, N>> &x, const T beta,
-                            A2DVec<Vec<T, N>> &y, A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(const T alpha, A2DObj<Vec<T, N>> &x, const T beta,
+                            A2DObj<Vec<T, N>> &y, A2DObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
                          ADiffType::ACTIVE, ADiffType::PASSIVE,
                          ADiffType::ACTIVE>(alpha, x, beta, y, z);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto VecSum(A2DScalar<T> &alpha, const Vec<T, N> &x,
-                            A2DScalar<T> &beta, const Vec<T, N> &y,
-                            A2DVec<Vec<T, N>> &z) {
+KOKKOS_FUNCTION auto VecSum(A2DObj<T> &alpha, const Vec<T, N> &x,
+                            A2DObj<T> &beta, const Vec<T, N> &y,
+                            A2DObj<Vec<T, N>> &z) {
   return VecSumScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
                          ADiffType::PASSIVE, ADiffType::ACTIVE,
                          ADiffType::PASSIVE>(alpha, x, beta, y, z);
@@ -310,24 +309,21 @@ class VecSumTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    Vec<T, N> A0, Ab, B0, Bb, C0, Cb;
-    ADVec<Vec<T, N>> A(A0, Ab), B(B0, Bb), C(C0, Cb);
-    x.get_values(A0, B0);
-    auto op = VecSum(A, B, C);
-    auto stack = MakeStack(op);
-    seed.get_values(Cb);
+    ADObj<Vec<T, N>> A, B, C;
+    x.get_values(A.value(), B.value());
+    auto stack = MakeStack(VecSum(A, B, C));
+    seed.get_values(C.bvalue());
     stack.reverse();
-    g.set_values(Ab, Bb);
+    g.set_values(A.bvalue(), B.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DVec<Vec<T, N>> A, B, C;
+    A2DObj<Vec<T, N>> A, B, C;
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());
-    auto op = VecSum(A, B, C);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(VecSum(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
     stack.reverse();
@@ -362,32 +358,29 @@ class VecSumScaleTest
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    ADScalar<T> alpha, beta;
-    Vec<T, N> A0, Ab, B0, Bb, C0, Cb;
-    ADVec<Vec<T, N>> A(A0, Ab), B(B0, Bb), C(C0, Cb);
-    x.get_values(alpha.value, A0, beta.value, B0);
-    auto op = VecSum(alpha, A, beta, B, C);
-    auto stack = MakeStack(op);
-    seed.get_values(Cb);
+    ADObj<T> alpha, beta;
+    ADObj<Vec<T, N>> A, B, C;
+    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
+    auto stack = MakeStack(VecSum(alpha, A, beta, B, C));
+    seed.get_values(C.bvalue());
     stack.reverse();
-    g.set_values(alpha.bvalue, Ab, beta.bvalue, Bb);
+    g.set_values(alpha.bvalue(), A.bvalue(), beta.bvalue(), B.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha, beta;
-    A2DVec<Vec<T, N>> A, B, C;
-    x.get_values(alpha.value, A.value(), beta.value, B.value());
-    p.get_values(alpha.pvalue, A.pvalue(), beta.pvalue, B.pvalue());
-    auto op = VecSum(alpha, A, beta, B, C);
-    auto stack = MakeStack(op);
+    A2DObj<T> alpha, beta;
+    A2DObj<Vec<T, N>> A, B, C;
+    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
+    p.get_values(alpha.pvalue(), A.pvalue(), beta.pvalue(), B.pvalue());
+    auto stack = MakeStack(VecSum(alpha, A, beta, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(alpha.hvalue, A.hvalue(), beta.hvalue, B.hvalue());
+    h.set_values(alpha.hvalue(), A.hvalue(), beta.hvalue(), B.hvalue());
   }
 };
 

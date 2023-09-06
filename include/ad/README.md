@@ -329,14 +329,14 @@ The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`,
 Mat<T, N, N> Id;
 
 // Input and derivative output
-ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
+ADObj<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
 
 // Output
-ADScalar<T> output;
+ADObj<T> output;
 
 // Intermediate values
-ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
-ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+ADObj<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
+ADObj<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
 
 auto stack = MakeStack(
     MatInv(J, Jinv),
@@ -362,14 +362,14 @@ For second derivatives, A2D uses Hessian-vector products that require a combinat
 Mat<T, N, N> Id;
 
 // Input
-A2DMat<Mat<T, N, N>> Uxi, J;
+A2DObj<Mat<T, N, N>> Uxi, J;
 
 // Outputs
-A2DScalar<T> output;
+A2DObj<T> output;
 
 // Intermediate data
-A2DMat<Mat<T, N, N>> Jinv, Ux, F;
-A2DMat<SymMat<T, N>> E, S;
+A2DObj<Mat<T, N, N>> Jinv, Ux, F;
+A2DObj<SymMat<T, N>> E, S;
 
 auto stack = MakeStack(
     MatInv(J, Jinv),

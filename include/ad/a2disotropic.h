@@ -168,31 +168,31 @@ class SymIsotropicExpr {
 };
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymIsotropic(ADScalar<T>& mu, ADScalar<T>& lambda,
-                                  ADMat<SymMat<T, N>>& E,
-                                  ADMat<SymMat<T, N>>& S) {
+KOKKOS_FUNCTION auto SymIsotropic(ADObj<T>& mu, ADObj<T>& lambda,
+                                  ADObj<SymMat<T, N>>& E,
+                                  ADObj<SymMat<T, N>>& S) {
   return SymIsotropicExpr<T, N, ADorder::FIRST>(mu, lambda, E, S);
 }
 
 template <typename T, int N>
 KOKKOS_FUNCTION auto SymIsotropic(const T mu, const T lambda,
-                                  ADMat<SymMat<T, N>>& E,
-                                  ADMat<SymMat<T, N>>& S) {
+                                  ADObj<SymMat<T, N>>& E,
+                                  ADObj<SymMat<T, N>>& S) {
   return SymIsotropicExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE>(mu, lambda,
                                                                     E, S);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION auto SymIsotropic(A2DScalar<T>& mu, A2DScalar<T>& lambda,
-                                  A2DMat<SymMat<T, N>>& E,
-                                  A2DMat<SymMat<T, N>>& S) {
+KOKKOS_FUNCTION auto SymIsotropic(A2DObj<T>& mu, A2DObj<T>& lambda,
+                                  A2DObj<SymMat<T, N>>& E,
+                                  A2DObj<SymMat<T, N>>& S) {
   return SymIsotropicExpr<T, N, ADorder::SECOND>(mu, lambda, E, S);
 }
 
 template <typename T, int N>
 KOKKOS_FUNCTION auto SymIsotropic(const T mu, const T lambda,
-                                  A2DMat<SymMat<T, N>>& E,
-                                  A2DMat<SymMat<T, N>>& S) {
+                                  A2DObj<SymMat<T, N>>& E,
+                                  A2DObj<SymMat<T, N>>& S) {
   return SymIsotropicExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE>(mu, lambda,
                                                                      E, S);
 }
@@ -221,13 +221,11 @@ class SymIsotropicConstTest : public A2DTest<T, SymMat<T, N>, SymMat<T, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    SymMat<T, N> E0, Eb, S0, Sb;
-    ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+    ADObj<SymMat<T, N>> E, S;
 
     x.get_values(E.value());
-    auto op = SymIsotropic(T(0.314), T(0.731), E, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    auto stack = MakeStack(SymIsotropic(T(0.314), T(0.731), E, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
     g.set_values(E.bvalue());
   }
@@ -235,12 +233,11 @@ class SymIsotropicConstTest : public A2DTest<T, SymMat<T, N>, SymMat<T, N>> {
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<SymMat<T, N>> E, S;
+    A2DObj<SymMat<T, N>> E, S;
 
     x.get_values(E.value());
     p.get_values(E.pvalue());
-    auto op = SymIsotropic(T(0.314), T(0.731), E, S);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(SymIsotropic(T(0.314), T(0.731), E, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
@@ -273,35 +270,31 @@ class SymIsotropicTest : public A2DTest<T, SymMat<T, N>, T, T, SymMat<T, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> mu, lambda;
-    SymMat<T, N> E0, Eb, S0, Sb;
-    ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+    ADObj<T> mu, lambda;
+    ADObj<SymMat<T, N>> E, S;
 
-    x.get_values(mu.value, lambda.value, E.value());
-    auto op = SymIsotropic(mu, lambda, E, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    x.get_values(mu.value(), lambda.value(), E.value());
+    auto stack = MakeStack(SymIsotropic(mu, lambda, E, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(mu.bvalue, lambda.bvalue, E.bvalue());
+    g.set_values(mu.bvalue(), lambda.bvalue(), E.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> mu, lambda;
-    A2DMat<SymMat<T, N>> E, S;
+    A2DObj<T> mu, lambda;
+    A2DObj<SymMat<T, N>> E, S;
 
-    x.get_values(mu.value, lambda.value, E.value());
-    p.get_values(mu.pvalue, lambda.pvalue, E.pvalue());
-
-    auto op = SymIsotropic(mu, lambda, E, S);
-    auto stack = MakeStack(op);
+    x.get_values(mu.value(), lambda.value(), E.value());
+    p.get_values(mu.pvalue(), lambda.pvalue(), E.pvalue());
+    auto stack = MakeStack(SymIsotropic(mu, lambda, E, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(mu.hvalue, lambda.hvalue, E.hvalue());
+    h.set_values(mu.hvalue(), lambda.hvalue(), E.hvalue());
   }
 };
 

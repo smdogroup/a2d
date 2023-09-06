@@ -40,19 +40,12 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    // Input
-    Mat<T, N, N> Uxi0, Uxib, J0, Jb;
-    x.get_values(Uxi0, J0);
-    ADScalar<T> output;
-
-    // Set the intermediary values
-    Mat<T, N, N> Jinv0, Jinvb, Ux0, Uxb;
-    SymMat<T, N> E10, E1b, E20, E2b, E0, Eb, S0, Sb;
-
     // The AD objects
-    ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
-    ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb);
-    ADMat<SymMat<T, N>> E1(E10, E1b), E2(E20, E2b), E(E0, Eb), S(S0, Sb);
+    ADObj<T> output;
+    ADObj<Mat<T, N, N>> Uxi, J, Jinv, Ux;
+    ADObj<SymMat<T, N>> E1, E2, E, S;
+
+    x.get_values(Uxi.value(), J.value());
 
     auto stack =
         MakeStack(MatInv(J, Jinv),            // Jinv = J^{-1}
@@ -63,19 +56,19 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
                   SymIsotropic(T(0.35), T(0.51), E, S),  // S = S(E)
                   SymMatMultTrace(E, S, output));
 
-    seed.get_values(output.bvalue);
+    seed.get_values(output.bvalue());
     stack.reverse();
-    g.set_values(Uxib, Jb);
+    g.set_values(Uxi.bvalue(), J.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
     // The AD objects
-    A2DMat<Mat<T, N, N>> Uxi, J;
-    A2DScalar<T> output;
-    A2DMat<Mat<T, N, N>> Jinv, Ux;
-    A2DMat<SymMat<T, N>> E1, E2, E, S;
+    A2DObj<Mat<T, N, N>> Uxi, J;
+    A2DObj<T> output;
+    A2DObj<Mat<T, N, N>> Jinv, Ux;
+    A2DObj<SymMat<T, N>> E1, E2, E, S;
 
     x.get_values(Uxi.value(), J.value());
     p.get_values(Uxi.pvalue(), J.pvalue());
@@ -89,8 +82,8 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
                   SymIsotropic(T(0.35), T(0.51), E, S),  // S = S(E)
                   SymMatMultTrace(E, S, output));
 
-    seed.get_values(output.bvalue);
-    hval.get_values(output.hvalue);
+    seed.get_values(output.bvalue());
+    hval.get_values(output.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -147,17 +140,22 @@ class MooneyRivlin
     Pow(detF, T(-2.0 / 3.0), inv);       // inv = (detF)^{-2/3}
     Mult(inv, trB, I1bar);               // I1bar = inv * tr(B)
     Mult(inv, I2, t1);                   // t1 = inv * I2
-    Mult(inv, t1, I2bar);                // I2 = inv * t1 = inv * inv * I2
+    Mult(inv, t1, I2bar);                // I2bar = inv * t1 = inv * inv * I2
     Sum(C1, I1bar, C2, I2bar, W);        // W = C1 * I1bar + C2 * I2bar
 
     return MakeVarTuple<T>(W);
   }
 
   void deriv(const Output& seed, const Input& x, Input& g) {
-    // Input
-    Mat<T, N, N> Uxi0, Uxib, J0, Jb;
-    x.get_values(Uxi0, J0);
-    ADScalar<T> W;
+    // The AD objects
+    ADObj<Mat<T, N, N>> Uxi, J;
+    ADObj<T> W;
+
+    // Intermediate values
+    ADObj<Mat<T, N, N>> Jinv, Ux, F;
+    ADObj<SymMat<T, N>> B;
+    ADObj<T> detF, trB, trB2, I2, I1bar, I2bar;
+    ADObj<T> t0, inv, t1;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -165,19 +163,9 @@ class MooneyRivlin
       Id(k, k) = 1.0;
     }
 
-    // Set the intermediary values
-    Mat<T, N, N> Jinv0, Jinvb, Ux0, Uxb, F0, Fb;
-    SymMat<T, N> B0, Bb;
-
-    // The AD objects
-    ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
-    ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
-    ADMat<SymMat<T, N>> B(B0, Bb);
-
-    ADScalar<T> detF, trB, trB2, I2, I1bar, I2bar;
-    ADScalar<T> t0, inv, t1;
-
     const T C1(0.1), C2(0.23);
+
+    x.get_values(Uxi.value(), J.value());
 
     auto stack =
         MakeStack(MatInv(J, Jinv),              // Jinv = J^{-1}
@@ -193,27 +181,27 @@ class MooneyRivlin
                   Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
                   Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
                   Mult(inv, I2, t1),              // t1 = inv * I2
-                  Mult(inv, t1, I2bar),  // I2 = inv * t1 = inv * inv * I2
+                  Mult(inv, t1, I2bar),  // I2bar = inv * t1 = inv * inv * I2
                   Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
         );
 
-    seed.get_values(W.bvalue);
+    seed.get_values(W.bvalue());
     stack.reverse();
-    g.set_values(Uxib, Jb);
+    g.set_values(Uxi.bvalue(), J.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
     // The AD objects
-    A2DMat<Mat<T, N, N>> Uxi, J;
-    A2DScalar<T> W;
+    A2DObj<Mat<T, N, N>> Uxi, J;
+    A2DObj<T> W;
 
     // Intermediate values
-    A2DMat<Mat<T, N, N>> Jinv, Ux, F;
-    A2DMat<SymMat<T, N>> B;
-    A2DScalar<T> detF, trB, trB2, I2, I1bar, I2bar;
-    A2DScalar<T> t0, inv, t1;
+    A2DObj<Mat<T, N, N>> Jinv, Ux, F;
+    A2DObj<SymMat<T, N>> B;
+    A2DObj<T> detF, trB, trB2, I2, I1bar, I2bar;
+    A2DObj<T> t0, inv, t1;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -240,12 +228,12 @@ class MooneyRivlin
                   Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
                   Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
                   Mult(inv, I2, t1),              // t1 = inv * I2
-                  Mult(inv, t1, I2bar),  // I2 = inv * t1 = inv * inv * I2
+                  Mult(inv, t1, I2bar),  // I2bar = inv * t1 = inv * inv * I2
                   Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
         );
 
-    seed.get_values(W.bvalue);
-    hval.get_values(W.hvalue);
+    seed.get_values(W.bvalue());
+    hval.get_values(W.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -295,10 +283,11 @@ class DefGradTest
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    // Input
-    Mat<T, N, N> Uxi0, Uxib, J0, Jb;
-    x.get_values(Uxi0, J0);
-    ADScalar<T> output;
+    // The AD objects
+    ADObj<Mat<T, N, N>> Uxi, J;
+    ADObj<T> output;
+    ADObj<Mat<T, N, N>> Jinv, Ux, F;
+    ADObj<SymMat<T, N>> E, S;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -306,14 +295,7 @@ class DefGradTest
       Id(k, k) = 1.0;
     }
 
-    // Set the intermediary values
-    Mat<T, N, N> Jinv0, Jinvb, Ux0, Uxb, F0, Fb;
-    SymMat<T, N> E0, Eb, S0, Sb;
-
-    // The AD objects
-    ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
-    ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
-    ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+    x.get_values(Uxi.value(), J.value());
 
     auto stack = MakeStack(
         MatInv(J, Jinv),                           // Jinv = J^{-1}
@@ -323,19 +305,19 @@ class DefGradTest
         SymIsotropic(T(0.35), T(0.51), E, S),      // S = S(E)
         SymMatMultTrace(E, S, output));            // output = tr(E * S)
 
-    seed.get_values(output.bvalue);
+    seed.get_values(output.bvalue());
     stack.reverse();
-    g.set_values(Uxib, Jb);
+    g.set_values(Uxi.bvalue(), J.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
     // The AD objects
-    A2DMat<Mat<T, N, N>> Uxi, J;
-    A2DScalar<T> output;
-    A2DMat<Mat<T, N, N>> Jinv, Ux, F;
-    A2DMat<SymMat<T, N>> E, S;
+    A2DObj<Mat<T, N, N>> Uxi, J;
+    A2DObj<T> output;
+    A2DObj<Mat<T, N, N>> Jinv, Ux, F;
+    A2DObj<SymMat<T, N>> E, S;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -354,8 +336,8 @@ class DefGradTest
         SymIsotropic(T(0.35), T(0.51), E, S),      // S = S(E)
         SymMatMultTrace(E, S, output));            // output = tr(E * S)
 
-    seed.get_values(output.bvalue);
-    hval.get_values(output.hvalue);
+    seed.get_values(output.bvalue());
+    hval.get_values(output.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -397,23 +379,21 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   void deriv(const Output& seed, const Input& x, Input& g) {
     // Input
     const T mu(0.197), lambda(0.839);
-    Mat<T, N, N> Ux0, Uxb;
-    ADMat<Mat<T, N, N>> Ux(Ux0, Uxb);
-    x.get_values(Ux0);
-    ADScalar<T> output;
+    ADObj<Mat<T, N, N>> Ux;
+    x.get_values(Ux.value());
+    ADObj<T> output;
 
     // Symmetric matrices
-    SymMat<T, N> E0, Eb, S0, Sb;
-    ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+    ADObj<SymMat<T, N>> E, S;
 
     auto stack =
         MakeStack(MatGreenStrain<GreenStrain::NONLINEAR>(Ux, E),  // E = E(Ux)
                   SymIsotropic(mu, lambda, E, S),                 // S = S(E)
                   SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
-    seed.get_values(output.bvalue);
+    seed.get_values(output.bvalue());
     stack.reverse();
-    g.set_values(Uxb);
+    g.set_values(Ux.bvalue());
   }
 
   // Compute the second-derivative
@@ -421,12 +401,12 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
              const Input& p, Input& h) {
     // Input
     const T mu(0.197), lambda(0.839);
-    A2DMat<Mat<T, N, N>> Ux;
+    A2DObj<Mat<T, N, N>> Ux;
     x.get_values(Ux.value());
-    A2DScalar<T> output;
+    A2DObj<T> output;
 
     // Symmetric matrices
-    A2DMat<SymMat<T, N>> E, S;
+    A2DObj<SymMat<T, N>> E, S;
 
     auto stack =
         MakeStack(MatGreenStrain<GreenStrain::NONLINEAR>(Ux, E),  // E = E(Ux)
@@ -436,11 +416,20 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Number of components in the derivative
     constexpr index_t ncomp = N * N;
 
-    h.zero();
+    output.bvalue() = hval[0];
+    stack.reverse();
+
+    auto g = MakeTieTuple<T, ADseed::b>(Ux);
+    for (int i = 0; i < ncomp; i++) {
+      h[i] = g[i];
+    }
+
+    auto temps = MakeTieTuple<T, ADseed::b>(Ux, S, E);
+    temps.zero();
 
     // Set the seeds for the second-order part
-    output.hvalue = hval[0];
-    output.bvalue = seed[0];
+    output.hvalue() = 0.0;
+    output.bvalue() = seed[0];
     stack.reverse();
 
     // Create data for extracting the Hessian-vector product

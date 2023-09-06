@@ -6,68 +6,6 @@
 namespace A2D {
 
 template <class... Operations>
-class OperationRefStack {
- public:
-  using StackTuple = std::tuple<Operations &...>;
-  static constexpr index_t num_ops = sizeof...(Operations);
-
-  KOKKOS_FUNCTION OperationRefStack(Operations &...s) : stack(std::tie(s...)) {
-    eval_<0>();
-  }
-
-  // First-order AD
-  KOKKOS_FUNCTION void forward() { forward_<0>(); }
-  KOKKOS_FUNCTION void reverse() { reverse_<num_ops - 1>(); }
-
-  // Second-order AD
-  KOKKOS_FUNCTION void hforward() { hforward_<0>(); }
-  KOKKOS_FUNCTION void hreverse() { hreverse_<num_ops - 1>(); }
-
- private:
-  StackTuple stack;
-
-  template <index_t index>
-  KOKKOS_FUNCTION void eval_() {
-    std::get<index>(stack).eval();
-    if constexpr (index < num_ops - 1) {
-      eval_<index + 1>();
-    }
-  }
-
-  template <index_t index>
-  KOKKOS_FUNCTION void forward_() {
-    std::get<index>(stack).template forward<ADorder::FIRST>();
-    if constexpr (index < num_ops - 1) {
-      forward_<index + 1>();
-    }
-  }
-
-  template <index_t index>
-  KOKKOS_FUNCTION void reverse_() {
-    std::get<index>(stack).reverse();
-    if constexpr (index) {
-      reverse_<index - 1>();
-    }
-  }
-
-  template <index_t index>
-  KOKKOS_FUNCTION void hforward_() {
-    std::get<index>(stack).template forward<ADorder::SECOND>();
-    if constexpr (index < num_ops - 1) {
-      hforward_<index + 1>();
-    }
-  }
-
-  template <index_t index>
-  KOKKOS_FUNCTION void hreverse_() {
-    std::get<index>(stack).hreverse();
-    if constexpr (index) {
-      hreverse_<index - 1>();
-    }
-  }
-};
-
-template <class... Operations>
 class OperationStack {
  public:
   using StackTuple = std::tuple<Operations...>;
@@ -156,11 +94,6 @@ class OperationStack {
     }
   }
 };
-
-template <class... Operations>
-KOKKOS_FUNCTION OperationRefStack<Operations...> MakeStack(Operations &...s) {
-  return OperationRefStack<Operations...>(s...);
-}
 
 template <class... Operations>
 KOKKOS_FUNCTION OperationStack<Operations...> MakeStack(Operations &&...s) {

@@ -102,12 +102,12 @@ class MatTraceExpr {
 };
 
 template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(ADMat<Mat<T, M, M>>& A, ADScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(ADObj<Mat<T, M, M>>& A, ADObj<T>& tr) {
   return MatTraceExpr<T, M, ADorder::FIRST, ADiffType::ACTIVE>(A, tr);
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(A2DMat<Mat<T, M, M>>& A, A2DScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(A2DObj<Mat<T, M, M>>& A, A2DObj<T>& tr) {
   return MatTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(A, tr);
 }
 
@@ -157,12 +157,12 @@ class SymTraceExpr {
 };
 
 template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(ADMat<SymMat<T, M>>& S, ADScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(ADObj<SymMat<T, M>>& S, ADObj<T>& tr) {
   return SymTraceExpr<T, M, ADorder::FIRST, ADiffType::ACTIVE>(S, tr);
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(A2DMat<SymMat<T, M>>& S, A2DScalar<T>& tr) {
+KOKKOS_FUNCTION auto MatTrace(A2DObj<SymMat<T, M>>& S, A2DObj<T>& tr) {
   return SymTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(S, tr);
 }
 
@@ -192,31 +192,26 @@ class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> trace;
-    Mat<T, N, N> A0, Ab;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
+    ADObj<T> trace;
+    ADObj<Mat<T, N, N>> A;
 
-    x.get_values(A0);
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-    seed.get_values(trace.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> trace;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<T> trace;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-
-    seed.get_values(trace.bvalue);
-    hval.get_values(trace.hvalue);
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
+    hval.get_values(trace.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -248,31 +243,27 @@ class SymTraceTest : public A2DTest<T, T, SymMat<T, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> trace;
-    SymMat<T, N> A0, Ab;
-    ADMat<SymMat<T, N>> A(A0, Ab);
+    ADObj<T> trace;
+    ADObj<SymMat<T, N>> A;
 
-    x.get_values(A0);
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-    seed.get_values(trace.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> trace;
-    A2DMat<SymMat<T, N>> A;
+    A2DObj<T> trace;
+    A2DObj<SymMat<T, N>> A;
+
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-
-    seed.get_values(trace.bvalue);
-    hval.get_values(trace.hvalue);
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
+    hval.get_values(trace.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

@@ -120,29 +120,29 @@ class VecOuterExpr {
 };
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(ADVec<Vec<T, M>>& x, ADVec<Vec<T, N>>& y,
-                              ADMat<Mat<T, M, N>>& A) {
+KOKKOS_FUNCTION auto VecOuter(ADObj<Vec<T, M>>& x, ADObj<Vec<T, N>>& y,
+                              ADObj<Mat<T, M, N>>& A) {
   return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(T(1.0), x, y, A);
 }
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, ADVec<Vec<T, M>>& x,
-                              ADVec<Vec<T, N>>& y, ADMat<Mat<T, M, N>>& A) {
+KOKKOS_FUNCTION auto VecOuter(const T alpha, ADObj<Vec<T, M>>& x,
+                              ADObj<Vec<T, N>>& y, ADObj<Mat<T, M, N>>& A) {
   return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y, A);
 }
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(A2DVec<Vec<T, M>>& x, A2DVec<Vec<T, N>>& y,
-                              A2DMat<Mat<T, M, N>>& A) {
+KOKKOS_FUNCTION auto VecOuter(A2DObj<Vec<T, M>>& x, A2DObj<Vec<T, N>>& y,
+                              A2DObj<Mat<T, M, N>>& A) {
   return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(T(1.0), x, y, A);
 }
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DVec<Vec<T, M>>& x,
-                              A2DVec<Vec<T, N>>& y, A2DMat<Mat<T, M, N>>& A) {
+KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DObj<Vec<T, M>>& x,
+                              A2DObj<Vec<T, N>>& y, A2DObj<Mat<T, M, N>>& A) {
   return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
                       ADiffType::ACTIVE>(alpha, x, y, A);
 }
@@ -172,31 +172,26 @@ class VecOuterTest : public A2DTest<T, Mat<T, N, M>, Vec<T, N>, Vec<T, M>> {
   // Compute the derivative
   void deriv(const Output& seed, const Input& X, Input& g) {
     T alpha(0.3157);
-    Vec<T, N> x0, xb;
-    Vec<T, M> y0, yb;
-    Mat<T, N, M> A0, Ab;
-    ADVec<Vec<T, N>> x(x0, xb);
-    ADVec<Vec<T, M>> y(y0, yb);
-    ADMat<Mat<T, N, M>> A(A0, Ab);
-    X.get_values(x0, y0);
-    auto op = VecOuter(alpha, x, y, A);
-    auto stack = MakeStack(op);
-    seed.get_values(Ab);
+    ADObj<Vec<T, N>> x;
+    ADObj<Vec<T, M>> y;
+    ADObj<Mat<T, N, M>> A;
+    X.get_values(x.value(), y.value());
+    auto stack = MakeStack(VecOuter(alpha, x, y, A));
+    seed.get_values(A.bvalue());
     stack.reverse();
-    g.set_values(xb, yb);
+    g.set_values(x.bvalue(), y.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& X,
              const Input& p, Input& h) {
     T alpha(0.3157);
-    A2DVec<Vec<T, N>> x;
-    A2DVec<Vec<T, M>> y;
-    A2DMat<Mat<T, N, M>> A;
+    A2DObj<Vec<T, N>> x;
+    A2DObj<Vec<T, M>> y;
+    A2DObj<Mat<T, N, M>> A;
     X.get_values(x.value(), y.value());
     p.get_values(x.pvalue(), y.pvalue());
-    auto op = VecOuter(alpha, x, y, A);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(VecOuter(alpha, x, y, A));
     seed.get_values(A.bvalue());
     hval.get_values(A.hvalue());
     stack.reverse();

@@ -64,7 +64,7 @@ class A2DTest {
    * @param g Derivative of the output w.r.t. the input
    */
   virtual void hprod(const VarTuple<T, Output>& seed,
-                     const VarTuple<T, Output>& hvalue,
+                     const VarTuple<T, Output>& hval,
                      const VarTuple<T, Inputs...>& x,
                      const VarTuple<T, Inputs...>& p,
                      VarTuple<T, Inputs...>& h) = 0;
@@ -133,7 +133,6 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
   // Set a random seed input
   seed.set_rand();
   hvalue.set_rand();
-  hvalue.zero();
 
   // Get the starting point
   test.get_point(x);

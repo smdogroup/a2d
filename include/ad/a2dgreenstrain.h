@@ -87,14 +87,14 @@ class MatGreenStrainExpr {
 };
 
 template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(ADMat<Mat<T, N, N>>& Ux,
-                                    ADMat<SymMat<T, N>>& E) {
+KOKKOS_FUNCTION auto MatGreenStrain(ADObj<Mat<T, N, N>>& Ux,
+                                    ADObj<SymMat<T, N>>& E) {
   return MatGreenStrainExpr<etype, T, N, ADorder::FIRST>(Ux, E);
 }
 
 template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(A2DMat<Mat<T, N, N>>& Ux,
-                                    A2DMat<SymMat<T, N>>& E) {
+KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<Mat<T, N, N>>& Ux,
+                                    A2DObj<SymMat<T, N>>& E) {
   return MatGreenStrainExpr<etype, T, N, ADorder::SECOND>(Ux, E);
 }
 
@@ -130,31 +130,25 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    Mat<T, N, N> Ux0, Uxb;
-    SymMat<T, N> E0, Eb;
-    ADMat<Mat<T, N, N>> Ux(Ux0, Uxb);
-    ADMat<SymMat<T, N>> E(E0, Eb);
+    ADObj<Mat<T, N, N>> Ux;
+    ADObj<SymMat<T, N>> E;
 
-    x.get_values(Ux0);
-    auto op = MatGreenStrain<etype>(Ux, E);
-    auto stack = MakeStack(op);
-    seed.get_values(Eb);
+    x.get_values(Ux.value());
+    auto stack = MakeStack(MatGreenStrain<etype>(Ux, E));
+    seed.get_values(E.bvalue());
     stack.reverse();
-    g.set_values(Uxb);
+    g.set_values(Ux.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<Mat<T, N, N>> Ux;
-    A2DMat<SymMat<T, N>> E;
+    A2DObj<Mat<T, N, N>> Ux;
+    A2DObj<SymMat<T, N>> E;
 
     x.get_values(Ux.value());
     p.get_values(Ux.pvalue());
-
-    auto op = MatGreenStrain<etype>(Ux, E);
-    auto stack = MakeStack(op);
-
+    auto stack = MakeStack(MatGreenStrain<etype>(Ux, E));
     seed.get_values(E.bvalue());
     hval.get_values(E.hvalue());
     stack.reverse();

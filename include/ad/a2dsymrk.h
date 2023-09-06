@@ -8,335 +8,9 @@
 #include "a2dobjs.h"
 #include "a2dtest.h"
 #include "ad/core/a2dgemmcore.h"
+#include "ad/core/a2dsymrkcore.h"
 
 namespace A2D {
-
-/*
-  Compute S = A * A^{T}  or S = A^{T} * A
-*/
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
-          bool additive = false>
-KOKKOS_FUNCTION void SymMatRKCore(const T A[], T S[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j <= i; j++) {
-        const T* a = &A[K * i];
-        const T* b = &A[K * j];
-
-        T val = 0.0;
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-        if constexpr (additive) {
-          S[0] += val;
-        } else {
-          S[0] = val;
-        }
-        S++;
-      }
-    }
-  } else {
-    for (int i = 0; i < K; i++) {
-      for (int j = 0; j <= i; j++) {
-        const T* a = &A[i];
-        const T* b = &A[j];
-
-        T val = 0.0;
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-        if constexpr (additive) {
-          S[0] += val;
-        } else {
-          S[0] = val;
-        }
-        S++;
-      }
-    }
-  }
-}
-
-/*
-  Compute S = alpha * A * A^{T}  or S = alpha * A^{T} * A
-*/
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
-          bool additive = false>
-KOKKOS_FUNCTION void SymMatRKCoreScale(const T alpha, const T A[], T S[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j <= i; j++) {
-        const T* a = &A[K * i];
-        const T* b = &A[K * j];
-
-        T val = 0.0;
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-        if constexpr (additive) {
-          S[0] += alpha * val;
-        } else {
-          S[0] = alpha * val;
-        }
-        S++;
-      }
-    }
-  } else {
-    for (int i = 0; i < K; i++) {
-      for (int j = 0; j <= i; j++) {
-        const T* a = &A[i];
-        const T* b = &A[j];
-
-        T val = 0.0;
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-        if constexpr (additive) {
-          S[0] += alpha * val;
-        } else {
-          S[0] = alpha * val;
-        }
-        S++;
-      }
-    }
-  }
-}
-
-/*
-  Compute S = A * B^{T} + B * A^{T}  or  S = A^{T} * B + B^{T} * A^{T}
-*/
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
-          bool additive = false>
-KOKKOS_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j <= i; j++) {
-        T val = 0.0;
-
-        const T* a = &A[K * i];
-        const T* b = &B[K * j];
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-
-        a = &A[K * j];
-        b = &B[K * i];
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-
-        if constexpr (additive) {
-          S[0] += val;
-        } else {
-          S[0] = val;
-        }
-        S++;
-      }
-    }
-  } else {
-    for (int i = 0; i < K; i++) {
-      for (int j = 0; j <= i; j++) {
-        T val = 0.0;
-
-        const T* a = &A[i];
-        const T* b = &B[j];
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-
-        a = &A[j];
-        b = &B[i];
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-
-        if constexpr (additive) {
-          S[0] += val;
-        } else {
-          S[0] = val;
-        }
-        S++;
-      }
-    }
-  }
-}
-
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
-          bool additive = false>
-KOKKOS_FUNCTION void SymMatR2KCoreScale(const T alpha, const T A[], const T B[],
-                                        T S[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j <= i; j++) {
-        T val = 0.0;
-
-        const T* a = &A[K * i];
-        const T* b = &B[K * j];
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-
-        a = &A[K * j];
-        b = &B[K * i];
-        for (int k = 0; k < K; k++) {
-          val += a[0] * b[0];
-          a++, b++;
-        }
-
-        if constexpr (additive) {
-          S[0] += alpha * val;
-        } else {
-          S[0] = alpha * val;
-        }
-        S++;
-      }
-    }
-  } else {
-    for (int i = 0; i < K; i++) {
-      for (int j = 0; j <= i; j++) {
-        T val = 0.0;
-
-        const T* a = &A[i];
-        const T* b = &B[j];
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-
-        a = &A[j];
-        b = &B[i];
-        for (int k = 0; k < N; k++) {
-          val += a[0] * b[0];
-          a += K, b += K;
-        }
-
-        if constexpr (additive) {
-          S[0] += alpha * val;
-        } else {
-          S[0] = alpha * val;
-        }
-        S++;
-      }
-    }
-  }
-}
-
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
-KOKKOS_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    // Ab = Sb * A
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < K; j++) {
-        int k = 0;
-        const T* s = &Sb[i * (i + 1) / 2];
-        const T* a = &A[j];
-
-        T val = 0.0;
-        for (; k < i; k++) {
-          val += s[0] * a[0];
-          a += K, s++;
-        }
-
-        for (; k < N; k++) {
-          val += s[0] * a[0];
-          a += K, s += k + 1;
-        }
-
-        val += A[K * i + j] * Sb[i + i * (i + 1) / 2];
-
-        Ab[0] += val;
-        Ab++;
-      }
-    }
-  } else {  // op == MatOp::TRANSPOSE
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < K; j++) {
-        int k = 0;
-        const T* a = &A[K * i];
-        const T* s = &Sb[j * (j + 1) / 2];
-
-        T val = 0.0;
-        for (; k < j; k++) {
-          val += s[0] * a[0];
-          a++, s++;
-        }
-
-        for (; k < K; k++) {
-          val += s[0] * a[0];
-          a++, s += k + 1;
-        }
-
-        val += A[K * i + j] * Sb[j + j * (j + 1) / 2];
-
-        Ab[0] += val;
-        Ab++;
-      }
-    }
-  }
-}
-
-template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
-KOKKOS_FUNCTION void SymMatRKCoreReverseScale(const T alpha, const T A[],
-                                              const T Sb[], T Ab[]) {
-  if constexpr (op == MatOp::NORMAL) {
-    // Ab = Sb * A
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < K; j++) {
-        int k = 0;
-        const T* s = &Sb[i * (i + 1) / 2];
-        const T* a = &A[j];
-
-        T val = 0.0;
-        for (; k < i; k++) {
-          val += s[0] * a[0];
-          a += K, s++;
-        }
-
-        for (; k < N; k++) {
-          val += s[0] * a[0];
-          a += K, s += k + 1;
-        }
-
-        val += A[K * i + j] * Sb[i + i * (i + 1) / 2];
-
-        Ab[0] += alpha * val;
-        Ab++;
-      }
-    }
-  } else {  // op == MatOp::TRANSPOSE
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < K; j++) {
-        int k = 0;
-        const T* a = &A[K * i];
-        const T* s = &Sb[j * (j + 1) / 2];
-
-        T val = 0.0;
-        for (; k < j; k++) {
-          val += s[0] * a[0];
-          a++, s++;
-        }
-
-        for (; k < K; k++) {
-          val += s[0] * a[0];
-          a++, s += k + 1;
-        }
-
-        val += A[K * i + j] * Sb[j + j * (j + 1) / 2];
-
-        Ab[0] += alpha * val;
-        Ab++;
-      }
-    }
-  }
-}
 
 template <typename T, int N, int K, int P>
 KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
@@ -415,24 +89,24 @@ class SymMatRKExpr {
 };
 
 template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(ADMat<Mat<T, N, K>>& A, ADMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(ADObj<Mat<T, N, K>>& A, ADObj<SymMat<T, P>>& S) {
   return SymMatRKExpr<T, N, K, P, ADorder::FIRST, MatOp::NORMAL>(A, S);
 }
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(ADMat<Mat<T, N, K>>& A, ADMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(ADObj<Mat<T, N, K>>& A, ADObj<SymMat<T, P>>& S) {
   return SymMatRKExpr<T, N, K, P, ADorder::FIRST, op>(A, S);
 }
 
 template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(A2DMat<Mat<T, N, K>>& A,
-                              A2DMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(A2DObj<Mat<T, N, K>>& A,
+                              A2DObj<SymMat<T, P>>& S) {
   return SymMatRKExpr<T, N, K, P, ADorder::SECOND, MatOp::NORMAL>(A, S);
 }
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(A2DMat<Mat<T, N, K>>& A,
-                              A2DMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(A2DObj<Mat<T, N, K>>& A,
+                              A2DObj<SymMat<T, P>>& S) {
   return SymMatRKExpr<T, N, K, P, ADorder::SECOND, op>(A, S);
 }
 
@@ -486,14 +160,14 @@ class SymMatRKScaleExpr {
 };
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADMat<Mat<T, N, K>>& A,
-                              ADMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Mat<T, N, K>>& A,
+                              ADObj<SymMat<T, P>>& S) {
   return SymMatRKScaleExpr<T, N, K, P, ADorder::FIRST, op>(alpha, A, S);
 }
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DMat<Mat<T, N, K>>& A,
-                              A2DMat<SymMat<T, P>>& S) {
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Mat<T, N, K>>& A,
+                              A2DObj<SymMat<T, P>>& S) {
   return SymMatRKScaleExpr<T, N, K, P, ADorder::SECOND, op>(alpha, A, S);
 }
 
@@ -529,31 +203,25 @@ class SymMatRKTest : public A2DTest<T, SymMat<T, P>, Mat<T, N, M>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    Mat<T, N, M> A0, Ab;
-    SymMat<T, P> S0, Sb;
-    ADMat<Mat<T, N, M>> A(A0, Ab);
-    ADMat<SymMat<T, P>> S(S0, Sb);
+    ADObj<Mat<T, N, M>> A;
+    ADObj<SymMat<T, P>> S;
 
-    x.get_values(A0);
-    auto mult = SymMatRK<op>(A, S);
-    auto stack = MakeStack(mult);
-    seed.get_values(Sb);
+    x.get_values(A.value());
+    auto stack = MakeStack(SymMatRK<op>(A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<Mat<T, N, M>> A;
-    A2DMat<SymMat<T, P>> S;
+    A2DObj<Mat<T, N, M>> A;
+    A2DObj<SymMat<T, P>> S;
 
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto mult = SymMatRK<op>(A, S);
-    auto stack = MakeStack(mult);
-
+    auto stack = MakeStack(SymMatRK<op>(A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
@@ -595,32 +263,26 @@ class SymMatRKScaleTest : public A2DTest<T, SymMat<T, P>, Mat<T, N, M>> {
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
     const T alpha = 0.25;
-    Mat<T, N, M> A0, Ab;
-    SymMat<T, P> S0, Sb;
-    ADMat<Mat<T, N, M>> A(A0, Ab);
-    ADMat<SymMat<T, P>> S(S0, Sb);
+    ADObj<Mat<T, N, M>> A;
+    ADObj<SymMat<T, P>> S;
 
-    x.get_values(A0);
-    auto mult = SymMatRK<op>(alpha, A, S);
-    auto stack = MakeStack(mult);
-    seed.get_values(Sb);
+    x.get_values(A.value());
+    auto stack = MakeStack(SymMatRK<op>(alpha, A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
     const T alpha = 0.25;
-    A2DMat<Mat<T, N, M>> A;
-    A2DMat<SymMat<T, P>> S;
+    A2DObj<Mat<T, N, M>> A;
+    A2DObj<SymMat<T, P>> S;
 
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto mult = SymMatRK<op>(alpha, A, S);
-    auto stack = MakeStack(mult);
-
+    auto stack = MakeStack(SymMatRK<op>(alpha, A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();

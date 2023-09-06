@@ -3,8 +3,6 @@
 
 #include "a2denum.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
-#include "a2dvec.h"
 
 namespace A2D {
 
@@ -15,7 +13,7 @@ class Mat {
  public:
   typedef T type;
 
-  static const index_t num_components = M * N;
+  static const index_t ncomp = M * N;
   static const int nrows = M;
   static const int ncols = N;
 
@@ -92,7 +90,7 @@ class SymMat {
   static constexpr int nrows = N;
   static constexpr int ncols = N;
 
-  static const index_t num_components = MAT_SIZE;
+  static const index_t ncomp = MAT_SIZE;
 
   KOKKOS_FUNCTION SymMat() {
     for (int i = 0; i < MAT_SIZE; i++) {

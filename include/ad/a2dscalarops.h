@@ -3,7 +3,6 @@
 
 #include "a2denum.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 
 namespace A2D {
 

@@ -11,7 +11,7 @@ class Vec {
  public:
   typedef T type;
 
-  static const index_t num_components = N;
+  static const index_t ncomp = N;
 
   KOKKOS_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {

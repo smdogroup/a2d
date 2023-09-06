@@ -6,10 +6,8 @@
 #include "a2denum.h"
 #include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
-// #include "ad/core/a2disotropiccore.h"
 
 namespace A2D {
 

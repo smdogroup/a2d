@@ -3,7 +3,6 @@
 
 #include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 #include "a2dvec.h"
 #include "ad/core/a2dmatveccore.h"
 #include "ad/core/a2dveccore.h"

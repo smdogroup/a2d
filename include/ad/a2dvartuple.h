@@ -22,7 +22,7 @@ struct __is_scalar_type {
 };
 
 struct __basic_arithmetic_type {
-  static const index_t num_components = 1;
+  static const index_t ncomp = 1;
 };
 
 template <class... Vars>
@@ -30,15 +30,15 @@ struct __count_var_components;
 
 template <>
 struct __count_var_components<> {
-  static const index_t num_components = 0;
+  static const index_t ncomp = 0;
 };
 
 template <class First, class... Remain>
 struct __count_var_components<First, Remain...> {
-  static const index_t num_components =
+  static const index_t ncomp =
       std::conditional<__is_scalar_type<First>::value, __basic_arithmetic_type,
-                       First>::type::num_components +
-      __count_var_components<Remain...>::num_components;
+                       First>::type::ncomp +
+      __count_var_components<Remain...>::ncomp;
 };
 
 template <typename T, class... Vars>
@@ -47,13 +47,12 @@ class VarTupleBase {
   /**
    * @brief Number of components in the tuple of variables
    */
-  static constexpr index_t num_components =
-      __count_var_components<Vars...>::num_components;
+  static constexpr index_t ncomp = __count_var_components<Vars...>::ncomp;
 
   /**
    * @brief Get the number of components
    */
-  KOKKOS_FUNCTION index_t get_num_components() const { return num_components; }
+  KOKKOS_FUNCTION index_t get_num_components() const { return ncomp; }
 
  protected:
   template <typename I, index_t index, class TupleObj, class First,
@@ -70,11 +69,11 @@ class VarTupleBase {
     } else {
       if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var)[comp];
-      } else if (comp < First::num_components) {
+      } else if (comp < First::ncomp) {
         return std::get<index>(var)[comp];
       } else {
         return get_value_<I, index + 1, TupleObj, Remain...>(
-            var, comp - First::num_components);
+            var, comp - First::ncomp);
       }
     }
   }
@@ -95,11 +94,11 @@ class VarTupleBase {
     } else {
       if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var)[comp];
-      } else if (comp < First::num_components) {
+      } else if (comp < First::ncomp) {
         return std::get<index>(var)[comp];
       } else {
         return get_value_const_<I, index + 1, TupleObj, Remain...>(
-            var, comp - First::num_components);
+            var, comp - First::ncomp);
       }
     }
   }
@@ -111,7 +110,7 @@ class VarTupleBase {
       std::get<index>(var) = f;
     } else {
       First& val = std::get<index>(var);
-      for (index_t i = 0; i < First::num_components; i++) {
+      for (index_t i = 0; i < First::ncomp; i++) {
         val[i] = f[i];
       }
     }
@@ -127,7 +126,7 @@ class VarTupleBase {
       f = std::get<index>(var);
     } else {
       const First& val = std::get<index>(var);
-      for (index_t i = 0; i < First::num_components; i++) {
+      for (index_t i = 0; i < First::ncomp; i++) {
         f[i] = val[i];
       }
     }
@@ -155,7 +154,7 @@ class VarTupleBase {
           low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
     } else {
       First& val = std::get<index>(var);
-      for (index_t i = 0; i < First::num_components; i++) {
+      for (index_t i = 0; i < First::ncomp; i++) {
         val[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
       }
     }

@@ -37,14 +37,27 @@ KOKKOS_FUNCTION void VecOuter(const T alpha, const Vec<T, M>& x,
   bar{x} = alpha * bar{A} * y
   bar{y} = alpha * bar{A}^{T} * x
 */
-template <typename T, int M, int N, ADorder order, ADiffType adx, ADiffType ady>
+template <class xtype, class ytype, class Atype>
+// typename T, int M, int N, ADorder order, ADiffType adx, ADiffType ady>
 class VecOuterExpr {
- private:
-  using xtype = ADVecType<adx, order, Vec<T, M>>;
-  using ytype = ADVecType<ady, order, Vec<T, N>>;
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, M, N>>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Atype>::type T;
+
+  // Extract the dimensions of the underlying vectors
+  static constexpr int M = get_vec_size<xtype>::size;
+  static constexpr int N = get_vec_size<ytype>::size;
+
+  // Extract the underlying sizes of the matrix
+  static constexpr int K = get_matrix_rows<Atype>::size;
+  static constexpr int L = get_matrix_columns<Atype>::size;
+
+  // Get the types of the matrices
+  static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
+  static constexpr ADiffType ady = get_diff_type<ytype>::diff_type;
+
+  static_assert((M == K && N == L), "Matrix and vector dimensions must agree");
+
   KOKKOS_FUNCTION VecOuterExpr(const T alpha, xtype& x, ytype& y, Atype& A)
       : alpha(alpha), x(x), y(y), A(A) {}
 
@@ -118,32 +131,33 @@ class VecOuterExpr {
   Atype& A;
 };
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(ADObj<Vec<T, M>>& x, ADObj<Vec<T, N>>& y,
-                              ADObj<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(T(1.0), x, y, A);
+template <class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
+                              ADObj<Atype>& A) {
+  using T = typename get_object_numeric_type<Atype>::type;
+  return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
+                                                                A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, ADObj<Vec<T, M>>& x,
-                              ADObj<Vec<T, N>>& y, ADObj<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y, A);
+template <typename T, class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
+                              ADObj<Atype>& A) {
+  return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(alpha, x, y, A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(A2DObj<Vec<T, M>>& x, A2DObj<Vec<T, N>>& y,
-                              A2DObj<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(T(1.0), x, y, A);
+template <class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                              A2DObj<Atype>& A) {
+  using T = typename get_object_numeric_type<Atype>::type;
+  return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
+                                                                   A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DObj<Vec<T, M>>& x,
-                              A2DObj<Vec<T, N>>& y, A2DObj<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y, A);
+template <typename T, class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
+                              A2DObj<Atype>& A) {
+  return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(alpha, x, y,
+                                                                   A);
 }
 
 namespace Test {

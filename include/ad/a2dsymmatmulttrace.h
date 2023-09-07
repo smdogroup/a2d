@@ -18,11 +18,27 @@ KOKKOS_FUNCTION void SymMatMultTrace(SymMat<T, N>& S, SymMat<T, N>& E,
   output = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
 }
 
-template <typename T, int N, ADorder order>
+template <class Stype, class Etype, class dtype>
 class SymMatMultTraceExpr {
  public:
-  using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Etype>::type T;
+
+  // Extract the dimensions of the underlying matrices
+  static constexpr int N = get_symmatrix_size<Etype>::size;
+  static constexpr int M = get_symmatrix_size<Stype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == M), "Matrix dimensions must agree");
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<Stype>::order == order,
+                "ADorder does not match");
+  static_assert(get_diff_order<Etype>::order == order,
+                "ADorder does not match");
 
   KOKKOS_FUNCTION SymMatMultTraceExpr(Stype& S, Stype& E, dtype& out)
       : S(S), E(E), out(out) {}
@@ -69,17 +85,18 @@ class SymMatMultTraceExpr {
   dtype& out;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatMultTrace(ADObj<SymMat<T, N>>& S,
-                                     ADObj<SymMat<T, N>>& E, ADObj<T>& output) {
-  return SymMatMultTraceExpr<T, N, ADorder::FIRST>(S, E, output);
+template <class Stype, class Etype, class dtype>
+KOKKOS_FUNCTION auto SymMatMultTrace(ADObj<Stype>& S, ADObj<Etype>& E,
+                                     ADObj<dtype>& output) {
+  return SymMatMultTraceExpr<ADObj<Stype>, ADObj<Etype>, ADObj<dtype>>(S, E,
+                                                                       output);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatMultTrace(A2DObj<SymMat<T, N>>& S,
-                                     A2DObj<SymMat<T, N>>& E,
-                                     A2DObj<T>& output) {
-  return SymMatMultTraceExpr<T, N, ADorder::SECOND>(S, E, output);
+template <class Stype, class Etype, class dtype>
+KOKKOS_FUNCTION auto SymMatMultTrace(A2DObj<Stype>& S, A2DObj<Etype>& E,
+                                     A2DObj<dtype>& output) {
+  return SymMatMultTraceExpr<A2DObj<Stype>, A2DObj<Etype>, A2DObj<dtype>>(
+      S, E, output);
 }
 
 namespace Test {

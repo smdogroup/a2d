@@ -11,10 +11,10 @@ namespace A2D {
   Check if a type is numeric or not
 */
 template <class T>
-struct __is_numeric_type : std::is_floating_point<T> {};
+struct is_numeric_type : std::is_floating_point<T> {};
 
 template <class T>
-struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
+struct is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
 
 /*
   Get the numeric type of the object
@@ -142,8 +142,8 @@ struct __remove_a2dobj<A2DObj<T>> {
 };
 
 template <class T>
-struct remove_a2dobj
-    : __remove_a2dobj<typename std::remove_reference<T>::type> {};
+struct remove_a2dobj : __remove_a2dobj<typename std::remove_const<
+                           typename std::remove_reference<T>::type>::type> {};
 
 /*
   Get whether the type is passive or not...
@@ -160,6 +160,16 @@ struct get_diff_type<ADObj<T>> {
 
 template <class T>
 struct get_diff_type<A2DObj<T>> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
+
+template <class T>
+struct get_diff_type<ADObj<T>&> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
+
+template <class T>
+struct get_diff_type<A2DObj<T>&> {
   static constexpr ADiffType diff_type = ADiffType::ACTIVE;
 };
 
@@ -261,71 +271,54 @@ struct get_matrix_columns
                 "get_matrix_rows called on incorrect type");
 };
 
-/**
- * @brief Select type based on whether the scalar is passive or active (can be
- * differentiated). This template is design for inputs to classes that may be
- * numerical constants and includes the reference in the defintion.
- *
- * @tparam adiff_type passive or active
- * @tparam order first (AD) or second (A2D)
- * @tparam MatType the numeric type of the matrix
- */
-template <ADiffType adiff_type, ADorder order, typename T>
-using ADScalarInputType = typename std::conditional<
-    adiff_type == ADiffType::ACTIVE,
-    typename std::conditional<order == ADorder::FIRST, ADObj<T>&,
-                              A2DObj<T>&>::type,
-    const T>::type;
+/*
+  Get the number of entries in the matrix -- symmetric or non-symmetric
+*/
+template <class T>
+struct __get_num_matrix_entries {
+  static constexpr int size = 0;
+};
+
+template <template <typename, int> class SymMat, typename T, int N>
+struct __get_num_matrix_entries<SymMat<T, N>> {
+  static constexpr int size = N * (N + 1) / 2;
+};
+
+template <template <typename, int, int> class Mat, typename T, int N, int M>
+struct __get_num_matrix_entries<Mat<T, N, M>> {
+  static constexpr int size = N * M;
+};
+
+template <class T>
+struct get_num_matrix_entries
+    : __get_num_matrix_entries<typename remove_a2dobj<T>::type> {
+  static_assert((get_a2d_object_type<T>::value == ADObjType::MATRIX ||
+                 get_a2d_object_type<T>::value == ADObjType::SYMMAT),
+                "get_num_matrix_entries called on incorrect type");
+};
 
 /**
- * @brief Select type based on whether the scalar is passive or active (can be
- * differentiated)
- *
- * @tparam adiff_type passive or active
- * @tparam order first (AD) or second (A2D)
- * @tparam MatType the numeric type of the matrix
- */
-template <ADiffType adiff_type, ADorder order, typename T>
-using ADScalarType = typename std::conditional<
-    adiff_type == ADiffType::ACTIVE,
-    typename std::conditional<order == ADorder::FIRST, ADObj<T>&,
-                              A2DObj<T>&>::type,
-    T&>::type;
-
-/**
- * @brief Select type based on whether the vector is passive or active (can be
- * differentiated)
- *
- * @tparam adiff_type passive or active
- * @tparam VecType the numeric type of the vector
- */
-template <ADiffType adiff_type, ADorder order, class VecType>
-using ADVecType = typename std::conditional<
-    adiff_type == ADiffType::ACTIVE,
-    typename std::conditional<order == ADorder::FIRST, ADObj<VecType>,
-                              A2DObj<VecType>>::type,
-    const VecType>::type;
-
-/**
- * @brief Select type based on whether the matrix is passive or active (can be
- * differentiated)
+ * @brief Select type based on supplied ADiffType value
  *
  * For example, the following types are equivalent:
  *
- * Mat<...>    == ADMatType<ADiffType::PASSIVE, *,               Mat<...>>;
- * ADObj<...>  == ADMatType<ADiffType::ACTIVE,  ADorder::FIRST,  Mat<...>>;
- * A2DObj<...> == ADMatType<ADiffType::ACTIVE,  ADorder::SECOND, Mat<...>>;
+ * Obj<...>         ==
+ *    ADObjSelect<ADiffType::PASSIVE, *,               Obj<...>>;
+ * ADObj<Obj<...>>  ==
+ *    ADObjSelect<ADiffType::ACTIVE,  ADorder::FIRST,  Obj<...>>;
+ * A2DObj<Obj<...>> ==
+ *    ADObjSelect<ADiffType::ACTIVE,  ADorder::SECOND, Obj<...>>;
  *
  * @tparam adiff_type passive or active
  * @tparam order first (AD) or second (A2D)
- * @tparam MatType the numeric type of the matrix
+ * @tparam Obj the numeric type of the matrix
  */
-template <ADiffType adiff_type, ADorder order, class MatType>
-using ADMatType = typename std::conditional<
+template <ADiffType adiff_type, ADorder order, class Obj>
+using ADObjSelect = typename std::conditional<
     adiff_type == ADiffType::ACTIVE,
-    typename std::conditional<order == ADorder::FIRST, ADObj<MatType>,
-                              A2DObj<MatType>>::type,
-    const MatType>::type;
+    typename std::conditional<order == ADorder::FIRST, ADObj<Obj>,
+                              A2DObj<Obj>>::type,
+    Obj>::type;
 
 /**
  * @brief Get objects and pointers to seed data (bvalue(), pvalue(), hvalue)
@@ -353,14 +346,14 @@ class GetSeed {
   }
 
   template <typename T,
-            std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+            std::enable_if_t<is_numeric_type<T>::value, bool> = true>
   static KOKKOS_FUNCTION T& get_data(ADObj<T>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
     return value.bvalue();
   }
 
   template <typename T,
-            std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+            std::enable_if_t<is_numeric_type<T>::value, bool> = true>
   static KOKKOS_FUNCTION T& get_data(A2DObj<T>& value) {
     static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
                   "Incompatible seed type for A2DObj");
@@ -488,38 +481,32 @@ class GetSeed {
   }
 };
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 T& get_data(T& value) {
   return value;
 }
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 const T& get_data(const T& value) {
   return value;
 }
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 T& get_data(ADObj<T>& value) {
   return value.value();
 }
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 const T& get_data(const ADObj<T>& value) {
   return value.value();
 }
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 T& get_data(A2DObj<T>& value) {
   return value.value();
 }
 
-template <typename T,
-          std::enable_if_t<__is_numeric_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 const T& get_data(const A2DObj<T>& value) {
   return value.value();
 }

@@ -15,11 +15,17 @@ KOKKOS_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
   alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
 }
 
-template <typename T, int N, ADorder order>
+template <class vtype, class dtype>
 class VecNormExpr {
  public:
-  using vtype = ADVecType<ADiffType::ACTIVE, order, Vec<T, N>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the underlying vectors
+  static constexpr int N = get_vec_size<vtype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
 
   KOKKOS_FUNCTION VecNormExpr(vtype &x, dtype &alpha) : x(x), alpha(alpha) {}
 
@@ -58,14 +64,14 @@ class VecNormExpr {
   T inv;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecNorm(ADObj<Vec<T, N>> &x, ADObj<T> &alpha) {
-  return VecNormExpr<T, N, ADorder::FIRST>(x, alpha);
+template <class vtype, class dtype>
+KOKKOS_FUNCTION auto VecNorm(ADObj<vtype> &x, ADObj<dtype> &alpha) {
+  return VecNormExpr<ADObj<vtype>, ADObj<dtype>>(x, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecNorm(A2DObj<Vec<T, N>> &x, A2DObj<T> &alpha) {
-  return VecNormExpr<T, N, ADorder::SECOND>(x, alpha);
+template <class vtype, class dtype>
+KOKKOS_FUNCTION auto VecNorm(A2DObj<vtype> &x, A2DObj<dtype> &alpha) {
+  return VecNormExpr<A2DObj<vtype>, A2DObj<dtype>>(x, alpha);
 }
 
 template <typename T, int N>
@@ -74,13 +80,27 @@ KOKKOS_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
   VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
 }
 
-template <typename T, int N, ADorder order>
+template <class xtype, class ytype>
 class VecNormalizeExpr {
  public:
-  using vtype = ADVecType<ADiffType::ACTIVE, order, Vec<T, N>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<ytype>::type T;
 
-  KOKKOS_FUNCTION VecNormalizeExpr(vtype &x, vtype &y) : x(x), y(y) {}
+  // Extract the dimensions of the underlying vectors
+  static constexpr int N = get_vec_size<xtype>::size;
+  static constexpr int M = get_vec_size<ytype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<ytype>::order;
+
+  // Make sure the vector dimensions are consistent
+  static_assert((N == M), "Matrix dimensions must agree");
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<xtype>::order == order,
+                "ADorder does not match");
+
+  KOKKOS_FUNCTION VecNormalizeExpr(xtype &x, ytype &y) : x(x), y(y) {}
 
   KOKKOS_FUNCTION void eval() {
     T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
@@ -129,18 +149,18 @@ class VecNormalizeExpr {
   }
 
   T inv;
-  vtype &x;
-  vtype &y;
+  xtype &x;
+  ytype &y;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecNormalize(ADObj<Vec<T, N>> &x, ADObj<Vec<T, N>> &y) {
-  return VecNormalizeExpr<T, N, ADorder::FIRST>(x, y);
+template <class xtype, class ytype>
+KOKKOS_FUNCTION auto VecNormalize(ADObj<xtype> &x, ADObj<ytype> &y) {
+  return VecNormalizeExpr<ADObj<xtype>, ADObj<ytype>>(x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecNormalize(A2DObj<Vec<T, N>> &x, A2DObj<Vec<T, N>> &y) {
-  return VecNormalizeExpr<T, N, ADorder::SECOND>(x, y);
+template <class xtype, class ytype>
+KOKKOS_FUNCTION auto VecNormalize(A2DObj<xtype> &x, A2DObj<ytype> &y) {
+  return VecNormalizeExpr<A2DObj<xtype>, A2DObj<ytype>>(x, y);
 }
 
 template <typename T, int N>
@@ -148,12 +168,25 @@ KOKKOS_FUNCTION void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
   VecScaleCore<T, N>(alpha, get_data(x), get_data(y));
 }
 
-template <typename T, int N, ADorder order, ADiffType ada, ADiffType adx>
+template <class dtype, class xtype, class ytype>
 class VecScaleExpr {
  public:
-  using dtype = ADScalarInputType<ada, order, T>;
-  using xtype = ADVecType<adx, order, Vec<T, N>>;
-  using ytype = ADVecType<ADiffType::ACTIVE, order, Vec<T, N>>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the underlying vectors
+  static constexpr int N = get_vec_size<xtype>::size;
+  static constexpr int M = get_vec_size<ytype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<ytype>::order;
+
+  // Get the types of the matrices
+  static constexpr ADiffType ada = get_diff_type<dtype>::diff_type;
+  static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == M), "Vector sizes must agree");
 
   KOKKOS_FUNCTION VecScaleExpr(dtype alpha, xtype &x, ytype &y)
       : alpha(alpha), x(x), y(y) {}
@@ -214,46 +247,39 @@ class VecScaleExpr {
   ytype &y;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<Vec<T, N>> &x,
-                              ADObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x,
+                              ADObj<ytype> &y) {
+  return VecScaleExpr<ADObj<T> &, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(const T alpha, ADObj<Vec<T, N>> &x,
-                              ADObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
-                      ADiffType::ACTIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(const T alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
+  return VecScaleExpr<const T, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(ADObj<T> alpha, const Vec<T, N> &x,
-                              ADObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::PASSIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x,
+                              ADObj<ytype> &y) {
+  return VecScaleExpr<ADObj<T> &, const xtype, ADObj<xtype>>(alpha, x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<Vec<T, N>> &x,
-                              A2DObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<xtype> &x,
+                              A2DObj<ytype> &y) {
+  return VecScaleExpr<A2DObj<T> &, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(const T alpha, A2DObj<Vec<T, N>> &x,
-                              A2DObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
-                      ADiffType::ACTIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x,
+                              A2DObj<ytype> &y) {
+  return VecScaleExpr<const T, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, const Vec<T, N> &x,
-                              A2DObj<Vec<T, N>> &y) {
-  return VecScaleExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::PASSIVE>(alpha, x, y);
+template <class T, class xtype, class ytype>
+KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x,
+                              A2DObj<ytype> &y) {
+  return VecScaleExpr<A2DObj<T> &, const xtype, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <typename T, int N>
@@ -261,12 +287,25 @@ KOKKOS_FUNCTION void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
   alpha = VecDotCore<T, N>(get_data(x), get_data(y));
 }
 
-template <typename T, int N, ADorder order, ADiffType adx, ADiffType ady>
+template <class xtype, class ytype, class dtype>
 class VecDotExpr {
  public:
-  using xtype = ADVecType<adx, order, Vec<T, N>>;
-  using ytype = ADVecType<ady, order, Vec<T, N>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the underlying vectors
+  static constexpr int N = get_vec_size<xtype>::size;
+  static constexpr int M = get_vec_size<ytype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
+
+  // Get the types of the matrices
+  static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
+  static constexpr ADiffType ady = get_diff_type<ytype>::diff_type;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == M), "Vector dimensions must agree");
 
   KOKKOS_FUNCTION VecDotExpr(xtype &x, ytype &y, dtype &alpha)
       : x(x), y(y), alpha(alpha) {}
@@ -328,46 +367,40 @@ class VecDotExpr {
   dtype &alpha;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(ADObj<Vec<T, N>> &x, ADObj<Vec<T, N>> &y,
-                            ADObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(ADObj<xtype> &x, ADObj<ytype> &y,
+                            ADObj<dtype> &alpha) {
+  return VecDotExpr<ADObj<xtype>, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, ADObj<Vec<T, N>> &y,
-                            ADObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE>(x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y,
+                            ADObj<dtype> &alpha) {
+  return VecDotExpr<const xtype, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(ADObj<Vec<T, N>> &x, const Vec<T, N> &y,
-                            ADObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE>(x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y,
+                            ADObj<dtype> &alpha) {
+  return VecDotExpr<ADObj<xtype>, const ytype, ADObj<dtype>>(x, y, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(A2DObj<Vec<T, N>> &x, A2DObj<Vec<T, N>> &y,
-                            A2DObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::ACTIVE>(x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(A2DObj<xtype> &x, A2DObj<ytype> &y,
+                            A2DObj<dtype> &alpha) {
+  return VecDotExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(const Vec<T, N> &x, A2DObj<Vec<T, N>> &y,
-                            A2DObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE>(x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(const xtype &x, A2DObj<ytype> &y,
+                            A2DObj<dtype> &alpha) {
+  return VecDotExpr<const xtype, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto VecDot(A2DObj<Vec<T, N>> &x, const Vec<T, N> &y,
-                            A2DObj<T> &alpha) {
-  return VecDotExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE>(x, y, alpha);
+template <class xtype, class ytype, class dtype>
+KOKKOS_FUNCTION auto VecDot(A2DObj<xtype> &x, const ytype &y,
+                            A2DObj<dtype> &alpha) {
+  return VecDotExpr<A2DObj<xtype>, const ytype, A2DObj<dtype>>(x, y, alpha);
 }
 
 namespace Test {

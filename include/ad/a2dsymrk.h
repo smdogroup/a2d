@@ -43,13 +43,17 @@ KOKKOS_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
   SymMatRKCoreScale<T, N, K, op>(get_data(alpha), get_data(A), get_data(S));
 }
 
-template <typename T, int N, int K, int P, ADorder order, MatOp op>
+template <class Atype, class Stype, MatOp op = MatOp::NORMAL>
 class SymMatRKExpr {
- private:
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, K>>;
-  using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, P>>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Stype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int N = get_matrix_rows<Atype>::size;
+  static constexpr int K = get_matrix_columns<Atype>::size;
+  static constexpr int P = get_symmatrix_size<Stype>::size;
+
   KOKKOS_FUNCTION SymMatRKExpr(Atype& A, Stype& S) : A(A), S(S) {
     static_assert(
         (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
@@ -88,35 +92,37 @@ class SymMatRKExpr {
   Stype& S;
 };
 
-template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(ADObj<Mat<T, N, K>>& A, ADObj<SymMat<T, P>>& S) {
-  return SymMatRKExpr<T, N, K, P, ADorder::FIRST, MatOp::NORMAL>(A, S);
+template <class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
+  return SymMatRKExpr<ADObj<Atype>, ADObj<Stype>>(A, S);
 }
 
-template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(ADObj<Mat<T, N, K>>& A, ADObj<SymMat<T, P>>& S) {
-  return SymMatRKExpr<T, N, K, P, ADorder::FIRST, op>(A, S);
+template <MatOp op, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
+  return SymMatRKExpr<ADObj<Atype>, ADObj<Stype>, op>(A, S);
 }
 
-template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(A2DObj<Mat<T, N, K>>& A,
-                              A2DObj<SymMat<T, P>>& S) {
-  return SymMatRKExpr<T, N, K, P, ADorder::SECOND, MatOp::NORMAL>(A, S);
+template <class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
+  return SymMatRKExpr<A2DObj<Atype>, A2DObj<Stype>>(A, S);
 }
 
-template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(A2DObj<Mat<T, N, K>>& A,
-                              A2DObj<SymMat<T, P>>& S) {
-  return SymMatRKExpr<T, N, K, P, ADorder::SECOND, op>(A, S);
+template <MatOp op, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
+  return SymMatRKExpr<A2DObj<Atype>, A2DObj<Stype>, op>(A, S);
 }
 
-template <typename T, int N, int K, int P, ADorder order, MatOp op>
+template <class Atype, class Stype, MatOp op = MatOp::NORMAL>
 class SymMatRKScaleExpr {
- private:
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, K>>;
-  using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, P>>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Stype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int N = get_matrix_rows<Atype>::size;
+  static constexpr int K = get_matrix_columns<Atype>::size;
+  static constexpr int P = get_symmatrix_size<Stype>::size;
+
   KOKKOS_FUNCTION SymMatRKScaleExpr(const T alpha, Atype& A, Stype& S)
       : alpha(alpha), A(A), S(S) {
     static_assert(
@@ -159,16 +165,26 @@ class SymMatRKScaleExpr {
   Stype& S;
 };
 
-template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Mat<T, N, K>>& A,
-                              ADObj<SymMat<T, P>>& S) {
-  return SymMatRKScaleExpr<T, N, K, P, ADorder::FIRST, op>(alpha, A, S);
+template <typename T, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
+  return SymMatRKScaleExpr<ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
-template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Mat<T, N, K>>& A,
-                              A2DObj<SymMat<T, P>>& S) {
-  return SymMatRKScaleExpr<T, N, K, P, ADorder::SECOND, op>(alpha, A, S);
+template <MatOp op, typename T, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
+  return SymMatRKScaleExpr<ADObj<Atype>, ADObj<Stype>, op>(alpha, A, S);
+}
+
+template <typename T, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
+                              A2DObj<Stype>& S) {
+  return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
+}
+
+template <MatOp op, typename T, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
+                              A2DObj<Stype>& S) {
+  return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>, op>(alpha, A, S);
 }
 
 namespace Test {

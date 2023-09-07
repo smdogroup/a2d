@@ -23,7 +23,7 @@ KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   }
 }
 
-template <GreenStrain etype, ADorder order, class Utype, class Etype>
+template <GreenStrain etype, class Utype, class Etype>
 class MatGreenStrainExpr {
  public:
   // Extract the numeric type to use
@@ -34,13 +34,14 @@ class MatGreenStrainExpr {
   static constexpr int K = get_matrix_columns<Utype>::size;
   static constexpr int N = get_symmatrix_size<Etype>::size;
 
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<Etype>::order;
+
   // Make sure the matrix dimensions are consistent
   static_assert((N == K && N == M), "Matrix dimensions must agree");
 
   // Make sure that the order matches
   static_assert(get_diff_order<Utype>::order == order,
-                "ADorder does not match");
-  static_assert(get_diff_order<Etype>::order == order,
                 "ADorder does not match");
 
   KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
@@ -102,14 +103,12 @@ class MatGreenStrainExpr {
 
 template <GreenStrain etype, class UxMat, class EMat>
 KOKKOS_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
-  return MatGreenStrainExpr<etype, ADorder::FIRST, ADObj<UxMat>, ADObj<EMat>>(
-      Ux, E);
+  return MatGreenStrainExpr<etype, ADObj<UxMat>, ADObj<EMat>>(Ux, E);
 }
 
 template <GreenStrain etype, class UxMat, class EMat>
 KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
-  return MatGreenStrainExpr<etype, ADorder::SECOND, A2DObj<UxMat>,
-                            A2DObj<EMat>>(Ux, E);
+  return MatGreenStrainExpr<etype, A2DObj<UxMat>, A2DObj<EMat>>(Ux, E);
 }
 
 namespace Test {

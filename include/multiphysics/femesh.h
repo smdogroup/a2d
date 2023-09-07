@@ -450,10 +450,12 @@ class ElementMesh {
   ElementMesh(const index_t label, MeshConnectivityBase& conn,
               ElementMesh<InteriorBasis>& mesh);
   template <class HOrderBasis>
-  ElementMesh(ElementMesh<HOrderBasis>& mesh);
+  ElementMesh(const ElementMesh<HOrderBasis>& mesh);
 
   // Copy constructor, this is needed for parallel dispatch
-  KOKKOS_FUNCTION ElementMesh(const ElementMesh& other)
+  // Note, this is also a specialization of the third constructor above
+  template <>
+  KOKKOS_FUNCTION ElementMesh(const ElementMesh<Basis>& other)
       : nelems(other.nelems),
         num_dof(other.num_dof),
         num_dof_offset(other.num_dof_offset),

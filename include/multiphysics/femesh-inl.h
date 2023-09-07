@@ -1551,7 +1551,7 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
  */
 template <class Basis>
 template <class HOrderBasis>
-ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
+ElementMesh<Basis>::ElementMesh(const ElementMesh<HOrderBasis>& mesh)
     : nelems(HOrderBasis::get_num_lorder_elements() * mesh.get_num_elements()),
       num_dof(mesh.get_num_dof()) {
   num_dof_offset = DofOffsetArray("num_dof_offset");

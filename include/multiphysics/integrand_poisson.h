@@ -38,6 +38,29 @@ class Poisson {
   using SolutionMapping = InteriorMapping<T, dim>;
 
   /**
+   * @brief Find the integral of the compliance over the entire domain
+   *
+   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& s) const {
+    // Get the value and the gradient of the solution
+    const T& u = s.template get<0>().get_value();
+    const Vec<T, dim>& grad = s.template get<0>().get_grad();
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    T dot, output;
+    VecDot(grad, grad, dot);
+    Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output);
+
+    return output;
+  }
+
+  /**
    * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
@@ -50,16 +73,28 @@ class Poisson {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
-    const H1Space<T, 1, dim>& u = s.template get<0>();
-    const Vec<T, dim>& u_grad = u.get_grad();
+    // Get the value and the gradient of the solution
+    T u0 = s.template get<0>().get_value();  // Make a copy of the value
+    Vec<T, dim> grad0 = s.template get<0>().get_grad();  // Make a copy of grad
 
-    H1Space<T, 1, dim>& v = coef.template get<0>();
-    Vec<T, dim>& v_grad = v.get_grad();
+    // Grab references to the output values
+    T& ub = coef.template get<0>().get_value();
+    Vec<T, dim>& gradb = coef.template get<0>().get_grad();
 
-    // Set the terms from the variational statement
-    for (index_t k = 0; k < dim; k++) {
-      v_grad(k) = wdetJ * u_grad(k);
-    }
+    // Make the objects with references
+    ADObj<T&> u(u0, ub);
+    ADObj<Vec<T, dim>&> grad(grad0, gradb);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    ADObj<T> dot, output;
+    auto stack = MakeStack(VecDot(grad, grad, dot),
+                           Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output));
+
+    output.bvalue() = 1.0;
+
+    // Reverse the derivatives - values are written directly to the output
+    // because we set the references
+    stack.reverse();
   }
 
   /**
@@ -76,7 +111,39 @@ class Poisson {
   KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                QMatType& jac) const {}
+                                QMatType& jac) const {
+    FiniteElementSpace in, out;
+
+    // Get the value and the gradient of the solution
+    T u0 = s.template get<0>().get_value();     // Make a copy of the value
+    T ub;                                       // Value for b
+    T& up = in.template get<0>().get_value();   // Set reference for p
+    T& uh = out.template get<0>().get_value();  // Set reference for h
+    A2DObj<T&> u(u0, ub, up, uh);
+
+    Vec<T, dim> grad0 = s.template get<0>().get_grad();     // Make a copy
+    Vec<T, dim> gradb;                                      // Value for b
+    Vec<T, dim>& gradp = in.template get<0>().get_grad();   // Set p ref
+    Vec<T, dim>& gradh = out.template get<0>().get_grad();  // Set h ref
+    A2DObj<Vec<T, dim>&> grad(grad0, gradb, gradp, gradh);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    A2DObj<T> dot, output;
+    auto stack = MakeStack(VecDot(grad, grad, dot),
+                           Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output));
+
+    output.bvalue() = 1.0;
+
+    // Compute the derivatives first..
+    stack.reverse();
+
+    // Create data for extracting the Hessian-vector product
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    auto inters = MakeTieTuple<T, ADseed::h>(dot, output);
+
+    // Extract the matrix
+    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
+  }
 };
 
 /**

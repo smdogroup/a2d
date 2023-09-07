@@ -27,8 +27,12 @@ class A2DIntegrandAnalysisTest
             TestType::SECOND_ORDER),
         integrand(integrand) {
     // Set values for the data and the geometry
-    this->set_rand(DataSpace::ncomp, data);
-    this->set_rand(FiniteElementGeometry::ncomp, gref);
+    if constexpr (DataSpace::ncomp > 0) {
+      this->set_rand(DataSpace::ncomp, data);
+    }
+    if constexpr (FiniteElementGeometry::ncomp > 0) {
+      this->set_rand(FiniteElementGeometry::ncomp, gref);
+    }
   }
 
   // Finite element geometry and data space

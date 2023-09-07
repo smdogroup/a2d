@@ -1,6 +1,7 @@
 #ifndef A2D_HEAT_CONDUCTION_H
 #define A2D_HEAT_CONDUCTION_H
 
+#include "a2dcore.h"
 #include "multiphysics/femapping.h"
 
 namespace A2D {
@@ -61,7 +62,16 @@ class HeatConduction {
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
               const FiniteElementSpace& s) const {
-    return wdetJ * (s.template get<0>()).get_value() * heat_source;
+    // Field objects for solution functions
+    const Vec<T, dim>& tx = s.template get<0>().get_grad();
+    Vec<T, dim>& cx = coef.template get<0>().get_grad();
+    const T temp = s.template get<0>().get_value();
+
+    T norm2;
+    VecDot(tx, tx, norm2);
+    Sum(0.5 * kappa, norm2, heat_source, temp, output);
+
+    return wdetJ * output;
   }
 
   /**
@@ -74,10 +84,10 @@ class HeatConduction {
    * @param s The trial solution
    * @param coef Derivative of the weak form w.r.t. coefficients
    */
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     // Field objects for solution functions
     const Vec<T, dim>& tx = s.template get<0>().get_grad();
     Vec<T, dim>& cx = coef.template get<0>().get_grad();
@@ -92,6 +102,12 @@ class HeatConduction {
       cx(k) = wdetJ * kappa * penalty * rho * tx(k);
     }
   }
+
+  // Evaluate the second order derivatives of the integral
+  KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                QMatType& jac) const {}
 
   /**
    * @brief Construct a JacVecProduct functor

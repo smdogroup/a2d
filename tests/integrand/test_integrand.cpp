@@ -5,8 +5,8 @@
 #include "a2dcore.h"
 #include "ad/a2dtest.h"
 #include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/integrand_poisson.h"
-// #include "multiphysics/integrand_heat_conduction.h"
 #include "multiphysics/integrand_test.h"
 
 using namespace A2D;
@@ -17,8 +17,8 @@ using TopoIntegrand = IntegrandTopoLinearElasticity<T, 3>;
 template <typename T>
 using PoissonIntegrand = Poisson<T, 3>;
 
-// template <typename T>
-// using HeatIntegrand = HeatConduction<T, 3>;
+template <typename T>
+using HeatIntegrand = HeatConduction<T, 3>;
 
 bool TestIntegrands(bool component, bool write_output) {
   bool passed = true;
@@ -33,16 +33,27 @@ bool TestIntegrands(bool component, bool write_output) {
   A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc> test2(integrand2);
   passed = passed && A2D::Test::Run(test2, component, write_output);
 
-  // HeatIntegrand<Tc> integrand2(Tc(0.7), Tc(0.3), Tc(5.0));
-  // A2D::Test::A2DIntegrandAnalysisTest<HeatIntegrand, Tc> test2(integrand2);
-  // passed = passed && A2D::Test::Run(test2, component, write_output);
+  HeatIntegrand<Tc> integrand3(Tc(0.7), Tc(0.3), Tc(5.0));
+  A2D::Test::A2DIntegrandAnalysisTest<HeatIntegrand, Tc> test3(integrand3);
+  passed = passed && A2D::Test::Run(test3, component, write_output);
 
   return passed;
 }
 
-int main() {
+int main(int argc, char *argv[]) {
   bool component = false;     // Default to a projection test
   bool write_output = false;  // Don't write output;
+
+  // Check for the write_output flag
+  for (int i = 0; i < argc; i++) {
+    std::string str(argv[i]);
+    if (str.compare("--write_output") == 0) {
+      write_output = true;
+    }
+    if (str.compare("--component") == 0) {
+      component = true;
+    }
+  }
 
   typedef std::function<bool(bool, bool)> TestFunc;
   std::vector<TestFunc> tests;

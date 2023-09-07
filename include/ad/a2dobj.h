@@ -8,20 +8,24 @@
 namespace A2D {
 
 /*
-  Check if a type is numeric or not
-*/
-template <class T>
-struct is_numeric_type : std::is_floating_point<T> {};
-
-template <class T>
-struct is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
-
-/*
   Remove the const-ness and references for a type
 */
 template <class T>
 struct remove_const_and_refs
     : std::remove_const<typename std::remove_reference<T>::type> {};
+
+/*
+  Check if a type is numeric or not
+*/
+template <class T>
+struct __is_numeric_type : std::is_floating_point<T> {};
+
+template <class T>
+struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
+
+template <class T>
+struct is_numeric_type
+    : __is_numeric_type<typename remove_const_and_refs<T>::type> {};
 
 /*
   Get the numeric type of the object

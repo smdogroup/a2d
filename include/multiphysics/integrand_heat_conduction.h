@@ -11,13 +11,14 @@ namespace A2D {
 
   The governing equation is
 
-  -k∆u = g in Ω
-  u = u0 on ∂Ω
+  -k div(u) = g in Omega
+  u = u0 on S
 
   The weak form is
 
-  ∫ k ∇u ∇v dΩ = ∫gv dΩ for test function v
+  Integral( k dot(grad(u), grad(v)) - g * v ) dOmega = 0
 
+  for any test function v in the FE space
 */
 template <typename T, index_t D>
 class HeatConduction {
@@ -62,16 +63,23 @@ class HeatConduction {
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
               const FiniteElementSpace& s) const {
-    // Field objects for solution functions
-    const Vec<T, dim>& tx = s.template get<0>().get_grad();
-    Vec<T, dim>& cx = coef.template get<0>().get_grad();
-    const T temp = s.template get<0>().get_value();
+    // Get the value and the gradient of the solution
+    const T& u = s.template get<0>().get_value();
+    const Vec<T, dim>& grad = s.template get<0>().get_grad();
 
-    T norm2;
-    VecDot(tx, tx, norm2);
-    Sum(0.5 * kappa, norm2, heat_source, temp, output);
+    T rho(data[0]);
+    T denom, penalty, k, dot, kdot, source, output;
 
-    return wdetJ * output;
+    // Compute the RAMP penalty
+    Sum(T(1.0 + q), -T(1.0), q, rho, denom);  // denom = (1.0 + q * (1.0 - rho))
+    Divide(T(1.0), denom, penalty);  // penalty = 1.0 / (1.0 + q * (1.0 - rho))
+    Mult(kappa, penalty, k);         // k = kappa * penalty
+    VecDot(grad, grad, dot);         // dot = (grad, grad)
+    Mult(k, dot, kdot);              // kdot = k * dot
+    Mult(-2.0 * heat_source, u, source);  // source = - 2.0 * heat_source * u
+    Sum(kdot, source, output);            // output = k * dot - 2 * g * u
+
+    return 0.5 * wdetJ * output;
   }
 
   /**
@@ -88,143 +96,83 @@ class HeatConduction {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
-    // Field objects for solution functions
-    const Vec<T, dim>& tx = s.template get<0>().get_grad();
-    Vec<T, dim>& cx = coef.template get<0>().get_grad();
-    T& c = coef.template get<0>().get_value();
-    c = -wdetJ * heat_source;  // Add a constant heat source here
+    // Get the value and the gradient of the solution
+    T u0 = s.template get<0>().get_value();  // Make a copy of the value
+    Vec<T, dim> grad0 = s.template get<0>().get_grad();  // Make a copy of grad
 
-    // Set the thermal conductivity coefficient
-    T rho = data[0];
-    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+    // Grab references to the output values
+    T& ub = coef.template get<0>().get_value();
+    Vec<T, dim>& gradb = coef.template get<0>().get_grad();
 
-    for (index_t k = 0; k < dim; k++) {
-      cx(k) = wdetJ * kappa * penalty * rho * tx(k);
-    }
+    // Make the objects with references
+    ADObj<T&> u(u0, ub);
+    ADObj<Vec<T, dim>&> grad(grad0, gradb);
+
+    // Make temporaries directly
+    ADObj<T> rho(data[0]);
+    ADObj<T> denom, penalty, k, dot, kdot, source, output;
+
+    // Make the stack
+    auto stack = MakeStack(Sum(T(1.0 + q), -T(1.0), q, rho, denom),  //
+                           Divide(T(1.0), denom, penalty),           //
+                           Mult(kappa, penalty, k),                  //
+                           VecDot(grad, grad, dot),                  //
+                           Mult(k, dot, kdot),                       //
+                           Mult(-2.0 * heat_source, u, source),      //
+                           Sum(kdot, source, output));
+
+    // Set the seed value
+    output.bvalue() = 0.5 * wdetJ;
+
+    // Reverse the derivatives - values are written directly to the output
+    // because we set the references
+    stack.reverse();
   }
 
   // Evaluate the second order derivatives of the integral
   KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
-                                QMatType& jac) const {}
+                                QMatType& jac) const {
+    FiniteElementSpace in, out;
 
-  /**
-   * @brief Construct a JacVecProduct functor
-   *
-   * This functor computes a Jacobian-vector product of the
-   *
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  class JacVecProduct {
-   public:
-    KOKKOS_FUNCTION JacVecProduct(const HeatConduction<T, D>& integrand,
-                                  T wdetJ, const DataSpace& data,
-                                  const FiniteElementGeometry& geo,
-                                  const FiniteElementSpace& s)
-        : wdetJ(wdetJ),
-          kappa(integrand.kappa),
-          rho(data[0]),
-          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))) {}
+    // Get the value and the gradient of the solution
+    T u0 = s.template get<0>().get_value();     // Make a copy of the value
+    T ub;                                       // Value for b
+    T& up = in.template get<0>().get_value();   // Set reference for p
+    T& uh = out.template get<0>().get_value();  // Set reference for h
+    A2DObj<T&> u(u0, ub, up, uh);
 
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    FiniteElementSpace& Jp) {
-      // Field objects for solution functions
-      const Vec<T, dim>& tx = p.template get<0>().get_grad();
-      Vec<T, dim>& cx = Jp.template get<0>().get_grad();
+    Vec<T, dim> grad0 = s.template get<0>().get_grad();     // Make a copy
+    Vec<T, dim> gradb;                                      // Value for b
+    Vec<T, dim>& gradp = in.template get<0>().get_grad();   // Set p ref
+    Vec<T, dim>& gradh = out.template get<0>().get_grad();  // Set h ref
+    A2DObj<Vec<T, dim>&> grad(grad0, gradb, gradp, gradh);
 
-      for (index_t k = 0; k < dim; k++) {
-        cx(k) = wdetJ * kappa * penalty * rho * tx(k);
-      }
-    }
+    // Make temporaries directly
+    A2DObj<T> rho(data[0]);
+    A2DObj<T> denom, penalty, k, dot, kdot, source, output;
 
-   private:
-    T wdetJ;
-    T kappa;
-    T rho;
-    T penalty;
-  };
+    // Make the stack
+    auto stack = MakeStack(Sum(T(1.0 + q), -T(1.0), q, rho, denom),  //
+                           Divide(T(1.0), denom, penalty),           //
+                           Mult(kappa, penalty, k),                  //
+                           VecDot(grad, grad, dot),                  //
+                           Mult(k, dot, kdot),                       //
+                           Mult(-2.0 * heat_source, u, source),      //
+                           Sum(kdot, source, output));
+    // Set the seed value
+    output.bvalue() = 0.5 * wdetJ;
 
-  /**
-   * @brief Construct a JacVecProduct functor
-   *
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  class AdjVecProduct {
-   public:
-    KOKKOS_FUNCTION AdjVecProduct(const HeatConduction<T, D>& integrand,
-                                  T wdetJ, const DataSpace& data,
-                                  const FiniteElementGeometry& geo,
-                                  const FiniteElementSpace& s)
-        : wdetJ(wdetJ),
-          kappa(integrand.kappa),
-          rho(data[0]),
-          q(integrand.q),
-          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))),
-          tx(s.template get<0>().get_grad()) {}
+    // Compute the derivatives first..
+    stack.reverse();
 
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    DataSpace& dfdx) {
-      T denom = (1.0 + q * (1.0 - rho));
-      T dprhodrho = (q + 1.0) / (denom * denom);
+    // Create data for extracting the Hessian-vector product
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    auto inters = MakeTieTuple<T, ADseed::h>(dot, output);
 
-      const Vec<T, dim>& psi = p.template get<0>().get_grad();
-
-      for (index_t k = 0; k < dim; k++) {
-        dfdx[0] += wdetJ * kappa * dprhodrho * tx(k) * psi(k);
-      }
-    }
-
-   private:
-    T wdetJ;
-    T kappa;
-    T rho;
-    T q;
-    T penalty;
-    const Vec<T, dim>& tx;
-  };
-};
-
-/**
- * @brief Compute the right-hand-side of the adjoint equation for thermal
- * compliance function.
- */
-template <typename T, index_t D>
-class AdjRHS {
- public:
-  // Number of dimensions
-  static const index_t dim = D;
-
-  // Number of data dimensions
-  static const index_t data_dim = 1;
-
-  // Space for the finite-element data
-  using DataSpace = typename HeatConduction<T, D>::DataSpace;
-
-  // Space for the element geometry
-  using FiniteElementGeometry =
-      typename HeatConduction<T, D>::FiniteElementGeometry;
-
-  // Finite element space
-  using FiniteElementSpace = typename HeatConduction<T, D>::FiniteElementSpace;
-
-  // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = InteriorMapping<T, dim>;
-
-  T heat_source;
-
-  AdjRHS(T heat_source) : heat_source(heat_source) {}
-
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
-    T& c = coef.template get<0>().get_value();
-    c = -wdetJ * heat_source;
+    // Extract the matrix
+    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
   }
 };
 

@@ -119,7 +119,7 @@ SymIsotropic(mu, lambda, E, S);
 Given $E, S \in \mathbb{S}^{n}$, compute $\alpha = \text{tr}(E S)$
 
 ```c++
-SymMatTrace(E, S, alpha);
+SymMatMultTrace(E, S, alpha);
 ```
 
 ### Matrix scale
@@ -311,7 +311,7 @@ MatMatMult(Uxi, Jinv, Ux);
 MatSum(Ux, Id, F);
 SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);
 SymIsotropic(T(0.35), T(0.51), E, S);
-SymMatTrace(E, S, output);
+SymMatMultTrace(E, S, output);
 ```
 
 Here $T$ and $N$ are template parameters. The scalar, matrix and symmetric matrix types are all A2D types designed to be used directly for computations without AD information.
@@ -329,14 +329,14 @@ The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`,
 Mat<T, N, N> Id;
 
 // Input and derivative output
-ADMat<Mat<T, N, N>> Uxi(Uxi0, Uxib), J(J0, Jb);
+ADObj<Mat<T, N, N>> Uxi, J;
 
 // Output
-ADScalar<T> output;
+ADObj<T> output;
 
 // Intermediate values
-ADMat<Mat<T, N, N>> Jinv(Jinv0, Jinvb), Ux(Ux0, Uxb), F(F0, Fb);
-ADMat<SymMat<T, N>> E(E0, Eb), S(S0, Sb);
+ADObj<Mat<T, N, N>> Jinv, U, F;
+ADObj<SymMat<T, N>> E, S;
 
 auto stack = MakeStack(
     MatInv(J, Jinv),
@@ -344,10 +344,10 @@ auto stack = MakeStack(
     MatSum(Ux, Id, F),
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
     SymIsotropic(T(0.35), T(0.51), E, S),
-    SymMatTrace(E, S, output));
+    SymMatMultTrace(E, S, output));
 
 // Set the seed value
-output.bvalue = 1.0;
+output.bvalue() = 1.0;
 
 // Reverse mode AD through the stack
 stack.reverse();
@@ -362,14 +362,14 @@ For second derivatives, A2D uses Hessian-vector products that require a combinat
 Mat<T, N, N> Id;
 
 // Input
-A2DMat<Mat<T, N, N>> Uxi, J;
+A2DObj<Mat<T, N, N>> Uxi, J;
 
 // Outputs
-A2DScalar<T> output;
+A2DObj<T> output;
 
 // Intermediate data
-A2DMat<Mat<T, N, N>> Jinv, Ux, F;
-A2DMat<SymMat<T, N>> E, S;
+A2DObj<Mat<T, N, N>> Jinv, Ux, F;
+A2DObj<SymMat<T, N>> E, S;
 
 auto stack = MakeStack(
     MatInv(J, Jinv),
@@ -377,16 +377,16 @@ auto stack = MakeStack(
     MatSum(Ux, Id, F),
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),
     SymIsotropic(T(0.35), T(0.51), E, S),
-    SymMatTrace(E, S, output));
+    SymMatMultTrace(E, S, output));
 
 // Set the seed value and the second derivative value
-output.bvalue = 1.0;
+output.bvalue() = 1.0;
 stack.reverse();
 
 // Set values for the direction p
 // Set Uxi.pvalue();
 // Set J.pvalue();
-output.hvalue = 0.0;
+output.hvalue() = 0.0;
 
 // Perform the forward and reverse passes
 stack.hforward();

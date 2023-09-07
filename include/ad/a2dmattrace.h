@@ -6,7 +6,6 @@
 #include "a2denum.h"
 #include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 
 namespace A2D {
 
@@ -56,13 +55,26 @@ KOKKOS_FUNCTION void MatTrace(SymMat<T, M>& S, T& trace) {
   trace = SymMatTraceCore<T, M>(get_data(S));
 }
 
-template <typename T, int M, ADorder order, ADiffType adA>
+template <class Atype, class dtype>
 class MatTraceExpr {
- private:
-  using Atype = ADMatType<adA, order, Mat<T, M, M>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int N = get_matrix_rows<Atype>::size;
+  static constexpr int M = get_matrix_columns<Atype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == M), "Matrix must be square");
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<Atype>::order == order,
+                "ADorder does not match");
+
   KOKKOS_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {}
 
   KOKKOS_FUNCTION void eval() {
@@ -76,24 +88,18 @@ class MatTraceExpr {
         "Can't perform second order forward with first order objects");
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    if constexpr (adA == ADiffType::ACTIVE) {
-      GetSeed<seed>::get_data(tr) =
-          MatTraceCore<T, M>(GetSeed<seed>::get_data(A));
-    }
+    GetSeed<seed>::get_data(tr) =
+        MatTraceCore<T, M>(GetSeed<seed>::get_data(A));
   }
 
   KOKKOS_FUNCTION void reverse() {
-    if constexpr (adA == ADiffType::ACTIVE) {
-      MatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
-                           GetSeed<ADseed::b>::get_data(A));
-    }
+    MatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
+                         GetSeed<ADseed::b>::get_data(A));
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    if constexpr (adA == ADiffType::ACTIVE) {
-      MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
-                           GetSeed<ADseed::h>::get_data(A));
-    }
+    MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
+                         GetSeed<ADseed::h>::get_data(A));
   }
 
  private:
@@ -101,23 +107,38 @@ class MatTraceExpr {
   dtype& tr;
 };
 
-template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(ADMat<Mat<T, M, M>>& A, ADScalar<T>& tr) {
-  return MatTraceExpr<T, M, ADorder::FIRST, ADiffType::ACTIVE>(A, tr);
+template <
+    class Atype, class dtype,
+    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
+                     bool> = true>
+KOKKOS_FUNCTION auto MatTrace(ADObj<Atype>& A, ADObj<dtype>& tr) {
+  return MatTraceExpr<ADObj<Atype>, ADObj<dtype>>(A, tr);
 }
 
-template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(A2DMat<Mat<T, M, M>>& A, A2DScalar<T>& tr) {
-  return MatTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(A, tr);
+template <
+    class Atype, class dtype,
+    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
+                     bool> = true>
+KOKKOS_FUNCTION auto MatTrace(A2DObj<Atype>& A, A2DObj<dtype>& tr) {
+  return MatTraceExpr<A2DObj<Atype>, A2DObj<dtype>>(A, tr);
 }
 
-template <typename T, int M, ADorder order, ADiffType adA>
+template <class Stype, class dtype>
 class SymTraceExpr {
- private:
-  using Stype = ADMatType<adA, order, SymMat<T, M>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int M = get_symmatrix_size<Stype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<Stype>::order == order,
+                "ADorder does not match");
+
   KOKKOS_FUNCTION SymTraceExpr(Stype& S, dtype& tr) : S(S), tr(tr) {}
 
   KOKKOS_FUNCTION void eval() {
@@ -131,24 +152,18 @@ class SymTraceExpr {
         "Can't perform second order forward with first order objects");
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    if constexpr (adA == ADiffType::ACTIVE) {
-      GetSeed<seed>::get_data(tr) =
-          SymMatTraceCore<T, M>(GetSeed<seed>::get_data(S));
-    }
+    GetSeed<seed>::get_data(tr) =
+        SymMatTraceCore<T, M>(GetSeed<seed>::get_data(S));
   }
 
   KOKKOS_FUNCTION void reverse() {
-    if constexpr (adA == ADiffType::ACTIVE) {
-      SymMatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
-                              GetSeed<ADseed::b>::get_data(S));
-    }
+    SymMatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
+                            GetSeed<ADseed::b>::get_data(S));
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    if constexpr (adA == ADiffType::ACTIVE) {
-      SymMatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
-                              GetSeed<ADseed::h>::get_data(S));
-    }
+    SymMatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
+                            GetSeed<ADseed::h>::get_data(S));
   }
 
  private:
@@ -156,14 +171,20 @@ class SymTraceExpr {
   dtype& tr;
 };
 
-template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(ADMat<SymMat<T, M>>& S, ADScalar<T>& tr) {
-  return SymTraceExpr<T, M, ADorder::FIRST, ADiffType::ACTIVE>(S, tr);
+template <
+    class Stype, class dtype,
+    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
+                     bool> = true>
+KOKKOS_FUNCTION auto MatTrace(ADObj<Stype>& S, ADObj<dtype>& tr) {
+  return SymTraceExpr<ADObj<Stype>, ADObj<dtype>>(S, tr);
 }
 
-template <typename T, int M>
-KOKKOS_FUNCTION auto MatTrace(A2DMat<SymMat<T, M>>& S, A2DScalar<T>& tr) {
-  return SymTraceExpr<T, M, ADorder::SECOND, ADiffType::ACTIVE>(S, tr);
+template <
+    class Stype, class dtype,
+    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
+                     bool> = true>
+KOKKOS_FUNCTION auto MatTrace(A2DObj<Stype>& S, A2DObj<dtype>& tr) {
+  return SymTraceExpr<A2DObj<Stype>, A2DObj<dtype>>(S, tr);
 }
 
 namespace Test {
@@ -192,31 +213,26 @@ class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> trace;
-    Mat<T, N, N> A0, Ab;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
+    ADObj<T> trace;
+    ADObj<Mat<T, N, N>> A;
 
-    x.get_values(A0);
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-    seed.get_values(trace.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> trace;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<T> trace;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-
-    seed.get_values(trace.bvalue);
-    hval.get_values(trace.hvalue);
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
+    hval.get_values(trace.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
@@ -248,31 +264,27 @@ class SymTraceTest : public A2DTest<T, T, SymMat<T, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> trace;
-    SymMat<T, N> A0, Ab;
-    ADMat<SymMat<T, N>> A(A0, Ab);
+    ADObj<T> trace;
+    ADObj<SymMat<T, N>> A;
 
-    x.get_values(A0);
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-    seed.get_values(trace.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> trace;
-    A2DMat<SymMat<T, N>> A;
+    A2DObj<T> trace;
+    A2DObj<SymMat<T, N>> A;
+
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatTrace(A, trace);
-    auto stack = MakeStack(op);
-
-    seed.get_values(trace.bvalue);
-    hval.get_values(trace.hvalue);
+    auto stack = MakeStack(MatTrace(A, trace));
+    seed.get_values(trace.bvalue());
+    hval.get_values(trace.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

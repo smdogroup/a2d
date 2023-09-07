@@ -83,12 +83,26 @@ KOKKOS_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N> &A,
   SymMatSumCore<T, N>(alpha, get_data(A), get_data(S));
 }
 
-template <typename T, int N, ADorder order, ADiffType ada, ADiffType adA>
+template <class atype, class Atype, class Stype>
 class SymMatSumExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using Atype = ADMatType<adA, order, Mat<T, N, N>>;
-  using Stype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Stype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int M = get_matrix_rows<Atype>::size;
+  static constexpr int K = get_matrix_columns<Atype>::size;
+  static constexpr int N = get_symmatrix_size<Stype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<Stype>::order;
+
+  // Get the types of the matrices
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adA = get_diff_type<Atype>::diff_type;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == K && N == M), "Matrix dimensions must agree");
 
   KOKKOS_FUNCTION SymMatSumExpr(atype alpha, Atype &A, Stype &S)
       : alpha(alpha), A(A), S(S) {}
@@ -151,61 +165,57 @@ class SymMatSumExpr {
   Stype &S;
 };
 
-// First-order
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADMat<Mat<T, N, N>> &A, ADMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
-                       ADiffType::ACTIVE>(T(1.0), A, S);
+// Scalar constant alpha = 1.0 case
+template <class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(ADObj<Atype> &A, ADObj<Stype> &S) {
+  using T = typename get_object_numeric_type<Stype>::type;
+  return SymMatSumExpr<const T, ADObj<Atype>, ADObj<Stype>>(T(1.0), A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADScalar<T> &alpha, ADMat<Mat<T, N, N>> &A,
-                               ADMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
-                       ADiffType::ACTIVE>(alpha, A, S);
+template <class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<Atype> &A, A2DObj<Stype> &S) {
+  using T = typename get_object_numeric_type<Stype>::type;
+  return SymMatSumExpr<const T, A2DObj<Atype>, A2DObj<Stype>>(T(1.0), A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(const T alpha, ADMat<Mat<T, N, N>> &A,
-                               ADMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::PASSIVE,
-                       ADiffType::ACTIVE>(alpha, A, S);
+// Cases with alpha
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
+                               ADObj<Stype> &S) {
+  return SymMatSumExpr<ADObj<atype> &, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(ADScalar<T> &alpha, Mat<T, N, N> &A,
-                               ADMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::FIRST, ADiffType::ACTIVE,
-                       ADiffType::PASSIVE>(alpha, A, S);
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
+                               A2DObj<Stype> &S) {
+  return SymMatSumExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<Stype>>(alpha, A,
+                                                                      S);
 }
 
-// Second-order
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
-                       ADiffType::ACTIVE>(T(1.0), A, S);
+// Cases with passive variables
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype> &A,
+                               ADObj<Stype> &S) {
+  return SymMatSumExpr<const atype, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                       ADiffType::ACTIVE>(alpha, A, S);
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype> &A,
+                               A2DObj<Stype> &S) {
+  return SymMatSumExpr<const atype, A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(const T alpha, A2DMat<Mat<T, N, N>> &A,
-                               A2DMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::PASSIVE,
-                       ADiffType::ACTIVE>(alpha, A, S);
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(ADObj<atype> &alpha, const Atype &A,
+                               ADObj<Stype> &S) {
+  return SymMatSumExpr<ADObj<atype> &, const Atype, ADObj<Stype>>(alpha, A, S);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto SymMatSum(A2DScalar<T> &alpha, Mat<T, N, N> &A,
-                               A2DMat<SymMat<T, N>> &S) {
-  return SymMatSumExpr<T, N, ADorder::SECOND, ADiffType::ACTIVE,
-                       ADiffType::PASSIVE>(alpha, A, S);
+template <class atype, class Atype, class Stype>
+KOKKOS_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A,
+                               A2DObj<Stype> &S) {
+  return SymMatSumExpr<A2DObj<atype> &, const Atype, A2DObj<Stype>>(alpha, A,
+                                                                    S);
 }
 
 namespace Test {
@@ -234,27 +244,23 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    Mat<T, N, N> A0, Ab;
-    SymMat<T, N> S0, Sb;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
-    ADMat<SymMat<T, N>> S(S0, Sb);
-    x.get_values(A0);
-    auto op = SymMatSum(A, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    ADObj<Mat<T, N, N>> A;
+    ADObj<SymMat<T, N>> S;
+    x.get_values(A.value());
+    auto stack = MakeStack(SymMatSum(A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DMat<SymMat<T, N>> S;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<SymMat<T, N>> S;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-    auto op = SymMatSum(A, S);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(SymMatSum(A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
@@ -289,35 +295,31 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    ADScalar<T> alpha;
-    Mat<T, N, N> A0, Ab;
-    SymMat<T, N> S0, Sb;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
-    ADMat<SymMat<T, N>> S(S0, Sb);
-    x.get_values(alpha.value, A0);
-    auto op = SymMatSum(alpha, A, S);
-    auto stack = MakeStack(op);
-    seed.get_values(Sb);
+    ADObj<T> alpha;
+    ADObj<Mat<T, N, N>> A;
+    ADObj<SymMat<T, N>> S;
+    x.get_values(alpha.value(), A.value());
+    auto stack = MakeStack(SymMatSum(alpha, A, S));
+    seed.get_values(S.bvalue());
     stack.reverse();
-    g.set_values(alpha.bvalue, Ab);
+    g.set_values(alpha.bvalue(), A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha;
-    A2DMat<SymMat<T, N>> S;
-    A2DMat<Mat<T, N, N>> A;
-    x.get_values(alpha.value, A.value());
-    p.get_values(alpha.pvalue, A.pvalue());
-    auto op = SymMatSum(alpha, A, S);
-    auto stack = MakeStack(op);
+    A2DObj<T> alpha;
+    A2DObj<SymMat<T, N>> S;
+    A2DObj<Mat<T, N, N>> A;
+    x.get_values(alpha.value(), A.value());
+    p.get_values(alpha.pvalue(), A.pvalue());
+    auto stack = MakeStack(SymMatSum(alpha, A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(alpha.hvalue, A.hvalue());
+    h.set_values(alpha.hvalue(), A.hvalue());
   }
 };
 

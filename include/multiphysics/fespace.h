@@ -3,9 +3,7 @@
 
 #include <type_traits>
 
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
-#include "a2dobjs.h"
+#include "a2dcore.h"
 
 namespace A2D {
 
@@ -92,7 +90,8 @@ class L2Space {
   }
 
   // Get the value of the specified component
-  KOKKOS_FUNCTION T& get_value(const index_t comp) {
+  template <typename I>
+  KOKKOS_FUNCTION T& get_value(const I comp) {
     if constexpr (C == 1) {
       return u;
     } else {
@@ -100,7 +99,26 @@ class L2Space {
     }
   }
 
-  KOKKOS_FUNCTION const T& get_value(const index_t comp) const {
+  template <typename I>
+  KOKKOS_FUNCTION const T& get_value(const I comp) const {
+    if constexpr (C == 1) {
+      return u;
+    } else {
+      return u(comp);
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION T& operator[](const I comp) {
+    if constexpr (C == 1) {
+      return u;
+    } else {
+      return u(comp);
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& operator[](const I comp) const {
     if constexpr (C == 1) {
       return u;
     } else {
@@ -156,7 +174,8 @@ class H1Space {
   }
 
   // Get the value of the specified component
-  KOKKOS_FUNCTION T& get_value(const index_t comp) {
+  template <typename I>
+  KOKKOS_FUNCTION T& get_value(const I comp) {
     if constexpr (C == 1) {
       if (comp == 0) {
         return u;
@@ -172,7 +191,43 @@ class H1Space {
     }
   }
 
-  KOKKOS_FUNCTION const T& get_value(const index_t comp) const {
+  template <typename I>
+  KOKKOS_FUNCTION const T& get_value(const I comp) const {
+    if constexpr (C == 1) {
+      if (comp == 0) {
+        return u;
+      } else {
+        return grad(comp - 1);
+      }
+    } else {
+      if (comp % (D + 1) == 0) {
+        return u(comp / (D + 1));
+      } else {
+        return grad(comp / (D + 1), (comp % (D + 1)) - 1);
+      }
+    }
+  }
+
+  // Get the value of the specified component
+  template <typename I>
+  KOKKOS_FUNCTION T& operator[](const I comp) {
+    if constexpr (C == 1) {
+      if (comp == 0) {
+        return u;
+      } else {
+        return grad(comp - 1);
+      }
+    } else {
+      if (comp % (D + 1) == 0) {
+        return u(comp / (D + 1));
+      } else {
+        return grad(comp / (D + 1), (comp % (D + 1)) - 1);
+      }
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& operator[](const I comp) const {
     if constexpr (C == 1) {
       if (comp == 0) {
         return u;
@@ -253,7 +308,6 @@ class H1Space {
           }
         }
       }
-      // MatMatMult<T, false, true>(grad, Jinv, s.grad);
     }
   }
 
@@ -280,14 +334,36 @@ class HdivSpace {
   }
 
   // Get the value of the specified component
-  KOKKOS_FUNCTION T& get_value(const index_t comp) {
+  template <typename I>
+  KOKKOS_FUNCTION T& get_value(const I comp) {
     if (comp < D) {
       return u(comp);
     } else {
       return div;
     }
   }
-  KOKKOS_FUNCTION const T& get_value(const index_t comp) const {
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& get_value(const I comp) const {
+    if (comp < D) {
+      return u(comp);
+    } else {
+      return div;
+    }
+  }
+
+  // Get the value of the specified component
+  template <typename I>
+  KOKKOS_FUNCTION T& operator[](const I comp) {
+    if (comp < D) {
+      return u(comp);
+    } else {
+      return div;
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& operator[](const I comp) const {
     if (comp < D) {
       return u(comp);
     } else {
@@ -358,14 +434,35 @@ class Hcurl2DSpace {
   }
 
   // Get the value of the specified component
-  KOKKOS_FUNCTION T& get_value(const index_t comp) {
+  template <typename I>
+  KOKKOS_FUNCTION T& get_value(const I comp) {
     if (comp < 2) {
       return u(comp);
     } else {
       return curl;
     }
   }
-  KOKKOS_FUNCTION const T& get_value(const index_t comp) const {
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& get_value(const I comp) const {
+    if (comp < 2) {
+      return u(comp);
+    } else {
+      return curl;
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION T& operator[](const I comp) {
+    if (comp < 2) {
+      return u(comp);
+    } else {
+      return curl;
+    }
+  }
+
+  template <typename I>
+  KOKKOS_FUNCTION const T& operator[](const I comp) const {
     if (comp < 2) {
       return u(comp);
     } else {
@@ -424,7 +521,7 @@ struct __count_space_components<First, Remain...> {
   etc. and a list of the solution space objects. For instance, this class might
   look like this when declared:
 
-  FESpace<double, 3, H1Space, L2Space, Hdiv3DSpace>
+  FESpace<double, 3, H1Space, L2Space, HdivSpace>
 
   FESpace implements a static member ncomp as well as set_value(comp, val),
   get_value(comp) in an analogous manner to the solution spaces. However, the

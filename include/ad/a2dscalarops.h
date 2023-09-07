@@ -3,20 +3,19 @@
 
 #include "a2denum.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 
 namespace A2D {
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Log(const T a, T& b) {
   b = std::log(a);
 }
 
-template <typename T, ADorder order>
+template <class atype, class btype>
 class LogExpr {
  public:
-  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
-  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
 
   KOKKOS_FUNCTION LogExpr(atype& a, btype& b) : a(a), b(b) {}
 
@@ -46,26 +45,26 @@ class LogExpr {
   btype& b;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Log(ADScalar<T>& a, ADScalar<T>& b) {
-  return LogExpr<T, ADorder::FIRST>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Log(ADObj<atype>& a, ADObj<btype>& b) {
+  return LogExpr<ADObj<atype>, ADObj<btype>>(a, b);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Log(A2DScalar<T>& a, A2DScalar<T>& b) {
-  return LogExpr<T, ADorder::SECOND>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Log(A2DObj<atype>& a, A2DObj<btype>& b) {
+  return LogExpr<A2DObj<atype>, A2DObj<btype>>(a, b);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Exp(const T a, T& b) {
   b = std::exp(a);
 }
 
-template <typename T, ADorder order>
+template <class atype, class btype>
 class ExpExpr {
  public:
-  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
-  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
 
   KOKKOS_FUNCTION ExpExpr(atype& a, btype& b) : a(a), b(b) {}
 
@@ -94,26 +93,26 @@ class ExpExpr {
   btype& b;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Exp(ADScalar<T>& a, ADScalar<T>& b) {
-  return ExpExpr<T, ADorder::FIRST>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Exp(ADObj<atype>& a, ADObj<btype>& b) {
+  return ExpExpr<ADObj<atype>, ADObj<btype>>(a, b);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Exp(A2DScalar<T>& a, A2DScalar<T>& b) {
-  return ExpExpr<T, ADorder::SECOND>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Exp(A2DObj<atype>& a, A2DObj<btype>& b) {
+  return ExpExpr<A2DObj<atype>, A2DObj<btype>>(a, b);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Sin(const T a, T& b) {
   b = std::sin(a);
 }
 
-template <typename T, ADorder order>
+template <class atype, class btype>
 class SinExpr {
  public:
-  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
-  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
 
   KOKKOS_FUNCTION SinExpr(atype& a, btype& b) : a(a), b(b) {}
 
@@ -144,26 +143,26 @@ class SinExpr {
   btype& b;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Sin(ADScalar<T>& a, ADScalar<T>& b) {
-  return SinExpr<T, ADorder::FIRST>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Sin(ADObj<atype>& a, ADObj<btype>& b) {
+  return SinExpr<ADObj<atype>, ADObj<btype>>(a, b);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sin(A2DScalar<T>& a, A2DScalar<T>& b) {
-  return SinExpr<T, ADorder::SECOND>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Sin(A2DObj<atype>& a, A2DObj<btype>& b) {
+  return SinExpr<A2DObj<atype>, A2DObj<btype>>(a, b);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Cos(const T a, T& b) {
   b = std::cos(a);
 }
 
-template <typename T, ADorder order>
+template <class atype, class btype>
 class CosExpr {
  public:
-  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
-  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
 
   KOKKOS_FUNCTION CosExpr(atype& a, btype& b) : a(a), b(b) {}
 
@@ -194,50 +193,50 @@ class CosExpr {
   btype& b;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Cos(ADScalar<T>& a, ADScalar<T>& b) {
-  return CosExpr<T, ADorder::FIRST>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Cos(ADObj<atype>& a, ADObj<btype>& b) {
+  return CosExpr<ADObj<atype>, ADObj<btype>>(a, b);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Cos(A2DScalar<T>& a, A2DScalar<T>& b) {
-  return CosExpr<T, ADorder::SECOND>(a, b);
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Cos(A2DObj<atype>& a, A2DObj<btype>& b) {
+  return CosExpr<A2DObj<atype>, A2DObj<btype>>(a, b);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Pow(const T a, const T exponent, T& b) {
   b = std::pow(a, exponent);
 }
 
-template <typename T, ADorder order>
+template <class atype, class btype>
 class PowExpr {
  public:
-  using atype = ADScalarType<ADiffType::ACTIVE, order, T>;
-  using btype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
 
   KOKKOS_FUNCTION PowExpr(atype& a, const T exponent, btype& b)
       : a(a), exponent(exponent), b(b) {}
 
-  KOKKOS_FUNCTION void eval() { get_data(b) = std::pow(get_data(a), exponent); }
+  KOKKOS_FUNCTION void eval() {
+    get_data(b) = std::pow(get_data(a), exponent);
+    inv = 1.0 / get_data(a);
+  }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    GetSeed<seed>::get_data(b) = exponent *
-                                 std::pow(get_data(a), exponent - 1.0) *
-                                 GetSeed<seed>::get_data(a);
+    GetSeed<seed>::get_data(b) =
+        exponent * inv * get_data(b) * GetSeed<seed>::get_data(a);
   }
 
   KOKKOS_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
-    T inv = 1.0 / get_data(a);
     GetSeed<seed>::get_data(a) +=
         exponent * inv * get_data(b) * GetSeed<seed>::get_data(b);
   }
 
   KOKKOS_FUNCTION void hreverse() {
-    T inv = 1.0 / get_data(a);
     GetSeed<ADseed::h>::get_data(a) +=
         get_data(b) *
         (exponent * inv * GetSeed<ADseed::h>::get_data(b) +
@@ -245,32 +244,88 @@ class PowExpr {
              GetSeed<ADseed::b>::get_data(b) * GetSeed<ADseed::p>::get_data(a));
   }
 
+  T inv;
   atype& a;
   const T exponent;
   btype& b;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Pow(ADScalar<T>& a, const T exponent, ADScalar<T>& b) {
-  return PowExpr<T, ADorder::FIRST>(a, exponent, b);
+template <class atype, typename T, class btype>
+KOKKOS_FUNCTION auto Pow(ADObj<atype>& a, const T exponent, ADObj<btype>& b) {
+  return PowExpr<ADObj<atype>, ADObj<btype>>(a, exponent, b);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Pow(A2DScalar<T>& a, const T exponent, A2DScalar<T>& b) {
-  return PowExpr<T, ADorder::SECOND>(a, exponent, b);
+template <class atype, typename T, class btype>
+KOKKOS_FUNCTION auto Pow(A2DObj<atype>& a, const T exponent, A2DObj<btype>& b) {
+  return PowExpr<A2DObj<atype>, A2DObj<btype>>(a, exponent, b);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+KOKKOS_FUNCTION void Sqrt(const T a, T& b) {
+  b = std::sqrt(a);
+}
+
+template <class atype, class btype>
+class SqrtExpr {
+ public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
+
+  KOKKOS_FUNCTION SqrtExpr(atype& a, btype& b) : a(a), b(b) {}
+
+  KOKKOS_FUNCTION void eval() {
+    get_data(b) = std::sqrt(get_data(a));
+    inv = T(1.0) / get_data(b);
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    GetSeed<seed>::get_data(b) = 0.5 * inv * GetSeed<seed>::get_data(a);
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    constexpr ADseed seed = ADseed::b;
+    GetSeed<seed>::get_data(a) += 0.5 * inv * GetSeed<seed>::get_data(b);
+  }
+
+  KOKKOS_FUNCTION void hreverse() {
+    GetSeed<ADseed::h>::get_data(a) +=
+        (0.5 * inv * GetSeed<ADseed::h>::get_data(b) -
+         0.25 * inv * inv * inv * GetSeed<ADseed::b>::get_data(b) *
+             GetSeed<ADseed::p>::get_data(a));
+  }
+
+  T inv;
+  atype& a;
+  btype& b;
+};
+
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Sqrt(ADObj<atype>& a, ADObj<btype>& b) {
+  return SqrtExpr<ADObj<atype>, ADObj<btype>>(a, b);
+}
+
+template <class atype, class btype>
+KOKKOS_FUNCTION auto Sqrt(A2DObj<atype>& a, A2DObj<btype>& b) {
+  return SqrtExpr<A2DObj<atype>, A2DObj<btype>>(a, b);
+}
+
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Mult(const T a, const T b, T& c) {
   c = a * b;
 }
 
-template <typename T, ADorder order, ADiffType ada, ADiffType adb>
+template <class atype, class btype, class ctype>
 class MultExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using btype = ADScalarInputType<adb, order, T>;
-  using ctype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
+
+  // Get the types of the different objects
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adb = get_diff_type<btype>::diff_type;
 
   KOKKOS_FUNCTION MultExpr(atype a, btype b, ctype& c) : a(a), b(b), c(c) {}
 
@@ -322,53 +377,51 @@ class MultExpr {
   ctype& c;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
-  return MultExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
-                                                                           c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(ADObj<atype>& a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return MultExpr<ADObj<atype>&, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(const T a, ADScalar<T>& b, ADScalar<T>& c) {
-  return MultExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(const atype a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return MultExpr<const atype, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(ADScalar<T>& a, const T b, ADScalar<T>& c) {
-  return MultExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(ADObj<atype>& a, const btype b, ADObj<ctype>& c) {
+  return MultExpr<ADObj<atype>&, const btype, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return MultExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(A2DObj<atype>& a, A2DObj<btype>& b,
+                          A2DObj<ctype>& c) {
+  return MultExpr<A2DObj<atype>&, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return MultExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(const atype a, A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return MultExpr<const atype, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Mult(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
-  return MultExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Mult(A2DObj<atype>& a, const btype b, A2DObj<ctype>& c) {
+  return MultExpr<A2DObj<atype>&, const btype, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Divide(const T a, const T b, T& c) {
   c = a / b;
 }
 
-template <typename T, ADorder order, ADiffType ada, ADiffType adb>
+template <class atype, class btype, class ctype>
 class DivideExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using btype = ADScalarInputType<adb, order, T>;
-  using ctype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
+
+  // Get the types of the different objects
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adb = get_diff_type<btype>::diff_type;
 
   KOKKOS_FUNCTION DivideExpr(atype a, btype b, ctype& c) : a(a), b(b), c(c) {}
 
@@ -431,53 +484,51 @@ class DivideExpr {
   ctype& c;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
-  return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(ADObj<atype>& a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return DivideExpr<ADObj<atype>&, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(const T a, ADScalar<T>& b, ADScalar<T>& c) {
-  return DivideExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(const atype a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return DivideExpr<const atype, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(ADScalar<T>& a, const T b, ADScalar<T>& c) {
-  return DivideExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(ADObj<atype>& a, const btype b, ADObj<ctype>& c) {
+  return DivideExpr<ADObj<atype>&, const btype, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(A2DObj<atype>& a, A2DObj<btype>& b,
+                            A2DObj<ctype>& c) {
+  return DivideExpr<A2DObj<atype>&, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return DivideExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(const atype a, A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return DivideExpr<const atype, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Divide(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
-  return DivideExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Divide(A2DObj<atype>& a, const btype b, A2DObj<ctype>& c) {
+  return DivideExpr<A2DObj<atype>&, const btype, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Sum(const T a, const T b, T& c) {
   c = a + b;
 }
 
-template <typename T, ADorder order, ADiffType ada, ADiffType adb>
+template <class atype, class btype, class ctype>
 class SumExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using btype = ADScalarInputType<adb, order, T>;
-  using ctype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
+
+  // Get the types of the different objects
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adb = get_diff_type<btype>::diff_type;
 
   KOKKOS_FUNCTION SumExpr(atype a, btype b, ctype& c) : a(a), b(b), c(c) {}
 
@@ -521,53 +572,50 @@ class SumExpr {
   ctype& c;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(ADScalar<T>& a, ADScalar<T>& b, ADScalar<T>& c) {
-  return SumExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
-                                                                          c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(ADObj<atype>& a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return SumExpr<ADObj<atype>&, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T a, ADScalar<T>& b, ADScalar<T>& c) {
-  return SumExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(a, b,
-                                                                           c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const atype a, ADObj<btype>& b, ADObj<ctype>& c) {
+  return SumExpr<const atype, ADObj<btype>&, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(ADScalar<T>& a, const T b, ADScalar<T>& c) {
-  return SumExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(a, b,
-                                                                           c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(ADObj<atype>& a, const btype b, ADObj<ctype>& c) {
+  return SumExpr<ADObj<atype>&, const btype, ADObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(A2DScalar<T>& a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return SumExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(a, b,
-                                                                           c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(A2DObj<atype>& a, A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return SumExpr<A2DObj<atype>&, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T a, A2DScalar<T>& b, A2DScalar<T>& c) {
-  return SumExpr<T, ADorder::SECOND, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const atype a, A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return SumExpr<const atype, A2DObj<btype>&, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(A2DScalar<T>& a, const T b, A2DScalar<T>& c) {
-  return SumExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      a, b, c);
+template <class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(A2DObj<atype>& a, const btype b, A2DObj<ctype>& c) {
+  return SumExpr<A2DObj<atype>&, const btype, A2DObj<ctype>>(a, b, c);
 }
 
-template <typename T>
+template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Sum(const T c1, const T a, const T c2, const T b, T& c) {
   c = c1 * a + c2 * b;
 }
 
-template <typename T, ADorder order, ADiffType ada, ADiffType adb>
+template <class atype, class btype, class ctype>
 class SumScaleExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using btype = ADScalarInputType<adb, order, T>;
-  using ctype = ADScalarType<ADiffType::ACTIVE, order, T>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<btype>::type T;
+
+  // Get the types of the different objects
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adb = get_diff_type<btype>::diff_type;
 
   KOKKOS_FUNCTION SumScaleExpr(const T c1, atype a, const T c2, btype b,
                                ctype& c)
@@ -617,46 +665,46 @@ class SumScaleExpr {
   ctype& c;
 };
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, ADScalar<T>& a, const T c2, ADScalar<T>& b,
-                         ADScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, ADObj<atype>& a, const T c2,
+                         ADObj<btype>& b, ADObj<ctype>& c) {
+  return SumScaleExpr<ADObj<atype>&, ADObj<btype>&, ADObj<ctype>>(c1, a, c2, b,
+                                                                  c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, ADScalar<T>& b,
-                         ADScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::FIRST, ADiffType::PASSIVE, ADiffType::ACTIVE>(
-      c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, const atype a, const T c2, ADObj<btype>& b,
+                         ADObj<ctype>& c) {
+  return SumScaleExpr<const atype, ADObj<btype>&, ADObj<ctype>>(c1, a, c2, b,
+                                                                c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, ADScalar<T>& a, const T c2, const T b,
-                         ADScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::FIRST, ADiffType::ACTIVE, ADiffType::PASSIVE>(
-      c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, ADObj<atype>& a, const T c2, const btype b,
+                         ADObj<ctype>& c) {
+  return SumScaleExpr<ADObj<atype>&, const btype, ADObj<ctype>>(c1, a, c2, b,
+                                                                c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, A2DScalar<T>& a, const T c2,
-                         A2DScalar<T>& b, A2DScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::SECOND, ADiffType::ACTIVE, ADiffType::ACTIVE>(
-      c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, A2DObj<atype>& a, const T c2,
+                         A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return SumScaleExpr<A2DObj<atype>&, A2DObj<btype>&, A2DObj<ctype>>(c1, a, c2,
+                                                                     b, c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, const T a, const T c2, A2DScalar<T>& b,
-                         A2DScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::SECOND, ADiffType::PASSIVE,
-                      ADiffType::ACTIVE>(c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, const atype a, const T c2,
+                         A2DObj<btype>& b, A2DObj<ctype>& c) {
+  return SumScaleExpr<const atype, A2DObj<btype>&, A2DObj<ctype>>(c1, a, c2, b,
+                                                                  c);
 }
 
-template <typename T>
-KOKKOS_FUNCTION auto Sum(const T c1, A2DScalar<T>& a, const T c2, const T b,
-                         A2DScalar<T>& c) {
-  return SumScaleExpr<T, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::PASSIVE>(c1, a, c2, b, c);
+template <typename T, class atype, class btype, class ctype>
+KOKKOS_FUNCTION auto Sum(const T c1, A2DObj<atype>& a, const T c2,
+                         const btype b, A2DObj<ctype>& c) {
+  return SumScaleExpr<A2DObj<atype>&, const btype, A2DObj<ctype>>(c1, a, c2, b,
+                                                                  c);
 }
 
 namespace Test {
@@ -674,7 +722,7 @@ class ScalarTest : public A2DTest<T, T, T> {
 
   // Evaluate the matrix-matrix product
   Output eval(const Input& x) {
-    T a, b, c, d, e, f, q, r, s, t;
+    T a, b, c, d, e, f, q, r, s, t, u;
     x.get_values(a);
     Log(a, b);
     Sin(b, c);
@@ -685,14 +733,15 @@ class ScalarTest : public A2DTest<T, T, T> {
     Sum(d, q, r);
     Sum(T(-1.0), q, T(3.14), r, s);
     Divide(q, s, t);
+    Sqrt(t, u);
 
-    return MakeVarTuple<T>(t);
+    return MakeVarTuple<T>(u);
   }
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> a, b, c, d, e, f, q, r, s, t;
-    x.get_values(a.value);
+    ADObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    x.get_values(a.value());
     auto stack = MakeStack(Log(a, b),                       //
                            Sin(b, c),                       //
                            Exp(c, d),                       //
@@ -701,18 +750,20 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Mult(c, f, q),                   //
                            Sum(d, q, r),                    //
                            Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t));
-    seed.get_values(t.bvalue);
+                           Divide(q, s, t),                 //
+                           Sqrt(t, u));
+
+    seed.get_values(u.bvalue());
     stack.reverse();
-    g.set_values(a.bvalue);
+    g.set_values(a.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> a, b, c, d, e, f, q, r, s, t;
-    x.get_values(a.value);
-    p.get_values(a.pvalue);
+    A2DObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    x.get_values(a.value());
+    p.get_values(a.pvalue());
     auto stack = MakeStack(Log(a, b),                       //
                            Sin(b, c),                       //
                            Exp(c, d),                       //
@@ -721,13 +772,14 @@ class ScalarTest : public A2DTest<T, T, T> {
                            Mult(c, f, q),                   //
                            Sum(d, q, r),                    //
                            Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t));
-    seed.get_values(t.bvalue);
-    hval.get_values(t.hvalue);
+                           Divide(q, s, t),                 //
+                           Sqrt(t, u));
+    seed.get_values(u.bvalue());
+    hval.get_values(u.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(a.hvalue);
+    h.set_values(a.hvalue());
   }
 };
 

@@ -2,6 +2,7 @@
 #ifndef A2D_FE_ELEMENT_VECTOR_H
 #define A2D_FE_ELEMENT_VECTOR_H
 
+#include "a2denum.h"
 #include "array.h"
 #include "multiphysics/femesh.h"
 #include "utils/complex_math.h"

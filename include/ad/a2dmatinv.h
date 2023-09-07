@@ -20,19 +20,36 @@ namespace A2D {
 */
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatInv(Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
+KOKKOS_FUNCTION void MatInv(const Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
   MatInvCore<T, N>(get_data(A), get_data(Ainv));
 }
 
-template <typename T, int N, ADorder order>
+template <class Atype, class Btype>
 class MatInvExpr {
- private:
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
+ public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Btype>::type T;
+
+  // Extract the dimensions of the matrix
+  static constexpr int N = get_matrix_rows<Atype>::size;
+  static constexpr int M = get_matrix_columns<Atype>::size;
+  static constexpr int K = get_matrix_rows<Btype>::size;
+  static constexpr int L = get_matrix_columns<Btype>::size;
+
+  // Assert that the matrix is square
+  static_assert(N == M, "Matrix must be square");
+  static_assert(N == K && M == L, "B matrix dimensions must match");
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<Btype>::order;
+
+  // Make sure that the order is correct
+  static_assert(get_diff_order<Atype>::order == order,
+                "ADorder does not match");
 
   static constexpr MatOp NORMAL = MatOp::NORMAL;
   static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
- public:
   KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {}
 
   KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
@@ -90,15 +107,14 @@ class MatInvExpr {
   Atype& Ainv;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatInv(ADMat<Mat<T, N, N>>& A, ADMat<Mat<T, N, N>>& Ainv) {
-  return MatInvExpr<T, N, ADorder::FIRST>(A, Ainv);
+template <class Atype, class Btype>
+KOKKOS_FUNCTION auto MatInv(ADObj<Atype>& A, ADObj<Btype>& Ainv) {
+  return MatInvExpr<ADObj<Atype>, ADObj<Btype>>(A, Ainv);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatInv(A2DMat<Mat<T, N, N>>& A,
-                            A2DMat<Mat<T, N, N>>& Ainv) {
-  return MatInvExpr<T, N, ADorder::SECOND>(A, Ainv);
+template <class Atype, class Btype>
+KOKKOS_FUNCTION auto MatInv(A2DObj<Atype>& A, A2DObj<Btype>& Ainv) {
+  return MatInvExpr<A2DObj<Atype>, A2DObj<Btype>>(A, Ainv);
 }
 
 namespace Test {
@@ -127,30 +143,25 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    Mat<T, N, N> A0, Ab;
-    Mat<T, N, N> B0, Bb;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
-    ADMat<Mat<T, N, N>> B(B0, Bb);
+    ADObj<Mat<T, N, N>> A;
+    ADObj<Mat<T, N, N>> B;
 
-    x.get_values(A0);
-    auto op = MatInv(A, B);
-    auto stack = MakeStack(op);
-    seed.get_values(Bb);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatInv(A, B));
+    seed.get_values(B.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<Mat<T, N, N>> A;
-    A2DMat<Mat<T, N, N>> B;
+    A2DObj<Mat<T, N, N>> A;
+    A2DObj<Mat<T, N, N>> B;
+
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatInv(A, B);
-    auto stack = MakeStack(op);
-
+    auto stack = MakeStack(MatInv(A, B));
     seed.get_values(B.bvalue());
     hval.get_values(B.hvalue());
     stack.reverse();

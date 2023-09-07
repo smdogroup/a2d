@@ -228,7 +228,7 @@ int blockPseudoInverse(AType& A, Mat<T, N, N>& Ainv) {
   int n = N;
   int nrhs = N;
   int lda = N;
-  T* b = Ainv.data();
+  T* b = Ainv.get_data();
   int ldb = N;
   double rcond = -1;
   int rank;

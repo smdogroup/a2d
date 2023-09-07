@@ -9,17 +9,30 @@
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatDet(Mat<T, N, N>& A, T& det) {
+KOKKOS_FUNCTION void MatDet(const Mat<T, N, N>& A, T& det) {
   det = MatDetCore<T, N>(get_data(A));
 }
 
-template <typename T, int N, ADorder order>
+template <class Atype, class dtype>
 class MatDetExpr {
- private:
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
-  using dtype = ADScalarType<ADiffType::ACTIVE, order, T>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<dtype>::type T;
+
+  // Extract the dimensions of the matrix
+  static constexpr int N = get_matrix_rows<Atype>::size;
+  static constexpr int M = get_matrix_columns<Atype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<dtype>::order;
+
+  // Assert that the matrix is square
+  static_assert(N == M, "Matrix must be square");
+
+  // Make sure that the order is correct
+  static_assert(get_diff_order<Atype>::order == order,
+                "ADorder does not match");
+
   KOKKOS_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {}
 
   KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
@@ -54,14 +67,14 @@ class MatDetExpr {
   dtype& det;
 };
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatDet(ADMat<Mat<T, N, N>>& A, ADScalar<T>& det) {
-  return MatDetExpr<T, N, ADorder::FIRST>(A, det);
+template <class Atype, class dtype>
+KOKKOS_FUNCTION auto MatDet(ADObj<Atype>& A, ADObj<dtype>& det) {
+  return MatDetExpr<ADObj<Atype>, ADObj<dtype>>(A, det);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatDet(A2DMat<Mat<T, N, N>>& A, A2DScalar<T>& det) {
-  return MatDetExpr<T, N, ADorder::SECOND>(A, det);
+template <class Atype, class dtype>
+KOKKOS_FUNCTION auto MatDet(A2DObj<Atype>& A, A2DObj<dtype>& det) {
+  return MatDetExpr<A2DObj<Atype>, A2DObj<dtype>>(A, det);
 }
 
 namespace Test {
@@ -90,31 +103,26 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADScalar<T> det;
-    Mat<T, N, N> A0, Ab;
-    ADMat<Mat<T, N, N>> A(A0, Ab);
+    ADObj<T> det;
+    ADObj<Mat<T, N, N>> A;
 
-    x.get_values(A0);
-    auto op = MatDet(A, det);
-    auto stack = MakeStack(op);
-    seed.get_values(det.bvalue);
+    x.get_values(A.value());
+    auto stack = MakeStack(MatDet(A, det));
+    seed.get_values(det.bvalue());
     stack.reverse();
-    g.set_values(Ab);
+    g.set_values(A.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DScalar<T> det;
-    A2DMat<Mat<T, N, N>> A;
+    A2DObj<T> det;
+    A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-
-    auto op = MatDet(A, det);
-    auto stack = MakeStack(op);
-
-    seed.get_values(det.bvalue);
-    hval.get_values(det.hvalue);
+    auto stack = MakeStack(MatDet(A, det));
+    seed.get_values(det.bvalue());
+    hval.get_values(det.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();

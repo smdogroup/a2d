@@ -3,7 +3,6 @@
 
 #include "a2dmat.h"
 #include "a2dobjs.h"
-#include "a2dscalar.h"
 #include "a2dvec.h"
 #include "ad/core/a2dmatveccore.h"
 #include "ad/core/a2dveccore.h"
@@ -38,14 +37,27 @@ KOKKOS_FUNCTION void VecOuter(const T alpha, const Vec<T, M>& x,
   bar{x} = alpha * bar{A} * y
   bar{y} = alpha * bar{A}^{T} * x
 */
-template <typename T, int M, int N, ADorder order, ADiffType adx, ADiffType ady>
+template <class xtype, class ytype, class Atype>
+// typename T, int M, int N, ADorder order, ADiffType adx, ADiffType ady>
 class VecOuterExpr {
- private:
-  using xtype = ADVecType<adx, order, Vec<T, M>>;
-  using ytype = ADVecType<ady, order, Vec<T, N>>;
-  using Atype = ADMatType<ADiffType::ACTIVE, order, Mat<T, M, N>>;
-
  public:
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Atype>::type T;
+
+  // Extract the dimensions of the underlying vectors
+  static constexpr int M = get_vec_size<xtype>::size;
+  static constexpr int N = get_vec_size<ytype>::size;
+
+  // Extract the underlying sizes of the matrix
+  static constexpr int K = get_matrix_rows<Atype>::size;
+  static constexpr int L = get_matrix_columns<Atype>::size;
+
+  // Get the types of the matrices
+  static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
+  static constexpr ADiffType ady = get_diff_type<ytype>::diff_type;
+
+  static_assert((M == K && N == L), "Matrix and vector dimensions must agree");
+
   KOKKOS_FUNCTION VecOuterExpr(const T alpha, xtype& x, ytype& y, Atype& A)
       : alpha(alpha), x(x), y(y), A(A) {}
 
@@ -119,32 +131,33 @@ class VecOuterExpr {
   Atype& A;
 };
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(ADVec<Vec<T, M>>& x, ADVec<Vec<T, N>>& y,
-                              ADMat<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(T(1.0), x, y, A);
+template <class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
+                              ADObj<Atype>& A) {
+  using T = typename get_object_numeric_type<Atype>::type;
+  return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
+                                                                A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, ADVec<Vec<T, M>>& x,
-                              ADVec<Vec<T, N>>& y, ADMat<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::FIRST, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y, A);
+template <typename T, class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
+                              ADObj<Atype>& A) {
+  return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(alpha, x, y, A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(A2DVec<Vec<T, M>>& x, A2DVec<Vec<T, N>>& y,
-                              A2DMat<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(T(1.0), x, y, A);
+template <class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                              A2DObj<Atype>& A) {
+  using T = typename get_object_numeric_type<Atype>::type;
+  return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
+                                                                   A);
 }
 
-template <typename T, int M, int N>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DVec<Vec<T, M>>& x,
-                              A2DVec<Vec<T, N>>& y, A2DMat<Mat<T, M, N>>& A) {
-  return VecOuterExpr<T, M, N, ADorder::SECOND, ADiffType::ACTIVE,
-                      ADiffType::ACTIVE>(alpha, x, y, A);
+template <typename T, class xtype, class ytype, class Atype>
+KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
+                              A2DObj<Atype>& A) {
+  return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(alpha, x, y,
+                                                                   A);
 }
 
 namespace Test {
@@ -172,31 +185,26 @@ class VecOuterTest : public A2DTest<T, Mat<T, N, M>, Vec<T, N>, Vec<T, M>> {
   // Compute the derivative
   void deriv(const Output& seed, const Input& X, Input& g) {
     T alpha(0.3157);
-    Vec<T, N> x0, xb;
-    Vec<T, M> y0, yb;
-    Mat<T, N, M> A0, Ab;
-    ADVec<Vec<T, N>> x(x0, xb);
-    ADVec<Vec<T, M>> y(y0, yb);
-    ADMat<Mat<T, N, M>> A(A0, Ab);
-    X.get_values(x0, y0);
-    auto op = VecOuter(alpha, x, y, A);
-    auto stack = MakeStack(op);
-    seed.get_values(Ab);
+    ADObj<Vec<T, N>> x;
+    ADObj<Vec<T, M>> y;
+    ADObj<Mat<T, N, M>> A;
+    X.get_values(x.value(), y.value());
+    auto stack = MakeStack(VecOuter(alpha, x, y, A));
+    seed.get_values(A.bvalue());
     stack.reverse();
-    g.set_values(xb, yb);
+    g.set_values(x.bvalue(), y.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& X,
              const Input& p, Input& h) {
     T alpha(0.3157);
-    A2DVec<Vec<T, N>> x;
-    A2DVec<Vec<T, M>> y;
-    A2DMat<Mat<T, N, M>> A;
+    A2DObj<Vec<T, N>> x;
+    A2DObj<Vec<T, M>> y;
+    A2DObj<Mat<T, N, M>> A;
     X.get_values(x.value(), y.value());
     p.get_values(x.pvalue(), y.pvalue());
-    auto op = VecOuter(alpha, x, y, A);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(VecOuter(alpha, x, y, A));
     seed.get_values(A.bvalue());
     hval.get_values(A.hvalue());
     stack.reverse();

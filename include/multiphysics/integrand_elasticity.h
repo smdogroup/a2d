@@ -1,9 +1,8 @@
 #ifndef A2D_ELASTICITY_H
 #define A2D_ELASTICITY_H
 
+#include "a2dcore.h"
 #include "a2denum.h"
-#include "a2dmatops2d.h"
-#include "a2dmatops3d.h"
 #include "multiphysics/femapping.h"
 #include "multiphysics/fespace.h"
 
@@ -66,17 +65,18 @@ class IntegrandTopoLinearElasticity {
     Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
 
     // The Green-Langrange strain terms
-    SymMat<T, dim> E;
+    SymMat<T, dim> E, S;
 
     T output;
-    MatLinearGreenStrain(Ux, E);
-    SymmIsotropicEnergy(mu, lambda, E, output);
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
+    SymMatMultTrace(E, S, output);
 
-    return wdetJ * output;
+    return 0.5 * wdetJ * output;
   }
 
   /**
-   * @brief Evaluate the weak form coefficients for linear elasticity
+   * @brief Evaluate the weak form coefficients for the residual
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
@@ -84,10 +84,10 @@ class IntegrandTopoLinearElasticity {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
@@ -95,29 +95,27 @@ class IntegrandTopoLinearElasticity {
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
 
-    // Extract the trial solution gradient and the coefficient terms. Here
-    // Uxb is the output computed as the derivative of the strain energy
-    // w.r.t. Ux
-    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
-    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-
-    // The Green-Lagrange strain terms
-    SymMat<T, dim> E0, Eb;
-    ADMat<SymMat<T, dim>> E(E0, Eb);
+    // Create the values needed in the computation
+    ADObj<Mat<T, dim, dim>> Ux((s.template get<0>()).get_grad());
+    ADObj<SymMat<T, dim>> E, S;
 
     // The strain energy output
-    ADScalar<T> output;
+    ADObj<T> output;
 
-    auto strain = MatLinearGreenStrain(Ux, E);
-    auto energy = SymmIsotropicEnergy(mu, lambda, E, output);
+    auto stack =
+        MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+                  SymIsotropic(mu, lambda, E, S),              // S = S(E)
+                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Seed the output value with the wdetJ
-    output.bvalue = wdetJ;
+    output.bvalue() = 0.5 * wdetJ;
 
     // Reverse the derivatives through the code
-    energy.reverse();
-    strain.reverse();
+    stack.reverse();
+
+    // Set the derivative output value
+    Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
+    Uxb.set(Ux.bvalue());
   }
 
   // Evaluate the second order derivatives of the integral
@@ -132,182 +130,90 @@ class IntegrandTopoLinearElasticity {
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
 
+    FiniteElementSpace in, out;
+
+    // Set up the pointers into the input/output matrices
+    Mat<T, dim, dim> Ux0 = s.template get<0>().get_grad();
+    Mat<T, dim, dim> Uxb;
+    Mat<T, dim, dim>& Uxp = in.template get<0>().get_grad();
+    Mat<T, dim, dim>& Uxh = out.template get<0>().get_grad();
+
     // Extract displacement gradient
-    A2DMat<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    A2DObj<Mat<T, dim, dim>&> Ux(Ux0, Uxb, Uxp, Uxh);
 
     // The Green-Lagrange strain terms
-    A2DMat<SymMat<T, dim>> E;
+    A2DObj<SymMat<T, dim>> E, S;
 
     // The strain energy output
-    A2DScalar<T> output;
+    A2DObj<T> output;
 
-    // Evaluate the energy
-    auto strain = MatLinearGreenStrain(Ux, E);
-    auto energy = SymmIsotropicEnergy(mu, lambda, E, output);
+    auto stack =
+        MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+                  SymIsotropic(mu, lambda, E, S),              // S = S(E)
+                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Seed the output value with the wdetJ
-    output.bvalue = wdetJ;
+    output.bvalue() = 0.5 * wdetJ;
 
     // Reverse the derivatives through the code
-    energy.reverse();
-    strain.reverse();
+    stack.reverse();
 
-    // Temporary vectors
-    FiniteElementSpace p, Jp;
+    // Create data for extracting the Hessian-vector product
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    auto inters = MakeTieTuple<T, ADseed::h>(S, E);
 
-    for (index_t k = 0; k < FiniteElementSpace::ncomp; k++) {
-      // Zero Hessian seeds because reverse operations are incremental
-      Ux.Ah.zero();
-      E.Ah.zero();
-      output.hvalue = 0.0;
-
-      // Select k-th column of the Hessian
-      p.zero();
-      p[k] = T(1.0);
-
-      // Set projection direction
-      Ux.set_pvalue((p.template get<0>()).get_grad());
-
-      // Forward sweep to compute dependent directions
-      strain.hforward();
-
-      // Reverse sweep to compute Hessian-vector products
-      energy.hreverse();
-      strain.hreverse();
-
-      // Set k-th column of the Hessian
-      Ux.get_hvalue((Jp.template get<0>()).get_grad());
-      for (index_t m = 0; m < ncomp; m++) {
-        jac(m, k) = Jp[m];
-      }
-    }
+    // Extract the matrix
+    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
   }
 
   /**
-   * @brief Construct a JacVecProduct functor
-   *
-   * This functor computes a Jacobian-vector product of the
-   *
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  class JacVecProduct {
-   public:
-    KOKKOS_FUNCTION JacVecProduct(
-        const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
-        :  // Initialize constitutive data
-          rho(data[0]),
-          penalty(1.0 / (1.0 + integrand.q * (1.0 - rho))),
-          mu(penalty * integrand.mu0),
-          lambda(penalty * integrand.lambda0),
-
-          // Initialize the displacement gradient
-          Ux(s.template get<0>().get_grad()),
-
-          // Compute the strain from the displacement gradient
-          strain(Ux, E),
-
-          // Compute the strain energy from the strain
-          energy(mu, lambda, E, output) {
-      // Set the seed on the derivative
-      output.bvalue = wdetJ;
-
-      // Reverse mode for the first derivative
-      energy.reverse();
-      strain.reverse();
-    }
-
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    FiniteElementSpace& Jp) {
-      Ux.set_pvalue((p.template get<0>()).get_grad());
-
-      strain.hforward();
-      energy.hreverse();
-      strain.hreverse();
-
-      Ux.get_hvalue((Jp.template get<0>()).get_grad());
-    }
-
-   private:
-    T rho, penalty;
-    T mu, lambda;
-    A2DMat<Mat<T, dim, dim>> Ux;
-    A2DMat<SymMat<T, dim>> E;
-    A2DScalar<T> output;
-
-    // Declare types of the operators
-    decltype(MatLinearGreenStrain(Ux, E)) strain;
-    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
-  };
-
-  /**
-   * @brief Construct a JacVecProduct functor
+   * @brief Compute the derivative of the adjoint-residual product with respect
+   * to the data
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
    * @param s The solution at the quadrature point
+   * @param adj The adjoint solution at the quadrature point
    */
-  class AdjVecProduct {
-   public:
-    KOKKOS_FUNCTION AdjVecProduct(
-        const IntegrandTopoLinearElasticity<T, D>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
-        :  // Initialize constitutive data
-          rho(data[0]),
-          q(integrand.q),
-          penalty(1.0 / (1.0 + q * (1.0 - rho))),
-          mu0(integrand.mu0),
-          lambda0(integrand.lambda0),
-          mu(penalty * mu0),
-          lambda(penalty * lambda0),
+  KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace& data,
+                                            const FiniteElementGeometry& geo,
+                                            const FiniteElementSpace& s,
+                                            const FiniteElementSpace& adj,
+                                            DataSpace& dfdx) const {
+    // T rho = data[0];
+    // T penalty = 1.0 / (1.0 + q * (1.0 - rho));
 
-          // Initialize the displacement gradient
-          Ux(s.template get<0>().get_grad()),
+    // // Get the constitutive data at the points
+    // T mu = penalty * mu0;
+    // T lambda = penalty * lambda0;
 
-          // Compute the strain from the displacement gradient
-          strain(Ux, E),
+    // // Extract displacement gradient
+    // A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
 
-          // Compute the strain energy from the strain
-          energy(mu, lambda, E, output) {
-      // Set the seed on the derivative
-      output.bvalue = wdetJ;
+    // // The Green-Lagrange strain terms
+    // A2DObj<SymMat<T, dim>> E, S;
 
-      // Reverse mode for the first derivative
-      energy.reverse();
-      strain.reverse();
-    }
+    // // The strain energy output
+    // A2DObj<T> output;
 
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    DataSpace& dfdx) {
-      Ux.set_pvalue((p.template get<0>()).get_grad());
+    // auto stack =
+    //     MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+    //               SymIsotropic(mu, lambda, E, S),              // S = S(E)
+    //               SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
-      strain.hforward();
-      energy.hreverse();
-      strain.hreverse();
+    // // Seed the output value with the wdetJ
+    // output.bvalue() = 0.5 * wdetJ;
 
-      T denom = (1.0 + q * (1.0 - rho));
-      dfdx[0] +=
-          (mu0 * mu.hvalue + lambda0 * lambda.hvalue) * q / (denom * denom);
-    }
+    // // Reverse the derivatives through the code
+    // stack.reverse();
 
-   private:
-    T rho;
-    T q;
-    T penalty;
-    T mu0, lambda0;
-    A2DScalar<T> mu, lambda;
-    A2DMat<Mat<T, dim, dim>> Ux;
-    A2DMat<SymMat<T, dim>> E;
-    A2DScalar<T> output;
-
-    // Declare types of the operators
-    decltype(MatLinearGreenStrain(Ux, E)) strain;
-    decltype(SymmIsotropicEnergy(mu, lambda, E, output)) energy;
-  };
+    // // Create data for extracting the Hessian-vector product
+    // constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    // auto inters = MakeTieTuple<T, ADseed::h>(Ux, S, E, output);
+    // auto in = MakeTieTuple<T, ADseed::p>(Ux);
+    // auto out = MakeTieTuple<T, ADseed::h>(Ux);
+  }
 };
 
 /*
@@ -390,16 +296,16 @@ class IntegrandTopoBodyForce {
   // Mapping of the solution from the reference element to the physical element
   using SolutionMapping = InteriorMapping<T, dim>;
 
-  IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
+  KOKKOS_FUNCTION IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
     for (index_t i = 0; i < dim; i++) {
       tx[i] = tx_[i];
     }
   }
 
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     T rho = data[0];
     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
 
@@ -503,7 +409,7 @@ class IntegrandTopoVonMisesKS {
    * @param max_failure_index_ Maximum value of the failure index anywhere in
    * the domain
    */
-  void set_max_failure_index(T max_failure_index_) {
+  KOKKOS_FUNCTION void set_max_failure_index(T max_failure_index_) {
     max_failure_index = max_failure_index_;
   }
 
@@ -514,7 +420,7 @@ class IntegrandTopoVonMisesKS {
    * @param failure_index_integral_ Integral of the failure index
    * @return T The failure value
    */
-  T evaluate_functional(T failure_index_integral_) {
+  KOKKOS_FUNCTION T evaluate_functional(T failure_index_integral_) {
     failure_index_integral = failure_index_integral_;
     return max_failure_index + log(failure_index_integral) / ks_penalty;
   }
@@ -527,28 +433,42 @@ class IntegrandTopoVonMisesKS {
    * @param s The solution at the quadurature point
    * @return T The integrand contribution
    */
-  T max(const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s) const {
+  KOKKOS_FUNCTION T max(const DataSpace& data, const FiniteElementGeometry& geo,
+                        const FiniteElementSpace& s) const {
+    // Inputs
     const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    SymMat<T, dim> E, S;
-    T trS, trSS;
-
-    MatLinearGreenStrain(Ux, E);
-    SymmIsotropicConstitutive(mu, lambda, E, S);
-    SymmTrace(S, trS);
-    SymmSymmMultTrace(S, S, trSS);
-
-    // Extract the design density value
     T rho = data[0];
 
-    // Compute the penalty = (q + 1) * rho/(q * rho + 1)
-    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+    // Intermediaries
+    SymMat<T, dim> E, S;
+    // von Mises stress
+    T trS, trSS, trS2, vm2, vm;
+    // penalty
+    T numer, denom, penalty;
 
-    // von Mises^2 = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
-    T vm = std::sqrt(1.5 * trSS - 0.5 * trS * trS) / design_stress;
+    // Final output computation
+    T relaxed_stress, failure_index;
+    T exponent, output;
 
-    // Compute the failure index
-    T failure_index = penalty * vm;
+    // Compute the strain and stress
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
+
+    // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
+    MatTrace(S, trS);
+    SymMatMultTrace(S, S, trSS);
+    Mult(trS, trS, trS2);
+    Sum(1.5, trSS, -0.5, trS2, vm2);
+    Sqrt(vm2, vm);
+
+    // Compute the stress-relaxation penalty
+    Mult(T(q + 1.0), rho, numer);        // numer = (q + 1) * rho
+    Sum(q, rho, T(1.0), T(1.0), denom);  // denom = q * rho + 1.0
+    Divide(numer, denom, penalty);  // penalty = (q + 1) * rho/(q * rho + 1)
+
+    // Compute the relaxed stress
+    Mult(penalty, vm, relaxed_stress);
+    Mult(T(1.0 / design_stress), relaxed_stress, failure_index);
 
     return failure_index;
   }
@@ -562,30 +482,50 @@ class IntegrandTopoVonMisesKS {
    * @param s The solution at the quadurature point
    * @return T The integrand contribution
    */
-  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) const {
+  KOKKOS_FUNCTION T integrand(T wdetJ, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& s) const {
+    // Inputs
     const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    SymMat<T, dim> E, S;
-    T trS, trSS;
-
-    MatLinearGreenStrain(Ux, E);
-    SymmIsotropicConstitutive(mu, lambda, E, S);
-    SymmTrace(S, trS);
-    SymmSymmMultTrace(S, S, trSS);
-
-    // Extract the design density value
     T rho = data[0];
 
-    // Compute the penalty = (q + 1) * rho/(q * rho + 1)
-    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+    // Intermediaries
+    SymMat<T, dim> E, S;
+    // von Mises stress
+    T trS, trSS, trS2, vm2, vm;
+    // penalty
+    T numer, denom, penalty;
 
-    // von Mises^2 = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
-    T vm = std::sqrt(1.5 * trSS - 0.5 * trS * trS) / design_stress;
+    // Final output computation
+    T relaxed_stress, failure_index;
+    T exponent, output;
 
-    // Compute the failure index
-    T failure_index = penalty * vm;
+    // Compute the strain and stress
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
 
-    return wdetJ * exp(ks_penalty * (failure_index - max_failure_index));
+    // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
+    MatTrace(S, trS);
+    SymMatMultTrace(S, S, trSS);
+    Mult(trS, trS, trS2);
+    Sum(1.5, trSS, -0.5, trS2, vm2);
+    Sqrt(vm2, vm);
+
+    // Compute the stress-relaxation penalty
+    Mult(T(q + 1.0), rho, numer);        // numer = (q + 1) * rho
+    Sum(q, rho, T(1.0), T(1.0), denom);  // denom = q * rho + 1.0
+    Divide(numer, denom, penalty);  // penalty = (q + 1) * rho/(q * rho + 1)
+
+    // Compute the relaxed stress
+    Mult(penalty, vm, relaxed_stress);
+    Mult(T(1.0 / design_stress), relaxed_stress, failure_index);
+
+    // exponent = ks_penalty * (failure_index - max_failure_index);
+    Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
+        T(1.0), exponent);
+    Exp(exponent, output);
+
+    return wdetJ * output;
   }
 
   /**
@@ -597,49 +537,63 @@ class IntegrandTopoVonMisesKS {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  void weak(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-            const FiniteElementSpace& s, FiniteElementSpace& coef) const {
-    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
+    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    SymMat<T, dim> E0, Eb;
-    SymMat<T, dim> S0, Sb;
 
-    ADMat<Mat<T, dim, dim>> Ux(Ux0, Uxb);
-    ADMat<SymMat<T, dim>> E(E0, Eb);
-    ADMat<SymMat<T, dim>> S(S0, Sb);
-    ADScalar<T> trS, trSS;
+    ADObj<T> rho(data[0]);
 
-    auto strain = MatLinearGreenStrain(Ux, E);
-    auto cons = SymmIsotropicConstitutive(mu, lambda, E, S);
-    auto trace1 = SymmTrace(S, trS);
-    auto trace2 = SymmSymmMultTrace(S, S, trSS);
+    // Intermediaries
+    ADObj<Mat<T, dim, dim>> Ux(Ux0);
+    ADObj<SymMat<T, dim>> E, S;
 
-    // Extract the design density value
-    T rho = data[0];
+    // von Mises stress
+    ADObj<T> trS, trSS, trS2, vm2, vm;
+    // penalty
+    ADObj<T> numer, denom, penalty;
 
-    // Compute the penalty = (q + 1) * x/(q * x + 1)
-    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+    // Final output computation
+    ADObj<T> relaxed_stress, failure_index;
+    ADObj<T> exponent, output;
 
-    // von Mises = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
-    T vm = std::sqrt(1.5 * trSS.value - 0.5 * trS.value * trS.value) /
-           design_stress;
+    auto stack = MakeStack(
+        // Compute the strain and stress
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),              // S = S(E)
 
-    // Compute the failure index
-    T failure_index = penalty * vm;
+        // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 *
+        // tr(S)**2)
+        MatTrace(S, trS),             // trS = tr(S)
+        SymMatMultTrace(S, S, trSS),  // trSS = tr(S * S)
+        Mult(trS, trS, trS2),         // trS2 = tr(S) * tr(S)
+        Sum(1.5, trSS, -0.5, trS2,
+            vm2),       // vm2 = 1.5 * trSS - 0.5 * tr(S)**2
+        Sqrt(vm2, vm),  // vm = sqrt(vm2)
 
-    // Compute the exponential contribution
-    T ks_exp = exp(ks_penalty * (failure_index - max_failure_index));
+        // Compute the stress-relaxation penalty
+        Mult(T(q + 1.0), rho, numer),        // numer = (q + 1) * rho
+        Sum(q, rho, T(1.0), T(1.0), denom),  // denom = q * rho + 1.0
+        Divide(numer, denom,
+               penalty),  // penalty = (q + 1) * rho/(q * rho + 1)
 
-    T scale = 0.5 * wdetJ * penalty * ks_exp /
-              (vm * design_stress * design_stress * failure_index_integral);
+        // Compute the relaxed stress
+        Mult(penalty, vm, relaxed_stress),  //
+        Mult(T(1.0 / design_stress), relaxed_stress, failure_index),
 
-    trSS.bvalue = 1.5 * scale;
-    trS.bvalue = -trS.value * scale;
+        // exponent = ks_penalty * (failure_index - max_failure_index);
+        Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
+            T(1.0), exponent),  //
+        Exp(exponent, output));
 
-    trace2.reverse();
-    trace1.reverse();
-    cons.reverse();
-    strain.reverse();
+    output.bvalue() = wdetJ;
+
+    stack.reverse();
+
+    // Set the derivative values
+    Uxb.set(Ux.bvalue());
   }
 
   /**
@@ -651,40 +605,62 @@ class IntegrandTopoVonMisesKS {
    * @param s The solution at the quadurature point
    * @param dfdx The output derivative value
    */
-  void data_derivative(T wdetJ, const DataSpace& data,
-                       const FiniteElementGeometry& geo,
-                       const FiniteElementSpace& s, DataSpace& dfdx) const {
-    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
-    SymMat<T, dim> E, S;
-    T trS, trSS;
+  KOKKOS_FUNCTION void data_derivative(T wdetJ, const DataSpace& data,
+                                       const FiniteElementGeometry& geo,
+                                       const FiniteElementSpace& s,
+                                       DataSpace& dfdx) const {
+    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim> Uxb;
 
-    MatLinearGreenStrain(Ux, E);
-    SymmIsotropicConstitutive(mu, lambda, E, S);
-    SymmTrace(S, trS);
-    SymmSymmMultTrace(S, S, trSS);
+    ADObj<T> rho(data[0]);
 
-    // Extract the design density value
-    T rho = data[0];
+    // Intermediaries
+    ADObj<Mat<T, dim, dim>> Ux(Ux0);
+    ADObj<SymMat<T, dim>> E, S;
 
-    // Compute the penalty = (q + 1) * x/(q * x + 1)
-    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+    // von Mises stress
+    ADObj<T> trS, trSS, trS2, vm2, vm;
+    // penalty
+    ADObj<T> numer, denom, penalty;
 
-    // Compute the penalty = (q + 1) * x/(q * x + 1)
-    T denom = (q * rho + 1.0) * (q * rho + 1.0);
-    T dpenalty = (q + 1.0) / denom;
+    // Final output computation
+    ADObj<T> relaxed_stress, failure_index;
+    ADObj<T> exponent, output;
 
-    // von Mises = 1.5 * tr(S * S) - 0.5 * tr(S)**2;
-    T vm = std::sqrt(1.5 * trSS - 0.5 * trS * trS) / design_stress;
+    auto stack = MakeStack(
+        // Compute the strain and stress
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),              // S = S(E)
 
-    // Compute the failure index
-    T failure_index = penalty * vm;
+        // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 *
+        // tr(S)**2)
+        MatTrace(S, trS),             // trS = tr(S)
+        SymMatMultTrace(S, S, trSS),  // trSS = tr(S * S)
+        Mult(trS, trS, trS2),         // trS2 = tr(S) * tr(S)
+        Sum(1.5, trSS, -0.5, trS2,
+            vm2),       // vm2 = 1.5 * trSS - 0.5 * tr(S)**2
+        Sqrt(vm2, vm),  // vm = sqrt(vm2)
 
-    // Compute the exponential contribution
-    T ks_exp = exp(ks_penalty * (failure_index - max_failure_index));
+        // Compute the stress-relaxation penalty
+        Mult(T(q + 1.0), rho, numer),        // numer = (q + 1) * rho
+        Sum(q, rho, T(1.0), T(1.0), denom),  // denom = q * rho + 1.0
+        Divide(numer, denom,
+               penalty),  // penalty = (q + 1) * rho/(q * rho + 1)
 
-    T scale = wdetJ * vm * ks_exp / (failure_index_integral);
+        // Compute the relaxed stress
+        Mult(penalty, vm, relaxed_stress),  //
+        Mult(T(1.0 / design_stress), relaxed_stress, failure_index),
 
-    dfdx[0] = scale * dpenalty;
+        // exponent = ks_penalty * (failure_index - max_failure_index);
+        Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
+            T(1.0), exponent),  //
+        Exp(exponent, output));
+
+    output.bvalue() = wdetJ;
+
+    stack.reverse();
+
+    dfdx[0] = rho.bvalue();
   }
 };
 
@@ -694,9 +670,9 @@ class IntegrandTopoVonMisesKS {
 template <typename T, index_t D>
 class IntegrandTopoSurfaceTraction {
  public:
-  IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
-                               const T torx_[] = nullptr,
-                               const T x0_[] = nullptr) {
+  KOKKOS_FUNCTION IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
+                                               const T torx_[] = nullptr,
+                                               const T x0_[] = nullptr) {
     has_traction = false;
     has_torque = false;
 
@@ -755,10 +731,10 @@ class IntegrandTopoSurfaceTraction {
    * @param s The trial solution
    * @param coef Output weak form coefficients of the test space
    */
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& data,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                FiniteElementSpace& coef) const {
     // Extract the solution
     Vec<T, dim>& U = (coef.template get<0>()).get_value();
     for (index_t i = 0; i < dim; i++) {

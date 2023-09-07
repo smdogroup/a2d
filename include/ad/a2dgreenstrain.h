@@ -23,11 +23,26 @@ KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   }
 }
 
-template <GreenStrain etype, typename T, int N, ADorder order>
+template <GreenStrain etype, class Utype, class Etype>
 class MatGreenStrainExpr {
  public:
-  using Utype = ADMatType<ADiffType::ACTIVE, order, Mat<T, N, N>>;
-  using Etype = ADMatType<ADiffType::ACTIVE, order, SymMat<T, N>>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Etype>::type T;
+
+  // Extract the dimensions of the underlying matrix
+  static constexpr int M = get_matrix_rows<Utype>::size;
+  static constexpr int K = get_matrix_columns<Utype>::size;
+  static constexpr int N = get_symmatrix_size<Etype>::size;
+
+  // Get the differentiation order from the output
+  static constexpr ADorder order = get_diff_order<Etype>::order;
+
+  // Make sure the matrix dimensions are consistent
+  static_assert((N == K && N == M), "Matrix dimensions must agree");
+
+  // Make sure that the order matches
+  static_assert(get_diff_order<Utype>::order == order,
+                "ADorder does not match");
 
   KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
 
@@ -86,16 +101,14 @@ class MatGreenStrainExpr {
   Etype& E;
 };
 
-template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(ADMat<Mat<T, N, N>>& Ux,
-                                    ADMat<SymMat<T, N>>& E) {
-  return MatGreenStrainExpr<etype, T, N, ADorder::FIRST>(Ux, E);
+template <GreenStrain etype, class UxMat, class EMat>
+KOKKOS_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
+  return MatGreenStrainExpr<etype, ADObj<UxMat>, ADObj<EMat>>(Ux, E);
 }
 
-template <GreenStrain etype, typename T, int N>
-KOKKOS_FUNCTION auto MatGreenStrain(A2DMat<Mat<T, N, N>>& Ux,
-                                    A2DMat<SymMat<T, N>>& E) {
-  return MatGreenStrainExpr<etype, T, N, ADorder::SECOND>(Ux, E);
+template <GreenStrain etype, class UxMat, class EMat>
+KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
+  return MatGreenStrainExpr<etype, A2DObj<UxMat>, A2DObj<EMat>>(Ux, E);
 }
 
 namespace Test {
@@ -130,31 +143,25 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    Mat<T, N, N> Ux0, Uxb;
-    SymMat<T, N> E0, Eb;
-    ADMat<Mat<T, N, N>> Ux(Ux0, Uxb);
-    ADMat<SymMat<T, N>> E(E0, Eb);
+    ADObj<Mat<T, N, N>> Ux;
+    ADObj<SymMat<T, N>> E;
 
-    x.get_values(Ux0);
-    auto op = MatGreenStrain<etype>(Ux, E);
-    auto stack = MakeStack(op);
-    seed.get_values(Eb);
+    x.get_values(Ux.value());
+    auto stack = MakeStack(MatGreenStrain<etype>(Ux, E));
+    seed.get_values(E.bvalue());
     stack.reverse();
-    g.set_values(Uxb);
+    g.set_values(Ux.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DMat<Mat<T, N, N>> Ux;
-    A2DMat<SymMat<T, N>> E;
+    A2DObj<Mat<T, N, N>> Ux;
+    A2DObj<SymMat<T, N>> E;
 
     x.get_values(Ux.value());
     p.get_values(Ux.pvalue());
-
-    auto op = MatGreenStrain<etype>(Ux, E);
-    auto stack = MakeStack(op);
-
+    auto stack = MakeStack(MatGreenStrain<etype>(Ux, E));
     seed.get_values(E.bvalue());
     hval.get_values(E.hvalue());
     stack.reverse();

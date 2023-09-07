@@ -37,24 +37,29 @@ KOKKOS_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
                                    get_data(C));
 }
 
-template <typename T, int N, int M, ADorder order, ADiffType adA, ADiffType adB,
-          MatSymType sym>
+template <class Atype, class Btype, class Ctype>
 class MatSumExpr {
  public:
-  using Atype =
-      ADMatType<adA, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
-  using Btype =
-      ADMatType<adB, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
-  using Ctype =
-      ADMatType<ADiffType::ACTIVE, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
-  static const int size = conditional_value<int, sym == MatSymType::NORMAL,
-                                            N * M, (N * (N + 1) / 2)>::value;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Ctype>::type T;
+
+  // Get the sizes of the matrices
+  static const int size = get_num_matrix_entries<Ctype>::size;
+
+  // Get the types of the matrices
+  static constexpr ADiffType adA = get_diff_type<Atype>::diff_type;
+  static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
+
+  // Assert that all the matrices are compatible types
+  static_assert(((get_a2d_object_type<Atype>::value ==
+                  get_a2d_object_type<Btype>::value) &&
+                 (get_a2d_object_type<Btype>::value ==
+                  get_a2d_object_type<Ctype>::value)),
+                "Matrices are not all of the same type");
+
+  static_assert((get_num_matrix_entries<Atype>::size == size &&
+                 get_num_matrix_entries<Btype>::size == size),
+                "Matrix sizes must agree");
 
   KOKKOS_FUNCTION
   MatSumExpr(Atype &A, Btype &B, Ctype &C) : A(A), B(B), C(C) {}
@@ -109,114 +114,65 @@ class MatSumExpr {
   Ctype &C;
 };
 
-// First-order AD
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, ADMat<Mat<T, N, M>> &B,
-                            ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+// Full active variants
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(ADObj<Atype> &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+  return MatSumExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, ADMat<Mat<T, N, M>> &B,
-                            ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B,
+                            A2DObj<Ctype> &C) {
+  return MatSumExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(ADMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
-                            ADMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(const Atype &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+  return MatSumExpr<const Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, ADMat<SymMat<T, N>> &B,
-                            ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B,
+                            A2DObj<Ctype> &C) {
+  return MatSumExpr<const Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, ADMat<SymMat<T, N>> &B,
-                            ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(ADObj<Atype> &A, const Btype &B, ADObj<Ctype> &C) {
+  return MatSumExpr<ADObj<Atype>, const Btype, ADObj<Ctype>>(A, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(ADMat<SymMat<T, N>> &A, SymMat<T, N> &B,
-                            ADMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
+template <class Atype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B,
+                            A2DObj<Ctype> &C) {
+  return MatSumExpr<A2DObj<Atype>, const Btype, A2DObj<Ctype>>(A, B, C);
 }
 
-// Second-order AD
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, A2DMat<Mat<T, N, M>> &B,
-                            A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(Mat<T, N, M> &A, A2DMat<Mat<T, N, M>> &B,
-                            A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::NORMAL>(A, B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(A2DMat<Mat<T, N, M>> &A, Mat<T, N, M> &B,
-                            A2DMat<Mat<T, N, M>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::NORMAL>(A, B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, A2DMat<SymMat<T, N>> &B,
-                            A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(SymMat<T, N> &A, A2DMat<SymMat<T, N>> &B,
-                            A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                    ADiffType::ACTIVE, MatSymType::SYMMETRIC>(A, B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(A2DMat<SymMat<T, N>> &A, SymMat<T, N> &B,
-                            A2DMat<SymMat<T, N>> &C) {
-  return MatSumExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                    ADiffType::PASSIVE, MatSymType::SYMMETRIC>(A, B, C);
-}
-
-template <typename T, int N, int M, ADorder order, ADiffType ada, ADiffType adA,
-          ADiffType adb, ADiffType adB, MatSymType sym>
+template <class atype, class Atype, class btype, class Btype, class Ctype>
 class MatSumScaleExpr {
  public:
-  using atype = ADScalarInputType<ada, order, T>;
-  using Atype =
-      ADMatType<adA, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
-  using btype = ADScalarInputType<adb, order, T>;
-  using Btype =
-      ADMatType<adB, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
+  // Extract the numeric type to use
+  typedef typename get_object_numeric_type<Ctype>::type T;
 
-  using Ctype =
-      ADMatType<ADiffType::ACTIVE, order,
-                typename std::conditional<sym == MatSymType::NORMAL,
-                                          Mat<T, N, M>, SymMat<T, N>>::type>;
+  // Get the sizes of the matrices
+  static const int size = get_num_matrix_entries<Ctype>::size;
 
-  static const int size = conditional_value<int, sym == MatSymType::NORMAL,
-                                            N * M, (N * (N + 1) / 2)>::value;
+  // Get the types of the matrices and scalars
+  static constexpr ADiffType ada = get_diff_type<atype>::diff_type;
+  static constexpr ADiffType adb = get_diff_type<btype>::diff_type;
+  static constexpr ADiffType adA = get_diff_type<Atype>::diff_type;
+  static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
+
+  // Assert that all the matrices are compatible types
+  static_assert(((get_a2d_object_type<Atype>::value ==
+                  get_a2d_object_type<Btype>::value) &&
+                 (get_a2d_object_type<Btype>::value ==
+                  get_a2d_object_type<Ctype>::value)),
+                "Matrices are not all of the same type");
+
+  static_assert((get_num_matrix_entries<Atype>::size == size &&
+                 get_num_matrix_entries<Btype>::size == size),
+                "Matrix sizes must agree");
 
   KOKKOS_FUNCTION
   MatSumScaleExpr(atype alpha, Atype &A, btype beta, Btype &B, Ctype &C)
@@ -322,84 +278,38 @@ class MatSumScaleExpr {
   Ctype &C;
 };
 
-// First-order AD
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(ADScalar<T> &alpha, ADMat<Mat<T, N, M>> &A,
-                            ADScalar<T> &beta, ADMat<Mat<T, N, M>> &B,
-                            ADMat<Mat<T, N, M>> &C) {
-  return MatSumScaleExpr<T, N, M, ADorder::FIRST, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
-                                                                B, C);
+// Fully AD
+template <class atype, class Atype, class btype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
+                            ADObj<btype> &beta, ADObj<Btype> &B,
+                            ADObj<Ctype> &C) {
+  return MatSumScaleExpr<ADObj<atype> &, ADObj<Atype>, ADObj<btype> &,
+                         ADObj<Btype>, ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(const T alpha, ADMat<Mat<T, N, M>> &A, const T beta,
-                            ADMat<Mat<T, N, M>> &B, ADMat<Mat<T, N, M>> &C) {
-  return MatSumScaleExpr<T, N, M, ADorder::FIRST, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
-                                                                B, C);
+template <class atype, class Atype, class btype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
+                            A2DObj<btype> &beta, A2DObj<Btype> &B,
+                            A2DObj<Ctype> &C) {
+  return MatSumScaleExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<btype> &,
+                         A2DObj<Btype>, A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatSum(ADScalar<T> &alpha, ADMat<SymMat<T, N>> &A,
-                            ADScalar<T> &beta, ADMat<SymMat<T, N>> &B,
-                            ADMat<SymMat<T, N>> &C) {
-  return MatSumScaleExpr<T, N, N, ADorder::FIRST, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
-                                                                   beta, B, C);
+// Fully AD
+template <class atype, class Atype, class btype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A,
+                            const btype beta, ADObj<Btype> &B,
+                            ADObj<Ctype> &C) {
+  return MatSumScaleExpr<const atype, ADObj<Atype>, const btype, ADObj<Btype>,
+                         ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatSum(const T alpha, ADMat<SymMat<T, N>> &A, const T beta,
-                            ADMat<SymMat<T, N>> &B, ADMat<SymMat<T, N>> &C) {
-  return MatSumScaleExpr<T, N, N, ADorder::FIRST, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
-                                                                   beta, B, C);
-}
-
-// Second-order AD
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<Mat<T, N, M>> &A,
-                            A2DScalar<T> &beta, A2DMat<Mat<T, N, M>> &B,
-                            A2DMat<Mat<T, N, M>> &C) {
-  return MatSumScaleExpr<T, N, M, ADorder::SECOND, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
-                                                                B, C);
-}
-
-template <typename T, int N, int M>
-KOKKOS_FUNCTION auto MatSum(const T alpha, A2DMat<Mat<T, N, M>> &A,
-                            const T beta, A2DMat<Mat<T, N, M>> &B,
-                            A2DMat<Mat<T, N, M>> &C) {
-  return MatSumScaleExpr<T, N, M, ADorder::SECOND, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, MatSymType::NORMAL>(alpha, A, beta,
-                                                                B, C);
-}
-
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatSum(A2DScalar<T> &alpha, A2DMat<SymMat<T, N>> &A,
-                            A2DScalar<T> &beta, A2DMat<SymMat<T, N>> &B,
-                            A2DMat<SymMat<T, N>> &C) {
-  return MatSumScaleExpr<T, N, N, ADorder::SECOND, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, ADiffType::ACTIVE,
-                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
-                                                                   beta, B, C);
-}
-
-template <typename T, int N>
-KOKKOS_FUNCTION auto MatSum(const T alpha, A2DMat<SymMat<T, N>> &A,
-                            const T beta, A2DMat<SymMat<T, N>> &B,
-                            A2DMat<SymMat<T, N>> &C) {
-  return MatSumScaleExpr<T, N, N, ADorder::SECOND, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, ADiffType::PASSIVE,
-                         ADiffType::ACTIVE, MatSymType::SYMMETRIC>(alpha, A,
-                                                                   beta, B, C);
+template <class atype, class Atype, class btype, class Btype, class Ctype>
+KOKKOS_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A,
+                            const btype beta, A2DObj<Btype> &B,
+                            A2DObj<Ctype> &C) {
+  return MatSumScaleExpr<const atype, A2DObj<Atype>, const btype, A2DObj<Btype>,
+                         A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 namespace Test {
@@ -427,24 +337,21 @@ class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    Mat<T, N, M> A0, Ab, B0, Bb, C0, Cb;
-    ADMat<Mat<T, N, M>> A(A0, Ab), B(B0, Bb), C(C0, Cb);
-    x.get_values(A0, B0);
-    auto op = MatSum(A, B, C);
-    auto stack = MakeStack(op);
-    seed.get_values(Cb);
+    ADObj<Mat<T, N, M>> A, B, C;
+    x.get_values(A.value(), B.value());
+    auto stack = MakeStack(MatSum(A, B, C));
+    seed.get_values(C.bvalue());
     stack.reverse();
-    g.set_values(Ab, Bb);
+    g.set_values(A.bvalue(), B.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DMat<Mat<T, N, M>> A, B, C;
+    A2DObj<Mat<T, N, M>> A, B, C;
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());
-    auto op = MatSum(A, B, C);
-    auto stack = MakeStack(op);
+    auto stack = MakeStack(MatSum(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
     stack.reverse();
@@ -479,32 +386,29 @@ class MatSumScaleTest
 
   // Compute the derivative
   void deriv(const Output &seed, const Input &x, Input &g) {
-    ADScalar<T> alpha, beta;
-    Mat<T, N, M> A0, Ab, B0, Bb, C0, Cb;
-    ADMat<Mat<T, N, M>> A(A0, Ab), B(B0, Bb), C(C0, Cb);
-    x.get_values(alpha.value, A0, beta.value, B0);
-    auto op = MatSum(alpha, A, beta, B, C);
-    auto stack = MakeStack(op);
-    seed.get_values(Cb);
+    ADObj<T> alpha, beta;
+    ADObj<Mat<T, N, M>> A, B, C;
+    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
+    auto stack = MakeStack(MatSum(alpha, A, beta, B, C));
+    seed.get_values(C.bvalue());
     stack.reverse();
-    g.set_values(alpha.bvalue, Ab, beta.bvalue, Bb);
+    g.set_values(alpha.bvalue(), A.bvalue(), beta.bvalue(), B.bvalue());
   }
 
   // Compute the second-derivative
   void hprod(const Output &seed, const Output &hval, const Input &x,
              const Input &p, Input &h) {
-    A2DScalar<T> alpha, beta;
-    A2DMat<Mat<T, N, M>> A, B, C;
-    x.get_values(alpha.value, A.value(), beta.value, B.value());
-    p.get_values(alpha.pvalue, A.pvalue(), beta.pvalue, B.pvalue());
-    auto op = MatSum(alpha, A, beta, B, C);
-    auto stack = MakeStack(op);
+    A2DObj<T> alpha, beta;
+    A2DObj<Mat<T, N, M>> A, B, C;
+    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
+    p.get_values(alpha.pvalue(), A.pvalue(), beta.pvalue(), B.pvalue());
+    auto stack = MakeStack(MatSum(alpha, A, beta, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
     stack.reverse();
     stack.hforward();
     stack.hreverse();
-    h.set_values(alpha.hvalue, A.hvalue(), beta.hvalue, B.hvalue());
+    h.set_values(alpha.hvalue(), A.hvalue(), beta.hvalue(), B.hvalue());
   }
 };
 

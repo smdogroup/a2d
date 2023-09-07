@@ -12,8 +12,6 @@ namespace A2D {
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
                             GeoElemVec &elem_geo) {
-  constexpr ElemVecType evtype = GeoElemVec::evtype;
-
   for (int e = 0; e < nhex; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -54,20 +52,14 @@ void set_geo_from_hex_nodes(const index_t nhex, const I hex[], const T Xloc[],
       }
     }
 
-    if constexpr (evtype == ElemVecType::Serial) {
-      elem_geo.set_element_values(e, geo_dof);
-    }
+    elem_geo.set_element_values(e, geo_dof);
   }
-  if constexpr (evtype == ElemVecType::Parallel) {
-    elem_geo.set_values();
-  }
+  elem_geo.set_values();
 }
 
 template <class GeoBasis, typename I, typename T, class GeoElemVec>
 void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
                              const T Xloc[], GeoElemVec &elem_geo) {
-  constexpr ElemVecType evtype = GeoElemVec::evtype;
-
   for (int e = 0; e < nquad; e++) {
     // Get the geometry values
     typename GeoElemVec::FEDof geo_dof(e, elem_geo);
@@ -98,13 +90,9 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
       }
     }
 
-    // if constexpr (evtype == ElemVecType::Serial) {
     elem_geo.set_element_values(e, geo_dof);
-    // }
   }
-  // if constexpr (evtype == ElemVecType::Parallel) {
   elem_geo.set_values();
-  // }
 }
 
 template <index_t outputs, index_t degree, typename T, class DataBasis,
@@ -115,6 +103,7 @@ void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
                       const FunctorType &func) {
   Timer timer("write_hex_to_vtk()");
   using ET = ElementTypes;
+  auto HEX_VERTS_CART = ET::get_hex_verts_cart();
   const index_t nex = degree;
   using QuadPts = HexGaussLobattoQuadrature<nex + 1>;
 
@@ -187,9 +176,9 @@ void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
 
           for (index_t ii = 0; ii < ET::HEX_NVERTS; ii++) {
             vtk_conn(counter, ii) =
-                off + vtk_node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                   j + ET::HEX_VERTS_CART[ii][1],
-                                   k + ET::HEX_VERTS_CART[ii][2]);
+                off + vtk_node_num(i + HEX_VERTS_CART[ii][0],
+                                   j + HEX_VERTS_CART[ii][1],
+                                   k + HEX_VERTS_CART[ii][2]);
           }
         }
       }
@@ -278,14 +267,15 @@ void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
       }
     }
 
+    auto QUAD_VERTS_CART = ET::get_quad_verts_cart();
     for (index_t j = 0; j < nex; j++) {
       for (index_t i = 0; i < nex; i++, counter++) {
         index_t off = n * (nex + 1) * (nex + 1);
 
         for (index_t ii = 0; ii < ET::QUAD_NVERTS; ii++) {
           vtk_conn(counter, ii) =
-              off + vtk_node_num(i + ET::QUAD_VERTS_CART[ii][0],
-                                 j + ET::QUAD_VERTS_CART[ii][1]);
+              off + vtk_node_num(i + QUAD_VERTS_CART[ii][0],
+                                 j + QUAD_VERTS_CART[ii][1]);
         }
       }
     }

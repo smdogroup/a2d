@@ -109,7 +109,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   using Quadrature = HexGaussQuadrature<degree + 1>;
   using DataBasis = FEBasis<T>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using DataElemVec = A2D::ElementVector_Serial<T, DataBasis, BasisVecType>;
+  using DataElemVec = A2D::ElementVector_Empty;
   using GeoElemVec = A2D::ElementVector_Serial<T, GeoBasis, BasisVecType>;
   using ElemVec = A2D::ElementVector_Serial<T, Basis, BasisVecType>;
   using FE =
@@ -119,8 +119,7 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   using LOrderDataBasis = FEBasis<T>;
   using LOrderGeoBasis =
       FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, low_degree>>;
-  using LOrderDataElemVec =
-      A2D::ElementVector_Serial<T, LOrderDataBasis, BasisVecType>;
+  using LOrderDataElemVec = A2D::ElementVector_Empty;
   using LOrderGeoElemVec =
       A2D::ElementVector_Serial<T, LOrderGeoBasis, BasisVecType>;
   using LOrderElemVec = A2D::ElementVector_Serial<T, LOrderBasis, BasisVecType>;
@@ -193,24 +192,21 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
 
   ElementMesh<Basis> mesh(conn);
   ElementMesh<GeoBasis> geomesh(conn);
-  ElementMesh<DataBasis> datamesh(conn);
 
   ElementMesh<LOrderBasis> lorder_mesh(mesh);
   ElementMesh<LOrderGeoBasis> lorder_geomesh(geomesh);
-  ElementMesh<LOrderDataBasis> lorder_datamesh(datamesh);
 
   SolutionVector<T> sol(mesh.get_num_dof());
   SolutionVector<T> geo(geomesh.get_num_dof());
-  SolutionVector<T> data(datamesh.get_num_dof());
 
-  DataElemVec elem_data(datamesh, data);
+  DataElemVec elem_data;
   GeoElemVec elem_geo(geomesh, geo);
   ElemVec elem_sol(mesh, sol);
 
   // Set the geometry from the node locations
   set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
 
-  LOrderDataElemVec lorder_elem_data(lorder_datamesh, data);
+  LOrderDataElemVec lorder_elem_data;
   LOrderGeoElemVec lorder_elem_geo(lorder_geomesh, geo);
   LOrderElemVec lorder_elem_sol(lorder_mesh, sol);
 

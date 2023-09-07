@@ -10,6 +10,7 @@
 #define A2D_MESH_H
 
 #include <cstdlib>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -94,9 +95,9 @@ class MesherRect2D {
     T dx = lx / nx;
     T dy = ly / ny;
 
-    if (randomize) {
-      std::srand(random_seed);
-    }
+    // This is a portable rng engine
+    std::mt19937 engine(random_seed);
+    std::uniform_real_distribution<T> rng(-1.0, 1.0);
 
     // Set X
     for (I j = 0; j < ny + 1; j++) {
@@ -106,8 +107,8 @@ class MesherRect2D {
 
         if (randomize) {
           if (i and j and (i - nx) and (j - ny)) {
-            px = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dx;
-            py = (T(std::rand()) / RAND_MAX - 0.5) * fraction * dy;
+            px = rng(engine) * fraction * dx;
+            py = rng(engine) * fraction * dy;
           }
         }
 
@@ -118,11 +119,12 @@ class MesherRect2D {
 
     // Set connectivity
     using ET = ElementTypes;
+    auto QUAD_VERTS_CART = ET::get_quad_verts_cart();
     for (I j = 0, e = 0; j < ny; j++) {
       for (I i = 0; i < nx; i++, e++) {
         for (I ii = 0; ii < ET::QUAD_NVERTS; ii++) {
-          quad[4 * e + ii] = node_num(i + ET::QUAD_VERTS_CART[ii][0],
-                                      j + ET::QUAD_VERTS_CART[ii][1]);
+          quad[4 * e + ii] =
+              node_num(i + QUAD_VERTS_CART[ii][0], j + QUAD_VERTS_CART[ii][1]);
         }
       }
     }
@@ -299,13 +301,14 @@ class MesherBrick3D {
 
     // Set connectivity
     using ET = ElementTypes;
+    auto HEX_VERTS_CART = ET::get_hex_verts_cart();
     for (I k = 0, e = 0; k < nz; k++) {
       for (I j = 0; j < ny; j++) {
         for (I i = 0; i < nx; i++, e++) {
           for (I ii = 0; ii < ET::HEX_NVERTS; ii++) {
-            hex[8 * e + ii] = node_num(i + ET::HEX_VERTS_CART[ii][0],
-                                       j + ET::HEX_VERTS_CART[ii][1],
-                                       k + ET::HEX_VERTS_CART[ii][2]);
+            hex[8 * e + ii] =
+                node_num(i + HEX_VERTS_CART[ii][0], j + HEX_VERTS_CART[ii][1],
+                         k + HEX_VERTS_CART[ii][2]);
           }
         }
       }

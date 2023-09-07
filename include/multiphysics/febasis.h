@@ -443,14 +443,16 @@ class FEBasis {
    * @param orient Orientation flag indicating the relative orientation
    * @param elem_signs Degrees of freedom for this element
    */
+  template <class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(index_t basis,
                                                ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int elem_signs[]) {
+                                               ElemSign& elem_signs) {
     if constexpr (sizeof...(Basis) == 0) {
       return;
     } else {
-      set_entity_signs<0, Basis...>(basis, entity, index, orient, elem_signs);
+      set_entity_signs<0, ElemSign, Basis...>(basis, entity, index, orient,
+                                              elem_signs);
     }
   }
 
@@ -492,11 +494,13 @@ class FEBasis {
    * @param horder_signs The signs from the high-order element
    * @param lorder_signs The output signs for the low-order element
    */
+  template <class HOrderSign, class LOrderSign>
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                               const int horder_signs[],
-                                               int lorder_signs[]) {
+                                               const HOrderSign& horder_signs,
+                                               LOrderSign& lorder_signs) {
     if constexpr (sizeof...(Basis) > 0) {
-      get_lorder_signs_<0, 0, Basis...>(n, horder_signs, lorder_signs);
+      get_lorder_signs_<0, 0, HOrderSign, LOrderSign, Basis...>(n, horder_signs,
+                                                                lorder_signs);
     }
   }
 
@@ -783,21 +787,21 @@ class FEBasis {
     }
   }
 
-  template <index_t r, class First, class... Remain>
+  template <index_t r, class ElemSign, class First, class... Remain>
   KOKKOS_FUNCTION static void set_entity_signs(index_t basis,
                                                ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int elem_signs[]) {
+                                               ElemSign& elem_signs) {
     if (basis == r) {
-      First::template set_entity_signs<get_dof_offset<r>()>(entity, index,
-                                                            orient, elem_signs);
+      First::template set_entity_signs<get_dof_offset<r>(), ElemSign>(
+          entity, index, orient, elem_signs);
     }
     if constexpr (sizeof...(Remain) == 0) {
-      First::template set_entity_signs<get_dof_offset<r>()>(entity, index,
-                                                            orient, elem_signs);
+      First::template set_entity_signs<get_dof_offset<r>(), ElemSign>(
+          entity, index, orient, elem_signs);
     } else {
-      set_entity_signs<r + 1, Remain...>(basis, entity, index, orient,
-                                         elem_signs);
+      set_entity_signs<r + 1, ElemSign, Remain...>(basis, entity, index, orient,
+                                                   elem_signs);
     }
   }
 
@@ -874,16 +878,17 @@ class FEBasis {
     }
   }
 
-  template <index_t hoffset, index_t loffset, class First, class... Remain>
+  template <index_t hoffset, index_t loffset, class HOrderSign,
+            class LOrderSign, class First, class... Remain>
   KOKKOS_FUNCTION static void get_lorder_signs_(const index_t n,
-                                                const int horder_signs[],
-                                                int lorder_signs[]) {
-    First::template get_lorder_signs<hoffset, loffset>(n, horder_signs,
-                                                       lorder_signs);
+                                                const HOrderSign& horder_signs,
+                                                LOrderSign& lorder_signs) {
+    First::template get_lorder_signs<hoffset, loffset, HOrderSign, LOrderSign>(
+        n, horder_signs, lorder_signs);
     if constexpr (sizeof...(Remain) > 0) {
       get_lorder_signs_<hoffset + First::ndof,
-                        loffset + First::LOrderBasis::ndof, Remain...>(
-          n, horder_signs, lorder_signs);
+                        loffset + First::LOrderBasis::ndof, HOrderSign,
+                        LOrderSign, Remain...>(n, horder_signs, lorder_signs);
     }
   }
 };

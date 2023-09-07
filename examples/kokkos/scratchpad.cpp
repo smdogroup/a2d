@@ -578,6 +578,154 @@ void test_cuda_axpy(int argc, char* argv[]) {
 #endif
 }
 
+void subview() {
+  // constexpr A2D::index_t ndof_per_element = 0;  // won't work
+  constexpr A2D::index_t ndof_per_element = 1;  // ok
+  using ElementDofArray = A2D::MultiArrayNew<A2D::index_t* [ndof_per_element]>;
+  A2D::index_t nelems = 10;
+  ElementDofArray element_dof("element_dof", nelems);
+  A2D::index_t elem = 1;
+  auto elem_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
+}
+
+void test_cuda_axpy_with_UVM(int argc, char* argv[]) {
+#ifdef KOKKOS_ENABLE_CUDA
+  using ViewDevice_t =
+      Kokkos::View<T*, Kokkos::LayoutRight, Kokkos::CudaUVMSpace>;
+  if (argc == 1) {
+    std::printf("axpy\nusage: ./scratchpad N, where mat size = 2^N\n");
+    return;
+  }
+
+  // Allocate x and y on host
+  I N = pow(2, atoi(argv[1]));
+  I bytes = N * sizeof(T);
+  double Mbytes = (double)bytes / 1024 / 1024;
+
+  std::printf("Allocating x[%d] on host, size: %.2f MB\n", N, Mbytes);
+  std::printf("Allocating y[%d] on host, size: %.2f MB\n", N, Mbytes);
+
+  // Allocate x and y on device
+  ViewDevice_t x_device("x_device", N);
+  ViewDevice_t y_device("y_device", N);
+
+  for (I i = 0; i < N; i++) {
+    x_device(i) = 2.4;
+    y_device(i) = 0.1;
+  }
+
+  // Perform 100 axpy operations on device and time
+  Kokkos::Timer timer;
+  int repeat = 100;
+  T alpha = 0.01;
+  for (int i = 0; i < repeat; i++) {
+    auto loop_body = KOKKOS_LAMBDA(const I index) {
+      // T alpha = Alpha::get_alpha_array()[0];  // This doesn't work
+      T alpha = Alpha::value_array[0];  // This works
+      auto x_slice = Kokkos::subview(x_device, Kokkos::ALL);
+      y_device(index) += alpha * x_slice(index);
+    };
+    Kokkos::parallel_for("axpy", N, loop_body);
+    Kokkos::fence();
+  }
+
+  double elapse = timer.seconds();
+  printf("averaged time: %.8f ms\n", elapse * 1e3);
+
+  // Compute bandwidth:
+  // x is read once, y is read once and written once
+  double bandwidth = 3 * Mbytes / 1024 * repeat / elapse;
+  printf("averaged bandwidth: %.8f GB/s\n", bandwidth);
+
+  // Print values
+  int len = 10;
+  if (N < len) {
+    len = N;
+  }
+
+  for (I i = 0; i < len; i++) {
+    printf("x[%2d]: %8.2f  y[%2d]: %8.2f\n", i, x_device(i), i, y_device(i));
+  }
+
+  // Check maximum error
+  T max_err = T(0);
+  T val = T(0);
+  for (I i = 0; i < N; i++) {
+    val = fabs(repeat * alpha * 2.4 + 0.1 - y_device(i));
+    if (val > max_err) {
+      max_err = val;
+    }
+  }
+
+  printf("Maximum error: %20.10e\n", max_err);
+#endif
+}
+
+class ParallelVector {
+#ifdef KOKKOS_ENABLE_CUDA
+  using MemSpace = Kokkos::CudaUVMSpace;
+#else
+  using MemSpace = Kokkos::HostSpace;
+#endif
+  using data_t = Kokkos::View<double*, Kokkos::LayoutRight, MemSpace>;
+
+  KOKKOS_FUNCTION void set_one_value(int i, double val) const { data(i) = val; }
+
+ public:
+  ParallelVector(int len) : len(len), data("data", len) {}
+
+  void set_values(double val) {
+    auto loop_body = KOKKOS_CLASS_LAMBDA(int i) { set_one_value(i, val); };
+
+    Kokkos::parallel_for("loop", len, loop_body);
+    Kokkos::fence();
+  }
+
+ private:
+  int len;
+  data_t data;
+};
+
+struct Head {
+  Head(double val) : val(val) {}
+  KOKKOS_FUNCTION double get_val() { return val; };
+
+ private:
+  double val;
+};
+struct Data {
+  Data(Head& head, double val, int id = 0) : val(val), id(id), head(head) {}
+  double val;
+  int id;
+  Head& head;
+};
+
+// This can build, won't work -  ``it is generally not valid to have any pointer
+// or reference members in the functor''
+void test_cuda_functor_pass_by_ref() {
+#ifdef KOKKOS_ENABLE_CUDA
+  Head head(5.6);
+  Data data(head, 4.2);
+  Kokkos::View<double*, Kokkos::LayoutRight, Kokkos::CudaUVMSpace> view("view",
+                                                                        10);
+  auto loop_body = [=] __device__(int i) { view(i) = data.head.get_val(); };
+  Kokkos::parallel_for("loop", 10, loop_body);
+  Kokkos::fence();
+
+  for (int i = 0; i < 10; i++) {
+    std::printf("view[%2d]: %.10f\n", i, view[i]);
+  }
+#endif
+}
+
+void test_KOKKOS_ENABLE_CXX17() {
+#ifdef KOKKOS_ENABLE_CXX17
+  printf("KOKKOS_ENABLE_CXX17 is defined\n");
+#else
+  printf("KOKKOS_ENABLE_CXX17 is not defined\n");
+#endif
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
@@ -592,8 +740,14 @@ int main(int argc, char* argv[]) {
      // test_smart_pointer_behavior();
      // test_copy();
      // test_parallel_for();
-    // test_modify_view_from_const_lambda();
-    test_cuda_axpy(argc, argv);
+     // test_modify_view_from_const_lambda();
+     // test_cuda_axpy(argc, argv);
+     // subview();
+     // test_cuda_axpy_with_UVM(argc, argv);
+     // ParallelVector pv(10);
+     // pv.set_values(4.2);
+     // test_cuda_functor_pass_by_ref();
+    test_KOKKOS_ENABLE_CXX17();
   }
   Kokkos::finalize();
 }

@@ -1211,9 +1211,10 @@ template <class Basis>
 ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     : nelems(conn.get_num_elements()), num_dof(0) {
   // Count up the number of degrees of freedom
-  element_dof = new index_t[nelems * ndof_per_element];
-  element_sign = new int[nelems * ndof_per_element];
-  std::fill(element_dof, element_dof + nelems * ndof_per_element, NO_INDEX);
+  num_dof_offset = DofOffsetArray("num_dof_offset");
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
+  BLAS::fill(element_dof, NO_INDEX);
 
   // Perform a sweep of the elements
   std::vector<index_t> ids(nelems, NO_INDEX), stack(nelems);
@@ -1264,8 +1265,8 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
     for (index_t counter = nelems; counter > 0; counter--) {
       index_t elem = stack[counter - 1];
 
-      index_t* elem_dof = &element_dof[elem * ndof_per_element];
-      int* elem_sign = &element_sign[elem * ndof_per_element];
+      auto elem_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
+      auto elem_sign = Kokkos::subview(element_sign, elem, Kokkos::ALL);
 
       // The domain DOF are always owned by the element - no need to check
       // for the element that owns them
@@ -1296,15 +1297,16 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           const index_t* owner_bounds;
           index_t nf_owner = conn.get_element_bounds(owner_elem, &owner_bounds);
 
+          auto owner_elem_dof =
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
+
           for (index_t i = 0; i < nf_owner; i++) {
             if (owner_bounds[i] == bound) {
               index_t ref[ET::MAX_BOUND_VERTS], verts[ET::MAX_BOUND_VERTS];
               index_t nverts = conn.get_element_bound_verts(owner_elem, i, ref);
               conn.get_element_bound_verts(elem, index, verts);
 
-              Basis::get_entity_dof(basis, ET::Bound, i,
-                                    &element_dof[owner_elem * ndof_per_element],
-                                    dof);
+              Basis::get_entity_dof(basis, ET::Bound, i, owner_elem_dof, dof);
 
               if (nverts == 4) {
                 orient = ET::get_quad_domain_orientation(ref, verts);
@@ -1340,15 +1342,16 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           const index_t* owner_edges;
           index_t ne_owner = conn.get_element_edges(owner_elem, &owner_edges);
 
+          auto owner_elem_dof =
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
+
           for (index_t i = 0; i < ne_owner; i++) {
             if (owner_edges[i] == edge) {
               index_t ref[2], verts[2];
               conn.get_element_edge_verts(owner_elem, i, ref);
               conn.get_element_edge_verts(elem, index, verts);
 
-              Basis::get_entity_dof(basis, ET::Edge, i,
-                                    &element_dof[owner_elem * ndof_per_element],
-                                    dof);
+              Basis::get_entity_dof(basis, ET::Edge, i, owner_elem_dof, dof);
 
               if (ref[0] == verts[1] && ref[1] == verts[0]) {
                 orient = 1;
@@ -1380,11 +1383,12 @@ ElementMesh<Basis>::ElementMesh(MeshConnectivityBase& conn)
           const index_t* owner_verts;
           index_t nv_owner = conn.get_element_verts(owner_elem, &owner_verts);
 
+          auto owner_elem_dof =
+              Kokkos::subview(element_dof, owner_elem, Kokkos::ALL);
+
           for (index_t i = 0; i < nv_owner; i++) {
             if (owner_verts[i] == vert) {
-              Basis::get_entity_dof(basis, ET::Vertex, i,
-                                    &element_dof[owner_elem * ndof_per_element],
-                                    dof);
+              Basis::get_entity_dof(basis, ET::Vertex, i, owner_elem_dof, dof);
               break;
             }
           }
@@ -1421,8 +1425,9 @@ template <class InteriorBasis>
 ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
                                 ElementMesh<InteriorBasis>& mesh)
     : nelems(conn.get_num_boundary_bounds_with_label(label)) {
-  element_dof = new index_t[nelems * ndof_per_element];
-  element_sign = new int[nelems * ndof_per_element];
+  num_dof_offset = DofOffsetArray("num_dof_offset");
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
 
   // Get the number of boundary bounds
   const index_t* boundary_bounds;
@@ -1449,14 +1454,11 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
       }
 
       // Get the signs associated wtih the original mesh
-      const index_t* dof;
-      const int* signs;
-      mesh.get_element_dof(elem, &dof);
-      mesh.get_element_signs(elem, &signs);
+      auto dof = mesh.get_element_dof(elem);
 
       // Set pointers for the entity dof
-      index_t* surf_dof = &element_dof[elem_count * ndof_per_element];
-      int* surf_signs = &element_sign[elem_count * ndof_per_element];
+      auto surf_dof = Kokkos::subview(element_dof, elem_count, Kokkos::ALL);
+      auto surf_signs = Kokkos::subview(element_sign, elem_count, Kokkos::ALL);
 
       // The degree of freedom indices for each entity
       index_t entity_dof[InteriorBasis::ndof];
@@ -1549,11 +1551,12 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
  */
 template <class Basis>
 template <class HOrderBasis>
-ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
+ElementMesh<Basis>::ElementMesh(const ElementMesh<HOrderBasis>& mesh)
     : nelems(HOrderBasis::get_num_lorder_elements() * mesh.get_num_elements()),
       num_dof(mesh.get_num_dof()) {
-  element_dof = new index_t[nelems * ndof_per_element];
-  element_sign = new int[nelems * ndof_per_element];
+  num_dof_offset = DofOffsetArray("num_dof_offset");
+  element_dof = ElementDofArray("element_dof", nelems);
+  element_sign = ElementSignArray("element_sign", nelems);
 
   for (index_t i = 0; i < Basis::nbasis; i++) {
     num_dof_offset[i] = mesh.get_num_cumulative_dof(i);
@@ -1563,20 +1566,18 @@ ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
   // representation
   for (index_t j = 0; j < mesh.get_num_elements(); j++) {
     // Get the signs associated wtih the high-order mesh
-    const index_t* horder_dof;
-    const int* horder_signs;
-    mesh.get_element_dof(j, &horder_dof);
-    mesh.get_element_signs(j, &horder_signs);
+    auto horder_dof = mesh.get_element_dof(j);
+    auto horder_signs = mesh.get_element_signs(j);
 
     for (index_t i = 0; i < HOrderBasis::get_num_lorder_elements(); i++) {
       index_t elem = i + j * HOrderBasis::get_num_lorder_elements();
 
       // Index into the high-order element
-      index_t* lorder_dof = &element_dof[ndof_per_element * elem];
+      auto lorder_dof = Kokkos::subview(element_dof, elem, Kokkos::ALL);
+      auto lorder_signs = Kokkos::subview(element_sign, elem, Kokkos::ALL);
       HOrderBasis::get_lorder_dof(i, horder_dof, lorder_dof);
 
       // Signs indicating any orientation flip
-      int* lorder_signs = &element_sign[ndof_per_element * elem];
       HOrderBasis::get_lorder_signs(i, horder_signs, lorder_signs);
     }
   }
@@ -1584,16 +1585,14 @@ ElementMesh<Basis>::ElementMesh(ElementMesh<HOrderBasis>& mesh)
 
 template <class Basis>
 template <index_t basis>
-int ElementMesh<Basis>::get_global_dof_sign(index_t elem, index_t index) {
-  return element_sign[ndof_per_element * elem +
-                      Basis::template get_dof_offset<basis>() + index];
+int ElementMesh<Basis>::get_global_dof_sign(index_t elem, index_t index) const {
+  return element_sign(elem, Basis::template get_dof_offset<basis>() + index);
 }
 
 template <class Basis>
 template <index_t basis>
-index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) {
-  return element_dof[ndof_per_element * elem +
-                     Basis::template get_dof_offset<basis>() + index];
+index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) const {
+  return element_dof(elem, Basis::template get_dof_offset<basis>() + index);
 }
 
 template <class Basis>
@@ -1610,9 +1609,8 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
     index_t dof_reduced[Basis::ndof];
     index_t n = 0;
     for (index_t j1 = 0; j1 < ndof_per_elem; j1++, n++) {
-      index_t row = element_dof[i * Basis::ndof + j1] / M;
-      while (j1 + 1 < ndof_per_elem &&
-             row == (element_dof[i * Basis::ndof + j1 + 1] / M)) {
+      index_t row = element_dof(i, j1) / M;
+      while (j1 + 1 < ndof_per_elem && row == (element_dof(i, j1 + 1) / M)) {
         j1++;
       }
       dof_reduced[n] = row;
@@ -1701,8 +1699,7 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
       conn.get_bound_elements(bound, &elem, &e2);
 
       // Get the degrees of freedom for this element
-      const index_t* elem_dof;
-      mesh.get_element_dof(elem, &elem_dof);
+      auto elem_dof = mesh.get_element_dof(elem);
 
       // Array of dof that may be extracted
       index_t dof[Basis::ndof];

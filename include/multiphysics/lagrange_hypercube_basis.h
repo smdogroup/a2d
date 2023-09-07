@@ -224,10 +224,10 @@ class LagrangeH1HypercubeBasis {
    * @param orient Orientation of the entity relative to the reference
    * @param signs Array of sign values
    */
-  template <index_t offset>
+  template <index_t offset, class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int signs[]) {
+                                               ElemSign& signs) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {
@@ -324,10 +324,11 @@ class LagrangeH1HypercubeBasis {
    * @param horder_signs The signs for the high-order degrees of freedom
    * @param signs The signs relative to the high-order element
    */
-  template <index_t horder_offset, index_t lorder_offset>
+  template <index_t horder_offset, index_t lorder_offset, class HOrderSign,
+            class LOrderSign>
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                               const int horder_signs[],
-                                               int signs[]) {
+                                               const HOrderSign& horder_signs,
+                                               LOrderSign& signs) {
     for (index_t p = 0; p < indexpow<2, dim>::value * C; p++) {
       signs[lorder_offset + p] = 1;
     }
@@ -685,14 +686,18 @@ class LagrangeH1HypercubeBasis {
         T u1[u1size];
         T u1x[u1size];
         T u1y[u1size];  // not used for dim == 2
-        std::fill(u1, u1 + u1size, T(0.0));
-        std::fill(u1x, u1x + u1size, T(0.0));
-        std::fill(u1y, u1y + u1size, T(0.0));
+        for (index_t k = 0; k < u1size; k++) {
+          u1[k] = T(0.0);
+          u1x[k] = T(0.0);
+          u1y[k] = T(0.0);
+        }
 
         T u0[u0size];
         T u0x[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
-        std::fill(u0x, u0x + u0size, T(0.0));
+        for (index_t k = 0; k < u0size; k++) {
+          u0[k] = T(0.0);
+          u0x[k] = T(0.0);
+        }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;
         for (index_t q2 = 0; q2 < qouter; q2++) {
@@ -1051,10 +1056,10 @@ class LagrangeL2HypercubeBasis {
    * @param orient Orientation of the entity relative to the reference
    * @param signs Array of sign values
    */
-  template <index_t offset>
+  template <index_t offset, class ElemSign>
   KOKKOS_FUNCTION static void set_entity_signs(ET::ElementEntity entity,
                                                index_t index, index_t orient,
-                                               int signs[]) {
+                                               ElemSign& signs) {
     int sgns[ndof];
     const index_t entity_ndof = get_entity_ndof(entity, index);
     for (index_t i = 0; i < entity_ndof; i++) {
@@ -1124,10 +1129,11 @@ class LagrangeL2HypercubeBasis {
    * @param horder_signs The signs for the high-order degrees of freedom
    * @param signs The signs relative to the high-order element
    */
-  template <index_t horder_offset, index_t lorder_offset>
+  template <index_t horder_offset, index_t lorder_offset, class HOrderSign,
+            class LOrderSign>
   KOKKOS_FUNCTION static void get_lorder_signs(const index_t n,
-                                               const int horder_signs[],
-                                               int signs[]) {
+                                               const HOrderSign& horder_signs,
+                                               LOrderSign& signs) {
     for (index_t p = 0; p < C; p++) {
       signs[lorder_offset + p] = 1;
     }
@@ -1418,9 +1424,14 @@ class LagrangeL2HypercubeBasis {
         }
 
         T u0[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
+        for (index_t k = 0; k < u0size; k++) {
+          u0[k] = T(0.0);
+        }
+
         T u1[u1size];
-        std::fill(u1, u1 + u1size, T(0.0));
+        for (index_t k = 0; k < u1size; k++) {
+          u1[k] = T(0.0);
+        }
 
         const index_t qouter = dim == 2 ? 1 : q2dim;
         for (index_t q2 = 0; q2 < qouter; q2++) {

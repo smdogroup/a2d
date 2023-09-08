@@ -18,6 +18,9 @@ template <typename T>
 using PoissonIntegrand = Poisson<T, 3>;
 
 template <typename T>
+using MixedPoissonIntegrand = MixedPoisson<T, 3>;
+
+template <typename T>
 using HeatIntegrand = HeatConduction<T, 3>;
 
 bool TestIntegrands(bool component, bool write_output) {
@@ -33,9 +36,14 @@ bool TestIntegrands(bool component, bool write_output) {
   A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc> test2(integrand2);
   passed = passed && A2D::Test::Run(test2, component, write_output);
 
-  HeatIntegrand<Tc> integrand3(Tc(0.7), Tc(0.3), Tc(5.0));
-  A2D::Test::A2DIntegrandAnalysisTest<HeatIntegrand, Tc> test3(integrand3);
+  MixedPoissonIntegrand<Tc> integrand3;
+  A2D::Test::A2DIntegrandAnalysisTest<MixedPoissonIntegrand, Tc> test3(
+      integrand3);
   passed = passed && A2D::Test::Run(test3, component, write_output);
+
+  HeatIntegrand<Tc> integrand4(Tc(0.7), Tc(0.3), Tc(5.0));
+  A2D::Test::A2DIntegrandAnalysisTest<HeatIntegrand, Tc> test4(integrand4);
+  passed = passed && A2D::Test::Run(test4, component, write_output);
 
   return passed;
 }

@@ -149,6 +149,12 @@ class Poisson {
 /**
  * @brief Mixed Poisson problem discretization
  *
+ * The mixed poisson problem takes the form
+ *
+ * inf_{q} /sup_{u} Integral( 1/2 q^{T} q + u * div(q) + f * u )
+ *
+ * where u is in L2 and q is in H(div).
+ *
  * @tparam T Scalar type for the calculation
  * @tparam D Dimension of the problem
  */
@@ -178,7 +184,34 @@ class MixedPoisson {
   using SolutionMapping = InteriorMapping<T, dim>;
 
   /**
-   * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
+   * @brief Find the integral of the sadle point problem
+   *
+   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& s) const {
+    // Extract the variables from the solution
+    const Vec<T, dim>& q =
+        s.template get<0>().get_value();            // Get the value of q
+    const T& divq = s.template get<0>().get_div();  // Get the divergence of q
+    const T& u = s.template get<1>().get_value();   // Get the value of u
+
+    T dot, prod, sum, output;
+    VecDot(q, q, dot);    // dot = ||q||_{2}^{2}
+    Mult(divq, u, prod);  // prod = 0.5 * wdetJ * dot
+    Sum(0.5 * wdetJ, dot, wdetJ, prod,
+        sum);  // sum = wdetJ * (0.5 * dot + prod)
+    Sum(wdetJ, u, T(1.0), sum, output);
+
+    return output;
+  }
+
+  /**
+   * @brief Evaluate the weak form of the coefficients
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
    * @param dobj The data at the quadrature point
@@ -190,82 +223,88 @@ class MixedPoisson {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
-    // Field objects for solution functions
-    const HdivSpace<T, dim>& sigma = s.template get<0>();
-    const L2Space<T, 1, dim>& u = s.template get<1>();
+    // Extract the variables from the solution
+    Vec<T, dim> q0 = s.template get<0>().get_value();  // Get the value of q
+    T divq0 = s.template get<0>().get_div();  // Get the divergence of q
+    T u0 = s.template get<1>().get_value();   // Get the value of u
 
-    // Solution function values
-    const Vec<T, dim>& sigma_val = sigma.get_value();
-    const T& sigma_div = sigma.get_div();
-    const T& u_val = u.get_value();
+    // Set references to the coefficients
+    Vec<T, dim>& qb = coef.template get<0>().get_value();
+    T& divqb = coef.template get<0>().get_div();
+    T& ub = coef.template get<1>().get_value();
 
-    // Test function values
-    HdivSpace<T, dim>& tau = coef.template get<0>();
-    L2Space<T, 1, dim>& v = coef.template get<1>();
+    ADObj<Vec<T, dim>&> q(q0, qb);
+    ADObj<T&> u(u0, ub), divq(divq0, divqb);
 
-    // Test function values
-    Vec<T, dim>& tau_val = tau.get_value();
-    T& tau_div = tau.get_div();
-    T& v_val = v.get_value();
+    // Intermediate values
+    ADObj<T> dot, prod, sum, output;
 
-    // Set the terms from the variational statement
-    for (index_t k = 0; k < dim; k++) {
-      tau_val(k) = wdetJ * sigma_val(k);
-    }
+    auto stack = MakeStack(VecDot(q, q, dot),    // dot = ||q||_{2}^{2}
+                           Mult(divq, u, prod),  // prod = 0.5 * wdetJ * dot
+                           Sum(0.5 * wdetJ, dot, wdetJ, prod, sum),
+                           Sum(wdetJ, u, T(1.0), sum, output));
 
-    tau_div = -wdetJ * u_val;
-    v_val = wdetJ * sigma_div;
+    output.bvalue() = 1.0;
+    stack.reverse();
   }
 
   /**
-   * @brief Construct a JacVecProduct functor
-   *
-   * This functor computes a Jacobian-vector product of the
+   * @brief Evaluate the Jacobian at a quadrature point
    *
    * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param s The solution at the quadrature point
+   * @param dobj The data at the quadrature point
+   * @param geo The geometry evaluated at the current point
+   * @param s The trial solution
+   * @param jac The Jacobian output
    */
-  class JacVecProduct {
-   public:
-    KOKKOS_FUNCTION JacVecProduct(const MixedPoisson<T, D>& integrand, T wdetJ,
-                                  const DataSpace& data,
-                                  const FiniteElementGeometry& geo,
-                                  const FiniteElementSpace& s)
-        : wdetJ(wdetJ) {}
+  KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
+                                const FiniteElementGeometry& geo,
+                                const FiniteElementSpace& s,
+                                QMatType& jac) const {
+    FiniteElementSpace in, out;
 
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    FiniteElementSpace& Jp) {
-      // Field objects for solution functions
-      const HdivSpace<T, dim>& sigma = p.template get<0>();
-      const L2Space<T, 1, dim>& u = p.template get<1>();
+    // Extract the variables from the solution
+    Vec<T, dim> q0 = s.template get<0>().get_value();  // Get the value of q
+    T divq0 = s.template get<0>().get_div();  // Get the divergence of q
+    T u0 = s.template get<1>().get_value();   // Get the value of u
 
-      // Solution function values
-      const Vec<T, dim>& sigma_val = sigma.get_value();
-      const T& sigma_div = sigma.get_div();
-      const T& u_val = u.get_value();
+    // Set references to the coefficients
+    Vec<T, dim> qb;
+    T divqb, ub;
 
-      // Test function values
-      HdivSpace<T, dim>& tau = Jp.template get<0>();
-      L2Space<T, 1, dim>& v = Jp.template get<1>();
+    // Extract the variables from the solution
+    Vec<T, dim>& qp = in.template get<0>().get_value();  // Get the value of q
+    T& divqp = in.template get<0>().get_div();  // Get the divergence of q
+    T& up = in.template get<1>().get_value();   // Get the value of u
 
-      // Test function values
-      Vec<T, dim>& tau_val = tau.get_value();
-      T& tau_div = tau.get_div();
-      T& v_val = v.get_value();
+    // Extract the variables from the solution
+    Vec<T, dim>& qh = out.template get<0>().get_value();  // Get the value of q
+    T& divqh = out.template get<0>().get_div();  // Get the divergence of q
+    T& uh = out.template get<1>().get_value();   // Get the value of u
 
-      // Set the terms from the variational statement
-      for (index_t k = 0; k < dim; k++) {
-        tau_val(k) = wdetJ * sigma_val(k);
-      }
+    A2DObj<Vec<T, dim>&> q(q0, qb, qp, qh);
+    A2DObj<T&> u(u0, ub, up, uh), divq(divq0, divqb, divqp, divqh);
 
-      tau_div = -wdetJ * u_val;
-      v_val = wdetJ * sigma_div;
-    }
+    // Intermediate values
+    A2DObj<T> dot, prod, sum, output;
 
-   private:
-    T wdetJ;
-  };
+    auto stack = MakeStack(VecDot(q, q, dot),    // dot = ||q||_{2}^{2}
+                           Mult(divq, u, prod),  // prod = 0.5 * wdetJ * dot
+                           Sum(0.5 * wdetJ, dot, wdetJ, prod, sum),
+                           Sum(wdetJ, u, T(1.0), sum, output));
+
+    output.bvalue() = 1.0;
+
+    // Compute the derivatives first..
+    stack.reverse();
+
+    // Create data for extracting the Hessian-vector product
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    auto inters = MakeTieTuple<T, ADseed::h>(dot, prod, sum);
+
+    // Extract the matrix
+    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
+  }
 };
 
 }  // namespace A2D

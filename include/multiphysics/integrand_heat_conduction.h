@@ -129,7 +129,15 @@ class HeatConduction {
     stack.reverse();
   }
 
-  // Evaluate the second order derivatives of the integral
+  /**
+   * @brief Evaluate the Jacobian at a quadrature point
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param dobj The data at the quadrature point
+   * @param geo The geometry evaluated at the current point
+   * @param s The trial solution
+   * @param jac The Jacobian output
+   */
   KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
@@ -169,7 +177,8 @@ class HeatConduction {
 
     // Create data for extracting the Hessian-vector product
     constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    auto inters = MakeTieTuple<T, ADseed::h>(dot, output);
+    auto inters = MakeTieTuple<T, ADseed::h>(rho, denom, penalty, k, dot, kdot,
+                                             source, output);
 
     // Extract the matrix
     stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);

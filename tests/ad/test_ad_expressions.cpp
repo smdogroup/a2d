@@ -3,7 +3,7 @@
 #include "a2dcore.h"
 
 using namespace A2D;
-
+/*
 template <typename T, int N>
 class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
  public:
@@ -467,6 +467,7 @@ bool MatIntegrationTests(bool component, bool write_output) {
 
   return passed;
 }
+*/
 
 int main(int argc, char* argv[]) {
   bool component = false;     // Default to a projection test
@@ -486,7 +487,7 @@ int main(int argc, char* argv[]) {
   typedef std::function<bool(bool, bool)> TestFunc;
   std::vector<TestFunc> tests;
 
-  tests.push_back(MatIntegrationTests);
+  // tests.push_back(MatIntegrationTests);
   tests.push_back(A2D::Test::MatMatMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);

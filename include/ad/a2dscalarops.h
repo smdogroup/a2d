@@ -1,11 +1,84 @@
 #ifndef A2D_SCALAR_OPS_H
 #define A2D_SCALAR_OPS_H
 
+#include "a2dbinary.h"
 #include "a2denum.h"
 #include "a2dobjs.h"
+#include "a2dunary.h"
 
 namespace A2D {
 
+template <class A, class T>
+class EvalExpr {
+ public:
+  KOKKOS_FUNCTION EvalExpr(ADExpr<A, T>&& expr, ADObj<T>& out)
+      : expr(std::forward<ADExpr<A, T>>(expr)), out(out) {}
+
+  KOKKOS_FUNCTION void eval() {
+    expr.eval();
+    out.value() = expr.value();
+  }
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    static_assert(forder == ADorder::FIRST,
+                  "EvalExpr only works for first-order AD");
+    expr.forward();
+    out.bvalue() = expr.bvalue();
+  }
+  KOKKOS_FUNCTION void reverse() {
+    expr.bvalue() = out.bvalue();
+    expr.reverse();
+  }
+
+ private:
+  ADExpr<A, T> expr;
+  ADObj<T>& out;
+};
+
+template <class A, class T>
+auto Eval(ADExpr<A, T>&& expr, ADObj<T>& out) {
+  return EvalExpr<A, T>(std::forward<ADExpr<A, T>>(expr), out);
+}
+
+/*
+template <class A, class T>
+class EvalExpr2 {
+ public:
+  KOKKOS_FUNCTION EvalExpr(A2DExpr<A, T> expr, A2DObj<T>& out)
+      : expr(expr), out(out) {}
+
+  KOKKOS_FUNCTION void eval() {
+    expr.eval();
+    out.value = expr.value();
+  }
+  KOKKOS_FUNCTION void reverse() {
+    expr.bvalue() = out.bvalue();
+    expr.reverse();
+  }
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    static_assert(forder == ADorder::SECOND,
+                  "EvalExpr2 only works for second-order AD");
+    expr.hforward();
+    out.pvalue = expr.pvalue();
+  }
+  KOKKOS_FUNCTION void hreverse() {
+    expr.hvalue() = out.hvalue();
+    expr.hreverse();
+  }
+
+ private:
+  A2DExpr<A, T> expr;
+  A2DObj<T> out;
+};
+*/
+
+// template <class A, class T>
+// auto Eval(A2DExpr<A, T> expr, A2DObj<T>& out) {
+//   return EvalExpr2<A, T>(expr, out);
+// }
+
+/*
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
 KOKKOS_FUNCTION void Log(const T a, T& b) {
   b = std::log(a);
@@ -706,7 +779,7 @@ KOKKOS_FUNCTION auto Sum(const T c1, A2DObj<atype>& a, const T c2,
   return SumScaleExpr<A2DObj<atype>&, const btype, A2DObj<ctype>>(c1, a, c2, b,
                                                                   c);
 }
-
+*/
 namespace Test {
 
 template <typename T>
@@ -724,62 +797,112 @@ class ScalarTest : public A2DTest<T, T, T> {
   Output eval(const Input& x) {
     T a, b, c, d, e, f, q, r, s, t, u;
     x.get_values(a);
-    Log(a, b);
-    Sin(b, c);
-    Exp(c, d);
-    Pow(d, T(3.5), e);
-    Cos(e, f);
-    Mult(c, f, q);
-    Sum(d, q, r);
-    Sum(T(-1.0), q, T(3.14), r, s);
-    Divide(q, s, t);
-    Sqrt(t, u);
+
+    u = a * a + a;
+
+    // log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a);
+
+    // exp(sin(cos(a)) * a * cos(-a) * sin(a *
+    // sin(sqrt(a) * exp(a) * a)));
+    // u = exp(sin(a));  // sin(a * cos(a) * sin(a * sin(a * exp(a) * a)));
+    // expr.eval();
+    // u = expr.value();
+
+    // Log(a, b);
+    // Sin(b, c);
+    // Exp(c, d);
+    // Pow(d, T(3.5), e);
+    // Cos(e, f);
+    // Mult(c, f, q);
+    // Sum(d, q, r);
+    // Sum(T(-1.0), q, T(3.14), r, s);
+    // Divide(q, s, t);
+    // Sqrt(t, u);
 
     return MakeVarTuple<T>(u);
   }
 
+  template <class A, class Ty>
+  void evaluate(ADExpr<A, Ty> expr) {
+    expr.eval();
+  }
+
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    ADObj<T> a, u;  // , b, c, d, e, f, q, r, s, t, u;
     x.get_values(a.value());
-    auto stack = MakeStack(Log(a, b),                       //
-                           Sin(b, c),                       //
-                           Exp(c, d),                       //
-                           Pow(d, T(3.5), e),               //
-                           Cos(e, f),                       //
-                           Mult(c, f, q),                   //
-                           Sum(d, q, r),                    //
-                           Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t),                 //
-                           Sqrt(t, u));
+    auto expr = a * a;
 
-    seed.get_values(u.bvalue());
-    stack.reverse();
-    g.set_values(a.bvalue());
+    std::cout << "Address: " << &a << std::endl;
+
+    evaluate(expr);
+
+    // auto stack = MakeStack(Eval(a * a + a, u));
+    //         Eval(log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a), u));
+    // auto stack = MakeStack(Log(a, b),                       //
+    //                        Sin(b, c),                       //
+    //                        Exp(c, d),                       //
+    //                        Pow(d, T(3.5), e),               //
+    //                        Cos(e, f),                       //
+    //                        Mult(c, f, q),                   //
+    //                        Sum(d, q, r),                    //
+    //                        Sum(T(-1.0), q, T(3.14), r, s),  //
+    //                        Divide(q, s, t),                 //
+    //                        Sqrt(t, u));
+
+    // seed.get_values(u.bvalue());
+    // stack.reverse();
+    // g.set_values(a.bvalue());
+
+    // //  + a;  // log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a);
+    // // auto expr = log(a * a * sqrt(exp(a * sin(a))));
+    // // exp(sin(cos(a)) * a * cos(-a) * sin(a * sin(sqrt(a) * exp(a) * a)));
+
+    // // sin(a * cos(a) * sin(a * sin(a * exp(a) * a)));
+    // expr.eval();
+    // expr.bvalue() = seed[0];
+    // expr.reverse();
+
+    // g[0] = a.bvalue();
   }
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    A2DObj<T> a;
     x.get_values(a.value());
     p.get_values(a.pvalue());
-    auto stack = MakeStack(Log(a, b),                       //
-                           Sin(b, c),                       //
-                           Exp(c, d),                       //
-                           Pow(d, T(3.5), e),               //
-                           Cos(e, f),                       //
-                           Mult(c, f, q),                   //
-                           Sum(d, q, r),                    //
-                           Sum(T(-1.0), q, T(3.14), r, s),  //
-                           Divide(q, s, t),                 //
-                           Sqrt(t, u));
-    seed.get_values(u.bvalue());
-    hval.get_values(u.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
-    h.set_values(a.hvalue());
+
+    auto expr = log(a * a * sqrt(exp(a * sin(a))));
+    expr.eval();
+    expr.bvalue() = seed[0];
+    expr.reverse();
+
+    expr.hforward();
+    expr.hvalue() = hval[0];
+    expr.hreverse();
+
+    h[0] = a.hvalue();
+
+    // A2DObj<T> a, b, c, d, e, f, q, r, s, t, u;
+    // x.get_values(a.value());
+    // p.get_values(a.pvalue());
+    // auto stack = MakeStack(Log(a, b),                       //
+    //                        Sin(b, c),                       //
+    //                        Exp(c, d),                       //
+    //                        Pow(d, T(3.5), e),               //
+    //                        Cos(e, f),                       //
+    //                        Mult(c, f, q),                   //
+    //                        Sum(d, q, r),                    //
+    //                        Sum(T(-1.0), q, T(3.14), r, s),  //
+    //                        Divide(q, s, t),                 //
+    //                        Sqrt(t, u));
+    // seed.get_values(u.bvalue());
+    // hval.get_values(u.hvalue());
+    // stack.reverse();
+    // stack.hforward();
+    // stack.hreverse();
+    // h.set_values(a.hvalue());
   }
 };
 

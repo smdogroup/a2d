@@ -95,20 +95,20 @@ KOKKOS_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
   thrust::fill(first, last, value);
 }
 #else
-template <typename T>
-KOKKOS_FUNCTION T sqrt(T val) {
-  return std::sqrt(val);
-}
+// template <typename T>
+// KOKKOS_FUNCTION T sqrt(T val) {
+//   return std::sqrt(val);
+// }
 
-template <typename T>
-KOKKOS_FUNCTION T exp(T val) {
-  return std::exp(val);
-}
+// template <typename T>
+// KOKKOS_FUNCTION T exp(T val) {
+//   return std::exp(val);
+// }
 
-template <typename T>
-KOKKOS_FUNCTION T log(T val) {
-  return std::log(val);
-}
+// template <typename T>
+// KOKKOS_FUNCTION T log(T val) {
+//   return std::log(val);
+// }
 template <class ForwardIt, class T>
 void fill(ForwardIt first, ForwardIt last, const T& value) {
   std::fill(first, last, value);

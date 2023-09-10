@@ -91,7 +91,8 @@ class ScalarTest : public A2DTest<T, T, T, T> {
     T a, b, f;
     x.get_values(a, b);
 
-    f = log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a) - a / b;
+    f = log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) -
+        4.0 * a / b + 5.0;
 
     return MakeVarTuple<T>(f);
   }
@@ -102,7 +103,9 @@ class ScalarTest : public A2DTest<T, T, T, T> {
     x.get_values(a.value(), b.value());
 
     auto stack = MakeStack(Eval(
-        log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a) - a / b, f));
+        log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) -
+            4.0 * a / b + 5.0,
+        f));
 
     seed.get_values(f.bvalue());
     stack.reverse();
@@ -117,7 +120,9 @@ class ScalarTest : public A2DTest<T, T, T, T> {
     p.get_values(a.pvalue(), b.pvalue());
 
     auto stack = MakeStack(Eval(
-        log(a * a * sqrt(exp(a * sin(a) + a)) + a * a * a * a) - a / b, f));
+        log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) -
+            4.0 * a / b + 5.0,
+        f));
 
     seed.get_values(f.bvalue());
     hval.get_values(f.hvalue());

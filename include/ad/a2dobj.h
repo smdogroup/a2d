@@ -15,7 +15,7 @@ struct remove_const_and_refs
     : std::remove_const<typename std::remove_reference<T>::type> {};
 
 /*
-  Check if a type is numeric or not
+  Check if a type is numeric or not - this includes complex numbers
 */
 template <class T>
 struct __is_numeric_type : std::is_floating_point<T> {};
@@ -26,6 +26,15 @@ struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
 template <class T>
 struct is_numeric_type
     : __is_numeric_type<typename remove_const_and_refs<T>::type> {};
+
+/*
+  Check if the type is a scalar - an arithmetic or complex type
+*/
+template <class T>
+struct is_scalar_type {
+  static const bool value =
+      is_numeric_type<T>::value || std::is_arithmetic<T>::value;
+};
 
 /*
   Get the numeric type of the object

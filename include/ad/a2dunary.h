@@ -60,6 +60,67 @@ A2D_1ST_UNARY_BASIC(UnaryPos, operator+, a.value(), T(1.0))
 A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
 
 /*
+  Definitions for second-derivative implementations with zero second derivative
+
+  OBJNAME: Expression template name
+  OPERNAME: Name of the operator
+  FUNCBODY: Body of the function evaluation
+  DERIVBODY: Body of the derivative evaluation
+*/
+#define A2D_2ND_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)            \
+                                                                               \
+  template <class A, class T, bool CA>                                         \
+  class OBJNAME : public A2DExpr<OBJNAME<A, T, CA>, T> {                       \
+   public:                                                                     \
+    using expr_t = typename std::conditional<CA, const A2DExpr<A, T>,          \
+                                             A2DExpr<A, T>>::type;             \
+    using A_t = typename std::conditional<CA, A, A&>::type;                    \
+    KOKKOS_FUNCTION OBJNAME(expr_t& a0)                                        \
+        : a(a0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0), tmp(0.0) {} \
+    KOKKOS_FUNCTION void eval() {                                              \
+      a.eval();                                                                \
+      val = (FUNCBODY);                                                        \
+    }                                                                          \
+    KOKKOS_FUNCTION void reverse() {                                           \
+      a.bvalue() += (DERIVBODY)*bval;                                          \
+      a.reverse();                                                             \
+    }                                                                          \
+    KOKKOS_FUNCTION void hforward() {                                          \
+      a.hforward();                                                            \
+      pval = (DERIVBODY)*a.pvalue();                                           \
+    }                                                                          \
+    KOKKOS_FUNCTION void hreverse() {                                          \
+      a.hvalue() += (DERIVBODY)*hval;                                          \
+      a.hreverse();                                                            \
+    }                                                                          \
+    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
+    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                            \
+    KOKKOS_FUNCTION T& value() { return val; }                                 \
+    KOKKOS_FUNCTION const T& value() const { return val; }                     \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
+    KOKKOS_FUNCTION T& pvalue() { return pval; }                               \
+    KOKKOS_FUNCTION const T& pvalue() const { return pval; }                   \
+    KOKKOS_FUNCTION T& hvalue() { return hval; }                               \
+    KOKKOS_FUNCTION const T& hvalue() const { return hval; }                   \
+                                                                               \
+   private:                                                                    \
+    A_t a;                                                                     \
+    T val, bval, pval, hval, tmp;                                              \
+  };                                                                           \
+  template <class A, class T>                                                  \
+  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, T>& a) {                      \
+    return OBJNAME<A, T, true>(a);                                             \
+  }                                                                            \
+  template <class A, class T>                                                  \
+  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, T>& a) {                            \
+    return OBJNAME<A, T, false>(a);                                            \
+  }
+
+A2D_2ND_UNARY_BASIC(UnaryPos2, operator+, a.value(), T(1.0))
+A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
+
+/*
   Definitions for forward and reverse-mode first-order AD with temporary
 
   OBJNAME: Expression template name

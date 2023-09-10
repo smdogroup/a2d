@@ -3,7 +3,7 @@
 #include "a2dcore.h"
 
 using namespace A2D;
-/*
+
 template <typename T, int N>
 class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
  public:
@@ -91,6 +91,7 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 };
 
+/*
 template <typename T>
 class MooneyRivlin
     : public A2D::Test::A2DTest<T, T, Mat<T, 3, 3>, Mat<T, 3, 3>> {
@@ -117,8 +118,9 @@ class MooneyRivlin
     // The intermediary values
     Mat<T, N, N> Jinv, Ux, F;
     SymMat<T, N> B;
-    T detF, trB, trB2, I2, I1bar, I2bar;
-    T t0, inv, t1;
+    T detF, trB, trB2;
+    T inv, I1, I2;
+    T I1bar, I2bar;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -128,20 +130,18 @@ class MooneyRivlin
 
     const T C1(0.1), C2(0.23);
 
-    MatInv(J, Jinv);                     // Jinv = J^{-1}
-    MatMatMult(Uxi, Jinv, Ux);           // Ux = Uxi * Jinv
-    MatSum(Id, Ux, F);                   // F = I + Ux
-    MatDet(F, detF);                     // detF = det(F)
-    SymMatRK(F, B);                      // B = F * F^{T}
-    MatTrace(B, trB);                    // trB = tr(B)
-    SymMatMultTrace(B, B, trB2);         // trB2 = tr(B * B)
-    Mult(trB, trB, t0);                  // t0 = trB * trB
-    Sum(T(0.5), t0, T(-0.5), trB2, I2);  // I2 = 0.5 * (trB * trB - tr(B * B))
-    Pow(detF, T(-2.0 / 3.0), inv);       // inv = (detF)^{-2/3}
-    Mult(inv, trB, I1bar);               // I1bar = inv * tr(B)
-    Mult(inv, I2, t1);                   // t1 = inv * I2
-    Mult(inv, t1, I2bar);                // I2bar = inv * t1 = inv * inv * I2
-    Sum(C1, I1bar, C2, I2bar, W);        // W = C1 * I1bar + C2 * I2bar
+    MatInv(J, Jinv);                // Jinv = J^{-1}
+    MatMatMult(Uxi, Jinv, Ux);      // Ux = Uxi * Jinv
+    MatSum(Id, Ux, F);              // F = I + Ux
+    MatDet(F, detF);                // detF = det(F)
+    SymMatRK(F, B);                 // B = F * F^{T}
+    MatTrace(B, trB);               // trB = tr(B)
+    SymMatMultTrace(B, B, trB2);    // trB2 = tr(B * B)
+    inv = pow(detF, -2.0 / 3.0);    // inv = detF^{-2/3}
+    I1 = 0.5 * (trB * trB - trB2);  // I2 = 0.5 * (trB * trB - tr(B * B))
+    I1bar = inv * trB;              // I1bar = inv * I1 = inv * tr(B)
+    I2bar = inv * inv * I2;         // I2bar = inv^2 * I2
+    W = C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0);
 
     return MakeVarTuple<T>(W);
   }
@@ -240,6 +240,7 @@ class MooneyRivlin
     h.set_values(Uxi.hvalue(), J.hvalue());
   }
 };
+*/
 
 template <typename T, int N>
 class DefGradTest
@@ -459,15 +460,14 @@ bool MatIntegrationTests(bool component, bool write_output) {
   DefGradTest<std::complex<double>, 3> test2;
   passed = passed && A2D::Test::Run(test2, component, write_output);
 
-  MooneyRivlin<std::complex<double>> test3;
-  passed = passed && A2D::Test::Run(test3, component, write_output);
+  // MooneyRivlin<std::complex<double>> test3;
+  // passed = passed && A2D::Test::Run(test3, component, write_output);
 
   HExtractTest<std::complex<double>, 3> test4;
   passed = passed && A2D::Test::Run(test4, component, write_output);
 
   return passed;
 }
-*/
 
 int main(int argc, char* argv[]) {
   bool component = false;     // Default to a projection test

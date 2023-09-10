@@ -91,7 +91,6 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 };
 
-/*
 template <typename T>
 class MooneyRivlin
     : public A2D::Test::A2DTest<T, T, Mat<T, 3, 3>, Mat<T, 3, 3>> {
@@ -119,7 +118,7 @@ class MooneyRivlin
     Mat<T, N, N> Jinv, Ux, F;
     SymMat<T, N> B;
     T detF, trB, trB2;
-    T inv, I1, I2;
+    T inv, I2;
     T I1bar, I2bar;
 
     // Set the entries of the identity matrix
@@ -138,7 +137,7 @@ class MooneyRivlin
     MatTrace(B, trB);               // trB = tr(B)
     SymMatMultTrace(B, B, trB2);    // trB2 = tr(B * B)
     inv = pow(detF, -2.0 / 3.0);    // inv = detF^{-2/3}
-    I1 = 0.5 * (trB * trB - trB2);  // I2 = 0.5 * (trB * trB - tr(B * B))
+    I2 = 0.5 * (trB * trB - trB2);  // I2 = 0.5 * (trB * trB - tr(B * B))
     I1bar = inv * trB;              // I1bar = inv * I1 = inv * tr(B)
     I2bar = inv * inv * I2;         // I2bar = inv^2 * I2
     W = C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0);
@@ -154,8 +153,9 @@ class MooneyRivlin
     // Intermediate values
     ADObj<Mat<T, N, N>> Jinv, Ux, F;
     ADObj<SymMat<T, N>> B;
-    ADObj<T> detF, trB, trB2, I2, I1bar, I2bar;
-    ADObj<T> t0, inv, t1;
+    ADObj<T> detF, trB, trB2;
+    ADObj<T> inv, I2;
+    ADObj<T> I1bar, I2bar;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -168,22 +168,19 @@ class MooneyRivlin
     x.get_values(Uxi.value(), J.value());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),              // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux),    // Ux = Uxi * Jinv
-                  MatSum(Id, Ux, F),            // F = I + Ux
-                  MatDet(F, detF),              // detF = det(F)
-                  SymMatRK(F, B),               // B = F * F^{T}
-                  MatTrace(B, trB),             // trB = tr(B)
-                  SymMatMultTrace(B, B, trB2),  // trB2 = tr(B * B)
-                  Mult(trB, trB, t0),           // t0 = trB * trB
-                  Sum(T(0.5), t0, T(-0.5), trB2,
-                      I2),  // I2 = 0.5 * (trB * trB - tr(B * B))
-                  Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
-                  Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
-                  Mult(inv, I2, t1),              // t1 = inv * I2
-                  Mult(inv, t1, I2bar),  // I2bar = inv * t1 = inv * inv * I2
-                  Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
-        );
+        MakeStack(MatInv(J, Jinv),                   // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),         // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),                 // F = I + Ux
+                  MatDet(F, detF),                   // detF = det(F)
+                  SymMatRK(F, B),                    // B = F * F^{T}
+                  MatTrace(B, trB),                  // trB = tr(B)
+                  SymMatMultTrace(B, B, trB2),       // trB2 = tr(B * B)
+                  Eval(pow(detF, -2.0 / 3.0), inv),  // inv = detF^{-2/3}
+                  Eval(0.5 * (trB * trB - trB2),
+                       I2),                // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Eval(inv * trB, I1bar),  // I1bar = inv * I1 = inv * tr(B)
+                  Eval(inv * inv * I2, I2bar),  // I2bar = inv^2 * I2
+                  Eval(C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0), W));
 
     seed.get_values(W.bvalue());
     stack.reverse();
@@ -200,8 +197,9 @@ class MooneyRivlin
     // Intermediate values
     A2DObj<Mat<T, N, N>> Jinv, Ux, F;
     A2DObj<SymMat<T, N>> B;
-    A2DObj<T> detF, trB, trB2, I2, I1bar, I2bar;
-    A2DObj<T> t0, inv, t1;
+    A2DObj<T> detF, trB, trB2;
+    A2DObj<T> inv, I2;
+    A2DObj<T> I1bar, I2bar;
 
     // Set the entries of the identity matrix
     Mat<T, N, N> Id;
@@ -215,22 +213,19 @@ class MooneyRivlin
     p.get_values(Uxi.pvalue(), J.pvalue());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),              // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux),    // Ux = Uxi * Jinv
-                  MatSum(Id, Ux, F),            // F = I + Ux
-                  MatDet(F, detF),              // detF = det(F)
-                  SymMatRK(F, B),               // B = F * F^{T}
-                  MatTrace(B, trB),             // trB = tr(B)
-                  SymMatMultTrace(B, B, trB2),  // trB2 = tr(B * B)
-                  Mult(trB, trB, t0),           // t0 = trB * trB
-                  Sum(T(0.5), t0, T(-0.5), trB2,
-                      I2),  // I2 = 0.5 * (trB * trB - tr(B * B))
-                  Pow(detF, T(-2.0 / 3.0), inv),  // inv = (detF)^{-2/3}
-                  Mult(inv, trB, I1bar),          // I1bar = inv * tr(B)
-                  Mult(inv, I2, t1),              // t1 = inv * I2
-                  Mult(inv, t1, I2bar),  // I2bar = inv * t1 = inv * inv * I2
-                  Sum(C1, I1bar, C2, I2bar, W)  // W = C1 * I1bar + C2 * I2bar
-        );
+        MakeStack(MatInv(J, Jinv),                   // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),         // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),                 // F = I + Ux
+                  MatDet(F, detF),                   // detF = det(F)
+                  SymMatRK(F, B),                    // B = F * F^{T}
+                  MatTrace(B, trB),                  // trB = tr(B)
+                  SymMatMultTrace(B, B, trB2),       // trB2 = tr(B * B)
+                  Eval(pow(detF, -2.0 / 3.0), inv),  // inv = detF^{-2/3}
+                  Eval(0.5 * (trB * trB - trB2),
+                       I2),                // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Eval(inv * trB, I1bar),  // I1bar = inv * I1 = inv * tr(B)
+                  Eval(inv * inv * I2, I2bar),  // I2bar = inv^2 * I2
+                  Eval(C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0), W));
 
     seed.get_values(W.bvalue());
     hval.get_values(W.hvalue());
@@ -240,7 +235,6 @@ class MooneyRivlin
     h.set_values(Uxi.hvalue(), J.hvalue());
   }
 };
-*/
 
 template <typename T, int N>
 class DefGradTest
@@ -276,8 +270,9 @@ class DefGradTest
     MatMatMult(Uxi, Jinv, Ux);                 // Ux = Uxi * Jinv
     MatSum(Ux, Id, F);                         // F = I + Ux
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);  // E = 0.5 * F^{T} * F
-    SymIsotropic(T(0.35), T(0.51), E, S);  // S = 2 * mu * E + lam * tr(E) * I
-    SymMatMultTrace(E, S, output);         // output = tr(E * S)
+    SymIsotropic(T(0.35), T(0.51), E,
+                 S);                // S = 2 * mu * E + lam * tr(E) * I
+    SymMatMultTrace(E, S, output);  // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }
@@ -460,8 +455,8 @@ bool MatIntegrationTests(bool component, bool write_output) {
   DefGradTest<std::complex<double>, 3> test2;
   passed = passed && A2D::Test::Run(test2, component, write_output);
 
-  // MooneyRivlin<std::complex<double>> test3;
-  // passed = passed && A2D::Test::Run(test3, component, write_output);
+  MooneyRivlin<std::complex<double>> test3;
+  passed = passed && A2D::Test::Run(test3, component, write_output);
 
   HExtractTest<std::complex<double>, 3> test4;
   passed = passed && A2D::Test::Run(test4, component, write_output);
@@ -487,7 +482,7 @@ int main(int argc, char* argv[]) {
   typedef std::function<bool(bool, bool)> TestFunc;
   std::vector<TestFunc> tests;
 
-  // tests.push_back(MatIntegrationTests);
+  tests.push_back(MatIntegrationTests);
   tests.push_back(A2D::Test::MatMatMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);

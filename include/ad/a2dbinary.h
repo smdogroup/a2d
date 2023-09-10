@@ -367,6 +367,11 @@ A2D_1ST_BINARY_LEFT_BASIC(LAddExpr, operator+, a.value() + b, a.bvalue(), bval)
 A2D_1ST_BINARY_LEFT_BASIC(LSubExpr, operator-, a.value() - b, a.bvalue(), bval)
 A2D_1ST_BINARY_LEFT_BASIC(LMultExpr, operator*, a.value() * b, a.bvalue() * b,
                           b* bval)
+A2D_1ST_BINARY_LEFT_BASIC(LDivide, operator/, a.value() / b, a.bvalue() / b,
+                          bval / b)
+A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
+                          a.bvalue() * b * std::pow(a.value(), b - 1.0),
+                          b* std::pow(a.value(), b - 1.0) * bval)
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD
@@ -440,6 +445,14 @@ A2D_2ND_BINARY_LEFT_BASIC(LSubExpr2, operator-, a.value() - b, bval, a.pvalue(),
                           hval)
 A2D_2ND_BINARY_LEFT_BASIC(LMultExpr2, operator*, a.value() * b, b* bval,
                           b* a.pvalue(), b* hval)
+A2D_2ND_BINARY_LEFT_BASIC(LDivide2, operator/, a.value() / b, bval / b,
+                          a.pvalue() / b, hval / b)
+A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
+                          bval* b* std::pow(a.value(), b - 1.0),
+                          a.pvalue() * b * std::pow(a.value(), b - 1.0),
+                          hval* b* std::pow(a.value(), b - 1.0) +
+                              bval * a.pvalue() * b * (b - 1.0) *
+                                  std::pow(a.value(), b - 2.0));
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD
@@ -499,6 +512,8 @@ A2D_2ND_BINARY_LEFT_BASIC(LMultExpr2, operator*, a.value() * b, b* bval,
 A2D_1ST_BINARY_RIGHT_BASIC(RAddExpr, operator+, a + b.value(), b.bvalue(), bval)
 A2D_1ST_BINARY_RIGHT_BASIC(RSubExpr, operator-, a - b.value(), -b.bvalue(),
                            -bval)
+A2D_1ST_BINARY_RIGHT_BASIC(RDivide, operator/, a / b.value(),
+                           -val* b.bvalue() / b.value(), -bval* val / b.value())
 A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
                            a* bval)
 
@@ -573,6 +588,11 @@ A2D_2ND_BINARY_RIGHT_BASIC(RSubExpr2, operator-, a - b.value(), -bval,
                            -b.pvalue(), -hval)
 A2D_2ND_BINARY_RIGHT_BASIC(RMultExpr2, operator*, a* b.value(), a* bval,
                            a* b.pvalue(), a* hval)
+A2D_2ND_BINARY_RIGHT_BASIC(RDivide2, operator/, a / b.value(),
+                           -bval* val / b.value(), -val* b.pvalue() / b.value(),
+                           -hval* val / b.value() +
+                               2.0 * val / (b.value() * b.value()) * bval *
+                                   b.pvalue())
 
 }  // namespace A2D
 

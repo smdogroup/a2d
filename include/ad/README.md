@@ -222,9 +222,9 @@ First and second-order derivatives of scalar operations are included by using th
 Eval(expression, beta);
 ```
 
-Compute $beta = f(alpha_1, alpha_2, \ldots, \alpha_{m})$
+Compute $\beta = f(\alpha_1, \alpha_2, \ldots, \alpha_{m})$
 
-For instance, if we want to include the derivative contributions from the expression $f = x_{1} + \ln(x_{2}) + x_{3}^{7}, we would add the following object to the operation stack:
+For instance, if we want to include the derivative contributions from the expression $f = x_{1} + \ln(x_{2}) + x_{3}^{7}$, we would add the following object to the operation stack:
 
 ```c++
 Eval(x1 + log(x2) - pow(x3, 7), f)

@@ -212,74 +212,22 @@ $\alpha$ is a passive numeric constant.
 
 ## Scalar operations
 
-### Log
+Scalar operations are implemented using an expression template approach. The expressions must be added to the operations stack so that their contributions can be included in a derivative computation.
 
-Given $\alpha$ compute $\beta = \ln(\alpha)$
+### Eval
+
+First and second-order derivatives of scalar operations are included by using the evaluation operation.
 
 ```c++
-Log(alpha, beta);
+Eval(expression, beta);
 ```
 
-## Exp
+Compute $beta = f(alpha_1, alpha_2, \ldots, \alpha_{m})$
 
-Given $\alpha$ compute $\beta = e^{\alpha}$
-
-```c++
-Exp(alpha, beta);
-```
-
-## Sin
-
-Given $\alpha$ compute $\beta = \sin(\alpha)$
+For instance, if we want to include the derivative contributions from the expression $f = x_{1} + \ln(x_{2}) + x_{3}^{7}, we would add the following object to the operation stack:
 
 ```c++
-Sin(alpha, beta);
-```
-
-## Cos
-
-Given $\alpha$ compute $\beta = \cos(\alpha)$
-
-```c++
-Cos(alpha, beta);
-```
-
-## Pow
-
-Given $\alpha$ compute $\beta = \alpha^{p}$
-
-```c++
-Pow(alpha, p, beta);
-```
-
-## Mult
-
-Given $\alpha$ and $\beta$ compute $\gamma = \alpha \beta$
-
-```c++
-Mult(alpha, beta, gamma);
-```
-
-## Divide
-
-Given $\alpha$ and $\beta$ compute $\gamma = \alpha / \beta$
-
-```c++
-Divide(alpha, beta, gamma);
-```
-
-## Sum
-
-Given $\alpha$ and $\beta$ compute $\gamma = \alpha + \beta$
-
-```c++
-Sum(alpha, beta, gamma);
-```
-
-Given passive constants $c_1$ and $c_2$, compute  $\gamma = c_1 \alpha + c_2 \beta$
-
-```c++
-Sum(c1, alpha, c2, beta, gamma);
+Eval(x1 + log(x2) - pow(x3, 7), f)
 ```
 
 ## Example use of A2D routines

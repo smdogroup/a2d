@@ -15,7 +15,7 @@ struct remove_const_and_refs
     : std::remove_const<typename std::remove_reference<T>::type> {};
 
 /*
-  Check if a type is numeric or not
+  Check if a type is numeric or not - this includes complex numbers
 */
 template <class T>
 struct __is_numeric_type : std::is_floating_point<T> {};
@@ -26,6 +26,15 @@ struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
 template <class T>
 struct is_numeric_type
     : __is_numeric_type<typename remove_const_and_refs<T>::type> {};
+
+/*
+  Check if the type is a scalar - an arithmetic or complex type
+*/
+template <class T>
+struct is_scalar_type {
+  static const bool value =
+      is_numeric_type<T>::value || std::is_arithmetic<T>::value;
+};
 
 /*
   Get the numeric type of the object
@@ -79,59 +88,141 @@ struct get_a2d_object_type
     : __get_a2d_object_type<typename std::remove_reference<T>::type> {};
 
 /*
+  Expression template for first derivatives
+*/
+template <class A, typename T>
+class ADExpr {
+ public:
+  A& self() { return static_cast<A&>(*this); }
+  const A& self() const { return static_cast<const A&>(*this); }
+
+  // Evaluation and derivatives
+  KOKKOS_FUNCTION void eval() { self().eval(); }
+  KOKKOS_FUNCTION void forward() { self().forward(); }
+  KOKKOS_FUNCTION void reverse() { self().reverse(); }
+
+  // Access the values and derivatives
+  KOKKOS_FUNCTION T& value() { return self().value(); }
+  KOKKOS_FUNCTION const T& value() const { return self().value(); }
+  KOKKOS_FUNCTION T& bvalue() { return self().bvalue(); }
+  KOKKOS_FUNCTION const T& bvalue() const { return self().bvalue(); }
+};
+
+/*
   The base first-order AD class
 */
-template <class ObjType>
-class ADObj {
+template <class T>
+class ADObj : public ADExpr<ADObj<T>, T> {
  public:
-  typedef typename get_object_numeric_type<ObjType>::type type;
-  static constexpr ADObjType obj_type = get_a2d_object_type<ObjType>::value;
+  typedef typename get_object_numeric_type<T>::type type;
+  static constexpr ADObjType obj_type = get_a2d_object_type<T>::value;
 
   KOKKOS_FUNCTION ADObj() {}
-  KOKKOS_FUNCTION ADObj(const ObjType& A) : A(A) {}
-  KOKKOS_FUNCTION ADObj(const ObjType& A, const ObjType& Ab) : A(A), Ab(Ab) {}
-  KOKKOS_FUNCTION ObjType& value() { return A; }
-  KOKKOS_FUNCTION const ObjType& value() const { return A; }
-  KOKKOS_FUNCTION ObjType& bvalue() { return Ab; }
-  KOKKOS_FUNCTION const ObjType& bvalue() const { return Ab; }
+  KOKKOS_FUNCTION ADObj(const T& A) : A(A) {}
+  KOKKOS_FUNCTION ADObj(const T& A, const T& Ab) : A(A), Ab(Ab) {}
+
+  // Evaluation and derivatives
+  KOKKOS_FUNCTION void eval() {}
+  KOKKOS_FUNCTION void forward() {}
+  KOKKOS_FUNCTION void reverse() {}
+  KOKKOS_FUNCTION void bzero() {
+    if constexpr (obj_type == ADObjType::SCALAR) {
+      Ab = T(0.0);
+    } else {
+      Ab.zero();
+    }
+  }
+
+  // Extract the data from the underlying objects
+  KOKKOS_FUNCTION T& value() { return A; }
+  KOKKOS_FUNCTION const T& value() const { return A; }
+  KOKKOS_FUNCTION T& bvalue() { return Ab; }
+  KOKKOS_FUNCTION const T& bvalue() const { return Ab; }
 
  private:
-  ObjType A;   // Object
-  ObjType Ab;  // Reverse mode derivative value
+  T A;   // Object
+  T Ab;  // Reverse mode derivative value
+};
+
+/*
+  Expression template for second derivatives
+*/
+template <class A, typename T>
+class A2DExpr {
+ public:
+  A& self() { return static_cast<A&>(*this); }
+  const A& self() const { return static_cast<const A&>(*this); }
+
+  // Evaluation and derivatives
+  KOKKOS_FUNCTION void eval() { self().eval(); }
+  KOKKOS_FUNCTION void reverse() { self().reverse(); }
+  KOKKOS_FUNCTION void hforward() { self().hforward(); }
+  KOKKOS_FUNCTION void hreverse() { self().hreverse(); }
+  KOKKOS_FUNCTION void bzero() { self().bzero(); }
+  KOKKOS_FUNCTION void hzero() { self().hzero(); }
+
+  // Access the values and derivatives
+  KOKKOS_FUNCTION T& value() { return self().value(); }
+  KOKKOS_FUNCTION const T& value() const { return self().value(); }
+  KOKKOS_FUNCTION T& bvalue() { return self().bvalue(); }
+  KOKKOS_FUNCTION const T& bvalue() const { return self().bvalue(); }
+  KOKKOS_FUNCTION T& pvalue() { return self().pvalue(); }
+  KOKKOS_FUNCTION const T& pvalue() const { return self().pvalue(); }
+  KOKKOS_FUNCTION T& hvalue() { return self().hvalue(); }
+  KOKKOS_FUNCTION const T& hvalue() const { return self().hvalue(); }
 };
 
 /*
   The base second-order AD class
 */
-template <class ObjType>
-class A2DObj {
+template <class T>
+class A2DObj : public A2DExpr<A2DObj<T>, T> {
  public:
-  typedef typename get_object_numeric_type<ObjType>::type type;
-  static constexpr ADObjType obj_type = get_a2d_object_type<ObjType>::value;
+  typedef typename get_object_numeric_type<T>::type type;
+  static constexpr ADObjType obj_type = get_a2d_object_type<T>::value;
 
   KOKKOS_FUNCTION A2DObj() {}
-  KOKKOS_FUNCTION A2DObj(const ObjType& A) : A(A) {}
-  KOKKOS_FUNCTION A2DObj(const ObjType& A, const ObjType& Ab) : A(A), Ab(Ab) {}
-  KOKKOS_FUNCTION A2DObj(const ObjType& A, const ObjType& Ab, const ObjType& Ap)
+  KOKKOS_FUNCTION A2DObj(const T& A) : A(A) {}
+  KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab) : A(A), Ab(Ab) {}
+  KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap)
       : A(A), Ab(Ab), Ap(Ap) {}
-  KOKKOS_FUNCTION A2DObj(const ObjType& A, const ObjType& Ab, const ObjType& Ap,
-                         const ObjType& Ah)
+  KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap, const T& Ah)
       : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
 
-  KOKKOS_FUNCTION ObjType& value() { return A; }
-  KOKKOS_FUNCTION const ObjType& value() const { return A; }
-  KOKKOS_FUNCTION ObjType& bvalue() { return Ab; }
-  KOKKOS_FUNCTION const ObjType& bvalue() const { return Ab; }
-  KOKKOS_FUNCTION ObjType& pvalue() { return Ap; }
-  KOKKOS_FUNCTION const ObjType& pvalue() const { return Ap; }
-  KOKKOS_FUNCTION ObjType& hvalue() { return Ah; }
-  KOKKOS_FUNCTION const ObjType& hvalue() const { return Ah; }
+  // Evaluation and derivatives
+  KOKKOS_FUNCTION void eval() {}
+  KOKKOS_FUNCTION void reverse() {}
+  KOKKOS_FUNCTION void hforward() {}
+  KOKKOS_FUNCTION void hreverse() {}
+
+  KOKKOS_FUNCTION void bzero() {
+    if constexpr (obj_type == ADObjType::SCALAR) {
+      Ab = T(0.0);
+    } else {
+      Ab.zero();
+    }
+  }
+  KOKKOS_FUNCTION void hzero() {
+    if constexpr (obj_type == ADObjType::SCALAR) {
+      Ah = T(0.0);
+    } else {
+      Ah.zero();
+    }
+  }
+  KOKKOS_FUNCTION T& value() { return A; }
+  KOKKOS_FUNCTION const T& value() const { return A; }
+  KOKKOS_FUNCTION T& bvalue() { return Ab; }
+  KOKKOS_FUNCTION const T& bvalue() const { return Ab; }
+  KOKKOS_FUNCTION T& pvalue() { return Ap; }
+  KOKKOS_FUNCTION const T& pvalue() const { return Ap; }
+  KOKKOS_FUNCTION T& hvalue() { return Ah; }
+  KOKKOS_FUNCTION const T& hvalue() const { return Ah; }
 
  private:
-  ObjType A;   // Object
-  ObjType Ab;  // Reverse mode derivative value
-  ObjType Ap;  // Projected second derivative value
-  ObjType Ah;  // Reverse mode second derivative
+  T A;   // Object
+  T Ab;  // Reverse mode derivative value
+  T Ap;  // Projected second derivative value
+  T Ah;  // Reverse mode second derivative
 };
 
 /*
@@ -155,6 +246,13 @@ struct __remove_a2dobj<A2DObj<T>> {
 template <class T>
 struct remove_a2dobj
     : __remove_a2dobj<typename remove_const_and_refs<T>::type> {};
+
+template <class Ta, class Tb>
+struct is_same_type {
+  const static bool value =
+      std::is_same<typename remove_const_and_refs<Ta>::type,
+                   typename remove_const_and_refs<Tb>::type>::value;
+};
 
 /*
   Get whether the type is passive or not...

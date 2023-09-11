@@ -380,7 +380,7 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
                                                                         \
    private:                                                             \
     A_t a;                                                              \
-    const B& b;                                                         \
+    const B b;                                                          \
     T val, bval;                                                        \
   };                                                                    \
   template <class A, class Ta, class B,                                 \
@@ -457,7 +457,7 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
                                                                            \
    private:                                                                \
     A_t a;                                                                 \
-    const B& b;                                                            \
+    const B b;                                                             \
     T val, bval, pval, hval;                                               \
   };                                                                       \
   template <class A, class Ta, class B,                                    \
@@ -529,7 +529,7 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
     KOKKOS_FUNCTION const T& bvalue() const { return bval; }             \
                                                                          \
    private:                                                              \
-    const A& a;                                                          \
+    const A a;                                                           \
     B_t b;                                                               \
     T val, bval;                                                         \
   };                                                                     \
@@ -603,7 +603,7 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
     KOKKOS_FUNCTION const T& hvalue() const { return hval; }               \
                                                                            \
    private:                                                                \
-    const A& a;                                                            \
+    const A a;                                                             \
     B_t b;                                                                 \
     T val, bval, pval, hval;                                               \
   };                                                                       \

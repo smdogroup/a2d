@@ -270,9 +270,8 @@ class DefGradTest
     MatMatMult(Uxi, Jinv, Ux);                 // Ux = Uxi * Jinv
     MatSum(Ux, Id, F);                         // F = I + Ux
     SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);  // E = 0.5 * F^{T} * F
-    SymIsotropic(T(0.35), T(0.51), E,
-                 S);                // S = 2 * mu * E + lam * tr(E) * I
-    SymMatMultTrace(E, S, output);  // output = tr(E * S)
+    SymIsotropic(T(0.35), T(0.51), E, S);  // S = 2 * mu * E + lam * tr(E) * I
+    SymMatMultTrace(E, S, output);         // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }

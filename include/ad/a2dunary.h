@@ -16,11 +16,11 @@ namespace A2D {
 */
 #define A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)            \
                                                                                \
-  template <class A, class T, bool CA>                                         \
-  class OBJNAME : public ADExpr<OBJNAME<A, T, CA>, T> {                        \
+  template <class A, class Ta, class T, bool CA>                               \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {                    \
    public:                                                                     \
-    using expr_t =                                                             \
-        typename std::conditional<CA, const ADExpr<A, T>, ADExpr<A, T>>::type; \
+    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,          \
+                                             ADExpr<A, Ta>>::type;             \
     using A_t = typename std::conditional<CA, A, A&>::type;                    \
     KOKKOS_FUNCTION OBJNAME(expr_t& a0) : a(a0.self()), val(0.0), bval(0.0) {} \
     KOKKOS_FUNCTION void eval() {                                              \
@@ -45,13 +45,15 @@ namespace A2D {
     A_t a;                                                                     \
     T val, bval;                                                               \
   };                                                                           \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, T>& a) {                       \
-    return OBJNAME<A, T, true>(a);                                             \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {                      \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, T>& a) {                             \
-    return OBJNAME<A, T, false>(a);                                            \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                            \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, false>(a);                                        \
   }
 
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
@@ -69,11 +71,11 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
 */
 #define A2D_2ND_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)            \
                                                                                \
-  template <class A, class T, bool CA>                                         \
-  class OBJNAME : public A2DExpr<OBJNAME<A, T, CA>, T> {                       \
+  template <class A, class Ta, class T, bool CA>                               \
+  class OBJNAME : public A2DExpr<OBJNAME<A, Ta, T, CA>, T> {                   \
    public:                                                                     \
-    using expr_t = typename std::conditional<CA, const A2DExpr<A, T>,          \
-                                             A2DExpr<A, T>>::type;             \
+    using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
+                                             A2DExpr<A, Ta>>::type;            \
     using A_t = typename std::conditional<CA, A, A&>::type;                    \
     KOKKOS_FUNCTION OBJNAME(expr_t& a0)                                        \
         : a(a0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0), tmp(0.0) {} \
@@ -108,13 +110,15 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, T>& a) {                      \
-    return OBJNAME<A, T, true>(a);                                             \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                     \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, T>& a) {                            \
-    return OBJNAME<A, T, false>(a);                                            \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                           \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, false>(a);                                        \
   }
 
 A2D_2ND_UNARY_BASIC(UnaryPos2, operator+, a.value(), T(1.0))
@@ -129,46 +133,48 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
   TEMPBODY: Body of the temporary variable calculation (computed in eval)
   DERIVBODY: Body of the derivative evaluation
 */
-#define A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)        \
-                                                                               \
-  template <class A, class T, bool CA>                                         \
-  class OBJNAME : public ADExpr<OBJNAME<A, T, CA>, T> {                        \
-   public:                                                                     \
-    using expr_t =                                                             \
-        typename std::conditional<CA, const ADExpr<A, T>, ADExpr<A, T>>::type; \
-    using A_t = typename std::conditional<CA, A, A&>::type;                    \
-    KOKKOS_FUNCTION OBJNAME(expr_t& a0)                                        \
-        : a(a0.self()), val(0.0), bval(0.0), tmp(0.0) {}                       \
-    KOKKOS_FUNCTION void eval() {                                              \
-      a.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-      tmp = (TEMPBODY);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void forward() {                                           \
-      a.forward();                                                             \
-      bval = (DERIVBODY)*a.bvalue();                                           \
-    }                                                                          \
-    KOKKOS_FUNCTION void reverse() {                                           \
-      a.bvalue() += (DERIVBODY)*bval;                                          \
-      a.reverse();                                                             \
-    }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
-    KOKKOS_FUNCTION T& value() { return val; }                                 \
-    KOKKOS_FUNCTION const T& value() const { return val; }                     \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
-                                                                               \
-   private:                                                                    \
-    A_t a;                                                                     \
-    T val, bval, tmp;                                                          \
-  };                                                                           \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, T>& a) {                       \
-    return OBJNAME<A, T, true>(a);                                             \
-  }                                                                            \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, T>& a) {                             \
-    return OBJNAME<A, T, false>(a);                                            \
+#define A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY) \
+                                                                        \
+  template <class A, class Ta, class T, bool CA>                        \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {             \
+   public:                                                              \
+    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,   \
+                                             ADExpr<A, Ta>>::type;      \
+    using A_t = typename std::conditional<CA, A, A&>::type;             \
+    KOKKOS_FUNCTION OBJNAME(expr_t& a0)                                 \
+        : a(a0.self()), val(0.0), bval(0.0), tmp(0.0) {}                \
+    KOKKOS_FUNCTION void eval() {                                       \
+      a.eval();                                                         \
+      val = (FUNCBODY);                                                 \
+      tmp = (TEMPBODY);                                                 \
+    }                                                                   \
+    KOKKOS_FUNCTION void forward() {                                    \
+      a.forward();                                                      \
+      bval = (DERIVBODY)*a.bvalue();                                    \
+    }                                                                   \
+    KOKKOS_FUNCTION void reverse() {                                    \
+      a.bvalue() += (DERIVBODY)*bval;                                   \
+      a.reverse();                                                      \
+    }                                                                   \
+    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                     \
+    KOKKOS_FUNCTION T& value() { return val; }                          \
+    KOKKOS_FUNCTION const T& value() const { return val; }              \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                        \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }            \
+                                                                        \
+   private:                                                             \
+    A_t a;                                                              \
+    T val, bval, tmp;                                                   \
+  };                                                                    \
+  template <class A, class Ta>                                          \
+  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {               \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, T, true>(a);                                  \
+  }                                                                     \
+  template <class A, class Ta>                                          \
+  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                     \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, T, false>(a);                                 \
   }
 
 // A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)
@@ -190,11 +196,11 @@ A2D_1ST_UNARY(LogExpr, log, std::log(a.value()), 1.0 / a.value(), tmp)
 #define A2D_2ND_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY,        \
                       DERIV2BODY)                                              \
                                                                                \
-  template <class A, class T, bool CA>                                         \
-  class OBJNAME : public A2DExpr<OBJNAME<A, T, CA>, T> {                       \
+  template <class A, class Ta, class T, bool CA>                               \
+  class OBJNAME : public A2DExpr<OBJNAME<A, Ta, T, CA>, T> {                   \
    public:                                                                     \
-    using expr_t = typename std::conditional<CA, const A2DExpr<A, T>,          \
-                                             A2DExpr<A, T>>::type;             \
+    using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
+                                             A2DExpr<A, Ta>>::type;            \
     using A_t = typename std::conditional<CA, A, A&>::type;                    \
     KOKKOS_FUNCTION OBJNAME(expr_t& a0)                                        \
         : a(a0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0), tmp(0.0) {} \
@@ -230,13 +236,15 @@ A2D_1ST_UNARY(LogExpr, log, std::log(a.value()), 1.0 / a.value(), tmp)
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, T>& a) {                      \
-    return OBJNAME<A, T, true>(a);                                             \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                     \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
-  template <class A, class T>                                                  \
-  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, T>& a) {                            \
-    return OBJNAME<A, T, false>(a);                                            \
+  template <class A, class Ta>                                                 \
+  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                           \
+    using T = typename remove_const_and_refs<Ta>::type;                        \
+    return OBJNAME<A, Ta, T, false>(a);                                        \
   }
 
 // A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)

@@ -55,7 +55,7 @@ class Poisson {
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
     T dot, output;
     VecDot(grad, grad, dot);
-    Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output);
+    output = wdetJ * (0.5 * dot - u);
 
     return output;
   }
@@ -88,7 +88,7 @@ class Poisson {
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
     ADObj<T> dot, output;
     auto stack = MakeStack(VecDot(grad, grad, dot),
-                           Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output));
+                           Eval(wdetJ * (0.5 * dot - u), output));
 
     output.bvalue() = 1.0;
 
@@ -130,7 +130,7 @@ class Poisson {
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
     A2DObj<T> dot, output;
     auto stack = MakeStack(VecDot(grad, grad, dot),
-                           Sum(0.5 * wdetJ, dot, -wdetJ, T(1.0), output));
+                           Eval(wdetJ * (0.5 * dot - u), output));
 
     output.bvalue() = 1.0;
 
@@ -200,12 +200,9 @@ class MixedPoisson {
     const T& divq = s.template get<0>().get_div();  // Get the divergence of q
     const T& u = s.template get<1>().get_value();   // Get the value of u
 
-    T dot, prod, sum, output;
-    VecDot(q, q, dot);    // dot = ||q||_{2}^{2}
-    Mult(divq, u, prod);  // prod = 0.5 * wdetJ * dot
-    Sum(0.5 * wdetJ, dot, wdetJ, prod,
-        sum);  // sum = wdetJ * (0.5 * dot + prod)
-    Sum(wdetJ, u, T(1.0), sum, output);
+    T dot, output;
+    VecDot(q, q, dot);  // dot = ||q||_{2}^{2}
+    output = wdetJ * (0.5 * dot + divq * u + u);
 
     return output;
   }
@@ -237,12 +234,10 @@ class MixedPoisson {
     ADObj<T&> u(u0, ub), divq(divq0, divqb);
 
     // Intermediate values
-    ADObj<T> dot, prod, sum, output;
+    ADObj<T> dot, output;
 
-    auto stack = MakeStack(VecDot(q, q, dot),    // dot = ||q||_{2}^{2}
-                           Mult(divq, u, prod),  // prod = 0.5 * wdetJ * dot
-                           Sum(0.5 * wdetJ, dot, wdetJ, prod, sum),
-                           Sum(wdetJ, u, T(1.0), sum, output));
+    auto stack = MakeStack(VecDot(q, q, dot),  // dot = ||q||_{2}^{2}
+                           Eval(wdetJ * (0.5 * dot + divq * u + u), output));
 
     output.bvalue() = 1.0;
     stack.reverse();
@@ -286,12 +281,10 @@ class MixedPoisson {
     A2DObj<T&> u(u0, ub, up, uh), divq(divq0, divqb, divqp, divqh);
 
     // Intermediate values
-    A2DObj<T> dot, prod, sum, output;
+    A2DObj<T> dot, output;
 
-    auto stack = MakeStack(VecDot(q, q, dot),    // dot = ||q||_{2}^{2}
-                           Mult(divq, u, prod),  // prod = 0.5 * wdetJ * dot
-                           Sum(0.5 * wdetJ, dot, wdetJ, prod, sum),
-                           Sum(wdetJ, u, T(1.0), sum, output));
+    auto stack = MakeStack(VecDot(q, q, dot),  // dot = ||q||_{2}^{2}
+                           Eval(wdetJ * (0.5 * dot + divq * u + u), output));
 
     output.bvalue() = 1.0;
 
@@ -300,7 +293,7 @@ class MixedPoisson {
 
     // Create data for extracting the Hessian-vector product
     constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    auto inters = MakeTieTuple<T, ADseed::h>(dot, prod, sum);
+    auto inters = MakeTieTuple<T, ADseed::h>(dot);
 
     // Extract the matrix
     stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);

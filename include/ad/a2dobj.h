@@ -247,6 +247,13 @@ template <class T>
 struct remove_a2dobj
     : __remove_a2dobj<typename remove_const_and_refs<T>::type> {};
 
+template <class Ta, class Tb>
+struct is_same_type {
+  const static bool value =
+      std::is_same<typename remove_const_and_refs<Ta>::type,
+                   typename remove_const_and_refs<Tb>::type>::value;
+};
+
 /*
   Get whether the type is passive or not...
 */

@@ -68,18 +68,14 @@ class HeatConduction {
     const Vec<T, dim>& grad = s.template get<0>().get_grad();
 
     T rho(data[0]);
-    T denom, penalty, k, dot, kdot, source, output;
+    T k, dot, output;
 
     // Compute the RAMP penalty
-    Sum(T(1.0 + q), -T(1.0), q, rho, denom);  // denom = (1.0 + q * (1.0 - rho))
-    Divide(T(1.0), denom, penalty);  // penalty = 1.0 / (1.0 + q * (1.0 - rho))
-    Mult(kappa, penalty, k);         // k = kappa * penalty
-    VecDot(grad, grad, dot);         // dot = (grad, grad)
-    Mult(k, dot, kdot);              // kdot = k * dot
-    Mult(-2.0 * heat_source, u, source);  // source = - 2.0 * heat_source * u
-    Sum(kdot, source, output);            // output = k * dot - 2 * g * u
+    k = kappa / (1.0 + q * (1.0 - rho));
+    VecDot(grad, grad, dot);  // dot = (grad, grad)
+    output = wdetJ * (0.5 * dot - heat_source * u);
 
-    return 0.5 * wdetJ * output;
+    return output;
   }
 
   /**
@@ -110,19 +106,14 @@ class HeatConduction {
 
     // Make temporaries directly
     ADObj<T> rho(data[0]);
-    ADObj<T> denom, penalty, k, dot, kdot, source, output;
+    ADObj<T> k, dot, output;
 
-    // Make the stack
-    auto stack = MakeStack(Sum(T(1.0 + q), -T(1.0), q, rho, denom),  //
-                           Divide(T(1.0), denom, penalty),           //
-                           Mult(kappa, penalty, k),                  //
-                           VecDot(grad, grad, dot),                  //
-                           Mult(k, dot, kdot),                       //
-                           Mult(-2.0 * heat_source, u, source),      //
-                           Sum(kdot, source, output));
+    auto stack = MakeStack(Eval(kappa / (1.0 + q * (1.0 - rho)), k),
+                           VecDot(grad, grad, dot),  // dot = (grad, grad)
+                           Eval(wdetJ * (0.5 * dot - heat_source * u), output));
 
     // Set the seed value
-    output.bvalue() = 0.5 * wdetJ;
+    output.bvalue() = 1.0;
 
     // Reverse the derivatives - values are written directly to the output
     // because we set the references
@@ -159,26 +150,22 @@ class HeatConduction {
 
     // Make temporaries directly
     A2DObj<T> rho(data[0]);
-    A2DObj<T> denom, penalty, k, dot, kdot, source, output;
+    A2DObj<T> k, dot, output;
 
     // Make the stack
-    auto stack = MakeStack(Sum(T(1.0 + q), -T(1.0), q, rho, denom),  //
-                           Divide(T(1.0), denom, penalty),           //
-                           Mult(kappa, penalty, k),                  //
-                           VecDot(grad, grad, dot),                  //
-                           Mult(k, dot, kdot),                       //
-                           Mult(-2.0 * heat_source, u, source),      //
-                           Sum(kdot, source, output));
+    auto stack = MakeStack(Eval(kappa / (1.0 + q * (1.0 - rho)), k),
+                           VecDot(grad, grad, dot),  // dot = (grad, grad)
+                           Eval(wdetJ * (0.5 * dot - heat_source * u), output));
+
     // Set the seed value
-    output.bvalue() = 0.5 * wdetJ;
+    output.bvalue() = 1.0;
 
     // Compute the derivatives first..
     stack.reverse();
 
     // Create data for extracting the Hessian-vector product
     constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    auto inters = MakeTieTuple<T, ADseed::h>(rho, denom, penalty, k, dot, kdot,
-                                             source, output);
+    auto inters = MakeTieTuple<T, ADseed::h>(k);
 
     // Extract the matrix
     stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);

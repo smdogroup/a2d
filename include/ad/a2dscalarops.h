@@ -99,7 +99,9 @@ class ScalarTest : public A2DTest<T, T, T, T> {
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> a, b, f;
+    T a0, ab, b0, bb;
+    ADObj<T&> a(a0, ab), b(b0, bb);
+    ADObj<T> f;
     x.get_values(a.value(), b.value());
 
     auto stack = MakeStack(Eval(
@@ -115,7 +117,9 @@ class ScalarTest : public A2DTest<T, T, T, T> {
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
-    A2DObj<T> a, b, f;
+    T a0, ab, ap, ah, b0, bb, bp, bh;
+    A2DObj<T&> a(a0, ab, ap, ah), b(b0, bb, bp, bh);
+    A2DObj<T> f;
     x.get_values(a.value(), b.value());
     p.get_values(a.pvalue(), b.pvalue());
 

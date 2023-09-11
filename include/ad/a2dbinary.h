@@ -6,61 +6,69 @@
 
 namespace A2D {
 
-#define A2D_1ST_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARDBODY,         \
-                             AREVBODY, BREVBODY)                               \
-                                                                               \
-  template <class A, class B, class T, bool CA, bool CB>                       \
-  class OBJNAME : public ADExpr<OBJNAME<A, B, T, CA, CB>, T> {                 \
-   public:                                                                     \
-    using Aexpr_t =                                                            \
-        typename std::conditional<CA, const ADExpr<A, T>, ADExpr<A, T>>::type; \
-    using Bexpr_t =                                                            \
-        typename std::conditional<CB, const ADExpr<B, T>, ADExpr<B, T>>::type; \
-    using A_t = typename std::conditional<CA, A, A&>::type;                    \
-    using B_t = typename std::conditional<CB, B, B&>::type;                    \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                          \
-        : a(a0.self()), b(b0.self()), val(0.0), bval(0.0) {}                   \
-    KOKKOS_FUNCTION void eval() {                                              \
-      a.eval();                                                                \
-      b.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void forward() {                                           \
-      a.forward();                                                             \
-      b.forward();                                                             \
-      bval = (FORWARDBODY);                                                    \
-    }                                                                          \
-    KOKKOS_FUNCTION void reverse() {                                           \
-      a.bvalue() += (AREVBODY);                                                \
-      b.bvalue() += (BREVBODY);                                                \
-      a.reverse();                                                             \
-      b.reverse();                                                             \
-    }                                                                          \
-    KOKKOS_FUNCTION T& value() { return val; }                                 \
-    KOKKOS_FUNCTION const T& value() const { return val; }                     \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
-                                                                               \
-   private:                                                                    \
-    A_t a;                                                                     \
-    B_t b;                                                                     \
-    T val, bval;                                                               \
-  };                                                                           \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(const ADExpr<A, T>& a, const ADExpr<B, T>& b) {         \
-    return OBJNAME<A, B, T, true, true>(a, b);                                 \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(const ADExpr<A, T>& a, ADExpr<B, T>& b) {               \
-    return OBJNAME<A, B, T, true, false>(a, b);                                \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(ADExpr<A, T>& a, const ADExpr<B, T>& b) {               \
-    return OBJNAME<A, B, T, false, true>(a, b);                                \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(ADExpr<A, T>& a, ADExpr<B, T>& b) {                     \
-    return OBJNAME<A, B, T, false, false>(a, b);                               \
+#define A2D_1ST_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARDBODY,       \
+                             AREVBODY, BREVBODY)                             \
+                                                                             \
+  template <class A, class Ta, class B, class Tb, class T, bool CA, bool CB> \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, B, Tb, T, CA, CB>, T> {       \
+   public:                                                                   \
+    using Aexpr_t = typename std::conditional<CA, const ADExpr<A, Ta>,       \
+                                              ADExpr<A, Ta>>::type;          \
+    using Bexpr_t = typename std::conditional<CB, const ADExpr<B, Tb>,       \
+                                              ADExpr<B, Tb>>::type;          \
+    using A_t = typename std::conditional<CA, A, A&>::type;                  \
+    using B_t = typename std::conditional<CB, B, B&>::type;                  \
+    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+        : a(a0.self()), b(b0.self()), val(0.0), bval(0.0) {}                 \
+    KOKKOS_FUNCTION void eval() {                                            \
+      a.eval();                                                              \
+      b.eval();                                                              \
+      val = (FUNCBODY);                                                      \
+    }                                                                        \
+    KOKKOS_FUNCTION void forward() {                                         \
+      a.forward();                                                           \
+      b.forward();                                                           \
+      bval = (FORWARDBODY);                                                  \
+    }                                                                        \
+    KOKKOS_FUNCTION void reverse() {                                         \
+      a.bvalue() += (AREVBODY);                                              \
+      b.bvalue() += (BREVBODY);                                              \
+      a.reverse();                                                           \
+      b.reverse();                                                           \
+    }                                                                        \
+    KOKKOS_FUNCTION T& value() { return val; }                               \
+    KOKKOS_FUNCTION const T& value() const { return val; }                   \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
+                                                                             \
+   private:                                                                  \
+    A_t a;                                                                   \
+    B_t b;                                                                   \
+    T val, bval;                                                             \
+  };                                                                         \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {     \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {           \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {           \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {                 \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }
 
 // A2D_1ST_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARDBODY, AREVBODY,
@@ -73,62 +81,70 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
                      a.bvalue() * b.value() + a.value() * b.bvalue(),
                      b.value() * bval, a.value() * bval)
 
-#define A2D_1ST_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, FORWARDBODY,     \
-                       AREVBODY, BREVBODY)                                     \
-                                                                               \
-  template <class A, class B, class T, bool CA, bool CB>                       \
-  class OBJNAME : public ADExpr<OBJNAME<A, B, T, CA, CB>, T> {                 \
-   public:                                                                     \
-    using Aexpr_t =                                                            \
-        typename std::conditional<CA, const ADExpr<A, T>, ADExpr<A, T>>::type; \
-    using Bexpr_t =                                                            \
-        typename std::conditional<CB, const ADExpr<B, T>, ADExpr<B, T>>::type; \
-    using A_t = typename std::conditional<CA, A, A&>::type;                    \
-    using B_t = typename std::conditional<CB, B, B&>::type;                    \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                          \
-        : a(a0.self()), b(b0.self()), tmp(0.0), val(0.0), bval(0.0) {}         \
-    KOKKOS_FUNCTION void eval() {                                              \
-      a.eval();                                                                \
-      b.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-      tmp = (TEMPBODY);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void forward() {                                           \
-      a.forward();                                                             \
-      b.forward();                                                             \
-      bval = (FORWARDBODY);                                                    \
-    }                                                                          \
-    KOKKOS_FUNCTION void reverse() {                                           \
-      a.bvalue() += (AREVBODY);                                                \
-      b.bvalue() += (BREVBODY);                                                \
-      a.reverse();                                                             \
-      b.reverse();                                                             \
-    }                                                                          \
-    KOKKOS_FUNCTION T& value() { return val; }                                 \
-    KOKKOS_FUNCTION const T& value() const { return val; }                     \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
-                                                                               \
-   private:                                                                    \
-    A_t a;                                                                     \
-    B_t b;                                                                     \
-    T tmp, val, bval;                                                          \
-  };                                                                           \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(const ADExpr<A, T>& a, const ADExpr<B, T>& b) {         \
-    return OBJNAME<A, B, T, true, true>(a, b);                                 \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(const ADExpr<A, T>& a, ADExpr<B, T>& b) {               \
-    return OBJNAME<A, B, T, true, false>(a, b);                                \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(ADExpr<A, T>& a, const ADExpr<B, T>& b) {               \
-    return OBJNAME<A, B, T, false, true>(a, b);                                \
-  }                                                                            \
-  template <class A, class B, class T>                                         \
-  inline auto OPERNAME(ADExpr<A, T>& a, ADExpr<B, T>& b) {                     \
-    return OBJNAME<A, B, T, false, false>(a, b);                               \
+#define A2D_1ST_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, FORWARDBODY,   \
+                       AREVBODY, BREVBODY)                                   \
+                                                                             \
+  template <class A, class Ta, class B, class Tb, class T, bool CA, bool CB> \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, B, Tb, T, CA, CB>, T> {       \
+   public:                                                                   \
+    using Aexpr_t = typename std::conditional<CA, const ADExpr<A, Ta>,       \
+                                              ADExpr<A, Ta>>::type;          \
+    using Bexpr_t = typename std::conditional<CB, const ADExpr<B, Tb>,       \
+                                              ADExpr<B, Tb>>::type;          \
+    using A_t = typename std::conditional<CA, A, A&>::type;                  \
+    using B_t = typename std::conditional<CB, B, B&>::type;                  \
+    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+        : a(a0.self()), b(b0.self()), tmp(0.0), val(0.0), bval(0.0) {}       \
+    KOKKOS_FUNCTION void eval() {                                            \
+      a.eval();                                                              \
+      b.eval();                                                              \
+      val = (FUNCBODY);                                                      \
+      tmp = (TEMPBODY);                                                      \
+    }                                                                        \
+    KOKKOS_FUNCTION void forward() {                                         \
+      a.forward();                                                           \
+      b.forward();                                                           \
+      bval = (FORWARDBODY);                                                  \
+    }                                                                        \
+    KOKKOS_FUNCTION void reverse() {                                         \
+      a.bvalue() += (AREVBODY);                                              \
+      b.bvalue() += (BREVBODY);                                              \
+      a.reverse();                                                           \
+      b.reverse();                                                           \
+    }                                                                        \
+    KOKKOS_FUNCTION T& value() { return val; }                               \
+    KOKKOS_FUNCTION const T& value() const { return val; }                   \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
+                                                                             \
+   private:                                                                  \
+    A_t a;                                                                   \
+    B_t b;                                                                   \
+    T tmp, val, bval;                                                        \
+  };                                                                         \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {     \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {           \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {           \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {                 \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }
 
 // A2D_1ST_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, FORWARDBODY,
@@ -140,13 +156,13 @@ A2D_1ST_BINARY(Divide, operator/, a.value() / b.value(), T(1.0) / b.value(),
 #define A2D_2ND_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, AREVBODY, BREVBODY, \
                              HFORWARDBODY, HAREVBODY, HBREVBODY)              \
                                                                               \
-  template <class A, class B, class T, bool CA, bool CB>                      \
-  class OBJNAME : public A2DExpr<OBJNAME<A, B, T, CA, CB>, T> {               \
+  template <class A, class Ta, class B, class Tb, class T, bool CA, bool CB>  \
+  class OBJNAME : public A2DExpr<OBJNAME<A, Ta, B, Tb, T, CA, CB>, T> {       \
    public:                                                                    \
-    using Aexpr_t = typename std::conditional<CA, const A2DExpr<A, T>,        \
-                                              A2DExpr<A, T>>::type;           \
-    using Bexpr_t = typename std::conditional<CB, const A2DExpr<B, T>,        \
-                                              A2DExpr<B, T>>::type;           \
+    using Aexpr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,       \
+                                              A2DExpr<A, Ta>>::type;          \
+    using Bexpr_t = typename std::conditional<CB, const A2DExpr<B, Tb>,       \
+                                              A2DExpr<B, Tb>>::type;          \
     using A_t = typename std::conditional<CA, A, A&>::type;                   \
     using B_t = typename std::conditional<CB, B, B&>::type;                   \
     KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                         \
@@ -194,21 +210,29 @@ A2D_1ST_BINARY(Divide, operator/, a.value() / b.value(), T(1.0) / b.value(),
     B_t b;                                                                    \
     T val, bval, pval, hval;                                                  \
   };                                                                          \
-  template <class A, class B, class T>                                        \
-  inline auto OPERNAME(const A2DExpr<A, T>& a, const A2DExpr<B, T>& b) {      \
-    return OBJNAME<A, B, T, true, true>(a, b);                                \
+  template <class A, class Ta, class B, class Tb,                             \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+  inline auto OPERNAME(const A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {    \
+    using T = typename remove_const_and_refs<Tb>::type;                       \
+    return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                        \
   }                                                                           \
-  template <class A, class B, class T>                                        \
-  inline auto OPERNAME(const A2DExpr<A, T>& a, A2DExpr<B, T>& b) {            \
-    return OBJNAME<A, B, T, true, false>(a, b);                               \
+  template <class A, class Ta, class B, class Tb,                             \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+  inline auto OPERNAME(const A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {          \
+    using T = typename remove_const_and_refs<Tb>::type;                       \
+    return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                       \
   }                                                                           \
-  template <class A, class B, class T>                                        \
-  inline auto OPERNAME(A2DExpr<A, T>& a, const A2DExpr<B, T>& b) {            \
-    return OBJNAME<A, B, T, false, true>(a, b);                               \
+  template <class A, class Ta, class B, class Tb,                             \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+  inline auto OPERNAME(A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {          \
+    using T = typename remove_const_and_refs<Tb>::type;                       \
+    return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                       \
   }                                                                           \
-  template <class A, class B, class T>                                        \
-  inline auto OPERNAME(A2DExpr<A, T>& a, A2DExpr<B, T>& b) {                  \
-    return OBJNAME<A, B, T, false, false>(a, b);                              \
+  template <class A, class Ta, class B, class Tb,                             \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+  inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {                \
+    using T = typename remove_const_and_refs<Tb>::type;                       \
+    return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                      \
   }
 
 // A2D_2ND_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, AREVBODY, BREVBODY,
@@ -223,80 +247,88 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
                      b.value() * hval + bval * b.pvalue(),
                      a.value() * hval + bval * a.pvalue())
 
-#define A2D_2ND_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, AREVBODY,  \
-                       BREVBODY, HFORWARDBODY, HAREVBODY, HBREVBODY)     \
-                                                                         \
-  template <class A, class B, class T, bool CA, bool CB>                 \
-  class OBJNAME : public A2DExpr<OBJNAME<A, B, T, CA, CB>, T> {          \
-   public:                                                               \
-    using Aexpr_t = typename std::conditional<CA, const A2DExpr<A, T>,   \
-                                              A2DExpr<A, T>>::type;      \
-    using Bexpr_t = typename std::conditional<CB, const A2DExpr<B, T>,   \
-                                              A2DExpr<B, T>>::type;      \
-    using A_t = typename std::conditional<CA, A, A&>::type;              \
-    using B_t = typename std::conditional<CB, B, B&>::type;              \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                    \
-        : a(a0.self()),                                                  \
-          b(b0.self()),                                                  \
-          tmp(0.0),                                                      \
-          val(0.0),                                                      \
-          bval(0.0),                                                     \
-          pval(0.0),                                                     \
-          hval(0.0) {}                                                   \
-    KOKKOS_FUNCTION void eval() {                                        \
-      a.eval();                                                          \
-      b.eval();                                                          \
-      val = (FUNCBODY);                                                  \
-      tmp = (TEMPBODY);                                                  \
-    }                                                                    \
-    KOKKOS_FUNCTION void reverse() {                                     \
-      a.bvalue() += (AREVBODY);                                          \
-      b.bvalue() += (BREVBODY);                                          \
-      a.reverse();                                                       \
-      b.reverse();                                                       \
-    }                                                                    \
-    KOKKOS_FUNCTION void hforward() {                                    \
-      a.hforward();                                                      \
-      b.hforward();                                                      \
-      pval = (HFORWARDBODY);                                             \
-    }                                                                    \
-    KOKKOS_FUNCTION void hreverse() {                                    \
-      a.hvalue() += (HAREVBODY);                                         \
-      b.hvalue() += (HBREVBODY);                                         \
-      a.hreverse();                                                      \
-      b.hreverse();                                                      \
-    }                                                                    \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                      \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                      \
-    KOKKOS_FUNCTION T& value() { return val; }                           \
-    KOKKOS_FUNCTION const T& value() const { return val; }               \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                         \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }             \
-    KOKKOS_FUNCTION T& pvalue() { return pval; }                         \
-    KOKKOS_FUNCTION const T& pvalue() const { return pval; }             \
-    KOKKOS_FUNCTION T& hvalue() { return hval; }                         \
-    KOKKOS_FUNCTION const T& hvalue() const { return hval; }             \
-                                                                         \
-   private:                                                              \
-    A_t a;                                                               \
-    B_t b;                                                               \
-    T tmp, val, bval, pval, hval;                                        \
-  };                                                                     \
-  template <class A, class B, class T>                                   \
-  inline auto OPERNAME(const A2DExpr<A, T>& a, const A2DExpr<B, T>& b) { \
-    return OBJNAME<A, B, T, true, true>(a, b);                           \
-  }                                                                      \
-  template <class A, class B, class T>                                   \
-  inline auto OPERNAME(const A2DExpr<A, T>& a, A2DExpr<B, T>& b) {       \
-    return OBJNAME<A, B, T, true, false>(a, b);                          \
-  }                                                                      \
-  template <class A, class B, class T>                                   \
-  inline auto OPERNAME(A2DExpr<A, T>& a, const A2DExpr<B, T>& b) {       \
-    return OBJNAME<A, B, T, false, true>(a, b);                          \
-  }                                                                      \
-  template <class A, class B, class T>                                   \
-  inline auto OPERNAME(A2DExpr<A, T>& a, A2DExpr<B, T>& b) {             \
-    return OBJNAME<A, B, T, false, false>(a, b);                         \
+#define A2D_2ND_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, AREVBODY,      \
+                       BREVBODY, HFORWARDBODY, HAREVBODY, HBREVBODY)         \
+  template <class A, class Ta, class B, class Tb, class T, bool CA, bool CB> \
+  class OBJNAME : public A2DExpr<OBJNAME<A, Ta, B, Tb, T, CA, CB>, T> {      \
+   public:                                                                   \
+    using Aexpr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,      \
+                                              A2DExpr<A, Ta>>::type;         \
+    using Bexpr_t = typename std::conditional<CB, const A2DExpr<B, Tb>,      \
+                                              A2DExpr<B, Tb>>::type;         \
+    using A_t = typename std::conditional<CA, A, A&>::type;                  \
+    using B_t = typename std::conditional<CB, B, B&>::type;                  \
+                                                                             \
+    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+        : a(a0.self()),                                                      \
+          b(b0.self()),                                                      \
+          tmp(0.0),                                                          \
+          val(0.0),                                                          \
+          bval(0.0),                                                         \
+          pval(0.0),                                                         \
+          hval(0.0) {}                                                       \
+    KOKKOS_FUNCTION void eval() {                                            \
+      a.eval();                                                              \
+      b.eval();                                                              \
+      val = (FUNCBODY);                                                      \
+      tmp = (TEMPBODY);                                                      \
+    }                                                                        \
+    KOKKOS_FUNCTION void reverse() {                                         \
+      a.bvalue() += (AREVBODY);                                              \
+      b.bvalue() += (BREVBODY);                                              \
+      a.reverse();                                                           \
+      b.reverse();                                                           \
+    }                                                                        \
+    KOKKOS_FUNCTION void hforward() {                                        \
+      a.hforward();                                                          \
+      b.hforward();                                                          \
+      pval = (HFORWARDBODY);                                                 \
+    }                                                                        \
+    KOKKOS_FUNCTION void hreverse() {                                        \
+      a.hvalue() += (HAREVBODY);                                             \
+      b.hvalue() += (HBREVBODY);                                             \
+      a.hreverse();                                                          \
+      b.hreverse();                                                          \
+    }                                                                        \
+    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                          \
+    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                          \
+    KOKKOS_FUNCTION T& value() { return val; }                               \
+    KOKKOS_FUNCTION const T& value() const { return val; }                   \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
+    KOKKOS_FUNCTION T& pvalue() { return pval; }                             \
+    KOKKOS_FUNCTION const T& pvalue() const { return pval; }                 \
+    KOKKOS_FUNCTION T& hvalue() { return hval; }                             \
+    KOKKOS_FUNCTION const T& hvalue() const { return hval; }                 \
+                                                                             \
+   private:                                                                  \
+    A_t a;                                                                   \
+    B_t b;                                                                   \
+    T tmp, val, bval, pval, hval;                                            \
+  };                                                                         \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {   \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(const A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {         \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {         \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
+  }                                                                          \
+  template <class A, class Ta, class B, class Tb,                            \
+            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+  inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {               \
+    using T = typename remove_const_and_refs<Tb>::type;                      \
+    return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }
 
 // A2D_2ND_BINARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, AREVBODY,
@@ -317,49 +349,51 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
   FORWARD: Body of the forward derivative
   REVERSE: Body of the reverse derivative
 */
-#define A2D_1ST_BINARY_LEFT_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARD,        \
-                                  REVERSE)                                     \
-                                                                               \
-  template <class A, class B, class T, bool CA>                                \
-  class OBJNAME : public ADExpr<OBJNAME<A, B, T, CA>, T> {                     \
-   public:                                                                     \
-    using expr_t =                                                             \
-        typename std::conditional<CA, const ADExpr<A, T>, ADExpr<A, T>>::type; \
-    using A_t = typename std::conditional<CA, A, A&>::type;                    \
-    KOKKOS_FUNCTION OBJNAME(expr_t& a0, const B& b)                            \
-        : a(a0.self()), b(b), val(0.0), bval(0.0) {}                           \
-    KOKKOS_FUNCTION void eval() {                                              \
-      a.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void forward() {                                           \
-      a.forward();                                                             \
-      bval = (FORWARD);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void reverse() {                                           \
-      a.bvalue() += (REVERSE);                                                 \
-      a.reverse();                                                             \
-    }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
-    KOKKOS_FUNCTION T& value() { return val; }                                 \
-    KOKKOS_FUNCTION const T& value() const { return val; }                     \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
-                                                                               \
-   private:                                                                    \
-    A_t a;                                                                     \
-    const B& b;                                                                \
-    T val, bval;                                                               \
-  };                                                                           \
-  template <class A, class B, class T,                                         \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>           \
-  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, T>& a, const B& b) {           \
-    return OBJNAME<A, B, T, true>(a, b);                                       \
-  }                                                                            \
-  template <class A, class B, class T,                                         \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>           \
-  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, T>& a, const B& b) {                 \
-    return OBJNAME<A, B, T, false>(a, b);                                      \
+#define A2D_1ST_BINARY_LEFT_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARD, \
+                                  REVERSE)                              \
+                                                                        \
+  template <class A, class Ta, class B, class T, bool CA>               \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, B, T, CA>, T> {          \
+   public:                                                              \
+    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,   \
+                                             ADExpr<A, Ta>>::type;      \
+    using A_t = typename std::conditional<CA, A, A&>::type;             \
+    KOKKOS_FUNCTION OBJNAME(expr_t& a0, const B& b)                     \
+        : a(a0.self()), b(b), val(0.0), bval(0.0) {}                    \
+    KOKKOS_FUNCTION void eval() {                                       \
+      a.eval();                                                         \
+      val = (FUNCBODY);                                                 \
+    }                                                                   \
+    KOKKOS_FUNCTION void forward() {                                    \
+      a.forward();                                                      \
+      bval = (FORWARD);                                                 \
+    }                                                                   \
+    KOKKOS_FUNCTION void reverse() {                                    \
+      a.bvalue() += (REVERSE);                                          \
+      a.reverse();                                                      \
+    }                                                                   \
+    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                     \
+    KOKKOS_FUNCTION T& value() { return val; }                          \
+    KOKKOS_FUNCTION const T& value() const { return val; }              \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                        \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }            \
+                                                                        \
+   private:                                                             \
+    A_t a;                                                              \
+    const B& b;                                                         \
+    T val, bval;                                                        \
+  };                                                                    \
+  template <class A, class Ta, class B,                                 \
+            std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
+  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a, const B& b) {   \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, B, T, true>(a, b);                            \
+  }                                                                     \
+  template <class A, class Ta, class B,                                 \
+            std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
+  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a, const B& b) {         \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, B, T, false>(a, b);                           \
   }
 
 // A2D_1ST_BINARY_LEFT_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
@@ -386,11 +420,11 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
 #define A2D_2ND_BINARY_LEFT_BASIC(OBJNAME, OPERNAME, FUNCBODY, REVERSE,    \
                                   HFORWARD, HREVERSE)                      \
                                                                            \
-  template <class A, class B, class T, bool CA>                            \
-  class OBJNAME : public A2DExpr<OBJNAME<A, B, T, CA>, T> {                \
+  template <class A, class Ta, class B, class T, bool CA>                  \
+  class OBJNAME : public A2DExpr<OBJNAME<A, Ta, B, T, CA>, T> {            \
    public:                                                                 \
-    using expr_t = typename std::conditional<CA, const A2DExpr<A, T>,      \
-                                             A2DExpr<A, T>>::type;         \
+    using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,     \
+                                             A2DExpr<A, Ta>>::type;        \
     using A_t = typename std::conditional<CA, A, A&>::type;                \
     KOKKOS_FUNCTION OBJNAME(expr_t& a0, const B& b)                        \
         : a(a0.self()), b(b), val(0.0), bval(0.0), pval(0.0), hval(0.0) {} \
@@ -426,15 +460,17 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
     const B& b;                                                            \
     T val, bval, pval, hval;                                               \
   };                                                                       \
-  template <class A, class B, class T,                                     \
+  template <class A, class Ta, class B,                                    \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, T>& a, const B& b) {      \
-    return OBJNAME<A, B, T, true>(a, b);                                   \
+  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a, const B& b) {     \
+    using T = typename remove_const_and_refs<Ta>::type;                    \
+    return OBJNAME<A, Ta, B, T, true>(a, b);                               \
   }                                                                        \
-  template <class A, class B, class T,                                     \
+  template <class A, class Ta, class B,                                    \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, T>& a, const B& b) {            \
-    return OBJNAME<A, B, T, false>(a, b);                                  \
+  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a, const B& b) {           \
+    using T = typename remove_const_and_refs<Ta>::type;                    \
+    return OBJNAME<A, Ta, B, T, false>(a, b);                              \
   }
 
 // A2D_2ND_BINARY_LEFT_BASIC(OBJNAME, OPERNAME, FUNCBODY, REVERSE,
@@ -463,49 +499,51 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
   FORWARD: Body of the forward derivative
   REVERSE: Body of the reverse derivative
 */
-#define A2D_1ST_BINARY_RIGHT_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARD,       \
-                                   REVERSE)                                    \
-                                                                               \
-  template <class A, class B, class T, bool CB>                                \
-  class OBJNAME : public ADExpr<OBJNAME<A, B, T, CB>, T> {                     \
-   public:                                                                     \
-    using expr_t =                                                             \
-        typename std::conditional<CB, const ADExpr<B, T>, ADExpr<B, T>>::type; \
-    using B_t = typename std::conditional<CB, B, B&>::type;                    \
-    KOKKOS_FUNCTION OBJNAME(const A& a, expr_t& b0)                            \
-        : a(a), b(b0.self()), val(0.0), bval(0.0) {}                           \
-    KOKKOS_FUNCTION void eval() {                                              \
-      b.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void forward() {                                           \
-      b.forward();                                                             \
-      bval = (FORWARD);                                                        \
-    }                                                                          \
-    KOKKOS_FUNCTION void reverse() {                                           \
-      b.bvalue() += (REVERSE);                                                 \
-      b.reverse();                                                             \
-    }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
-    KOKKOS_FUNCTION T& value() { return val; }                                 \
-    KOKKOS_FUNCTION const T& value() const { return val; }                     \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                   \
-                                                                               \
-   private:                                                                    \
-    const A& a;                                                                \
-    B_t b;                                                                     \
-    T val, bval;                                                               \
-  };                                                                           \
-  template <class A, class B, class T,                                         \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>           \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, const ADExpr<B, T>& b) {           \
-    return OBJNAME<A, B, T, true>(a, b);                                       \
-  }                                                                            \
-  template <class A, class B, class T,                                         \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>           \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, ADExpr<B, T>& b) {                 \
-    return OBJNAME<A, B, T, false>(a, b);                                      \
+#define A2D_1ST_BINARY_RIGHT_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARD, \
+                                   REVERSE)                              \
+                                                                         \
+  template <class A, class B, class Tb, class T, bool CB>                \
+  class OBJNAME : public ADExpr<OBJNAME<A, B, Tb, T, CB>, T> {           \
+   public:                                                               \
+    using expr_t = typename std::conditional<CB, const ADExpr<B, Tb>,    \
+                                             ADExpr<B, Tb>>::type;       \
+    using B_t = typename std::conditional<CB, B, B&>::type;              \
+    KOKKOS_FUNCTION OBJNAME(const A& a, expr_t& b0)                      \
+        : a(a), b(b0.self()), val(0.0), bval(0.0) {}                     \
+    KOKKOS_FUNCTION void eval() {                                        \
+      b.eval();                                                          \
+      val = (FUNCBODY);                                                  \
+    }                                                                    \
+    KOKKOS_FUNCTION void forward() {                                     \
+      b.forward();                                                       \
+      bval = (FORWARD);                                                  \
+    }                                                                    \
+    KOKKOS_FUNCTION void reverse() {                                     \
+      b.bvalue() += (REVERSE);                                           \
+      b.reverse();                                                       \
+    }                                                                    \
+    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                      \
+    KOKKOS_FUNCTION T& value() { return val; }                           \
+    KOKKOS_FUNCTION const T& value() const { return val; }               \
+    KOKKOS_FUNCTION T& bvalue() { return bval; }                         \
+    KOKKOS_FUNCTION const T& bvalue() const { return bval; }             \
+                                                                         \
+   private:                                                              \
+    const A& a;                                                          \
+    B_t b;                                                               \
+    T val, bval;                                                         \
+  };                                                                     \
+  template <class A, class B, class Tb,                                  \
+            std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
+  KOKKOS_FUNCTION auto OPERNAME(const A& a, const ADExpr<B, Tb>& b) {    \
+    using T = typename remove_const_and_refs<Tb>::type;                  \
+    return OBJNAME<A, B, Tb, T, true>(a, b);                             \
+  }                                                                      \
+  template <class A, class B, class Tb,                                  \
+            std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
+  KOKKOS_FUNCTION auto OPERNAME(const A& a, ADExpr<B, Tb>& b) {          \
+    using T = typename remove_const_and_refs<Tb>::type;                  \
+    return OBJNAME<A, B, Tb, T, false>(a, b);                            \
   }
 
 // A2D_1ST_BINARY_RIGHT_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
@@ -529,11 +567,11 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
 #define A2D_2ND_BINARY_RIGHT_BASIC(OBJNAME, OPERNAME, FUNCBODY, REVERSE,   \
                                    HFORWARD, HREVERSE)                     \
                                                                            \
-  template <class A, class B, class T, bool CB>                            \
-  class OBJNAME : public A2DExpr<OBJNAME<A, B, T, CB>, T> {                \
+  template <class A, class B, class Tb, class T, bool CB>                  \
+  class OBJNAME : public A2DExpr<OBJNAME<A, B, Tb, T, CB>, T> {            \
    public:                                                                 \
-    using expr_t = typename std::conditional<CB, const A2DExpr<B, T>,      \
-                                             A2DExpr<B, T>>::type;         \
+    using expr_t = typename std::conditional<CB, const A2DExpr<B, Tb>,     \
+                                             A2DExpr<B, Tb>>::type;        \
     using B_t = typename std::conditional<CB, B, B&>::type;                \
     KOKKOS_FUNCTION OBJNAME(const A& a, expr_t& b0)                        \
         : a(a), b(b0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0) {} \
@@ -569,15 +607,17 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
     B_t b;                                                                 \
     T val, bval, pval, hval;                                               \
   };                                                                       \
-  template <class A, class B, class T,                                     \
+  template <class A, class B, class Tb,                                    \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, const A2DExpr<B, T>& b) {      \
-    return OBJNAME<A, B, T, true>(a, b);                                   \
+  KOKKOS_FUNCTION auto OPERNAME(const A& a, const A2DExpr<B, Tb>& b) {     \
+    using T = typename remove_const_and_refs<Tb>::type;                    \
+    return OBJNAME<A, B, Tb, T, true>(a, b);                               \
   }                                                                        \
-  template <class A, class B, class T,                                     \
+  template <class A, class B, class Tb,                                    \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, A2DExpr<B, T>& b) {            \
-    return OBJNAME<A, B, T, false>(a, b);                                  \
+  KOKKOS_FUNCTION auto OPERNAME(const A& a, A2DExpr<B, Tb>& b) {           \
+    using T = typename remove_const_and_refs<Tb>::type;                    \
+    return OBJNAME<A, B, Tb, T, false>(a, b);                              \
   }
 
 // A2D_2ND_BINARY_RIGHT_BASIC(OBJNAME, OPERNAME, FUNCBODY, REVERSE,

@@ -1,91 +1,11 @@
 #ifndef A2D_OBJECTS_H
 #define A2D_OBJECTS_H
 
-#include "a2denum.h"
+#include "a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dvec.h"
 
 namespace A2D {
-
-/*
-  Remove the const-ness and references for a type
-*/
-template <class T>
-struct remove_const_and_refs
-    : std::remove_const<typename std::remove_reference<T>::type> {};
-
-/*
-  Check if a type is numeric or not - this includes complex numbers
-*/
-template <class T>
-struct __is_numeric_type : std::is_floating_point<T> {};
-
-template <class T>
-struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
-
-template <class T>
-struct is_numeric_type
-    : __is_numeric_type<typename remove_const_and_refs<T>::type> {};
-
-/*
-  Check if the type is a scalar - an arithmetic or complex type
-*/
-template <class T>
-struct is_scalar_type {
-  static const bool value =
-      is_numeric_type<T>::value || std::is_arithmetic<T>::value;
-};
-
-/*
-  Get the numeric type of the object
-*/
-template <class T>
-struct __get_object_numeric_type {
-  using type = typename T::type;
-};
-
-template <>
-struct __get_object_numeric_type<double> {
-  using type = double;
-};
-
-template <>
-struct __get_object_numeric_type<std::complex<double>> {
-  using type = std::complex<double>;
-};
-
-/*
-  Get the numeric type of the underlying object.
-
-  All A2D numeric objects must either be scalar values (float, double,
-  std::complex) or must use a typedef statement to define the static scalar
-  type.
-*/
-template <class T>
-struct get_object_numeric_type
-    : __get_object_numeric_type<typename remove_const_and_refs<T>::type> {};
-
-/*
-  Get the type of object
-*/
-template <class T>
-struct __get_a2d_object_type {
-  static constexpr ADObjType value = T::obj_type;
-};
-
-template <>
-struct __get_a2d_object_type<double> {
-  static constexpr ADObjType value = ADObjType::SCALAR;
-};
-
-template <>
-struct __get_a2d_object_type<std::complex<double>> {
-  static constexpr ADObjType value = ADObjType::SCALAR;
-};
-
-template <class T>
-struct get_a2d_object_type
-    : __get_a2d_object_type<typename std::remove_reference<T>::type> {};
 
 /*
   Expression template for first derivatives

@@ -4,7 +4,7 @@
 #include "Kokkos_Sort.hpp"
 #include "Kokkos_StdAlgorithms.hpp"
 #include "Kokkos_UnorderedMap.hpp"
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "array.h"
 
 using namespace std;

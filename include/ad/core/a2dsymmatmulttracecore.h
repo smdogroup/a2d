@@ -1,6 +1,8 @@
 #ifndef A2D_SYM_TRACE_CORE_H
 #define A2D_SYM_TRACE_CORE_H
 
+#include "a2ddefs.h"
+
 namespace A2D {
 
 template <typename T, int N>

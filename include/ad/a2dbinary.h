@@ -1,8 +1,7 @@
 #ifndef A2D_BINARY_OPS_H
 #define A2D_BINARY_OPS_H
 
-#include "a2denum.h"
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 
@@ -337,8 +336,8 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
                tmp* bval, -tmp* tmp* a.value() * bval,
                tmp*(a.pvalue() - tmp * a.value() * b.pvalue()),
                tmp*(hval - tmp * bval * b.pvalue()),
-               tmp* tmp*(2.0 * tmp * a.value() * bval * b.pvalue() -
-                         a.value() * hval - bval * a.pvalue()))
+               tmp* tmp * (2.0 * tmp * a.value() * bval * b.pvalue() -
+                           a.value() * hval - bval * a.pvalue()))
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD

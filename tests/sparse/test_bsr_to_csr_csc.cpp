@@ -1,6 +1,6 @@
 #include <vector>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_utils.h"
 #include "test_commons.h"

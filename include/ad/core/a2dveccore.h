@@ -1,7 +1,7 @@
 #ifndef A2D_VEC_CORE_H
 #define A2D_VEC_CORE_H
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 

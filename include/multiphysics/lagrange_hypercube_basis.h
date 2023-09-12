@@ -1,7 +1,7 @@
 #ifndef A2D_LAGRANGE_HEX_BASIS_H
 #define A2D_LAGRANGE_HEX_BASIS_H
 
-#include "a2denum.h"
+#include "a2ddefs.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelementtypes.h"
 #include "multiphysics/lagrange_tools.h"

@@ -1,7 +1,7 @@
 #ifndef A2D_GEMMCORE_H
 #define A2D_GEMMCORE_H
 
-#include "a2denum.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 

@@ -2,7 +2,6 @@
 #define A2D_ELASTICITY_H
 
 #include "a2dcore.h"
-#include "a2denum.h"
 #include "multiphysics/femapping.h"
 #include "multiphysics/fespace.h"
 

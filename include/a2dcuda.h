@@ -9,7 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 
 /**
  * @brief Check device execution

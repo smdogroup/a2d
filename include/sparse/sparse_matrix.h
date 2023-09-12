@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "array.h"
 
 namespace A2D {

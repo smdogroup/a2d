@@ -1,8 +1,8 @@
 #ifndef A2D_UNARY_OPS_H
 #define A2D_UNARY_OPS_H
 
-#include "a2denum.h"
-#include "a2dobjs.h"
+
+#include "a2ddefs.h"
 
 namespace A2D {
 

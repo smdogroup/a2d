@@ -1,8 +1,8 @@
 #ifndef A2D_VEC_OUTER_H
 #define A2D_VEC_OUTER_H
 
+#include "a2ddefs.h"
 #include "a2dmat.h"
-#include "a2dobjs.h"
 #include "a2dvec.h"
 #include "ad/core/a2dmatveccore.h"
 #include "ad/core/a2dveccore.h"

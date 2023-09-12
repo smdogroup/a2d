@@ -1,8 +1,7 @@
 #ifndef A2D_VEC_SUM_H
 #define A2D_VEC_SUM_H
 
-#include "a2denum.h"
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
 #include "a2dvec.h"

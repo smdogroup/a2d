@@ -1,8 +1,10 @@
 #ifndef A2D_MAT_INV_CORE_H
 #define A2D_MAT_INV_CORE_H
 
+#include "a2ddefs.h"
+
 template <typename T, int N>
-void MatInvCore(const T A[], T Ainv[]) {
+KOKKOS_FUNCTION void MatInvCore(const T A[], T Ainv[]) {
   static_assert((N >= 1 && N <= 3), "MatInvCore not implemented for N >= 4");
 
   if constexpr (N == 1) {

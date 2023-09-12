@@ -1,9 +1,8 @@
 #ifndef A2D_MAT_DET_H
 #define A2D_MAT_DET_H
 
-#include "a2denum.h"
+#include "a2ddefs.h"
 #include "a2dmat.h"
-#include "a2dobjs.h"
 #include "ad/core/a2dmatdetcore.h"
 
 namespace A2D {

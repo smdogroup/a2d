@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 

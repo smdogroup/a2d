@@ -1,7 +1,7 @@
 #ifndef A2D_BLOCK_NUMERIC_H
 #define A2D_BLOCK_NUMERIC_H
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "array.h"
 
 namespace A2D {

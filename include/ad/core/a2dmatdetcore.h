@@ -1,12 +1,12 @@
 #ifndef A2D_MAT_DET_CORE_H
 #define A2D_MAT_DET_CORE_H
 
-#include "a2denum.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 
 template <typename T, int N>
-T MatDetCore(const T A[]) {
+KOKKOS_FUNCTION T MatDetCore(const T A[]) {
   static_assert((N >= 1 && N <= 3), "MatDet not implemented for N >= 4");
 
   if constexpr (N == 1) {
@@ -22,7 +22,7 @@ T MatDetCore(const T A[]) {
 }
 
 template <typename T, int N>
-T MatDetForwardCore(const T A[], const T Ad[]) {
+KOKKOS_FUNCTION T MatDetForwardCore(const T A[], const T Ad[]) {
   static_assert((N >= 1 && N <= 3),
                 "MatDetForwardCore not implemented for N >= 4");
 
@@ -46,7 +46,7 @@ T MatDetForwardCore(const T A[], const T Ad[]) {
 }
 
 template <typename T, int N>
-void MatDetReverseCore(const T bdet, const T A[], T Ab[]) {
+KOKKOS_FUNCTION void MatDetReverseCore(const T bdet, const T A[], T Ab[]) {
   static_assert((N >= 1 && N <= 3),
                 "MatDetReverseCore not implemented for N >= 4");
 
@@ -71,8 +71,8 @@ void MatDetReverseCore(const T bdet, const T A[], T Ab[]) {
 }
 
 template <typename T, int N>
-void MatDetHReverseCore(const T bdet, const T hdet, const T A[], const T Ap[],
-                        T Ah[]) {
+KOKKOS_FUNCTION void MatDetHReverseCore(const T bdet, const T hdet, const T A[],
+                                        const T Ap[], T Ah[]) {
   if constexpr (N == 1) {
     Ah[0] += hdet;
   } else if constexpr (N == 2) {

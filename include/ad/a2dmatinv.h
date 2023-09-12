@@ -1,9 +1,9 @@
 #ifndef A2D_MAT_INV_H
 #define A2D_MAT_INV_H
 
-#include "a2denum.h"
+
 #include "a2dmat.h"
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "ad/core/a2dgemmcore.h"
 #include "ad/core/a2dmatinvcore.h"
 

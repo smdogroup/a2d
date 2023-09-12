@@ -1,7 +1,7 @@
 #ifndef A2D_SPARSE_CHOLESKY_H
 #define A2D_SPARSE_CHOLESKY_H
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dlapack.h"

@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "sparse/sparse_matrix.h"
 
 namespace A2D {

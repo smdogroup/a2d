@@ -1,7 +1,7 @@
 #ifndef A2D_GREEN_STRAIN_CORE_H
 #define A2D_GREEN_STRAIN_CORE_H
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 

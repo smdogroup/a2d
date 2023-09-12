@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
 #include "array.h"
 #include "multiphysics/feelementtypes.h"
 

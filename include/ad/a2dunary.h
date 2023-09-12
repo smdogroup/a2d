@@ -1,7 +1,6 @@
 #ifndef A2D_UNARY_OPS_H
 #define A2D_UNARY_OPS_H
 
-
 #include "a2ddefs.h"
 
 namespace A2D {

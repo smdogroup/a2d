@@ -1,7 +1,6 @@
 #ifndef A2D_VEC_NORM_H
 #define A2D_VEC_NORM_H
 
-
 #include "a2ddefs.h"
 #include "a2dstack.h"
 #include "a2dtest.h"

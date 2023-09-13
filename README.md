@@ -1,6 +1,6 @@
 
 <h2 align="center">
-    <img src="doc/a2d_logo.svg" width="400" />
+    <img src="docs/a2d_logo.svg" width="400" />
 </h2>
 
 # A2D - a PDE discretization library using almost automatic differentiation

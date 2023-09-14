@@ -20,6 +20,45 @@
 using namespace A2D;
 
 /**
+ * @brief Compute the right-hand-side of the adjoint equation for thermal
+ * compliance function.
+ */
+template <typename T, index_t D>
+class AdjRHS {
+ public:
+  // Number of dimensions
+  static const index_t dim = D;
+
+  // Number of data dimensions
+  static const index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = typename HeatConduction<T, D>::DataSpace;
+
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename HeatConduction<T, D>::FiniteElementGeometry;
+
+  // Finite element space
+  using FiniteElementSpace = typename HeatConduction<T, D>::FiniteElementSpace;
+
+  // Mapping of the solution from the reference element to the physical element
+  using SolutionMapping = InteriorMapping<T, dim>;
+
+  T heat_source;
+
+  AdjRHS(T heat_source) : heat_source(heat_source) {}
+
+  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace &data,
+                                const FiniteElementGeometry &geo,
+                                const FiniteElementSpace &s,
+                                FiniteElementSpace &coef) const {
+    T &c = coef.template get<0>().get_value();
+    c = -wdetJ * heat_source;
+  }
+};
+
+/**
  * @brief Performs heat conduction analysis for topology optimization.
  */
 template <typename T, index_t degree, index_t filter_degree>

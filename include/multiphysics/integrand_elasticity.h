@@ -315,32 +315,20 @@ class IntegrandTopoBodyForce {
     }
   }
 
-  class AdjVecProduct {
-   public:
-    KOKKOS_FUNCTION AdjVecProduct(
-        const IntegrandTopoBodyForce<T, dim>& integrand, T wdetJ,
-        const DataSpace& data, const FiniteElementGeometry& geo,
-        const FiniteElementSpace& s)
-        : q(integrand.q), rho(data[0]), wdetJ(wdetJ) {
-      for (index_t i = 0; i < dim; i++) {
-        tx[i] = integrand.tx[i];
-      }
+  KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace& data,
+                                            const FiniteElementGeometry& geo,
+                                            const FiniteElementSpace& s,
+                                            const FiniteElementSpace& adj,
+                                            DataSpace& dfdx) const {
+    const Vec<T, dim>& Uadj = (adj.template get<0>()).get_value();
+
+    T rho = data[0];
+    T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
+
+    for (index_t i = 0; i < dim; i++) {
+      dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
     }
-
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& psi,
-                                    DataSpace& dfdx) {
-      const Vec<T, dim>& Uadj = (psi.template get<0>()).get_value();
-      T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
-
-      for (index_t i = 0; i < dim; i++) {
-        dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
-      }
-    }
-
-   private:
-    T q, rho, wdetJ;
-    T tx[dim];
-  };
+  }
 
  private:
   T q;        // RAMP parameter
@@ -440,14 +428,7 @@ class IntegrandTopoVonMisesKS {
 
     // Intermediaries
     SymMat<T, dim> E, S;
-    // von Mises stress
-    T trS, trSS, trS2, vm2, vm;
-    // penalty
-    T numer, denom, penalty;
-
-    // Final output computation
-    T relaxed_stress, failure_index;
-    T exponent, output;
+    T trS, trSS, trS2;
 
     // Compute the strain and stress
     MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
@@ -456,18 +437,9 @@ class IntegrandTopoVonMisesKS {
     // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
     MatTrace(S, trS);
     SymMatMultTrace(S, S, trSS);
-    Mult(trS, trS, trS2);
-    Sum(1.5, trSS, -0.5, trS2, vm2);
-    Sqrt(vm2, vm);
-
-    // Compute the stress-relaxation penalty
-    Mult(T(q + 1.0), rho, numer);        // numer = (q + 1) * rho
-    Sum(q, rho, T(1.0), T(1.0), denom);  // denom = q * rho + 1.0
-    Divide(numer, denom, penalty);  // penalty = (q + 1) * rho/(q * rho + 1)
-
-    // Compute the relaxed stress
-    Mult(penalty, vm, relaxed_stress);
-    Mult(T(1.0 / design_stress), relaxed_stress, failure_index);
+    T vm = sqrt(1.5 * trSS - 0.5 * trS * trS);
+    T relaxed_stress = (vm * ((q + 1.0) / (q * rho + 1.0)));
+    T failure_index = relaxed_stress / design_stress;
 
     return failure_index;
   }
@@ -490,14 +462,7 @@ class IntegrandTopoVonMisesKS {
 
     // Intermediaries
     SymMat<T, dim> E, S;
-    // von Mises stress
-    T trS, trSS, trS2, vm2, vm;
-    // penalty
-    T numer, denom, penalty;
-
-    // Final output computation
-    T relaxed_stress, failure_index;
-    T exponent, output;
+    T trS, trSS, trS2;
 
     // Compute the strain and stress
     MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
@@ -506,23 +471,12 @@ class IntegrandTopoVonMisesKS {
     // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
     MatTrace(S, trS);
     SymMatMultTrace(S, S, trSS);
-    Mult(trS, trS, trS2);
-    Sum(1.5, trSS, -0.5, trS2, vm2);
-    Sqrt(vm2, vm);
+    T vm = sqrt(1.5 * trSS - 0.5 * trS * trS);
+    T relaxed_stress = (vm * ((q + 1.0) / (q * rho + 1.0)));
+    T failure_index = relaxed_stress / design_stress;
 
-    // Compute the stress-relaxation penalty
-    Mult(T(q + 1.0), rho, numer);        // numer = (q + 1) * rho
-    Sum(q, rho, T(1.0), T(1.0), denom);  // denom = q * rho + 1.0
-    Divide(numer, denom, penalty);  // penalty = (q + 1) * rho/(q * rho + 1)
-
-    // Compute the relaxed stress
-    Mult(penalty, vm, relaxed_stress);
-    Mult(T(1.0 / design_stress), relaxed_stress, failure_index);
-
-    // exponent = ks_penalty * (failure_index - max_failure_index);
-    Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
-        T(1.0), exponent);
-    Exp(exponent, output);
+    // Compute the integrand for the KS function
+    T output = exp(ks_penalty * (failure_index - max_failure_index));
 
     return wdetJ * output;
   }
@@ -540,60 +494,40 @@ class IntegrandTopoVonMisesKS {
                                 const FiniteElementGeometry& geo,
                                 const FiniteElementSpace& s,
                                 FiniteElementSpace& coef) const {
-    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
+    Mat<T, dim, dim> Ux0 = (s.template get<0>()).get_grad();
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
 
-    ADObj<T> rho(data[0]);
+    // Inputs/outputs
+    ADObj<Mat<T, dim, dim>&> Ux(Ux0, Uxb);
+    T rho(data[0]);
 
     // Intermediaries
-    ADObj<Mat<T, dim, dim>> Ux(Ux0);
     ADObj<SymMat<T, dim>> E, S;
-
-    // von Mises stress
-    ADObj<T> trS, trSS, trS2, vm2, vm;
-    // penalty
-    ADObj<T> numer, denom, penalty;
-
-    // Final output computation
-    ADObj<T> relaxed_stress, failure_index;
-    ADObj<T> exponent, output;
+    ADObj<T> trS, trSS;
+    ADObj<T> vm, relaxed_stress, failure_index;
 
     auto stack = MakeStack(
         // Compute the strain and stress
-        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
-        SymIsotropic(mu, lambda, E, S),              // S = S(E)
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S), MatTrace(S, trS),
+        SymMatMultTrace(S, S, trSS),
 
-        // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 *
-        // tr(S)**2)
-        MatTrace(S, trS),             // trS = tr(S)
-        SymMatMultTrace(S, S, trSS),  // trSS = tr(S * S)
-        Mult(trS, trS, trS2),         // trS2 = tr(S) * tr(S)
-        Sum(1.5, trSS, -0.5, trS2,
-            vm2),       // vm2 = 1.5 * trSS - 0.5 * tr(S)**2
-        Sqrt(vm2, vm),  // vm = sqrt(vm2)
+        // Evaluate the von Mises stress output
+        Eval(sqrt(1.5 * trSS - 0.5 * trS * trS), vm),
+        Eval((vm * ((q + 1.0) / (q * rho + 1.0))), relaxed_stress),
+        Eval(relaxed_stress / design_stress, failure_index));
 
-        // Compute the stress-relaxation penalty
-        Mult(T(q + 1.0), rho, numer),        // numer = (q + 1) * rho
-        Sum(q, rho, T(1.0), T(1.0), denom),  // denom = q * rho + 1.0
-        Divide(numer, denom,
-               penalty),  // penalty = (q + 1) * rho/(q * rho + 1)
+    // Compute the integrand for the KS function
+    T ks_factor =
+        exp(ks_penalty * (failure_index.value() - max_failure_index)) /
+        failure_index_integral;
 
-        // Compute the relaxed stress
-        Mult(penalty, vm, relaxed_stress),  //
-        Mult(T(1.0 / design_stress), relaxed_stress, failure_index),
-
-        // exponent = ks_penalty * (failure_index - max_failure_index);
-        Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
-            T(1.0), exponent),  //
-        Exp(exponent, output));
-
-    output.bvalue() = wdetJ;
+    failure_index.bvalue() = wdetJ * ks_factor;
 
     stack.reverse();
-
-    // Set the derivative values
-    Uxb.set(Ux.bvalue());
   }
+
+  // A2D::operator*<double, A2D::ADObj<std::complex<double>>>
 
   /**
    * @brief Derivative of the integrand with respect to the data
@@ -608,54 +542,36 @@ class IntegrandTopoVonMisesKS {
                                        const FiniteElementGeometry& geo,
                                        const FiniteElementSpace& s,
                                        DataSpace& dfdx) const {
-    const Mat<T, dim, dim>& Ux0 = (s.template get<0>()).get_grad();
-    Mat<T, dim, dim> Uxb;
+    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
 
+    SymMat<T, dim> E, S;
+    T trS, trSS;
+
+    // Compute the strain and stress
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
+    MatTrace(S, trS);
+    SymMatMultTrace(S, S, trSS);
+
+    // Evaluate the von Mises stress output
+    T vm = sqrt(1.5 * trSS - 0.5 * trS * trS);
+
+    // Inputs
     ADObj<T> rho(data[0]);
 
     // Intermediaries
-    ADObj<Mat<T, dim, dim>> Ux(Ux0);
-    ADObj<SymMat<T, dim>> E, S;
-
-    // von Mises stress
-    ADObj<T> trS, trSS, trS2, vm2, vm;
-    // penalty
-    ADObj<T> numer, denom, penalty;
-
-    // Final output computation
     ADObj<T> relaxed_stress, failure_index;
-    ADObj<T> exponent, output;
 
     auto stack = MakeStack(
-        // Compute the strain and stress
-        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
-        SymIsotropic(mu, lambda, E, S),              // S = S(E)
+        Eval((vm * ((T(q + 1.0)) / (q * rho + T(1.0)))), relaxed_stress),
+        Eval(relaxed_stress / design_stress, failure_index));
 
-        // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 *
-        // tr(S)**2)
-        MatTrace(S, trS),             // trS = tr(S)
-        SymMatMultTrace(S, S, trSS),  // trSS = tr(S * S)
-        Mult(trS, trS, trS2),         // trS2 = tr(S) * tr(S)
-        Sum(1.5, trSS, -0.5, trS2,
-            vm2),       // vm2 = 1.5 * trSS - 0.5 * tr(S)**2
-        Sqrt(vm2, vm),  // vm = sqrt(vm2)
+    // Compute the integrand for the KS function
+    T ks_factor =
+        exp(ks_penalty * (failure_index.value() - max_failure_index)) /
+        failure_index_integral;
 
-        // Compute the stress-relaxation penalty
-        Mult(T(q + 1.0), rho, numer),        // numer = (q + 1) * rho
-        Sum(q, rho, T(1.0), T(1.0), denom),  // denom = q * rho + 1.0
-        Divide(numer, denom,
-               penalty),  // penalty = (q + 1) * rho/(q * rho + 1)
-
-        // Compute the relaxed stress
-        Mult(penalty, vm, relaxed_stress),  //
-        Mult(T(1.0 / design_stress), relaxed_stress, failure_index),
-
-        // exponent = ks_penalty * (failure_index - max_failure_index);
-        Sum(T(ks_penalty), failure_index, -T(ks_penalty * max_failure_index),
-            T(1.0), exponent),  //
-        Exp(exponent, output));
-
-    output.bvalue() = wdetJ;
+    failure_index.bvalue() = wdetJ * ks_factor;
 
     stack.reverse();
 

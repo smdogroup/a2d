@@ -33,7 +33,7 @@ class LagrangeH1HypercubeBasis {
   using ET = ElementTypes;
 
   static constexpr index_t dim = Dim;
-  static_assert(dim == 1 or dim == 2 or dim == 3, "unsupported dim");
+  static_assert(dim == 1 || dim == 2 || dim == 3, "unsupported dim");
 
   static const index_t order = degree + 1;  // Number of nodes along each edge
 
@@ -411,7 +411,6 @@ class LagrangeH1HypercubeBasis {
             double n0[order], d0[order];
             const double pt0 = Quadrature::get_tensor_point(0, q0);
             interpolation_basis<order, interp_type>(pt0, n0, d0);
-            lagrange_basis<order>(pt0, n0, d0);
 
             for (index_t j1 = 0; j1 < order; j1++) {
               T val(0.0), derx(0.0);
@@ -1232,89 +1231,40 @@ class LagrangeL2HypercubeBasis {
             index_t offset, class SolnType>
   KOKKOS_FUNCTION static void interp(
       const SolnType& sol, QptSpace<Quadrature, FiniteElementSpace>& out) {
-    if constexpr (Quadrature::is_tensor_product) {
+    if constexpr (Quadrature::is_tensor_product && dim >= 2) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      index_t q2dim = 0;
-      if constexpr (dim == 3) {
-        q2dim = Quadrature::tensor_dim2;
-      }
 
       for (index_t i = 0; i < C; i++) {
-        // Interpolate along the 0-direction
-        T u0[indexpow<order, dim - 1>::value * q0dim];
-        for (index_t q0 = 0; q0 < q0dim; q0++) {
-          double n0[order];
-          const double pt0 = Quadrature::get_tensor_point(0, q0);
-          interpolation_basis<order, interp_type>(pt0, n0);
+        if constexpr (dim == 2) {
+          T u0[order * q0dim];
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0);
 
-          const index_t outer = dim == 2 ? 1 : order;
-          for (index_t j2 = 0; j2 < outer; j2++) {
             for (index_t j1 = 0; j1 < order; j1++) {
               T val(0.0);
               for (index_t j0 = 0; j0 < order; j0++) {
-                const index_t node = j0 + order * (j1 + order * j2);
+                const index_t node = j0 + order * j1;
                 val += n0[j0] * sol[offset + C * node + i];
               }
-
-              u0[j1 + order * (j2 + outer * q0)] = val;
+              u0[j1 + order * q0] = val;
             }
           }
-        }
 
-        // Interpolate along the 1-direction, for dim == 3 only
-        T u1[order * q0dim * q1dim];
-        if constexpr (dim == 3) {
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order];
             const double pt1 = Quadrature::get_tensor_point(1, q1);
             interpolation_basis<order, interp_type>(pt1, n1);
 
             for (index_t q0 = 0; q0 < q0dim; q0++) {
-              for (index_t j2 = 0; j2 < order; j2++) {
-                T val(0.0);
-                for (index_t j1 = 0; j1 < order; j1++) {
-                  val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
-                }
-
-                u1[j2 + order * (q0 + q0dim * q1)] = val;
-              }
-            }
-          }
-        }
-
-        // For dim == 3: interpolate along the 2-direction, or
-        // for dim == 2: interpolate along the 1-direction
-        const index_t qouter = dim == 2 ? 1 : q2dim;
-        double n2[order];
-        for (index_t q2 = 0; q2 < qouter; q2++) {  // q2 == 0 for dim == 2
-          if constexpr (dim == 3) {
-            const double pt2 = Quadrature::get_tensor_point(2, q2);
-            interpolation_basis<order, interp_type>(pt2, n2);
-          }
-          for (index_t q1 = 0; q1 < q1dim; q1++) {
-            double n1[order];
-            if constexpr (dim == 2) {
-              const double pt1 = Quadrature::get_tensor_point(1, q1);
-              interpolation_basis<order, interp_type>(pt1, n1);
-            }
-            for (index_t q0 = 0; q0 < q0dim; q0++) {
               T val(0.0);
-              for (index_t j2 = 0; j2 < order; j2++) {
-                if constexpr (dim == 3) {
-                  val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
-                } else {
-                  val += n1[j2] * u0[j2 + order * q0];
-                }
+              for (index_t j1 = 0; j1 < order; j1++) {
+                val += n1[j1] * u0[j1 + order * q0];
               }
 
-              index_t qindex;
-              if constexpr (dim == 2) {
-                qindex = Quadrature::get_tensor_index(q0, q1);
-              } else {
-                qindex = Quadrature::get_tensor_index(q0, q1, q2);
-              }
-
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1);
               FiniteElementSpace& s = out.get(qindex);
               L2Space<T, C, dim>& l2 = s.template get<space>();
               typename L2Space<T, C, dim>::VarType& u = l2.get_value();
@@ -1323,6 +1273,69 @@ class LagrangeL2HypercubeBasis {
                 u = val;
               } else {
                 u(i) = val;
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          const index_t q2dim = Quadrature::tensor_dim1;
+
+          T u0[order * order * q0dim];
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0);
+
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                T val(0.0);
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  const index_t node = j0 + order * (j1 + order * j2);
+                  val += n0[j0] * sol[offset + C * node + i];
+                }
+                u0[j1 + order * (j2 + order * q0)] = val;
+              }
+            }
+          }
+
+          T u1[order * q0dim * q1dim];
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order];
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1);
+
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              for (index_t j2 = 0; j2 < order; j2++) {
+                T val(0.0), derx(0.0), dery(0.0);
+                for (index_t j1 = 0; j1 < order; j1++) {
+                  val += n1[j1] * u0[j1 + order * (j2 + order * q0)];
+                }
+                u1[j2 + order * (q0 + q0dim * q1)] = val;
+              }
+            }
+          }
+
+          for (index_t q2 = 0; q2 < q2dim; q2++) {
+            double n2[order];
+            const double pt2 = Quadrature::get_tensor_point(2, q2);
+            interpolation_basis<order, interp_type>(pt2, n2);
+
+            for (index_t q1 = 0; q1 < q1dim; q1++) {
+              for (index_t q0 = 0; q0 < q0dim; q0++) {
+                T val(0.0);
+                for (index_t j2 = 0; j2 < order; j2++) {
+                  val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
+                }
+
+                const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+                FiniteElementSpace& s = out.get(qindex);
+                L2Space<T, C, dim>& l2 = s.template get<space>();
+                typename L2Space<T, C, dim>::VarType& u = l2.get_value();
+
+                if constexpr (C == 1) {
+                  u = val;
+                } else {
+                  u(i) = val;
+                }
               }
             }
           }
@@ -1444,75 +1457,85 @@ class LagrangeL2HypercubeBasis {
             index_t offset, class SolnType>
   KOKKOS_FUNCTION static void add(
       const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
-    if constexpr (Quadrature::is_tensor_product) {
+    if constexpr (Quadrature::is_tensor_product && dim >= 2) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      index_t q2dim = 0;
-      if constexpr (dim == 3) {
-        q2dim = Quadrature::tensor_dim2;
-      }
 
       for (index_t i = 0; i < C; i++) {
-        // Interpolate along the 2-direction
-        index_t u0size, u1size;
-
         if constexpr (dim == 2) {
-          u0size = order * q0dim;
-          u1size = order * q0dim;
-        } else {  // dim == 3
-          u0size = order * order * q0dim;
-          u1size = order * q0dim * q1dim;
-        }
-
-        T u0[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
-        T u1[u1size];
-        std::fill(u1, u1 + u1size, T(0.0));
-
-        const index_t qouter = dim == 2 ? 1 : q2dim;
-        for (index_t q2 = 0; q2 < qouter; q2++) {
-          double n2[order];
-          if constexpr (dim == 3) {
-            const double pt2 = Quadrature::get_tensor_point(2, q2);
-            interpolation_basis<order, interp_type>(pt2, n2);
-          }
-
+          T u0[order * q0dim];
+          std::fill(u0, u0 + order * q0dim, T(0.0));
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order];
-            if constexpr (dim == 2) {
-              const double pt1 = Quadrature::get_tensor_point(1, q1);
-              interpolation_basis<order, interp_type>(pt1, n1);
-            }
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1);
+
             for (index_t q0 = 0; q0 < q0dim; q0++) {
-              index_t qindex;
-              if constexpr (dim == 2) {
-                qindex = Quadrature::get_tensor_index(q0, q1);
-              } else {
-                qindex = Quadrature::get_tensor_index(q0, q1, q2);
-              }
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1);
 
               const FiniteElementSpace& s = in.get(qindex);
               const L2Space<T, C, dim>& l2 = s.template get<space>();
               const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
 
-              T val;
+              T val, derx, dery;
               if constexpr (C == 1) {
                 val = u;
               } else {
                 val = u(i);
               }
-              for (index_t j2 = 0; j2 < order; j2++) {
-                if constexpr (dim == 2) {
-                  u0[j2 + order * q0] += n1[j2] * val;
+              for (index_t j1 = 0; j1 < order; j1++) {
+                u0[j1 + order * q0] += n1[j1] * val;
+              }
+            }
+          }
+
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0);
+
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val = u0[j1 + order * q0];
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * j1;
+                res[offset + C * node + i] += n0[j0] * val;
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          const index_t q2dim = Quadrature::tensor_dim2;
+
+          T u1[order * q0dim * q1dim];
+          std::fill(u1, u1 + order * q0dim * q1dim, T(0.0));
+
+          for (index_t q2 = 0; q2 < q2dim; q2++) {
+            double n2[order];
+            const double pt2 = Quadrature::get_tensor_point(2, q2);
+            interpolation_basis<order, interp_type>(pt2, n2);
+
+            for (index_t q1 = 0; q1 < q1dim; q1++) {
+              for (index_t q0 = 0; q0 < q0dim; q0++) {
+                const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+
+                const FiniteElementSpace& s = in.get(qindex);
+                const L2Space<T, C, dim>& l2 = s.template get<space>();
+                const typename H1Space<T, C, dim>::VarType& u = l2.get_value();
+
+                T val, derx, dery, derz;
+                if constexpr (C == 1) {
+                  val = u;
                 } else {
+                  val = u(i);
+                }
+                for (index_t j2 = 0; j2 < order; j2++) {
                   u1[j2 + order * (q0 + q0dim * q1)] += n2[j2] * val;
                 }
               }
             }
           }
-        }
 
-        if constexpr (dim == 3) {
+          T u0[order * order * q0dim];
+          std::fill(u0, u0 + order * order * q0dim, T(0.0));
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order];
             const double pt1 = Quadrature::get_tensor_point(1, q1);
@@ -1521,28 +1544,25 @@ class LagrangeL2HypercubeBasis {
             for (index_t q0 = 0; q0 < q0dim; q0++) {
               for (index_t j2 = 0; j2 < order; j2++) {
                 T val = u1[j2 + order * (q0 + q0dim * q1)];
-
                 for (index_t j1 = 0; j1 < order; j1++) {
                   u0[j1 + order * (j2 + order * q0)] += n1[j1] * val;
                 }
               }
             }
           }
-        }
 
-        for (index_t q0 = 0; q0 < q0dim; q0++) {
-          double n0[order];
-          const double pt0 = Quadrature::get_tensor_point(0, q0);
-          interpolation_basis<order, interp_type>(pt0, n0);
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0);
 
-          const index_t outer = dim == 2 ? 1 : order;
-          for (index_t j2 = 0; j2 < outer; j2++) {
-            for (index_t j1 = 0; j1 < order; j1++) {
-              T val = u0[j1 + order * (j2 + outer * q0)];
-
-              for (index_t j0 = 0; j0 < order; j0++) {
-                const index_t node = j0 + order * (j1 + order * j2);
-                res[offset + C * node + i] += n0[j0] * val;
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                T val = u0[j1 + order * (j2 + order * q0)];
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  const index_t node = j0 + order * (j1 + order * j2);
+                  res[offset + C * node + i] += n0[j0] * val;
+                }
               }
             }
           }

@@ -170,6 +170,55 @@ class HeatConduction {
     // Extract the matrix
     stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
   }
+
+  /**
+   * @brief Compute the derivative of the adjoint-residual product with respect
+   * to the data
+   *
+   * @param wdetJ The quadrature weight times determinant of the Jacobian
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param s The solution at the quadrature point
+   * @param adj The adjoint solution at the quadrature point
+   */
+  KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace& data,
+                                            const FiniteElementGeometry& geo,
+                                            const FiniteElementSpace& s,
+                                            const FiniteElementSpace& adj,
+                                            DataSpace& dfdx) const {
+    // Get the value and the gradient of the solution
+    T u0 = s.template get<0>().get_value();    // Make a copy of the value
+    T up = adj.template get<0>().get_value();  // Set reference for p
+    T ub, uh;
+    A2DObj<T> u(u0, ub, up, uh);
+
+    Vec<T, dim> grad0 = s.template get<0>().get_grad();    // Make a copy
+    Vec<T, dim> gradp = adj.template get<0>().get_grad();  // Set p ref
+    Vec<T, dim> gradb, gradh;
+    A2DObj<Vec<T, dim>&> grad(grad0, gradb, gradp, gradh);
+
+    // Make temporaries directly
+    A2DObj<T> rho(data[0]);
+    A2DObj<T> k, dot, output;
+
+    // Make the stack
+    auto stack = MakeStack(Eval(kappa / (1.0 + q * (1.0 - rho)), k),
+                           VecDot(grad, grad, dot),  // dot = (grad, grad)
+                           Eval(wdetJ * (0.5 * dot - heat_source * u), output));
+
+    // Set the seed value
+    output.bvalue() = 1.0;
+
+    // Compute the derivatives first..
+    stack.reverse();
+
+    // Perform the second derivatives to get the adjoint-vector product
+    stack.hforward();
+    stack.hreverse();
+
+    // Get the derivative
+    dfdx[0] = rho.hvalue();
+  }
 };
 
 /*

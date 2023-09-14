@@ -399,44 +399,93 @@ class LagrangeH1HypercubeBasis {
             index_t offset, class SolnType>
   KOKKOS_FUNCTION static void interp(
       const SolnType& sol, QptSpace<Quadrature, FiniteElementSpace>& out) {
-    if constexpr (Quadrature::is_tensor_product) {
+    if constexpr (Quadrature::is_tensor_product && dim >= 2) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      index_t q2dim = 0;
-      if constexpr (dim == 3) {
-        q2dim = Quadrature::tensor_dim2;
-      }
 
       for (index_t i = 0; i < C; i++) {
-        // Interpolate along the 0-direction
-        T u0[indexpow<order, dim - 1>::value * q0dim];
-        T u0x[indexpow<order, dim - 1>::value * q0dim];
-        for (index_t q0 = 0; q0 < q0dim; q0++) {
-          double n0[order], d0[order];
-          const double pt0 = Quadrature::get_tensor_point(0, q0);
-          interpolation_basis<order, interp_type>(pt0, n0, d0);
+        if constexpr (dim == 2) {
+          T u0[order * q0dim];
+          T u0x[order * q0dim];
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0, d0);
+            lagrange_basis<order>(pt0, n0, d0);
 
-          const index_t outer = dim == 2 ? 1 : order;
-          for (index_t j2 = 0; j2 < outer; j2++) {  // j2 == 0 for dim == 2
             for (index_t j1 = 0; j1 < order; j1++) {
               T val(0.0), derx(0.0);
               for (index_t j0 = 0; j0 < order; j0++) {
-                const index_t node = j0 + order * (j1 + order * j2);
+                const index_t node = j0 + order * j1;
                 val += n0[j0] * sol[offset + C * node + i];
                 derx += d0[j0] * sol[offset + C * node + i];
               }
 
-              u0[j1 + order * (j2 + outer * q0)] = val;
-              u0x[j1 + order * (j2 + outer * q0)] = derx;
+              u0[j1 + order * q0] = val;
+              u0x[j1 + order * q0] = derx;
             }
           }
-        }
 
-        // Interpolate along the 1-direction, for dim == 3 only
-        T u1[order * q0dim * q1dim];
-        T u1x[order * q0dim * q1dim];
-        T u1y[order * q0dim * q1dim];
-        if constexpr (dim == 3) {
+          // Interpolate along the 1-direction
+          for (index_t q1 = 0; q1 < q1dim; q1++) {
+            double n1[order], d1[order];
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1, d1);
+
+            for (index_t q0 = 0; q0 < q0dim; q0++) {
+              T val(0.0), derx(0.0), dery(0.0);
+              for (index_t j1 = 0; j1 < order; j1++) {
+                val += n1[j1] * u0[j1 + order * q0];
+                derx += n1[j1] * u0x[j1 + order * q0];
+                dery += d1[j1] * u0[j1 + order * q0];
+              }
+
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1);
+              FiniteElementSpace& s = out.get(qindex);
+              H1Space<T, C, dim>& h1 = s.template get<space>();
+              typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+              typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
+
+              if constexpr (C == 1) {
+                u = val;
+                grad(0) = derx;
+                grad(1) = dery;
+              } else {
+                u(i) = val;
+                grad(i, 0) = derx;
+                grad(i, 1) = dery;
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          const index_t q2dim = Quadrature::tensor_dim1;
+
+          T u0[order * order * q0dim];
+          T u0x[order * order * q0dim];
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0, d0);
+
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                T val(0.0), derx(0.0);
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  const index_t node = j0 + order * (j1 + order * j2);
+                  val += n0[j0] * sol[offset + C * node + i];
+                  derx += d0[j0] * sol[offset + C * node + i];
+                }
+
+                u0[j1 + order * (j2 + order * q0)] = val;
+                u0x[j1 + order * (j2 + order * q0)] = derx;
+              }
+            }
+          }
+
+          // Interpolate along the 1-direction
+          T u1[order * q0dim * q1dim];
+          T u1x[order * q0dim * q1dim];
+          T u1y[order * q0dim * q1dim];
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order], d1[order];
             const double pt1 = Quadrature::get_tensor_point(1, q1);
@@ -457,63 +506,39 @@ class LagrangeH1HypercubeBasis {
               }
             }
           }
-        }
 
-        // For dim == 3: interpolate along the 2-direction, or
-        // for dim == 2: interpolate along the 1-direction
-        const index_t qouter = dim == 2 ? 1 : q2dim;
-        double n2[order], d2[order];
-        for (index_t q2 = 0; q2 < qouter; q2++) {  // q2 == 0 for dim == 2
-          if constexpr (dim == 3) {
+          // Interpolate along the 2-direction
+          for (index_t q2 = 0; q2 < q2dim; q2++) {
+            double n2[order], d2[order];
             const double pt2 = Quadrature::get_tensor_point(2, q2);
             interpolation_basis<order, interp_type>(pt2, n2, d2);
-          }
-          for (index_t q1 = 0; q1 < q1dim; q1++) {
-            double n1[order], d1[order];
-            if constexpr (dim == 2) {
-              const double pt1 = Quadrature::get_tensor_point(1, q1);
-              interpolation_basis<order, interp_type>(pt1, n1, d1);
-            }
-            for (index_t q0 = 0; q0 < q0dim; q0++) {
-              T val(0.0), derx(0.0), dery(0.0), derz(0.0);
-              for (index_t j2 = 0; j2 < order; j2++) {
-                if constexpr (dim == 3) {
+
+            for (index_t q1 = 0; q1 < q1dim; q1++) {
+              for (index_t q0 = 0; q0 < q0dim; q0++) {
+                T val(0.0), derx(0.0), dery(0.0), derz(0.0);
+                for (index_t j2 = 0; j2 < order; j2++) {
                   val += n2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
                   derx += n2[j2] * u1x[j2 + order * (q0 + q0dim * q1)];
                   dery += n2[j2] * u1y[j2 + order * (q0 + q0dim * q1)];
                   derz += d2[j2] * u1[j2 + order * (q0 + q0dim * q1)];
-                } else {  // dim == 2
-                  val += n1[j2] * u0[j2 + order * q0];
-                  derx += n1[j2] * u0x[j2 + order * q0];
-                  dery += d1[j2] * u0[j2 + order * q0];
                 }
-              }
 
-              index_t qindex;
-              if constexpr (dim == 2) {
-                qindex = Quadrature::get_tensor_index(q0, q1);
-              } else {  // dim == 3
-                qindex = Quadrature::get_tensor_index(q0, q1, q2);
-              }
+                const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+                FiniteElementSpace& s = out.get(qindex);
+                H1Space<T, C, dim>& h1 = s.template get<space>();
+                typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+                typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-              FiniteElementSpace& s = out.get(qindex);
-              H1Space<T, C, dim>& h1 = s.template get<space>();
-              typename H1Space<T, C, dim>::VarType& u = h1.get_value();
-              typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
-
-              if constexpr (C == 1) {
-                u = val;
-                grad(0) = derx;
-                grad(1) = dery;
-                if constexpr (dim == 3) {
+                if constexpr (C == 1) {
+                  u = val;
+                  grad(0) = derx;
+                  grad(1) = dery;
                   grad(2) = derz;
-                }
 
-              } else {
-                u(i) = val;
-                grad(i, 0) = derx;
-                grad(i, 1) = dery;
-                if constexpr (dim == 3) {
+                } else {
+                  u(i) = val;
+                  grad(i, 0) = derx;
+                  grad(i, 1) = dery;
                   grad(i, 2) = derz;
                 }
               }
@@ -521,26 +546,11 @@ class LagrangeH1HypercubeBasis {
           }
         }
       }
-    } else {  // is not tensor_product
+    } else {  // dim == 1 or not tensor_product
       for (index_t q = 0; q < Quadrature::get_num_points(); q++) {
         // Get the quadrature point
         double pt[dim];
         Quadrature::get_point(q, pt);
-
-        // Evaluate the basis functions
-        double n0[order], d0[order];
-        double n1[order], d1[order];
-        double n2[order], d2[order];
-
-        if constexpr (dim >= 1) {
-          interpolation_basis<order, interp_type>(pt[0], n0, d0);
-        }
-        if constexpr (dim >= 2) {
-          interpolation_basis<order, interp_type>(pt[1], n1, d1);
-        }
-        if constexpr (dim >= 3) {
-          interpolation_basis<order, interp_type>(pt[2], n2, d2);
-        }
 
         FiniteElementSpace& s = out.get(q);
         H1Space<T, C, dim>& h1 = s.template get<space>();
@@ -554,65 +564,83 @@ class LagrangeH1HypercubeBasis {
         }
         grad.zero();
 
-        // | dim | j2range | j1range | j0range |
-        // -------------------------------------
-        // | 3   | order   | order   | order   |
-        // | 2   | 1       | order   | order   |
-        // | 1   | 1       | 1       | order   |
-        constexpr index_t j2range = dim >= 3 ? order : 1;
-        constexpr index_t j1range = dim >= 2 ? order : 1;
-        constexpr index_t j0range = dim >= 1 ? order : 1;
+        if constexpr (dim == 1) {
+          double n0[order], d0[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
 
-        for (index_t j2 = 0; j2 < j2range; j2++) {
-          for (index_t j1 = 0; j1 < j1range; j1++) {
-            double n1n2, d1n2, n1d2;
-            if constexpr (dim == 3) {
-              n1n2 = n1[j1] * n2[j2];
-              d1n2 = d1[j1] * n2[j2];
-              n1d2 = n1[j1] * d2[j2];
-            }
-            for (index_t j0 = 0; j0 < j0range; j0++) {
-              const index_t node = j0 + order * (j1 + order * j2);
-              double N, dx, dy, dz;
-              if constexpr (dim == 3) {
-                N = n0[j0] * n1n2;
-                dx = d0[j0] * n1n2;
-                dy = n0[j0] * d1n2;
-                dz = n0[j0] * n1d2;
-              } else if constexpr (dim == 2) {
-                N = n0[j0] * n1[j1];
-                dx = d0[j0] * n1[j1];
-                dy = n0[j0] * d1[j1];
-              } else {  // dim == 1
-                N = n0[j0];
-                dx = d0[j0];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            if constexpr (C == 1) {
+              const T val = sol[offset + j0];
+              u += n0[j0] * val;
+              grad(0) += d0[j0] * val;
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                const T val = sol[offset + C * j0 + i];
+                u(i) += n0[j0] * val;
+                grad(i, 0) += d0[j0] * val;
               }
+            }
+          }
+        } else if constexpr (dim == 2) {
+          double n0[order], n1[order];
+          double d0[order], d1[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * j1;
+              double N = n0[j0] * n0[j1];
+              double dx = d0[j0] * n0[j1];
+              double dy = n0[j0] * d0[j1];
 
               if constexpr (C == 1) {
                 const T val = sol[offset + node];
-
                 u += N * val;
-                if constexpr (dim >= 1) {
-                  grad(0) += dx * val;
-                }
-                if constexpr (dim >= 2) {
-                  grad(1) += dy * val;
-                }
-                if constexpr (dim >= 3) {
-                  grad(2) += dz * val;
-                }
+                grad(0) += dx * val;
+                grad(1) += dy * val;
               } else {
                 for (index_t i = 0; i < C; i++) {
                   const T val = sol[offset + C * node + i];
-
                   u(i) += N * val;
-                  if constexpr (dim >= 1) {
+                  grad(i, 0) += dx * val;
+                  grad(i, 1) += dy * val;
+                }
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          double n0[order], n1[order], n2[order];
+          double d0[order], d1[order], d2[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+          interpolation_basis<order, interp_type>(pt[2], n2, d2);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              double n1n2 = n1[j1] * n2[j2];
+              double d1n2 = d1[j1] * n2[j2];
+              double n1d2 = n1[j1] * d2[j2];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                double N = n0[j0] * n1n2;
+                double dx = d0[j0] * n1n2;
+                double dy = n0[j0] * d1n2;
+                double dz = n0[j0] * n1d2;
+
+                if constexpr (C == 1) {
+                  const T val = sol[offset + node];
+                  u += N * val;
+                  grad(0) += dx * val;
+                  grad(1) += dy * val;
+                  grad(2) += dz * val;
+                } else {
+                  for (index_t i = 0; i < C; i++) {
+                    const T val = sol[offset + C * node + i];
+                    u(i) += N * val;
                     grad(i, 0) += dx * val;
-                  }
-                  if constexpr (dim >= 2) {
                     grad(i, 1) += dy * val;
-                  }
-                  if constexpr (dim >= 3) {
                     grad(i, 2) += dz * val;
                   }
                 }
@@ -660,87 +688,99 @@ class LagrangeH1HypercubeBasis {
             index_t offset, class SolnType>
   KOKKOS_FUNCTION static void add(
       const QptSpace<Quadrature, FiniteElementSpace>& in, SolnType& res) {
-    if constexpr (Quadrature::is_tensor_product) {
+    if constexpr (Quadrature::is_tensor_product && dim >= 2) {
       const index_t q0dim = Quadrature::tensor_dim0;
       const index_t q1dim = Quadrature::tensor_dim1;
-      index_t q2dim = 0;
-      if constexpr (dim == 3) {
-        q2dim = Quadrature::tensor_dim2;
-      }
 
       for (index_t i = 0; i < C; i++) {
-        // Interpolate along the 2-direction
-        // index_t u0size, u1size;
-        // if constexpr (dim == 2) {
-        //   u0size = order * q0dim;
-        //   u1size = order * q0dim;
-        // } else {
-        //   u0size = order * order * q0dim;
-        //   u1size = order * q0dim * q1dim;
-        // }
-
-        constexpr index_t u0size = order * order * q0dim;
-        constexpr index_t u1size = order * q0dim * q1dim;
-
-        T u1[u1size];
-        T u1x[u1size];
-        T u1y[u1size];  // not used for dim == 2
-        std::fill(u1, u1 + u1size, T(0.0));
-        std::fill(u1x, u1x + u1size, T(0.0));
-        std::fill(u1y, u1y + u1size, T(0.0));
-
-        T u0[u0size];
-        T u0x[u0size];
-        std::fill(u0, u0 + u0size, T(0.0));
-        std::fill(u0x, u0x + u0size, T(0.0));
-
-        const index_t qouter = dim == 2 ? 1 : q2dim;
-        for (index_t q2 = 0; q2 < qouter; q2++) {
-          double n2[order], d2[order];
-          if constexpr (dim == 3) {
-            const double pt2 = Quadrature::get_tensor_point(2, q2);
-            interpolation_basis<order, interp_type>(pt2, n2, d2);
-          }
+        if constexpr (dim == 2) {
+          T u0[order * q0dim];
+          T u0x[order * q0dim];
+          std::fill(u0, u0 + order * q0dim, T(0.0));
+          std::fill(u0x, u0x + order * q0dim, T(0.0));
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order], d1[order];
-            if constexpr (dim == 2) {
-              const double pt1 = Quadrature::get_tensor_point(1, q1);
-              interpolation_basis<order, interp_type>(pt1, n1, d1);
-            }
+            const double pt1 = Quadrature::get_tensor_point(1, q1);
+            interpolation_basis<order, interp_type>(pt1, n1, d1);
+
             for (index_t q0 = 0; q0 < q0dim; q0++) {
-              index_t qindex;
-              if constexpr (dim == 2) {
-                qindex = Quadrature::get_tensor_index(q0, q1);
-              } else {
-                qindex = Quadrature::get_tensor_index(q0, q1, q2);
-              }
+              const index_t qindex = Quadrature::get_tensor_index(q0, q1);
 
               const FiniteElementSpace& s = in.get(qindex);
               const H1Space<T, C, dim>& h1 = s.template get<space>();
               const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
               const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-              T val, derx, dery, derz;
+              T val, derx, dery;
               if constexpr (C == 1) {
                 val = u;
                 derx = grad(0);
                 dery = grad(1);
-                if constexpr (dim == 3) {
-                  derz = grad(2);
-                }
               } else {
                 val = u(i);
                 derx = grad(i, 0);
                 dery = grad(i, 1);
-                if constexpr (dim == 3) {
+              }
+              for (index_t j1 = 0; j1 < order; j1++) {
+                u0[j1 + order * q0] += n1[j1] * val + d1[j1] * dery;
+                u0x[j1 + order * q0] += n1[j1] * derx;
+              }
+            }
+          }
+
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0, d0);
+
+            for (index_t j1 = 0; j1 < order; j1++) {
+              T val = u0[j1 + order * q0];
+              T derx = u0x[j1 + order * q0];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * j1;
+                res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          const index_t q2dim = Quadrature::tensor_dim2;
+
+          T u1[order * q0dim * q1dim];
+          T u1x[order * q0dim * q1dim];
+          T u1y[order * q0dim * q1dim];
+          std::fill(u1, u1 + order * q0dim * q1dim, T(0.0));
+          std::fill(u1x, u1x + order * q0dim * q1dim, T(0.0));
+          std::fill(u1y, u1y + order * q0dim * q1dim, T(0.0));
+
+          for (index_t q2 = 0; q2 < q2dim; q2++) {
+            double n2[order], d2[order];
+            const double pt2 = Quadrature::get_tensor_point(2, q2);
+            interpolation_basis<order, interp_type>(pt2, n2, d2);
+
+            for (index_t q1 = 0; q1 < q1dim; q1++) {
+              for (index_t q0 = 0; q0 < q0dim; q0++) {
+                const index_t qindex = Quadrature::get_tensor_index(q0, q1, q2);
+
+                const FiniteElementSpace& s = in.get(qindex);
+                const H1Space<T, C, dim>& h1 = s.template get<space>();
+                const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
+                const typename H1Space<T, C, dim>::GradType& grad =
+                    h1.get_grad();
+
+                T val, derx, dery, derz;
+                if constexpr (C == 1) {
+                  val = u;
+                  derx = grad(0);
+                  dery = grad(1);
+                  derz = grad(2);
+                } else {
+                  val = u(i);
+                  derx = grad(i, 0);
+                  dery = grad(i, 1);
                   derz = grad(i, 2);
                 }
-              }
-              for (index_t j2 = 0; j2 < order; j2++) {
-                if constexpr (dim == 2) {
-                  u0[j2 + order * q0] += n1[j2] * val + d1[j2] * dery;
-                  u0x[j2 + order * q0] += n1[j2] * derx;
-                } else {
+                for (index_t j2 = 0; j2 < order; j2++) {
                   u1[j2 + order * (q0 + q0dim * q1)] +=
                       n2[j2] * val + d2[j2] * derz;
                   u1x[j2 + order * (q0 + q0dim * q1)] += n2[j2] * derx;
@@ -749,9 +789,11 @@ class LagrangeH1HypercubeBasis {
               }
             }
           }
-        }
 
-        if constexpr (dim == 3) {
+          T u0[order * order * q0dim];
+          T u0x[order * order * q0dim];
+          std::fill(u0, u0 + order * order * q0dim, T(0.0));
+          std::fill(u0x, u0x + order * order * q0dim, T(0.0));
           for (index_t q1 = 0; q1 < q1dim; q1++) {
             double n1[order], d1[order];
             const double pt1 = Quadrature::get_tensor_point(1, q1);
@@ -771,22 +813,21 @@ class LagrangeH1HypercubeBasis {
               }
             }
           }
-        }
 
-        for (index_t q0 = 0; q0 < q0dim; q0++) {
-          double n0[order], d0[order];
-          const double pt0 = Quadrature::get_tensor_point(0, q0);
-          interpolation_basis<order, interp_type>(pt0, n0, d0);
+          for (index_t q0 = 0; q0 < q0dim; q0++) {
+            double n0[order], d0[order];
+            const double pt0 = Quadrature::get_tensor_point(0, q0);
+            interpolation_basis<order, interp_type>(pt0, n0, d0);
 
-          const index_t outer = dim == 2 ? 1 : order;
-          for (index_t j2 = 0; j2 < outer; j2++) {
-            for (index_t j1 = 0; j1 < order; j1++) {
-              T val = u0[j1 + order * (j2 + outer * q0)];
-              T derx = u0x[j1 + order * (j2 + outer * q0)];
+            for (index_t j2 = 0; j2 < order; j2++) {
+              for (index_t j1 = 0; j1 < order; j1++) {
+                T val = u0[j1 + order * (j2 + order * q0)];
+                T derx = u0x[j1 + order * (j2 + order * q0)];
 
-              for (index_t j0 = 0; j0 < order; j0++) {
-                const index_t node = j0 + order * (j1 + order * j2);
-                res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
+                for (index_t j0 = 0; j0 < order; j0++) {
+                  const index_t node = j0 + order * (j1 + order * j2);
+                  res[offset + C * node + i] += n0[j0] * val + d0[j0] * derx;
+                }
               }
             }
           }
@@ -798,77 +839,76 @@ class LagrangeH1HypercubeBasis {
         double pt[dim];
         Quadrature::get_point(q, pt);
 
-        // Evaluate the basis functions
-        double n0[order], d0[order];
-        double n1[order], d1[order];
-        double n2[order], d2[order];
-
-        if constexpr (dim >= 1) {
-          interpolation_basis<order, interp_type>(pt[0], n0, d0);
-        }
-        if constexpr (dim >= 2) {
-          interpolation_basis<order, interp_type>(pt[1], n1, d1);
-        }
-        if constexpr (dim >= 3) {
-          interpolation_basis<order, interp_type>(pt[2], n2, d2);
-        }
-
         const FiniteElementSpace& s = in.get(q);
         const H1Space<T, C, dim>& h1 = s.template get<space>();
         const typename H1Space<T, C, dim>::VarType& u = h1.get_value();
         const typename H1Space<T, C, dim>::GradType& grad = h1.get_grad();
 
-        // | dim | j2range | j1range | j0range |
-        // -------------------------------------
-        // | 3   | order   | order   | order   |
-        // | 2   | 1       | order   | order   |
-        // | 1   | 1       | 1       | order   |
-        constexpr index_t j2range = dim >= 3 ? order : 1;
-        constexpr index_t j1range = dim >= 2 ? order : 1;
-        constexpr index_t j0range = dim >= 1 ? order : 1;
+        if constexpr (dim == 1) {
+          double n0[order], d0[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
 
-        for (index_t j2 = 0; j2 < j2range; j2++) {
-          for (index_t j1 = 0; j1 < j1range; j1++) {
-            double n1n2, d1n2, n1d2;
-            if constexpr (dim == 3) {
-              n1n2 = n1[j1] * n2[j2];
-              d1n2 = d1[j1] * n2[j2];
-              n1d2 = n1[j1] * d2[j2];
-            }
-            for (index_t j0 = 0; j0 < j0range; j0++) {
-              const index_t node = j0 + order * (j1 + order * j2);
-              double N, dx, dy, dz;
-              if constexpr (dim == 3) {
-                N = n0[j0] * n1n2;
-                dx = d0[j0] * n1n2;
-                dy = n0[j0] * d1n2;
-                dz = n0[j0] * n1d2;
-              } else if constexpr (dim == 2) {
-                N = n0[j0] * n1[j1];
-                dx = d0[j0] * n1[j1];
-                dy = n0[j0] * d1[j1];
-              } else {  // dim == 1
-                N = n0[j0];
-                dx = d0[j0];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            if constexpr (C == 1) {
+              res[offset + j0] += n0[j0] * u + d0[j0] * grad(0);
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                res[offset + C * j0 + i] += n0[j0] * u(i) + d0[j0] * grad(i, 0);
               }
+            }
+          }
+        } else if constexpr (dim == 2) {
+          double n0[order], n1[order];
+          double d0[order], d1[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              double N = n0[j0] * n1[j1];
+              double dx = d0[j0] * n1[j1];
+              double dy = n0[j0] * d1[j1];
+              const index_t node = j0 + order * j1;
 
               if constexpr (C == 1) {
-                res[offset + node] += N * u + dx * grad(0);
-                if constexpr (dim == 2) {
-                  res[offset + node] += dy * grad(1);
-                }
-                if constexpr (dim == 3) {
-                  res[offset + node] += dy * grad(1) + dz * grad(2);
-                }
+                res[offset + node] += N * u + dx * grad(0) + dy * grad(1);
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  res[offset + C * node + i] += N * u(i) + dx * grad(i, 0);
-                  if constexpr (dim == 2) {
-                    res[offset + C * node + i] += dy * grad(i, 1);
-                  }
-                  if constexpr (dim == 3) {
-                    res[offset + C * node + i] +=
-                        dy * grad(i, 1) + dz * grad(i, 2);
+                  res[offset + C * node + i] +=
+                      N * u(i) + dx * grad(i, 0) + dy * grad(i, 1);
+                }
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          double n0[order], n1[order], n2[order];
+          double d0[order], d1[order], d2[order];
+          interpolation_basis<order, interp_type>(pt[0], n0, d0);
+          interpolation_basis<order, interp_type>(pt[1], n1, d1);
+          interpolation_basis<order, interp_type>(pt[2], n2, d2);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              double n1n2 = n1[j1] * n2[j2];
+              double d1n2 = d1[j1] * n2[j2];
+              double n1d2 = n1[j1] * d2[j2];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                double N = n0[j0] * n1n2;
+                double dx = d0[j0] * n1n2;
+                double dy = n0[j0] * d1n2;
+                double dz = n0[j0] * n1d2;
+
+                const index_t node = j0 + order * (j1 + order * j2);
+
+                if constexpr (C == 1) {
+                  res[offset + node] +=
+                      N * u + dx * grad(0) + dy * grad(1) + dz * grad(2);
+                } else {
+                  for (index_t i = 0; i < C; i++) {
+                    res[offset + C * node + i] += N * u(i) + dx * grad(i, 0) +
+                                                  dy * grad(i, 1) +
+                                                  dz * grad(i, 2);
                   }
                 }
               }
@@ -904,50 +944,44 @@ class LagrangeH1HypercubeBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    // Evaluate the basis functions
-    double n0[order], n1[order], n2[order];
-    double d0[order], d1[order], d2[order];
-
-    if constexpr (dim >= 1) {
+    if constexpr (dim == 1) {
+      double n0[order], d0[order];
       interpolation_basis<order, interp_type>(pt[0], n0, d0);
-    }
-    if constexpr (dim >= 2) {
+
+      for (index_t j0 = 0; j0 < order; j0++) {
+        N[(dim + 1) * j0] = n0[j0];
+        N[(dim + 1) * j0 + 1] = d0[j0];
+      }
+    } else if constexpr (dim == 2) {
+      double n0[order], n1[order];
+      double d0[order], d1[order];
+      interpolation_basis<order, interp_type>(pt[0], n0, d0);
       interpolation_basis<order, interp_type>(pt[1], n1, d1);
-    }
-    if constexpr (dim == 3) {
-      interpolation_basis<order, interp_type>(pt[2], n2, d2);
-    }
 
-    // | dim | j2range | j1range | j0range |
-    // -------------------------------------
-    // | 3   | order   | order   | order   |
-    // | 2   | 1       | order   | order   |
-    // | 1   | 1       | 1       | order   |
-    constexpr index_t j2range = dim >= 3 ? order : 1;
-    constexpr index_t j1range = dim >= 2 ? order : 1;
-    constexpr index_t j0range = dim >= 1 ? order : 1;
+      for (index_t j1 = 0; j1 < order; j1++) {
+        for (index_t j0 = 0; j0 < order; j0++) {
+          const index_t node = j0 + order * j1;
 
-    for (index_t j2 = 0; j2 < j2range; j2++) {
-      for (index_t j1 = 0; j1 < j1range; j1++) {
-        double n1n2, d1n2, n1d2;
-
-        if constexpr (dim == 3) {
-          n1n2 = n1[j1] * n2[j2];
-          d1n2 = d1[j1] * n2[j2];
-          n1d2 = n1[j1] * d2[j2];
+          N[(dim + 1) * node] = n0[j0] * n1[j1];
+          N[(dim + 1) * node + 1] = d0[j0] * n1[j1];
+          N[(dim + 1) * node + 2] = n0[j0] * d1[j1];
         }
+      }
+    } else if constexpr (dim == 3) {
+      double n0[order], n1[order], n2[order];
+      double d0[order], d1[order], d2[order];
+      interpolation_basis<order, interp_type>(pt[0], n0, d0);
+      interpolation_basis<order, interp_type>(pt[1], n1, d1);
+      interpolation_basis<order, interp_type>(pt[2], n2, d2);
 
-        for (index_t j0 = 0; j0 < j0range; j0++) {
-          const index_t node = j0 + order * (j1 + order * j2);
+      for (index_t j2 = 0; j2 < order; j2++) {
+        for (index_t j1 = 0; j1 < order; j1++) {
+          double n1n2 = n1[j1] * n2[j2];
+          double d1n2 = d1[j1] * n2[j2];
+          double n1d2 = n1[j1] * d2[j2];
 
-          if constexpr (dim == 1) {
-            N[(dim + 1) * node] = n0[j0];
-            N[(dim + 1) * node + 1] = d0[j0];
-          } else if constexpr (dim == 2) {
-            N[(dim + 1) * node] = n0[j0] * n1[j1];
-            N[(dim + 1) * node + 1] = d0[j0] * n1[j1];
-            N[(dim + 1) * node + 2] = n0[j0] * d1[j1];
-          } else {  // dim == 3
+          for (index_t j0 = 0; j0 < order; j0++) {
+            const index_t node = j0 + order * (j1 + order * j2);
             N[(dim + 1) * node] = n0[j0] * n1n2;
             N[(dim + 1) * node + 1] = d0[j0] * n1n2;
             N[(dim + 1) * node + 2] = n0[j0] * d1n2;
@@ -985,7 +1019,8 @@ class LagrangeL2HypercubeBasis {
   /**
    * @brief Degree of freedom handling on the topological entities
    *
-   * @param entity The type of topological entity (domain, bound, edge, vertex)
+   * @param entity The type of topological entity (domain, bound, edge,
+   * vertex)
    * @param index The index of the topological entity (e.g. edge index)
    * @return The number of degrees of freedom
    */
@@ -1309,49 +1344,61 @@ class LagrangeL2HypercubeBasis {
           u.zero();
         }
 
-        // Evaluate the basis functions
-        double n0[order], n1[order], n2[order];
-
-        if constexpr (dim >= 1) {
+        if constexpr (dim == 1) {
+          double n0[order];
           interpolation_basis<order, interp_type>(pt[0], n0);
-        }
-        if constexpr (dim >= 2) {
-          interpolation_basis<order, interp_type>(pt[1], n1);
-        }
-        if constexpr (dim == 3) {
-          interpolation_basis<order, interp_type>(pt[2], n2);
-        }
 
-        // | dim | j2range | j1range | j0range |
-        // -------------------------------------
-        // | 3   | order   | order   | order   |
-        // | 2   | 1       | order   | order   |
-        // | 1   | 1       | 1       | order   |
-        constexpr index_t j2range = dim >= 3 ? order : 1;
-        constexpr index_t j1range = dim >= 2 ? order : 1;
-        constexpr index_t j0range = dim >= 1 ? order : 1;
-
-        for (index_t j2 = 0; j2 < j2range; j2++) {
-          for (index_t j1 = 0; j1 < j1range; j1++) {
-            double n1n2;
-            if constexpr (dim == 3) {
-              n1n2 = n1[j1] * n2[j2];
-            }
-            for (index_t j0 = 0; j0 < j0range; j0++) {
-              const index_t node = j0 + order * (j1 + order * j2);
-              double coeff;
-              if constexpr (dim == 3) {
-                coeff = n0[j0] * n1n2;
-              } else if constexpr (dim == 2) {
-                coeff = n0[j0] * n1[j1];
-              } else {  // dim == 1
-                coeff = n0[j0];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            if constexpr (C == 1) {
+              const T val = sol[offset + j0];
+              u += n0[j0] * val;
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                const T val = sol[offset + C * j0 + i];
+                u(i) += n0[j0] * val;
               }
+            }
+          }
+        } else if constexpr (dim == 2) {
+          double n0[order], n1[order];
+          interpolation_basis<order, interp_type>(pt[0], n0);
+          interpolation_basis<order, interp_type>(pt[1], n1);
+
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              const index_t node = j0 + order * j1;
+              double N = n0[j0] * n0[j1];
               if constexpr (C == 1) {
-                u += coeff * sol[offset + node];
+                const T val = sol[offset + node];
+                u += N * val;
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  u(i) += coeff * sol[offset + C * node + i];
+                  const T val = sol[offset + C * node + i];
+                  u(i) += N * val;
+                }
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          double n0[order], n1[order], n2[order];
+          interpolation_basis<order, interp_type>(pt[0], n0);
+          interpolation_basis<order, interp_type>(pt[1], n1);
+          interpolation_basis<order, interp_type>(pt[2], n2);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              double n1n2 = n1[j1] * n2[j2];
+              for (index_t j0 = 0; j0 < order; j0++) {
+                const index_t node = j0 + order * (j1 + order * j2);
+                double N = n0[j0] * n1n2;
+                if constexpr (C == 1) {
+                  const T val = sol[offset + node];
+                  u += N * val;
+                } else {
+                  for (index_t i = 0; i < C; i++) {
+                    const T val = sol[offset + C * node + i];
+                    u(i) += N * val;
+                  }
                 }
               }
             }
@@ -1511,49 +1558,58 @@ class LagrangeL2HypercubeBasis {
         const L2Space<T, C, dim>& l2 = s.template get<space>();
         const typename L2Space<T, C, dim>::VarType& u = l2.get_value();
 
-        // Evaluate the basis functions
-        double n0[order], n1[order], n2[order];
-        if constexpr (dim >= 1) {
+        if constexpr (dim == 1) {
+          double n0[order];
           interpolation_basis<order, interp_type>(pt[0], n0);
-        }
-        if constexpr (dim >= 2) {
-          interpolation_basis<order, interp_type>(pt[1], n1);
-        }
-        if constexpr (dim >= 3) {
-          interpolation_basis<order, interp_type>(pt[2], n2);
-        }
 
-        // | dim | j2range | j1range | j0range |
-        // -------------------------------------
-        // | 3   | order   | order   | order   |
-        // | 2   | 1       | order   | order   |
-        // | 1   | 1       | 1       | order   |
-        constexpr index_t j2range = dim >= 3 ? order : 1;
-        constexpr index_t j1range = dim >= 2 ? order : 1;
-        constexpr index_t j0range = dim >= 1 ? order : 1;
-
-        for (index_t j2 = 0; j2 < j2range; j2++) {
-          for (index_t j1 = 0; j1 < j1range; j1++) {
-            double n1n2;
-            if constexpr (dim == 3) {
-              n1n2 = n1[j1] * n2[j2];
-            }
-            for (index_t j0 = 0; j0 < j0range; j0++) {
-              const index_t node = j0 + order * (j1 + order * j2);
-              double coeff;
-              if constexpr (dim == 3) {
-                coeff = n0[j0] * n1n2;
-              } else if constexpr (dim == 2) {
-                coeff = n0[j0] * n1[j1];
-              } else {  // dim == 1
-                coeff = n0[j0];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            if constexpr (C == 1) {
+              res[offset + j0] += n0[j0] * u;
+            } else {
+              for (index_t i = 0; i < C; i++) {
+                res[offset + C * j0 + i] += n0[j0] * u(i);
               }
+            }
+          }
+        } else if constexpr (dim == 2) {
+          double n0[order], n1[order];
+          interpolation_basis<order, interp_type>(pt[0], n0);
+          interpolation_basis<order, interp_type>(pt[1], n1);
+
+          for (index_t j1 = 0; j1 < order; j1++) {
+            for (index_t j0 = 0; j0 < order; j0++) {
+              double N = n0[j0] * n1[j1];
+              const index_t node = j0 + order * j1;
 
               if constexpr (C == 1) {
-                res[offset + node] += coeff * u;
+                res[offset + node] += N * u;
               } else {
                 for (index_t i = 0; i < C; i++) {
-                  res[offset + C * node + i] += coeff * u(i);
+                  res[offset + C * node + i] += N * u(i);
+                }
+              }
+            }
+          }
+        } else if constexpr (dim == 3) {
+          double n0[order], n1[order], n2[order];
+          interpolation_basis<order, interp_type>(pt[0], n0);
+          interpolation_basis<order, interp_type>(pt[1], n1);
+          interpolation_basis<order, interp_type>(pt[2], n2);
+
+          for (index_t j2 = 0; j2 < order; j2++) {
+            for (index_t j1 = 0; j1 < order; j1++) {
+              double n1n2 = n1[j1] * n2[j2];
+
+              for (index_t j0 = 0; j0 < order; j0++) {
+                double N = n0[j0] * n1n2;
+                const index_t node = j0 + order * (j1 + order * j2);
+
+                if constexpr (C == 1) {
+                  res[offset + node] += N * u;
+                } else {
+                  for (index_t i = 0; i < C; i++) {
+                    res[offset + C * node + i] += N * u(i);
+                  }
                 }
               }
             }
@@ -1581,42 +1637,36 @@ class LagrangeL2HypercubeBasis {
     double pt[dim];
     Quadrature::get_point(n, pt);
 
-    // Evaluate the basis functions
-    double n0[order], n1[order], n2[order];
-
-    if constexpr (dim >= 1) {
+    if constexpr (dim == 1) {
+      double n0[order];
       interpolation_basis<order, interp_type>(pt[0], n0);
-    }
-    if constexpr (dim >= 2) {
+
+      for (index_t j0 = 0; j0 < order; j0++) {
+        N[(dim + 1) * j0] = n0[j0];
+      }
+    } else if constexpr (dim == 2) {
+      double n0[order], n1[order];
+      interpolation_basis<order, interp_type>(pt[0], n0);
       interpolation_basis<order, interp_type>(pt[1], n1);
-    }
-    if constexpr (dim >= 3) {
-      interpolation_basis<order, interp_type>(pt[2], n2);
-    }
 
-    // | dim | j2range | j1range | j0range |
-    // -------------------------------------
-    // | 3   | order   | order   | order   |
-    // | 2   | 1       | order   | order   |
-    // | 1   | 1       | 1       | order   |
-    constexpr index_t j2range = dim >= 3 ? order : 1;
-    constexpr index_t j1range = dim >= 2 ? order : 1;
-    constexpr index_t j0range = dim >= 1 ? order : 1;
-
-    for (index_t j2 = 0; j2 < j2range; j2++) {
-      for (index_t j1 = 0; j1 < j1range; j1++) {
-        double n1n2;
-        if constexpr (dim == 3) {
-          n1n2 = n1[j1] * n2[j2];
+      for (index_t j1 = 0; j1 < order; j1++) {
+        for (index_t j0 = 0; j0 < order; j0++) {
+          const index_t node = j0 + order * j1;
+          N[(dim + 1) * node] = n0[j0] * n1[j1];
         }
-        for (index_t j0 = 0; j0 < j0range; j0++) {
-          const index_t node = j0 + order * (j1 + order * j2);
-          if constexpr (dim == 3) {
-            N[node] = n0[j0] * n1n2;
-          } else if constexpr (dim == 2) {
-            N[node] = n0[j0] * n1[j1];
-          } else {  // dim == 1
-            N[node] = n0[j0];
+      }
+    } else if constexpr (dim == 3) {
+      double n0[order], n1[order], n2[order];
+      interpolation_basis<order, interp_type>(pt[0], n0);
+      interpolation_basis<order, interp_type>(pt[1], n1);
+      interpolation_basis<order, interp_type>(pt[2], n2);
+
+      for (index_t j2 = 0; j2 < order; j2++) {
+        for (index_t j1 = 0; j1 < order; j1++) {
+          double n1n2 = n1[j1] * n2[j2];
+          for (index_t j0 = 0; j0 < order; j0++) {
+            const index_t node = j0 + order * (j1 + order * j2);
+            N[(dim + 1) * node] = n0[j0] * n1n2;
           }
         }
       }

@@ -884,7 +884,7 @@ void TestPDEImplementation(Integrand& integrand, double dh = 1e-7) {
 
   // Compute the coefficients
   transform.transform(sref, s);
-  integrand.weak(detJ, data, geo, s, coef);
+  integrand.residual(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref0);
 
   if constexpr (std::is_same<T, std::complex<double>>::value) {
@@ -899,15 +899,20 @@ void TestPDEImplementation(Integrand& integrand, double dh = 1e-7) {
 
   // Compute the coefficients
   transform.transform(sref, s);
-  integrand.weak(detJ, data, geo, s, coef);
+  integrand.residual(detJ, data, geo, s, coef);
   transform.rtransform(coef, cref);
 
   // Compute the Jacobian-vector product
-  typename Integrand::JacVecProduct jvp(integrand, detJ, data, geo, s);
+  typename Integrand::QMatType jac;
+  integrand.jacobian(detJ, data, geo, s, jac);
 
   // Compute the Jacobian-vector product
   transform.transform(pref, p);
-  jvp(p, Jp);
+  for (index_t i = 0; i < Integrand::FiniteElementSpace::ncomp; i++) {
+    for (index_t j = 0; j < Integrand::FiniteElementSpace::ncomp; j++) {
+      Jp[i] += jac(i, j) * p[j];
+    }
+  }
   transform.rtransform(Jp, Jpref);
 
   // Compute the finite-difference value

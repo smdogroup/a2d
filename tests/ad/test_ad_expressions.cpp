@@ -445,6 +445,115 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
+template <typename T>
+class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
+ public:
+  using Input = VarTuple<T, T, Mat<T, 3, 3>>;
+  using Output = VarTuple<T, T>;
+
+  // Assemble a string to describe the test
+  std::string name() { return "VonMisesPenalty"; }
+
+  // Evaluate the function
+  Output eval(const Input& x) {
+    // Set constants
+    double q = 5.0;
+    double design_stress = 135.0;
+    T mu = 3.374, lambda = 9.173;
+
+    // Get the variables
+    T rho;
+    Mat<T, 3, 3> Ux;
+    x.get_values(rho, Ux);
+
+    // Intermediaries
+    SymMat<T, 3> E, S;
+    T trS, trSS, trS2;
+
+    // Compute the strain and stress
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
+
+    // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
+    MatTrace(S, trS);
+    SymMatMultTrace(S, S, trSS);
+    T vm = sqrt(1.5 * trSS - 0.5 * trS * trS);
+    T relaxed_stress = (vm * ((q + 1.0) / (q * rho + 1.0)));
+    T failure_index = relaxed_stress / design_stress;
+
+    return MakeVarTuple<T>(failure_index);
+  }
+
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    // Set constants
+    double q = 5.0;
+    double design_stress = 135.0;
+    T mu = 3.374, lambda = 9.173;
+
+    // Get the variables
+    ADObj<T> rho;
+    ADObj<Mat<T, 3, 3>> Ux;
+    x.get_values(rho.value(), Ux.value());
+
+    // Intermediaries
+    ADObj<SymMat<T, 3>> E, S;
+    ADObj<T> trS, trSS;
+    ADObj<T> vm, relaxed_stress, failure_index;
+
+    auto stack = MakeStack(
+        // Compute the strain and stress
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S), MatTrace(S, trS),
+        SymMatMultTrace(S, S, trSS),
+
+        // Evaluate the von Mises stress output
+        Eval(sqrt(1.5 * trSS - 0.5 * trS * trS), vm),
+        Eval((vm * ((q + 1.0) / (q * rho + 1.0))), relaxed_stress),
+        Eval(relaxed_stress / design_stress, failure_index));
+
+    seed.get_values(failure_index.bvalue());
+    stack.reverse();
+    g.set_values(rho.bvalue(), Ux.bvalue());
+  }
+
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    // Set constants
+    double q = 5.0;
+    double design_stress = 135.0;
+    T mu = 3.374, lambda = 9.173;
+
+    // Get the variables
+    A2DObj<T> rho;
+    A2DObj<Mat<T, 3, 3>> Ux;
+    x.get_values(rho.value(), Ux.value());
+    p.get_values(rho.pvalue(), Ux.pvalue());
+
+    // Intermediaries
+    A2DObj<SymMat<T, 3>> E, S;
+    A2DObj<T> trS, trSS;
+    A2DObj<T> vm, relaxed_stress, failure_index;
+
+    auto stack = MakeStack(
+        // Compute the strain and stress
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S), MatTrace(S, trS),
+        SymMatMultTrace(S, S, trSS),
+
+        // Evaluate the von Mises stress output
+        Eval(sqrt(1.5 * trSS - 0.5 * trS * trS), vm),
+        Eval((vm * ((q + 1.0) / (q * rho + 1.0))), relaxed_stress),
+        Eval(relaxed_stress / design_stress, failure_index));
+
+    seed.get_values(failure_index.bvalue());
+    hval.get_values(failure_index.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(rho.hvalue(), Ux.hvalue());
+  }
+};
+
 bool MatIntegrationTests(bool component, bool write_output) {
   bool passed = true;
 
@@ -459,6 +568,9 @@ bool MatIntegrationTests(bool component, bool write_output) {
 
   HExtractTest<std::complex<double>, 3> test4;
   passed = passed && A2D::Test::Run(test4, component, write_output);
+
+  VonMisesPenaltyTest<std::complex<double>> test5;
+  passed = passed && A2D::Test::Run(test5, component, write_output);
 
   return passed;
 }

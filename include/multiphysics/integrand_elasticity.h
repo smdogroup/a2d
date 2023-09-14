@@ -180,38 +180,40 @@ class IntegrandTopoLinearElasticity {
                                             const FiniteElementSpace& s,
                                             const FiniteElementSpace& adj,
                                             DataSpace& dfdx) const {
-    // T rho = data[0];
-    // T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+    A2DObj<T> rho(data[0]);
 
-    // // Get the constitutive data at the points
-    // T mu = penalty * mu0;
-    // T lambda = penalty * lambda0;
+    // Extract displacement gradient
+    A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    Ux.pvalue().set(adj.template get<0>().get_grad());
 
-    // // Extract displacement gradient
-    // A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
+    // Set the displacement
+    A2DObj<T> penalty, mu, lambda;
 
-    // // The Green-Lagrange strain terms
-    // A2DObj<SymMat<T, dim>> E, S;
+    // The Green-Lagrange strain terms
+    A2DObj<SymMat<T, dim>> E, S;
 
-    // // The strain energy output
-    // A2DObj<T> output;
+    // The strain energy output
+    A2DObj<T> output;
 
-    // auto stack =
-    //     MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
-    //               SymIsotropic(mu, lambda, E, S),              // S = S(E)
-    //               SymMatMultTrace(E, S, output));  // output = tr(E * S)
+    auto stack =
+        MakeStack(Eval(1.0 / (1.0 + q * (1.0 - rho)), penalty),
+                  Eval(mu0 * penalty, mu), Eval(lambda0 * penalty, lambda),
+                  MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+                  SymIsotropic(mu, lambda, E, S),              // S = S(E)
+                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
-    // // Seed the output value with the wdetJ
-    // output.bvalue() = 0.5 * wdetJ;
+    // Seed the output value with the wdetJ
+    output.bvalue() = 0.5 * wdetJ;
 
-    // // Reverse the derivatives through the code
-    // stack.reverse();
+    // Reverse the derivatives through the code
+    stack.reverse();
 
-    // // Create data for extracting the Hessian-vector product
-    // constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    // auto inters = MakeTieTuple<T, ADseed::h>(Ux, S, E, output);
-    // auto in = MakeTieTuple<T, ADseed::p>(Ux);
-    // auto out = MakeTieTuple<T, ADseed::h>(Ux);
+    // Forward/reverse through the code
+    stack.hforward();
+    stack.hreverse();
+
+    // Set the derivative
+    dfdx[0] = rho.hvalue();
   }
 };
 

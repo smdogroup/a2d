@@ -157,6 +157,31 @@ KOKKOS_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
   return MatVecMultExpr<MatOp::NORMAL, A2DObj<Atype>, A2DObj<xtype>,
                         A2DObj<ytype>>(A, x, y);
 }
+template <class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x,
+                                ADObj<ytype>& y) {
+  return MatVecMultExpr<MatOp::NORMAL, ADObj<Atype>, const xtype, ADObj<ytype>>(
+      A, x, y);
+}
+template <class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
+                                A2DObj<ytype>& y) {
+  return MatVecMultExpr<MatOp::NORMAL, A2DObj<Atype>, const xtype,
+                        A2DObj<ytype>>(A, x, y);
+}
+template <class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x,
+                                ADObj<ytype>& y) {
+  return MatVecMultExpr<MatOp::NORMAL, const Atype, ADObj<xtype>, ADObj<ytype>>(
+      A, x, y);
+}
+template <class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
+                                A2DObj<ytype>& y) {
+  return MatVecMultExpr<MatOp::NORMAL, const Atype, A2DObj<xtype>,
+                        A2DObj<ytype>>(A, x, y);
+}
+
 template <MatOp op, class Atype, class xtype, class ytype>
 KOKKOS_FUNCTION auto MatVecMult(ADObj<Atype>& A, ADObj<xtype>& x,
                                 ADObj<ytype>& y) {
@@ -167,6 +192,27 @@ KOKKOS_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
                                 A2DObj<ytype>& y) {
   return MatVecMultExpr<op, A2DObj<Atype>, A2DObj<xtype>, A2DObj<ytype>>(A, x,
                                                                          y);
+}
+template <MatOp op, class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x,
+                                ADObj<ytype>& y) {
+  return MatVecMultExpr<op, ADObj<Atype>, const xtype, ADObj<ytype>>(A, x, y);
+}
+template <MatOp op, class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
+                                A2DObj<ytype>& y) {
+  return MatVecMultExpr<op, A2DObj<Atype>, const xtype, A2DObj<ytype>>(A, x, y);
+}
+
+template <MatOp op, class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x,
+                                ADObj<ytype>& y) {
+  return MatVecMultExpr<op, const Atype, ADObj<xtype>, ADObj<ytype>>(A, x, y);
+}
+template <MatOp op, class Atype, class xtype, class ytype>
+KOKKOS_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
+                                A2DObj<ytype>& y) {
+  return MatVecMultExpr<op, const Atype, A2DObj<xtype>, A2DObj<ytype>>(A, x, y);
 }
 
 namespace Test {

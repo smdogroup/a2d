@@ -52,6 +52,12 @@ enum class MatSymType { NORMAL, SYMMETRIC };
  */
 enum class ADseed { b, p, h };
 
+/**
+ * @brief The type of variable type
+ *
+ */
+enum class FEVarType { DATA, GEOMETRY, STATE };
+
 using index_t = uint32_t;  // TODO: size_t may be a better choice here
 static constexpr index_t MAX_INDEX = std::numeric_limits<index_t>::max();
 static constexpr index_t INDEX_NBITS = std::numeric_limits<index_t>::digits;

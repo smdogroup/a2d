@@ -595,6 +595,7 @@ int main(int argc, char* argv[]) {
 
   tests.push_back(MatIntegrationTests);
   tests.push_back(A2D::Test::MatMatMultTestAll);
+  tests.push_back(A2D::Test::MatVecMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);
   tests.push_back(A2D::Test::MatTraceTestAll);

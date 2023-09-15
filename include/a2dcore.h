@@ -18,6 +18,7 @@
 #include "ad/a2dmatinv.h"
 #include "ad/a2dmatsum.h"
 #include "ad/a2dmattrace.h"
+#include "ad/a2dmatvecmult.h"
 #include "ad/a2dscalarops.h"
 #include "ad/a2dsymmatmulttrace.h"
 #include "ad/a2dsymrk.h"

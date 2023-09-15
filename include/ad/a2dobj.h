@@ -350,6 +350,80 @@ using ADObjSelect = typename std::conditional<
     Obj>::type;
 
 /**
+ * @brief Select the type of variable to use, depending on the input parameter
+ *
+ * @tparam wrt Parameter indicating data, geo or state
+ * @tparam Data Data variable type
+ * @tparam Geo Geo variable type
+ * @tparam State State variable type
+ */
+template <FEVarType wrt, class Data, class Geo, class State>
+using FEVarSelect = typename std::conditional<
+    wrt == FEVarType::DATA, Data,
+    typename std::conditional<wrt == FEVarType::GEOMETRY, Geo,
+                              State>::type>::type;
+
+/**
+ * @brief Given the variable type, store the number of components
+ *
+ * @tparam wrt The variable type
+ * @tparam ndata number of data components
+ * @tparam ngeo number of geometry components
+ * @tparam nstate number of state components
+ */
+template <index_t ndata, index_t ngeo, index_t nstate, FEVarType wrt>
+struct get_var_dim {
+  static const index_t value = 0;
+};
+
+template <index_t ndata, index_t ngeo, index_t nstate>
+struct get_var_dim<ndata, ngeo, nstate, FEVarType::DATA> {
+  static const index_t value = ndata;
+};
+
+template <index_t ndata, index_t ngeo, index_t nstate>
+struct get_var_dim<ndata, ngeo, nstate, FEVarType::GEOMETRY> {
+  static const index_t value = ngeo;
+};
+
+template <index_t ndata, index_t ngeo, index_t nstate>
+struct get_var_dim<ndata, ngeo, nstate, FEVarType::STATE> {
+  static const index_t value = nstate;
+};
+
+/**
+ * @brief Select the type of matrix to use - symmetric if of = wrt
+ *
+ * @tparam of Parameter indicating the residual type
+ * @tparam wrt Parameter indicating the derivative type
+ * @tparam T typename of the scalar value
+ * @tparam ndata number of data components
+ * @tparam ngeo number of geometry components
+ * @tparam nstate number of state components
+ */
+template <FEVarType of, FEVarType wrt, typename T, index_t ndata, index_t ngeo,
+          index_t nstate>
+using FESymMatSelect = typename std::conditional<
+    of == wrt, SymMat<T, get_var_dim<ndata, ngeo, nstate, of>::value>,
+    Mat<T, get_var_dim<ndata, ngeo, nstate, of>::value,
+        get_var_dim<ndata, ngeo, nstate, wrt>::value>>::type;
+
+/**
+ * @brief Select the type of matrix to use - always non-symmetric
+ *
+ * @tparam of Parameter indicating the residual type
+ * @tparam wrt Parameter indicating the derivative type
+ * @tparam T typename of the scalar value
+ * @tparam ndata number of data components
+ * @tparam ngeo number of geometry components
+ * @tparam nstate number of state components
+ */
+template <FEVarType of, FEVarType wrt, typename T, index_t ndata, index_t ngeo,
+          index_t nstate>
+using FEMatSelect = Mat<T, get_var_dim<ndata, ngeo, nstate, of>::value,
+                        get_var_dim<ndata, ngeo, nstate, wrt>::value>;
+
+/**
  * @brief Get objects and pointers to seed data (bvalue(), pvalue(), hvalue)
  */
 template <ADseed seed>

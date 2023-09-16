@@ -8,6 +8,169 @@
 namespace A2D {
 
 template <typename T, index_t D>
+class TopoElasticity {
+ public:
+  TopoElasticity(T E, T nu, T q) : q(q) {
+    mu0 = 0.5 * E / (1.0 + nu);
+    lambda0 = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+  }
+
+  // Data for the element
+  T mu0;      // Second Lame parameter
+  T lambda0;  // First Lame parameter
+  T q;        // The RAMP penalty parameter
+
+  // Number of dimensions
+  static const index_t dim = D;
+
+  // Number of data dimensions
+  static const index_t data_dim = 1;
+
+  // Space for the finite-element data
+  using DataSpace = FESpace<T, data_dim, L2Space<T, data_dim, dim>>;
+
+  // Space for the element geometry
+  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim>>;
+
+  // Finite element space
+  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim>>;
+
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      FEVarSelect<wrt, DataSpace, FiniteElementGeometry, FiniteElementSpace>;
+
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      FESymMatSelect<of, wrt, T, DataSpace::ncomp, FiniteElementGeometry::ncomp,
+                     FiniteElementSpace::ncomp>;
+
+  /**
+   * @brief Find the integral of the compliance over the entire domain
+   *
+   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param sref The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  T integrand(T weight, const DataSpace& data, const FiniteElementGeometry& geo,
+              const FiniteElementSpace& sref) const {
+    // Input values
+    T rho = data[0];
+    const Mat<T, dim, dim>& Ux = (sref.template get<0>()).get_grad();
+
+    // Intermidiate varaibles
+    FiniteElementSpace s;
+    SymMat<T, dim> E, S;
+
+    // Get the constitutive data at the points
+    RefElementTransform(geo, sref, detJ, s);
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+    T mu = penalty * mu0;
+    T lambda = penalty * lambda0;
+    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    SymIsotropic(mu, lambda, E, S);
+    SymMatMultTrace(E, S, energy);
+    T output = 0.5 * wdetJ * energy;
+
+    return output;
+  }
+
+  template <FEVarType wrt>
+  void residual(T weight, const DataSpace& data,
+                const FiniteElementGeometry& geo_,
+                const FiniteElementSpace& sref_,
+                FiniteElementVar<wrt>& res) const {
+    ADObj<T> rho(data[0]), detJ, penalty, lambda, energy, output;
+
+    ADObj<FiniteElementSpace> sref(sref_);
+    ADObj<FiniteElementGeometry> geo(geo_);
+
+    // Intermidiate varaibles
+    ADObj<FiniteElementSpace> s;
+    ADObj<SymMat<T, dim>> E, S;
+
+    // Make a stack of the operations
+    auto stack = MakeStack(
+        RefElementTransform(geo, sref, detJ, s),       // transform
+        Eval(1.0 / (1.0 + q * (1.0 - rho)), penalty),  // penalty parameter
+        Eval(penalty * mu0, mu), Eval(penalty * lambda0, lambda),
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S),               // Evaluate the stress
+        SymMatMultTrace(E, S, energy),                // Compute the energy
+        Eval(0.5 * weight * detJ * energy, output));  // compute the
+
+    output.bvalue() = 1.0;
+    stack.reverse();
+
+    if constexpr (wrt == FEVarType::DATA) {
+      res[0] = rho.bvalue();
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      res.set(geo.bvalue());
+    } else if constexpr (wrt == FEVarType::STATE) {
+      res.set(sref.bvalue());
+    }
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  void jacobian_product(T weight, const DataSpace& data,
+                        const FiniteElementGeometry& geo,
+                        const FiniteElementSpace& sref,
+                        const FiniteElementVar<wrt>& p,
+                        FiniteElementVar<of>& out) const {}
+
+  template <FEVarType of, FEVarType wrt>
+  void jacobian(T weight, const DataSpace& data,
+                const FiniteElementGeometry& geo,
+                const FiniteElementSpace& sref,
+                FiniteElementJacobian<of, wrt>& jac) const {
+    T rho = data[0];
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+
+    // Get the constitutive data at the points
+    T mu = penalty * mu0;
+    T lambda = penalty * lambda0;
+
+    FiniteElementSpace in, out;
+
+    // Set up the pointers into the input/output matrices
+    Mat<T, dim, dim> Ux0 = s.template get<0>().get_grad();
+    Mat<T, dim, dim> Uxb;
+    Mat<T, dim, dim>& Uxp = in.template get<0>().get_grad();
+    Mat<T, dim, dim>& Uxh = out.template get<0>().get_grad();
+
+    // Extract displacement gradient
+    A2DObj<Mat<T, dim, dim>&> Ux(Ux0, Uxb, Uxp, Uxh);
+
+    // The Green-Lagrange strain terms
+    A2DObj<SymMat<T, dim>> E, S;
+
+    // The strain energy output
+    A2DObj<T> output;
+
+    auto stack =
+        MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
+                  SymIsotropic(mu, lambda, E, S),              // S = S(E)
+                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
+
+    // Seed the output value with the wdetJ
+    output.bvalue() = 0.5 * wdetJ;
+
+    // Reverse the derivatives through the code
+    stack.reverse();
+
+    // Create data for extracting the Hessian-vector product
+    constexpr index_t ncomp = FiniteElementSpace::ncomp;
+    auto inters = MakeTieTuple<T, ADseed::h>(S, E);
+
+    // Extract the matrix
+    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
+  }
+};
+
+template <typename T, index_t D>
 class IntegrandTopoLinearElasticity {
  public:
   IntegrandTopoLinearElasticity(T E, T nu, T q) : q(q) {
@@ -35,6 +198,8 @@ class IntegrandTopoLinearElasticity {
 
   // The type of matrix used to store data at each quadrature point
   static const index_t ncomp = FiniteElementSpace::ncomp;
+
+  // Finite-element matrix at a quadrature point
   using QMatType = SymMat<T, ncomp>;
 
   // Data for the element
@@ -53,20 +218,20 @@ class IntegrandTopoLinearElasticity {
    */
   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
               const FiniteElementSpace& s) const {
+    // Input values
     T rho = data[0];
-    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
-
-    // Get the constitutive data at the points
-    T mu = penalty * mu0;
-    T lambda = penalty * lambda0;
-
-    // Extract the solution
     Mat<T, dim, dim> Ux = (s.template get<0>()).get_grad();
+
+    // The output scalar
+    T output;
 
     // The Green-Langrange strain terms
     SymMat<T, dim> E, S;
 
-    T output;
+    // Get the constitutive data at the points
+    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
+    T mu = penalty * mu0;
+    T lambda = penalty * lambda0;
     MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
     SymIsotropic(mu, lambda, E, S);
     SymMatMultTrace(E, S, output);

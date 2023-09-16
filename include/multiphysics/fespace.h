@@ -49,7 +49,7 @@ namespace A2D {
   4. sref.transform(detJ, J, Jinv, s): This function transforms the current
   sref object from the reference element to the physical element.
 
-  5. s.rtransform(detJ, J, Jinv, sref): Transform the derivatives from the
+  5. s.btransform(detJ, J, Jinv, sref): Transform the derivatives from the
   physical element back to the reference element.
 */
 
@@ -138,7 +138,7 @@ class L2Space {
   }
 
   // Transform derivatives from the physical to the refernece space
-  KOKKOS_FUNCTION void rtransform(const T& detJ, const Mat<T, D, D>& J,
+  KOKKOS_FUNCTION void btransform(const T& detJ, const Mat<T, D, D>& J,
                                   const Mat<T, D, D>& Jinv,
                                   L2Space<T, C, D>& s) const {
     s.u = u;
@@ -259,28 +259,14 @@ class H1Space {
 
     // s.grad = grad * Jinv
     if constexpr (C == 1) {
-      for (index_t i = 0; i < dim; i++) {
-        s.grad(i) = 0.0;
-        for (index_t j = 0; j < dim; j++) {
-          s.grad(i) += grad(j) * Jinv(j, i);
-        }
-      }
+      MatVecMult<MatOp::TRANSPOSE>(Jinv, grad, s.grad);
     } else {
-      for (index_t i = 0; i < C; i++) {
-        for (index_t j = 0; j < dim; j++) {
-          s.grad(i, j) = 0.0;
-
-          for (index_t k = 0; k < dim; k++) {
-            s.grad(i, j) += grad(i, k) * Jinv(k, j);
-          }
-        }
-      }
-      // MatMatMult(grad, Jinv, s.grad);
+      MatMatMult(grad, Jinv, s.grad);
     }
   }
 
   // Transform derivatives from the physical to the reference space
-  KOKKOS_FUNCTION void rtransform(const T& detJ, const Mat<T, D, D>& J,
+  KOKKOS_FUNCTION void btransform(const T& detJ, const Mat<T, D, D>& J,
                                   const Mat<T, D, D>& Jinv,
                                   H1Space<T, C, D>& s) const {
     // dot{s.grad} = dot{grad} Jinv =>
@@ -292,22 +278,9 @@ class H1Space {
 
     // s.grad = grad * Jinv^{T}
     if constexpr (C == 1) {
-      for (index_t i = 0; i < dim; i++) {
-        s.grad(i) = 0.0;
-        for (index_t j = 0; j < dim; j++) {
-          s.grad(i) += Jinv(i, j) * grad(j);
-        }
-      }
+      MatVecMult(Jinv, grad, s.grad);
     } else {
-      for (index_t i = 0; i < C; i++) {
-        for (index_t j = 0; j < dim; j++) {
-          s.grad(i, j) = 0.0;
-
-          for (index_t k = 0; k < dim; k++) {
-            s.grad(i, j) += grad(i, k) * Jinv(j, k);
-          }
-        }
-      }
+      MatMatMult<MatOp::NORMAL, MatOp::TRANSPOSE>(grad, Jinv, s.grad);
     }
   }
 
@@ -396,7 +369,7 @@ class HdivSpace {
   }
 
   // Transform derivatives from the physical to the refernece space
-  KOKKOS_FUNCTION void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
+  KOKKOS_FUNCTION void btransform(const T& detJ, const Mat<T, dim, dim>& J,
                                   const Mat<T, dim, dim>& Jinv,
                                   HdivSpace<T, D>& s) const {
     T inv = 1.0 / detJ;
@@ -487,7 +460,7 @@ class Hcurl2DSpace {
   }
 
   // Transform derivatives from the physical to the refernece space
-  KOKKOS_FUNCTION void rtransform(const T& detJ, const Mat<T, dim, dim>& J,
+  KOKKOS_FUNCTION void btransform(const T& detJ, const Mat<T, dim, dim>& J,
                                   const Mat<T, dim, dim>& Jinv,
                                   Hcurl2DSpace<T>& s) const {
     s.u = u;
@@ -540,8 +513,19 @@ struct __count_space_components<First, Remain...> {
 template <typename T, index_t D, class... Spaces>
 class FESpace {
  public:
+  // Tuple type for storing the solution space object
   typedef std::tuple<Spaces...> SolutionSpace;
-  static constexpr index_t nspaces = std::tuple_size<std::tuple<Spaces...>>();
+
+  // Numeric type used for the space
+  typedef T type;
+
+  // Number of spaces
+  static constexpr index_t nspaces = sizeof...(Spaces);
+
+  /*
+    The dimension of the problem
+  */
+  static constexpr index_t dim = D;
 
   /*
     Count up the total number of degrees of freedom
@@ -591,10 +575,10 @@ class FESpace {
     Perform the reverse of the transform - transfer the derivative from the
     physical element to the reference element
   */
-  KOKKOS_FUNCTION void rtransform(const T& detJ, const Mat<T, D, D>& J,
+  KOKKOS_FUNCTION void btransform(const T& detJ, const Mat<T, D, D>& J,
                                   const Mat<T, D, D>& Jinv,
                                   FESpace<T, D, Spaces...>& s) const {
-    rtransform_<0, Spaces...>(detJ, J, Jinv, s);
+    btransform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
  private:
@@ -615,16 +599,16 @@ class FESpace {
   }
 
   template <index_t index>
-  KOKKOS_FUNCTION void rtransform_(const T& detJ, const Mat<T, D, D>& J,
+  KOKKOS_FUNCTION void btransform_(const T& detJ, const Mat<T, D, D>& J,
                                    const Mat<T, D, D>& Jinv,
                                    FESpace<T, D, Spaces...>& s) const {}
 
   template <index_t index, class First, class... Remain>
-  KOKKOS_FUNCTION void rtransform_(const T& detJ, const Mat<T, D, D>& J,
+  KOKKOS_FUNCTION void btransform_(const T& detJ, const Mat<T, D, D>& J,
                                    const Mat<T, D, D>& Jinv,
                                    FESpace<T, D, Spaces...>& s) const {
-    std::get<index>(u).rtransform(detJ, J, Jinv, std::get<index>(s.u));
-    rtransform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    std::get<index>(u).btransform(detJ, J, Jinv, std::get<index>(s.u));
+    btransform_<index + 1, Remain...>(detJ, J, Jinv, s);
   }
 
   template <index_t index, class First, class... Remain>

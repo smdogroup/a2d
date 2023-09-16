@@ -478,7 +478,7 @@ class FiniteElement {
    * @param elem_sol Element solution vector
    * @param elem_res Element residual vector
    */
-  template <class DataElemVec, class GeoElemVec, class ElemVec,
+  template <FEVarType wrt, class DataElemVec, class GeoElemVec, class ElemVec,
             class ElemResVec>
   void add_residual(const Integrand& integrand, DataElemVec& elem_data,
                     GeoElemVec& elem_geo, ElemVec& elem_sol,
@@ -506,6 +506,9 @@ class FiniteElement {
       elem_geo.get_element_values(i, geo_dof);
       elem_sol.get_element_values(i, sol_dof);
 
+      // Space needed for the solution data and residuals at each quadrature
+      // point
+      QSpace res;
       QDataSpace data;
       QGeoSpace geo;
       QSpace sol;
@@ -518,32 +521,11 @@ class FiniteElement {
       GeoBasis::template interp(geo_dof, geo);
       Basis::template interp(sol_dof, sol);
 
-      // Allocate space for the residual values at each quadrature point
-      QSpace res;
-
       // Compute the weak coefficients at all quadrature points
       for (index_t j = 0; j < num_quadrature_points; j++) {
-        // Get the solution/geometry and derivatives in the reference domain
-        typename Integrand::FiniteElementSpace& sref = sol.get(j);
-        typename Integrand::FiniteElementGeometry& gref =
-            geo.get(j);  // this has J
-
-        // Initialize the transform object
-        T detJ;
-        typename Integrand::SolutionMapping transform(gref, detJ);
-
-        // Transform from the reference element to the physical space
-        typename Integrand::FiniteElementSpace s;
-        transform.transform(sref, s);
-
-        // Compute the coefficients for the weak form of the Integrand
         double weight = Quadrature::get_weight(j);
-        typename Integrand::FiniteElementSpace coef;
-        integrand.residual(weight * detJ, data.get(j), gref, s, coef);
-
-        // Transform the coefficients back to the reference element
-        typename Integrand::FiniteElementSpace& cref = res.get(j);
-        transform.rtransform(coef, cref);
+        integrand.residual<wrt>(weight, data.get(j), geo.get(j), sol.get(j),
+                                res.get(j));
       }
 
       // Add the residual from the quadrature points back to the

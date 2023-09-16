@@ -5,7 +5,9 @@
 
 namespace A2D {
 
-template <class... Operations>
+enum class StackEvaluation { CONSTRUCTOR, FUNCTION };
+
+template <StackEvaluation eval_time, class... Operations>
 class OperationStack {
  public:
   using StackTuple = std::tuple<Operations...>;
@@ -13,7 +15,16 @@ class OperationStack {
 
   KOKKOS_FUNCTION OperationStack(Operations &&...s)
       : stack(std::forward<Operations>(s)...) {
-    eval_<0>();
+    if constexpr (eval_time == StackEvaluation::CONSTRUCTOR) {
+      eval_<0>();
+    }
+  }
+
+  // Evaluate the operations
+  KOKKOS_FUNCTION void eval() {
+    if constexpr (eval_time == StackEvaluation::FUNCTION) {
+      eval_<0>();
+    }
   }
 
   // First-order AD
@@ -95,9 +106,36 @@ class OperationStack {
   }
 };
 
+/**
+ * @brief Make an operations stack for automatic differentiation
+ *
+ * Operations are evaluated immediately
+ *
+ * @tparam Operations Template parameter list deduced from context
+ * @param s The operator objects
+ * @return The list of operations
+ */
 template <class... Operations>
-KOKKOS_FUNCTION OperationStack<Operations...> MakeStack(Operations &&...s) {
-  return OperationStack<Operations...>(std::forward<Operations>(s)...);
+KOKKOS_FUNCTION auto MakeStack(Operations &&...s) {
+  return OperationStack<StackEvaluation::CONSTRUCTOR, Operations...>(
+      std::forward<Operations>(s)...);
+}
+
+/**
+ * @brief Make an operations stack for automatic differentiation
+ *
+ * Operations are evaluated on a call to the eval() function. This is useful if
+ * you're creating a stack of operations that will be used within another
+ * AD-able object.
+ *
+ * @tparam Operations Template parameter list deduced from context
+ * @param s The operator objects
+ * @return The list of operations
+ */
+template <class... Operations>
+KOKKOS_FUNCTION auto MakeSubStack(Operations &&...s) {
+  return OperationStack<StackEvaluation::FUNCTION, Operations...>(
+      std::forward<Operations>(s)...);
 }
 
 }  // namespace A2D

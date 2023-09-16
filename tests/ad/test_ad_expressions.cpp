@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "a2dcore.h"
+#include "multiphysics/femapping.h"
 
 using namespace A2D;
 
@@ -613,6 +614,7 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::VecSumTestAll);
   tests.push_back(A2D::Test::VecOuterTestAll);
   tests.push_back(A2D::Test::ScalarTestAll);
+  tests.push_back(A2D::Test::RefElementTransformTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

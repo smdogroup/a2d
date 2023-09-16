@@ -3,8 +3,290 @@
 
 #include "a2dcore.h"
 #include "multiphysics/febasis.h"
+#include "multiphysics/fespace.h"
 
 namespace A2D {
+
+template <class Geometry, class Space, typename T>
+void RefElementTransform(const Geometry& geo, const Space& in, T& detJ,
+                         Space& out) {
+  static_assert(Geometry::dim == Space::dim,
+                "Spatial and finite-element space dimensions must agree");
+
+  const Mat<T, Geometry::dim, Geometry::dim>& J =
+      geo.template get<0>().get_grad();
+
+  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+  MatInv(J, Jinv);
+  MatDet(J, detJ);
+  in.transform(detJ, J, Jinv, out);
+}
+
+template <class Geometry, class Space, typename T>
+class RefElementTransformConstGeoExpr {
+ public:
+  // In this case, the geometry must be passive
+  static_assert(get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                "Must use passive geometry type");
+
+  // Set the type of matrix to use - here use a constant matrix
+  using JinvType = Mat<T, Geometry::dim, Geometry::dim>;
+
+  RefElementTransformConstGeoExpr(const Geometry& geo, Space& in, T& detJ,
+                                  Space& out)
+      : geo(geo), in(in), detJ(detJ), out(out) {}
+
+  void eval() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.template get<0>().get_grad();
+
+    MatInv(J, Jinv);
+    MatDet(J, detJ);
+    in.value().transform(detJ, J, Jinv, out.value());
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.template get<0>().get_grad();
+    GetSeed<seed>::get_obj(in).transform(detJ, J, Jinv,
+                                         GetSeed<seed>::get_obj(out));
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.template get<0>().get_grad();
+    out.bvalue().btransform(detJ, J, Jinv, in.bvalue());
+  }
+  KOKKOS_FUNCTION void hreverse() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.template get<0>().get_grad();
+    out.hvalue().btransform(detJ, J, Jinv, in.hvalue());
+  }
+
+ private:
+  // Internal data
+  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+
+  // Input/output data
+  const Geometry& geo;
+  Space& in;
+  T detJ;
+  Space& out;
+};
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto RefElementTransform(const Geometry& geo, ADObj<Space>& in,
+                                         T& detJ, ADObj<Space>& out) {
+  return RefElementTransformConstGeoExpr<Geometry, ADObj<Space>, T>(geo, in,
+                                                                    detJ, out);
+}
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto RefElementTransform(const Geometry& geo, A2DObj<Space>& in,
+                                         T& detJ, A2DObj<Space>& out) {
+  return RefElementTransformConstGeoExpr<Geometry, A2DObj<Space>, T>(geo, in,
+                                                                     detJ, out);
+}
+
+template <class Geometry, class Space, class dtype>
+class RefElementTransformExpr {
+ public:
+  // Set the numeric type to use
+  typedef typename get_object_numeric_type<Geometry>::type T;
+
+  // In this case, the geometry and space objects must be the same AD type
+  static constexpr ADorder order = get_diff_order<Geometry>::order;
+  static_assert(order == get_diff_order<Space>::order &&
+                    order == get_diff_order<dtype>::order,
+                "All objects must be the same AD order");
+
+  // Set the type of matrix to use - here use a constant matrix
+  using JinvType = ADObjSelect<ADiffType::ACTIVE, order,
+                               Mat<T, Geometry::dim, Geometry::dim>>;
+
+  RefElementTransformExpr(Geometry& geo, Space& in, dtype& detJ, Space& out)
+      : geo(geo), in(in), detJ(detJ), out(out) {}
+
+  void eval() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.value().template get<0>().get_grad();
+
+    MatInv(J, Jinv.value());
+    MatDet(J, detJ.value());
+    in.value().transform(detJ.value(), J, Jinv.value(), out.value());
+  }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.value().template get<0>().get_grad();
+    GetSeed<seed>::get_obj(in).transform(detJ.value(), J, Jinv.value(),
+                                         GetSeed<seed>::get_obj(out));
+  }
+
+  KOKKOS_FUNCTION void reverse() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.value().template get<0>().get_grad();
+    out.bvalue().btransform(detJ.value(), J, Jinv.value(), in.bvalue());
+  }
+  KOKKOS_FUNCTION void hreverse() {
+    const Mat<T, Geometry::dim, Geometry::dim>& J =
+        geo.value().template get<0>().get_grad();
+    out.hvalue().btransform(detJ.value(), J, Jinv.value(), in.hvalue());
+  }
+
+ private:
+  // Internal data
+  JinvType Jinv;
+
+  // Input/output data
+  Geometry& geo;
+  Space& in;
+  dtype detJ;
+  Space& out;
+};
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto RefElementTransform(ADObj<Geometry>& geo, ADObj<Space>& in,
+                                         ADObj<T>& detJ, ADObj<Space>& out) {
+  return RefElementTransformExpr<ADObj<Geometry>, ADObj<Space>, ADObj<T>>(
+      geo, in, detJ, out);
+}
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto RefElementTransform(A2DObj<Geometry>& geo,
+                                         A2DObj<Space>& in, A2DObj<T>& detJ,
+                                         A2DObj<Space>& out) {
+  return RefElementTransformExpr<A2DObj<Geometry>, A2DObj<Space>, A2DObj<T>>(
+      geo, in, detJ, out);
+}
+
+namespace Test {
+
+template <typename T, class Geometry, class Space>
+class RefElementTransformConstGeoTest
+    : public A2D::Test::A2DTest<T, Space, Space> {
+ public:
+  using Input = VarTuple<T, Space>;
+  using Output = VarTuple<T, Space>;
+
+  RefElementTransformConstGeoTest() { this->set_rand(Geometry::ncomp, geo); }
+
+  // the constant geometry object
+  Geometry geo;
+
+  // Assemble a string to describe the test
+  std::string name() { return "RefElementTransform"; }
+
+  // Evaluate the function
+  Output eval(const Input& x) {
+    Space in, out;
+    T detJ;
+    x.get_values(in);
+    RefElementTransform(geo, in, detJ, out);
+    return MakeVarTuple<T>(out);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    ADObj<Space> in, out;
+    T detJ;
+    x.get_values(in.value());
+    auto stack = MakeStack(RefElementTransform(geo, in, detJ, out));
+    seed.get_values(out.bvalue());
+    stack.reverse();
+    g.set_values(in.bvalue());
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DObj<Space> in, out;
+    T detJ;
+    x.get_values(in.value());
+    p.get_values(in.pvalue());
+    auto stack = MakeStack(RefElementTransform(geo, in, detJ, out));
+    seed.get_values(out.bvalue());
+    hval.get_values(out.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(in.hvalue());
+  }
+};
+
+template <typename T, class Geometry, class Space>
+class RefElementTransformTest
+    : public A2D::Test::A2DTest<T, Space, Geometry, Space> {
+ public:
+  using Input = VarTuple<T, Geometry, Space>;
+  using Output = VarTuple<T, Space>;
+
+  // Assemble a string to describe the test
+  std::string name() { return "RefElementTransform"; }
+
+  // Evaluate the function
+  Output eval(const Input& x) {
+    Geometry geo;
+    Space in, out;
+    T detJ;
+    x.get_values(geo, in);
+    RefElementTransform(geo, in, detJ, out);
+    return MakeVarTuple<T>(out);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    ADObj<Geometry> geo;
+    ADObj<Space> in, out;
+    T detJ;
+    x.get_values(geo.value(), in.value());
+    auto stack = MakeStack(RefElementTransform(geo.value(), in, detJ, out));
+    seed.get_values(out.bvalue());
+    stack.reverse();
+    g.set_values(geo.bvalue(), in.bvalue());
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {}
+};
+
+template <typename T, class Geometry, class Space>
+bool RefElementTransformTestHelper(bool component, bool write_output) {
+  bool passed = true;
+
+  RefElementTransformConstGeoTest<T, Geometry, Space> test1;
+  passed = passed && A2D::Test::Run(test1, component, write_output);
+
+  RefElementTransformTest<T, Geometry, Space> test2;
+  passed = passed && A2D::Test::Run(test2, component, write_output);
+
+  return passed;
+}
+
+bool RefElementTransformTestAll(bool component, bool write_output) {
+  bool passed = true;
+
+  using T = std::complex<double>;
+  const int dim = 3;
+  using Geometry = FESpace<T, dim, H1Space<T, dim, dim>>;
+  using Space = FESpace<T, dim, L2Space<T, dim - 1, dim>, H1Space<T, dim, 1>,
+                        H1Space<T, dim + 2, dim>, HdivSpace<T, dim>>;
+
+  passed = RefElementTransformTestHelper<T, Geometry, Space>(component,
+                                                             write_output);
+
+  return passed;
+}
+
+}  // namespace Test
 
 /**
  * @brief 3D or 2D volume transform transform
@@ -30,9 +312,9 @@ class InteriorMapping {
   }
 
   template <class FiniteElementSpace>
-  KOKKOS_FUNCTION void rtransform(const FiniteElementSpace& in,
+  KOKKOS_FUNCTION void btransform(const FiniteElementSpace& in,
                                   FiniteElementSpace& out) {
-    in.rtransform(detJ, J, Jinv, out);
+    in.btransform(detJ, J, Jinv, out);
   }
 
   template <class FiniteElementSpace, class QMatType>
@@ -55,7 +337,7 @@ class InteriorMapping {
           Jp[i] += mat_in(i, j) * p[j];
         }
       }
-      rtransform(Jp, pref);
+      btransform(Jp, pref);
       for (index_t i = 0; i < ncomp; i++) {
         mat_out(i, k) = pref[i];
       }
@@ -111,9 +393,9 @@ class SurfaceMapping {
   }
 
   template <class FiniteElementSpace>
-  KOKKOS_FUNCTION void rtransform(const FiniteElementSpace& in,
+  KOKKOS_FUNCTION void btransform(const FiniteElementSpace& in,
                                   FiniteElementSpace& out) {
-    in.rtransform(detJ, J, Jinv, out);
+    in.btransform(detJ, J, Jinv, out);
   }
 
  private:

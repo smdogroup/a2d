@@ -91,24 +91,6 @@ class L2Space {
 
   // Get the value of the specified component
   template <typename I>
-  KOKKOS_FUNCTION T& get_value(const I comp) {
-    if constexpr (C == 1) {
-      return u;
-    } else {
-      return u(comp);
-    }
-  }
-
-  template <typename I>
-  KOKKOS_FUNCTION const T& get_value(const I comp) const {
-    if constexpr (C == 1) {
-      return u;
-    } else {
-      return u(comp);
-    }
-  }
-
-  template <typename I>
   KOKKOS_FUNCTION T& operator[](const I comp) {
     if constexpr (C == 1) {
       return u;
@@ -171,41 +153,6 @@ class H1Space {
       u.zero();
     }
     grad.zero();
-  }
-
-  // Get the value of the specified component
-  template <typename I>
-  KOKKOS_FUNCTION T& get_value(const I comp) {
-    if constexpr (C == 1) {
-      if (comp == 0) {
-        return u;
-      } else {
-        return grad(comp - 1);
-      }
-    } else {
-      if (comp % (D + 1) == 0) {
-        return u(comp / (D + 1));
-      } else {
-        return grad(comp / (D + 1), (comp % (D + 1)) - 1);
-      }
-    }
-  }
-
-  template <typename I>
-  KOKKOS_FUNCTION const T& get_value(const I comp) const {
-    if constexpr (C == 1) {
-      if (comp == 0) {
-        return u;
-      } else {
-        return grad(comp - 1);
-      }
-    } else {
-      if (comp % (D + 1) == 0) {
-        return u(comp / (D + 1));
-      } else {
-        return grad(comp / (D + 1), (comp % (D + 1)) - 1);
-      }
-    }
   }
 
   // Get the value of the specified component
@@ -308,25 +255,6 @@ class HdivSpace {
 
   // Get the value of the specified component
   template <typename I>
-  KOKKOS_FUNCTION T& get_value(const I comp) {
-    if (comp < D) {
-      return u(comp);
-    } else {
-      return div;
-    }
-  }
-
-  template <typename I>
-  KOKKOS_FUNCTION const T& get_value(const I comp) const {
-    if (comp < D) {
-      return u(comp);
-    } else {
-      return div;
-    }
-  }
-
-  // Get the value of the specified component
-  template <typename I>
   KOKKOS_FUNCTION T& operator[](const I comp) {
     if (comp < D) {
       return u(comp);
@@ -407,24 +335,6 @@ class Hcurl2DSpace {
   }
 
   // Get the value of the specified component
-  template <typename I>
-  KOKKOS_FUNCTION T& get_value(const I comp) {
-    if (comp < 2) {
-      return u(comp);
-    } else {
-      return curl;
-    }
-  }
-
-  template <typename I>
-  KOKKOS_FUNCTION const T& get_value(const I comp) const {
-    if (comp < 2) {
-      return u(comp);
-    } else {
-      return curl;
-    }
-  }
-
   template <typename I>
   KOKKOS_FUNCTION T& operator[](const I comp) {
     if (comp < 2) {
@@ -617,9 +527,9 @@ class FESpace {
   template <index_t index, class First, class... Remain>
   KOKKOS_FUNCTION T& get_value_(const index_t comp) {
     if constexpr (sizeof...(Remain) == 0) {
-      return std::get<index>(u).get_value(comp);
+      return std::get<index>(u)[comp];
     } else if (comp < First::ncomp) {
-      return std::get<index>(u).get_value(comp);
+      return std::get<index>(u)[comp];
     } else {
       return get_value_<index + 1, Remain...>(comp - First::ncomp);
     }
@@ -628,9 +538,9 @@ class FESpace {
   template <index_t index, class First, class... Remain>
   KOKKOS_FUNCTION const T& get_value_(const index_t comp) const {
     if constexpr (sizeof...(Remain) == 0) {
-      return std::get<index>(u).get_value(comp);
+      return std::get<index>(u)[comp];
     } else if (comp < First::ncomp) {
-      return std::get<index>(u).get_value(comp);
+      return std::get<index>(u)[comp];
     } else {
       return get_value_<index + 1, Remain...>(comp - First::ncomp);
     }

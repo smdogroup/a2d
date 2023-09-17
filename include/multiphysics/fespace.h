@@ -548,6 +548,15 @@ class FESpace {
   }
 
   /*
+    Copy the values from another FESpace object
+  */
+  KOKKOS_FUNCTION void copy(const FESpace<T, D, Spaces...>& src) {
+    for (index_t i = 0; i < ncomp; i++) {
+      (*this)[i] = src[i];
+    }
+  }
+
+  /*
     Extract the specified solution space from the FESpace object
   */
   template <index_t index>
@@ -585,30 +594,24 @@ class FESpace {
   // Solution space tuple object
   SolutionSpace u;
 
-  template <index_t index>
-  KOKKOS_FUNCTION void transform_(const T& detJ, const Mat<T, D, D>& J,
-                                  const Mat<T, D, D>& Jinv,
-                                  FESpace<T, D, Spaces...>& s) const {}
-
   template <index_t index, class First, class... Remain>
   KOKKOS_FUNCTION void transform_(const T& detJ, const Mat<T, D, D>& J,
                                   const Mat<T, D, D>& Jinv,
                                   FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).transform(detJ, J, Jinv, std::get<index>(s.u));
-    transform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    if constexpr (sizeof...(Remain) > 0) {
+      transform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    }
   }
-
-  template <index_t index>
-  KOKKOS_FUNCTION void btransform_(const T& detJ, const Mat<T, D, D>& J,
-                                   const Mat<T, D, D>& Jinv,
-                                   FESpace<T, D, Spaces...>& s) const {}
 
   template <index_t index, class First, class... Remain>
   KOKKOS_FUNCTION void btransform_(const T& detJ, const Mat<T, D, D>& J,
                                    const Mat<T, D, D>& Jinv,
                                    FESpace<T, D, Spaces...>& s) const {
     std::get<index>(u).btransform(detJ, J, Jinv, std::get<index>(s.u));
-    btransform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    if constexpr (sizeof...(Remain) > 0) {
+      btransform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    }
   }
 
   template <index_t index, class First, class... Remain>

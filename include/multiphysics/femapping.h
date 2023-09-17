@@ -7,7 +7,14 @@
 
 namespace A2D {
 
-template <class Geometry, class Space, typename T>
+template <
+    class Geometry, class Space, typename T,
+    std::enable_if_t<get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<Space>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
+        true>
 void RefElementTransform(const Geometry& geo, const Space& in, T& detJ,
                          Space& out) {
   static_assert(Geometry::dim == Space::dim,
@@ -103,16 +110,16 @@ class RefElementTransformExpr {
                     order == get_diff_order<dtype>::order,
                 "All objects must be the same AD order");
 
+  static const int dim = remove_a2dobj<Geometry>::type::dim;
+
   // Set the type of matrix to use - here use a constant matrix
-  using JinvType = ADObjSelect<ADiffType::ACTIVE, order,
-                               Mat<T, Geometry::dim, Geometry::dim>>;
+  using JinvType = ADObjSelect<ADiffType::ACTIVE, order, Mat<T, dim, dim>>;
 
   RefElementTransformExpr(Geometry& geo, Space& in, dtype& detJ, Space& out)
       : geo(geo), in(in), detJ(detJ), out(out) {}
 
   void eval() {
-    const Mat<T, Geometry::dim, Geometry::dim>& J =
-        geo.value().template get<0>().get_grad();
+    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
 
     MatInv(J, Jinv.value());
     MatDet(J, detJ.value());
@@ -124,20 +131,17 @@ class RefElementTransformExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
-    const Mat<T, Geometry::dim, Geometry::dim>& J =
-        geo.value().template get<0>().get_grad();
+    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
     GetSeed<seed>::get_obj(in).transform(detJ.value(), J, Jinv.value(),
                                          GetSeed<seed>::get_obj(out));
   }
 
   KOKKOS_FUNCTION void reverse() {
-    const Mat<T, Geometry::dim, Geometry::dim>& J =
-        geo.value().template get<0>().get_grad();
+    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
     out.bvalue().btransform(detJ.value(), J, Jinv.value(), in.bvalue());
   }
   KOKKOS_FUNCTION void hreverse() {
-    const Mat<T, Geometry::dim, Geometry::dim>& J =
-        geo.value().template get<0>().get_grad();
+    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
     out.hvalue().btransform(detJ.value(), J, Jinv.value(), in.hvalue());
   }
 
@@ -148,7 +152,7 @@ class RefElementTransformExpr {
   // Input/output data
   Geometry& geo;
   Space& in;
-  dtype detJ;
+  dtype& detJ;
   Space& out;
 };
 

@@ -59,21 +59,25 @@ class TopoElasticity {
               const FiniteElementSpace& sref) const {
     // Input values
     T rho = data[0];
-    const Mat<T, dim, dim>& Ux = (sref.template get<0>()).get_grad();
 
     // Intermidiate varaibles
     FiniteElementSpace s;
     SymMat<T, dim> E, S;
+    T detJ, energy;
 
     // Get the constitutive data at the points
     RefElementTransform(geo, sref, detJ, s);
+
+    // Extract the pointer to the physical coordinate derivatives
+    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
+
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
     MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
     SymIsotropic(mu, lambda, E, S);
     SymMatMultTrace(E, S, energy);
-    T output = 0.5 * wdetJ * energy;
+    T output = 0.5 * weight * detJ * energy;
 
     return output;
   }
@@ -83,14 +87,18 @@ class TopoElasticity {
                 const FiniteElementGeometry& geo_,
                 const FiniteElementSpace& sref_,
                 FiniteElementVar<wrt>& res) const {
-    ADObj<T> rho(data[0]), detJ, penalty, lambda, energy, output;
-
+    ADObj<T> rho(data[0]);
     ADObj<FiniteElementSpace> sref(sref_);
     ADObj<FiniteElementGeometry> geo(geo_);
 
     // Intermidiate varaibles
+    ADObj<T> detJ, penalty, mu, lambda, energy, output;
     ADObj<FiniteElementSpace> s;
     ADObj<SymMat<T, dim>> E, S;
+
+    // Set the derivative of the solution
+    ADObj<Mat<T, dim, dim>&> Ux((s.value().template get<0>()).get_grad(),
+                                (s.bvalue().template get<0>()).get_grad());
 
     // Make a stack of the operations
     auto stack = MakeStack(
@@ -108,66 +116,71 @@ class TopoElasticity {
     if constexpr (wrt == FEVarType::DATA) {
       res[0] = rho.bvalue();
     } else if constexpr (wrt == FEVarType::GEOMETRY) {
-      res.set(geo.bvalue());
+      res.copy(geo.bvalue());
     } else if constexpr (wrt == FEVarType::STATE) {
-      res.set(sref.bvalue());
+      res.copy(sref.bvalue());
     }
   }
 
   template <FEVarType of, FEVarType wrt>
   void jacobian_product(T weight, const DataSpace& data,
-                        const FiniteElementGeometry& geo,
-                        const FiniteElementSpace& sref,
+                        const FiniteElementGeometry& geo_,
+                        const FiniteElementSpace& sref_,
                         const FiniteElementVar<wrt>& p,
-                        FiniteElementVar<of>& out) const {}
+                        FiniteElementVar<of>& res) const {
+    A2DObj<T> rho(data[0]);
+    A2DObj<FiniteElementSpace> sref(sref_);
+    A2DObj<FiniteElementGeometry> geo(geo_);
+
+    // Intermidiate varaibles
+    A2DObj<T> detJ, penalty, mu, lambda, energy, output;
+    A2DObj<FiniteElementSpace> s;
+    A2DObj<SymMat<T, dim>> E, S;
+
+    if constexpr (wrt == FEVarType::DATA) {
+      rho.pvalue() = p[0];
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      geo.pvalue().copy(p);
+    } else if constexpr (wrt == FEVarType::STATE) {
+      sref.pvalue().copy(p);
+    }
+
+    // Set the derivative of the solution - this is awkward - is there an easier
+    // way to extract these objects?
+    A2DObj<Mat<T, dim, dim>&> Ux((s.value().template get<0>()).get_grad(),
+                                 (s.bvalue().template get<0>()).get_grad(),
+                                 (s.pvalue().template get<0>()).get_grad(),
+                                 (s.hvalue().template get<0>()).get_grad());
+
+    // Make a stack of the operations
+    auto stack = MakeStack(
+        RefElementTransform(geo, sref, detJ, s),       // transform
+        Eval(1.0 / (1.0 + q * (1.0 - rho)), penalty),  // penalty parameter
+        Eval(penalty * mu0, mu), Eval(penalty * lambda0, lambda),
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S),               // Evaluate the stress
+        SymMatMultTrace(E, S, energy),                // Compute the energy
+        Eval(0.5 * weight * detJ * energy, output));  // compute the
+
+    output.bvalue() = 1.0;
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+
+    if constexpr (of == FEVarType::DATA) {
+      res[0] = rho.hvalue();
+    } else if constexpr (of == FEVarType::GEOMETRY) {
+      res.copy(geo.hvalue());
+    } else if constexpr (of == FEVarType::STATE) {
+      res.copy(sref.hvalue());
+    }
+  }
 
   template <FEVarType of, FEVarType wrt>
   void jacobian(T weight, const DataSpace& data,
                 const FiniteElementGeometry& geo,
                 const FiniteElementSpace& sref,
-                FiniteElementJacobian<of, wrt>& jac) const {
-    T rho = data[0];
-    T penalty = 1.0 / (1.0 + q * (1.0 - rho));
-
-    // Get the constitutive data at the points
-    T mu = penalty * mu0;
-    T lambda = penalty * lambda0;
-
-    FiniteElementSpace in, out;
-
-    // Set up the pointers into the input/output matrices
-    Mat<T, dim, dim> Ux0 = s.template get<0>().get_grad();
-    Mat<T, dim, dim> Uxb;
-    Mat<T, dim, dim>& Uxp = in.template get<0>().get_grad();
-    Mat<T, dim, dim>& Uxh = out.template get<0>().get_grad();
-
-    // Extract displacement gradient
-    A2DObj<Mat<T, dim, dim>&> Ux(Ux0, Uxb, Uxp, Uxh);
-
-    // The Green-Lagrange strain terms
-    A2DObj<SymMat<T, dim>> E, S;
-
-    // The strain energy output
-    A2DObj<T> output;
-
-    auto stack =
-        MakeStack(MatGreenStrain<GreenStrain::LINEAR>(Ux, E),  // E = E(Ux)
-                  SymIsotropic(mu, lambda, E, S),              // S = S(E)
-                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
-
-    // Seed the output value with the wdetJ
-    output.bvalue() = 0.5 * wdetJ;
-
-    // Reverse the derivatives through the code
-    stack.reverse();
-
-    // Create data for extracting the Hessian-vector product
-    constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    auto inters = MakeTieTuple<T, ADseed::h>(S, E);
-
-    // Extract the matrix
-    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
-  }
+                FiniteElementJacobian<of, wrt>& jac) const {}
 };
 
 template <typename T, index_t D>
@@ -279,7 +292,7 @@ class IntegrandTopoLinearElasticity {
 
     // Set the derivative output value
     Mat<T, dim, dim>& Uxb = (coef.template get<0>()).get_grad();
-    Uxb.set(Ux.bvalue());
+    Uxb.copy(Ux.bvalue());
   }
 
   // Evaluate the second order derivatives of the integral
@@ -349,7 +362,7 @@ class IntegrandTopoLinearElasticity {
 
     // Extract displacement gradient
     A2DObj<Mat<T, dim, dim>> Ux(s.template get<0>().get_grad());
-    Ux.pvalue().set(adj.template get<0>().get_grad());
+    Ux.pvalue().copy(adj.template get<0>().get_grad());
 
     // Set the displacement
     A2DObj<T> penalty, mu, lambda;

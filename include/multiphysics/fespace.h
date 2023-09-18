@@ -126,6 +126,10 @@ class L2Space {
     s.u = u;
   }
 
+  template <typename dtype, class JType, class JinvType>
+  KOKKOS_FUNCTION void reverse_transform(const L2Space<T, C, D>& s, dtype& detJ,
+                                         JType& J, JinvType& Jinv) const {}
+
  private:
   VarType u;
 };
@@ -206,9 +210,11 @@ class H1Space {
 
     // s.grad = grad * Jinv
     if constexpr (C == 1) {
-      MatVecMult<MatOp::TRANSPOSE>(Jinv, grad, s.grad);
+      MatVecCore<T, D, D, MatOp::TRANSPOSE>(get_data(Jinv), get_data(grad),
+                                            get_data(s.grad));
     } else {
-      MatMatMult(grad, Jinv, s.grad);
+      MatMatMultCore<T, C, D, D, D, C, D>(get_data(grad), get_data(Jinv),
+                                          get_data(s.grad));
     }
   }
 
@@ -225,9 +231,24 @@ class H1Space {
 
     // s.grad = grad * Jinv^{T}
     if constexpr (C == 1) {
-      MatVecMult(Jinv, grad, s.grad);
+      MatVecCore<T, D, D>(get_data(Jinv), get_data(grad), get_data(s.grad));
     } else {
-      MatMatMult<MatOp::NORMAL, MatOp::TRANSPOSE>(grad, Jinv, s.grad);
+      MatMatMultCore<T, C, D, D, D, C, D, MatOp::NORMAL, MatOp::TRANSPOSE>(
+          get_data(grad), get_data(Jinv), get_data(s.grad));
+    }
+  }
+
+  template <typename dtype, class JType, class JinvType>
+  KOKKOS_FUNCTION void reverse_transform(const H1Space<T, C, D>& s, dtype& detJ,
+                                         JType& J, JinvType& Jinv) const {
+    const bool additive = true;
+    if constexpr (C == 1) {
+      VecOuterCore<T, D, D, additive>(get_data(grad), get_data(s.grad),
+                                      GetSeed<ADseed::b>::get_data(Jinv));
+    } else {
+      MatMatMultCore<T, C, D, C, D, D, D, MatOp::TRANSPOSE, MatOp::NORMAL,
+                     additive>(get_data(grad), get_data(s.grad),
+                               GetSeed<ADseed::b>::get_data(Jinv));
     }
   }
 
@@ -310,6 +331,27 @@ class HdivSpace {
       s.u(2) = inv * (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2));
     }
     s.div = inv * div;
+  }
+
+  template <typename dtype, class JType, class JinvType>
+  KOKKOS_FUNCTION void reverse_transform(const HdivSpace<T, D>& s, dtype& detJ,
+                                         JType& J0, JinvType& Jinv) const {
+    const bool additive = true;
+    const Mat<T, D, D>& J = J0.value();
+
+    T inv = 1.0 / detJ.value();
+    T binv = s.div * div;
+    if (D == 2) {
+      binv += (s.u(0) * (J(0, 0) * u(0) + J(0, 1) * u(1)) +
+               s.u(1) * (J(1, 0) * u(0) + J(1, 1) * u(1)));
+    } else if (D == 3) {
+      binv += (s.u(0) * (J(0, 0) * u(0) + J(0, 1) * u(1) + J(0, 2) * u(2)) +
+               s.u(1) * (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2)) +
+               s.u(2) * (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2)));
+    }
+    detJ.bvalue() -= inv * inv * binv;
+    VecOuterCore<T, D, D, additive>(inv, get_data(s.u), get_data(u),
+                                    GetSeed<ADseed::b>::get_data(J0));
   }
 
  private:
@@ -500,6 +542,20 @@ class FESpace {
     btransform_<0, Spaces...>(detJ, J, Jinv, s);
   }
 
+  template <typename dtype, class JType, class JinvType,
+            std::enable_if_t<
+                (is_scalar_type<typename remove_a2dobj<dtype>::type>::value &&
+                 D == get_matrix_rows<JType>::size &&
+                 D == get_matrix_columns<JType>::size &&
+                 D == get_matrix_rows<JinvType>::size &&
+                 D == get_matrix_columns<JinvType>::size),
+                bool> = true>
+  KOKKOS_FUNCTION void reverse_transform(const FESpace<T, D, Spaces...>& s,
+                                         dtype& detJ, JType& J,
+                                         JinvType& Jinv) const {
+    reverse_transform_<0, dtype, JType, JinvType, Spaces...>(s, detJ, J, Jinv);
+  }
+
  private:
   // Solution space tuple object
   SolutionSpace u;
@@ -521,6 +577,18 @@ class FESpace {
     std::get<index>(u).btransform(detJ, J, Jinv, std::get<index>(s.u));
     if constexpr (sizeof...(Remain) > 0) {
       btransform_<index + 1, Remain...>(detJ, J, Jinv, s);
+    }
+  }
+
+  template <index_t index, typename dtype, class JType, class JinvType,
+            class First, class... Remain>
+  KOKKOS_FUNCTION void reverse_transform_(const FESpace<T, D, Spaces...>& s,
+                                          dtype& detJ, JType& J,
+                                          JinvType& Jinv) const {
+    std::get<index>(u).reverse_transform(std::get<index>(s.u), detJ, J, Jinv);
+    if constexpr (sizeof...(Remain) > 0) {
+      reverse_transform_<index + 1, dtype, JType, JinvType, Remain...>(s, detJ,
+                                                                       J, Jinv);
     }
   }
 
@@ -575,6 +643,20 @@ class QptSpace {
  private:
   FiniteElementSpace space[Quadrature::num_quad_points];
 };
+
+template <index_t index, int N, int M, typename T, index_t D, class... Spaces>
+ADObj<Mat<T, N, M>&> get_grad(ADObj<FESpace<T, D, Spaces...>>& obj) {
+  return ADObj<Mat<T, N, M>&>(obj.value().template get<index>().get_grad(),
+                              obj.bvalue().template get<index>().get_grad());
+}
+
+template <index_t index, int N, int M, typename T, index_t D, class... Spaces>
+A2DObj<Mat<T, N, M>&> get_grad(A2DObj<FESpace<T, D, Spaces...>>& obj) {
+  return A2DObj<Mat<T, N, M>&>(obj.value().template get<index>().get_grad(),
+                               obj.bvalue().template get<index>().get_grad(),
+                               obj.pvalue().template get<index>().get_grad(),
+                               obj.hvalue().template get<index>().get_grad());
+}
 
 }  // namespace A2D
 

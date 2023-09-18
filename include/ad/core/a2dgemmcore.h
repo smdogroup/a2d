@@ -19,7 +19,7 @@ struct int_conditional<false, i, j> {
 };
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-inline void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
+KOKKOS_FUNCTION void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
     C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
@@ -64,7 +64,8 @@ inline void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-inline void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[], T C[]) {
+KOKKOS_FUNCTION void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[],
+                                            T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] = scalar * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = scalar * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
@@ -109,7 +110,7 @@ inline void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[], T C[]) {
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-inline void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
+KOKKOS_FUNCTION void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] += A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
     C[1] += A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
@@ -154,8 +155,8 @@ inline void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-inline void MatMatMultCore3x3ScaleAdd(T scalar, const T A[], const T B[],
-                                      T C[]) {
+KOKKOS_FUNCTION void MatMatMultCore3x3ScaleAdd(T scalar, const T A[],
+                                               const T B[], T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] += scalar * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += scalar * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
@@ -225,7 +226,7 @@ inline void MatMatMultCore3x3ScaleAdd(T scalar, const T A[], const T B[],
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
+KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
   // Op(A) is M-by-P, Op(B) is P-by-N, C is M-by-N
   constexpr int M = Cnrows;
   constexpr int N = Cncols;
@@ -342,8 +343,8 @@ inline void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-inline void MatMatMultScaleCoreGeneral(const T alpha, const T A[], const T B[],
-                                       T C[]) {
+KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
+                                                const T B[], T C[]) {
   // Op(A) is M-by-P, Op(B) is P-by-N, C is M-by-N
   constexpr int M = Cnrows;
   constexpr int N = Cncols;
@@ -463,7 +464,7 @@ inline void MatMatMultScaleCoreGeneral(const T alpha, const T A[], const T B[],
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-inline void MatMatMultCore(const T A[], const T B[], T C[]) {
+KOKKOS_FUNCTION void MatMatMultCore(const T A[], const T B[], T C[]) {
   // Check if shapes are consistent
   if constexpr (opA == MatOp::TRANSPOSE && opB == MatOp::TRANSPOSE) {
     static_assert(Anrows == Bncols && Ancols == Cnrows && Bnrows == Cncols,

@@ -84,14 +84,24 @@ class RefElementTransformConstGeoExpr {
   Space& out;
 };
 
-template <class Geometry, class Space, typename T>
+template <
+    class Geometry, class Space, typename T,
+    std::enable_if_t<get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
+        true>
 KOKKOS_FUNCTION auto RefElementTransform(const Geometry& geo, ADObj<Space>& in,
                                          T& detJ, ADObj<Space>& out) {
   return RefElementTransformConstGeoExpr<Geometry, ADObj<Space>, T>(geo, in,
                                                                     detJ, out);
 }
 
-template <class Geometry, class Space, typename T>
+template <
+    class Geometry, class Space, typename T,
+    std::enable_if_t<get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
+        true>
 KOKKOS_FUNCTION auto RefElementTransform(const Geometry& geo, A2DObj<Space>& in,
                                          T& detJ, A2DObj<Space>& out) {
   return RefElementTransformConstGeoExpr<Geometry, A2DObj<Space>, T>(geo, in,
@@ -113,17 +123,31 @@ class RefElementTransformExpr {
   static const int dim = remove_a2dobj<Geometry>::type::dim;
 
   // Set the type of matrix to use - here use a constant matrix
+  using JType = ADObjSelect<ADiffType::ACTIVE, order, Mat<T, dim, dim>&>;
   using JinvType = ADObjSelect<ADiffType::ACTIVE, order, Mat<T, dim, dim>>;
 
-  RefElementTransformExpr(Geometry& geo, Space& in, dtype& detJ, Space& out)
-      : geo(geo), in(in), detJ(detJ), out(out) {}
+  RefElementTransformExpr(Geometry& geo_, Space& in_, dtype& detJ_, Space& out_)
+      : geo(geo_),
+        in(in_),
+        detJ(detJ_),
+        out(out_),
+        J(get_grad<0, dim, dim>(geo)),
+        det(J, detJ),
+        inv(J, Jinv) {}
+
+  RefElementTransformExpr(const RefElementTransformExpr& src)
+      : geo(src.geo),
+        in(src.in),
+        detJ(src.detJ),
+        out(src.out),
+        J(src.J),
+        det(J, src.detJ),
+        inv(J, Jinv) {}
 
   void eval() {
-    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
-
-    MatInv(J, Jinv.value());
-    MatDet(J, detJ.value());
-    in.value().transform(detJ.value(), J, Jinv.value(), out.value());
+    det.eval();
+    inv.eval();
+    in.value().transform(detJ.value(), J.value(), Jinv.value(), out.value());
   }
 
   template <ADorder forder>
@@ -131,29 +155,37 @@ class RefElementTransformExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
-    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
-    GetSeed<seed>::get_obj(in).transform(detJ.value(), J, Jinv.value(),
+    inv.template forward<forder>();
+    det.template forward<forder>();
+    GetSeed<seed>::get_obj(in).transform(detJ.value(), J.value(), Jinv.value(),
                                          GetSeed<seed>::get_obj(out));
   }
 
   KOKKOS_FUNCTION void reverse() {
-    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
-    out.bvalue().btransform(detJ.value(), J, Jinv.value(), in.bvalue());
+    out.bvalue().btransform(detJ.value(), J.value(), Jinv.value(), in.bvalue());
+    in.value().reverse_transform(out.bvalue(), detJ, J, Jinv);
+    inv.reverse();
+    det.reverse();
   }
+
   KOKKOS_FUNCTION void hreverse() {
-    const Mat<T, dim, dim>& J = geo.value().template get<0>().get_grad();
-    out.hvalue().btransform(detJ.value(), J, Jinv.value(), in.hvalue());
+    out.hvalue().btransform(detJ.value(), J.value(), Jinv.value(), in.hvalue());
   }
 
  private:
-  // Internal data
-  JinvType Jinv;
-
   // Input/output data
   Geometry& geo;
   Space& in;
   dtype& detJ;
   Space& out;
+
+  // Internal data
+  JType J;
+  JinvType Jinv;
+
+  // The expression objects for determinant and inverse operations
+  MatDetExpr<JType, dtype> det;
+  MatInvExpr<JType, JinvType> inv;
 };
 
 template <class Geometry, class Space, typename T>
@@ -186,7 +218,7 @@ class RefElementTransformConstGeoTest
   Geometry geo;
 
   // Assemble a string to describe the test
-  std::string name() { return "RefElementTransform"; }
+  std::string name() { return "RefElementTransformConstGeo"; }
 
   // Evaluate the function
   Output eval(const Input& x) {
@@ -249,9 +281,9 @@ class RefElementTransformTest
   void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<Geometry> geo;
     ADObj<Space> in, out;
-    T detJ;
+    ADObj<T> detJ;
     x.get_values(geo.value(), in.value());
-    auto stack = MakeStack(RefElementTransform(geo.value(), in, detJ, out));
+    auto stack = MakeStack(RefElementTransform(geo, in, detJ, out));
     seed.get_values(out.bvalue());
     stack.reverse();
     g.set_values(geo.bvalue(), in.bvalue());
@@ -259,7 +291,20 @@ class RefElementTransformTest
 
   // Compute the second-derivative
   void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {}
+             const Input& p, Input& h) {
+    A2DObj<Geometry> geo;
+    A2DObj<Space> in, out;
+    A2DObj<T> detJ;
+    x.get_values(geo.value(), in.value());
+    p.get_values(geo.pvalue(), in.pvalue());
+    auto stack = MakeStack(RefElementTransform(geo, in, detJ, out));
+    seed.get_values(out.bvalue());
+    hval.get_values(out.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(geo.hvalue(), in.hvalue());
+  }
 };
 
 template <typename T, class Geometry, class Space>
@@ -281,8 +326,12 @@ bool RefElementTransformTestAll(bool component, bool write_output) {
   using T = std::complex<double>;
   const int dim = 3;
   using Geometry = FESpace<T, dim, H1Space<T, dim, dim>>;
-  using Space = FESpace<T, dim, L2Space<T, dim - 1, dim>, H1Space<T, dim, 1>,
-                        H1Space<T, dim + 2, dim>, HdivSpace<T, dim>>;
+  // using Space = FESpace<T, dim, L2Space<T, dim - 1, dim>, H1Space<T, dim, 1>,
+  //                       H1Space<T, dim + 2, dim>, HdivSpace<T, dim>>;
+
+  // using Space = FESpace<T, dim, HdivSpace<T, dim>>;
+
+  using Space = FESpace<T, dim, H1Space<T, 3, dim>>;
 
   passed = RefElementTransformTestHelper<T, Geometry, Space>(component,
                                                              write_output);

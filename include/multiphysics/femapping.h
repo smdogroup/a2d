@@ -56,8 +56,7 @@ class RefElementTransformConstGeoExpr {
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    const Mat<T, Geometry::dim, Geometry::dim>& J =
-        geo.template get<0>().get_grad();
+    const Mat<T, Geometry::dim, Geometry::dim>& J = get_grad<0>(geo);
     GetSeed<seed>::get_obj(in).transform(detJ, J, Jinv,
                                          GetSeed<seed>::get_obj(out));
   }
@@ -131,7 +130,7 @@ class RefElementTransformExpr {
         in(in_),
         detJ(detJ_),
         out(out_),
-        J(get_grad<0, dim, dim>(geo)),
+        J(get_grad<0>(geo)),
         det(J, detJ),
         inv(J, Jinv) {}
 

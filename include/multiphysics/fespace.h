@@ -262,6 +262,9 @@ class HdivSpace {
  public:
   KOKKOS_FUNCTION HdivSpace() { div = 0.0; }
 
+  using VarType = Vec<T, D>;
+  using DivType = T;
+
   // Spatial dimension
   static const index_t dim = D;
 
@@ -355,8 +358,8 @@ class HdivSpace {
   }
 
  private:
-  Vec<T, D> u;
-  T div;
+  VarType u;
+  DivType div;
 };
 
 template <typename T>
@@ -436,6 +439,17 @@ template <class First, class... Remain>
 struct __count_space_components<First, Remain...> {
   static const index_t ncomp =
       First::ncomp + __count_space_components<Remain...>::ncomp;
+};
+
+template <index_t index, class First, class... Spaces>
+struct get_fespace_type;
+
+template <index_t index, class First, class... Remain>
+struct get_fespace_type : get_fespace_type<index - 1, Remain...> {};
+
+template <class First, class... Remain>
+struct get_fespace_type<0, First, Remain...> {
+  typedef First type;
 };
 
 /*
@@ -644,18 +658,88 @@ class QptSpace {
   FiniteElementSpace space[Quadrature::num_quad_points];
 };
 
-template <index_t index, int N, int M, typename T, index_t D, class... Spaces>
-ADObj<Mat<T, N, M>&> get_grad(ADObj<FESpace<T, D, Spaces...>>& obj) {
-  return ADObj<Mat<T, N, M>&>(obj.value().template get<index>().get_grad(),
-                              obj.bvalue().template get<index>().get_grad());
+template <index_t index, typename T, index_t D, class... Spaces>
+const typename get_fespace_type<index, Spaces...>::type::VarType& get_value(
+    const FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_value();
 }
 
-template <index_t index, int N, int M, typename T, index_t D, class... Spaces>
-A2DObj<Mat<T, N, M>&> get_grad(A2DObj<FESpace<T, D, Spaces...>>& obj) {
-  return A2DObj<Mat<T, N, M>&>(obj.value().template get<index>().get_grad(),
-                               obj.bvalue().template get<index>().get_grad(),
-                               obj.pvalue().template get<index>().get_grad(),
-                               obj.hvalue().template get<index>().get_grad());
+template <index_t index, typename T, index_t D, class... Spaces>
+typename get_fespace_type<index, Spaces...>::type::VarType& get_value(
+    FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_value();
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_value(ADObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::VarType;
+  return ADObj<type&>(obj.value().template get<index>().get_value(),
+                      obj.bvalue().template get<index>().get_value());
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_value(A2DObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::VarType;
+  return A2DObj<type&>(obj.value().template get<index>().get_value(),
+                       obj.bvalue().template get<index>().get_value(),
+                       obj.pvalue().template get<index>().get_value(),
+                       obj.hvalue().template get<index>().get_value());
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+const typename get_fespace_type<index, Spaces...>::type::GradType& get_grad(
+    const FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_grad();
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+typename get_fespace_type<index, Spaces...>::type::GradType& get_grad(
+    FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_grad();
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_grad(ADObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::GradType;
+  return ADObj<type&>(obj.value().template get<index>().get_grad(),
+                      obj.bvalue().template get<index>().get_grad());
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_grad(A2DObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::GradType;
+  return A2DObj<type&>(obj.value().template get<index>().get_grad(),
+                       obj.bvalue().template get<index>().get_grad(),
+                       obj.pvalue().template get<index>().get_grad(),
+                       obj.hvalue().template get<index>().get_grad());
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+const typename get_fespace_type<index, Spaces...>::type::DivType& get_div(
+    const FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_div();
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+typename get_fespace_type<index, Spaces...>::type::DivType& get_div(
+    FESpace<T, D, Spaces...>& obj) {
+  return obj.template get<index>().get_div();
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_div(ADObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::DivType;
+  return ADObj<type&>(obj.value().template get<index>().get_div(),
+                      obj.bvalue().template get<index>().get_div());
+}
+
+template <index_t index, typename T, index_t D, class... Spaces>
+auto get_div(A2DObj<FESpace<T, D, Spaces...>>& obj) {
+  using type = typename get_fespace_type<index, Spaces...>::type::DivType;
+  return A2DObj<type&>(obj.value().template get<index>().get_div(),
+                       obj.bvalue().template get<index>().get_div(),
+                       obj.pvalue().template get<index>().get_div(),
+                       obj.hvalue().template get<index>().get_div());
 }
 
 }  // namespace A2D

@@ -69,7 +69,7 @@ class TopoElasticity {
     RefElementTransform(geo, sref, detJ, s);
 
     // Extract the pointer to the physical coordinate derivatives
-    const Mat<T, dim, dim>& Ux = (s.template get<0>()).get_grad();
+    const Mat<T, dim, dim>& Ux = get_grad<0>(s);
 
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
     T mu = penalty * mu0;
@@ -97,8 +97,7 @@ class TopoElasticity {
     ADObj<SymMat<T, dim>> E, S;
 
     // Set the derivative of the solution
-    ADObj<Mat<T, dim, dim>&> Ux((s.value().template get<0>()).get_grad(),
-                                (s.bvalue().template get<0>()).get_grad());
+    ADObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
 
     // Make a stack of the operations
     auto stack = MakeStack(
@@ -137,6 +136,9 @@ class TopoElasticity {
     A2DObj<FiniteElementSpace> s;
     A2DObj<SymMat<T, dim>> E, S;
 
+    // Set the derivative of the solution
+    A2DObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
+
     if constexpr (wrt == FEVarType::DATA) {
       rho.pvalue() = p[0];
     } else if constexpr (wrt == FEVarType::GEOMETRY) {
@@ -144,13 +146,6 @@ class TopoElasticity {
     } else if constexpr (wrt == FEVarType::STATE) {
       sref.pvalue().copy(p);
     }
-
-    // Set the derivative of the solution - this is awkward - is there an easier
-    // way to extract these objects?
-    A2DObj<Mat<T, dim, dim>&> Ux((s.value().template get<0>()).get_grad(),
-                                 (s.bvalue().template get<0>()).get_grad(),
-                                 (s.pvalue().template get<0>()).get_grad(),
-                                 (s.hvalue().template get<0>()).get_grad());
 
     // Make a stack of the operations
     auto stack = MakeStack(

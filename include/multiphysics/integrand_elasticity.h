@@ -49,7 +49,7 @@ class TopoElasticity {
   /**
    * @brief Find the integral of the compliance over the entire domain
    *
-   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param weight The quadrature weight
    * @param data The data at the quadrature point
    * @param geo The geometry at the quadrature point
    * @param sref The solution at the quadurature point
@@ -60,17 +60,16 @@ class TopoElasticity {
     // Input values
     T rho = data[0];
 
-    // Intermidiate varaibles
+    // Intermediate variables
     FiniteElementSpace s;
     SymMat<T, dim> E, S;
     T detJ, energy;
 
-    // Get the constitutive data at the points
-    RefElementTransform(geo, sref, detJ, s);
-
     // Extract the pointer to the physical coordinate derivatives
     const Mat<T, dim, dim>& Ux = get_grad<0>(s);
 
+    // Get the constitutive data at the points
+    RefElementTransform(geo, sref, detJ, s);
     T penalty = 1.0 / (1.0 + q * (1.0 - rho));
     T mu = penalty * mu0;
     T lambda = penalty * lambda0;
@@ -91,7 +90,7 @@ class TopoElasticity {
     ADObj<FiniteElementSpace> sref(sref_);
     ADObj<FiniteElementGeometry> geo(geo_);
 
-    // Intermidiate varaibles
+    // Intermediate variables
     ADObj<T> detJ, penalty, mu, lambda, energy, output;
     ADObj<FiniteElementSpace> s;
     ADObj<SymMat<T, dim>> E, S;
@@ -107,7 +106,7 @@ class TopoElasticity {
         MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
         SymIsotropic(mu, lambda, E, S),               // Evaluate the stress
         SymMatMultTrace(E, S, energy),                // Compute the energy
-        Eval(0.5 * weight * detJ * energy, output));  // compute the
+        Eval(0.5 * weight * detJ * energy, output));  // Compute the output
 
     output.bvalue() = 1.0;
     stack.reverse();
@@ -131,7 +130,7 @@ class TopoElasticity {
     A2DObj<FiniteElementSpace> sref(sref_);
     A2DObj<FiniteElementGeometry> geo(geo_);
 
-    // Intermidiate varaibles
+    // Intermediate variables
     A2DObj<T> detJ, penalty, mu, lambda, energy, output;
     A2DObj<FiniteElementSpace> s;
     A2DObj<SymMat<T, dim>> E, S;
@@ -155,7 +154,7 @@ class TopoElasticity {
         MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
         SymIsotropic(mu, lambda, E, S),               // Evaluate the stress
         SymMatMultTrace(E, S, energy),                // Compute the energy
-        Eval(0.5 * weight * detJ * energy, output));  // compute the
+        Eval(0.5 * weight * detJ * energy, output));  // Compute the output
 
     output.bvalue() = 1.0;
     stack.reverse();
@@ -218,7 +217,7 @@ class IntegrandTopoLinearElasticity {
   /**
    * @brief Find the integral of the compliance over the entire domain
    *
-   * @param wdetJ The determinant of the Jacobian times the quadrature weight
+   * @param weight The integration weight
    * @param data The data at the quadrature point
    * @param geo The geometry at the quadrature point
    * @param s The solution at the quadurature point

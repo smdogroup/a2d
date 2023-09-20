@@ -5,6 +5,7 @@
 #include "a2dmat.h"
 #include "ad/core/a2dgemmcore.h"
 #include "ad/core/a2dmatinvcore.h"
+#include "ad/core/a2dveccore.h"
 
 namespace A2D {
 
@@ -62,10 +63,9 @@ class MatInvExpr {
                                               ADseed::b, ADseed::p>::value;
 
     T temp[N * N];
-    const bool additive = true;
     MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL>(
         get_data(Ainv), GetSeed<seed>::get_data(A), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, additive>(
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL>(
         T(-1.0), temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv));
   }
 
@@ -82,19 +82,24 @@ class MatInvExpr {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
-    T temp[N * N];
+    T Ab[N * N], temp[N * N];
     const bool additive = true;
+
+    // Compute the derivative contribution
+    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
+        get_data(Ainv), GetSeed<ADseed::b>::get_data(Ainv), temp);
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
+        T(-1.0), temp, get_data(Ainv), Ab);
 
     // - A^{-T} * Ap^{T} * Ab
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, TRANSPOSE>(
         get_data(Ainv), GetSeed<ADseed::p>::get_data(A), temp);
     MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, additive>(
-        T(-1.0), temp, GetSeed<ADseed::b>::get_data(A),
-        GetSeed<ADseed::h>::get_data(A));
+        T(-1.0), temp, Ab, GetSeed<ADseed::h>::get_data(A));
 
     // - Ab * Ap^{T} * A^{-T}
     MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE>(
-        GetSeed<ADseed::b>::get_data(A), GetSeed<ADseed::p>::get_data(A), temp);
+        Ab, GetSeed<ADseed::p>::get_data(A), temp);
     MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A));
 

@@ -57,7 +57,7 @@ KOKKOS_FUNCTION void MatDetReverseCore(const T bdet, const T A[], T Ab[]) {
     Ab[1] += -A[2] * bdet;
     Ab[2] += -A[1] * bdet;
     Ab[3] += A[0] * bdet;
-  } else {  // N == 3
+  } else if constexpr (N == 3) {
     Ab[0] += (A[8] * A[4] - A[7] * A[5]) * bdet;
     Ab[1] += (A[6] * A[5] - A[8] * A[3]) * bdet;
     Ab[2] += (A[7] * A[3] - A[6] * A[4]) * bdet;
@@ -85,7 +85,7 @@ KOKKOS_FUNCTION void MatDetHReverseCore(const T bdet, const T hdet, const T A[],
     Ah[1] += -A[2] * hdet;
     Ah[2] += -A[1] * hdet;
     Ah[3] += A[0] * hdet;
-  } else {  // N == 3
+  } else if constexpr (N == 3) {
     Ah[0] += (A[8] * Ap[4] - A[7] * Ap[5] + Ap[8] * A[4] - Ap[7] * A[5]) * bdet;
     Ah[1] += (A[6] * Ap[5] - A[8] * Ap[3] + Ap[6] * A[5] - Ap[8] * A[3]) * bdet;
     Ah[2] += (A[7] * Ap[3] - A[6] * Ap[4] + Ap[7] * A[3] - Ap[6] * A[4]) * bdet;

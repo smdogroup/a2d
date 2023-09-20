@@ -110,6 +110,8 @@ class SymMatSumExpr {
     SymMatSumCore<T, N>(get_data(alpha), get_data(A), get_data(S));
   }
 
+  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -139,6 +141,8 @@ class SymMatSumExpr {
                                  GetSeed<seed>::get_data(A));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { S.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
@@ -262,9 +266,7 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
     auto stack = MakeStack(SymMatSum(A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };
@@ -315,9 +317,7 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
     auto stack = MakeStack(SymMatSum(alpha, A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(alpha.hvalue(), A.hvalue());
   }
 };

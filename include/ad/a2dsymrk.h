@@ -63,6 +63,8 @@ class SymMatRKExpr {
     SymMatRKCore<T, N, K, op>(get_data(A), get_data(S));
   }
 
+  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -76,6 +78,8 @@ class SymMatRKExpr {
     SymMatRKCoreReverse<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(S),
                                      GetSeed<seed>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { S.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     SymMatRKCoreReverse<T, N, K, op>(get_data(A),
@@ -133,6 +137,8 @@ class SymMatRKScaleExpr {
     SymMatRKCoreScale<T, N, K, op>(alpha, get_data(A), get_data(S));
   }
 
+  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -149,6 +155,8 @@ class SymMatRKScaleExpr {
                                           GetSeed<seed>::get_data(S),
                                           GetSeed<seed>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { S.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     SymMatRKCoreReverseScale<T, N, K, op>(alpha, get_data(A),
@@ -239,9 +247,7 @@ class SymMatRKTest : public A2DTest<T, SymMat<T, P>, Mat<T, N, M>> {
     auto stack = MakeStack(SymMatRK<op>(A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };
@@ -300,9 +306,7 @@ class SymMatRKScaleTest : public A2DTest<T, SymMat<T, P>, Mat<T, N, M>> {
     auto stack = MakeStack(SymMatRK<op>(alpha, A, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

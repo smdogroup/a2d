@@ -9,35 +9,26 @@ namespace Test {
 
 template <template <typename> class Integrand, typename T>
 class A2DIntegrandAnalysisTest
-    : public A2DTest<T, T, typename Integrand<T>::FiniteElementSpace> {
+    : public A2DTest<T, T, typename Integrand<T>::DataSpace,
+                     typename Integrand<T>::FiniteElementGeometry,
+                     typename Integrand<T>::FiniteElementSpace> {
  public:
   // Set the solution space data
   using DataSpace = typename Integrand<T>::DataSpace;
-  using FiniteElementSpace = typename Integrand<T>::FiniteElementSpace;
-  using FiniteElementGeometry = typename Integrand<T>::FiniteElementGeometry;
-  using SolutionMapping = typename Integrand<T>::SolutionMapping;
-  using QMatType = typename Integrand<T>::QMatType;
+  using Geometry = typename Integrand<T>::FiniteElementGeometry;
+  using Space = typename Integrand<T>::FiniteElementSpace;
+
+  static constexpr FEVarType DATA = FEVarType::DATA;
+  static constexpr FEVarType GEOMETRY = FEVarType::GEOMETRY;
+  static constexpr FEVarType STATE = FEVarType::STATE;
 
   // Set the inputs and outputs
-  using Inputs = FiniteElementSpace;
-  using Output = T;
+  using Input = VarTuple<T, DataSpace, Geometry, Space>;
+  using Output = VarTuple<T, T>;
 
   A2DIntegrandAnalysisTest(Integrand<T>& integrand)
-      : A2DTest<T, T, typename Integrand<T>::FiniteElementSpace>(
-            TestType::SECOND_ORDER),
-        integrand(integrand) {
-    // Set values for the data and the geometry
-    if constexpr (DataSpace::ncomp > 0) {
-      this->set_rand(DataSpace::ncomp, data);
-    }
-    if constexpr (FiniteElementGeometry::ncomp > 0) {
-      this->set_rand(FiniteElementGeometry::ncomp, gref);
-    }
-  }
-
-  // Finite element geometry and data space
-  DataSpace data;
-  FiniteElementGeometry gref;
+      : A2DTest<T, T, DataSpace, Geometry, Space>(TestType::SECOND_ORDER),
+        integrand(integrand) {}
 
   // The integrand that we will test
   Integrand<T> integrand;
@@ -55,24 +46,15 @@ class A2DIntegrandAnalysisTest
    * @param x Variable tuple for the input
    * @return The output value
    */
-  VarTuple<T, Output> eval(const VarTuple<T, Inputs>& x) {
-    // Get the solution/geometry in the reference domain
-    FiniteElementSpace sref;
-
-    // Get the input values
-    x.get_values(sref);
-
-    // Initialize the transform object
-    T detJ;
-    SolutionMapping transform(gref, detJ);
-
-    // Transform from the reference element to the physical space
-    FiniteElementSpace s;
-    transform.transform(sref, s);
+  Output eval(const Input& x) {
+    DataSpace data;
+    Geometry geo;
+    Space sref;
+    x.get_values(data, geo, sref);
 
     // Compute the coefficients for the weak form of the Integrand
-    FiniteElementSpace coef;
-    T value = integrand.integrand(detJ, data, gref, s);
+    double weight(0.1378);
+    T value = integrand.integrand(weight, data, geo, sref);
 
     return MakeVarTuple<T>(value);
   }
@@ -84,34 +66,18 @@ class A2DIntegrandAnalysisTest
    * @param x Variable tuple for the input
    * @param g Derivative of the output w.r.t. the input
    */
-  void deriv(const VarTuple<T, Output>& seed, const VarTuple<T, Inputs>& x,
-             VarTuple<T, Inputs>& g) {
-    // Get the solution/geometry in the reference domain
-    FiniteElementSpace sref;
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    DataSpace data, bdata;
+    Geometry geo, bgeo;
+    Space sref, bsref;
+    x.get_values(data, geo, sref);
 
-    // Get the input values
-    x.get_values(sref);
+    double weight(0.1378);
+    integrand.template residual<DATA>(weight, data, geo, sref, bdata);
+    integrand.template residual<GEOMETRY>(weight, data, geo, sref, bgeo);
+    integrand.template residual<STATE>(weight, data, geo, sref, bsref);
 
-    // Initialize the transform object
-    T detJ;
-    SolutionMapping transform(gref, detJ);
-
-    // Transform from the reference element to the physical space
-    FiniteElementSpace s;
-    transform.transform(sref, s);
-
-    // Compute the coefficients for the weak form of the Integrand
-    FiniteElementSpace coef;
-    integrand.residual(detJ, data, gref, s, coef);
-
-    // Transform the coefficients back to the reference element
-    FiniteElementSpace cref;
-    transform.rtransform(coef, cref);
-
-    // Set the coefficients as the gradient
-    for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-      g[i] = cref[i];
-    }
+    g.set_values(bdata, bgeo, bsref);
   }
 
   /**
@@ -120,36 +86,57 @@ class A2DIntegrandAnalysisTest
    * @param x Variable tuple for the input
    * @param g Derivative of the output w.r.t. the input
    */
-  void hprod(const VarTuple<T, Output>& seed, const VarTuple<T, Output>& hval,
-             const VarTuple<T, Inputs>& x, const VarTuple<T, Inputs>& p,
-             VarTuple<T, Inputs>& h) {
-    // Get the solution/geometry in the reference domain
-    FiniteElementSpace sref;
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    DataSpace data, pdata, bdata, hdata;
+    Geometry geo, pgeo, bgeo, hgeo;
+    Space sref, psref, bsref, hsref;
+    x.get_values(data, geo, sref);
+    p.get_values(pdata, pgeo, psref);
 
-    // Get the input values
-    x.get_values(sref);
+    double weight(0.1378);
+    integrand.template jacobian_product<DATA, DATA>(weight, data, geo, sref,
+                                                    pdata, hdata);
+    integrand.template jacobian_product<GEOMETRY, DATA>(weight, data, geo, sref,
+                                                        pdata, hgeo);
+    integrand.template jacobian_product<STATE, DATA>(weight, data, geo, sref,
+                                                     pdata, hsref);
 
-    // Initialize the transform object
-    T detJ;
-    SolutionMapping transform(gref, detJ);
+    integrand.template jacobian_product<DATA, GEOMETRY>(weight, data, geo, sref,
+                                                        pgeo, bdata);
+    integrand.template jacobian_product<GEOMETRY, GEOMETRY>(weight, data, geo,
+                                                            sref, pgeo, bgeo);
+    integrand.template jacobian_product<STATE, GEOMETRY>(weight, data, geo,
+                                                         sref, pgeo, bsref);
 
-    // Transform from the reference element to the physical space
-    FiniteElementSpace s;
-    transform.transform(sref, s);
-
-    // Compute the Jacobian for the weak form at the quadrature point
-    QMatType jac_ref, jac;
-    integrand.jacobian(detJ, data, gref, s, jac);
-
-    // Transform second derivatives from w.r.t. x to w.r.t. xi
-    transform.template jtransform<FiniteElementSpace>(jac, jac_ref);
-
-    for (int i = 0; i < FiniteElementSpace::ncomp; i++) {
-      h[i] = T(0.0);
-      for (int j = 0; j < FiniteElementSpace::ncomp; j++) {
-        h[i] += jac_ref(i, j) * p[j];
-      }
+    for (index_t i = 0; i < DataSpace::ncomp; i++) {
+      hdata[i] += bdata[i];
     }
+    for (index_t i = 0; i < Geometry::ncomp; i++) {
+      hgeo[i] += bgeo[i];
+    }
+    for (index_t i = 0; i < Space::ncomp; i++) {
+      hsref[i] += bsref[i];
+    }
+
+    integrand.template jacobian_product<DATA, STATE>(weight, data, geo, sref,
+                                                     psref, bdata);
+    integrand.template jacobian_product<GEOMETRY, STATE>(weight, data, geo,
+                                                         sref, psref, bgeo);
+    integrand.template jacobian_product<STATE, STATE>(weight, data, geo, sref,
+                                                      psref, bsref);
+
+    for (index_t i = 0; i < DataSpace::ncomp; i++) {
+      hdata[i] += bdata[i];
+    }
+    for (index_t i = 0; i < Geometry::ncomp; i++) {
+      hgeo[i] += bgeo[i];
+    }
+    for (index_t i = 0; i < Space::ncomp; i++) {
+      hsref[i] += bsref[i];
+    }
+
+    h.set_values(hdata, hgeo, hsref);
   }
 };
 

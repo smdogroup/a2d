@@ -5,6 +5,7 @@
 #include "a2dmat.h"
 #include "ad/core/a2dgemmcore.h"
 #include "ad/core/a2dmatinvcore.h"
+#include "ad/core/a2dveccore.h"
 
 namespace A2D {
 
@@ -49,9 +50,11 @@ class MatInvExpr {
   static constexpr MatOp NORMAL = MatOp::NORMAL;
   static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
-  KOKKOS_FUNCTION MatInvExpr(Atype& A, Atype& Ainv) : A(A), Ainv(Ainv) {}
+  KOKKOS_FUNCTION MatInvExpr(Atype& A, Btype& Ainv) : A(A), Ainv(Ainv) {}
 
   KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
+
+  KOKKOS_FUNCTION void bzero() { Ainv.bzero(); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
@@ -64,46 +67,55 @@ class MatInvExpr {
     T temp[N * N];
     MatMatMultCore<T, N, N, N, N, N, N, NORMAL, NORMAL>(
         get_data(Ainv), GetSeed<seed>::get_data(A), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, true>(
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL>(
         T(-1.0), temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv));
   }
 
   KOKKOS_FUNCTION void reverse() {
     T temp[N * N];
+    const bool additive = true;
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
         get_data(Ainv), GetSeed<ADseed::b>::get_data(Ainv), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { Ainv.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
-    T temp[N * N];
+    T Ab[N * N], temp[N * N];
+    const bool additive = true;
+
+    // Compute the derivative contribution
+    MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
+        get_data(Ainv), GetSeed<ADseed::b>::get_data(Ainv), temp);
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
+        T(-1.0), temp, get_data(Ainv), Ab);
 
     // - A^{-T} * Ap^{T} * Ab
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, TRANSPOSE>(
         get_data(Ainv), GetSeed<ADseed::p>::get_data(A), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, true>(
-        T(-1.0), temp, GetSeed<ADseed::b>::get_data(A),
-        GetSeed<ADseed::h>::get_data(A));
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, NORMAL, additive>(
+        T(-1.0), temp, Ab, GetSeed<ADseed::h>::get_data(A));
 
     // - Ab * Ap^{T} * A^{-T}
     MatMatMultCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE>(
-        GetSeed<ADseed::b>::get_data(A), GetSeed<ADseed::p>::get_data(A), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+        Ab, GetSeed<ADseed::p>::get_data(A), temp);
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A));
 
     // - A^{-T} * Ainvh * A^{-T}
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
         get_data(Ainv), GetSeed<ADseed::h>::get_data(Ainv), temp);
-    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, true>(
+    MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::h>::get_data(A));
   }
 
   Atype& A;
-  Atype& Ainv;
+  Btype& Ainv;
 };
 
 template <class Atype, class Btype>
@@ -163,9 +175,7 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
     auto stack = MakeStack(MatInv(A, B));
     seed.get_values(B.bvalue());
     hval.get_values(B.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

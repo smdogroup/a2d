@@ -107,6 +107,8 @@ class SymIsotropicExpr {
                            get_data(S));
   }
 
+  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -153,6 +155,8 @@ class SymIsotropicExpr {
       }
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { S.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     if constexpr (Ediff == ADiffType::ACTIVE) {
@@ -272,9 +276,7 @@ class SymIsotropicConstTest : public A2DTest<T, SymMat<T, N>, SymMat<T, N>> {
     auto stack = MakeStack(SymIsotropic(T(0.314), T(0.731), E, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(E.hvalue());
   }
 };
@@ -323,9 +325,7 @@ class SymIsotropicTest : public A2DTest<T, SymMat<T, N>, T, T, SymMat<T, N>> {
     auto stack = MakeStack(SymIsotropic(mu, lambda, E, S));
     seed.get_values(S.bvalue());
     hval.get_values(S.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(mu.hvalue(), lambda.hvalue(), E.hvalue());
   }
 };

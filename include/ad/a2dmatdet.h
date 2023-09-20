@@ -3,6 +3,7 @@
 
 #include "a2ddefs.h"
 #include "a2dmat.h"
+#include "a2dmatinv.h"
 #include "ad/core/a2dmatdetcore.h"
 
 namespace A2D {
@@ -36,6 +37,8 @@ class MatDetExpr {
 
   KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
 
+  KOKKOS_FUNCTION void bzero() { det.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -51,6 +54,8 @@ class MatDetExpr {
     MatDetReverseCore<T, N>(GetSeed<ADseed::b>::get_data(det), get_data(A),
                             GetSeed<ADseed::b>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { det.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
@@ -94,19 +99,20 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
   // Evaluate the matrix-matrix product
   Output eval(const Input& x) {
     T det;
-    Mat<T, N, N> A;
+    Mat<T, N, N> A, Ainv;
     x.get_values(A);
     MatDet(A, det);
+    MatInv(A, Ainv);
     return MakeVarTuple<T>(det);
   }
 
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<T> det;
-    ADObj<Mat<T, N, N>> A;
+    ADObj<Mat<T, N, N>> A, Ainv;
 
     x.get_values(A.value());
-    auto stack = MakeStack(MatDet(A, det));
+    auto stack = MakeStack(MatDet(A, det), MatInv(A, Ainv));
     seed.get_values(det.bvalue());
     stack.reverse();
     g.set_values(A.bvalue());
@@ -116,15 +122,13 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) {
     A2DObj<T> det;
-    A2DObj<Mat<T, N, N>> A;
+    A2DObj<Mat<T, N, N>> A, Ainv;
     x.get_values(A.value());
     p.get_values(A.pvalue());
-    auto stack = MakeStack(MatDet(A, det));
+    auto stack = MakeStack(MatDet(A, det), MatInv(A, Ainv));
     seed.get_values(det.bvalue());
     hval.get_values(det.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

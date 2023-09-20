@@ -80,6 +80,8 @@ class MatTraceExpr {
     get_data(tr) = MatTraceCore<T, M>(get_data(A));
   }
 
+  KOKKOS_FUNCTION void bzero() { tr.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -95,6 +97,8 @@ class MatTraceExpr {
     MatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
                          GetSeed<ADseed::b>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { tr.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
@@ -232,9 +236,7 @@ class MatTraceTest : public A2DTest<T, T, Mat<T, N, N>> {
     auto stack = MakeStack(MatTrace(A, trace));
     seed.get_values(trace.bvalue());
     hval.get_values(trace.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };
@@ -284,9 +286,7 @@ class SymTraceTest : public A2DTest<T, T, SymMat<T, N>> {
     auto stack = MakeStack(MatTrace(A, trace));
     seed.get_values(trace.bvalue());
     hval.get_values(trace.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

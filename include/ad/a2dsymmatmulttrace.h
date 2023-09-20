@@ -46,6 +46,8 @@ class SymMatMultTraceExpr {
     get_data(out) = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
   }
 
+  KOKKOS_FUNCTION void bzero() { out.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -65,6 +67,8 @@ class SymMatMultTraceExpr {
     SymMatMultTraceReverseCore<T, N>(out.bvalue(), get_data(E),
                                      GetSeed<ADseed::b>::get_data(S));
   }
+
+  KOKKOS_FUNCTION void hzero() { out.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     SymMatMultTraceReverseCore<T, N>(out.bvalue(),
@@ -145,9 +149,7 @@ class SymMatMultTraceTest : public A2DTest<T, T, SymMat<T, N>, SymMat<T, N>> {
     auto stack = MakeStack(SymMatMultTrace(S, E, output));
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(S.hvalue(), E.hvalue());
   }
 };

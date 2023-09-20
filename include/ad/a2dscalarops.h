@@ -17,6 +17,7 @@ class EvalExpr {
     expr.eval();
     out.value() = expr.value();
   }
+  KOKKOS_FUNCTION void bzero() { out.bzero(); }
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(forder == ADorder::FIRST,
@@ -49,6 +50,7 @@ class EvalExpr2 {
     expr.eval();
     out.value() = expr.value();
   }
+  KOKKOS_FUNCTION void bzero() { out.bzero(); }
   KOKKOS_FUNCTION void reverse() {
     expr.bvalue() += out.bvalue();
     expr.reverse();
@@ -60,6 +62,7 @@ class EvalExpr2 {
     expr.hforward();
     out.pvalue() = expr.pvalue();
   }
+  KOKKOS_FUNCTION void hzero() { out.hzero(); }
   KOKKOS_FUNCTION void hreverse() {
     expr.hvalue() += out.hvalue();
     expr.hreverse();
@@ -129,9 +132,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
 
     seed.get_values(f.bvalue());
     hval.get_values(f.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(a.hvalue(), b.hvalue());
   }
 };

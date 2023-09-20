@@ -107,6 +107,8 @@ class VecNormalizeExpr {
     VecScaleCore<T, N>(inv, get_data(x), get_data(y));
   }
 
+  KOKKOS_FUNCTION void bzero() { y.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -118,6 +120,7 @@ class VecNormalizeExpr {
     T scale = -inv * VecDotCore<T, N>(GetSeed<seed>::get_data(x), get_data(y));
     VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(y));
   }
+
   KOKKOS_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     // xb = inv * yb - inv * inv * (yb, x) * y
@@ -127,6 +130,9 @@ class VecNormalizeExpr {
         -inv * inv * VecDotCore<T, N>(GetSeed<seed>::get_data(y), get_data(x));
     VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(x));
   }
+
+  KOKKOS_FUNCTION void hzero() { y.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     T tmp1 = VecDotCore<T, N>(GetSeed<ADseed::b>::get_data(y), get_data(y));
     T tmp2 = VecDotCore<T, N>(GetSeed<ADseed::p>::get_data(x), get_data(y));
@@ -443,9 +449,7 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
     auto stack = MakeStack(VecNorm(x, alpha));
     seed.get_values(alpha.bvalue());
     hval.get_values(alpha.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(x.hvalue());
   }
 };
@@ -501,9 +505,7 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
     auto stack = MakeStack(VecScale(alpha, x, y));
     seed.get_values(y.bvalue());
     hval.get_values(y.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(alpha.hvalue(), x.hvalue());
   }
 };
@@ -556,9 +558,7 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
     auto stack = MakeStack(VecNormalize(x, y));
     seed.get_values(y.bvalue());
     hval.get_values(y.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(x.hvalue());
   }
 };
@@ -614,9 +614,7 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
     auto stack = MakeStack(VecDot(x, y, alpha));
     seed.get_values(alpha.bvalue());
     hval.get_values(alpha.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(x.hvalue(), y.hvalue());
   }
 };

@@ -65,6 +65,8 @@ class VecOuterExpr {
     VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
   }
 
+  KOKKOS_FUNCTION void bzero() { A.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -101,6 +103,8 @@ class VecOuterExpr {
           GetSeed<seed>::get_data(y));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { A.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr bool additive = true;
@@ -207,9 +211,7 @@ class VecOuterTest : public A2DTest<T, Mat<T, N, M>, Vec<T, N>, Vec<T, M>> {
     auto stack = MakeStack(VecOuter(alpha, x, y, A));
     seed.get_values(A.bvalue());
     hval.get_values(A.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(x.hvalue(), y.hvalue());
   }
 };

@@ -38,10 +38,10 @@ class Mat {
     }
   }
   template <class MatType>
-  KOKKOS_FUNCTION void set(const MatType& mat) {
+  KOKKOS_FUNCTION void copy(const MatType& src) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
-        A[N * i + j] = mat(i, j);
+        A[N * i + j] = src(i, j);
       }
     }
   }
@@ -106,10 +106,10 @@ class SymMat {
     }
   }
   template <class SymMat>
-  KOKKOS_FUNCTION void set(const SymMat& mat) {
+  KOKKOS_FUNCTION void copy(const SymMat& src) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
-        A[i + j * (j + 1) / 2] = mat(i, j);
+        A[i + j * (j + 1) / 2] = src(i, j);
       }
     }
   }

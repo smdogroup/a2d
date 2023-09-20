@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "a2dcore.h"
+#include "multiphysics/femapping.h"
 
 using namespace A2D;
 
@@ -425,16 +426,14 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Set the seeds for the second-order part
     output.hvalue() = 0.0;
     output.bvalue() = seed[0];
-    stack.reverse();
 
     // Create data for extracting the Hessian-vector product
-    auto inters = MakeTieTuple<T, ADseed::h>(S, E);
     auto in = MakeTieTuple<T, ADseed::p>(Ux);
     auto out = MakeTieTuple<T, ADseed::h>(Ux);
 
     // Extract the Hessian matrix
     Mat<T, ncomp, ncomp> jac;  // Symmetric only if hval = 0.0
-    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
+    stack.hextract(in, out, jac);
 
     // Mupltiply the outputs
     for (int i = 0; i < ncomp; i++) {
@@ -613,6 +612,7 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::VecSumTestAll);
   tests.push_back(A2D::Test::VecOuterTestAll);
   tests.push_back(A2D::Test::ScalarTestAll);
+  tests.push_back(A2D::Test::RefElementTransformTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

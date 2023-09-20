@@ -67,6 +67,8 @@ class MatSumExpr {
     VecSumCore<T, size>(get_data(A), get_data(B), get_data(C));
   }
 
+  KOKKOS_FUNCTION void bzero() { C.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -95,6 +97,8 @@ class MatSumExpr {
                           GetSeed<seed>::get_data(B));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { C.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
@@ -353,9 +357,7 @@ class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
     auto stack = MakeStack(MatSum(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue(), B.hvalue());
   }
 };
@@ -404,9 +406,7 @@ class MatSumScaleTest
     auto stack = MakeStack(MatSum(alpha, A, beta, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(alpha.hvalue(), A.hvalue(), beta.hvalue(), B.hvalue());
   }
 };

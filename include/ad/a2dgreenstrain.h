@@ -53,6 +53,8 @@ class MatGreenStrainExpr {
     }
   }
 
+  KOKKOS_FUNCTION void bzero() { E.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -82,6 +84,8 @@ class MatGreenStrainExpr {
                                             GetSeed<ADseed::b>::get_data(Ux));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { E.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     if constexpr (etype == GreenStrain::LINEAR) {
@@ -163,9 +167,7 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
     auto stack = MakeStack(MatGreenStrain<etype>(Ux, E));
     seed.get_values(E.bvalue());
     hval.get_values(E.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(Ux.hvalue());
   }
 };

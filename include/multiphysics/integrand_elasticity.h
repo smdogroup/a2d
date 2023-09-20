@@ -157,9 +157,7 @@ class TopoElasticity {
         Eval(0.5 * weight * detJ * energy, output));  // Compute the output
 
     output.bvalue() = 1.0;
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
 
     if constexpr (of == FEVarType::DATA) {
       res[0] = rho.hvalue();
@@ -172,9 +170,36 @@ class TopoElasticity {
 
   template <FEVarType of, FEVarType wrt>
   void jacobian(T weight, const DataSpace& data,
-                const FiniteElementGeometry& geo,
-                const FiniteElementSpace& sref,
-                FiniteElementJacobian<of, wrt>& jac) const {}
+                const FiniteElementGeometry& geo_,
+                const FiniteElementSpace& sref_,
+                FiniteElementJacobian<of, wrt>& jac) const {
+    A2DObj<T> rho(data[0]);
+    A2DObj<FiniteElementSpace> sref(sref_);
+    A2DObj<FiniteElementGeometry> geo(geo_);
+
+    // Intermediate variables
+    A2DObj<T> detJ, penalty, mu, lambda, energy, output;
+    A2DObj<FiniteElementSpace> s;
+    A2DObj<SymMat<T, dim>> E, S;
+
+    // Set the derivative of the solution
+    A2DObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
+
+    // Make a stack of the operations
+    auto stack = MakeStack(
+        RefElementTransform(geo, sref, detJ, s),       // transform
+        Eval(1.0 / (1.0 + q * (1.0 - rho)), penalty),  // penalty parameter
+        Eval(penalty * mu0, mu), Eval(penalty * lambda0, lambda),
+        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        SymIsotropic(mu, lambda, E, S),               // Evaluate the stress
+        SymMatMultTrace(E, S, energy),                // Compute the energy
+        Eval(0.5 * weight * detJ * energy, output));  // Compute the output
+
+    output.bvalue() = 1.0;
+
+    // Extract the Hessian
+    ExtractJacobian<of, wrt>(stack, rho, geo, sref, jac);
+  }
 };
 
 template <typename T, index_t D>

@@ -601,6 +601,9 @@ class FESpace {
   // Numeric type used for the space
   typedef T type;
 
+  // Type of AD object
+  static const ADObjType obj_type = ADObjType::VECTOR;
+
   // Number of spaces
   static constexpr index_t nspaces = sizeof...(Spaces);
 

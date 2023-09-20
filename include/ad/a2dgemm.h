@@ -100,6 +100,8 @@ class MatMatMultExpr {
                                                   get_data(C));
   }
 
+  KOKKOS_FUNCTION void bzero() { C.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -150,6 +152,8 @@ class MatMatMultExpr {
       }
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { C.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
@@ -355,9 +359,7 @@ class MatMatMultTest
     auto stack = MakeStack(MatMatMult<opA, opB>(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue(), B.hvalue());
   }
 };

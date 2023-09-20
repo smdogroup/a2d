@@ -39,6 +39,8 @@ class VecCrossExpr {
     VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
   }
 
+  KOKKOS_FUNCTION void bzero() { z.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -71,6 +73,9 @@ class VecCrossExpr {
                          GetSeed<seed>::get_data(y));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { z.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     if constexpr (adx == ADiffType::ACTIVE) {
       VecCrossCoreAdd<T>(get_data(y), GetSeed<ADseed::h>::get_data(z),
@@ -163,9 +168,7 @@ class VecCrossTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
     auto stack = MakeStack(VecCross(x, y, z));
     seed.get_values(z.bvalue());
     hval.get_values(z.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(x.hvalue(), y.hvalue());
   }
 };

@@ -37,6 +37,8 @@ class MatDetExpr {
 
   KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
 
+  KOKKOS_FUNCTION void bzero() { det.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -52,6 +54,8 @@ class MatDetExpr {
     MatDetReverseCore<T, N>(GetSeed<ADseed::b>::get_data(det), get_data(A),
                             GetSeed<ADseed::b>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { det.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
@@ -124,9 +128,7 @@ class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
     auto stack = MakeStack(MatDet(A, det), MatInv(A, Ainv));
     seed.get_values(det.bvalue());
     hval.get_values(det.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

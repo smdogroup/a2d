@@ -54,6 +54,8 @@ class MatInvExpr {
 
   KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
 
+  KOKKOS_FUNCTION void bzero() { Ainv.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -77,6 +79,8 @@ class MatInvExpr {
     MatMatMultScaleCore<T, N, N, N, N, N, N, NORMAL, TRANSPOSE, additive>(
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A));
   }
+
+  KOKKOS_FUNCTION void hzero() { Ainv.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
@@ -171,9 +175,7 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
     auto stack = MakeStack(MatInv(A, B));
     seed.get_values(B.bvalue());
     hval.get_values(B.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue());
   }
 };

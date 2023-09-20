@@ -40,6 +40,8 @@ class VecSumExpr {
     VecSumCore<T, N>(get_data(x), get_data(y), get_data(z));
   }
 
+  KOKKOS_FUNCTION void bzero() { z.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -63,6 +65,8 @@ class VecSumExpr {
       VecAddCore<T, N>(GetSeed<seed>::get_data(z), GetSeed<seed>::get_data(y));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { z.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
@@ -147,6 +151,8 @@ class VecSumScaleExpr {
                      get_data(z));
   }
 
+  KOKKOS_FUNCTION void bzero() { z.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -200,6 +206,8 @@ class VecSumScaleExpr {
           VecDotCore<T, N>(GetSeed<seed>::get_data(z), get_data(y));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { z.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
@@ -333,9 +341,7 @@ class VecSumTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
     auto stack = MakeStack(VecSum(A, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue(), B.hvalue());
   }
 };
@@ -384,9 +390,7 @@ class VecSumScaleTest
     auto stack = MakeStack(VecSum(alpha, A, beta, B, C));
     seed.get_values(C.bvalue());
     hval.get_values(C.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(alpha.hvalue(), A.hvalue(), beta.hvalue(), B.hvalue());
   }
 };

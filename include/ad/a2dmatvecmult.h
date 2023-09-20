@@ -60,6 +60,8 @@ class MatVecMultExpr {
     MatVecCore<T, N, M, op>(get_data(A), get_data(x), get_data(y));
   }
 
+  KOKKOS_FUNCTION void bzero() { y.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     static_assert(
@@ -103,6 +105,8 @@ class MatVecMultExpr {
                                             GetSeed<ADseed::b>::get_data(x));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { y.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
     constexpr bool additive = true;
@@ -272,9 +276,7 @@ class MatVecMultTest : public A2DTest<T, Vec<T, P>, Mat<T, N, M>, Vec<T, K>> {
     auto stack = MakeStack(MatVecMult<op>(A, x, y));
     seed.get_values(y.bvalue());
     hval.get_values(y.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(A.hvalue(), x.hvalue());
   }
 };

@@ -48,6 +48,8 @@ class RefElementTransformConstGeoExpr {
     in.value().transform(detJ, J, Jinv, out.value());
   }
 
+  KOKKOS_FUNCTION void bzero() { out.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -61,6 +63,9 @@ class RefElementTransformConstGeoExpr {
     const Mat<T, Geometry::dim, Geometry::dim>& J = get_grad<0>(geo);
     out.bvalue().btransform(detJ, J, Jinv, in.bvalue());
   }
+
+  KOKKOS_FUNCTION void hzero() { out.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     const Mat<T, Geometry::dim, Geometry::dim>& J = get_grad<0>(geo);
     out.hvalue().btransform(detJ, J, Jinv, in.hvalue());
@@ -143,6 +148,11 @@ class RefElementTransformExpr {
     in.value().transform(detJ.value(), J.value(), Jinv.value(), out.value());
   }
 
+  KOKKOS_FUNCTION void bzero() {
+    out.bzero();
+    detJ.bzero();
+  }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -163,6 +173,11 @@ class RefElementTransformExpr {
     in.value().reverse_transform(out.bvalue(), detJ, J, Jinv, in.bvalue());
     det.reverse();
     inv.reverse();
+  }
+
+  KOKKOS_FUNCTION void hzero() {
+    out.hzero();
+    detJ.hzero();
   }
 
   KOKKOS_FUNCTION void hreverse() {

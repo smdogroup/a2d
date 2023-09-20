@@ -433,7 +433,7 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
 
     // Extract the Hessian matrix
     Mat<T, ncomp, ncomp> jac;  // Symmetric only if hval = 0.0
-    stack.template hextract<T, ncomp, ncomp>(in, out, jac);
+    stack.hextract(in, out, jac);
 
     // Mupltiply the outputs
     for (int i = 0; i < ncomp; i++) {

@@ -11,18 +11,18 @@
 
 namespace A2D {
 
-enum class GreenStrain { LINEAR, NONLINEAR };
+enum class GreenStrainType { LINEAR, NONLINEAR };
 
-template <GreenStrain etype, typename T, int N>
+template <GreenStrainType etype, typename T, int N>
 KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
-  if constexpr (etype == GreenStrain::LINEAR) {
+  if constexpr (etype == GreenStrainType::LINEAR) {
     LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
   } else {
     NonlinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
   }
 }
 
-template <GreenStrain etype, class Utype, class Etype>
+template <GreenStrainType etype, class Utype, class Etype>
 class MatGreenStrainExpr {
  public:
   // Extract the numeric type to use
@@ -46,7 +46,7 @@ class MatGreenStrainExpr {
   KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
 
   KOKKOS_FUNCTION void eval() {
-    if constexpr (etype == GreenStrain::LINEAR) {
+    if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
     } else {
       NonlinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
@@ -63,7 +63,7 @@ class MatGreenStrainExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
-    if constexpr (etype == GreenStrain::LINEAR) {
+    if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainForwardCore<T, N>(GetSeed<seed>::get_data(Ux),
                                          GetSeed<seed>::get_data(E));
     } else {
@@ -74,7 +74,7 @@ class MatGreenStrainExpr {
   }
 
   KOKKOS_FUNCTION void reverse() {
-    if constexpr (etype == GreenStrain::LINEAR) {
+    if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainReverseCore<T, N>(GetSeed<ADseed::b>::get_data(E),
                                          GetSeed<ADseed::b>::get_data(Ux));
 
@@ -88,7 +88,7 @@ class MatGreenStrainExpr {
   KOKKOS_FUNCTION void hzero() { E.hzero(); }
 
   KOKKOS_FUNCTION void hreverse() {
-    if constexpr (etype == GreenStrain::LINEAR) {
+    if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainHReverseCore<T, N>(GetSeed<ADseed::h>::get_data(E),
                                           GetSeed<ADseed::h>::get_data(Ux));
 
@@ -104,19 +104,19 @@ class MatGreenStrainExpr {
   Etype& E;
 };
 
-template <GreenStrain etype, class UxMat, class EMat>
+template <GreenStrainType etype, class UxMat, class EMat>
 KOKKOS_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
   return MatGreenStrainExpr<etype, ADObj<UxMat>, ADObj<EMat>>(Ux, E);
 }
 
-template <GreenStrain etype, class UxMat, class EMat>
+template <GreenStrainType etype, class UxMat, class EMat>
 KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
   return MatGreenStrainExpr<etype, A2DObj<UxMat>, A2DObj<EMat>>(Ux, E);
 }
 
 namespace Test {
 
-template <GreenStrain etype, typename T, int N>
+template <GreenStrainType etype, typename T, int N>
 class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
  public:
   using Input = VarTuple<T, Mat<T, N, N>>;
@@ -126,7 +126,7 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
   std::string name() {
     std::stringstream s;
     s << "MatGreenStrain<";
-    if (etype == GreenStrain::LINEAR) {
+    if (etype == GreenStrainType::LINEAR) {
       s << "LINEAR," << N << ">";
     } else {
       s << "NONLINEAR," << N << ">";
@@ -176,14 +176,14 @@ bool MatGreenStrainTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;
-  MatGreenStrainTest<GreenStrain::LINEAR, Tc, 2> test1;
+  MatGreenStrainTest<GreenStrainType::LINEAR, Tc, 2> test1;
   passed = passed && Run(test1, component, write_output);
-  MatGreenStrainTest<GreenStrain::NONLINEAR, Tc, 2> test2;
+  MatGreenStrainTest<GreenStrainType::NONLINEAR, Tc, 2> test2;
   passed = passed && Run(test2, component, write_output);
 
-  MatGreenStrainTest<GreenStrain::LINEAR, Tc, 3> test3;
+  MatGreenStrainTest<GreenStrainType::LINEAR, Tc, 3> test3;
   passed = passed && Run(test3, component, write_output);
-  MatGreenStrainTest<GreenStrain::NONLINEAR, Tc, 3> test4;
+  MatGreenStrainTest<GreenStrainType::NONLINEAR, Tc, 3> test4;
   passed = passed && Run(test4, component, write_output);
 
   return passed;

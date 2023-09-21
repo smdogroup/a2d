@@ -1,7 +1,9 @@
 #ifndef A2D_FE_BASE_H
 #define A2D_FE_BASE_H
 
-#include "multiphysics/fesolution.h"
+#include "a2ddefs.h"
+#include "multiphysics/feelement.h"
+#include "multiphysics/femesh.h"
 
 namespace A2D {
 
@@ -15,116 +17,108 @@ namespace A2D {
  *
  * @tparam T data type
  */
-template <typename T>
+template <class VecType, class MatType>
 class ElementBase {
  public:
   virtual ~ElementBase() {}
-  virtual void set_geo(SolutionVector<T>& X) = 0;
-  virtual void set_solution(SolutionVector<T>& U) = 0;
-  virtual void add_residual(SolutionVector<T>& res) = 0;
-  // virtual void add_jacobian_vector_product(SolutionVector<T>& x,
-  //                                          SolutionVector<T>& y) = 0;
 
-  // virtual void add_dof_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
-  // virtual void add_jacobian(typename PDEInfo::SparseMat& jac) = 0;
-  virtual void add_adjoint_dfdnodes(SolutionVector<T>& psi,
-                                    SolutionVector<T>& dfdx) {}
-};
+  // Add the residual
+  virtual void add_residual(VecType& data, VecType& geo, VecType& sol,
+                            VecType& res) = 0;
 
-/**
- * @brief Base class for a constitutive object.
- *
- * These objects provide a way to set the design variables into the elements.
- * The mapping from design variables to element data is not defined and depends
- * on the nature of the design variable.
- *
- * @tparam T data type
- */
-template <typename T>
-class ConstitutiveBase {
- public:
-  virtual void set_design_vars(SolutionVector<T>& x) {}
-  virtual void add_adjoint_dfdx(SolutionVector<T>& psi,
-                                SolutionVector<T>& dfdx) {}
+  // Add the Jacobian
+  virtual void add_jacobian(VecType& data, VecType& geo, VecType& sol,
+                            MatType& mat) = 0;
+
+  // Add the adjoint-residual product
+  virtual void add_adjoint_res_product(FEVarType wrt, VecType& data,
+                                       VecType& geo, VecType& sol,
+                                       VecType& adjoint, VecType& dfdx) = 0;
 };
 
 /*
-  ElementFunction base class.
-
-  This class enables the computation of a function that sums up over all
-  the elements within the element.
+  Integrand-type finite-element
 */
-template <typename T>
-class ElementFunctional {
+template <typename T, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis, class VecType, class MatType>
+class ElementIntegrand : public ElementBase<VecType, MatType> {
  public:
-  virtual ~ElementFunctional() {}
-  virtual T eval_functional() = 0;
-  virtual void add_dfdu(SolutionVector<T>& dfdu) {}
-  virtual void add_dfdx(SolutionVector<T>& dfdx) {}
-  virtual void add_dfdnodes(SolutionVector<T>& dfdx) {}
+  // Set the element vector to use
+  template <typename T0, class BasisType, class VectorType>
+  using ElementVector = ElementVector_Serial<T0, BasisType, VectorType>;
+
+  // Set the element matrix to use
+  template <typename T0, class BasisType, class VectorType>
+  using ElementMatrix = ElementMat_Serial<T0, BasisType, VectorType>;
+
+  virtual const Integrand& get_integrand() = 0;
+
+  // Set the meshes
+  void set_meshes(std::shared_ptr<ElementMesh<DataBasis>> data,
+                  std::shared_ptr<ElementMesh<GeoBasis>> geo,
+                  std::shared_ptr<ElementMesh<Basis>> sol) {
+    data_mesh = data;
+    geo_mesh = geo;
+    sol_mesh = sol;
+  }
+
+  // Add the residual to the residual vector
+  void add_residual(VecType& data, VecType& geo, VecType& sol, VecType& res) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
+    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
+    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
+    ElementVector<T, Basis, VecType> elem_res(*sol_mesh, res);
+    element.template add_residual<FEVarType::STATE>(
+        integrand, elem_data, elem_geo, elem_sol, elem_res);
+  }
+
+  // Add the Jacobian
+  void add_jacobian(VecType& data, VecType& geo, VecType& sol, MatType& mat) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
+    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
+    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
+    ElementMatrix<T, Basis, MatType> elem_jac(*sol_mesh, mat);
+    element.template add_jacobian<FEVarType::STATE, FEVarType::STATE>(
+        integrand, elem_data, elem_geo, elem_sol, elem_jac);
+  }
+
+  // Add the adjoint-residual product
+  void add_adjoint_res_product(FEVarType wrt, VecType& data, VecType& geo,
+                               VecType& sol, VecType& adjoint, VecType& dfdx) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
+    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
+    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
+    ElementVector<T, Basis, VecType> elem_adjoint(*sol_mesh, adjoint);
+
+    if (wrt == FEVarType::DATA) {
+      ElementVector<T, DataBasis, VecType> elem_dfdx(*data_mesh, dfdx);
+      element.template add_jacobian_product<FEVarType::DATA, FEVarType::STATE>(
+          integrand, elem_data, elem_geo, elem_sol, elem_adjoint, elem_dfdx);
+
+    } else if (wrt == FEVarType::GEOMETRY) {
+      ElementVector<T, GeoBasis, VecType> elem_dfdx(*geo_mesh, dfdx);
+      element
+          .template add_jacobian_product<FEVarType::GEOMETRY, FEVarType::STATE>(
+              integrand, elem_data, elem_geo, elem_sol, elem_adjoint,
+              elem_dfdx);
+
+    } else if (wrt == FEVarType::STATE) {
+      ElementVector<T, Basis, VecType> elem_dfdx(*sol_mesh, dfdx);
+      element.template add_jacobian_product<FEVarType::STATE, FEVarType::STATE>(
+          integrand, elem_data, elem_geo, elem_sol, elem_adjoint, elem_dfdx);
+    }
+  }
+
+ private:
+  FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis> element;
+
+  std::shared_ptr<ElementMesh<DataBasis>> data_mesh;
+  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh;
+  std::shared_ptr<ElementMesh<Basis>> sol_mesh;
 };
-
-/*
-  Container class for all functionals.
-
-  The functional must be the result of a sum over the ElementFunctions in the
-  container.
-*/
-// template <typename I, typename T, class Integrand>
-// class Functional {
-//  public:
-//   Functional() {}
-//   virtual ~Functional() {}
-
-//   void add_functional(
-//       std::shared_ptr<ElementFunctional<I, T, Integrand>> functional) {
-//     functionals.push_back(functional);
-//   }
-
-//   /*
-//     Evaluate the functional by summing the values over all components
-//   */
-//   T eval_functional() {
-//     T value = 0.0;
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       value += (*it)->eval_functional();
-//     }
-//     return value;
-//   }
-
-//   /*
-//     Compute the derivative of the functional w.r.t. state variables
-//   */
-//   void eval_dfdu(std::shared_ptr<typename Integrand::SolutionArray> dfdu) {
-//     A2D::BLAS::zero(*dfdu);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdu(*dfdu);
-//     }
-//   }
-
-//   /*
-//     Compute the derivative of the functional w.r.t. design variables
-//   */
-//   void eval_dfdx(std::shared_ptr<typename Integrand::DesignArray> dfdx) {
-//     A2D::BLAS::zero(*dfdx);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdx(*dfdx);
-//     }
-//   }
-
-//   /*
-//     Compute the derivative of the functional w.r.t. nodes
-//   */
-//   void eval_dfdnodes(std::shared_ptr<typename Integrand::NodeArray> dfdx) {
-//     A2D::BLAS::zero(*dfdx);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdnodes(*dfdx);
-//     }
-//   }
-
-//  private:
-//   std::list<std::shared_ptr<ElementFunctional<I, T, Integrand>>> functionals;
-// };
 
 }  // namespace A2D
 

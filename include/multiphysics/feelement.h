@@ -299,8 +299,7 @@ class FiniteElement {
       QSpaceSelect<wrt> res;
 
       // Evaluate values (and potentially derivatives) for all quadrature
-      // points
-      // Note: derivatives computed at this point are all w.r.t.
+      // points. Note: derivatives computed at this point are all w.r.t.
       // computational coordinates!
       DataBasis::template interp(data_dof, data);
       GeoBasis::template interp(geo_dof, geo);
@@ -316,7 +315,13 @@ class FiniteElement {
       // Add the residual from the quadrature points back to the
       // finite-element mesh
       typename ElemResVec::FEDof res_dof(i, elem_res);
-      Basis::template add(res, res_dof);
+      if constexpr (wrt == FEVarType::DATA) {
+        DataBasis::template add(res, res_dof);
+      } else if constexpr (wrt == FEVarType::GEOMETRY) {
+        GeoBasis::template add(res, res_dof);
+      } else if constexpr (wrt == FEVarType::STATE) {
+        Basis::template add(res, res_dof);
+      }
 
       // Serialized gather - only effective for a serialized element vector
       // implementation

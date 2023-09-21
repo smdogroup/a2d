@@ -66,20 +66,12 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   const int dim = 3;
   const int degree = 2;
   constexpr GreenStrainType etype = GreenStrainType::LINEAR;
-  using Elem = HexTopoElement<T, dim, etype, degree, VecType, MatType>;
-  auto data_mesh = std::make_shared<ElementMesh<Elem::DataBasis>>(conn);
-  auto geo_mesh = std::make_shared<ElementMesh<Elem::GeoBasis>>(conn);
-  auto sol_mesh = std::make_shared<ElementMesh<Elem::Basis>>(conn);
+  using HexElem = HexTopoElement<T, dim, etype, degree, VecType, MatType>;
+  using HexFunc = HexTopoVonMises<T, dim, etype, degree, VecType>;
 
-  T E = 70.0, nu = 0.3, q = 5.0;
-
-  TopoElasticityIntegrand<T, dim, etype> integrand(E, nu, q);
-  Elem element(integrand, data_mesh, geo_mesh, sol_mesh);
-
-  // Create the matrix
-  index_t nrows;
-  std::vector<index_t> rowp, cols;
-  sol_mesh->template create_block_csr<block_size>(nrows, rowp, cols);
+  auto data_mesh = std::make_shared<ElementMesh<HexElem::DataBasis>>(conn);
+  auto geo_mesh = std::make_shared<ElementMesh<HexElem::GeoBasis>>(conn);
+  auto sol_mesh = std::make_shared<ElementMesh<HexElem::Basis>>(conn);
 
   // Create the shared pointer
   SolutionVector<T> data(data_mesh->get_num_dof());
@@ -88,12 +80,29 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   SolutionVector<T> res(sol_mesh->get_num_dof());
 
   // Set the geometry
-  ElementVector_Serial<T, Elem::GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-  set_geo_from_hex_nodes<Elem::GeoBasis>(nhex, hex, Xloc, elem_geo);
+  ElementVector_Serial<T, HexElem::GeoBasis, VecType> elem_geo(*geo_mesh, geo);
+  set_geo_from_hex_nodes<HexElem::GeoBasis>(nhex, hex, Xloc, elem_geo);
+
+  T E = 70.0, nu = 0.3, q = 5.0;
+  T design_stress = 1.0, ks_param = 10.0;
+  TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
+  HexElem element(elem_integrand, data_mesh, geo_mesh, sol_mesh);
+
+  TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
+                                               ks_param);
+  HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
+
+  // Create the matrix
+  index_t nrows;
+  std::vector<index_t> rowp, cols;
+  sol_mesh->template create_block_csr<block_size>(nrows, rowp, cols);
 
   auto mat = std::make_shared<MatType>(nrows, nrows, cols.size(), rowp, cols);
   element.add_residual(data, geo, sol, res);
   element.add_jacobian(data, geo, sol, *mat);
+
+  T value = functional.evaluate(data, geo, sol);
+  functional.add_derivative(FEVarType::STATE, data, geo, sol, res);
 }
 
 template <typename T>

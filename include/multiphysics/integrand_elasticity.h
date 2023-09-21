@@ -425,25 +425,26 @@ class TopoVonMisesKS {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = typename TopoElasticityIntegrand<T, D>::DataSpace;
+  using DataSpace = typename TopoElasticityIntegrand<T, D, etype>::DataSpace;
 
   // Space for the element geometry
   using FiniteElementGeometry =
-      typename TopoElasticityIntegrand<T, D>::FiniteElementGeometry;
+      typename TopoElasticityIntegrand<T, D, etype>::FiniteElementGeometry;
 
   // Finite element space
   using FiniteElementSpace =
-      typename TopoElasticityIntegrand<T, D>::FiniteElementSpace;
+      typename TopoElasticityIntegrand<T, D, etype>::FiniteElementSpace;
 
   // Define the input or output type based on wrt type
   template <FEVarType wrt>
   using FiniteElementVar =
-      typename TopoElasticityIntegrand<T, D>::template FiniteElementVar<wrt>;
+      typename TopoElasticityIntegrand<T, D,
+                                       etype>::template FiniteElementVar<wrt>;
 
   // Define the matrix Jacobian type based on the of and wrt types
   template <FEVarType of, FEVarType wrt>
   using FiniteElementJacobian = typename TopoElasticityIntegrand<
-      T, D>::template FiniteElementJacobian<of, wrt>;
+      T, D, etype>::template FiniteElementJacobian<of, wrt>;
 
   // Material parameters
   T mu;
@@ -570,7 +571,7 @@ class TopoVonMisesKS {
     ADObj<FiniteElementSpace> sref(sref_);
     ADObj<FiniteElementGeometry> geo(geo_);
 
-    FiniteElementSpace s;
+    ADObj<FiniteElementSpace> s;
     ADObj<SymMat<T, dim>> E, S;
     ADObj<T> trS, trSS;
     ADObj<T> output, detJ, vm, relaxed_stress, failure_index;
@@ -603,6 +604,36 @@ class TopoVonMisesKS {
       res.copy(sref.bvalue());
     }
   }
+};
+
+template <typename T, index_t D, GreenStrainType etype, index_t degree,
+          class VecType>
+class HexTopoVonMises
+    : public IntegralFunctional<
+          T, TopoVonMisesKS<T, D, etype>,
+          HexGaussQuadrature<degree + 1>,                    // Quadrature
+          FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>,  // DataBasis
+          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // GeoBasis
+          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // Basis,
+          VecType> {
+ public:
+  using Quadrature = HexGaussQuadrature<degree>;
+  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
+
+  HexTopoVonMises(TopoVonMisesKS<T, D, etype> integrand,
+                  std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                  std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const TopoVonMisesKS<T, D, etype>& get_integrand() { return integrand; }
+
+ private:
+  TopoVonMisesKS<T, D, etype> integrand;
 };
 
 /**

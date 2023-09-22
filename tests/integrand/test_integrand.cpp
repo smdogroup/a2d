@@ -9,12 +9,116 @@
 // #include "multiphysics/integrand_poisson.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_test.h"
+#include "sparse/sparse_cholesky.h"
+#include "sparse/sparse_utils.h"
 
 using namespace A2D;
 
+template <typename T>
+class Analysis {
+ public:
+  // Data types
+  static const int block_size = 3;
+  using Vec_t = SolutionVector<T>;
+  using BSRMat_t = BSRMat<T, block_size, block_size>;
+  using CSCMat_t = CSCMat<T>;
+
+  // Element matrix assembler object
+  std::shared_ptr<ElementAssembler<Vec_t, BSRMat_t>> assembler;
+
+  // System matrices
+  std::shared_ptr<BSRMat_t> bsr_mat;
+  CSCMat_t csc_mat;
+
+  // Cholesky solver
+  SparseCholesky<T> *chol;
+
+  Analysis(std::shared_ptr<ElementAssembler<Vec_t, BSRMat_t>> assembler,
+           std::shared_ptr<BSRMat_t> bsr_mat)
+      : assembler(assembler), bsr_mat(bsr_mat) {}
+
+  void factor(Vec_t &data, Vec_t &geo, Vec_t &sol) {
+    bsr_mat.zero();
+    assembler->add_jacobian(data, geo, sol, bsr_mat);
+
+    // // Apply boundary conditions to each row
+    // const index_t *bc_dofs;
+    // index_t nbcs = bcs.get_bcs(&bc_dofs);
+    // bsr_mat.zero_rows(nbcs, bc_dofs);
+
+    // convert bsr to csc because we want to use Cholesky factorization
+    csc_mat = bsr_to_csc(bsr_mat);
+
+    // // Apply boundary conditions to each column
+    // csc_mat.zero_columns(nbcs, bc_dofs);
+
+    // Set values to Cholesky solver and factorize
+    chol->setValues(csc_mat);
+    chol->factor();
+  }
+
+  // void zero_bcs(Vec_t &vec) {
+  //   // Zero-out bcs
+  //   const index_t *bc_dofs;
+  //   index_t nbcs = bcs.get_bcs(&bc_dofs);
+  //   for (index_t i = 0; i < nbcs; i++) {
+  //     index_t dof = bc_dofs[i];
+  //     vec[dof] = 0.0;
+  //   }
+  // }
+
+  // void solve() {
+  //   // Compute the residual and zero the boundary conditions
+  //   res.zero();
+  //   assembler->add_residual(data, geo, sol, res);
+  //   zero_bcs(res);
+
+  //   // Solve for the update
+  //   factor();
+  //   chol->solve(res.data());
+
+  //   // Update the solution
+  //   for (index_t i = 0; i < sol.get_num_dof(); i++) {
+  //     sol[i] -= res[i];
+  //   }
+  // }
+
+  // void tovtk(const std::string filename) {
+  //   if constexpr (spatial_dim == 2) {
+  //     write_quad_to_vtk<3, degree, T, DataBasisElas, GeoBasisElas, BasisElas,
+  //                       IntegrandElas>(
+  //         elem_data_elas, elem_geo_elas, elem_sol_elas, filename,
+  //         [](index_t k, typename IntegrandElas::DataSpace &d,
+  //            typename IntegrandElas::FiniteElementGeometry &g,
+  //            typename IntegrandElas::FiniteElementSpace &s) {
+  //           if (k == 2) {  // write data
+  //             return (d.template get<0>()).get_value();
+  //           } else {  // write solution components
+  //             auto u = (s.template get<0>()).get_value();
+  //             return u(k);
+  //           }
+  //         });
+  //   } else {  // spatial_dim == 3
+  //     write_hex_to_vtk<4, degree, T, DataBasisElas, GeoBasisElas, BasisElas,
+  //                      IntegrandElas>(
+  //         elem_data_elas, elem_geo_elas, elem_sol_elas, filename,
+  //         [](index_t k, typename IntegrandElas::DataSpace &d,
+  //            typename IntegrandElas::FiniteElementGeometry &g,
+  //            typename IntegrandElas::FiniteElementSpace &s) {
+  //           if (k == 3) {  // write data
+  //             return (d.template get<0>()).get_value();
+  //           } else {  // write solution components
+  //             auto u = (s.template get<0>()).get_value();
+  //             return u(k);
+  //           }
+  //         });
+  //   }
+  // }
+};
+
 void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
          double b_lx = 1.0, double b_ly = 1.0, double b_lz = 1.0) {
-  using T = std::complex<double>;
+  using T = double;  // std::complex<double>;
 
   // helper functor
   auto node_num = [&](int i, int j, int k) {
@@ -61,17 +165,25 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
                           pyrmd);
 
   const index_t block_size = 3;
-  using MatType = BSRMat<T, block_size, block_size>;
-  using VecType = SolutionVector<T>;
+  using BSRMat_t = BSRMat<T, block_size, block_size>;
+  using Vec_t = SolutionVector<T>;
   const int dim = 3;
   const int degree = 2;
   constexpr GreenStrainType etype = GreenStrainType::LINEAR;
-  using HexElem = HexTopoElement<T, dim, etype, degree, VecType, MatType>;
-  using HexFunc = HexTopoVonMises<T, dim, etype, degree, VecType>;
+  using HexElem = HexTopoElement<T, dim, etype, degree, Vec_t, BSRMat_t>;
+  using HexFunc = HexTopoVonMises<T, dim, etype, degree, Vec_t>;
 
+  // Create the meshes for the Hex elements
   auto data_mesh = std::make_shared<ElementMesh<HexElem::DataBasis>>(conn);
   auto geo_mesh = std::make_shared<ElementMesh<HexElem::GeoBasis>>(conn);
   auto sol_mesh = std::make_shared<ElementMesh<HexElem::Basis>>(conn);
+
+  // Create the matrix
+  index_t nrows;
+  std::vector<index_t> rowp, cols;
+  sol_mesh->template create_block_csr<block_size>(nrows, rowp, cols);
+  auto bsr_mat =
+      std::make_shared<BSRMat_t>(nrows, nrows, cols.size(), rowp, cols);
 
   // Create the shared pointer
   SolutionVector<T> data(data_mesh->get_num_dof());
@@ -79,30 +191,30 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   SolutionVector<T> sol(sol_mesh->get_num_dof());
   SolutionVector<T> res(sol_mesh->get_num_dof());
 
-  // Set the geometry
-  ElementVector_Serial<T, HexElem::GeoBasis, VecType> elem_geo(*geo_mesh, geo);
+  // Set the geometry from the vertex mesh
+  ElementVector_Serial<T, HexElem::GeoBasis, Vec_t> elem_geo(*geo_mesh, geo);
   set_geo_from_hex_nodes<HexElem::GeoBasis>(nhex, hex, Xloc, elem_geo);
 
+  // Create the element
   T E = 70.0, nu = 0.3, q = 5.0;
   T design_stress = 1.0, ks_param = 10.0;
   TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
-  HexElem element(elem_integrand, data_mesh, geo_mesh, sol_mesh);
 
-  TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
-                                               ks_param);
-  HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
+  auto assembler = std::make_shared<ElementAssembler<Vec_t, BSRMat_t>>();
+  assembler->add_element(
+      std::make_shared<HexElem>(elem_integrand, data_mesh, geo_mesh, sol_mesh));
 
-  // Create the matrix
-  index_t nrows;
-  std::vector<index_t> rowp, cols;
-  sol_mesh->template create_block_csr<block_size>(nrows, rowp, cols);
+  Analysis<T> analysis(assembler, bsr_mat);
 
-  auto mat = std::make_shared<MatType>(nrows, nrows, cols.size(), rowp, cols);
-  element.add_residual(data, geo, sol, res);
-  element.add_jacobian(data, geo, sol, *mat);
+  // TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
+  //                                              ks_param);
+  // HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
-  T value = functional.evaluate(data, geo, sol);
-  functional.add_derivative(FEVarType::STATE, data, geo, sol, res);
+  // assembler.add_residual(data, geo, sol, res);
+  // assembler.add_jacobian(data, geo, sol, *mat);
+
+  // T value = functional.evaluate(data, geo, sol);
+  // functional.add_derivative(FEVarType::STATE, data, geo, sol, res);
 }
 
 template <typename T>

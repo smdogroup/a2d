@@ -1,6 +1,8 @@
 #ifndef A2D_FE_BASE_H
 #define A2D_FE_BASE_H
 
+#include <list>
+
 #include "a2ddefs.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/femesh.h"
@@ -33,10 +35,57 @@ class ElementBase {
 };
 
 /**
+ * @brief Assemble the contributions from a number of elements
+ *
+ * @tparam VecType The type of vector
+ * @tparam MatType The type of matrix to use
+ */
+template <class VecType, class MatType>
+class ElementAssembler {
+ public:
+  typedef std::shared_ptr<ElementBase<VecType, MatType>> ElemPtr;
+
+  ElementAssembler() {}
+  virtual ~ElementAssembler() {}
+
+  // Add an element at the specified index
+  void add_element(ElemPtr element) { elements.push_back(element); }
+
+  // Add the residual from all the elements
+  void add_residual(VecType& data, VecType& geo, VecType& sol, VecType& res) {
+    typename std::list<ElemPtr>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_residual(data, geo, sol, res);
+    }
+  }
+
+  // Add the Jacobian contributions from all the elements
+  void add_jacobian(VecType& data, VecType& geo, VecType& sol, MatType& mat) {
+    typename std::list<ElemPtr>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_jacobian(data, geo, sol, mat);
+    }
+  }
+
+  // Add the adjoint-residual product
+  virtual void adjoint_res_product(FEVarType wrt, VecType& data, VecType& geo,
+                                   VecType& sol, VecType& adjoint,
+                                   VecType& dfdx) {
+    typename std::list<ElemPtr>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_adjoint_res_product(wrt, data, geo, sol, adjoint, dfdx);
+    }
+  }
+
+ private:
+  std::list<ElemPtr> elements;
+};
+
+/**
  * @brief Functional base class
  *
- * This class defines a functional evaluation that is compatible with the given
- * vector and matrix types
+ * This class defines a functional evaluation that is compatible with the
+ * given vector and matrix types
  */
 template <typename T, class VecType>
 class FunctionalBase {
@@ -197,7 +246,6 @@ class IntegralFunctional : public FunctionalBase<T, VecType> {
 
  protected:
   FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis> element;
-
   std::shared_ptr<ElementMesh<DataBasis>> data_mesh;
   std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh;
   std::shared_ptr<ElementMesh<Basis>> sol_mesh;

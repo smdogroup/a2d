@@ -5,6 +5,7 @@
 #include <set>
 
 #include "a2ddefs.h"
+#include "multiphysics/febase.h"
 #include "multiphysics/feelementtypes.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_symbolic.h"
@@ -426,10 +427,73 @@ class DirichletBCInfo {
   std::vector<std::tuple<index_t, index_t, index_t>> data;
 };
 
+/**
+ * @brief ElementMesh base class
+ *
+ */
+class ElementMeshBase {
+ public:
+  virtual ~ElementMeshBase() {}
+
+  // Add all entries to the Jacobian matrix given a matrix with the specified
+  // block size
+  virtual void add_matrix_pairs(
+      const index_t block_size,
+      std::set<std::pair<index_t, index_t>>& pairs) const = 0;
+
+  // Get the number of degrees of freedom
+  virtual index_t get_num_elements() const = 0;
+  virtual index_t get_num_dof() const = 0;
+
+  static void create_block_csr(std::set<std::pair<index_t, index_t>>& pairs,
+                               index_t& nrows, std::vector<index_t>& rowp,
+                               std::vector<index_t>& cols) {
+    nrows = 0;
+    typename std::set<std::pair<index_t, index_t>>::iterator it;
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      if (it->first > nrows) {
+        nrows = it->first;
+      }
+    }
+    nrows++;
+
+    // Find the number of nodes referenced by other nodes
+    rowp.resize(nrows + 1);
+    std::fill(rowp.begin(), rowp.end(), 0);
+
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      rowp[it->first + 1] += 1;
+    }
+
+    // Set the pointer into the rows
+    rowp[0] = 0;
+    for (index_t i = 0; i < nrows; i++) {
+      rowp[i + 1] += rowp[i];
+    }
+
+    index_t nnz = rowp[nrows];
+    cols.resize(nnz);
+
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      cols[rowp[it->first]] = it->second;
+      rowp[it->first]++;
+    }
+
+    // Reset the pointer into the nodes
+    for (index_t i = nrows; i > 0; i--) {
+      rowp[i] = rowp[i - 1];
+    }
+    rowp[0] = 0;
+
+    // Sort the cols array
+    SortCSRData(nrows, rowp, cols);
+  }
+};
+
 // ElementMesh - Map from an element to the global to element local degrees
 // of freedom
 template <class Basis>
-class ElementMesh {
+class ElementMesh : public ElementMeshBase {
  public:
   using ET = ElementTypes;
   static constexpr index_t dim = Basis::dim;
@@ -445,9 +509,9 @@ class ElementMesh {
   template <class HOrderBasis>
   ElementMesh(ElementMesh<HOrderBasis>& mesh);
 
-  index_t get_num_elements() { return nelems; }
-  index_t get_num_dof() { return num_dof; }
-  index_t get_num_cumulative_dof(index_t basis) {
+  index_t get_num_elements() const { return nelems; }
+  index_t get_num_dof() const { return num_dof; }
+  index_t get_num_cumulative_dof(index_t basis) const {
     return num_dof_offset[basis];
   }
 
@@ -467,9 +531,9 @@ class ElementMesh {
     *signs = &element_sign[ndof_per_element * elem];
   }
 
-  template <index_t M, index_t basis_offset = Basis::nbasis>
-  void create_block_csr(index_t& nrows, std::vector<index_t>& rowp,
-                        std::vector<index_t>& cols);
+  // Add (i, j) pairs from the element mesh
+  void add_matrix_pairs(const index_t block_size,
+                        std::set<std::pair<index_t, index_t>>& pairs) const;
 
  private:
   index_t nelems;                         // Total number of elements

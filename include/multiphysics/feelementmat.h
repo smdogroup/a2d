@@ -86,6 +86,7 @@ class ElementMat_Serial {
   ElementMesh<Basis>& mesh;
   MatType& mat;
 };
+
 }  // namespace A2D
 
 #endif  // A2D_FE_ELEMENT_MAT_H

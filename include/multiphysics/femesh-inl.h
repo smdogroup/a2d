@@ -1597,22 +1597,16 @@ index_t ElementMesh<Basis>::get_global_dof(index_t elem, index_t index) {
 }
 
 template <class Basis>
-template <index_t M, index_t basis_offset>
-void ElementMesh<Basis>::create_block_csr(index_t& nrows,
-                                          std::vector<index_t>& rowp,
-                                          std::vector<index_t>& cols) {
-  std::set<std::pair<index_t, index_t>> node_set;
-
-  const constexpr index_t ndof_per_elem =
-      Basis::template get_dof_offset<basis_offset>();
-
+void ElementMesh<Basis>::add_matrix_pairs(
+    const index_t block_size,
+    std::set<std::pair<index_t, index_t>>& pairs) const {
   for (index_t i = 0; i < nelems; i++) {
     index_t dof_reduced[Basis::ndof];
     index_t n = 0;
-    for (index_t j1 = 0; j1 < ndof_per_elem; j1++, n++) {
-      index_t row = element_dof[i * Basis::ndof + j1] / M;
-      while (j1 + 1 < ndof_per_elem &&
-             row == (element_dof[i * Basis::ndof + j1 + 1] / M)) {
+    for (index_t j1 = 0; j1 < Basis::ndof; j1++, n++) {
+      index_t row = element_dof[i * Basis::ndof + j1] / block_size;
+      while (j1 + 1 < Basis::ndof &&
+             row == (element_dof[i * Basis::ndof + j1 + 1] / block_size)) {
         j1++;
       }
       dof_reduced[n] = row;
@@ -1620,47 +1614,10 @@ void ElementMesh<Basis>::create_block_csr(index_t& nrows,
 
     for (index_t j1 = 0; j1 < n; j1++) {
       for (index_t j2 = 0; j2 < n; j2++) {
-        node_set.insert(std::make_pair(dof_reduced[j1], dof_reduced[j2]));
+        pairs.insert(std::make_pair(dof_reduced[j1], dof_reduced[j2]));
       }
     }
   }
-
-  nrows = num_dof_offset[basis_offset - 1] / M;
-  if (num_dof_offset[basis_offset - 1] % M > 0) {
-    nrows += 1;
-  }
-
-  // Find the number of nodes referenced by other nodes
-  rowp.resize(nrows + 1);
-  std::fill(rowp.begin(), rowp.end(), 0);
-
-  typename std::set<std::pair<index_t, index_t>>::iterator it;
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    rowp[it->first + 1] += 1;
-  }
-
-  // Set the pointer into the rows
-  rowp[0] = 0;
-  for (index_t i = 0; i < nrows; i++) {
-    rowp[i + 1] += rowp[i];
-  }
-
-  index_t nnz = rowp[nrows];
-  cols.resize(nnz);
-
-  for (it = node_set.begin(); it != node_set.end(); it++) {
-    cols[rowp[it->first]] = it->second;
-    rowp[it->first]++;
-  }
-
-  // Reset the pointer into the nodes
-  for (index_t i = nrows; i > 0; i--) {
-    rowp[i] = rowp[i - 1];
-  }
-  rowp[0] = 0;
-
-  // Sort the cols array
-  SortCSRData(nrows, rowp, cols);
 }
 
 /**

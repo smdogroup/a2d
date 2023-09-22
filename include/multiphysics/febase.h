@@ -1,7 +1,9 @@
 #ifndef A2D_FE_BASE_H
 #define A2D_FE_BASE_H
 
+#include <algorithm>
 #include <list>
+#include <set>
 
 #include "a2ddefs.h"
 #include "multiphysics/feelement.h"
@@ -19,6 +21,8 @@ template <class VecType, class MatType>
 class ElementBase {
  public:
   virtual ~ElementBase() {}
+
+  virtual const ElementMeshBase& get_mesh(FEVarType wrt) const = 0;
 
   // Add the residual
   virtual void add_residual(VecType& data, VecType& geo, VecType& sol,
@@ -50,6 +54,18 @@ class ElementAssembler {
 
   // Add an element at the specified index
   void add_element(ElemPtr element) { elements.push_back(element); }
+
+  // Get the CSR structure for all the elements in the mesh
+  void get_bsr_data(const index_t block_size, index_t& nrows,
+                    std::vector<index_t>& rowp, std::vector<index_t>& cols) {
+    std::set<std::pair<index_t, index_t>> pairs;
+    typename std::list<ElemPtr>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      const ElementMeshBase& mesh = (*it)->get_mesh(FEVarType::STATE);
+      mesh.add_matrix_pairs(block_size, pairs);
+    }
+    ElementMeshBase::create_block_csr(pairs, nrows, rowp, cols);
+  }
 
   // Add the residual from all the elements
   void add_residual(VecType& data, VecType& geo, VecType& sol, VecType& res) {
@@ -124,6 +140,16 @@ class ElementIntegrand : public ElementBase<VecType, MatType> {
     data_mesh = data;
     geo_mesh = geo;
     sol_mesh = sol;
+  }
+
+  const ElementMeshBase& get_mesh(FEVarType wrt) const {
+    if (wrt == FEVarType::DATA) {
+      return *data_mesh;
+    } else if (wrt == FEVarType::GEOMETRY) {
+      return *geo_mesh;
+    } else {
+      return *sol_mesh;
+    }
   }
 
   // Add the residual to the residual vector

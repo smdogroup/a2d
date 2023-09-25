@@ -58,8 +58,8 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
 
   index_t num_boundary_verts = (b_ny + 1) * (b_nz + 1);
   index_t *boundary_verts = new index_t[num_boundary_verts];
-  for (int k = 0, count = 0, e = 0; k < b_nz; k++) {
-    for (int j = 0; j < b_ny; j++, count++) {
+  for (int k = 0, count = 0; k < b_nz + 1; k++) {
+    for (int j = 0; j < b_ny + 1; j++, count++) {
       int i = 0;
       boundary_verts[count] = node_num(i, j, k);
     }
@@ -92,8 +92,8 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
 
   // Get the sizes of the different meshes
   index_t ndata = data_mesh->get_num_dof();
-  index_t ngeo = data_mesh->get_num_dof();
-  index_t ndof = data_mesh->get_num_dof();
+  index_t ngeo = geo_mesh->get_num_dof();
+  index_t ndof = sol_mesh->get_num_dof();
 
   // Create the element
   T E = 70.0, nu = 0.3, q = 5.0;

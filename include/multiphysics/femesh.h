@@ -570,7 +570,7 @@ class DirichletBasis : public DirichletBase<T> {
   DirichletBasis(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
                  DirichletBCInfo& bcinfo, T value = 0.0);
   ~DirichletBasis() {
-    delete dof;
+    delete[] dof;
     delete[] vals;
   }
 

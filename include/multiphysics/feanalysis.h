@@ -35,6 +35,14 @@ class DirectCholeskyAnalysis {
     assembler->get_bsr_data(block_size, nrows, rowp, cols);
     bsr_mat = std::make_shared<BSRMat_t>(nrows, nrows, cols.size(), rowp, cols);
 
+    // Create the sparse matrix
+    csc_mat = bsr_to_csc(*bsr_mat);
+
+    // Set up Cholesky solver but don't set up values yet
+    bool set_values = false;
+    chol =
+        new SparseCholesky(csc_mat, CholOrderingType::ND, nullptr, set_values);
+
     // Set the boundary conditions
     bcs->set_bcs(sol);
   }

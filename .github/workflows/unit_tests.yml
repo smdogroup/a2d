@@ -32,6 +32,13 @@ jobs:
           cd build;
           cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -G Ninja
           ninja install;
+          cd ../../
+          git clone https://github.com/KarypisLab/METIS.git metis;
+          cd metis;
+          mkdir build;
+          cd build;
+          cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/metis;
+          make install;
           mkdir ../../../build;
           cd ../../../build;
           cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=OFF -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;

@@ -121,8 +121,6 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   analysis.linear_solve();
 
   // using HexFunc = HexTopoVonMises<T, dim, etype, degree, Vec_t>;
-  // Analysis<T> analysis(assembler, bsr_mat);
-
   // TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
   //                                              ks_param);
   // HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);

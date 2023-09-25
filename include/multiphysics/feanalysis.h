@@ -47,10 +47,30 @@ class DirectCholeskyAnalysis {
     bcs->set_bcs(sol);
   }
 
+  /**
+   * @brief Get the data vector object
+   *
+   * @return Vec_t& Reference to the data
+   */
   Vec_t &get_data() { return data; }
+
+  /**
+   * @brief Get the geometry vector object
+   *
+   * @return Vec_t& Reference to the data
+   */
   Vec_t &get_geo() { return geo; }
+
+  /**
+   * @brief Get the solution vector object
+   *
+   * @return Vec_t& Reference to the data
+   */
   Vec_t &get_sol() { return sol; }
 
+  /**
+   * @brief Compute the residual and store it
+   */
   void residual() {
     res.zero();
     assembler->add_residual(data, geo, sol, res);
@@ -59,6 +79,9 @@ class DirectCholeskyAnalysis {
     bcs->zero_bcs(res);
   }
 
+  /**
+   * @brief Compute the Jacobian and store it
+   */
   void jacobian() {
     // Compute the BSR matrix
     bsr_mat->zero();
@@ -70,6 +93,9 @@ class DirectCholeskyAnalysis {
     bsr_mat->zero_rows(nbcs, bc_dofs);
   }
 
+  /**
+   * @brief Factor the Jacobian
+   */
   void factor() {
     // This is a problem here -- matrix is passed by value, but should be passed
     // by reference to avoid copying. Convert bsr to csc because we want to use
@@ -86,6 +112,9 @@ class DirectCholeskyAnalysis {
     chol->factor();
   }
 
+  /**
+   * @brief Perform a linear solve to obtain the solution
+   */
   void linear_solve() {
     residual();
     jacobian();

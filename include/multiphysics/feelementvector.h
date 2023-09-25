@@ -78,8 +78,8 @@ struct have_same_evtype<EV1> {
 
 template <class EV1, class EV2>
 struct have_same_evtype<EV1, EV2> {
-  static constexpr bool value = (EV1::evtype == ElemVecType::Empty or
-                                 EV2::evtype == ElemVecType::Empty or EV1::evtype == EV2::evtype);
+  static constexpr bool value = (EV1::evtype == ElemVecType::Empty ||
+                                 EV2::evtype == ElemVecType::Empty || EV1::evtype == EV2::evtype);
   static constexpr ElemVecType evtype =
       conditional_value<ElemVecType, EV1::evtype != ElemVecType::Empty, EV1::evtype,
                         EV2::evtype>::value;
@@ -93,7 +93,7 @@ struct have_same_evtype<EV1, EV2, rest...> {
   using compare_23 = have_same_evtype<EV2, rest...>;
 
  public:
-  static constexpr bool value = compare_12::value and compare_13::value and compare_23::value;
+  static constexpr bool value = compare_12::value && compare_13::value && compare_23::value;
   static constexpr ElemVecType evtype =
       conditional_value<ElemVecType, compare_12::evtype != ElemVecType::Empty, compare_12::evtype,
                         conditional_value<ElemVecType, compare_13::evtype != ElemVecType::Empty,

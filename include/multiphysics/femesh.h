@@ -5,7 +5,6 @@
 #include <set>
 
 #include "a2ddefs.h"
-#include "multiphysics/febase.h"
 #include "multiphysics/feelementtypes.h"
 #include "sparse/sparse_matrix.h"
 #include "sparse/sparse_symbolic.h"
@@ -546,33 +545,102 @@ class ElementMesh : public ElementMeshBase {
   int* element_sign;
 };
 
-template <class Basis>
-class DirichletBCs {
+/*
+  Base class for Dirichlet BCs
+*/
+template <typename T>
+class DirichletBase {
+ public:
+  virtual ~DirichletBase() {}
+  virtual index_t get_bcs(const index_t* bcs[], const T* values[]) const = 0;
+};
+
+/**
+ * @brief Dirichlet boundary conditions for a given basis
+ *
+ * @tparam Basis The FEBasis type
+ */
+template <typename T, class Basis>
+class DirichletBasis : public DirichletBase<T> {
  public:
   // Use the definitions from the element types
   using ET = ElementTypes;
   static constexpr index_t dim = Basis::dim;
 
-  DirichletBCs(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
-               DirichletBCInfo& bcinfo);
+  DirichletBasis(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
+                 DirichletBCInfo& bcinfo, T value = 0.0);
+  ~DirichletBasis() {
+    delete dof;
+    delete[] vals;
+  }
 
-  index_t get_bcs(const index_t* bcs[]) const {
+  index_t get_bcs(const index_t* bcs[], const T* values[]) const {
     if (bcs) {
       *bcs = dof;
     }
-    return ndof;
-  }
-
-  template <class VecType, typename T>
-  void set_bcs(VecType& vec, T value) {
-    for (index_t i = 0; i < ndof; i++) {
-      vec[dof[i]] = value;
+    if (values) {
+      *values = vals;
     }
+    return ndof;
   }
 
  private:
   index_t ndof;
   index_t* dof;
+  T* vals;
+};
+
+/*
+  A collection of Dirichlet BCs from different sources
+*/
+template <typename T>
+class DirichletBCs {
+ public:
+  typedef std::shared_ptr<DirichletBase<T>> BCPtr;
+
+  DirichletBCs() {}
+
+  void add_bcs(BCPtr bc) {
+    const index_t* dof;
+    const T* vals;
+    index_t count = bc->get_bcs(&dof, &vals);
+
+    indices.reserve(indices.size() + count);
+    indices.insert(indices.end(), dof, dof + count);
+
+    values.reserve(values.size() + count);
+    values.insert(values.end(), vals, vals + count);
+  }
+
+  template <class VecType>
+  void zero_bcs(VecType& vec) {
+    const index_t size = indices.size();
+    for (index_t i = 0; i < size; i++) {
+      vec[indices[i]] = T(0.0);
+    }
+  }
+
+  template <class VecType>
+  void set_bcs(VecType& vec) {
+    const index_t size = indices.size();
+    for (index_t i = 0; i < size; i++) {
+      vec[indices[i]] = values[i];
+    }
+  }
+
+  index_t get_bcs(const index_t* array[]) const {
+    *array = indices.data();
+    return indices.size();
+  }
+  index_t get_bcs(const index_t* array[], const T* vals[]) const {
+    *array = indices.data();
+    *vals = values.data();
+    return indices.size();
+  }
+
+ private:
+  std::vector<index_t> indices;
+  std::vector<T> values;
 };
 
 }  // namespace A2D

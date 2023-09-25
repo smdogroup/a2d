@@ -20,10 +20,11 @@ class SolutionVector {
   //   return array(index);
   // }
 
-  index_t get_num_dof() const { return ndof; }
+  KOKKOS_FUNCTION index_t get_num_dof() const { return ndof; }
 
   KOKKOS_FUNCTION void zero() { BLAS::zero(array); }
   KOKKOS_FUNCTION void fill(T val) { BLAS::fill(array, val); }
+  KOKKOS_FUNCTION T* data() { return array.data(); }
 
  private:
   const index_t ndof;

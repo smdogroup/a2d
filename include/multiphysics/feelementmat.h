@@ -1,7 +1,7 @@
 #ifndef A2D_FE_ELEMENT_MAT_H
 #define A2D_FE_ELEMENT_MAT_H
 
-#include "array.h"
+#include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "utils/complex_math.h"
 

@@ -1628,10 +1628,10 @@ void ElementMesh<Basis>::add_matrix_pairs(
  * @param conn The connectivity
  * @param mesh The mesh object with the ordered degrees of freedom
  */
-template <class Basis>
-DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
-                                  ElementMesh<Basis>& mesh,
-                                  DirichletBCInfo& bcinfo) {
+template <typename T, class Basis>
+DirichletBasis<T, Basis>::DirichletBasis(MeshConnectivityBase& conn,
+                                         ElementMesh<Basis>& mesh,
+                                         DirichletBCInfo& bcinfo, T value) {
   const index_t* boundary_bounds;
   const index_t* boundary_labels;
   index_t num_boundary_bounds =
@@ -1753,6 +1753,11 @@ DirichletBCs<Basis>::DirichletBCs(MeshConnectivityBase& conn,
   dof = new index_t[ndof];
   for (index_t i = 0; i < ndof; i++) {
     dof[i] = boundary_dof[i];
+  }
+
+  vals = new T[ndof];
+  for (index_t i = 0; i < ndof; i++) {
+    vals[i] = value;
   }
 
   // Free the boundary_dof array

@@ -4,13 +4,9 @@
 
 #include "a2dcore.h"
 #include "ad/a2dtest.h"
-#include "multiphysics/integrand_elasticity.h"
-// #include "multiphysics/integrand_heat_conduction.h"
-// #include "multiphysics/integrand_poisson.h"
 #include "multiphysics/feanalysis.h"
 #include "multiphysics/hex_tools.h"
-#include "sparse/sparse_cholesky.h"
-#include "sparse/sparse_utils.h"
+#include "multiphysics/integrand_elasticity.h"
 
 using namespace A2D;
 
@@ -100,7 +96,7 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   T design_stress = 1.0, ks_param = 10.0;
   TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
-  auto assembler = std::make_shared<ElementAssembler<Vec_t, BSRMat_t>>();
+  auto assembler = std::make_shared<ElementAssembler<T, Vec_t, BSRMat_t>>();
   assembler->add_element(
       std::make_shared<HexElem>(elem_integrand, data_mesh, geo_mesh, sol_mesh));
 
@@ -118,18 +114,23 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
       *geo_mesh, analysis.get_geo());
   set_geo_from_hex_nodes<HexElem::GeoBasis>(nhex, hex, Xloc, elem_geo);
 
+  // Set the data
+  Vec_t &data = analysis.get_data();
+  for (index_t i = 0; i < data.size(); i++) {
+    data[i] = 1.0;
+  }
+
   analysis.linear_solve();
 
-  // using HexFunc = HexTopoVonMises<T, dim, etype, degree, Vec_t>;
-  // TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
-  //                                              ks_param);
-  // HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
+  using HexFunc = HexTopoVonMises<T, dim, etype, degree, Vec_t>;
+  TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
+                                               ks_param);
+  HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
-  // assembler.add_residual(data, geo, sol, res);
-  // assembler.add_jacobian(data, geo, sol, *mat);
-
-  // T value = functional.evaluate(data, geo, sol);
-  // functional.add_derivative(FEVarType::STATE, data, geo, sol, res);
+  constexpr FEVarType wrt = FEVarType::GEOMETRY;
+  Vec_t dfdx(ndata);
+  T value = analysis.evaluate(functional);
+  analysis.eval_adjoint_derivative(functional, wrt, dfdx);
 }
 
 int main(int argc, char *argv[]) {

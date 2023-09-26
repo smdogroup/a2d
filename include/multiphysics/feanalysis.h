@@ -3,6 +3,9 @@
 
 #include "a2dcore.h"
 #include "ad/a2dtest.h"
+#include "multiphysics/febase.h"
+#include "multiphysics/femesh.h"
+#include "multiphysics/fesolution.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
 
@@ -18,7 +21,7 @@ class DirectCholeskyAnalysis {
 
   DirectCholeskyAnalysis(
       index_t ndata, index_t ngeo, index_t ndof,
-      std::shared_ptr<ElementAssembler<Vec_t, BSRMat_t>> assembler,
+      std::shared_ptr<ElementAssembler<T, Vec_t, BSRMat_t>> assembler,
       std::shared_ptr<DirichletBCs<T>> bcs)
       : ndata(ndata),
         ngeo(ngeo),
@@ -73,7 +76,7 @@ class DirectCholeskyAnalysis {
    */
   void residual() {
     res.zero();
-    assembler->add_residual(data, geo, sol, res);
+    assembler->add_residual(T(1.0), data, geo, sol, res);
 
     // Apply boundary conditions
     bcs->zero_bcs(res);
@@ -85,7 +88,7 @@ class DirectCholeskyAnalysis {
   void jacobian() {
     // Compute the BSR matrix
     bsr_mat->zero();
-    assembler->add_jacobian(data, geo, sol, *bsr_mat);
+    assembler->add_jacobian(T(1.0), data, geo, sol, *bsr_mat);
 
     // Zero the rows corresponding to the boundary conditions
     const index_t *bc_dofs;
@@ -134,12 +137,42 @@ class DirectCholeskyAnalysis {
 
   void nonlinear_solve() {}
 
+  T evaluate(FunctionalBase<T, Vec_t> &func) {
+    return func.evaluate(data, geo, sol);
+  }
+
+  void add_derivative(FunctionalBase<T, Vec_t> &func, FEVarType wrt, T alpha,
+                      Vec_t &dfdx) {
+    func.add_derivative(wrt, alpha, data, geo, sol, dfdx);
+  }
+
+  void eval_adjoint_derivative(FunctionalBase<T, Vec_t> &func, FEVarType wrt,
+                               Vec_t &dfdx) {
+    // This doesn't make sense for the adjoint method
+    if (wrt == FEVarType::STATE) {
+      return;
+    }
+
+    // Add the contributions to the derivative from the partial
+    dfdx.zero();
+    func.add_derivative(wrt, T(1.0), data, geo, sol, dfdx);
+
+    // Compute the derivative of the function wrt state and solve the adjoint
+    // equations
+    res.zero();
+    func.add_derivative(FEVarType::STATE, T(-1.0), data, geo, sol, res);
+    chol->solve(res.data());
+
+    // Add the terms from the total derivative
+    assembler->add_adjoint_res_product(wrt, T(1.0), data, geo, sol, res, dfdx);
+  }
+
  private:
   // The solution information
   index_t ndata, ngeo, ndof;
 
   // Element matrix assembler object
-  std::shared_ptr<ElementAssembler<Vec_t, BSRMat_t>> assembler;
+  std::shared_ptr<ElementAssembler<T, Vec_t, BSRMat_t>> assembler;
 
   // Boundary conditions
   std::shared_ptr<DirichletBCs<T>> bcs;

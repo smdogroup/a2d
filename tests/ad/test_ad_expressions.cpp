@@ -545,6 +545,80 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
   }
 };
 
+/* Test AD and A2D for a diamond-like computational graph */
+template <typename T, int N>
+class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
+ public:
+  using Input = VarTuple<T, Mat<T, N, N>>;
+  using Output = VarTuple<T, T>;
+
+  // Assemble a string to describe the test
+  std::string name() {
+    std::stringstream s;
+    s << "DiamondGraphTest<" << N << ">";
+    return s.str();
+  }
+
+  // Evaluate the function
+  Output eval(const Input& x) {
+    Mat<T, N, N> J;
+    x.get_values(J);
+    T Jdet, tr, output;
+
+    // Set the intermediary values
+    Mat<T, N, N> Jinv, Ux;
+    SymMat<T, N> E1, E2, E, S;
+
+    MatDet(J, Jdet);     // Jdet = det(J)
+    MatInv(J, Jinv);     // Jinv = J^{-1}
+    MatTrace(Jinv, tr);  // tr = tr(Jinv)
+    output = tr + Jdet;  // output = tr + Jdet
+
+    return MakeVarTuple<T>(output);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    // The AD objects
+    ADObj<Mat<T, N, N>> J, Jinv;
+    ADObj<T> Jdet, tr, output;
+
+    x.get_values(J.value());
+
+    auto stack = MakeStack(MatDet(J, Jdet),           // Jdet = det(J)
+                           MatInv(J, Jinv),           // Jinv = J^{-1}
+                           MatTrace(Jinv, tr),        // tr = tr(Jinv)
+                           Eval(tr + Jdet, output));  // output = tr + Jdet
+
+    seed.get_values(output.bvalue());
+    stack.reverse();
+    g.set_values(J.bvalue());
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    // The AD objects
+    A2DObj<Mat<T, N, N>> J, Jinv;
+    A2DObj<T> Jdet, tr, output;
+
+    x.get_values(J.value());
+    p.get_values(J.pvalue());
+
+    auto stack = MakeStack(MatDet(J, Jdet),           // Jdet = det(J)
+                           MatInv(J, Jinv),           // Jinv = J^{-1}
+                           MatTrace(Jinv, tr),        // tr = tr(Jinv)
+                           Eval(tr + Jdet, output));  // output = tr + Jdet
+
+    seed.get_values(output.bvalue());
+    hval.get_values(output.hvalue());
+    stack.reverse();
+    stack.hforward();
+    stack.hreverse();
+    h.set_values(J.hvalue());
+  }
+};
+
 bool MatIntegrationTests(bool component, bool write_output) {
   bool passed = true;
 
@@ -562,6 +636,9 @@ bool MatIntegrationTests(bool component, bool write_output) {
 
   VonMisesPenaltyTest<std::complex<double>> test5;
   passed = passed && A2D::Test::Run(test5, component, write_output);
+
+  DiamondGraphTest<std::complex<double>, 3> test6;
+  passed = passed && A2D::Test::Run(test6, component, write_output);
 
   return passed;
 }

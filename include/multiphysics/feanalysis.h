@@ -14,15 +14,28 @@ namespace A2D {
 template <typename T, index_t block_size>
 class DirectCholeskyAnalysis {
  public:
+  // Set the implementation type
+  class Impl_t {
+   public:
+    using type = T;
+    using Vec_t = SolutionVector<T>;
+    using Mat_t = BSRMat<T, block_size, block_size>;
+
+    template <class Basis>
+    using ElementVector = ElementVector_Serial<type, Basis, Vec_t>;
+
+    template <class Basis>
+    using ElementMatrix = ElementMat_Serial<type, Basis, Mat_t>;
+  };
+
   // Data types
-  using Vec_t = SolutionVector<T>;
-  using BSRMat_t = BSRMat<T, block_size, block_size>;
+  using Vec_t = typename Impl_t::Vec_t;
+  using Mat_t = typename Impl_t::Mat_t;
   using CSCMat_t = CSCMat<T>;
 
-  DirectCholeskyAnalysis(
-      index_t ndata, index_t ngeo, index_t ndof,
-      std::shared_ptr<ElementAssembler<T, Vec_t, BSRMat_t>> assembler,
-      std::shared_ptr<DirichletBCs<T>> bcs)
+  DirectCholeskyAnalysis(index_t ndata, index_t ngeo, index_t ndof,
+                         std::shared_ptr<ElementAssembler<Impl_t>> assembler,
+                         std::shared_ptr<DirichletBCs<T>> bcs)
       : ndata(ndata),
         ngeo(ngeo),
         ndof(ndof),
@@ -36,7 +49,7 @@ class DirectCholeskyAnalysis {
     index_t nrows;
     std::vector<index_t> rowp, cols;
     assembler->get_bsr_data(block_size, nrows, rowp, cols);
-    bsr_mat = std::make_shared<BSRMat_t>(nrows, nrows, cols.size(), rowp, cols);
+    bsr_mat = std::make_shared<Mat_t>(nrows, nrows, cols.size(), rowp, cols);
 
     // Create the sparse matrix
     csc_mat = bsr_to_csc(*bsr_mat);
@@ -137,16 +150,16 @@ class DirectCholeskyAnalysis {
 
   void nonlinear_solve() {}
 
-  T evaluate(FunctionalBase<T, Vec_t> &func) {
+  T evaluate(FunctionalBase<Impl_t> &func) {
     return func.evaluate(data, geo, sol);
   }
 
-  void add_derivative(FunctionalBase<T, Vec_t> &func, FEVarType wrt, T alpha,
+  void add_derivative(FunctionalBase<Impl_t> &func, FEVarType wrt, T alpha,
                       Vec_t &dfdx) {
     func.add_derivative(wrt, alpha, data, geo, sol, dfdx);
   }
 
-  void eval_adjoint_derivative(FunctionalBase<T, Vec_t> &func, FEVarType wrt,
+  void eval_adjoint_derivative(FunctionalBase<Impl_t> &func, FEVarType wrt,
                                Vec_t &dfdx) {
     // This doesn't make sense for the adjoint method
     if (wrt == FEVarType::STATE) {
@@ -172,7 +185,7 @@ class DirectCholeskyAnalysis {
   index_t ndata, ngeo, ndof;
 
   // Element matrix assembler object
-  std::shared_ptr<ElementAssembler<T, Vec_t, BSRMat_t>> assembler;
+  std::shared_ptr<ElementAssembler<Impl_t>> assembler;
 
   // Boundary conditions
   std::shared_ptr<DirichletBCs<T>> bcs;
@@ -184,7 +197,7 @@ class DirectCholeskyAnalysis {
   Vec_t res;
 
   // System matrices
-  std::shared_ptr<BSRMat_t> bsr_mat;
+  std::shared_ptr<Mat_t> bsr_mat;
   CSCMat_t csc_mat;
 
   // Cholesky solver

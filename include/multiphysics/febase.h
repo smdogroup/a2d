@@ -12,54 +12,79 @@
 namespace A2D {
 
 /**
+ * The classes in this file use an Impl object that should contain the following
+ * information
+ *
+ * class Impl {
+ *  public: using type = double;
+ *
+ *  using Vec_t = SolutionVector<type>;
+ *
+ *  using Mat_t = BSRMat<type, bsize, bsize>;
+ *
+ *  template <class Basis>
+ *  using ElementVector<Basis> = ElementVector_Serial<type, Basis, Vec_t>;
+ *
+ *  template <class Basis>
+ *  using ElementMatrix<Basis> = ElementMat_Serial<type, Basis, Vec_t>;
+ * };
+ *
+ */
+
+/**
  * @brief Element base class.
  *
  * This defines an element that is compatible with the given vector and matrix
  * types.
  */
-template <typename T, class VecType, class MatType>
+template <class Impl>
 class ElementBase {
  public:
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
+
   virtual ~ElementBase() {}
 
   virtual const ElementMeshBase& get_mesh(FEVarType wrt) const = 0;
 
   // Add the residual
-  virtual void add_residual(T alpha, VecType& data, VecType& geo, VecType& sol,
-                            VecType& res) = 0;
+  virtual void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol,
+                            Vec_t& res) = 0;
 
   // Add the Jacobian
-  virtual void add_jacobian(T alpha, VecType& data, VecType& geo, VecType& sol,
-                            MatType& mat) = 0;
+  virtual void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol,
+                            Mat_t& mat) = 0;
 
   // Add the adjoint-residual product
-  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, VecType& data,
-                                       VecType& geo, VecType& sol,
-                                       VecType& adjoint, VecType& dfdx) = 0;
+  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data,
+                                       Vec_t& geo, Vec_t& sol, Vec_t& adjoint,
+                                       Vec_t& dfdx) = 0;
 };
 
 /**
  * @brief Assemble the contributions from a number of elements
  *
- * @tparam VecType The type of vector
- * @tparam MatType The type of matrix to use
  */
-template <typename T, class VecType, class MatType>
+template <class Impl>
 class ElementAssembler {
  public:
-  typedef std::shared_ptr<ElementBase<T, VecType, MatType>> ElemPtr;
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
+  using Elem_t = std::shared_ptr<ElementBase<Impl>>;
 
   ElementAssembler() {}
   virtual ~ElementAssembler() {}
 
   // Add an element at the specified index
-  void add_element(ElemPtr element) { elements.push_back(element); }
+  void add_element(Elem_t element) { elements.push_back(element); }
 
   // Get the CSR structure for all the elements in the mesh
   void get_bsr_data(const index_t block_size, index_t& nrows,
                     std::vector<index_t>& rowp, std::vector<index_t>& cols) {
     std::set<std::pair<index_t, index_t>> pairs;
-    typename std::list<ElemPtr>::iterator it;
+    typename std::list<Elem_t>::iterator it;
     for (it = elements.begin(); it != elements.end(); ++it) {
       const ElementMeshBase& mesh = (*it)->get_mesh(FEVarType::STATE);
       mesh.add_matrix_pairs(block_size, pairs);
@@ -68,51 +93,51 @@ class ElementAssembler {
   }
 
   // Add the residual from all the elements
-  void add_residual(T alpha, VecType& data, VecType& geo, VecType& sol,
-                    VecType& res) {
-    typename std::list<ElemPtr>::iterator it;
+  void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Vec_t& res) {
+    typename std::list<Elem_t>::iterator it;
     for (it = elements.begin(); it != elements.end(); ++it) {
       (*it)->add_residual(alpha, data, geo, sol, res);
     }
   }
 
   // Add the Jacobian contributions from all the elements
-  void add_jacobian(T alpha, VecType& data, VecType& geo, VecType& sol,
-                    MatType& mat) {
-    typename std::list<ElemPtr>::iterator it;
+  void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Mat_t& mat) {
+    typename std::list<Elem_t>::iterator it;
     for (it = elements.begin(); it != elements.end(); ++it) {
       (*it)->add_jacobian(alpha, data, geo, sol, mat);
     }
   }
 
   // Add the adjoint-residual product
-  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, VecType& data,
-                                       VecType& geo, VecType& sol,
-                                       VecType& adjoint, VecType& dfdx) {
-    typename std::list<ElemPtr>::iterator it;
+  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data,
+                                       Vec_t& geo, Vec_t& sol, Vec_t& adjoint,
+                                       Vec_t& dfdx) {
+    typename std::list<Elem_t>::iterator it;
     for (it = elements.begin(); it != elements.end(); ++it) {
       (*it)->add_adjoint_res_product(wrt, alpha, data, geo, sol, adjoint, dfdx);
     }
   }
 
  private:
-  std::list<ElemPtr> elements;
+  std::list<Elem_t> elements;
 };
 
 /*
   Integrand-type finite-element
 */
-template <typename T, class Integrand, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis, class VecType, class MatType>
-class ElementIntegrand : public ElementBase<T, VecType, MatType> {
+template <class Impl, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis>
+class ElementIntegrand : public ElementBase<Impl> {
  public:
-  // Set the element vector to use
-  template <typename T0, class BasisType, class VectorType>
-  using ElementVector = ElementVector_Serial<T0, BasisType, VectorType>;
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
 
-  // Set the element matrix to use
-  template <typename T0, class BasisType, class VectorType>
-  using ElementMatrix = ElementMat_Serial<T0, BasisType, VectorType>;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  template <class Base>
+  using ElementMatrix = typename Impl::template ElementMatrix<Base>;
 
   virtual const Integrand& get_integrand() = 0;
 
@@ -136,54 +161,51 @@ class ElementIntegrand : public ElementBase<T, VecType, MatType> {
   }
 
   // Add the residual to the residual vector
-  void add_residual(T alpha, VecType& data, VecType& geo, VecType& sol,
-                    VecType& res) {
+  void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Vec_t& res) {
     const Integrand& integrand = this->get_integrand();
-    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
-    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
-    ElementVector<T, Basis, VecType> elem_res(*sol_mesh, res);
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementVector<Basis> elem_res(*sol_mesh, res);
     element.template add_residual<FEVarType::STATE>(
         integrand, alpha, elem_data, elem_geo, elem_sol, elem_res);
   }
 
   // Add the Jacobian
-  void add_jacobian(T alpha, VecType& data, VecType& geo, VecType& sol,
-                    MatType& mat) {
+  void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Mat_t& mat) {
     const Integrand& integrand = this->get_integrand();
-    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
-    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
-    ElementMatrix<T, Basis, MatType> elem_jac(*sol_mesh, mat);
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementMatrix<Basis> elem_jac(*sol_mesh, mat);
     element.template add_jacobian<FEVarType::STATE, FEVarType::STATE>(
         integrand, alpha, elem_data, elem_geo, elem_sol, elem_jac);
   }
 
   // Add the adjoint-residual product
-  void add_adjoint_res_product(FEVarType wrt, T alpha, VecType& data,
-                               VecType& geo, VecType& sol, VecType& adjoint,
-                               VecType& dfdx) {
+  void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                               Vec_t& sol, Vec_t& adjoint, Vec_t& dfdx) {
     const Integrand& integrand = this->get_integrand();
-    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
-    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
-    ElementVector<T, Basis, VecType> elem_adjoint(*sol_mesh, adjoint);
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementVector<Basis> elem_adjoint(*sol_mesh, adjoint);
 
     if (wrt == FEVarType::DATA) {
-      ElementVector<T, DataBasis, VecType> elem_dfdx(*data_mesh, dfdx);
+      ElementVector<DataBasis> elem_dfdx(*data_mesh, dfdx);
       element.template add_jacobian_product<FEVarType::DATA, FEVarType::STATE>(
           integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
           elem_dfdx);
 
     } else if (wrt == FEVarType::GEOMETRY) {
-      ElementVector<T, GeoBasis, VecType> elem_dfdx(*geo_mesh, dfdx);
+      ElementVector<GeoBasis> elem_dfdx(*geo_mesh, dfdx);
       element
           .template add_jacobian_product<FEVarType::GEOMETRY, FEVarType::STATE>(
               integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
               elem_dfdx);
 
     } else if (wrt == FEVarType::STATE) {
-      ElementVector<T, Basis, VecType> elem_dfdx(*sol_mesh, dfdx);
+      ElementVector<Basis> elem_dfdx(*sol_mesh, dfdx);
       element.template add_jacobian_product<FEVarType::STATE, FEVarType::STATE>(
           integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
           elem_dfdx);
@@ -203,33 +225,38 @@ class ElementIntegrand : public ElementBase<T, VecType, MatType> {
  * This class defines a functional evaluation that is compatible with the
  * given vector and matrix types
  */
-template <typename T, class VecType>
+template <class Impl>
 class FunctionalBase {
  public:
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+
   virtual ~FunctionalBase() {}
 
   // Add the residual
-  virtual T evaluate(VecType& data, VecType& geo, VecType& sol) = 0;
+  virtual T evaluate(Vec_t& data, Vec_t& geo, Vec_t& sol) = 0;
 
   // Add to the derivative type
-  virtual void add_derivative(FEVarType wrt, T alpha, VecType& data,
-                              VecType& geo, VecType& sol, VecType& dfdx) = 0;
+  virtual void add_derivative(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                              Vec_t& sol, Vec_t& dfdx) = 0;
 };
 
 /*
   Integral type functional
 */
-template <typename T, class Integrand, class Quadrature, class DataBasis,
-          class GeoBasis, class Basis, class VecType>
-class IntegralFunctional : public FunctionalBase<T, VecType> {
+template <class Impl, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis>
+class IntegralFunctional : public FunctionalBase<Impl> {
  public:
-  // Set the element vector to use
-  template <typename T0, class BasisType, class VectorType>
-  using ElementVector = ElementVector_Serial<T0, BasisType, VectorType>;
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
 
-  // Set the element matrix to use
-  template <typename T0, class BasisType, class VectorType>
-  using ElementMatrix = ElementMat_Serial<T0, BasisType, VectorType>;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  template <class Base>
+  using ElementMatrix = typename Impl::template ElementMatrix<Base>;
 
   virtual const Integrand& get_integrand() = 0;
 
@@ -243,35 +270,35 @@ class IntegralFunctional : public FunctionalBase<T, VecType> {
   }
 
   // Add the residual to the residual vector
-  T evaluate(VecType& data, VecType& geo, VecType& sol) {
+  T evaluate(Vec_t& data, Vec_t& geo, Vec_t& sol) {
     const Integrand& integrand = this->get_integrand();
-    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
-    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
     T value = element.integrate(integrand, elem_data, elem_geo, elem_sol);
     return value;
   }
 
   // Add the adjoint-residual product
-  void add_derivative(FEVarType wrt, T alpha, VecType& data, VecType& geo,
-                      VecType& sol, VecType& dfdx) {
+  void add_derivative(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                      Vec_t& sol, Vec_t& dfdx) {
     const Integrand& integrand = this->get_integrand();
-    ElementVector<T, DataBasis, VecType> elem_data(*data_mesh, data);
-    ElementVector<T, GeoBasis, VecType> elem_geo(*geo_mesh, geo);
-    ElementVector<T, Basis, VecType> elem_sol(*sol_mesh, sol);
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
 
     if (wrt == FEVarType::DATA) {
-      ElementVector<T, DataBasis, VecType> elem_dfdx(*data_mesh, dfdx);
+      ElementVector<DataBasis> elem_dfdx(*data_mesh, dfdx);
       element.template add_residual<FEVarType::DATA>(
           integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
 
     } else if (wrt == FEVarType::GEOMETRY) {
-      ElementVector<T, GeoBasis, VecType> elem_dfdx(*geo_mesh, dfdx);
+      ElementVector<GeoBasis> elem_dfdx(*geo_mesh, dfdx);
       element.template add_residual<FEVarType::GEOMETRY>(
           integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
 
     } else if (wrt == FEVarType::STATE) {
-      ElementVector<T, Basis, VecType> elem_dfdx(*sol_mesh, dfdx);
+      ElementVector<Basis> elem_dfdx(*sol_mesh, dfdx);
       element.template add_residual<FEVarType::STATE>(
           integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
     }

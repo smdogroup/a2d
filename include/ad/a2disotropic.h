@@ -144,7 +144,7 @@ class SymIsotropicExpr {
                                 GetSeed<ADseed::b>::get_data(E));
     }
     if constexpr (mudiff == ADiffType::ACTIVE || lamdiff == ADiffType::ACTIVE) {
-      T mu0, lam0;
+      T mu0(0.0), lam0(0.0);
       SymIsotropicReverseCoefCore<T, N>(
           get_data(E), GetSeed<ADseed::b>::get_data(S), mu0, lam0);
       if constexpr (mudiff == ADiffType::ACTIVE) {
@@ -165,7 +165,7 @@ class SymIsotropicExpr {
                                 GetSeed<ADseed::h>::get_data(E));
     }
     if constexpr (mudiff == ADiffType::ACTIVE || lamdiff == ADiffType::ACTIVE) {
-      T mu0, lam0;
+      T mu0(0.0), lam0(0.0);
       SymIsotropicReverseCoefCore<T, N>(
           get_data(E), GetSeed<ADseed::h>::get_data(S), mu0, lam0);
       if constexpr (mudiff == ADiffType::ACTIVE) {
@@ -178,7 +178,7 @@ class SymIsotropicExpr {
     if constexpr (Ediff == ADiffType::ACTIVE &&
                   (mudiff == ADiffType::ACTIVE ||
                    lamdiff == ADiffType::ACTIVE)) {
-      T pmu = T(0.0), plam = T(0.0), hmu, hlam;
+      T pmu(0.0), plam(0.0), hmu(0.0), hlam(0.0);
       if constexpr (mudiff == ADiffType::ACTIVE) {
         pmu = GetSeed<ADseed::p>::get_data(mu);
       }

@@ -10,7 +10,7 @@
 
 using namespace A2D;
 
-void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
+void box(index_t b_nx = 20, index_t b_ny = 20, index_t b_nz = 20,
          double b_lx = 1.0, double b_ly = 1.0, double b_lz = 1.0) {
   using T = double;  // std::complex<double>;
 
@@ -73,13 +73,15 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
       conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
   bcinfo.add_boundary_condition(bc_label);
 
-  const index_t block_size = 3;
-  using BSRMat_t = BSRMat<T, block_size, block_size>;
-  using Vec_t = SolutionVector<T>;
-  const int dim = 3;
-  const int degree = 2;
+  // Set up the type of implementation we're using
+  const index_t degree = 1;
+  const index_t dim = 3;
+  const index_t block_size = dim;
+  using Impl_t = typename DirectCholeskyAnalysis<T, block_size>::Impl_t;
+
+  // Set the type of element
   constexpr GreenStrainType etype = GreenStrainType::LINEAR;
-  using HexElem = HexTopoElement<T, dim, etype, degree, Vec_t, BSRMat_t>;
+  using HexElem = HexTopoElement<Impl_t, dim, etype, degree>;
 
   // Create the meshes for the Hex elements
   auto data_mesh = std::make_shared<ElementMesh<HexElem::DataBasis>>(conn);
@@ -96,7 +98,7 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   T design_stress = 1.0, ks_param = 10.0;
   TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
-  auto assembler = std::make_shared<ElementAssembler<T, Vec_t, BSRMat_t>>();
+  auto assembler = std::make_shared<ElementAssembler<Impl_t>>();
   assembler->add_element(
       std::make_shared<HexElem>(elem_integrand, data_mesh, geo_mesh, sol_mesh));
 
@@ -110,25 +112,25 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
                                                  bcs);
 
   // Set the geometry
-  ElementVector_Serial<T, HexElem::GeoBasis, Vec_t> elem_geo(
+  typename Impl_t::ElementVector<HexElem::GeoBasis> elem_geo(
       *geo_mesh, analysis.get_geo());
   set_geo_from_hex_nodes<HexElem::GeoBasis>(nhex, hex, Xloc, elem_geo);
 
   // Set the data
-  Vec_t &data = analysis.get_data();
+  typename Impl_t::Vec_t &data = analysis.get_data();
   for (index_t i = 0; i < data.size(); i++) {
     data[i] = 1.0;
   }
 
   analysis.linear_solve();
 
-  using HexFunc = HexTopoVonMises<T, dim, etype, degree, Vec_t>;
+  using HexFunc = HexTopoVonMises<Impl_t, dim, etype, degree>;
   TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
                                                ks_param);
   HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
   constexpr FEVarType wrt = FEVarType::GEOMETRY;
-  Vec_t dfdx(ngeo);
+  typename Impl_t::Vec_t dfdx(ngeo);
   T value = analysis.evaluate(functional);
   analysis.eval_adjoint_derivative(functional, wrt, dfdx);
 }

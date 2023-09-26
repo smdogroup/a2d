@@ -240,17 +240,22 @@ class TopoElasticityIntegrand {
   }
 };
 
-template <typename T, index_t D, GreenStrainType etype, index_t degree,
-          class VecType, class MatType>
+template <class Impl, index_t D, GreenStrainType etype, index_t degree>
 class HexTopoElement
     : public ElementIntegrand<
-          T, TopoElasticityIntegrand<T, D, etype>,
-          HexGaussQuadrature<degree + 1>,                    // Quadrature
-          FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>,  // DataBasis
-          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // GeoBasis
-          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // Basis,
-          VecType, MatType> {
+          Impl, TopoElasticityIntegrand<typename Impl::type, D, etype>,
+          HexGaussQuadrature<degree + 1>,  // Quadrature
+          FEBasis<typename Impl::type,
+                  LagrangeL2HexBasis<typename Impl::type, 1,
+                                     degree - 1>>,  // DataBasis
+          FEBasis<
+              typename Impl::type,
+              LagrangeH1HexBasis<typename Impl::type, D, degree>>,  // GeoBasis
+          FEBasis<
+              typename Impl::type,
+              LagrangeH1HexBasis<typename Impl::type, D, degree>>> {  // Basis
  public:
+  using T = typename Impl::type;
   using Quadrature = HexGaussQuadrature<degree>;
   using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
@@ -271,136 +276,6 @@ class HexTopoElement
  private:
   TopoElasticityIntegrand<T, D, etype> integrand;
 };
-
-/*
-  Evaluate the volume of the structure, given the constitutive class
-*/
-// template <typename T, index_t C, index_t D, class Integrand>
-// class IntegrandTopoVolume {
-//  public:
-//   // Number of dimensions
-//   static const index_t dim = D;
-
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
-
-//   // Space for the finite-element data
-//   using DataSpace = typename Integrand::DataSpace;
-
-//   // Space for the element geometry
-//   using FiniteElementGeometry = typename
-//   Integrand::FiniteElementGeometry;
-
-//   // Finite element space
-//   using FiniteElementSpace = typename Integrand::FiniteElementSpace;
-
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = typename Integrand::SolutionMapping;
-
-//   IntegrandTopoVolume() = default;
-
-//   /**
-//    * @brief Compute the integrand for this functional
-//    *
-//    * @param wdetJ The determinant of the Jacobian times the quadrature
-//    weight
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The solution at the quadurature point
-//    * @return T The integrand contribution
-//    */
-//   T integrand(T wdetJ, const DataSpace& data, const
-//   FiniteElementGeometry& geo,
-//               const FiniteElementSpace& s) const {
-//     return wdetJ * data[0];
-//   }
-
-//   /**
-//    * @brief Derivative of the integrand with respect to the data
-//    *
-//    * @param wdetJ The determinant of the Jacobian times the quadrature
-//    weight
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The solution at the quadurature point
-//    * @param dfdx The output derivative value
-//    */
-//   void data_derivative(T wdetJ, const DataSpace& data,
-//                        const FiniteElementGeometry& geo,
-//                        const FiniteElementSpace& s, DataSpace& dfdx)
-//                        const {
-//     dfdx.zero();
-//     dfdx[0] = wdetJ;
-//   }
-// };
-
-// template <typename T, index_t D>
-// class IntegrandTopoBodyForce {
-//  public:
-//   // Number of dimensions
-//   static const index_t dim = D;
-
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
-
-//   // Space for the finite-element data
-//   using DataSpace = typename IntegrandTopoLinearElasticity<T,
-//   D>::DataSpace;
-
-//   // Space for the element geometry
-//   using FiniteElementGeometry =
-//       typename IntegrandTopoLinearElasticity<T,
-//       D>::FiniteElementGeometry;
-
-//   // Finite element space
-//   using FiniteElementSpace =
-//       typename IntegrandTopoLinearElasticity<T, D>::FiniteElementSpace;
-
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = InteriorMapping<T, dim>;
-
-//   KOKKOS_FUNCTION IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
-//     for (index_t i = 0; i < dim; i++) {
-//       tx[i] = tx_[i];
-//     }
-//   }
-
-//   KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
-//                                 const FiniteElementGeometry& geo,
-//                                 const FiniteElementSpace& s,
-//                                 FiniteElementSpace& coef) const {
-//     T rho = data[0];
-//     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
-
-//     // Add body force components
-//     Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
-//     for (index_t i = 0; i < dim; i++) {
-//       Ub(i) = wdetJ * penalty * tx[i];
-//     }
-//   }
-
-//   KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace&
-//   data,
-//                                             const
-//                                             FiniteElementGeometry& geo,
-//                                             const FiniteElementSpace&
-//                                             s, const
-//                                             FiniteElementSpace& adj,
-//                                             DataSpace& dfdx) const {
-//     const Vec<T, dim>& Uadj = (adj.template get<0>()).get_value();
-
-//     T rho = data[0];
-//     T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
-
-//     for (index_t i = 0; i < dim; i++) {
-//       dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
-//     }
-//   }
-
-//  private:
-//   T q;        // RAMP parameter
-//   T tx[dim];  // body force values
-// };
 
 /*
   Evalute the KS functional of the stress, given the constitutive class
@@ -606,17 +481,22 @@ class TopoVonMisesKS {
   }
 };
 
-template <typename T, index_t D, GreenStrainType etype, index_t degree,
-          class VecType>
+template <class Impl, index_t D, GreenStrainType etype, index_t degree>
 class HexTopoVonMises
     : public IntegralFunctional<
-          T, TopoVonMisesKS<T, D, etype>,
-          HexGaussQuadrature<degree + 1>,                    // Quadrature
-          FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>,  // DataBasis
-          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // GeoBasis
-          FEBasis<T, LagrangeH1HexBasis<T, D, degree>>,      // Basis,
-          VecType> {
+          Impl, TopoVonMisesKS<typename Impl::type, D, etype>,
+          HexGaussQuadrature<degree + 1>,  // Quadrature
+          FEBasis<typename Impl::type,
+                  LagrangeL2HexBasis<typename Impl::type, 1,
+                                     degree - 1>>,  // DataBasis
+          FEBasis<
+              typename Impl::type,
+              LagrangeH1HexBasis<typename Impl::type, D, degree>>,  // GeoBasis
+          FEBasis<
+              typename Impl::type,
+              LagrangeH1HexBasis<typename Impl::type, D, degree>>> {  // Basis,
  public:
+  using T = typename Impl::type;
   using Quadrature = HexGaussQuadrature<degree>;
   using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>;
   using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
@@ -635,6 +515,136 @@ class HexTopoVonMises
  private:
   TopoVonMisesKS<T, D, etype> integrand;
 };
+
+/*
+  Evaluate the volume of the structure, given the constitutive class
+*/
+// template <typename T, index_t C, index_t D, class Integrand>
+// class IntegrandTopoVolume {
+//  public:
+//   // Number of dimensions
+//   static const index_t dim = D;
+
+//   // Number of data dimensions
+//   static const index_t data_dim = 1;
+
+//   // Space for the finite-element data
+//   using DataSpace = typename Integrand::DataSpace;
+
+//   // Space for the element geometry
+//   using FiniteElementGeometry = typename
+//   Integrand::FiniteElementGeometry;
+
+//   // Finite element space
+//   using FiniteElementSpace = typename Integrand::FiniteElementSpace;
+
+//   // Mapping of the solution from the reference element to the physical
+//   element using SolutionMapping = typename Integrand::SolutionMapping;
+
+//   IntegrandTopoVolume() = default;
+
+//   /**
+//    * @brief Compute the integrand for this functional
+//    *
+//    * @param wdetJ The determinant of the Jacobian times the quadrature
+//    weight
+//    * @param data The data at the quadrature point
+//    * @param geo The geometry at the quadrature point
+//    * @param s The solution at the quadurature point
+//    * @return T The integrand contribution
+//    */
+//   T integrand(T wdetJ, const DataSpace& data, const
+//   FiniteElementGeometry& geo,
+//               const FiniteElementSpace& s) const {
+//     return wdetJ * data[0];
+//   }
+
+//   /**
+//    * @brief Derivative of the integrand with respect to the data
+//    *
+//    * @param wdetJ The determinant of the Jacobian times the quadrature
+//    weight
+//    * @param data The data at the quadrature point
+//    * @param geo The geometry at the quadrature point
+//    * @param s The solution at the quadurature point
+//    * @param dfdx The output derivative value
+//    */
+//   void data_derivative(T wdetJ, const DataSpace& data,
+//                        const FiniteElementGeometry& geo,
+//                        const FiniteElementSpace& s, DataSpace& dfdx)
+//                        const {
+//     dfdx.zero();
+//     dfdx[0] = wdetJ;
+//   }
+// };
+
+// template <typename T, index_t D>
+// class IntegrandTopoBodyForce {
+//  public:
+//   // Number of dimensions
+//   static const index_t dim = D;
+
+//   // Number of data dimensions
+//   static const index_t data_dim = 1;
+
+//   // Space for the finite-element data
+//   using DataSpace = typename IntegrandTopoLinearElasticity<T,
+//   D>::DataSpace;
+
+//   // Space for the element geometry
+//   using FiniteElementGeometry =
+//       typename IntegrandTopoLinearElasticity<T,
+//       D>::FiniteElementGeometry;
+
+//   // Finite element space
+//   using FiniteElementSpace =
+//       typename IntegrandTopoLinearElasticity<T, D>::FiniteElementSpace;
+
+//   // Mapping of the solution from the reference element to the physical
+//   element using SolutionMapping = InteriorMapping<T, dim>;
+
+//   KOKKOS_FUNCTION IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
+//     for (index_t i = 0; i < dim; i++) {
+//       tx[i] = tx_[i];
+//     }
+//   }
+
+//   KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
+//                                 const FiniteElementGeometry& geo,
+//                                 const FiniteElementSpace& s,
+//                                 FiniteElementSpace& coef) const {
+//     T rho = data[0];
+//     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+
+//     // Add body force components
+//     Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
+//     for (index_t i = 0; i < dim; i++) {
+//       Ub(i) = wdetJ * penalty * tx[i];
+//     }
+//   }
+
+//   KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace&
+//   data,
+//                                             const
+//                                             FiniteElementGeometry& geo,
+//                                             const FiniteElementSpace&
+//                                             s, const
+//                                             FiniteElementSpace& adj,
+//                                             DataSpace& dfdx) const {
+//     const Vec<T, dim>& Uadj = (adj.template get<0>()).get_value();
+
+//     T rho = data[0];
+//     T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
+
+//     for (index_t i = 0; i < dim; i++) {
+//       dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
+//     }
+//   }
+
+//  private:
+//   T q;        // RAMP parameter
+//   T tx[dim];  // body force values
+// };
 
 /**
  * @brief Apply surface traction and/or surface torque.

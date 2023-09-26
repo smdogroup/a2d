@@ -37,8 +37,21 @@ class ADObj : public ADExpr<ADObj<T>, T> {
   typedef typename get_object_numeric_type<T>::type type;
   static constexpr ADObjType obj_type = get_a2d_object_type<T>::value;
 
-  KOKKOS_FUNCTION ADObj() {}
-  KOKKOS_FUNCTION ADObj(const T& A) : A(A) {}
+  // If this is a scalar, non-reference type - initialize values to zero
+  KOKKOS_FUNCTION ADObj() {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      A = Ab = T(0.0);
+    }
+  }
+
+  // If this is a scalar, non-reference type - initialize values to zero
+  KOKKOS_FUNCTION ADObj(const T& A) : A(A) {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      Ab = T(0.0);
+    }
+  }
+
+  // Initialize with both values
   KOKKOS_FUNCTION ADObj(const T& A, const T& Ab) : A(A), Ab(Ab) {}
 
   // Evaluation and derivatives
@@ -101,11 +114,27 @@ class A2DObj : public A2DExpr<A2DObj<T>, T> {
   typedef typename get_object_numeric_type<T>::type type;
   static constexpr ADObjType obj_type = get_a2d_object_type<T>::value;
 
-  KOKKOS_FUNCTION A2DObj() {}
-  KOKKOS_FUNCTION A2DObj(const T& A) : A(A) {}
-  KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab) : A(A), Ab(Ab) {}
+  KOKKOS_FUNCTION A2DObj() {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      A = Ab = Ap = Ah = T(0.0);
+    }
+  }
+  KOKKOS_FUNCTION A2DObj(const T& A) : A(A) {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      Ab = Ap = Ah = T(0.0);
+    }
+  }
+  KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab) : A(A), Ab(Ab) {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      Ap = Ah = T(0.0);
+    }
+  }
   KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap)
-      : A(A), Ab(Ab), Ap(Ap) {}
+      : A(A), Ab(Ab), Ap(Ap) {
+    if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
+      Ah = T(0.0);
+    }
+  }
   KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap, const T& Ah)
       : A(A), Ab(Ab), Ap(Ap), Ah(Ah) {}
 

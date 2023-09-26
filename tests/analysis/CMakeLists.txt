@@ -9,6 +9,9 @@ link_directories(${A2D_METIS_DIR}/lib)
 # Add targets
 add_executable(test_analysis test_analysis.cpp)
 
+# target_compile_options(test_analysis PRIVATE -fsanitize=address)
+# target_link_options(test_analysis PRIVATE -fsanitize=address)
+
 # Link to kokkos
 target_link_libraries(test_analysis Kokkos::kokkos OpenMP::OpenMP_CXX LAPACK::LAPACK metis)
 

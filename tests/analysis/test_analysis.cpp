@@ -128,7 +128,7 @@ void box(index_t b_nx = 5, index_t b_ny = 5, index_t b_nz = 5,
   HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
   constexpr FEVarType wrt = FEVarType::GEOMETRY;
-  Vec_t dfdx(ndata);
+  Vec_t dfdx(ngeo);
   T value = analysis.evaluate(functional);
   analysis.eval_adjoint_derivative(functional, wrt, dfdx);
 }

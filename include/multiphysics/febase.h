@@ -1,130 +1,315 @@
 #ifndef A2D_FE_BASE_H
 #define A2D_FE_BASE_H
 
-#include "multiphysics/fesolution.h"
+#include <algorithm>
+#include <list>
+#include <set>
+
+#include "a2ddefs.h"
+#include "multiphysics/feelement.h"
+#include "multiphysics/femesh.h"
 
 namespace A2D {
 
 /**
+ * The classes in this file use an Impl object that should contain the following
+ * information
+ *
+ * class Impl {
+ *  public: using type = double;
+ *
+ *  using Vec_t = SolutionVector<type>;
+ *
+ *  using Mat_t = BSRMat<type, bsize, bsize>;
+ *
+ *  template <class Basis>
+ *  using ElementVector<Basis> = ElementVector_Serial<type, Basis, Vec_t>;
+ *
+ *  template <class Basis>
+ *  using ElementMatrix<Basis> = ElementMat_Serial<type, Basis, Vec_t>;
+ * };
+ *
+ */
+
+/**
  * @brief Element base class.
  *
- * This defines an element that is compatible with the given Integrand. You can
- * set the node locations into the element, add the non-zero-pattern of the
- * Jacobian matrix via the add_node_set as well as adding the residual and
- * Jacobian contributions
- *
- * @tparam T data type
+ * This defines an element that is compatible with the given vector and matrix
+ * types.
  */
-template <typename T>
+template <class Impl>
 class ElementBase {
  public:
-  virtual ~ElementBase() {}
-  virtual void set_geo(SolutionVector<T>& X) = 0;
-  virtual void set_solution(SolutionVector<T>& U) = 0;
-  virtual void add_residual(SolutionVector<T>& res) = 0;
-  // virtual void add_jacobian_vector_product(SolutionVector<T>& x,
-  //                                          SolutionVector<T>& y) = 0;
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
 
-  // virtual void add_dof_set(Kokkos::UnorderedMap<COO<I>, void>& node_set) = 0;
-  // virtual void add_jacobian(typename PDEInfo::SparseMat& jac) = 0;
-  virtual void add_adjoint_dfdnodes(SolutionVector<T>& psi,
-                                    SolutionVector<T>& dfdx) {}
+  virtual ~ElementBase() {}
+
+  virtual const ElementMeshBase& get_mesh(FEVarType wrt) const = 0;
+
+  // Add the residual
+  virtual void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol,
+                            Vec_t& res) = 0;
+
+  // Add the Jacobian
+  virtual void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol,
+                            Mat_t& mat) = 0;
+
+  // Add the adjoint-residual product
+  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data,
+                                       Vec_t& geo, Vec_t& sol, Vec_t& adjoint,
+                                       Vec_t& dfdx) = 0;
 };
 
 /**
- * @brief Base class for a constitutive object.
+ * @brief Assemble the contributions from a number of elements
  *
- * These objects provide a way to set the design variables into the elements.
- * The mapping from design variables to element data is not defined and depends
- * on the nature of the design variable.
- *
- * @tparam T data type
  */
-template <typename T>
-class ConstitutiveBase {
+template <class Impl>
+class ElementAssembler {
  public:
-  virtual void set_design_vars(SolutionVector<T>& x) {}
-  virtual void add_adjoint_dfdx(SolutionVector<T>& psi,
-                                SolutionVector<T>& dfdx) {}
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
+  using Elem_t = std::shared_ptr<ElementBase<Impl>>;
+
+  ElementAssembler() {}
+  virtual ~ElementAssembler() {}
+
+  // Add an element at the specified index
+  void add_element(Elem_t element) { elements.push_back(element); }
+
+  // Get the CSR structure for all the elements in the mesh
+  void get_bsr_data(const index_t block_size, index_t& nrows,
+                    std::vector<index_t>& rowp, std::vector<index_t>& cols) {
+    std::set<std::pair<index_t, index_t>> pairs;
+    typename std::list<Elem_t>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      const ElementMeshBase& mesh = (*it)->get_mesh(FEVarType::STATE);
+      mesh.add_matrix_pairs(block_size, pairs);
+    }
+    ElementMeshBase::create_block_csr(pairs, nrows, rowp, cols);
+  }
+
+  // Add the residual from all the elements
+  void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Vec_t& res) {
+    typename std::list<Elem_t>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_residual(alpha, data, geo, sol, res);
+    }
+  }
+
+  // Add the Jacobian contributions from all the elements
+  void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Mat_t& mat) {
+    typename std::list<Elem_t>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_jacobian(alpha, data, geo, sol, mat);
+    }
+  }
+
+  // Add the adjoint-residual product
+  virtual void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data,
+                                       Vec_t& geo, Vec_t& sol, Vec_t& adjoint,
+                                       Vec_t& dfdx) {
+    typename std::list<Elem_t>::iterator it;
+    for (it = elements.begin(); it != elements.end(); ++it) {
+      (*it)->add_adjoint_res_product(wrt, alpha, data, geo, sol, adjoint, dfdx);
+    }
+  }
+
+ private:
+  std::list<Elem_t> elements;
 };
 
 /*
-  ElementFunction base class.
-
-  This class enables the computation of a function that sums up over all
-  the elements within the element.
+  Integrand-type finite-element
 */
-template <typename T>
-class ElementFunctional {
+template <class Impl, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis>
+class ElementIntegrand : public ElementBase<Impl> {
  public:
-  virtual ~ElementFunctional() {}
-  virtual T eval_functional() = 0;
-  virtual void add_dfdu(SolutionVector<T>& dfdu) {}
-  virtual void add_dfdx(SolutionVector<T>& dfdx) {}
-  virtual void add_dfdnodes(SolutionVector<T>& dfdx) {}
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
+
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  template <class Base>
+  using ElementMatrix = typename Impl::template ElementMatrix<Base>;
+
+  virtual const Integrand& get_integrand() = 0;
+
+  // Set the meshes
+  void set_meshes(std::shared_ptr<ElementMesh<DataBasis>> data,
+                  std::shared_ptr<ElementMesh<GeoBasis>> geo,
+                  std::shared_ptr<ElementMesh<Basis>> sol) {
+    data_mesh = data;
+    geo_mesh = geo;
+    sol_mesh = sol;
+  }
+
+  const ElementMeshBase& get_mesh(FEVarType wrt) const {
+    if (wrt == FEVarType::DATA) {
+      return *data_mesh;
+    } else if (wrt == FEVarType::GEOMETRY) {
+      return *geo_mesh;
+    } else {
+      return *sol_mesh;
+    }
+  }
+
+  // Add the residual to the residual vector
+  void add_residual(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Vec_t& res) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementVector<Basis> elem_res(*sol_mesh, res);
+    element.template add_residual<FEVarType::STATE>(
+        integrand, alpha, elem_data, elem_geo, elem_sol, elem_res);
+  }
+
+  // Add the Jacobian
+  void add_jacobian(T alpha, Vec_t& data, Vec_t& geo, Vec_t& sol, Mat_t& mat) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementMatrix<Basis> elem_jac(*sol_mesh, mat);
+    element.template add_jacobian<FEVarType::STATE, FEVarType::STATE>(
+        integrand, alpha, elem_data, elem_geo, elem_sol, elem_jac);
+  }
+
+  // Add the adjoint-residual product
+  void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                               Vec_t& sol, Vec_t& adjoint, Vec_t& dfdx) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    ElementVector<Basis> elem_adjoint(*sol_mesh, adjoint);
+
+    if (wrt == FEVarType::DATA) {
+      ElementVector<DataBasis> elem_dfdx(*data_mesh, dfdx);
+      element.template add_jacobian_product<FEVarType::DATA, FEVarType::STATE>(
+          integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
+          elem_dfdx);
+
+    } else if (wrt == FEVarType::GEOMETRY) {
+      ElementVector<GeoBasis> elem_dfdx(*geo_mesh, dfdx);
+      element
+          .template add_jacobian_product<FEVarType::GEOMETRY, FEVarType::STATE>(
+              integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
+              elem_dfdx);
+
+    } else if (wrt == FEVarType::STATE) {
+      ElementVector<Basis> elem_dfdx(*sol_mesh, dfdx);
+      element.template add_jacobian_product<FEVarType::STATE, FEVarType::STATE>(
+          integrand, alpha, elem_data, elem_geo, elem_sol, elem_adjoint,
+          elem_dfdx);
+    }
+  }
+
+ protected:
+  FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis> element;
+  std::shared_ptr<ElementMesh<DataBasis>> data_mesh;
+  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh;
+  std::shared_ptr<ElementMesh<Basis>> sol_mesh;
+};
+
+/**
+ * @brief Functional base class
+ *
+ * This class defines a functional evaluation that is compatible with the
+ * given vector and matrix types
+ */
+template <class Impl>
+class FunctionalBase {
+ public:
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+
+  virtual ~FunctionalBase() {}
+
+  // Add the residual
+  virtual T evaluate(Vec_t& data, Vec_t& geo, Vec_t& sol) = 0;
+
+  // Add to the derivative type
+  virtual void add_derivative(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                              Vec_t& sol, Vec_t& dfdx) = 0;
 };
 
 /*
-  Container class for all functionals.
-
-  The functional must be the result of a sum over the ElementFunctions in the
-  container.
+  Integral type functional
 */
-// template <typename I, typename T, class Integrand>
-// class Functional {
-//  public:
-//   Functional() {}
-//   virtual ~Functional() {}
+template <class Impl, class Integrand, class Quadrature, class DataBasis,
+          class GeoBasis, class Basis>
+class IntegralFunctional : public FunctionalBase<Impl> {
+ public:
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+  using Mat_t = typename Impl::Mat_t;
 
-//   void add_functional(
-//       std::shared_ptr<ElementFunctional<I, T, Integrand>> functional) {
-//     functionals.push_back(functional);
-//   }
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
 
-//   /*
-//     Evaluate the functional by summing the values over all components
-//   */
-//   T eval_functional() {
-//     T value = 0.0;
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       value += (*it)->eval_functional();
-//     }
-//     return value;
-//   }
+  template <class Base>
+  using ElementMatrix = typename Impl::template ElementMatrix<Base>;
 
-//   /*
-//     Compute the derivative of the functional w.r.t. state variables
-//   */
-//   void eval_dfdu(std::shared_ptr<typename Integrand::SolutionArray> dfdu) {
-//     A2D::BLAS::zero(*dfdu);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdu(*dfdu);
-//     }
-//   }
+  virtual const Integrand& get_integrand() = 0;
 
-//   /*
-//     Compute the derivative of the functional w.r.t. design variables
-//   */
-//   void eval_dfdx(std::shared_ptr<typename Integrand::DesignArray> dfdx) {
-//     A2D::BLAS::zero(*dfdx);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdx(*dfdx);
-//     }
-//   }
+  // Set the meshes
+  void set_meshes(std::shared_ptr<ElementMesh<DataBasis>> data,
+                  std::shared_ptr<ElementMesh<GeoBasis>> geo,
+                  std::shared_ptr<ElementMesh<Basis>> sol) {
+    data_mesh = data;
+    geo_mesh = geo;
+    sol_mesh = sol;
+  }
 
-//   /*
-//     Compute the derivative of the functional w.r.t. nodes
-//   */
-//   void eval_dfdnodes(std::shared_ptr<typename Integrand::NodeArray> dfdx) {
-//     A2D::BLAS::zero(*dfdx);
-//     for (auto it = functionals.begin(); it != functionals.end(); it++) {
-//       (*it)->add_dfdnodes(*dfdx);
-//     }
-//   }
+  // Add the residual to the residual vector
+  T evaluate(Vec_t& data, Vec_t& geo, Vec_t& sol) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+    T value = element.integrate(integrand, elem_data, elem_geo, elem_sol);
+    return value;
+  }
 
-//  private:
-//   std::list<std::shared_ptr<ElementFunctional<I, T, Integrand>>> functionals;
-// };
+  // Add the adjoint-residual product
+  void add_derivative(FEVarType wrt, T alpha, Vec_t& data, Vec_t& geo,
+                      Vec_t& sol, Vec_t& dfdx) {
+    const Integrand& integrand = this->get_integrand();
+    ElementVector<DataBasis> elem_data(*data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*sol_mesh, sol);
+
+    if (wrt == FEVarType::DATA) {
+      ElementVector<DataBasis> elem_dfdx(*data_mesh, dfdx);
+      element.template add_residual<FEVarType::DATA>(
+          integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
+
+    } else if (wrt == FEVarType::GEOMETRY) {
+      ElementVector<GeoBasis> elem_dfdx(*geo_mesh, dfdx);
+      element.template add_residual<FEVarType::GEOMETRY>(
+          integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
+
+    } else if (wrt == FEVarType::STATE) {
+      ElementVector<Basis> elem_dfdx(*sol_mesh, dfdx);
+      element.template add_residual<FEVarType::STATE>(
+          integrand, alpha, elem_data, elem_geo, elem_sol, elem_dfdx);
+    }
+  }
+
+ protected:
+  FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis> element;
+  std::shared_ptr<ElementMesh<DataBasis>> data_mesh;
+  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh;
+  std::shared_ptr<ElementMesh<Basis>> sol_mesh;
+};
 
 }  // namespace A2D
 

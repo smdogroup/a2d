@@ -85,9 +85,7 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
 
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(Uxi.hvalue(), J.hvalue());
   }
 };
@@ -230,9 +228,7 @@ class MooneyRivlin
 
     seed.get_values(W.bvalue());
     hval.get_values(W.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(Uxi.hvalue(), J.hvalue());
   }
 };
@@ -334,9 +330,7 @@ class DefGradTest
 
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(Uxi.hvalue(), J.hvalue());
   }
 };
@@ -364,9 +358,9 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Symmetric matrices
     SymMat<T, N> E, S;
 
-    MatGreenStrain<GreenStrain::NONLINEAR>(Ux, E);  // E = E(Ux)
-    SymIsotropic(mu, lambda, E, S);                 // S = S(E)
-    SymMatMultTrace(E, S, output);                  // output = tr(E * S)
+    MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E);  // E = E(Ux)
+    SymIsotropic(mu, lambda, E, S);                     // S = S(E)
+    SymMatMultTrace(E, S, output);                      // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }
@@ -382,10 +376,10 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Symmetric matrices
     ADObj<SymMat<T, N>> E, S;
 
-    auto stack =
-        MakeStack(MatGreenStrain<GreenStrain::NONLINEAR>(Ux, E),  // E = E(Ux)
-                  SymIsotropic(mu, lambda, E, S),                 // S = S(E)
-                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
+    auto stack = MakeStack(
+        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),                     // S = S(E)
+        SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     seed.get_values(output.bvalue());
     stack.reverse();
@@ -404,10 +398,10 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Symmetric matrices
     A2DObj<SymMat<T, N>> E, S;
 
-    auto stack =
-        MakeStack(MatGreenStrain<GreenStrain::NONLINEAR>(Ux, E),  // E = E(Ux)
-                  SymIsotropic(mu, lambda, E, S),                 // S = S(E)
-                  SymMatMultTrace(E, S, output));  // output = tr(E * S)
+    auto stack = MakeStack(
+        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),                     // S = S(E)
+        SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Number of components in the derivative
     constexpr index_t ncomp = N * N;
@@ -470,7 +464,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
     T trS, trSS, trS2;
 
     // Compute the strain and stress
-    MatGreenStrain<GreenStrain::LINEAR>(Ux, E);
+    MatGreenStrain<GreenStrainType::LINEAR>(Ux, E);
     SymIsotropic(mu, lambda, E, S);
 
     // Compute the von Mises stress = sqrt(1.5 * tr(S * S) - 0.5 * tr(S)**2)
@@ -501,7 +495,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
 
     auto stack = MakeStack(
         // Compute the strain and stress
-        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        MatGreenStrain<GreenStrainType::LINEAR>(Ux, E),
         SymIsotropic(mu, lambda, E, S), MatTrace(S, trS),
         SymMatMultTrace(S, S, trSS),
 
@@ -535,7 +529,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
 
     auto stack = MakeStack(
         // Compute the strain and stress
-        MatGreenStrain<GreenStrain::LINEAR>(Ux, E),
+        MatGreenStrain<GreenStrainType::LINEAR>(Ux, E),
         SymIsotropic(mu, lambda, E, S), MatTrace(S, trS),
         SymMatMultTrace(S, S, trSS),
 
@@ -546,9 +540,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
 
     seed.get_values(failure_index.bvalue());
     hval.get_values(failure_index.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(rho.hvalue(), Ux.hvalue());
   }
 };

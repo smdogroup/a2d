@@ -7,12 +7,17 @@
 #include "multiphysics/integrand_elasticity.h"
 // #include "multiphysics/integrand_heat_conduction.h"
 // #include "multiphysics/integrand_poisson.h"
+#include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_test.h"
 
 using namespace A2D;
 
 template <typename T>
-using TopoIntegrand = TopoElasticity<T, 3>;
+using TopoIntegrand = TopoElasticityIntegrand<T, 3, GreenStrainType::LINEAR>;
+
+template <typename T>
+using NonlinearTopoIntegrand =
+    TopoElasticityIntegrand<T, 3, GreenStrainType::NONLINEAR>;
 
 // IntegrandTopoLinearElasticity<T, 3>;
 
@@ -34,6 +39,11 @@ bool TestIntegrands(bool component, bool write_output) {
   A2D::Test::A2DIntegrandAnalysisTest<TopoIntegrand, Tc> test1(integrand1);
   passed = passed && A2D::Test::Run(test1, component, write_output);
 
+  NonlinearTopoIntegrand<Tc> integrand2(Tc(0.7), Tc(0.3), Tc(5.0));
+  A2D::Test::A2DIntegrandAnalysisTest<NonlinearTopoIntegrand, Tc> test2(
+      integrand2);
+  passed = passed && A2D::Test::Run(test2, component, write_output);
+
   // PoissonIntegrand<Tc> integrand2;
   // A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc>
   // test2(integrand2); passed = passed && A2D::Test::Run(test2, component,
@@ -52,6 +62,8 @@ bool TestIntegrands(bool component, bool write_output) {
 }
 
 int main(int argc, char *argv[]) {
+  Kokkos::initialize();
+
   bool component = false;     // Default to a projection test
   bool write_output = false;  // Don't write output;
 
@@ -91,5 +103,7 @@ int main(int argc, char *argv[]) {
   if (!passed) {
     fail = 1;
   }
+
+  Kokkos::finalize();
   return fail;
 }

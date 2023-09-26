@@ -426,10 +426,73 @@ class DirichletBCInfo {
   std::vector<std::tuple<index_t, index_t, index_t>> data;
 };
 
+/**
+ * @brief ElementMesh base class
+ *
+ */
+class ElementMeshBase {
+ public:
+  virtual ~ElementMeshBase() {}
+
+  // Add all entries to the Jacobian matrix given a matrix with the specified
+  // block size
+  virtual void add_matrix_pairs(
+      const index_t block_size,
+      std::set<std::pair<index_t, index_t>>& pairs) const = 0;
+
+  // Get the number of degrees of freedom
+  virtual index_t get_num_elements() const = 0;
+  virtual index_t get_num_dof() const = 0;
+
+  static void create_block_csr(std::set<std::pair<index_t, index_t>>& pairs,
+                               index_t& nrows, std::vector<index_t>& rowp,
+                               std::vector<index_t>& cols) {
+    nrows = 0;
+    typename std::set<std::pair<index_t, index_t>>::iterator it;
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      if (it->first > nrows) {
+        nrows = it->first;
+      }
+    }
+    nrows++;
+
+    // Find the number of nodes referenced by other nodes
+    rowp.resize(nrows + 1);
+    std::fill(rowp.begin(), rowp.end(), 0);
+
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      rowp[it->first + 1] += 1;
+    }
+
+    // Set the pointer into the rows
+    rowp[0] = 0;
+    for (index_t i = 0; i < nrows; i++) {
+      rowp[i + 1] += rowp[i];
+    }
+
+    index_t nnz = rowp[nrows];
+    cols.resize(nnz);
+
+    for (it = pairs.begin(); it != pairs.end(); it++) {
+      cols[rowp[it->first]] = it->second;
+      rowp[it->first]++;
+    }
+
+    // Reset the pointer into the nodes
+    for (index_t i = nrows; i > 0; i--) {
+      rowp[i] = rowp[i - 1];
+    }
+    rowp[0] = 0;
+
+    // Sort the cols array
+    SortCSRData(nrows, rowp, cols);
+  }
+};
+
 // ElementMesh - Map from an element to the global to element local degrees
 // of freedom
 template <class Basis>
-class ElementMesh {
+class ElementMesh : public ElementMeshBase {
  public:
   using ET = ElementTypes;
   static constexpr index_t dim = Basis::dim;
@@ -445,9 +508,9 @@ class ElementMesh {
   template <class HOrderBasis>
   ElementMesh(ElementMesh<HOrderBasis>& mesh);
 
-  index_t get_num_elements() { return nelems; }
-  index_t get_num_dof() { return num_dof; }
-  index_t get_num_cumulative_dof(index_t basis) {
+  index_t get_num_elements() const { return nelems; }
+  index_t get_num_dof() const { return num_dof; }
+  index_t get_num_cumulative_dof(index_t basis) const {
     return num_dof_offset[basis];
   }
 
@@ -467,9 +530,9 @@ class ElementMesh {
     *signs = &element_sign[ndof_per_element * elem];
   }
 
-  template <index_t M, index_t basis_offset = Basis::nbasis>
-  void create_block_csr(index_t& nrows, std::vector<index_t>& rowp,
-                        std::vector<index_t>& cols);
+  // Add (i, j) pairs from the element mesh
+  void add_matrix_pairs(const index_t block_size,
+                        std::set<std::pair<index_t, index_t>>& pairs) const;
 
  private:
   index_t nelems;                         // Total number of elements
@@ -482,33 +545,102 @@ class ElementMesh {
   int* element_sign;
 };
 
-template <class Basis>
-class DirichletBCs {
+/*
+  Base class for Dirichlet BCs
+*/
+template <typename T>
+class DirichletBase {
+ public:
+  virtual ~DirichletBase() {}
+  virtual index_t get_bcs(const index_t* bcs[], const T* values[]) const = 0;
+};
+
+/**
+ * @brief Dirichlet boundary conditions for a given basis
+ *
+ * @tparam Basis The FEBasis type
+ */
+template <typename T, class Basis>
+class DirichletBasis : public DirichletBase<T> {
  public:
   // Use the definitions from the element types
   using ET = ElementTypes;
   static constexpr index_t dim = Basis::dim;
 
-  DirichletBCs(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
-               DirichletBCInfo& bcinfo);
+  DirichletBasis(MeshConnectivityBase& conn, ElementMesh<Basis>& mesh,
+                 DirichletBCInfo& bcinfo, T value = 0.0);
+  ~DirichletBasis() {
+    delete[] dof;
+    delete[] vals;
+  }
 
-  index_t get_bcs(const index_t* bcs[]) const {
+  index_t get_bcs(const index_t* bcs[], const T* values[]) const {
     if (bcs) {
       *bcs = dof;
     }
-    return ndof;
-  }
-
-  template <class VecType, typename T>
-  void set_bcs(VecType& vec, T value) {
-    for (index_t i = 0; i < ndof; i++) {
-      vec[dof[i]] = value;
+    if (values) {
+      *values = vals;
     }
+    return ndof;
   }
 
  private:
   index_t ndof;
   index_t* dof;
+  T* vals;
+};
+
+/*
+  A collection of Dirichlet BCs from different sources
+*/
+template <typename T>
+class DirichletBCs {
+ public:
+  typedef std::shared_ptr<DirichletBase<T>> BCPtr;
+
+  DirichletBCs() {}
+
+  void add_bcs(BCPtr bc) {
+    const index_t* dof;
+    const T* vals;
+    index_t count = bc->get_bcs(&dof, &vals);
+
+    indices.reserve(indices.size() + count);
+    indices.insert(indices.end(), dof, dof + count);
+
+    values.reserve(values.size() + count);
+    values.insert(values.end(), vals, vals + count);
+  }
+
+  template <class VecType>
+  void zero_bcs(VecType& vec) {
+    const index_t size = indices.size();
+    for (index_t i = 0; i < size; i++) {
+      vec[indices[i]] = T(0.0);
+    }
+  }
+
+  template <class VecType>
+  void set_bcs(VecType& vec) {
+    const index_t size = indices.size();
+    for (index_t i = 0; i < size; i++) {
+      vec[indices[i]] = values[i];
+    }
+  }
+
+  index_t get_bcs(const index_t* array[]) const {
+    *array = indices.data();
+    return indices.size();
+  }
+  index_t get_bcs(const index_t* array[], const T* vals[]) const {
+    *array = indices.data();
+    *vals = values.data();
+    return indices.size();
+  }
+
+ private:
+  std::vector<index_t> indices;
+  std::vector<T> values;
 };
 
 }  // namespace A2D

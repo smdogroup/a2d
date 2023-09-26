@@ -1,7 +1,7 @@
 #ifndef A2D_FE_ELEMENT_MAT_H
 #define A2D_FE_ELEMENT_MAT_H
 
-#include "array.h"
+#include "multiphysics/feelementvector.h"
 #include "multiphysics/femesh.h"
 #include "utils/complex_math.h"
 
@@ -86,6 +86,7 @@ class ElementMat_Serial {
   ElementMesh<Basis>& mesh;
   MatType& mat;
 };
+
 }  // namespace A2D
 
 #endif  // A2D_FE_ELEMENT_MAT_H

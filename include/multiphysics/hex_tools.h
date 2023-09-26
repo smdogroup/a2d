@@ -3,7 +3,8 @@
 
 #include <string>
 
-#include "feelementvector.h"
+#include "multiphysics/feelementvector.h"
+#include "multiphysics/fequadrature.h"
 #include "utils/a2dprofiler.h"
 #include "utils/a2dvtk.h"
 

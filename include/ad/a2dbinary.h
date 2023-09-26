@@ -35,6 +35,11 @@ namespace A2D {
       a.reverse();                                                           \
       b.reverse();                                                           \
     }                                                                        \
+    KOKKOS_FUNCTION void bzero() {                                           \
+      bval = T(0.0);                                                         \
+      a.bzero();                                                             \
+      b.bzero();                                                             \
+    }                                                                        \
     KOKKOS_FUNCTION T& value() { return val; }                               \
     KOKKOS_FUNCTION const T& value() const { return val; }                   \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
@@ -110,6 +115,11 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
       b.bvalue() += (BREVBODY);                                              \
       a.reverse();                                                           \
       b.reverse();                                                           \
+    }                                                                        \
+    KOKKOS_FUNCTION void bzero() {                                           \
+      bval = T(0.0);                                                         \
+      a.bzero();                                                             \
+      b.bzero();                                                             \
     }                                                                        \
     KOKKOS_FUNCTION T& value() { return val; }                               \
     KOKKOS_FUNCTION const T& value() const { return val; }                   \
@@ -193,8 +203,16 @@ A2D_1ST_BINARY(Divide, operator/, a.value() / b.value(), T(1.0) / b.value(),
       a.hreverse();                                                           \
       b.hreverse();                                                           \
     }                                                                         \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                           \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                           \
+    KOKKOS_FUNCTION void bzero() {                                            \
+      bval = T(0.0);                                                          \
+      a.bzero();                                                              \
+      b.bzero();                                                              \
+    }                                                                         \
+    KOKKOS_FUNCTION void hzero() {                                            \
+      hval = T(0.0);                                                          \
+      a.hzero();                                                              \
+      b.hzero();                                                              \
+    }                                                                         \
     KOKKOS_FUNCTION T& value() { return val; }                                \
     KOKKOS_FUNCTION const T& value() const { return val; }                    \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                              \
@@ -289,8 +307,16 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
       a.hreverse();                                                          \
       b.hreverse();                                                          \
     }                                                                        \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                          \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                          \
+    KOKKOS_FUNCTION void bzero() {                                           \
+      bval = T(0.0);                                                         \
+      a.bzero();                                                             \
+      b.bzero();                                                             \
+    }                                                                        \
+    KOKKOS_FUNCTION void hzero() {                                           \
+      hval = T(0.0);                                                         \
+      a.hzero();                                                             \
+      b.hzero();                                                             \
+    }                                                                        \
     KOKKOS_FUNCTION T& value() { return val; }                               \
     KOKKOS_FUNCTION const T& value() const { return val; }                   \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
@@ -371,7 +397,10 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
       a.bvalue() += (REVERSE);                                          \
       a.reverse();                                                      \
     }                                                                   \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                     \
+    KOKKOS_FUNCTION void bzero() {                                      \
+      bval = T(0.0);                                                    \
+      a.bzero();                                                        \
+    }                                                                   \
     KOKKOS_FUNCTION T& value() { return val; }                          \
     KOKKOS_FUNCTION const T& value() const { return val; }              \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                        \
@@ -443,8 +472,14 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
       a.hvalue() += (HREVERSE);                                            \
       a.hreverse();                                                        \
     }                                                                      \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                        \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                        \
+    KOKKOS_FUNCTION void bzero() {                                         \
+      bval = T(0.0);                                                       \
+      a.bzero();                                                           \
+    }                                                                      \
+    KOKKOS_FUNCTION void hzero() {                                         \
+      hval = T(0.0);                                                       \
+      a.hzero();                                                           \
+    }                                                                      \
     KOKKOS_FUNCTION T& value() { return val; }                             \
     KOKKOS_FUNCTION const T& value() const { return val; }                 \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                           \
@@ -521,7 +556,10 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
       b.bvalue() += (REVERSE);                                           \
       b.reverse();                                                       \
     }                                                                    \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                      \
+    KOKKOS_FUNCTION void bzero() {                                       \
+      bval = T(0.0);                                                     \
+      b.bzero();                                                         \
+    }                                                                    \
     KOKKOS_FUNCTION T& value() { return val; }                           \
     KOKKOS_FUNCTION const T& value() const { return val; }               \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                         \
@@ -590,8 +628,14 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
       b.hvalue() += (HREVERSE);                                            \
       b.hreverse();                                                        \
     }                                                                      \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                        \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                        \
+    KOKKOS_FUNCTION void bzero() {                                         \
+      bval = T(0.0);                                                       \
+      b.bzero();                                                           \
+    }                                                                      \
+    KOKKOS_FUNCTION void hzero() {                                         \
+      hval = T(0.0);                                                       \
+      b.hzero();                                                           \
+    }                                                                      \
     KOKKOS_FUNCTION T& value() { return val; }                             \
     KOKKOS_FUNCTION const T& value() const { return val; }                 \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                           \

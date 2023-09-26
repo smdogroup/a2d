@@ -34,7 +34,10 @@ namespace A2D {
       a.bvalue() += (DERIVBODY)*bval;                                          \
       a.reverse();                                                             \
     }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
+    KOKKOS_FUNCTION void bzero() {                                             \
+      bval = T(0.0);                                                           \
+      a.bzero();                                                               \
+    }                                                                          \
     KOKKOS_FUNCTION T& value() { return val; }                                 \
     KOKKOS_FUNCTION const T& value() const { return val; }                     \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
@@ -94,8 +97,14 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
       a.hvalue() += (DERIVBODY)*hval;                                          \
       a.hreverse();                                                            \
     }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                            \
+    KOKKOS_FUNCTION void bzero() {                                             \
+      bval = T(0.0);                                                           \
+      a.bzero();                                                               \
+    }                                                                          \
+    KOKKOS_FUNCTION void hzero() {                                             \
+      hval = T(0.0);                                                           \
+      a.hzero();                                                               \
+    }                                                                          \
     KOKKOS_FUNCTION T& value() { return val; }                                 \
     KOKKOS_FUNCTION const T& value() const { return val; }                     \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                               \
@@ -155,7 +164,10 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
       a.bvalue() += (DERIVBODY)*bval;                                   \
       a.reverse();                                                      \
     }                                                                   \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                     \
+    KOKKOS_FUNCTION void bzero() {                                      \
+      bval = T(0.0);                                                    \
+      a.bzero();                                                        \
+    }                                                                   \
     KOKKOS_FUNCTION T& value() { return val; }                          \
     KOKKOS_FUNCTION const T& value() const { return val; }              \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                        \
@@ -220,8 +232,14 @@ A2D_1ST_UNARY(LogExpr, log, std::log(a.value()), 1.0 / a.value(), tmp)
       a.hvalue() += (DERIVBODY)*hval + (DERIV2BODY)*bval * a.pvalue();         \
       a.hreverse();                                                            \
     }                                                                          \
-    KOKKOS_FUNCTION void bzero() { bval = T(0.0); }                            \
-    KOKKOS_FUNCTION void hzero() { hval = T(0.0); }                            \
+    KOKKOS_FUNCTION void bzero() {                                             \
+      bval = T(0.0);                                                           \
+      a.bzero();                                                               \
+    }                                                                          \
+    KOKKOS_FUNCTION void hzero() {                                             \
+      hval = T(0.0);                                                           \
+      a.hzero();                                                               \
+    }                                                                          \
     KOKKOS_FUNCTION T& value() { return val; }                                 \
     KOKKOS_FUNCTION const T& value() const { return val; }                     \
     KOKKOS_FUNCTION T& bvalue() { return bval; }                               \

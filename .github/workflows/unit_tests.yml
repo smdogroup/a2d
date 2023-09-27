@@ -21,15 +21,28 @@ jobs:
       - uses: seanmiddleditch/gha-setup-ninja@master
       - name: build tests
         run: |
+          A2D_ROOT=$(pwd);
+
           git clone https://github.com/kokkos/kokkos.git extern/kokkos;
           cd extern/kokkos;
           git checkout tags/3.6.01;
           mkdir build;
           cd build;
-          cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -G Ninja
+          cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -G Ninja;
           ninja install;
-          mkdir ../../../build;
-          cd ../../../build;
+
+          METIS_SOURCE_DIR=${A2D_ROOT}/extern;
+          METIS_INSTALL_DIR=${A2D_ROOT}/installs/metis;
+          cd $METIS_SOURCE_DIR;
+          wget https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/metis-5.1.0.tar.gz;
+          tar -zxvf metis-5.1.0.tar.gz;
+          cd metis-5.1.0;
+          make config prefix=$METIS_INSTALL_DIR;
+          make;
+          make install;
+
+          mkdir ${A2D_ROOT}/build;
+          cd ${A2D_ROOT}/build;
           cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=OFF -DA2D_BUILD_UNIT_TESTS=ON -G Ninja;
           ninja;
 

@@ -106,7 +106,8 @@ documentation](https://kokkos.github.io/kokkos-core-wiki/ProgrammingGuide/Compil
 ### Install METIS
 
 Obtain the tarball from [here](https://src.fedoraproject.org/lookaside/pkgs/metis/metis-5.1.0.tar.gz/5465e67079419a69e0116de24fce58fe/).
-The following commands can be used to install METIS to a2d/extern/metis:
+The following commands can be used to download METIS to ```a2d/extern/``` and
+install it in ```a2d/installs/metis/```:
 ```
 # You must start from the root directory of a2d
 METIS_SOURCE_DIR=$(pwd)/extern &&

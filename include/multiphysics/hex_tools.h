@@ -158,24 +158,15 @@ void write_hex_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
           const index_t index = vtk_node_num(i, j, k);
           const index_t node = off + index;
 
-          typename Integrand::FiniteElementSpace &sref = sol.get(index);
           typename Integrand::FiniteElementGeometry &gref = geo.get(index);
-
-          // Initialize the transform object
-          T detJ;
-          typename Integrand::SolutionMapping transform(gref, detJ);
-
-          // Transform the solution the physical element
-          typename Integrand::FiniteElementSpace x, s;
-          transform.transform(sref, s);
-
           auto X = gref.template get<0>().get_value();
           vtk_nodes(node, 0) = X(0);
           vtk_nodes(node, 1) = X(1);
           vtk_nodes(node, 2) = X(2);
 
           for (index_t kk = 0; kk < outputs; kk++) {
-            vtk_outputs(node, kk) = func(kk, data.get(index), gref, s);
+            vtk_outputs(node, kk) =
+                func(kk, data.get(index), gref, sol.get(index));
           }
         }
       }
@@ -258,23 +249,14 @@ void write_quad_to_vtk(DataElemVec &elem_data, GeoElemVec &elem_geo,
         const index_t index = vtk_node_num(i, j);
         const index_t node = off + index;
 
-        typename Integrand::FiniteElementSpace &sref = sol.get(index);
         typename Integrand::FiniteElementGeometry &gref = geo.get(index);
-
-        // Initialize the transform object
-        T detJ;
-        typename Integrand::SolutionMapping transform(gref, detJ);
-
-        // Transform the solution the physical element
-        typename Integrand::FiniteElementSpace x, s;
-        transform.transform(sref, s);
-
         auto X = gref.template get<0>().get_value();
         vtk_nodes(node, 0) = X(0);
         vtk_nodes(node, 1) = X(1);
 
         for (index_t kk = 0; kk < outputs; kk++) {
-          vtk_outputs(node, kk) = func(kk, data.get(index), gref, s);
+          vtk_outputs(node, kk) =
+              func(kk, data.get(index), gref, sol.get(index));
         }
       }
     }

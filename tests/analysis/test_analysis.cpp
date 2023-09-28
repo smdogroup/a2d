@@ -78,20 +78,30 @@ void box(index_t b_nx = 20, index_t b_ny = 20, index_t b_nz = 20,
   const index_t dim = 3;
   const index_t block_size = dim;
   using Impl_t = typename DirectCholeskyAnalysis<T, block_size>::Impl_t;
+  using Vec_t = typename Impl_t::Vec_t;
 
   // Set the type of element
   constexpr GreenStrainType etype = GreenStrainType::LINEAR;
-  using HexElem = HexTopoElement<Impl_t, dim, etype, degree>;
+  using HexElem = HexTopoElement<Impl_t, etype, degree>;
 
   // Create the meshes for the Hex elements
   auto data_mesh = std::make_shared<ElementMesh<HexElem::DataBasis>>(conn);
   auto geo_mesh = std::make_shared<ElementMesh<HexElem::GeoBasis>>(conn);
   auto sol_mesh = std::make_shared<ElementMesh<HexElem::Basis>>(conn);
 
-  // Get the sizes of the different meshes
+  // Get the number of different dof
   index_t ndata = data_mesh->get_num_dof();
   index_t ngeo = geo_mesh->get_num_dof();
   index_t ndof = sol_mesh->get_num_dof();
+  auto data = std::make_shared<Vec_t>(ndata);
+  auto geo = std::make_shared<Vec_t>(ngeo);
+  auto sol = std::make_shared<Vec_t>(ndof);
+  auto res = std::make_shared<Vec_t>(ndof);
+
+  // Set the data
+  for (index_t i = 0; i < ndata; i++) {
+    (*data)[i] = 1.0;
+  }
 
   // Create the element
   T E = 70.0, nu = 0.3, q = 5.0;
@@ -108,23 +118,17 @@ void box(index_t b_nx = 20, index_t b_ny = 20, index_t b_nz = 20,
       conn, *sol_mesh, bcinfo, 0.0));
 
   // Create the assembler object
-  DirectCholeskyAnalysis<T, block_size> analysis(ndata, ngeo, ndof, assembler,
+  DirectCholeskyAnalysis<T, block_size> analysis(data, geo, sol, res, assembler,
                                                  bcs);
 
   // Set the geometry
   typename Impl_t::ElementVector<HexElem::GeoBasis> elem_geo(
-      *geo_mesh, analysis.get_geo());
+      *geo_mesh, *analysis.get_geo());
   set_geo_from_hex_nodes<HexElem::GeoBasis>(nhex, hex, Xloc, elem_geo);
-
-  // Set the data
-  typename Impl_t::Vec_t &data = analysis.get_data();
-  for (index_t i = 0; i < data.size(); i++) {
-    data[i] = 1.0;
-  }
 
   analysis.linear_solve();
 
-  using HexFunc = HexTopoVonMises<Impl_t, dim, etype, degree>;
+  using HexFunc = HexTopoVonMises<Impl_t, etype, degree>;
   TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
                                                ks_param);
   HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);

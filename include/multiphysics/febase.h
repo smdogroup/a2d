@@ -60,6 +60,9 @@ class ElementBase {
   virtual void add_adjoint_res_product(FEVarType wrt, T alpha, Vec_t& data,
                                        Vec_t& geo, Vec_t& sol, Vec_t& adjoint,
                                        Vec_t& dfdx) = 0;
+
+  virtual void to_vtk(Vec_t& data, Vec_t& geo, Vec_t& sol,
+                      const std::string filename) {}
 };
 
 /**
@@ -115,6 +118,16 @@ class ElementAssembler {
     typename std::list<Elem_t>::iterator it;
     for (it = elements.begin(); it != elements.end(); ++it) {
       (*it)->add_adjoint_res_product(wrt, alpha, data, geo, sol, adjoint, dfdx);
+    }
+  }
+
+  // Write all the vtk files
+  virtual void to_vtk(Vec_t& data, Vec_t& geo, Vec_t& sol,
+                      const std::string prefix) {
+    typename std::list<Elem_t>::iterator it = elements.begin();
+    for (int index = 0; it != elements.end(); ++it, index++) {
+      std::string filename = prefix + std::string(".vtk");
+      (*it)->to_vtk(data, geo, sol, filename);
     }
   }
 

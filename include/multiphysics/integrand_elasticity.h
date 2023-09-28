@@ -7,6 +7,7 @@
 #include "multiphysics/femapping.h"
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/fespace.h"
+#include "multiphysics/hex_tools.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 
 namespace A2D {
@@ -32,7 +33,7 @@ class TopoElasticityIntegrand {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = FESpace<T, data_dim, L2Space<T, data_dim, dim>>;
+  using DataSpace = FESpace<T, dim, H1Space<T, data_dim, dim>>;
 
   // Space for the element geometry
   using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim>>;
@@ -240,28 +241,24 @@ class TopoElasticityIntegrand {
   }
 };
 
-template <class Impl, index_t D, GreenStrainType etype, index_t degree>
+template <class Impl, GreenStrainType etype, index_t degree>
 class HexTopoElement
     : public ElementIntegrand<
-          Impl, TopoElasticityIntegrand<typename Impl::type, D, etype>,
-          HexGaussQuadrature<degree + 1>,  // Quadrature
+          Impl, TopoElasticityIntegrand<typename Impl::type, 3, etype>,
+          HexGaussQuadrature<degree + 1>,
           FEBasis<typename Impl::type,
-                  LagrangeL2HexBasis<typename Impl::type, 1,
-                                     degree - 1>>,  // DataBasis
-          FEBasis<
-              typename Impl::type,
-              LagrangeH1HexBasis<typename Impl::type, D, degree>>,  // GeoBasis
-          FEBasis<
-              typename Impl::type,
-              LagrangeH1HexBasis<typename Impl::type, D, degree>>> {  // Basis
+                  LagrangeH1HexBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 3, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 3, degree>>> {
  public:
   using T = typename Impl::type;
-  using Quadrature = HexGaussQuadrature<degree>;
-  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
+  using DataBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
 
-  HexTopoElement(TopoElasticityIntegrand<T, D, etype> integrand,
+  HexTopoElement(TopoElasticityIntegrand<T, 3, etype> integrand,
                  std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
                  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
                  std::shared_ptr<ElementMesh<Basis>> sol_mesh)
@@ -269,12 +266,65 @@ class HexTopoElement
     this->set_meshes(data_mesh, geo_mesh, sol_mesh);
   }
 
-  const TopoElasticityIntegrand<T, D, etype>& get_integrand() {
+  const TopoElasticityIntegrand<T, 3, etype>& get_integrand() {
     return integrand;
   }
 
  private:
-  TopoElasticityIntegrand<T, D, etype> integrand;
+  TopoElasticityIntegrand<T, 3, etype> integrand;
+};
+
+template <class Impl, GreenStrainType etype, index_t degree>
+class QuadTopoElement
+    : public ElementIntegrand<
+          Impl, TopoElasticityIntegrand<typename Impl::type, 2, etype>,
+          QuadGaussQuadrature<degree + 1>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using Integrand = TopoElasticityIntegrand<T, 2, etype>;
+  using DataBasis = FEBasis<T, LagrangeH1QuadBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Vec_t = typename Impl::Vec_t;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  QuadTopoElement(TopoElasticityIntegrand<T, 2, etype> integrand,
+                  std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                  std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                  std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const TopoElasticityIntegrand<T, 2, etype>& get_integrand() {
+    return integrand;
+  }
+
+  void to_vtk(Vec_t& data, Vec_t& geo, Vec_t& sol, const std::string filename) {
+    const int num_out = 2;  // Number of outputs to the file
+    ElementVector<DataBasis> elem_data(*this->data_mesh, data);
+    ElementVector<GeoBasis> elem_geo(*this->geo_mesh, geo);
+    ElementVector<Basis> elem_sol(*this->sol_mesh, sol);
+
+    write_quad_to_vtk<num_out, degree, T, DataBasis, GeoBasis, Basis,
+                      Integrand>(
+        elem_data, elem_geo, elem_sol, filename,
+        [](index_t k, typename Integrand::DataSpace& d,
+           typename Integrand::FiniteElementGeometry& g,
+           typename Integrand::FiniteElementSpace& s) {
+          return get_value<0>(s)[k];
+        });
+  }
+
+ private:
+  TopoElasticityIntegrand<T, 2, etype> integrand;
 };
 
 /*
@@ -481,28 +531,24 @@ class TopoVonMisesKS {
   }
 };
 
-template <class Impl, index_t D, GreenStrainType etype, index_t degree>
+template <class Impl, GreenStrainType etype, index_t degree>
 class HexTopoVonMises
     : public IntegralFunctional<
-          Impl, TopoVonMisesKS<typename Impl::type, D, etype>,
-          HexGaussQuadrature<degree + 1>,  // Quadrature
+          Impl, TopoVonMisesKS<typename Impl::type, 3, etype>,
+          HexGaussQuadrature<degree + 1>,
           FEBasis<typename Impl::type,
-                  LagrangeL2HexBasis<typename Impl::type, 1,
-                                     degree - 1>>,  // DataBasis
-          FEBasis<
-              typename Impl::type,
-              LagrangeH1HexBasis<typename Impl::type, D, degree>>,  // GeoBasis
-          FEBasis<
-              typename Impl::type,
-              LagrangeH1HexBasis<typename Impl::type, D, degree>>> {  // Basis,
+                  LagrangeH1HexBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 3, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 3, degree>>> {
  public:
   using T = typename Impl::type;
-  using Quadrature = HexGaussQuadrature<degree>;
-  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, 1, degree - 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, D, degree>>;
+  using DataBasis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
 
-  HexTopoVonMises(TopoVonMisesKS<T, D, etype> integrand,
+  HexTopoVonMises(TopoVonMisesKS<T, 3, etype> integrand,
                   std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
                   std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
                   std::shared_ptr<ElementMesh<Basis>> sol_mesh)
@@ -510,73 +556,93 @@ class HexTopoVonMises
     this->set_meshes(data_mesh, geo_mesh, sol_mesh);
   }
 
-  const TopoVonMisesKS<T, D, etype>& get_integrand() { return integrand; }
+  const TopoVonMisesKS<T, 3, etype>& get_integrand() { return integrand; }
 
  private:
-  TopoVonMisesKS<T, D, etype> integrand;
+  TopoVonMisesKS<T, 3, etype> integrand;
 };
 
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-// template <typename T, index_t C, index_t D, class Integrand>
-// class IntegrandTopoVolume {
-//  public:
-//   // Number of dimensions
-//   static const index_t dim = D;
+template <typename T, index_t D, class Integrand>
+class TopoVolume {
+ public:
+  // Number of dimensions
+  static const index_t dim = D;
 
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
+  // Number of data dimensions
+  static const index_t data_dim = 1;
 
-//   // Space for the finite-element data
-//   using DataSpace = typename Integrand::DataSpace;
+  // Space for the finite-element data
+  using DataSpace = typename Integrand::DataSpace;
 
-//   // Space for the element geometry
-//   using FiniteElementGeometry = typename
-//   Integrand::FiniteElementGeometry;
+  // Space for the element geometry
+  using FiniteElementGeometry = typename Integrand::FiniteElementGeometry;
 
-//   // Finite element space
-//   using FiniteElementSpace = typename Integrand::FiniteElementSpace;
+  // Finite element space
+  using FiniteElementSpace = typename Integrand::FiniteElementSpace;
 
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = typename Integrand::SolutionMapping;
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar = typename Integrand::template FiniteElementVar<wrt>;
 
-//   IntegrandTopoVolume() = default;
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      typename Integrand::template FiniteElementJacobian<of, wrt>;
 
-//   /**
-//    * @brief Compute the integrand for this functional
-//    *
-//    * @param wdetJ The determinant of the Jacobian times the quadrature
-//    weight
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The solution at the quadurature point
-//    * @return T The integrand contribution
-//    */
-//   T integrand(T wdetJ, const DataSpace& data, const
-//   FiniteElementGeometry& geo,
-//               const FiniteElementSpace& s) const {
-//     return wdetJ * data[0];
-//   }
+  TopoVolume() = default;
 
-//   /**
-//    * @brief Derivative of the integrand with respect to the data
-//    *
-//    * @param wdetJ The determinant of the Jacobian times the quadrature
-//    weight
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The solution at the quadurature point
-//    * @param dfdx The output derivative value
-//    */
-//   void data_derivative(T wdetJ, const DataSpace& data,
-//                        const FiniteElementGeometry& geo,
-//                        const FiniteElementSpace& s, DataSpace& dfdx)
-//                        const {
-//     dfdx.zero();
-//     dfdx[0] = wdetJ;
-//   }
-// };
+  /**
+   * @brief Find the integral of the compliance over the entire domain
+   *
+   * @param weight The quadrature weight
+   * @param data The data at the quadrature point
+   * @param geo The geometry at the quadrature point
+   * @param sref The solution at the quadurature point
+   * @return T The integrand contribution
+   */
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    const Mat<T, dim, dim>& J = get_grad<0>(geo);
+    T detJ;
+    MatDet(J, detJ);
+    return weight * detJ * data[0];
+  }
+
+  /**
+   * @brief Compute the contribution to the residual
+   *
+   * @tparam wrt Variable type (DATA, GEOMETRY, STATE)
+   * @param weight Quadrature weight
+   * @param data Data at the quadrature point
+   * @param geo_ Geometry data at the quadrature point
+   * @param sref_ State at the quadrature point
+   * @param res Residual contribution
+   */
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data,
+                                const FiniteElementGeometry& geo_,
+                                const FiniteElementSpace& sref_,
+                                FiniteElementVar<wrt>& res) const {
+    if constexpr (wrt == FEVarType::DATA) {
+      const Mat<T, dim, dim>& J = get_grad<0>(geo_);
+      T detJ;
+      MatDet(J, detJ);
+      res[0] = weight * detJ;
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      ADObj<FiniteElementGeometry> geo(geo_);
+      ADObj<Mat<T, dim, dim>&> J = get_grad<0>(geo);
+      ADObj<T> detJ;
+      auto stack = MakeStack(MatDet(J, detJ));
+      detJ.bvalue() = weight * data[0];
+      stack.reverse();
+      res.copy(geo.bvalue());
+    }
+  }
+};
 
 // template <typename T, index_t D>
 // class IntegrandTopoBodyForce {
@@ -740,7 +806,8 @@ class HexTopoVonMises
 //       } else {  // dim == 3
 //         // Force at this point is (x - x0) cross torque
 //         U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) *
-//         torx[1]); U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) - x0[0])
+//         torx[1]); U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) -
+//         x0[0])
 //         * torx[2]); U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) -
 //         x0[1]) * torx[0]);
 //       }

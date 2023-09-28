@@ -40,14 +40,14 @@ class ADObj : public ADExpr<ADObj<T>, T> {
   // If this is a scalar, non-reference type - initialize values to zero
   KOKKOS_FUNCTION ADObj() {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      A = Ab = T(0.0);
+      A = Ab = type(0.0);
     }
   }
 
   // If this is a scalar, non-reference type - initialize values to zero
   KOKKOS_FUNCTION ADObj(const T& A) : A(A) {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      Ab = T(0.0);
+      Ab = type(0.0);
     }
   }
 
@@ -60,7 +60,7 @@ class ADObj : public ADExpr<ADObj<T>, T> {
   KOKKOS_FUNCTION void reverse() {}
   KOKKOS_FUNCTION void bzero() {
     if constexpr (obj_type == ADObjType::SCALAR) {
-      Ab = T(0.0);
+      Ab = type(0.0);
     } else {
       Ab.zero();
     }
@@ -116,23 +116,23 @@ class A2DObj : public A2DExpr<A2DObj<T>, T> {
 
   KOKKOS_FUNCTION A2DObj() {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      A = Ab = Ap = Ah = T(0.0);
+      A = Ab = Ap = Ah = type(0.0);
     }
   }
   KOKKOS_FUNCTION A2DObj(const T& A) : A(A) {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      Ab = Ap = Ah = T(0.0);
+      Ab = Ap = Ah = type(0.0);
     }
   }
   KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab) : A(A), Ab(Ab) {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      Ap = Ah = T(0.0);
+      Ap = Ah = type(0.0);
     }
   }
   KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap)
       : A(A), Ab(Ab), Ap(Ap) {
     if constexpr (is_scalar_type<T>::value && !std::is_reference<T>::value) {
-      Ah = T(0.0);
+      Ah = type(0.0);
     }
   }
   KOKKOS_FUNCTION A2DObj(const T& A, const T& Ab, const T& Ap, const T& Ah)
@@ -146,14 +146,14 @@ class A2DObj : public A2DExpr<A2DObj<T>, T> {
 
   KOKKOS_FUNCTION void bzero() {
     if constexpr (obj_type == ADObjType::SCALAR) {
-      Ab = T(0.0);
+      Ab = type(0.0);
     } else {
       Ab.zero();
     }
   }
   KOKKOS_FUNCTION void hzero() {
     if constexpr (obj_type == ADObjType::SCALAR) {
-      Ah = T(0.0);
+      Ah = type(0.0);
     } else {
       Ah.zero();
     }

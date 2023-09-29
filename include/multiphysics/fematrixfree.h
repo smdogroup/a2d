@@ -30,9 +30,8 @@ class MatrixFree {
   using QSpace = QptSpace<Quadrature, typename Integrand::FiniteElementSpace>;
 
   // Quadrature point view of the Jacobian-matrices
-  using QMatSpace =
-      QptSpace<Quadrature,
-               typename Integrand::template FiniteElementJacobian<of, wrt>>;
+  using QMatType = typename Integrand::template FiniteElementJacobian<of, wrt>;
+  using QMatSpace = QptSpace<Quadrature, QMatType>;
 
   MatrixFree() {}
 
@@ -86,27 +85,9 @@ class MatrixFree {
       Basis::template interp(sol_dof, sol);
 
       for (index_t j = 0; j < num_quadrature_points; j++) {
-        // Transform to the local coordinate system
-        typename Integrand::FiniteElementSpace& sref = sol.get(j);
-        typename Integrand::FiniteElementGeometry& gref = geo.get(j);
-
-        // Initialize the transform object
-        T detJ;
-        typename Integrand::SolutionMapping transform(gref, detJ);
-
-        // Transform the solution the physical element
-        typename Integrand::FiniteElementSpace s;
-        transform.transform(sref, s);
-
-        // Compute the Jacobian for the weak form at the quadrature point
-        double weight = Quadrature::get_weight(j);
-        typename Integrand::QMatType jac;
-        integrand.jacobian(weight * detJ, data.get(j), gref, s, jac);
-
-        // Transform second derivatives from w.r.t. x to w.r.t. xi
-        typename Integrand::QMatType& jac_ref = qmat[i].get(j);
-        transform.template jtransform<typename Integrand::FiniteElementSpace>(
-            jac, jac_ref);
+        T weight = Quadrature::get_weight(j);
+        integrand.template jacobian<of, wrt>(weight, data.get(j), geo.get(j),
+                                             sol.get(j), qmat[i].get(j));
       }
     }
   }
@@ -142,7 +123,7 @@ class MatrixFree {
         typename Integrand::FiniteElementSpace& xref = xsol.get(j);
 
         // The entries of the Jacobian matrix at the quadrature point
-        typename Integrand::QMatType& jac = qmat[i].get(j);
+        const QMatType& jac = qmat[i].get(j);
 
         // Matrix-vector product at the quadrature point
         yref.zero();

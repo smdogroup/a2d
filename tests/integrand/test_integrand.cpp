@@ -19,6 +19,9 @@ template <typename T>
 using NonlinearTopoIntegrand =
     TopoElasticityIntegrand<T, 3, GreenStrainType::NONLINEAR>;
 
+template <typename T>
+using TopoBodyIntegrand = TopoBodyForceIntegrand<T, 3>;
+
 // IntegrandTopoLinearElasticity<T, 3>;
 
 // template <typename T>
@@ -43,6 +46,11 @@ bool TestIntegrands(bool component, bool write_output) {
   A2D::Test::A2DIntegrandAnalysisTest<NonlinearTopoIntegrand, Tc> test2(
       integrand2);
   passed = passed && A2D::Test::Run(test2, component, write_output);
+
+  Tc tx[3] = {1.1, -1.2, -0.8};
+  TopoBodyIntegrand<Tc> integrand3(Tc(5.0), tx);
+  A2D::Test::A2DIntegrandAnalysisTest<TopoBodyIntegrand, Tc> test3(integrand3);
+  passed = passed && A2D::Test::Run(test3, component, write_output);
 
   // PoissonIntegrand<Tc> integrand2;
   // A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc>

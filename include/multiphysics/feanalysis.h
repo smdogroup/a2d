@@ -11,40 +11,68 @@
 
 namespace A2D {
 
+template <class Impl>
+class Analysis {
+ public:
+  using T = typename Impl::type;
+  using Vec_t = typename Impl::Vec_t;
+
+  virtual ~Analysis() {}
+
+  virtual std::shared_ptr<Vec_t> get_data() = 0;
+  virtual std::shared_ptr<Vec_t> get_geo() = 0;
+  virtual std::shared_ptr<Vec_t> get_sol() = 0;
+  virtual std::shared_ptr<Vec_t> get_res() = 0;
+
+  virtual void linear_solve() = 0;
+  virtual void nonlinear_solve() = 0;
+
+  virtual T evaluate(FunctionalBase<Impl> &func) = 0;
+  virtual void add_derivative(FunctionalBase<Impl> &func, FEVarType wrt,
+                              T alpha, Vec_t &dfdx) = 0;
+  virtual void eval_adjoint_derivative(FunctionalBase<Impl> &func,
+                                       FEVarType wrt, Vec_t &dfdx) = 0;
+  virtual void eval_adjoint_derivative(FEVarType wrt, Vec_t &dfdx) = 0;
+  virtual void to_vtk(const std::string prefix) {}
+};
+
 template <typename T, index_t block_size>
-class DirectCholeskyAnalysis {
+class DirectCholeskyAnalysisImpl {
+ public:
+  using type = T;
+  using Vec_t = SolutionVector<T>;
+  using Mat_t = BSRMat<T, block_size, block_size>;
+
+  template <class Basis>
+  using ElementVector = ElementVector_Serial<type, Basis, Vec_t>;
+
+  template <class Basis>
+  using ElementMatrix = ElementMat_Serial<type, Basis, Mat_t>;
+};
+
+template <typename T, index_t block_size>
+class DirectCholeskyAnalysis
+    : public Analysis<DirectCholeskyAnalysisImpl<T, block_size>> {
  public:
   // Set the implementation type
-  class Impl_t {
-   public:
-    using type = T;
-    using Vec_t = SolutionVector<T>;
-    using Mat_t = BSRMat<T, block_size, block_size>;
-
-    template <class Basis>
-    using ElementVector = ElementVector_Serial<type, Basis, Vec_t>;
-
-    template <class Basis>
-    using ElementMatrix = ElementMat_Serial<type, Basis, Mat_t>;
-  };
+  using Impl_t = DirectCholeskyAnalysisImpl<T, block_size>;
 
   // Data types
   using Vec_t = typename Impl_t::Vec_t;
   using Mat_t = typename Impl_t::Mat_t;
   using CSCMat_t = CSCMat<T>;
 
-  DirectCholeskyAnalysis(index_t ndata, index_t ngeo, index_t ndof,
+  DirectCholeskyAnalysis(std::shared_ptr<Vec_t> data,
+                         std::shared_ptr<Vec_t> geo, std::shared_ptr<Vec_t> sol,
+                         std::shared_ptr<Vec_t> res,
                          std::shared_ptr<ElementAssembler<Impl_t>> assembler,
-                         std::shared_ptr<DirichletBCs<T>> bcs)
-      : ndata(ndata),
-        ngeo(ngeo),
-        ndof(ndof),
+                         std::shared_ptr<DirichletBCs<T>> bcs = nullptr)
+      : data(data),
+        geo(geo),
+        sol(sol),
+        res(res),
         assembler(assembler),
-        bcs(bcs),
-        data(ndata),
-        geo(ngeo),
-        sol(ndof),
-        res(ndof) {
+        bcs(bcs) {
     // Create the system matrix
     index_t nrows;
     std::vector<index_t> rowp, cols;
@@ -60,39 +88,51 @@ class DirectCholeskyAnalysis {
         new SparseCholesky(csc_mat, CholOrderingType::ND, nullptr, set_values);
 
     // Set the boundary conditions
-    bcs->set_bcs(sol);
+    if (bcs != nullptr) {
+      bcs->set_bcs(*sol);
+    }
   }
+  ~DirectCholeskyAnalysis() {}
 
   /**
    * @brief Get the data vector object
    *
-   * @return Vec_t& Reference to the data
+   * @return std::shared_ptr<Vec_t>
    */
-  Vec_t &get_data() { return data; }
+  std::shared_ptr<Vec_t> get_data() { return data; }
 
   /**
    * @brief Get the geometry vector object
    *
-   * @return Vec_t& Reference to the data
+   * @return std::shared_ptr<Vec_t>
    */
-  Vec_t &get_geo() { return geo; }
+  std::shared_ptr<Vec_t> get_geo() { return geo; }
 
   /**
    * @brief Get the solution vector object
    *
-   * @return Vec_t& Reference to the data
+   * @return std::shared_ptr<Vec_t>
    */
-  Vec_t &get_sol() { return sol; }
+  std::shared_ptr<Vec_t> get_sol() { return sol; }
+
+  /**
+   * @brief Get the residual vector - stores residuals/dfdu
+   *
+   * @return std::shared_ptr<Vec_t>
+   */
+  std::shared_ptr<Vec_t> get_res() { return res; }
 
   /**
    * @brief Compute the residual and store it
    */
   void residual() {
-    res.zero();
-    assembler->add_residual(T(1.0), data, geo, sol, res);
+    res->zero();
+    assembler->add_residual(T(1.0), *data, *geo, *sol, *res);
 
     // Apply boundary conditions
-    bcs->zero_bcs(res);
+    if (bcs != nullptr) {
+      bcs->zero_bcs(*res);
+    }
   }
 
   /**
@@ -101,27 +141,31 @@ class DirectCholeskyAnalysis {
   void jacobian() {
     // Compute the BSR matrix
     bsr_mat->zero();
-    assembler->add_jacobian(T(1.0), data, geo, sol, *bsr_mat);
+    assembler->add_jacobian(T(1.0), *data, *geo, *sol, *bsr_mat);
 
     // Zero the rows corresponding to the boundary conditions
-    const index_t *bc_dofs;
-    index_t nbcs = bcs->get_bcs(&bc_dofs);
-    bsr_mat->zero_rows(nbcs, bc_dofs);
+    if (bcs != nullptr) {
+      const index_t *bc_dofs;
+      index_t nbcs = bcs->get_bcs(&bc_dofs);
+      bsr_mat->zero_rows(nbcs, bc_dofs);
+    }
   }
 
   /**
    * @brief Factor the Jacobian
    */
   void factor() {
-    // This is a problem here -- matrix is passed by value, but should be passed
-    // by reference to avoid copying. Convert bsr to csc because we want to use
-    // Cholesky factorization
+    // This is a problem here -- matrix is passed by value, but should be
+    // passed by reference to avoid copying. Convert bsr to csc because we
+    // want to use Cholesky factorization
     csc_mat = bsr_to_csc(*bsr_mat);
 
     // Apply boundary conditions to each column
-    const index_t *bc_dofs;
-    index_t nbcs = bcs->get_bcs(&bc_dofs);
-    csc_mat.zero_columns(nbcs, bc_dofs);
+    if (bcs != nullptr) {
+      const index_t *bc_dofs;
+      index_t nbcs = bcs->get_bcs(&bc_dofs);
+      csc_mat.zero_columns(nbcs, bc_dofs);
+    }
 
     // Set values to Cholesky solver and factorize
     chol->setValues(csc_mat);
@@ -137,26 +181,26 @@ class DirectCholeskyAnalysis {
     factor();
 
     // Find the solution
-    chol->solve(res.data());
+    chol->solve(res->data());
 
     // Apply the boundary condition values
-    bcs->set_bcs(sol);
-
-    // Update the solution
-    for (index_t i = 0; i < sol.get_num_dof(); i++) {
-      sol[i] -= res[i];
+    if (bcs != nullptr) {
+      bcs->set_bcs(*sol);
     }
+
+    // The residual
+    sol->axpy(-1.0, *res);
   }
 
   void nonlinear_solve() {}
 
   T evaluate(FunctionalBase<Impl_t> &func) {
-    return func.evaluate(data, geo, sol);
+    return func.evaluate(*data, *geo, *sol);
   }
 
   void add_derivative(FunctionalBase<Impl_t> &func, FEVarType wrt, T alpha,
                       Vec_t &dfdx) {
-    func.add_derivative(wrt, alpha, data, geo, sol, dfdx);
+    func.add_derivative(wrt, alpha, *data, *geo, *sol, dfdx);
   }
 
   void eval_adjoint_derivative(FunctionalBase<Impl_t> &func, FEVarType wrt,
@@ -168,33 +212,61 @@ class DirectCholeskyAnalysis {
 
     // Add the contributions to the derivative from the partial
     dfdx.zero();
-    func.add_derivative(wrt, T(1.0), data, geo, sol, dfdx);
+    func.add_derivative(wrt, T(1.0), *data, *geo, *sol, dfdx);
 
     // Compute the derivative of the function wrt state and solve the adjoint
     // equations
-    res.zero();
-    func.add_derivative(FEVarType::STATE, T(-1.0), data, geo, sol, res);
-    chol->solve(res.data());
+    res->zero();
+    func.add_derivative(FEVarType::STATE, T(1.0), *data, *geo, *sol, *res);
+
+    // Apply boundary conditions
+    if (bcs != nullptr) {
+      bcs->zero_bcs(*res);
+    }
+
+    // Solve the adjoint system
+    chol->solve(res->data());
 
     // Add the terms from the total derivative
-    assembler->add_adjoint_res_product(wrt, T(1.0), data, geo, sol, res, dfdx);
+    assembler->add_adjoint_res_product(wrt, T(-1.0), *data, *geo, *sol, *res,
+                                       dfdx);
+  }
+
+  void eval_adjoint_derivative(FEVarType wrt, Vec_t &dfdx) {
+    // This doesn't make sense for the adjoint method
+    if (wrt == FEVarType::STATE) {
+      return;
+    }
+
+    // Apply boundary conditions
+    if (bcs != nullptr) {
+      bcs->zero_bcs(*res);
+    }
+
+    // Solve the adjoint system
+    chol->solve(res->data());
+
+    // Add the terms from the total derivative
+    assembler->add_adjoint_res_product(wrt, T(-1.0), *data, *geo, *sol, *res,
+                                       dfdx);
+  }
+
+  void to_vtk(const std::string prefix) {
+    assembler->to_vtk(*data, *geo, *sol, prefix);
   }
 
  private:
-  // The solution information
-  index_t ndata, ngeo, ndof;
+  // Vectors of data, geometry and solution degrees of freedom
+  std::shared_ptr<Vec_t> data;
+  std::shared_ptr<Vec_t> geo;
+  std::shared_ptr<Vec_t> sol;
+  std::shared_ptr<Vec_t> res;
 
   // Element matrix assembler object
   std::shared_ptr<ElementAssembler<Impl_t>> assembler;
 
   // Boundary conditions
   std::shared_ptr<DirichletBCs<T>> bcs;
-
-  // Vectors of data, geometry and solution degrees of freedom
-  Vec_t data;
-  Vec_t geo;
-  Vec_t sol;
-  Vec_t res;
 
   // System matrices
   std::shared_ptr<Mat_t> bsr_mat;

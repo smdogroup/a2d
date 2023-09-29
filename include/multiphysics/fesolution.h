@@ -24,6 +24,11 @@ class SolutionVector {
   KOKKOS_FUNCTION index_t size() const { return ndof; }
 
   KOKKOS_FUNCTION void zero() { BLAS::zero(array); }
+  KOKKOS_FUNCTION void axpy(T alpha, SolutionVector<T>& x) {
+    for (int i = 0; i < ndof; i++) {
+      array[i] += alpha * x[i];
+    }
+  }
   KOKKOS_FUNCTION void fill(T val) { BLAS::fill(array, val); }
   KOKKOS_FUNCTION T* data() { return array.data(); }
 

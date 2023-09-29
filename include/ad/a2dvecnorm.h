@@ -32,6 +32,7 @@ class VecNormExpr {
     get_data(alpha) = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
     inv = 1.0 / get_data(alpha);
   }
+  KOKKOS_FUNCTION void bzero() { alpha.bzero(); }
 
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
@@ -45,6 +46,9 @@ class VecNormExpr {
     VecAddCore<T, N>(inv * GetSeed<seed>::get_data(alpha), get_data(x),
                      GetSeed<seed>::get_data(x));
   }
+
+  KOKKOS_FUNCTION void hzero() { alpha.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     VecAddCore<T, N>(inv * GetSeed<ADseed::h>::get_data(alpha), get_data(x),
                      GetSeed<ADseed::h>::get_data(x));
@@ -200,6 +204,8 @@ class VecScaleExpr {
     VecScaleCore<T, N>(get_data(alpha), get_data(x), get_data(y));
   }
 
+  KOKKOS_FUNCTION void bzero() { y.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -229,6 +235,9 @@ class VecScaleExpr {
                        GetSeed<seed>::get_data(x));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { y.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<ADseed::h>::get_data(alpha) +=
@@ -319,6 +328,8 @@ class VecDotExpr {
     get_data(alpha) = VecDotCore<T, N>(get_data(x), get_data(y));
   }
 
+  KOKKOS_FUNCTION void bzero() { alpha.bzero(); }
+
   template <ADorder forder>
   KOKKOS_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
@@ -348,6 +359,9 @@ class VecDotExpr {
                        GetSeed<seed>::get_data(y));
     }
   }
+
+  KOKKOS_FUNCTION void hzero() { alpha.hzero(); }
+
   KOKKOS_FUNCTION void hreverse() {
     if constexpr (adx == ADiffType::ACTIVE) {
       VecAddCore<T, N>(GetSeed<ADseed::h>::get_data(alpha), get_data(y),

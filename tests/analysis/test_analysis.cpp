@@ -82,7 +82,7 @@ void box(index_t b_nx = 20, index_t b_ny = 20, index_t b_nz = 20,
 
   // Set the type of element
   constexpr GreenStrainType etype = GreenStrainType::LINEAR;
-  using HexElem = HexTopoElement<Impl_t, dim, etype, degree>;
+  using HexElem = HexTopoElement<Impl_t, etype, degree>;
 
   // Create the meshes for the Hex elements
   auto data_mesh = std::make_shared<ElementMesh<HexElem::DataBasis>>(conn);
@@ -128,7 +128,7 @@ void box(index_t b_nx = 20, index_t b_ny = 20, index_t b_nz = 20,
 
   analysis.linear_solve();
 
-  using HexFunc = HexTopoVonMises<Impl_t, dim, etype, degree>;
+  using HexFunc = HexTopoVonMises<Impl_t, etype, degree>;
   TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
                                                ks_param);
   HexFunc functional(func_integrand, data_mesh, geo_mesh, sol_mesh);

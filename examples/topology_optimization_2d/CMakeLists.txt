@@ -25,6 +25,7 @@ target_link_libraries(2d_analysis OpenMP::OpenMP_CXX LAPACK::LAPACK metis)
 target_link_libraries(2d_topology OpenMP::OpenMP_CXX LAPACK::LAPACK metis)
 
 target_link_libraries(2d_topology paropt MPI::MPI_CXX)
+target_link_libraries(2d_analysis paropt MPI::MPI_CXX)
 
 # If using gcc and version < 9, need to explicitly link to filesystem
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

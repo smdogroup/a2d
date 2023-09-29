@@ -1,5 +1,6 @@
 #include <vector>
 
+#include "ParOptOptimizer.h"
 #include "a2ddefs.h"
 #include "multiphysics/feanalysis.h"
 #include "multiphysics/febasis.h"
@@ -73,20 +74,163 @@ class TopoFilterAnalysis : public Analysis<AnlyImpl> {
 
   void eval_adjoint_derivative(FEVarType wrt, Vec_t &dfdx) {}
 
+  void to_vtk(const std::string filename) {
+    filter->to_vtk(filename + std::string("-filter.vtk"));
+    analysis->to_vtk(filename + std::string("-elasticity.vtk"));
+  }
+
  private:
   std::shared_ptr<Analysis<FltrImpl>> filter;
   std::shared_ptr<Analysis<AnlyImpl>> analysis;
 };
 
+template <class FltrImpl, class AnlyImpl>
+class TopOptProb : public ParOptProblem {
+ public:
+  TopOptProb(std::string prefix, MPI_Comm comm,
+             std::shared_ptr<TopoFilterAnalysis<FltrImpl, AnlyImpl>> analysis,
+             std::shared_ptr<FunctionalBase<AnlyImpl>> obj,
+             std::shared_ptr<FunctionalBase<AnlyImpl>> volume,
+             double target_volume,
+             std::shared_ptr<typename AnlyImpl::Vec_t> dfdx)
+      : ParOptProblem(comm),
+        prefix(prefix),
+        analysis(analysis),
+        obj(obj),
+        volume(volume),
+        dfdx(dfdx),
+        target_volume(target_volume) {
+    nvars = analysis->get_data()->size();
+    ncon = 1;
+    nineq = 1;
+
+    if (!std::filesystem::is_directory(prefix)) {
+      std::filesystem::create_directory(prefix);
+    }
+    setProblemSizes(nvars, ncon, 0);
+    setNumInequalities(nineq, 0);
+
+    fobj_ref = 1.0;
+  }
+
+  //! Create the quasi-def matrix associated with this problem
+  ParOptQuasiDefMat *createQuasiDefMat() {
+    int nwblock = 0;
+    return new ParOptQuasiDefBlockMat(this, nwblock);
+  }
+
+  void getVarsAndBounds(ParOptVec *xvec, ParOptVec *lbvec, ParOptVec *ubvec) {
+    ParOptScalar *x, *lb, *ub;
+    xvec->getArray(&x);
+    lbvec->getArray(&lb);
+    ubvec->getArray(&ub);
+
+    // Set the design variable bounds
+    for (int i = 0; i < nvars; i++) {
+      x[i] = 0.95;
+      lb[i] = 1e-3;
+      ub[i] = 1.0;
+    }
+  }
+
+  // Note: constraints > 0
+  int evalObjCon(ParOptVec *xvec, ParOptScalar *fobj, ParOptScalar *cons) {
+    Timer timer("TopOptProb::evalObjCon()");
+    // Set design variables by paropt
+    ParOptScalar *x;
+    xvec->getArray(&x);
+
+    auto data = analysis->get_data();
+
+    // Set the design variables
+    for (int i = 0; i < nvars; i++) {
+      (*data)[i] = x[i];
+    }
+
+    // Solve the problem
+    analysis->linear_solve();
+
+    // Evaluate objective
+    *fobj = analysis->evaluate(*obj) / fobj_ref;
+
+    // Evaluate constraint
+    cons[0] = 1.0 - analysis->evaluate(*volume) / target_volume;
+
+    // Write design to vtk
+    if (opt_iter % vtk_freq == 0) {
+      char vtk_name[256];
+      std::snprintf(vtk_name, sizeof(vtk_name), "result_%d.vtk", opt_iter);
+      std::filesystem::path path =
+          std::filesystem::path(prefix) / std::filesystem::path(vtk_name);
+      analysis->to_vtk(path);
+    }
+
+    opt_iter++;
+
+    std::printf("[%2d] obj: %20.10e, con: %20.10e\n", opt_iter, *fobj, cons[0]);
+
+    return 0;
+  }
+
+  int evalObjConGradient(ParOptVec *xvec, ParOptVec *gvec, ParOptVec **Ac) {
+    Timer timer("TopOptProb::evalObjConGradient()");
+    ParOptScalar *g, *c;
+
+    // Evaluate the gradient
+    dfdx->zero();
+    analysis->eval_adjoint_derivative(*obj, FEVarType::DATA, *dfdx);
+
+    // Set the gradient objective gradient
+    gvec->getArray(&g);
+    for (int i = 0; i < nvars; i++) {
+      g[i] = (*dfdx)[i] / fobj_ref;
+    }
+
+    // Evaluate the gradient of the volume constraint
+    dfdx->zero();
+    analysis->add_derivative(*volume, FEVarType::DATA, -1.0 / target_volume,
+                             *dfdx);
+
+    // Set the gradient objective gradient
+    Ac[0]->getArray(&c);
+    for (int i = 0; i < nvars; i++) {
+      c[i] = (*dfdx)[i];
+    }
+
+    return 0;
+  }
+
+ private:
+  std::string prefix;
+  MPI_Comm comm;
+  std::shared_ptr<TopoFilterAnalysis<FltrImpl, AnlyImpl>> analysis;
+  std::shared_ptr<FunctionalBase<AnlyImpl>> obj;
+  std::shared_ptr<FunctionalBase<AnlyImpl>> volume;
+  std::shared_ptr<typename AnlyImpl::Vec_t> dfdx;
+
+  int nvars;
+  int ncon;
+  int nineq;
+  ParOptScalar fobj_ref;
+  ParOptScalar target_volume;
+
+  int opt_iter;
+  bool verbose;
+  int vtk_freq;
+};
+
 int main(int argc, char *argv[]) {
+  MPI_Init(&argc, &argv);
   Kokkos::initialize(argc, argv);
   {
+    MPI_Comm comm = MPI_COMM_SELF;
     using T = double;
 
     // Number of elements in each dimension
     const index_t degree = 1;
-    const index_t nx = 128, ny = 128;
+    const index_t nx = 8, ny = 8;
     const double lx = 2.0, ly = 2.0;
+    const double target_volume = 0.4 * lx * ly;
 
     // Set up mesh
     const index_t nverts = (nx + 1) * (ny + 1);
@@ -211,106 +355,51 @@ int main(int argc, char *argv[]) {
     using Func_t = QuadTopoVonMises<AnlyImpl_t, etype, degree>;
     TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
                                                  ks_param);
-    Func_t functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
+    auto functional =
+        std::make_shared<Func_t>(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
-    TopoFilterAnalysis<FltrImpl_t, AnlyImpl_t> topo(filter, analysis);
+    using Volume_t = QuadTopoVolume<AnlyImpl_t, degree>;
+    TopoVolume<T, dim> vol_integrand;
+    auto volume = std::make_shared<Volume_t>(vol_integrand, data_mesh, geo_mesh,
+                                             sol_mesh);
 
-    // Evaluate the function and its derivative
-    topo.linear_solve();
-    T f0 = topo.evaluate(functional);
-    topo.eval_adjoint_derivative(functional, FEVarType::DATA, *dfdx);
+    auto topo = std::make_shared<TopoFilterAnalysis<FltrImpl_t, AnlyImpl_t>>(
+        filter, analysis);
 
-    // Perturb x and test the gradient
-    double dh = 1e-6;
-    T dfdp = 0.0;
-    for (int i = 0; i < ndata; i++) {
-      dfdp += (*dfdx)[i];
-      (*filter_data)[i] += dh;
-    }
+    // Set up the topology optimization problem
+    std::string prefix("./");
+    TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
+                                            volume, target_volume, dfdx);
 
-    topo.linear_solve();
-    T f1 = topo.evaluate(functional);
-    T fd = (f1 - f0) / dh;
+    prob.checkGradients(1e-6);
 
-    std::cout << "dfdp:  " << std::setw(20) << std::setprecision(12) << dfdp
-              << std::endl;
-    std::cout << "fd:    " << std::setw(20) << std::setprecision(12) << fd
-              << std::endl;
-    std::cout << "err:   " << std::setw(20) << std::setprecision(12)
-              << (fd - dfdp) / fd << std::endl;
+    // // Evaluate the function and its derivative
+    // topo->linear_solve();
+    // T f0 = topo->evaluate(*functional);
+    // topo->eval_adjoint_derivative(*functional, FEVarType::DATA, *dfdx);
 
-    filter->to_vtk("test");
-    analysis->to_vtk("elasticity");
+    // // Perturb x and test the gradient
+    // double dh = 1e-6;
+    // T dfdp = 0.0;
+    // for (int i = 0; i < ndata; i++) {
+    //   dfdp += (*dfdx)[i];
+    //   (*filter_data)[i] += dh;
+    // }
 
-    /*
+    // topo->linear_solve();
+    // T f1 = topo->evaluate(*functional);
+    // T fd = (f1 - f0) / dh;
 
-      TopoElasticityAnalysis<T, degree> prob(conn, nquad, quad.data(),
-                                             Xloc.data(), bcinfo);
-
-      // Save mesh
-      prob.tovtk("mesh.vtk");
-
-      // Create bsr mat and zero bcs rows
-      TopoElasticityAnalysis<T, degree>::BSRMat_t bsr_mat =
-          prob.create_fea_bsr_matrix();
-      const index_t *bc_dofs;
-      DirichletBCs<TopoElasticityAnalysis<T, degree>::Basis> bcs(
-          conn, prob.get_mesh(), bcinfo);
-      index_t nbcs = bcs.get_bcs(&bc_dofs);
-      bsr_mat.zero_rows(nbcs, bc_dofs);
-
-      // Convert to csr mat and zero bcs columns
-      StopWatch watch;
-      CSRMat<T> csr_mat = bsr_to_csr(bsr_mat);
-
-      // Convert to csc mat and apply bcs
-      CSCMat<T> csc_mat = bsr_to_csc(bsr_mat);
-      csc_mat.zero_columns(nbcs, bc_dofs);
-
-      // Create rhs
-      std::vector<T> b(csc_mat.nrows);
-      for (int i = 0; i < csc_mat.nrows; i++) {
-        b[i] = 0.0;
-      }
-      for (int i = 0; i < csc_mat.nrows; i++) {
-        for (int jp = csc_mat.colp[i]; jp < csc_mat.colp[i + 1]; jp++) {
-          b[csc_mat.rows[jp]] += csc_mat.vals[jp];
-        }
-      }
-
-      // Write to mtx
-      // double t2 = watch.lap();
-      // bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
-      // csc_mat.write_mtx("csc_mat.mtx", 1e-12);
-      // double t3 = watch.lap();
-      // printf("write mtx time: %12.5e s\n", t3 - t2);
-
-      // Perform cholesky factorization
-      printf("number of vertices: %d\n", conn.get_num_verts());
-      printf("number of edges:    %d\n", conn.get_num_edges());
-      printf("number of faces:    %d\n", conn.get_num_bounds());
-      printf("number of elements: %d\n", conn.get_num_elements());
-      printf("number of dofs:     %d\n", prob.get_mesh().get_num_dof());
-      printf("matrix dimension:  (%d, %d)\n", csr_mat.nrows, csr_mat.ncols);
-      double t4 = watch.lap();
-      SparseCholesky<T> *chol = new SparseCholesky<T>(csc_mat);
-      double t5 = watch.lap();
-      printf("Setup/order/setvalue time: %12.5e s\n", t5 - t4);
-      chol->factor();
-      double t6 = watch.lap();
-      printf("Factor time:               %12.5e s\n", t6 - t5);
-      chol->solve(b.data());
-      double t7 = watch.lap();
-      printf("Solve time:                %12.5e s\n", t7 - t6);
-      T err = 0.0;
-      for (int i = 0; i < csc_mat.nrows; i++) {
-        err += (1.0 - b[i]) * (1.0 - b[i]);
-      }
-      printf("||x - e||: %25.15e\n", sqrt(err));
-      */
+    // std::cout << "dfdp:  " << std::setw(20) << std::setprecision(12) << dfdp
+    //           << std::endl;
+    // std::cout << "fd:    " << std::setw(20) << std::setprecision(12) << fd
+    //           << std::endl;
+    // std::cout << "err:   " << std::setw(20) << std::setprecision(12)
+    //           << (fd - dfdp) / fd << std::endl;
   }
 
   Kokkos::finalize();
+  MPI_Finalize();
 
   return 0;
 }

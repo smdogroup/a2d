@@ -585,7 +585,8 @@ class QuadTopoVonMises
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
-template <typename T, index_t D, class Integrand>
+template <typename T, index_t D,
+          class Integrand = TopoElasticityIntegrand<T, D>>
 class TopoVolume {
  public:
   // Number of dimensions
@@ -664,6 +665,37 @@ class TopoVolume {
       res.zero();
     }
   }
+};
+
+template <class Impl, index_t degree>
+class QuadTopoVolume
+    : public IntegralFunctional<
+          Impl, TopoVolume<typename Impl::type, 2>,
+          QuadGaussQuadrature<degree + 1>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using DataBasis = FEBasis<T, LagrangeH1QuadBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+
+  QuadTopoVolume(TopoVolume<T, 2> integrand,
+                 std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                 std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                 std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const TopoVolume<T, 2>& get_integrand() { return integrand; }
+
+ private:
+  TopoVolume<T, 2> integrand;
 };
 
 template <typename T, index_t D>

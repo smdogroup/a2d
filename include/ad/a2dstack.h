@@ -135,6 +135,48 @@ KOKKOS_FUNCTION auto MakeStack(Operations &&...s) {
 }
 
 /**
+ * @brief Compute the Jacobian-vector product depending on the input/output
+ * states
+ *
+ * @tparam of Residual type
+ * @tparam wrt Derivative type
+ * @tparam Data Deduced data space type
+ * @tparam Geo Deduced geometry space type
+ * @tparam State Deduced state space type
+ * @tparam Operations variadic template of operations
+ * @param stack Stack of operations
+ * @param data Data object
+ * @param geo Geometry object
+ * @param state State space object
+ * @param p Direction vector - same type as wrt
+ * @param res Result vector - same type as of
+ */
+template <FEVarType of, FEVarType wrt, class Data, class Geo, class State,
+          class PType, class RType, class... Operations>
+KOKKOS_FUNCTION void JacobianProduct(OperationStack<Operations...> &stack,
+                                     A2DObj<Data> &data, A2DObj<Geo> &geo,
+                                     A2DObj<State> &state, PType &p,
+                                     RType &res) {
+  if constexpr (wrt == FEVarType::DATA) {
+    data.pvalue().copy(p);
+  } else if constexpr (wrt == FEVarType::GEOMETRY) {
+    geo.pvalue().copy(p);
+  } else if constexpr (wrt == FEVarType::STATE) {
+    state.pvalue().copy(p);
+  }
+
+  stack.hproduct();
+
+  if constexpr (of == FEVarType::DATA) {
+    res.copy(data.hvalue());
+  } else if constexpr (of == FEVarType::GEOMETRY) {
+    res.copy(geo.hvalue());
+  } else if constexpr (of == FEVarType::STATE) {
+    res.copy(state.hvalue());
+  }
+}
+
+/**
  * @brief Extract the Jacobian matrix using a series of vector-products
  * depending on the input/output state
  *

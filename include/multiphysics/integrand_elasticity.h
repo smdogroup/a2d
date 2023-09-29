@@ -98,13 +98,13 @@ class TopoElasticityIntegrand {
    * @param res Residual contribution
    */
   template <FEVarType wrt>
-  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data,
-                                const FiniteElementGeometry& geo_,
-                                const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
                                 FiniteElementVar<wrt>& res) const {
-    ADObj<T> rho(data[0]);
-    ADObj<FiniteElementSpace> sref(sref_);
-    ADObj<FiniteElementGeometry> geo(geo_);
+    ADObj<DataSpace> data(data0);
+    ADObj<FiniteElementSpace> sref(sref0);
+    ADObj<FiniteElementGeometry> geo(geo0);
 
     // Intermediate variables
     ADObj<T> detJ, penalty, mu, lambda, energy, output;
@@ -112,6 +112,7 @@ class TopoElasticityIntegrand {
     ADObj<SymMat<T, dim>> E, S;
 
     // Set the derivative of the solution
+    ADObj<T&> rho = get_value<0>(data);
     ADObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
 
     // Make a stack of the operations
@@ -149,14 +150,14 @@ class TopoElasticityIntegrand {
    * @param res Output product
    */
   template <FEVarType of, FEVarType wrt>
-  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data,
-                                        const FiniteElementGeometry& geo_,
-                                        const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
                                         const FiniteElementVar<wrt>& p,
                                         FiniteElementVar<of>& res) const {
-    A2DObj<T> rho(data[0]);
-    A2DObj<FiniteElementSpace> sref(sref_);
-    A2DObj<FiniteElementGeometry> geo(geo_);
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
     // Intermediate variables
     A2DObj<T> detJ, penalty, mu, lambda, energy, output;
@@ -164,15 +165,8 @@ class TopoElasticityIntegrand {
     A2DObj<SymMat<T, dim>> E, S;
 
     // Set the derivative of the solution
+    A2DObj<T&> rho = get_value<0>(data);
     A2DObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
-
-    if constexpr (wrt == FEVarType::DATA) {
-      rho.pvalue() = p[0];
-    } else if constexpr (wrt == FEVarType::GEOMETRY) {
-      geo.pvalue().copy(p);
-    } else if constexpr (wrt == FEVarType::STATE) {
-      sref.pvalue().copy(p);
-    }
 
     // Make a stack of the operations
     auto stack = MakeStack(
@@ -185,15 +179,9 @@ class TopoElasticityIntegrand {
         Eval(0.5 * weight * detJ * energy, output));  // Compute the output
 
     output.bvalue() = 1.0;
-    stack.hproduct();
 
-    if constexpr (of == FEVarType::DATA) {
-      res[0] = rho.hvalue();
-    } else if constexpr (of == FEVarType::GEOMETRY) {
-      res.copy(geo.hvalue());
-    } else if constexpr (of == FEVarType::STATE) {
-      res.copy(sref.hvalue());
-    }
+    // Compute the Jacobian-vector product
+    JacobianProduct<of, wrt>(stack, data, geo, sref, p, res);
   }
 
   /**
@@ -208,13 +196,13 @@ class TopoElasticityIntegrand {
    * @param jac The Jacobian output
    */
   template <FEVarType of, FEVarType wrt>
-  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data,
-                                const FiniteElementGeometry& geo_,
-                                const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
                                 FiniteElementJacobian<of, wrt>& jac) const {
-    A2DObj<T> rho(data[0]);
-    A2DObj<FiniteElementSpace> sref(sref_);
-    A2DObj<FiniteElementGeometry> geo(geo_);
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
     // Intermediate variables
     A2DObj<T> detJ, penalty, mu, lambda, energy, output;
@@ -222,6 +210,7 @@ class TopoElasticityIntegrand {
     A2DObj<SymMat<T, dim>> E, S;
 
     // Set the derivative of the solution
+    A2DObj<T&> rho = get_value<0>(data);
     A2DObj<Mat<T, dim, dim>&> Ux = get_grad<0>(s);
 
     // Make a stack of the operations
@@ -237,7 +226,7 @@ class TopoElasticityIntegrand {
     output.bvalue() = 1.0;
 
     // Extract the Jacobian
-    ExtractJacobian<of, wrt>(stack, rho, geo, sref, jac);
+    ExtractJacobian<of, wrt>(stack, data, geo, sref, jac);
   }
 };
 
@@ -562,6 +551,37 @@ class HexTopoVonMises
   TopoVonMisesKS<T, 3, etype> integrand;
 };
 
+template <class Impl, GreenStrainType etype, index_t degree>
+class QuadTopoVonMises
+    : public IntegralFunctional<
+          Impl, TopoVonMisesKS<typename Impl::type, 2, etype>,
+          QuadGaussQuadrature<degree + 1>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using DataBasis = FEBasis<T, LagrangeH1QuadBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+
+  QuadTopoVonMises(TopoVonMisesKS<T, 2, etype> integrand,
+                   std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                   std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                   std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const TopoVonMisesKS<T, 2, etype>& get_integrand() { return integrand; }
+
+ private:
+  TopoVonMisesKS<T, 2, etype> integrand;
+};
+
 /*
   Evaluate the volume of the structure, given the constitutive class
 */
@@ -640,77 +660,174 @@ class TopoVolume {
       detJ.bvalue() = weight * data[0];
       stack.reverse();
       res.copy(geo.bvalue());
+    } else {
+      res.zero();
     }
   }
 };
 
-// template <typename T, index_t D>
-// class IntegrandTopoBodyForce {
-//  public:
-//   // Number of dimensions
-//   static const index_t dim = D;
+template <typename T, index_t D>
+class TopoBodyForceIntegrand {
+ public:
+  // Number of dimensions
+  static const index_t dim = D;
 
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
+  // Number of data dimensions
+  static const index_t data_dim = 1;
 
-//   // Space for the finite-element data
-//   using DataSpace = typename IntegrandTopoLinearElasticity<T,
-//   D>::DataSpace;
+  // Space for the finite-element data
+  using DataSpace = typename TopoElasticityIntegrand<T, D>::DataSpace;
 
-//   // Space for the element geometry
-//   using FiniteElementGeometry =
-//       typename IntegrandTopoLinearElasticity<T,
-//       D>::FiniteElementGeometry;
+  // Space for the element geometry
+  using FiniteElementGeometry =
+      typename TopoElasticityIntegrand<T, D>::FiniteElementGeometry;
 
-//   // Finite element space
-//   using FiniteElementSpace =
-//       typename IntegrandTopoLinearElasticity<T, D>::FiniteElementSpace;
+  // Finite element space
+  using FiniteElementSpace =
+      typename TopoElasticityIntegrand<T, D>::FiniteElementSpace;
 
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = InteriorMapping<T, dim>;
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      typename TopoElasticityIntegrand<T, D>::template FiniteElementVar<wrt>;
 
-//   KOKKOS_FUNCTION IntegrandTopoBodyForce(T q, const T tx_[]) : q(q) {
-//     for (index_t i = 0; i < dim; i++) {
-//       tx[i] = tx_[i];
-//     }
-//   }
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian = typename TopoElasticityIntegrand<
+      T, D>::template FiniteElementJacobian<of, wrt>;
 
-//   KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
-//                                 const FiniteElementGeometry& geo,
-//                                 const FiniteElementSpace& s,
-//                                 FiniteElementSpace& coef) const {
-//     T rho = data[0];
-//     T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+  KOKKOS_FUNCTION TopoBodyForceIntegrand(T q, const T tx[]) : q(q), tx(tx) {}
 
-//     // Add body force components
-//     Vec<T, dim>& Ub = (coef.template get<0>()).get_value();
-//     for (index_t i = 0; i < dim; i++) {
-//       Ub(i) = wdetJ * penalty * tx[i];
-//     }
-//   }
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    T rho(data[0]);
+    const Vec<T, dim>& U = get_value<0>(sref);
+    const Mat<T, dim, dim>& J = get_grad<0>(geo);
+    T detJ, dot;
+    MatDet(J, detJ);
+    VecDot(U, tx, dot);
+    T penalty = (q + 1.0) * rho / (q * rho + 1.0);
+    T energy = -penalty * weight * detJ * dot;
+    return energy;
+  }
 
-//   KOKKOS_FUNCTION void data_adjoint_product(T wdetJ, const DataSpace&
-//   data,
-//                                             const
-//                                             FiniteElementGeometry& geo,
-//                                             const FiniteElementSpace&
-//                                             s, const
-//                                             FiniteElementSpace& adj,
-//                                             DataSpace& dfdx) const {
-//     const Vec<T, dim>& Uadj = (adj.template get<0>()).get_value();
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementVar<wrt>& res) const {
+    ADObj<DataSpace> data(data0);
+    ADObj<FiniteElementSpace> sref(sref0);
+    ADObj<FiniteElementGeometry> geo(geo0);
 
-//     T rho = data[0];
-//     T dpdrho = (q + 1.0) / ((q * rho + 1.0) * (q * rho + 1.0));
+    ADObj<T&> rho = get_value<0>(data);
+    ADObj<Vec<T, dim>&> U = get_value<0>(sref);
+    ADObj<Mat<T, dim, dim>&> J = get_grad<0>(geo);
+    ADObj<T> detJ, dot, penalty, energy;
 
-//     for (index_t i = 0; i < dim; i++) {
-//       dfdx[0] += wdetJ * dpdrho * Uadj(i) * tx[i];
-//     }
-//   }
+    auto stack = MakeStack(MatDet(J, detJ), VecDot(U, tx, dot),
+                           Eval((q + 1.0) * rho / (q * rho + 1.0), penalty),
+                           Eval(-penalty * weight * detJ * dot, energy));
 
-//  private:
-//   T q;        // RAMP parameter
-//   T tx[dim];  // body force values
-// };
+    energy.bvalue() = 1.0;
+    stack.reverse();
+
+    if constexpr (wrt == FEVarType::DATA) {
+      res[0] = rho.bvalue();
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      res.copy(geo.bvalue());
+    } else if constexpr (wrt == FEVarType::STATE) {
+      res.copy(sref.bvalue());
+    }
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
+                                        const FiniteElementVar<wrt>& p,
+                                        FiniteElementVar<of>& res) const {
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
+
+    A2DObj<T&> rho = get_value<0>(data);
+    A2DObj<Vec<T, dim>&> U = get_value<0>(sref);
+    A2DObj<Mat<T, dim, dim>&> J = get_grad<0>(geo);
+    A2DObj<T> detJ, dot, penalty, energy;
+
+    auto stack = MakeStack(MatDet(J, detJ), VecDot(U, tx, dot),
+                           Eval((q + 1.0) * rho / (q * rho + 1.0), penalty),
+                           Eval(-penalty * weight * detJ * dot, energy));
+    energy.bvalue() = 1.0;
+
+    // Compute the Jacobian-vector product
+    JacobianProduct<of, wrt>(stack, data, geo, sref, p, res);
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementJacobian<of, wrt>& jac) const {
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
+
+    A2DObj<T&> rho = get_value<0>(data);
+    A2DObj<Vec<T, dim>&> U = get_value<0>(sref);
+    A2DObj<Mat<T, dim, dim>&> J = get_grad<0>(geo);
+    A2DObj<T> detJ, dot, penalty, energy;
+
+    auto stack = MakeStack(MatDet(J, detJ), VecDot(U, tx, dot),
+                           Eval((q + 1.0) * rho / (q * rho + 1.0), penalty),
+                           Eval(-penalty * weight * detJ * dot, energy));
+    energy.bvalue() = 1.0;
+
+    // Extract the Jacobian
+    ExtractJacobian<of, wrt>(stack, data, geo, sref, jac);
+  }
+
+ private:
+  T q;             // RAMP parameter
+  Vec<T, dim> tx;  // body force values
+};
+
+template <class Impl, index_t degree>
+class QuadBodyForceTopoElement
+    : public ElementIntegrand<
+          Impl, TopoBodyForceIntegrand<typename Impl::type, 2>,
+          QuadGaussQuadrature<degree + 1>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 1, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1QuadBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using Integrand = TopoBodyForceIntegrand<T, 2>;
+  using DataBasis = FEBasis<T, LagrangeH1QuadBasis<T, 1, degree>>;
+  using GeoBasis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1QuadBasis<T, 2, degree>>;
+  using Vec_t = typename Impl::Vec_t;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  QuadBodyForceTopoElement(TopoBodyForceIntegrand<T, 2> integrand,
+                           std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                           std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                           std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const TopoBodyForceIntegrand<T, 2>& get_integrand() { return integrand; }
+
+ private:
+  TopoBodyForceIntegrand<T, 2> integrand;
+};
 
 /**
  * @brief Apply surface traction and/or surface torque.

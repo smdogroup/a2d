@@ -83,16 +83,17 @@ class HelmholtzFilter {
    * @param res Residual contribution
    */
   template <FEVarType wrt>
-  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data,
-                                const FiniteElementGeometry& geo_,
-                                const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
                                 FiniteElementVar<wrt>& res) const {
-    ADObj<T> x(data[0]);
-    ADObj<FiniteElementSpace> sref(sref_);
-    ADObj<FiniteElementGeometry> geo(geo_);
+    ADObj<DataSpace> data(data0);
+    ADObj<FiniteElementSpace> sref(sref0);
+    ADObj<FiniteElementGeometry> geo(geo0);
 
     ADObj<FiniteElementSpace> s;
     ADObj<T> detJ, dot, output;
+    ADObj<T&> x = get_value<0>(data);
     ADObj<T&> rho = get_value<0>(s);
     ADObj<Vec<T, dim>&> rho_grad = get_grad<0>(s);
 
@@ -127,17 +128,18 @@ class HelmholtzFilter {
    * @param res Output product
    */
   template <FEVarType of, FEVarType wrt>
-  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data,
-                                        const FiniteElementGeometry& geo_,
-                                        const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
                                         const FiniteElementVar<wrt>& p,
                                         FiniteElementVar<of>& res) const {
-    A2DObj<T> x(data[0]);
-    A2DObj<FiniteElementSpace> sref(sref_);
-    A2DObj<FiniteElementGeometry> geo(geo_);
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
     A2DObj<FiniteElementSpace> s;
     A2DObj<T> detJ, dot, output;
+    A2DObj<T&> x = get_value<0>(data);
     A2DObj<T&> rho = get_value<0>(s);
     A2DObj<Vec<T, dim>&> rho_grad = get_grad<0>(s);
 
@@ -148,15 +150,9 @@ class HelmholtzFilter {
              output));
 
     output.bvalue() = 1.0;
-    stack.hproduct();
 
-    if constexpr (of == FEVarType::DATA) {
-      res[0] = x.hvalue();
-    } else if constexpr (of == FEVarType::GEOMETRY) {
-      res.copy(geo.hvalue());
-    } else if constexpr (of == FEVarType::STATE) {
-      res.copy(sref.hvalue());
-    }
+    // Compute the Jacobian-vector product
+    JacobianProduct<of, wrt>(stack, data, geo, sref, p, res);
   }
 
   /**
@@ -171,16 +167,17 @@ class HelmholtzFilter {
    * @param jac The Jacobian output
    */
   template <FEVarType of, FEVarType wrt>
-  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data,
-                                const FiniteElementGeometry& geo_,
-                                const FiniteElementSpace& sref_,
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
                                 FiniteElementJacobian<of, wrt>& jac) const {
-    A2DObj<T> x(data[0]);
-    A2DObj<FiniteElementSpace> sref(sref_);
-    A2DObj<FiniteElementGeometry> geo(geo_);
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
     A2DObj<FiniteElementSpace> s;
     A2DObj<T> detJ, dot, output;
+    A2DObj<T&> x = get_value<0>(data);
     A2DObj<T&> rho = get_value<0>(s);
     A2DObj<Vec<T, dim>&> rho_grad = get_grad<0>(s);
 
@@ -193,7 +190,7 @@ class HelmholtzFilter {
     output.bvalue() = 1.0;
 
     // Extract the Jacobian
-    ExtractJacobian<of, wrt>(stack, x, geo, sref, jac);
+    ExtractJacobian<of, wrt>(stack, data, geo, sref, jac);
   }
 };
 

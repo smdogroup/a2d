@@ -84,9 +84,9 @@ int main(int argc, char *argv[]) {
     using T = double;
 
     // Number of elements in each dimension
-    const index_t degree = 2;
-    const index_t nx = 32, ny = 32;
-    const double lx = 1.5, ly = 2.0;
+    const index_t degree = 1;
+    const index_t nx = 128, ny = 128;
+    const double lx = 2.0, ly = 2.0;
 
     // Set up mesh
     const index_t nverts = (nx + 1) * (ny + 1);
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     std::vector<index_t> quad(4 * nquad);
     std::vector<double> Xloc(2 * nverts);
     MesherRect2D mesher(nx, ny, lx, ly);
-    bool randomize = true;
+    bool randomize = false;
     unsigned int seed = 0;
     double fraction = 0.2;
     mesher.set_X_conn<index_t, T>(Xloc.data(), quad.data(), randomize, seed,
@@ -124,7 +124,6 @@ int main(int argc, char *argv[]) {
     const index_t block_size = dim;
     using FltrImpl_t = typename DirectCholeskyAnalysis<T, data_size>::Impl_t;
     using AnlyImpl_t = typename DirectCholeskyAnalysis<T, block_size>::Impl_t;
-
     using Vec_t = typename AnlyImpl_t::Vec_t;
 
     // Set the types of elements
@@ -132,6 +131,7 @@ int main(int argc, char *argv[]) {
 
     constexpr GreenStrainType etype = GreenStrainType::LINEAR;
     using Elem_t = QuadTopoElement<AnlyImpl_t, etype, degree>;
+    using BodyForce_t = QuadBodyForceTopoElement<AnlyImpl_t, degree>;
 
     // Create the meshes for the Hex elements
     auto data_mesh = std::make_shared<ElementMesh<Elem_t::DataBasis>>(conn);
@@ -150,6 +150,9 @@ int main(int argc, char *argv[]) {
     // vector
     auto filter_sol = std::make_shared<Vec_t>(ndata);
     auto filter_res = std::make_shared<Vec_t>(ndata);
+
+    // Derivative of the function of interest
+    auto dfdx = std::make_shared<Vec_t>(ndata);
 
     // Create the geometry vector - same for both filter/analysis
     auto geo = std::make_shared<Vec_t>(ngeo);
@@ -181,14 +184,19 @@ int main(int argc, char *argv[]) {
     auto filter = std::make_shared<DirectCholeskyAnalysis<T, 1>>(
         filter_data, geo, filter_sol, filter_res, filer_assembler);
 
-    // Create the element
+    // Create the element integrand
     T E = 70.0, nu = 0.3, q = 5.0;
-    T design_stress = 1.0, ks_param = 10.0;
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
+
+    // Create the body force integrand
+    T tx[] = {0.0, 10.0};
+    TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
     auto assembler = std::make_shared<ElementAssembler<AnlyImpl_t>>();
     assembler->add_element(std::make_shared<Elem_t>(elem_integrand, data_mesh,
                                                     geo_mesh, sol_mesh));
+    assembler->add_element(std::make_shared<BodyForce_t>(
+        body_integrand, data_mesh, geo_mesh, sol_mesh));
 
     // Set up the boundary conditions
     auto bcs = std::make_shared<DirichletBCs<T>>();
@@ -199,9 +207,32 @@ int main(int argc, char *argv[]) {
     auto analysis = std::make_shared<DirectCholeskyAnalysis<T, block_size>>(
         filter_sol, geo, sol, res, assembler, bcs);
 
+    T design_stress = 100.0, ks_param = 0.01;
+    using Func_t = QuadTopoVonMises<AnlyImpl_t, etype, degree>;
+    TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
+                                                 ks_param);
+    Func_t functional(func_integrand, data_mesh, geo_mesh, sol_mesh);
+
     TopoFilterAnalysis<FltrImpl_t, AnlyImpl_t> topo(filter, analysis);
 
+    // Evaluate the function and its derivative
     topo.linear_solve();
+    T f0 = topo.evaluate(functional);
+    topo.eval_adjoint_derivative(functional, FEVarType::DATA, *dfdx);
+
+    // Perturb x and test the gradient
+    double dh = 1e-6;
+    T dfdp = 0.0;
+    for (int i = 0; i < ndata; i++) {
+      dfdp += (*dfdx)[i];
+      (*filter_data)[i] += dh;
+    }
+
+    topo.linear_solve();
+    T f1 = topo.evaluate(functional);
+
+    std::cout << "dfdp:  " << std::setw(20) << dfdp << std::endl;
+    std::cout << "fd:    " << std::setw(20) << (f1 - f0) / dh << std::endl;
 
     filter->to_vtk("test");
     analysis->to_vtk("elasticity");

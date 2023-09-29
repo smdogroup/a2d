@@ -230,9 +230,14 @@ int main(int argc, char *argv[]) {
 
     topo.linear_solve();
     T f1 = topo.evaluate(functional);
+    T fd = (f1 - f0) / dh;
 
-    std::cout << "dfdp:  " << std::setw(20) << dfdp << std::endl;
-    std::cout << "fd:    " << std::setw(20) << (f1 - f0) / dh << std::endl;
+    std::cout << "dfdp:  " << std::setw(20) << std::setprecision(12) << dfdp
+              << std::endl;
+    std::cout << "fd:    " << std::setw(20) << std::setprecision(12) << fd
+              << std::endl;
+    std::cout << "err:   " << std::setw(20) << std::setprecision(12)
+              << (fd - dfdp) / fd << std::endl;
 
     filter->to_vtk("test");
     analysis->to_vtk("elasticity");

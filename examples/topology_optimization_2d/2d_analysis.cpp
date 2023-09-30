@@ -75,8 +75,8 @@ class TopoFilterAnalysis : public Analysis<AnlyImpl> {
   void eval_adjoint_derivative(FEVarType wrt, Vec_t &dfdx) {}
 
   void to_vtk(const std::string filename) {
-    filter->to_vtk(filename + std::string("-filter.vtk"));
-    analysis->to_vtk(filename + std::string("-elasticity.vtk"));
+    filter->to_vtk(filename + std::string("-filter"));
+    analysis->to_vtk(filename + std::string("-elasticity"));
   }
 
  private:
@@ -110,6 +110,9 @@ class TopOptProb : public ParOptProblem {
     setProblemSizes(nvars, ncon, 0);
     setNumInequalities(nineq, 0);
 
+    verbose = true;
+    opt_iter = 0;
+    vtk_freq = 5;
     fobj_ref = 1.0;
   }
 
@@ -159,7 +162,7 @@ class TopOptProb : public ParOptProblem {
     // Write design to vtk
     if (opt_iter % vtk_freq == 0) {
       char vtk_name[256];
-      std::snprintf(vtk_name, sizeof(vtk_name), "result_%d.vtk", opt_iter);
+      std::snprintf(vtk_name, sizeof(vtk_name), "result%d", opt_iter);
       std::filesystem::path path =
           std::filesystem::path(prefix) / std::filesystem::path(vtk_name);
       analysis->to_vtk(path);
@@ -228,8 +231,8 @@ int main(int argc, char *argv[]) {
 
     // Number of elements in each dimension
     const index_t degree = 1;
-    const index_t nx = 8, ny = 8;
-    const double lx = 2.0, ly = 2.0;
+    const index_t nx = 384, ny = 96;
+    const double lx = 8.0, ly = 2.0;
     const double target_volume = 0.4 * lx * ly;
 
     // Set up mesh
@@ -249,11 +252,12 @@ int main(int argc, char *argv[]) {
     // Set up bcs
     auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
 
-    const index_t num_boundary_verts = (ny + 1);
+    const index_t num_boundary_verts = 2 * (ny + 1);
     index_t boundary_verts[num_boundary_verts];
 
     for (index_t j = 0; j < ny + 1; j++) {
       boundary_verts[j] = node_num(0, j);
+      boundary_verts[ny + 1 + j] = node_num(nx, j);
     }
 
     index_t bc_label =
@@ -367,35 +371,36 @@ int main(int argc, char *argv[]) {
         filter, analysis);
 
     // Set up the topology optimization problem
-    std::string prefix("./");
+    std::string prefix("./results/");
     TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
                                             volume, target_volume, dfdx);
-
+    prob.incref();
     prob.checkGradients(1e-6);
 
-    // // Evaluate the function and its derivative
-    // topo->linear_solve();
-    // T f0 = topo->evaluate(*functional);
-    // topo->eval_adjoint_derivative(*functional, FEVarType::DATA, *dfdx);
+    // Create the options class, and create default values
+    ParOptOptions *options = new ParOptOptions();
+    ParOptOptimizer::addDefaultOptions(options);
 
-    // // Perturb x and test the gradient
-    // double dh = 1e-6;
-    // T dfdp = 0.0;
-    // for (int i = 0; i < ndata; i++) {
-    //   dfdp += (*dfdx)[i];
-    //   (*filter_data)[i] += dh;
-    // }
+    options->setOption("algorithm", "mma");
+    options->setOption("mma_output_file", "paropt.mma");
+    options->setOption("output_file", "paropt.out");
+    options->setOption("mma_max_iterations", 100);
+    options->setOption("max_major_iters", 100);
+    options->setOption("abs_res_tol", 1e-8);
+    options->setOption("starting_point_strategy", "affine_step");
+    options->setOption("barrier_strategy", "mehrotra");
+    options->setOption("use_line_search", 0);
 
-    // topo->linear_solve();
-    // T f1 = topo->evaluate(*functional);
-    // T fd = (f1 - f0) / dh;
+    ParOptOptimizer *opt = new ParOptOptimizer(&prob, options);
+    opt->incref();
 
-    // std::cout << "dfdp:  " << std::setw(20) << std::setprecision(12) << dfdp
-    //           << std::endl;
-    // std::cout << "fd:    " << std::setw(20) << std::setprecision(12) << fd
-    //           << std::endl;
-    // std::cout << "err:   " << std::setw(20) << std::setprecision(12)
-    //           << (fd - dfdp) / fd << std::endl;
+    // Set the checkpoint file
+    double start = MPI_Wtime();
+    opt->optimize();
+    double diff = MPI_Wtime() - start;
+    printf("ParOpt time: %f seconds \n", diff);
+
+    opt->decref();
   }
 
   Kokkos::finalize();

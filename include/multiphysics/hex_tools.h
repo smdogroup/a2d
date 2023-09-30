@@ -78,10 +78,10 @@ void set_geo_from_quad_nodes(const index_t nquad, const I quad[],
       GeoBasis::get_dof_point(ii, pt);
 
       double N[4];
-      N[0] = 0.125 * (1.0 - pt[0]) * (1.0 - pt[1]);
-      N[1] = 0.125 * (1.0 + pt[0]) * (1.0 - pt[1]);
-      N[2] = 0.125 * (1.0 + pt[0]) * (1.0 + pt[1]);
-      N[3] = 0.125 * (1.0 - pt[0]) * (1.0 + pt[1]);
+      N[0] = 0.25 * (1.0 - pt[0]) * (1.0 - pt[1]);
+      N[1] = 0.25 * (1.0 + pt[0]) * (1.0 - pt[1]);
+      N[2] = 0.25 * (1.0 + pt[0]) * (1.0 + pt[1]);
+      N[3] = 0.25 * (1.0 - pt[0]) * (1.0 + pt[1]);
 
       // Interpolate to find the basis
       if (ii % 2 == 0) {

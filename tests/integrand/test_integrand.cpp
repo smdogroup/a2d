@@ -6,8 +6,8 @@
 #include "ad/a2dtest.h"
 #include "multiphysics/integrand_elasticity.h"
 // #include "multiphysics/integrand_heat_conduction.h"
-// #include "multiphysics/integrand_poisson.h"
 #include "multiphysics/hex_tools.h"
+#include "multiphysics/integrand_poisson.h"
 #include "multiphysics/integrand_test.h"
 
 using namespace A2D;
@@ -24,8 +24,8 @@ using TopoBodyIntegrand = TopoBodyForceIntegrand<T, 3>;
 
 // IntegrandTopoLinearElasticity<T, 3>;
 
-// template <typename T>
-// using PoissonIntegrand = Poisson<T, 3>;
+template <typename T>
+using PoissonIntegrand = Poisson<T, 3>;
 
 // template <typename T>
 // using MixedPoissonIntegrand = MixedPoisson<T, 3>;
@@ -52,10 +52,9 @@ bool TestIntegrands(bool component, bool write_output) {
   A2D::Test::A2DIntegrandAnalysisTest<TopoBodyIntegrand, Tc> test3(integrand3);
   passed = passed && A2D::Test::Run(test3, component, write_output);
 
-  // PoissonIntegrand<Tc> integrand2;
-  // A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc>
-  // test2(integrand2); passed = passed && A2D::Test::Run(test2, component,
-  // write_output);
+  PoissonIntegrand<Tc> integrand4;
+  A2D::Test::A2DIntegrandAnalysisTest<PoissonIntegrand, Tc> test4(integrand4);
+  passed = passed && A2D::Test::Run(test4, component, write_output);
 
   // MixedPoissonIntegrand<Tc> integrand3;
   // A2D::Test::A2DIntegrandAnalysisTest<MixedPoissonIntegrand, Tc> test3(

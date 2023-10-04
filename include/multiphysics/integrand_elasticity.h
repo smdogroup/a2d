@@ -864,105 +864,131 @@ class QuadBodyForceTopoElement
 /**
  * @brief Apply surface traction and/or surface torque.
  */
-// template <typename T, index_t D>
-// class IntegrandTopoSurfaceTraction {
-//  public:
-//   KOKKOS_FUNCTION IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
-//                                                const T torx_[] = nullptr,
-//                                                const T x0_[] = nullptr) {
-//     has_traction = false;
-//     has_torque = false;
+template <typename T, index_t D>
+class SurfaceTractionIntegrand {
+ public:
+  // Number of dimensions
+  static const index_t dim = D;
 
-//     if (tx_) {
-//       for (index_t i = 0; i < dim; i++) {
-//         tx[i] = tx_[i];
-//       }
-//       has_traction = true;
-//     }
+  // Number of data dimensions
+  static const index_t data_dim = 1;
 
-//     if (torx_ && x0_) {
-//       for (index_t i = 0; i < dim; i++) {
-//         x0[i] = x0_[i];
-//         if constexpr (dim == 3) {
-//           torx[i] = torx_[i];
-//         }
-//       }
-//       if constexpr (dim == 2) {
-//         torx[0] = torx_[0];
-//       }
-//       has_torque = true;
-//     }
-//   }
+  // Space for the finite-element data
+  using DataSpace = FESpace<T, dim>;
 
-//   // Number of dimensions
-//   static const index_t dim = D;
+  // Space for the element geometry
+  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
+  // Finite element space
+  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
-//   // Space for the finite-element data
-//   using DataSpace = FESpace<T, dim>;
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      FEVarSelect<wrt, DataSpace, FiniteElementGeometry, FiniteElementSpace>;
 
-//   // Space for the element geometry
-//   using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      FESymMatSelect<of, wrt, T, DataSpace::ncomp, FiniteElementGeometry::ncomp,
+                     FiniteElementSpace::ncomp>;
 
-//   // Finite element space
-//   using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  // Data used for information
+  Vec<T, dim> x0;  // Position vector
+  Vec<T, dim> tx;  // Surface traction
+  typename std::conditional<dim == 2, T, Vec<T, dim>>::type torx;
 
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = SurfaceMapping<T, dim>;
+  KOKKOS_FUNCTION SurfaceTractionIntegrand(const T tx_[] = nullptr,
+                                           const T torx_[] = nullptr,
+                                           const T x0_[] = nullptr) {
+    if (tx_) {
+      for (index_t i = 0; i < dim; i++) {
+        tx[i] = tx_[i];
+      }
+    }
 
-//   T tx[dim];  // surface traction vector
-//   T torx[conditional_value<index_t, dim == 3, 3, 1>::value];  // surface
-//   torque
-//                                                               // vector
-//   T x0[dim];                                                  // torque
-//   origin bool has_traction; bool has_torque;
+    if (x0_) {
+      for (index_t i = 0; i < dim; i++) {
+        x0[i] = x0_[i];
+      }
+    }
 
-//   /**
-//    * @brief Evaluate the weak form coefficients for linear elasticity
-//    *
-//    * @param wdetJ The quadrature weight times determinant of the Jacobian
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The trial solution
-//    * @param coef Output weak form coefficients of the test space
-//    */
-//   KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
-//                                 const FiniteElementGeometry& geo,
-//                                 const FiniteElementSpace& s,
-//                                 FiniteElementSpace& coef) const {
-//     // Extract the solution
-//     Vec<T, dim>& U = (coef.template get<0>()).get_value();
-//     for (index_t i = 0; i < dim; i++) {
-//       U(i) = 0.0;
-//     }
+    if (torx_) {
+      if constexpr (dim == 2) {
+        torx = torx_[0];
+      } else if constexpr (dim == 3) {
+        for (index_t i = 0; i < dim; i++) {
+          torx[i] = torx_[i];
+        }
+      }
+    }
+  }
 
-//     if (has_traction) {
-//       for (index_t i = 0; i < dim; i++) {
-//         U(i) -= wdetJ * tx[i];
-//       }
-//     }
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    FiniteElementSpace s;
+    Vec<T, dim> d, tqx, fx;
+    T dot, detJ, output;
 
-//     if (has_torque) {
-//       // Extract location
-//       const Vec<T, dim>& x = (geo.template get<0>()).get_value();
+    Vec<T, dim>& u = get_value<0>(s);
+    const Vec<T, dim>& x = get_value<0>(geo);
 
-//       if constexpr (dim == 2) {
-//         // Force at this point is (x - x0) cross torque
-//         U(0) += wdetJ * torx[0] * (x(1) - x0[1]);
-//         U(1) += -wdetJ * torx[0] * (x(0) - x0[0]);
-//       } else {  // dim == 3
-//         // Force at this point is (x - x0) cross torque
-//         U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) *
-//         torx[1]); U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) -
-//         x0[0])
-//         * torx[2]); U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) -
-//         x0[1]) * torx[0]);
-//       }
-//     }
-//   }
-// };
+    // SurfElementTransform(geo, sref, detJ, s);
+    VecSum(1.0, x, -1.0, x0, d);
+    VecCross(d, torx, tqx);
+    VecSum(tx, tqx, fx);
+    VecDot(u, fx, dot);
+    output = -weight * detJ * dot;
+
+    return output;
+  }
+
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementVar<wrt>& res) const {
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
+
+    ADObj<FiniteElementSpace> s;
+    ADObj<Vec<T, dim>> d, tqx, fx;
+    ADObj<T> dot, detJ, output;
+
+    ADObj<Vec<T, dim>&> u = get_value<0>(s);
+    ADObj<Vec<T, dim>&> x = get_value<0>(geo);
+
+    auto stack = MakeStack(  // SurfElementTransform(geo, sref, detJ, s),
+        VecSum(1.0, x, -1.0, x0, d), VecCross(d, torx, tqx),
+        VecSum(tx, tqx, fx), VecDot(u, fx, dot),
+        Eval(-weight * detJ * dot, output));
+
+    output.bvalue() = 1.0;
+    stack.reverse();
+
+    if constexpr (wrt == FEVarType::DATA) {
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      res.copy(geo.bvalue());
+    } else if constexpr (wrt == FEVarType::STATE) {
+      res.copy(sref.bvalue());
+    }
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
+                                        const FiniteElementVar<wrt>& p,
+                                        FiniteElementVar<of>& res) const {}
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementJacobian<of, wrt>& jac) const {}
+};
 
 }  // namespace A2D
 

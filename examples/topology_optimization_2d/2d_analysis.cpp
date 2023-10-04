@@ -247,8 +247,8 @@ int main(int argc, char *argv[]) {
     double fraction = 0.2;
     mesher.set_X_conn<index_t, T>(Xloc.data(), quad.data(), randomize, seed,
                                   fraction);
-
     MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
+
     // Set up bcs
     auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
 

@@ -3,9 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include "ad/a2dgemm.h"
-#include "ad/a2dstack.h"
-#include "ad/core/a2dgemmcore.h"
+#include "a2dcore.h"
 
 template <typename I, typename T>
 void print_row_major_matrix(const std::string name, I M, I N, T mat[]) {
@@ -117,32 +115,33 @@ void test_matmatmult_forward() {
   A2D::Mat<T, Cm, Cn> C, Cb;
 
   for (int i = 0; i < Am * An; i++) {
-    A.data()[i] = T(std::rand()) / RAND_MAX;
-    Ab.data()[i] = T(std::rand()) / RAND_MAX;
+    A[i] = T(std::rand()) / RAND_MAX;
+    Ab[i] = T(std::rand()) / RAND_MAX;
   }
 
   for (int i = 0; i < Bm * Bn; i++) {
-    B.data()[i] = T(std::rand()) / RAND_MAX;
-    Bb.data()[i] = T(std::rand()) / RAND_MAX;
+    B[i] = T(std::rand()) / RAND_MAX;
+    Bb[i] = T(std::rand()) / RAND_MAX;
   }
 
   A2D::Mat<T, Cm, Cn> Cref, Cbref;
 
-  RefImpl::MatMatMult<T, Am, An, Bn>(A.data(), B.data(), Cref.data());
+  RefImpl::MatMatMult<T, Am, An, Bn>(A.get_data(), B.get_data(),
+                                     Cref.get_data());
 
-  A2D::ADMat<A2D::Mat<T, Am, An>> Aobj(A, Ab);
-  A2D::ADMat<A2D::Mat<T, Bm, Bn>> Bobj(B, Bb);
-  A2D::ADMat<A2D::Mat<T, Cm, Cn>> Cobj(C, Cb);
+  A2D::ADObj<A2D::Mat<T, Am, An>> Aobj(A, Ab);
+  A2D::ADObj<A2D::Mat<T, Bm, Bn>> Bobj(B, Bb);
+  A2D::ADObj<A2D::Mat<T, Cm, Cn>> Cobj(C, Cb);
 
   auto expr = A2D::MatMatMult(Aobj, Bobj, Cobj);
 
   expr.template forward<A2D::ADorder::FIRST>();
-  print_row_major_matrix("Cb", Cm, Cn, Cb.data());
+  print_row_major_matrix("Cb", Cm, Cn, Cb.get_data());
 
   auto evalA = [=](const std::complex<T> Ac[], std::complex<T> Cc[]) mutable {
     std::complex<T> Bc[Bm * Bn];
     for (int n = 0; n < Bm * Bn; n++) {
-      Bc[n] = B.data()[n];
+      Bc[n] = B[n];
     }
     A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
   };
@@ -150,17 +149,17 @@ void test_matmatmult_forward() {
   auto evalB = [=](const std::complex<T> Bc[], std::complex<T> Cc[]) mutable {
     std::complex<T> Ac[Am * An];
     for (int n = 0; n < Am * An; n++) {
-      Ac[n] = A.data()[n];
+      Ac[n] = A[n];
     }
     A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
   };
 
-  RefImpl::complex_step<T, Am, An, Cm, Cn>(A.data(), Ab.data(), Cbref.data(),
-                                           evalA);
-  RefImpl::complex_step<T, Bm, Bn, Cm, Cn>(B.data(), Bb.data(), Cbref.data(),
-                                           evalB);
+  RefImpl::complex_step<T, Am, An, Cm, Cn>(A.get_data(), Ab.get_data(),
+                                           Cbref.get_data(), evalA);
+  RefImpl::complex_step<T, Bm, Bn, Cm, Cn>(B.get_data(), Bb.get_data(),
+                                           Cbref.get_data(), evalB);
 
-  print_row_major_matrix("Cb_ref", Cm, Cn, Cbref.data());
+  print_row_major_matrix("Cb_ref", Cm, Cn, Cbref.get_data());
 }
 
 void test_matmatmult_op() {
@@ -168,10 +167,10 @@ void test_matmatmult_op() {
 
   A2D::Mat<T, 3, 3> A, B, C, D, E, F, G, Ab, Bb, Cb, Db, Eb, Fb, Gb, Ap, Bp, Cp,
       Dp, Ep, Fp, Gp, Ah, Bh, Ch, Dh, Eh, Fh, Gh;
-  A2D::ADMat<A2D::Mat<T, 3, 3>> Amat(A, Ab), Bmat(B, Bb), Cmat(C, Cb),
+  A2D::ADObj<A2D::Mat<T, 3, 3>> Amat(A, Ab), Bmat(B, Bb), Cmat(C, Cb),
       Dmat(D, Db), Emat(E, Eb), Fmat(F, Fb), Gmat(G, Gb);
 
-  A2D::A2DMat<A2D::Mat<T, 3, 3>> A2Dmat(A, Ab, Ap, Ah), B2Dmat(B, Bb, Bp, Bh),
+  A2D::A2DObj<A2D::Mat<T, 3, 3>> A2Dmat(A, Ab, Ap, Ah), B2Dmat(B, Bb, Bp, Bh),
       C2Dmat(C, Cb, Cp, Ch);
 
   // Test all active/passive combinations

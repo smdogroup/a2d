@@ -218,6 +218,19 @@ KOKKOS_FUNCTION auto RefElementTransform(A2DObj<Geometry>& geo,
       geo, in, detJ, out);
 }
 
+template <
+    class Geometry, class Space, typename T,
+    std::enable_if_t<get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<Space>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
+        true>
+void BoundaryElementTransform(const Geometry& geo, const Space& in, T& detJ,
+                              Space& out) {
+  const Mat<T, Geometry::dim + 1, Geometry::dim>& J = get_grad<0>(geo);
+}
+
 namespace Test {
 
 template <typename T, class Geometry, class Space>

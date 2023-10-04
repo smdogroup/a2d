@@ -2,6 +2,7 @@
 #define A2D_STACK_H
 
 #include "a2ddefs.h"
+#include "a2dobj.h"
 
 namespace A2D {
 

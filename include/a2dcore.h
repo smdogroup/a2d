@@ -17,6 +17,7 @@
 #include "ad/a2dmatdet.h"
 #include "ad/a2dmatinv.h"
 #include "ad/a2dmatsum.h"
+#include "ad/a2dmattovec.h"
 #include "ad/a2dmattrace.h"
 #include "ad/a2dmatvecmult.h"
 #include "ad/a2dscalarops.h"

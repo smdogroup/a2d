@@ -15,10 +15,10 @@ template <typename T>
 class SolutionVector {
  public:
   SolutionVector(index_t ndof) : ndof(ndof), array("array", ndof) { zero(); }
-  KOKKOS_FUNCTION T& operator[](index_t index) const { return array(index); }
-  // KOKKOS_FUNCTION const T& operator[](index_t index) const {
-  //   return array(index);
-  // }
+  KOKKOS_FUNCTION T& operator[](index_t index) { return array(index); }
+  KOKKOS_FUNCTION const T& operator[](index_t index) const {
+    return array(index);
+  }
 
   KOKKOS_FUNCTION index_t get_num_dof() const { return ndof; }
   KOKKOS_FUNCTION index_t size() const { return ndof; }

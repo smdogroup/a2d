@@ -12,8 +12,8 @@
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatMultTrace(SymMat<T, N>& S, SymMat<T, N>& E,
-                                     T& output) {
+KOKKOS_FUNCTION void SymMatMultTrace(const SymMat<T, N>& S,
+                                     const SymMat<T, N>& E, T& output) {
   output = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
 }
 

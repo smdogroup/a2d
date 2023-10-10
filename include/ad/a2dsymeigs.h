@@ -50,6 +50,244 @@ KOKKOS_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
   }
 }
 
+/**
+ * @brief Reduce a symmetric matrix to tridiagonal form
+ *
+ * @tparam T Scalar type
+ * @tparam N Dimension of the symmetric matrix
+ * @param A Input matrix - entries are destroyed
+ * @param alpha Array of length N
+ * @param beta Array of length N
+ * @param w Temporary array of length N
+ * @param P Identity on input, transform on output (optional)
+ */
+template <typename T, int N>
+KOKKOS_FUNCTION void SymMatTriReduce(T* A, T* alpha, T* beta, T* w,
+                                     T* P = nullptr) {
+  for (int j = N - 1; j > 0; j--) {
+    // Set the column vector for the Householder transform
+    T* aj = &A[j * (j + 1) / 2];
+
+    // Set the A matrix entries
+    beta[j - 1] = aj[j - 1];
+    alpha[j] = aj[j];
+
+    // Complete the computation for the Householder vector
+    T sigma = 0.0;
+    for (int i = 0; i < j; i++) {
+      sigma += aj[i] * aj[i];
+    }
+    sigma = std::sqrt(sigma);
+
+    // Set sigma to reduce round-off error
+    if (std::real(aj[j - 1]) < 0.0) {
+      sigma *= -1.0;
+    }
+
+    // Comupte h = 1/2 *  u^{T} u
+    T h = 0.0;
+    for (int i = 0; i < j - 1; i++) {
+      h += aj[i] * aj[i];
+    }
+    h += (aj[j - 1] + sigma) * (aj[j - 1] + sigma);
+    T hinv = 0.0;
+    if (std::real(h) != 0.0) {
+      hinv = 2.0 / h;
+    }
+
+    // Compute the matrix-vector product w = hinv * A * u
+    const T* ap = A;
+    for (int i = 0; i <= j; i++) {
+      w[i] = 0.0;
+    }
+    for (int i = 0; i <= j; i++) {
+      T ui = aj[i];
+      if (i == j - 1) {
+        ui += sigma;
+      } else if (i == j) {
+        ui = 0.0;
+      }
+
+      for (int k = 0; k < i; k++) {
+        T uk = aj[k];
+        if (k == j - 1) {
+          uk += sigma;
+        } else if (k == j) {
+          uk = 0.0;
+        }
+
+        w[k] += ap[0] * ui;
+        w[i] += ap[0] * uk;
+        ap++;
+      }
+      w[i] += ap[0] * ui;
+      ap++;
+    }
+    for (int i = 0; i <= j; i++) {
+      w[i] *= hinv;
+    }
+
+    // Now adjust the aj column so that it stores u
+    T* u = aj;
+    u[j - 1] += sigma;
+    u[j] = 0.0;
+
+    // kappa = 1/2 * hinv * u^{T} * w
+    T kappa = 0.0;
+    for (int i = 0; i < j; i++) {
+      kappa += u[i] * w[i];
+    }
+    kappa *= 0.5 * hinv;
+
+    // Apply the update to the remaining parts of the matrix
+    T* a = A;
+    for (int i = 0; i < j; i++) {
+      // q = w - kappa * u
+      T qi = w[i] - kappa * u[i];
+      for (int k = 0; k < i; k++) {
+        T qk = w[k] - kappa * u[k];
+        a[0] -= qi * u[k] + qk * u[i];
+        a++;
+      }
+      a[0] -= 2.0 * qi * u[i];
+      a++;
+    }
+
+    T qj = w[j] - kappa * u[j];
+    T qk = w[j - 1] - kappa * u[j - 1];
+    beta[j - 1] -= qk * u[j] + qj * u[j - 1];
+    alpha[j] -= 2.0 * qj * u[j];
+
+    // Store hinv for later
+    u[j] = hinv;
+  }
+
+  // Set the last diagonal
+  alpha[0] = A[0];
+
+  if (P) {
+    for (int j = N - 1; j > 0; j--) {
+      const T* u = &A[j * (j + 1) / 2];
+      const T hinv = u[j];
+
+      // Compute the full
+      for (int i = 0; i < N; i++) {
+        w[i] = 0.0;
+        for (int k = 0; k < j; k++) {
+          // w[i] += P[i, k] * u[k]
+          w[i] += P[k + i * N] * u[k];
+        }
+      }
+
+      // P = P - hinv * w * u^{T}
+      for (int i = 0; i < N; i++) {
+        for (int k = 0; k < j; k++) {
+          P[k + i * N] -= hinv * w[i] * u[k];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * @brief Compute the eigenvalues and optionally eigenvectors of a tridiagonal
+ * matrix
+ *
+ * @tparam T Scalar type
+ * @tparam N Dimension of the symmetric matrix
+ * @param alpha Diagonal entries of length N (eigenvalue outputs)
+ * @param beta Off-diagonal entries - length N (note this is not N-1)
+ * @param Q Eigenvectors
+ */
+template <typename T, int N>
+void TriSymEigs(T* alpha, T* beta, T* Q) {
+  for (int j = 0; j < N; j++) {
+    for (int iter = 0; iter < 30; iter++) {
+      int m = j;
+      for (; m < N - 1; m++) {
+        double tr = (std::fabs(std::real(alpha[m + 1])) +
+                     std::fabs(std::real(alpha[m])));
+        if (tr + std::fabs(std::real(beta[m])) == tr) {
+          break;
+        }
+      }
+
+      //  m is the index we were looking for
+      if (m != j) {
+        // Compute whether the shift should be positive or negative
+        T g = (alpha[j + 1] - alpha[j]) / (2.0 * beta[j]);
+        T r = std::sqrt(1.0 + g * g);
+
+        // Compute the shift using the expression with less roundoff error
+        if (std::real(g) >= 0.0) {
+          g = alpha[m] - alpha[j] + beta[j] / (g + r);
+        } else {
+          g = alpha[m] - alpha[j] + beta[j] / (g - r);
+        }
+
+        // Apply the transformation
+        T c = 1.0, s = 1.0, p = 0.0;
+        int i = m - 1;
+        for (; i >= j; i--) {
+          T f = s * beta[i];
+          T b = c * beta[i];
+          r = std::sqrt(f * f + g * g);
+          beta[i + 1] = r;
+
+          if (std::real(r) == 0.0) {
+            alpha[i + 1] -= p;
+            beta[m] = 0.0;
+            break;
+          }
+
+          s = f / r;
+          c = g / r;
+          g = alpha[i + 1] - p;
+          r = (alpha[i] - g) * s + 2.0 * c * b;
+          p = s * r;
+          alpha[i + 1] = g + p;
+          g = c * r - b;
+
+          if (Q) {
+            // Apply plane rotations to Q
+            for (int k = 0; k < N; k++) {
+              T q = Q[i + 1 + k * N];
+              Q[i + 1 + k * N] = s * Q[i + k * N] + c * q;
+              Q[i + k * N] = c * Q[i + k * N] - s * q;
+            }
+          }
+        }
+        if (std::real(r) == 0.0 && i >= j) {
+          continue;
+        }
+        alpha[j] -= p;
+        beta[j] = g;
+        beta[m] = 0.0;
+      }
+    }
+  }
+}
+
+template <typename T, int N>
+KOKKOS_FUNCTION void SymEigsGeneral(const T* A, T* eigs, T* Q = nullptr) {
+  T Acopy[N * (N + 1) / 2], work[2 * N];
+  for (int i = 0; i < N * (N + 1) / 2; i++) {
+    Acopy[i] = A[i];
+  }
+
+  // Initialize Q
+  if (Q) {
+    for (int i = 0; i < N * N; i++) {
+      Q[i] = 0.0;
+    }
+    for (int i = 0; i < N; i++) {
+      Q[i * (N + 1)] = 1.0;
+    }
+  }
+  SymMatTriReduce<T, N>(Acopy, eigs, &work[0], &work[N], Q);
+  TriSymEigs<T, N>(eigs, &work[0], Q);
+}
+
 template <typename T, int N>
 KOKKOS_FUNCTION void SymEigsForward(const T* eigs, const T* Q, const T* Ad,
                                     T* eigsd) {
@@ -166,20 +404,7 @@ KOKKOS_FUNCTION void SymEigs(const SymMat<T, N>& S, Vec<T, N>& eigs) {
   if constexpr (N == 2) {
     SymEigs2x2(get_data(S), get_data(eigs));
   } else {
-    int n = N, ldz = N, info;
-    T Ap[N * (N + 1) / 2], W[N];
-    double work[3 * N];
-
-    // Copy the data over since LAPACK over-writes the matrix
-    for (int i = 0; i < N * (N + 1) / 2; i++) {
-      Ap[i] = S[i];
-    }
-    LAPACKdspev("N", "U", &n, Ap, W, nullptr, &ldz, work, &info);
-
-    // Set the eigenvalues
-    for (int i = 0; i < N; i++) {
-      eigs(i) = W[i];
-    }
+    SymEigsGeneral<T, N>(get_data(S), get_data(eigs));
   }
 }
 
@@ -202,30 +427,7 @@ class SymEigsExpr {
     if constexpr (N == 2) {
       SymEigs2x2(get_data(S), get_data(eigs), get_data(Q));
     } else {
-      auto S0 = S.value();
-      auto eigs0 = eigs.value();
-
-      int n = N, ldz = N, info;
-      double Ap[N * (N + 1) / 2], Z[N * N], W[N];
-      double work[3 * N];
-
-      // Copy the data over since LAPACK over-writes the matrix
-      for (int i = 0; i < N * (N + 1) / 2; i++) {
-        Ap[i] = std::real(S0[i]);
-      }
-      LAPACKdspev("V", "U", &n, Ap, W, Z, &ldz, work, &info);
-
-      // Copy the data back to the matrix
-      for (int j = 0; j < N; j++) {
-        for (int i = 0; i < N; i++) {
-          Q(i, j) = T(Z[i + j * N]);
-        }
-      }
-
-      // Set the eigenvalues
-      for (int i = 0; i < N; i++) {
-        eigs0(i) = T(W[i]);
-      }
+      SymEigsGeneral<T, N>(get_data(S), get_data(eigs), get_data(Q));
     }
   }
 
@@ -332,10 +534,15 @@ bool SymEigsTestAll(bool component = false, bool write_output = true) {
     passed = passed && Run(test1, component, write_output);
   }
 
-  // for (int i = 0; i < 10; i++) {
-  //   SymEigsTest<Tc, 3> test1;
-  //   passed = passed && Run(test1, component, write_output);
-  // }
+  for (int i = 0; i < 10; i++) {
+    SymEigsTest<Tc, 3> test1;
+    passed = passed && Run(test1, component, write_output);
+  }
+
+  for (int i = 0; i < 10; i++) {
+    SymEigsTest<Tc, 10> test1;
+    passed = passed && Run(test1, component, write_output);
+  }
 
   return passed;
 }

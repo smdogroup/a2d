@@ -215,11 +215,6 @@ inline void LAPACKdspev(const char *job, const char *uplo, int *n, double *a,
                         int *info) {
   dspev_(job, uplo, n, a, w, z, ldz, work, info);
 }
-// inline void LAPACKdspev(const char *job, const char *uplo, int *n,
-//                         std::complex<double> *ac, std::complex<double> *wc,
-//                         double *z, int *ldz, double *work, int *info) {
-//   dspev_(job, uplo, n, a, w, z, ldz, work, info);
-// }
 
 }  // namespace A2D
 

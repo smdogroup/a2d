@@ -620,7 +620,11 @@ class FESpace {
   /*
     Zero all the values in all the spaces
   */
-  KOKKOS_FUNCTION void zero() { zero_<0, Spaces...>(); }
+  KOKKOS_FUNCTION void zero() {
+    if constexpr (sizeof...(Spaces) > 0) {
+      zero_<0, Spaces...>();
+    }
+  }
 
   /*
     Get a solution value based on the index
@@ -636,8 +640,10 @@ class FESpace {
     Copy the values from another FESpace object
   */
   KOKKOS_FUNCTION void copy(const FESpace<T, D, Spaces...>& src) {
-    for (index_t i = 0; i < ncomp; i++) {
-      (*this)[i] = src[i];
+    if constexpr (ncomp > 0) {
+      for (index_t i = 0; i < ncomp; i++) {
+        (*this)[i] = src[i];
+      }
     }
   }
 

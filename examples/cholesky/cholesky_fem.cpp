@@ -1,6 +1,7 @@
 #include <vector>
 
-#include "a2dobjs.h"
+#include "a2ddefs.h"
+#include "multiphysics/feanalysis.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
 #include "multiphysics/feelementmat.h"
@@ -8,89 +9,13 @@
 #include "multiphysics/fequadrature.h"
 #include "multiphysics/hex_tools.h"
 #include "multiphysics/integrand_elasticity.h"
+#include "multiphysics/integrand_helmholtz.h"
 #include "multiphysics/lagrange_hypercube_basis.h"
 #include "sparse/sparse_cholesky.h"
 #include "sparse/sparse_utils.h"
 #include "utils/a2dmesh.h"
 
 using namespace A2D;
-
-template <typename T>
-class FEProb {
- public:
-  static constexpr int spatial_dim = 3;
-  static constexpr int data_dim = 1;
-  static constexpr int var_dim = 3;
-  static constexpr int block_size = var_dim;
-  static constexpr int degree = 1;
-
-  using Vec_t = SolutionVector<T>;
-  using BSRMat_t = BSRMat<T, block_size, block_size>;
-
-  using Integrand = IntegrandTopoLinearElasticity<T, spatial_dim>;
-  using Quadrature = HexGaussQuadrature<degree + 1>;
-  using DataBasis = FEBasis<T, LagrangeL2HexBasis<T, data_dim, degree - 1>>;
-  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, spatial_dim, degree>>;
-  using Basis = FEBasis<T, LagrangeH1HexBasis<T, var_dim, degree>>;
-
-  using FE =
-      FiniteElement<T, Integrand, Quadrature, DataBasis, GeoBasis, Basis>;
-  using DataElemVec = ElementVector_Serial<T, DataBasis, Vec_t>;
-  using GeoElemVec = ElementVector_Serial<T, GeoBasis, Vec_t>;
-  using ElemVec = ElementVector_Serial<T, Basis, Vec_t>;
-
-  FEProb(MeshConnectivity3D &conn, int nhex, const int hex[],
-         const double Xloc[], DirichletBCInfo &bcinfo, T E = 70e3, T nu = 0.3,
-         T q = 5.0)
-      : E(E),
-        nu(nu),
-        q(q),
-        datamesh(conn),
-        geomesh(conn),
-        mesh(conn),
-        data(datamesh.get_num_dof()),
-        geo(geomesh.get_num_dof()),
-        sol(mesh.get_num_dof()),
-        elem_data(datamesh, data),
-        elem_geo(geomesh, geo),
-        elem_sol(mesh, sol) {
-    // Set geometry
-    set_geo_from_hex_nodes<GeoBasis>(nhex, hex, Xloc, elem_geo);
-  }
-
-  BSRMat_t create_fea_bsr_matrix() {
-    // Symbolically create block CSR matrix
-
-    index_t nrows;
-    std::vector<index_t> rowp, cols;
-    mesh.template create_block_csr<block_size>(nrows, rowp, cols);
-
-    BSRMat_t bsr_mat(nrows, nrows, cols.size(), rowp, cols);
-
-    // Populate the CSR matrix
-    FE fe;
-    Integrand integrand(E, nu, q);
-
-    ElementMat_Serial<T, Basis, BSRMat_t> elem_mat(mesh, bsr_mat);
-    fe.add_jacobian(integrand, elem_data, elem_geo, elem_sol, elem_mat);
-
-    return bsr_mat;
-  }
-
-  ElementMesh<Basis> &get_mesh() { return mesh; }
-
- private:
-  T E, nu, q;
-  ElementMesh<DataBasis> datamesh;
-  ElementMesh<GeoBasis> geomesh;
-  ElementMesh<Basis> mesh;
-  Vec_t data;
-  Vec_t geo;
-  Vec_t sol;
-  DataElemVec elem_data;
-  GeoElemVec elem_geo;
-  ElemVec elem_sol;
-};
 
 int main(int argc, char *argv[]) {
   Kokkos::initialize(argc, argv);
@@ -133,23 +58,75 @@ int main(int argc, char *argv[]) {
     A2D::DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
 
-    FEProb<T> prob(conn, nhex, hex.data(), Xloc.data(), bcinfo);
+    // Set up the type of element we're using
+    const index_t degree = 1;
+    const index_t dim = 3;
+    const index_t data_size = 1;
+    const index_t block_size = dim;
+    using Impl_t = typename DirectCholeskyAnalysis<T, block_size>::Impl_t;
+    using Vec_t = typename Impl_t::Vec_t;
+    constexpr GreenStrainType etype = GreenStrainType::LINEAR;
+    using Elem_t = HexTopoElement<Impl_t, etype, degree>;
+    using Mat_t = typename DirectCholeskyAnalysis<T, dim>::Mat_t;
 
-    // Create bsr mat and zero bcs rows
-    FEProb<T>::BSRMat_t bsr_mat = prob.create_fea_bsr_matrix();
-    const index_t *bc_dofs;
-    DirichletBCs<FEProb<T>::Basis> bcs(conn, prob.get_mesh(), bcinfo);
-    index_t nbcs = bcs.get_bcs(&bc_dofs);
-    bsr_mat.zero_rows(nbcs, bc_dofs);
+    // Create the meshes for the elements
+    auto data_mesh = std::make_shared<ElementMesh<Elem_t::DataBasis>>(conn);
+    auto geo_mesh = std::make_shared<ElementMesh<Elem_t::GeoBasis>>(conn);
+    auto sol_mesh = std::make_shared<ElementMesh<Elem_t::Basis>>(conn);
+
+    // Get the number of different dof for the analysis
+    index_t ndata = data_mesh->get_num_dof();
+    index_t ngeo = geo_mesh->get_num_dof();
+    index_t ndof = sol_mesh->get_num_dof();
+
+    // Create the solution/residual vector for the analysis
+    auto data = std::make_shared<Vec_t>(ndata);
+    auto geo = std::make_shared<Vec_t>(ngeo);
+    auto sol = std::make_shared<Vec_t>(ndof);
+    auto res = std::make_shared<Vec_t>(ndof);
+
+    // Create the element assembler
+    auto assembler = std::make_shared<ElementAssembler<Impl_t>>();
+
+    // Create the element integrand
+    T E = 70.0, nu = 0.3, q = 5.0;
+    TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
+    assembler->add_element(std::make_shared<Elem_t>(elem_integrand, data_mesh,
+                                                    geo_mesh, sol_mesh));
+
+    // Set the geometry
+    typename Impl_t::ElementVector<Elem_t::GeoBasis> elem_geo(*geo_mesh, *geo);
+    set_geo_from_hex_nodes<Elem_t::GeoBasis>(nhex, hex.data(), Xloc.data(),
+                                             elem_geo);
+
+    for (int i = 0; i < ndata; i++) {
+      (*data)[i] = T(1.0);
+    }
+
+    // Set up the boundary conditions
+    auto bcs = std::make_shared<DirichletBCs<T>>();
+    bcs->add_bcs(std::make_shared<DirichletBasis<T, Elem_t::Basis>>(
+        conn, *sol_mesh, bcinfo, 0.0));
+
+    // Create the assembler object
+    auto analysis = std::make_shared<DirectCholeskyAnalysis<T, block_size>>(
+        data, geo, sol, res, assembler, bcs);
+
+    analysis->linear_solve();
+
+    // // Create bsr mat and zero bcs rows
+    std::shared_ptr<Mat_t> bsr_mat = analysis->get_mat();
 
     // Convert to csr mat and zero bcs columns
     StopWatch watch;
-    CSRMat<T> csr_mat = bsr_to_csr(bsr_mat);
+    CSRMat<T> csr_mat = bsr_to_csr(*bsr_mat);
     double t1 = watch.lap();
     std::printf("bsr->csr time: %12.5e s\n", t1);
 
     // Convert to csc mat and apply bcs
-    CSCMat<T> csc_mat = bsr_to_csc(bsr_mat);
+    CSCMat<T> csc_mat = bsr_to_csc(*bsr_mat);
+    const index_t *bc_dofs;
+    index_t nbcs = bcs->get_bcs(&bc_dofs);
     csc_mat.zero_columns(nbcs, bc_dofs);
     double t2 = watch.lap();
     std::printf("bsr->csc time: %12.5e s\n", t2 - t1);
@@ -165,19 +142,19 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // // Write to mtx
-    // bsr_mat.write_mtx("bsr_mat.mtx", 1e-12);
-    // csr_mat.write_mtx("csr_mat.mtx", 1e-12);
-    // csc_mat.write_mtx("csc_mat.mtx", 1e-12);
-    // double t3 = watch.lap();
-    // std::printf("write mtx time: %12.5e s\n", t3 - t2);
+    // Write to mtx
+    bsr_mat->write_mtx("bsr_mat.mtx", 1e-12);
+    csr_mat.write_mtx("csr_mat.mtx", 1e-12);
+    csc_mat.write_mtx("csc_mat.mtx", 1e-12);
+    double t3 = watch.lap();
+    std::printf("write mtx time: %12.5e s\n", t3 - t2);
 
     // Perform cholesky factorization
     printf("number of vertices: %d\n", conn.get_num_verts());
     printf("number of edges:    %d\n", conn.get_num_edges());
     printf("number of faces:    %d\n", conn.get_num_bounds());
     printf("number of elements: %d\n", conn.get_num_elements());
-    printf("number of dofs:     %d\n", prob.get_mesh().get_num_dof());
+    printf("number of dofs:     %d\n", ndof);
     printf("matrix dimension:  (%d, %d)\n", csr_mat.nrows, csr_mat.ncols);
     double t4 = watch.lap();
     SparseCholesky<T> *chol = new SparseCholesky<T>(csc_mat);

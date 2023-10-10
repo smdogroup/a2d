@@ -15,8 +15,8 @@ template <
                      bool> = true,
     std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
         true>
-void RefElementTransform(const Geometry& geo, const Space& in, T& detJ,
-                         Space& out) {
+KOKKOS_FUNCTION void RefElementTransform(const Geometry& geo, const Space& in,
+                                         T& detJ, Space& out) {
   static_assert(Geometry::dim == Space::dim,
                 "Spatial and finite-element space dimensions must agree");
 
@@ -37,11 +37,12 @@ class RefElementTransformConstGeoExpr {
   // Set the type of matrix to use - here use a constant matrix
   using JinvType = Mat<T, Geometry::dim, Geometry::dim>;
 
-  RefElementTransformConstGeoExpr(const Geometry& geo, Space& in, T& detJ,
-                                  Space& out)
+  KOKKOS_FUNCTION RefElementTransformConstGeoExpr(const Geometry& geo,
+                                                  Space& in, T& detJ,
+                                                  Space& out)
       : geo(geo), in(in), detJ(detJ), out(out) {}
 
-  void eval() {
+  KOKKOS_FUNCTION void eval() {
     const Mat<T, Geometry::dim, Geometry::dim>& J = get_grad<0>(geo);
     MatInv(J, Jinv);
     MatDet(J, detJ);
@@ -124,7 +125,8 @@ class RefElementTransformExpr {
   using JType = ADObjSelect<ADiffType::ACTIVE, order, Mat<T, dim, dim>&>;
   using JinvType = ADObjSelect<ADiffType::ACTIVE, order, Mat<T, dim, dim>>;
 
-  RefElementTransformExpr(Geometry& geo_, Space& in_, dtype& detJ_, Space& out_)
+  KOKKOS_FUNCTION RefElementTransformExpr(Geometry& geo_, Space& in_,
+                                          dtype& detJ_, Space& out_)
       : geo(geo_),
         in(in_),
         detJ(detJ_),
@@ -133,7 +135,7 @@ class RefElementTransformExpr {
         det(J, detJ),
         inv(J, Jinv) {}
 
-  RefElementTransformExpr(const RefElementTransformExpr& src)
+  KOKKOS_FUNCTION RefElementTransformExpr(const RefElementTransformExpr& src)
       : geo(src.geo),
         in(src.in),
         detJ(src.detJ),
@@ -142,7 +144,7 @@ class RefElementTransformExpr {
         det(J, src.detJ),
         inv(J, Jinv) {}
 
-  void eval() {
+  KOKKOS_FUNCTION void eval() {
     det.eval();
     inv.eval();
     in.value().transform(detJ.value(), J.value(), Jinv.value(), out.value());
@@ -215,6 +217,107 @@ KOKKOS_FUNCTION auto RefElementTransform(A2DObj<Geometry>& geo,
                                          A2DObj<Space>& in, A2DObj<T>& detJ,
                                          A2DObj<Space>& out) {
   return RefElementTransformExpr<A2DObj<Geometry>, A2DObj<Space>, A2DObj<T>>(
+      geo, in, detJ, out);
+}
+
+template <
+    class Geometry, class Space, typename T,
+    std::enable_if_t<get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<Space>::diff_type == ADiffType::PASSIVE,
+                     bool> = true,
+    std::enable_if_t<get_diff_type<T>::diff_type == ADiffType::PASSIVE, bool> =
+        true>
+KOKKOS_FUNCTION void BoundaryElementTransform(const Geometry& geo,
+                                              const Space& in, T& detJ,
+                                              Space& out) {
+  const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
+  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+
+  if constexpr (Geometry::dim == 2) {
+    Vec<T, 2> x0, n;
+    MatColumnToVec(0, J, x0);
+    VecNorm(n, detJ);
+  } else if constexpr (Geometry::dim == 3) {
+    Vec<T, 3> x0, x1, n;
+    MatColumnToVec(0, J, x0);
+    MatColumnToVec(1, J, x1);
+    VecCross(x0, x1, n);
+    VecNorm(n, detJ);
+  }
+
+  in.transform(detJ, J, Jinv, out);
+}
+
+template <class Geometry, class Space, typename T>
+class BoundaryElementTransformConstGeoExpr {
+ public:
+  // In this case, the geometry must be passive
+  static_assert(get_diff_type<Geometry>::diff_type == ADiffType::PASSIVE,
+                "Must use passive geometry type");
+
+  KOKKOS_FUNCTION BoundaryElementTransformConstGeoExpr(const Geometry& geo,
+                                                       Space& in, T& detJ,
+                                                       Space& out)
+      : geo(geo), in(in), detJ(detJ), out(out) {}
+
+  KOKKOS_FUNCTION void eval() {
+    const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
+
+    if constexpr (Geometry::dim == 2) {
+      Vec<T, 2> x0;
+      MatColumnToVec(0, J, x0);
+      VecNorm(x0, detJ);
+    } else if constexpr (Geometry::dim == 3) {
+      Vec<T, 3> x0, x1, n;
+      MatColumnToVec(0, J, x0);
+      MatColumnToVec(1, J, x1);
+      VecCross(x0, x1, n);
+      VecNorm(n, detJ);
+    }
+
+    in.value().transform(detJ, J, Jinv, out.value());
+  }
+
+  KOKKOS_FUNCTION void bzero() { out.bzero(); }
+
+  template <ADorder forder>
+  KOKKOS_FUNCTION void forward() {}
+
+  KOKKOS_FUNCTION void reverse() {
+    const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
+    out.bvalue().btransform(detJ, J, Jinv, in.bvalue());
+  }
+
+  KOKKOS_FUNCTION void hzero() { out.hzero(); }
+
+  KOKKOS_FUNCTION void hreverse() {}
+
+ private:
+  // Internal data
+  Vec<T, Geometry::dim> x0, x1, n;
+  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+
+  // Input/output data
+  const Geometry& geo;
+  Space& in;
+  T& detJ;
+  Space& out;
+};
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto BoundaryElementTransform(const Geometry& geo,
+                                              ADObj<Space>& in, T& detJ,
+                                              ADObj<Space>& out) {
+  return BoundaryElementTransformConstGeoExpr<Geometry, ADObj<Space>, T>(
+      geo, in, detJ, out);
+}
+
+template <class Geometry, class Space, typename T>
+KOKKOS_FUNCTION auto BoundaryElementTransform(const Geometry& geo,
+                                              A2DObj<Space>& in, T& detJ,
+                                              A2DObj<Space>& out) {
+  return BoundaryElementTransformConstGeoExpr<Geometry, A2DObj<Space>, T>(
       geo, in, detJ, out);
 }
 

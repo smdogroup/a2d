@@ -82,9 +82,10 @@ void main_body(std::string type, int ar = 1, double h = 1.0,
   constexpr int low_degree = 1;
 
   // Switch between poisson and elasticity
-  using Integrand = typename std::conditional<
-      integrand_type == PDE_TYPE::POISSON, Poisson<T, spatial_dim>,
-      IntegrandTopoLinearElasticity<T, spatial_dim>>::type;
+  using Integrand =
+      typename std::conditional<integrand_type == PDE_TYPE::POISSON,
+                                Poisson<T, spatial_dim>,
+                                TopoElasticityIntegrand<T, spatial_dim>>::type;
   using Basis = typename std::conditional<
       integrand_type == PDE_TYPE::POISSON,
       FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>,

@@ -284,6 +284,35 @@ KOKKOS_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x,
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
+KOKKOS_FUNCTION auto VecSum(const atype alpha, const xtype &x, const btype beta,
+                            ADObj<ytype> &y, ADObj<ztype> &z) {
+  return VecSumScaleExpr<const atype, const xtype, const btype, ADObj<ytype>,
+                         ADObj<ztype>>(alpha, x, beta, y, z);
+}
+
+template <class atype, class xtype, class btype, class ytype, class ztype>
+KOKKOS_FUNCTION auto VecSum(const atype alpha, const xtype &x, const btype beta,
+                            A2DObj<ytype> &y, A2DObj<ztype> &z) {
+  return VecSumScaleExpr<const atype, const xtype, const btype, A2DObj<ytype>,
+                         A2DObj<ztype>>(alpha, x, beta, y, z);
+}
+
+template <class atype, class xtype, class btype, class ytype, class ztype>
+KOKKOS_FUNCTION auto VecSum(const atype alpha, ADObj<xtype> &x,
+                            const btype beta, const ytype &y, ADObj<ztype> &z) {
+  return VecSumScaleExpr<const atype, ADObj<xtype>, const btype, const ytype,
+                         ADObj<ztype>>(alpha, x, beta, y, z);
+}
+
+template <class atype, class xtype, class btype, class ytype, class ztype>
+KOKKOS_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x,
+                            const btype beta, const ytype &y,
+                            A2DObj<ztype> &z) {
+  return VecSumScaleExpr<const atype, A2DObj<xtype>, const btype, const ytype,
+                         A2DObj<ztype>>(alpha, x, beta, y, z);
+}
+
+template <class atype, class xtype, class btype, class ytype, class ztype>
 KOKKOS_FUNCTION auto VecSum(ADObj<atype> &alpha, const xtype &x,
                             ADObj<btype> &beta, const ytype &y,
                             ADObj<ztype> &z) {

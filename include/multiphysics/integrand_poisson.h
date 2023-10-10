@@ -31,119 +31,152 @@ class Poisson {
   // Space for the element geometry - parametrized by H1 in 2D
   using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim>>;
 
-  // The type of matrix used to store data at each quadrature point
-  using QMatType = SymMat<T, FiniteElementSpace::ncomp>;
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      FEVarSelect<wrt, DataSpace, FiniteElementGeometry, FiniteElementSpace>;
 
-  // Mapping of the solution from the reference element to the physical element
-  using SolutionMapping = InteriorMapping<T, dim>;
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      FESymMatSelect<of, wrt, T, DataSpace::ncomp, FiniteElementGeometry::ncomp,
+                     FiniteElementSpace::ncomp>;
 
-  /**
-   * @brief Find the integral of the compliance over the entire domain
-   *
-   * @param wdetJ The determinant of the Jacobian times the quadrature weight
-   * @param data The data at the quadrature point
-   * @param geo The geometry at the quadrature point
-   * @param s The solution at the quadurature point
-   * @return T The integrand contribution
-   */
-  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) const {
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    T detJ, dot, output;
+    FiniteElementSpace s;
+
     // Get the value and the gradient of the solution
-    const T& u = s.template get<0>().get_value();
-    const Vec<T, dim>& grad = s.template get<0>().get_grad();
+    const T& u = get_value<0>(s);
+    const Vec<T, dim>& grad = get_grad<0>(s);
 
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
-    T dot, output;
+    RefElementTransform(geo, sref, detJ, s);
     VecDot(grad, grad, dot);
-    output = wdetJ * (0.5 * dot - u);
+    output = weight * detJ * (0.5 * dot - u);
 
     return output;
   }
 
-  /**
-   * @brief Evaluate the weak form of the coefficients for nonlinear elasticity
-   *
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param dobj The data at the quadrature point
-   * @param geo The geometry evaluated at the current point
-   * @param s The trial solution
-   * @param coef Derivative of the weak form w.r.t. coefficients
-   */
-  KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& dobj,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                FiniteElementSpace& coef) const {
-    // Get the value and the gradient of the solution
-    T u0 = s.template get<0>().get_value();  // Make a copy of the value
-    Vec<T, dim> grad0 = s.template get<0>().get_grad();  // Make a copy of grad
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementVar<wrt>& res) const {
+    ADObj<FiniteElementSpace> sref(sref0);
+    ADObj<FiniteElementGeometry> geo(geo0);
 
-    // Grab references to the output values
-    T& ub = coef.template get<0>().get_value();
-    Vec<T, dim>& gradb = coef.template get<0>().get_grad();
+    // Intermediate values
+    ADObj<T> detJ, dot, output;
+    ADObj<FiniteElementSpace> s;
 
-    // Make the objects with references
-    ADObj<T&> u(u0, ub);
-    ADObj<Vec<T, dim>&> grad(grad0, gradb);
+    // Grab references to the input values
+    ADObj<T&> u = get_value<0>(s);
+    ADObj<Vec<T, dim>&> grad = get_grad<0>(s);
 
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
-    ADObj<T> dot, output;
-    auto stack = MakeStack(VecDot(grad, grad, dot),
-                           Eval(wdetJ * (0.5 * dot - u), output));
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - u), output));
+
+    output.bvalue() = 1.0;
+    stack.reverse();
+
+    if constexpr (wrt == FEVarType::DATA) {
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      res.copy(geo.bvalue());
+    } else if constexpr (wrt == FEVarType::STATE) {
+      res.copy(sref.bvalue());
+    }
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
+                                        const FiniteElementVar<wrt>& p,
+                                        FiniteElementVar<of>& res) const {
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
+
+    // Intermediate values
+    A2DObj<T> detJ, dot, output;
+    A2DObj<FiniteElementSpace> s;
+
+    // Grab references to the input values
+    A2DObj<T&> u = get_value<0>(s);
+    A2DObj<Vec<T, dim>&> grad = get_grad<0>(s);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - u), output));
 
     output.bvalue() = 1.0;
 
-    // Reverse the derivatives - values are written directly to the output
-    // because we set the references
-    stack.reverse();
+    // Compute the Jacobian-vector product
+    JacobianProduct<of, wrt>(stack, data, geo, sref, p, res);
   }
 
-  /**
-   * @brief Compute the Jacobian
-   *
-   * This functor computes a Jacobian-vector product of the weak form
-   *
-   * @param integrand The Integrand object for this class
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param geo The geometry at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  KOKKOS_FUNCTION void jacobian(T wdetJ, const DataSpace& data,
-                                const FiniteElementGeometry& geo,
-                                const FiniteElementSpace& s,
-                                QMatType& jac) const {
-    FiniteElementSpace in, out;
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementJacobian<of, wrt>& jac) const {
+    A2DObj<DataSpace> data(data0);
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
-    // Get the value and the gradient of the solution
-    T u0 = s.template get<0>().get_value();     // Make a copy of the value
-    T ub;                                       // Value for b
-    T& up = in.template get<0>().get_value();   // Set reference for p
-    T& uh = out.template get<0>().get_value();  // Set reference for h
-    A2DObj<T&> u(u0, ub, up, uh);
+    // Intermediate values
+    A2DObj<T> detJ, dot, output;
+    A2DObj<FiniteElementSpace> s;
 
-    Vec<T, dim> grad0 = s.template get<0>().get_grad();     // Make a copy
-    Vec<T, dim> gradb;                                      // Value for b
-    Vec<T, dim>& gradp = in.template get<0>().get_grad();   // Set p ref
-    Vec<T, dim>& gradh = out.template get<0>().get_grad();  // Set h ref
-    A2DObj<Vec<T, dim>&> grad(grad0, gradb, gradp, gradh);
+    // Grab references to the input values
+    A2DObj<T&> u = get_value<0>(s);
+    A2DObj<Vec<T, dim>&> grad = get_grad<0>(s);
 
     // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
-    A2DObj<T> dot, output;
-    auto stack = MakeStack(VecDot(grad, grad, dot),
-                           Eval(wdetJ * (0.5 * dot - u), output));
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - u), output));
 
     output.bvalue() = 1.0;
 
-    // Compute the derivatives first..
-    stack.reverse();
-
-    // Create data for extracting the Hessian-vector product
-    constexpr index_t ncomp = FiniteElementSpace::ncomp;
-    auto inters = MakeTieTuple<T, ADseed::h>(dot, output);
-
-    // Extract the matrix
-    stack.template hextract<T, ncomp, ncomp>(inters, in, out, jac);
+    // Extract the Jacobian
+    ExtractJacobian<of, wrt>(stack, data, geo, sref, jac);
   }
+};
+
+template <class Impl, index_t degree>
+class HexPoissonElement
+    : public ElementIntegrand<
+          Impl, Poisson<typename Impl::type, 3>, HexGaussQuadrature<degree>,
+          FEBasis<typename Impl::type>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 3, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1HexBasis<typename Impl::type, 1, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using DataBasis = FEBasis<T>;
+  using GeoBasis = FEBasis<T, LagrangeH1HexBasis<T, 3, degree>>;
+  using Basis = FEBasis<T, LagrangeH1HexBasis<T, 1, degree>>;
+
+  HexPoissonElement(Poisson<T, 3> integrand,
+                    std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                    std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                    std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const Poisson<T, 3>& get_integrand() { return integrand; }
+
+ private:
+  Poisson<T, 3> integrand;
 };
 
 /**

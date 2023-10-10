@@ -612,9 +612,7 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
 
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
-    stack.reverse();
-    stack.hforward();
-    stack.hreverse();
+    stack.hproduct();
     h.set_values(J.hvalue());
   }
 };
@@ -681,6 +679,7 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::VecSumTestAll);
   tests.push_back(A2D::Test::VecOuterTestAll);
   tests.push_back(A2D::Test::ScalarTestAll);
+  tests.push_back(A2D::Test::SymEigsTestAll);
   tests.push_back(A2D::Test::RefElementTransformTestAll);
 
   bool passed = true;

@@ -68,11 +68,17 @@ class VarTupleBase {
     } else {
       if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var)[comp];
-      } else if (comp < First::ncomp) {
-        return std::get<index>(var)[comp];
       } else {
-        return get_value_<I, index + 1, TupleObj, Remain...>(
-            var, comp - First::ncomp);
+        if constexpr (First::ncomp > 0) {
+          if (comp < First::ncomp) {
+            return std::get<index>(var)[comp];
+          } else {
+            return get_value_<I, index + 1, TupleObj, Remain...>(
+                var, comp - First::ncomp);
+          }
+        } else {
+          return get_value_<I, index + 1, TupleObj, Remain...>(var, comp);
+        }
       }
     }
   }
@@ -93,11 +99,17 @@ class VarTupleBase {
     } else {
       if constexpr (sizeof...(Remain) == 0) {
         return std::get<index>(var)[comp];
-      } else if (comp < First::ncomp) {
-        return std::get<index>(var)[comp];
       } else {
-        return get_value_const_<I, index + 1, TupleObj, Remain...>(
-            var, comp - First::ncomp);
+        if constexpr (First::ncomp > 0) {
+          if (comp < First::ncomp) {
+            return std::get<index>(var)[comp];
+          } else {
+            return get_value_const_<I, index + 1, TupleObj, Remain...>(
+                var, comp - First::ncomp);
+          }
+        } else {
+          return get_value_const_<I, index + 1, TupleObj, Remain...>(var, comp);
+        }
       }
     }
   }
@@ -107,7 +119,7 @@ class VarTupleBase {
                                    const Remain&... r) {
     if constexpr (__is_scalar_type<First>::value) {
       std::get<index>(var) = f;
-    } else {
+    } else if constexpr (First::ncomp > 0) {
       First& val = std::get<index>(var);
       for (index_t i = 0; i < First::ncomp; i++) {
         val[i] = f[i];
@@ -123,7 +135,7 @@ class VarTupleBase {
                                    Remain&... r) const {
     if constexpr (__is_scalar_type<First>::value) {
       f = std::get<index>(var);
-    } else {
+    } else if constexpr (First::ncomp > 0) {
       const First& val = std::get<index>(var);
       for (index_t i = 0; i < First::ncomp; i++) {
         f[i] = val[i];
@@ -138,7 +150,7 @@ class VarTupleBase {
   KOKKOS_FUNCTION void zero_(TupleObj& var) {
     if constexpr (__is_scalar_type<First>::value) {
       std::get<index>(var) = T(0.0);
-    } else {
+    } else if constexpr (First::ncomp > 0) {
       std::get<index>(var).zero();
     }
     if constexpr (sizeof...(Remain) > 0) {
@@ -151,7 +163,7 @@ class VarTupleBase {
     if constexpr (__is_scalar_type<First>::value) {
       std::get<index>(var) =
           low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
-    } else {
+    } else if constexpr (First::ncomp > 0) {
       First& val = std::get<index>(var);
       for (index_t i = 0; i < First::ncomp; i++) {
         val[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
@@ -188,22 +200,30 @@ class VarTuple : public VarTupleBase<T, Vars...> {
 
   /// @brief Zero the components of the tuple
   KOKKOS_FUNCTION void zero() {
-    this->template zero_<0, VarTupleObj, Vars...>(var);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template zero_<0, VarTupleObj, Vars...>(var);
+    }
   }
 
   /// @brief Set a random set of values on an interval
   KOKKOS_FUNCTION void set_rand(T low = T(-1.0), T high = T(1.0)) {
-    this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
+    }
   }
 
   /// @brief Set values into the tuple from a list of objects
   KOKKOS_FUNCTION void set_values(const Vars&... s) {
-    this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
+    }
   }
 
   /// @brief Place the values from the tuple into list of objects
   KOKKOS_FUNCTION void get_values(Vars&... s) const {
-    this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
+    }
   }
 
  private:
@@ -237,22 +257,30 @@ class TieTuple : public VarTupleBase<T, Vars...> {
 
   /// @brief Zero the components of the tuple
   KOKKOS_FUNCTION void zero() {
-    this->template zero_<0, VarTupleObj, Vars...>(var);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template zero_<0, VarTupleObj, Vars...>(var);
+    }
   }
 
   /// @brief Set a random set of values on an interval
   KOKKOS_FUNCTION void set_rand(T low = T(-1.0), T high = T(1.0)) {
-    this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
+    }
   }
 
   /// @brief Set values into the tuple from a list of objects
   KOKKOS_FUNCTION void set_values(const Vars&... s) {
-    this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
+    }
   }
 
   /// @brief Place the values from the tuple into list of objects
   KOKKOS_FUNCTION void get_values(Vars&... s) const {
-    this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
+    if constexpr (sizeof...(Vars) > 0) {
+      this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
+    }
   }
 
  private:

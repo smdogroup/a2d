@@ -28,6 +28,8 @@ extern void dgetrs_(const char *c, int *n, int *nrhs, double *a, int *lda,
 extern void dpptrf_(const char *c, int *n, double *ap, int *info);
 extern void dpptrs_(const char *c, int *n, int *nrhs, double *ap, double *rhs,
                     int *ldrhs, int *info);
+extern void dspev_(const char *job, const char *uplo, int *n, double *a,
+                   double *w, double *z, int *ldz, double *work, int *info);
 }
 
 // Complex BLAS/LAPACK functions
@@ -205,6 +207,13 @@ inline void LAPACKpptrs(const char *c, int *n, int *nrhs,
                         std::complex<double> *ap, std::complex<double> *rhs,
                         int *ldrhs, int *info) {
   return zpptrs_(c, n, nrhs, ap, rhs, ldrhs, info);
+}
+
+// Solve a real eigenvalue problem
+inline void LAPACKdspev(const char *job, const char *uplo, int *n, double *a,
+                        double *w, double *z, int *ldz, double *work,
+                        int *info) {
+  dspev_(job, uplo, n, a, w, z, ldz, work, info);
 }
 
 }  // namespace A2D

@@ -95,45 +95,49 @@ class A2DIntegrandAnalysisTest
     p.get_values(pdata, pgeo, psref);
 
     double weight(0.1378);
-    integrand.template jacobian_product<DATA, DATA>(weight, data, geo, sref,
-                                                    pdata, hdata);
-    integrand.template jacobian_product<GEOMETRY, DATA>(weight, data, geo, sref,
-                                                        pdata, hgeo);
-    integrand.template jacobian_product<STATE, DATA>(weight, data, geo, sref,
-                                                     pdata, hsref);
-
-    integrand.template jacobian_product<DATA, GEOMETRY>(weight, data, geo, sref,
-                                                        pgeo, bdata);
-    integrand.template jacobian_product<GEOMETRY, GEOMETRY>(weight, data, geo,
-                                                            sref, pgeo, bgeo);
-    integrand.template jacobian_product<STATE, GEOMETRY>(weight, data, geo,
-                                                         sref, pgeo, bsref);
-
-    for (index_t i = 0; i < DataSpace::ncomp; i++) {
-      hdata[i] += bdata[i];
-    }
-    for (index_t i = 0; i < Geometry::ncomp; i++) {
-      hgeo[i] += bgeo[i];
-    }
-    for (index_t i = 0; i < Space::ncomp; i++) {
-      hsref[i] += bsref[i];
+    if constexpr (DataSpace::ncomp > 0) {
+      integrand.template jacobian_product<DATA, DATA>(weight, data, geo, sref,
+                                                      pdata, hdata);
+      integrand.template jacobian_product<DATA, GEOMETRY>(weight, data, geo,
+                                                          sref, pgeo, bdata);
+      for (index_t i = 0; i < DataSpace::ncomp; i++) {
+        hdata[i] += bdata[i];
+      }
+      integrand.template jacobian_product<DATA, STATE>(weight, data, geo, sref,
+                                                       psref, bdata);
+      for (index_t i = 0; i < DataSpace::ncomp; i++) {
+        hdata[i] += bdata[i];
+      }
     }
 
-    integrand.template jacobian_product<DATA, STATE>(weight, data, geo, sref,
-                                                     psref, bdata);
-    integrand.template jacobian_product<GEOMETRY, STATE>(weight, data, geo,
-                                                         sref, psref, bgeo);
-    integrand.template jacobian_product<STATE, STATE>(weight, data, geo, sref,
-                                                      psref, bsref);
+    if constexpr (Geometry::ncomp > 0) {
+      integrand.template jacobian_product<GEOMETRY, DATA>(weight, data, geo,
+                                                          sref, pdata, hgeo);
+      integrand.template jacobian_product<GEOMETRY, GEOMETRY>(weight, data, geo,
+                                                              sref, pgeo, bgeo);
+      for (index_t i = 0; i < Geometry::ncomp; i++) {
+        hgeo[i] += bgeo[i];
+      }
+      integrand.template jacobian_product<GEOMETRY, STATE>(weight, data, geo,
+                                                           sref, psref, bgeo);
+      for (index_t i = 0; i < Geometry::ncomp; i++) {
+        hgeo[i] += bgeo[i];
+      }
+    }
 
-    for (index_t i = 0; i < DataSpace::ncomp; i++) {
-      hdata[i] += bdata[i];
-    }
-    for (index_t i = 0; i < Geometry::ncomp; i++) {
-      hgeo[i] += bgeo[i];
-    }
-    for (index_t i = 0; i < Space::ncomp; i++) {
-      hsref[i] += bsref[i];
+    if constexpr (Space::ncomp > 0) {
+      integrand.template jacobian_product<STATE, DATA>(weight, data, geo, sref,
+                                                       pdata, hsref);
+      integrand.template jacobian_product<STATE, GEOMETRY>(weight, data, geo,
+                                                           sref, pgeo, bsref);
+      for (index_t i = 0; i < Space::ncomp; i++) {
+        hsref[i] += bsref[i];
+      }
+      integrand.template jacobian_product<STATE, STATE>(weight, data, geo, sref,
+                                                        psref, bsref);
+      for (index_t i = 0; i < Space::ncomp; i++) {
+        hsref[i] += bsref[i];
+      }
     }
 
     h.set_values(hdata, hgeo, hsref);

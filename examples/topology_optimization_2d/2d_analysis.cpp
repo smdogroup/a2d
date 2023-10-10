@@ -247,11 +247,12 @@ int main(int argc, char *argv[]) {
     double fraction = 0.2;
     mesher.set_X_conn<index_t, T>(Xloc.data(), quad.data(), randomize, seed,
                                   fraction);
-
     MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
-    // Set up bcs
+
+    // Compute the node index
     auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
 
+    // Boundary vertex labels
     const index_t num_boundary_verts = 2 * (ny + 1);
     index_t boundary_verts[num_boundary_verts];
 
@@ -262,6 +263,16 @@ int main(int argc, char *argv[]) {
 
     index_t bc_label =
         conn.add_boundary_label_from_verts(num_boundary_verts, boundary_verts);
+
+    // Create the label for the surface traction
+    const index_t num_traction_verts = nx + 1;
+    index_t traction_verts[num_traction_verts];
+
+    for (index_t i = 0; i < nx + 1; i++) {
+      traction_verts[i] = node_num(i, ny);
+    }
+    index_t traction_label =
+        conn.add_boundary_label_from_verts(num_traction_verts, traction_verts);
 
     DirichletBCInfo bcinfo;
     bcinfo.add_boundary_condition(bc_label);
@@ -280,11 +291,20 @@ int main(int argc, char *argv[]) {
     constexpr GreenStrainType etype = GreenStrainType::LINEAR;
     using Elem_t = QuadTopoElement<AnlyImpl_t, etype, degree>;
     using BodyForce_t = QuadBodyForceTopoElement<AnlyImpl_t, degree>;
+    using Traction_t = QuadSurfTraction<AnlyImpl_t, degree>;
 
-    // Create the meshes for the Hex elements
+    // Create the meshes for the elements
     auto data_mesh = std::make_shared<ElementMesh<Elem_t::DataBasis>>(conn);
     auto geo_mesh = std::make_shared<ElementMesh<Elem_t::GeoBasis>>(conn);
     auto sol_mesh = std::make_shared<ElementMesh<Elem_t::Basis>>(conn);
+
+    // Create the meshes for the traction
+    auto data_mesh_trac = std::make_shared<ElementMesh<Traction_t::DataBasis>>(
+        traction_label, conn, *data_mesh);
+    auto geo_mesh_trac = std::make_shared<ElementMesh<Traction_t::GeoBasis>>(
+        traction_label, conn, *geo_mesh);
+    auto sol_mesh_trac = std::make_shared<ElementMesh<Traction_t::Basis>>(
+        traction_label, conn, *sol_mesh);
 
     // Get the number of different dof for the analysis
     index_t ndata = data_mesh->get_num_dof();
@@ -333,18 +353,24 @@ int main(int argc, char *argv[]) {
         filter_data, geo, filter_sol, filter_res, filer_assembler);
 
     // Create the element integrand
-    T E = 70.0, nu = 0.3, q = 5.0;
+    T E = 70.0, nu = 0.3, q = 8.0;
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
     T tx[] = {0.0, 10.0};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
+    // Create the traction integrand
+    T surf_tx[] = {0.0, -100.0};
+    SurfaceTractionIntegrand<T, dim> traction_integrand(surf_tx);
+
     auto assembler = std::make_shared<ElementAssembler<AnlyImpl_t>>();
     assembler->add_element(std::make_shared<Elem_t>(elem_integrand, data_mesh,
                                                     geo_mesh, sol_mesh));
     assembler->add_element(std::make_shared<BodyForce_t>(
         body_integrand, data_mesh, geo_mesh, sol_mesh));
+    assembler->add_element(std::make_shared<Traction_t>(
+        traction_integrand, data_mesh_trac, geo_mesh_trac, sol_mesh_trac));
 
     // Set up the boundary conditions
     auto bcs = std::make_shared<DirichletBCs<T>>();

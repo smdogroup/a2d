@@ -33,6 +33,12 @@ class Vec {
       V[i] = 0.0;
     }
   }
+  template <class VecType>
+  KOKKOS_FUNCTION void copy(const VecType& vec) {
+    for (int i = 0; i < N; i++) {
+      V[i] = vec(i);
+    }
+  }
   template <class IdxType>
   KOKKOS_FUNCTION T& operator()(const IdxType i) {
     return V[i];

@@ -130,104 +130,166 @@ class PoissonForSphere {
   static const index_t dim = D;
   static const index_t data_dim = 0;
 
+  // Set the spaces to use
   using DataSpace = FESpace<T, data_dim>;
   using FiniteElementSpace = FESpace<T, dim, H1Space<T, 1, dim>>;
   using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim>>;
-  using QMatType = SymMat<T, FiniteElementSpace::ncomp>;
-  using SolutionMapping = InteriorMapping<T, dim>;
 
-  KOKKOS_FUNCTION void weak(T wdetJ, const DataSpace& dobj,
-                            const FiniteElementGeometry& geo,
-                            const FiniteElementSpace& s,
-                            FiniteElementSpace& coef) const {
-    const H1Space<T, 1, dim>& u = s.template get<0>();
-    const Vec<T, dim>& u_grad = u.get_grad();
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      FEVarSelect<wrt, DataSpace, FiniteElementGeometry, FiniteElementSpace>;
 
-    H1Space<T, 1, dim>& v = coef.template get<0>();
-    Vec<T, dim>& v_grad = v.get_grad();
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      FESymMatSelect<of, wrt, T, DataSpace::ncomp, FiniteElementGeometry::ncomp,
+                     FiniteElementSpace::ncomp>;
 
-    // Compute the right-hand-side
-    T& v_value = v.get_value();
-    const Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    v_value = -wdetJ * r * r * r * r;
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    T detJ, r2, dot, output;
+    FiniteElementSpace s;
 
-    // Set the terms from the variational statement
-    for (index_t k = 0; k < dim; k++) {
-      v_grad(k) = wdetJ * u_grad(k);
+    // Get the value and the gradient of the solution
+    const Vec<T, dim>& x = get_value<0>(geo);
+    const T& u = get_value<0>(s);
+    const Vec<T, dim>& grad = get_grad<0>(s);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    RefElementTransform(geo, sref, detJ, s);
+    VecDot(grad, grad, dot);
+    VecDot(x, x, r2);
+    output = weight * detJ * (0.5 * dot - u * r2 * r2);
+
+    return output;
+  }
+
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementVar<wrt>& res) const {
+    ADObj<FiniteElementSpace> sref(sref0);
+    ADObj<FiniteElementGeometry> geo(geo0);
+
+    // Intermediate values
+    ADObj<T> detJ, r2, dot, output;
+    ADObj<FiniteElementSpace> s;
+
+    // Grab references to the input values
+    ADObj<Vec<T, dim>&> x = get_value<0>(geo);
+    ADObj<T&> u = get_value<0>(s);
+    ADObj<Vec<T, dim>&> grad = get_grad<0>(s);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(x, x, r2), VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - r2 * r2), output));
+
+    output.bvalue() = 1.0;
+    stack.reverse();
+
+    if constexpr (wrt == FEVarType::DATA) {
+    } else if constexpr (wrt == FEVarType::GEOMETRY) {
+      res.copy(geo.bvalue());
+    } else if constexpr (wrt == FEVarType::STATE) {
+      res.copy(sref.bvalue());
     }
   }
 
-  /**
-   * @brief Construct the JacVecProduct functor
-   *
-   * This functor computes a Jacobian-vector product of the weak form
-   *
-   * @param integrand The Integrand object for this class
-   * @param wdetJ The quadrature weight times determinant of the Jacobian
-   * @param data The data at the quadrature point
-   * @param geo The geometry at the quadrature point
-   * @param s The solution at the quadrature point
-   */
-  class JacVecProduct {
-   public:
-    KOKKOS_FUNCTION JacVecProduct(const PoissonForSphere<T, D>& integrand,
-                                  T wdetJ, const DataSpace& data,
-                                  const FiniteElementGeometry& geo,
-                                  const FiniteElementSpace& s)
-        : wdetJ(wdetJ) {}
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
+                                        const FiniteElementVar<wrt>& p,
+                                        FiniteElementVar<of>& res) const {
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
 
-    KOKKOS_FUNCTION void operator()(const FiniteElementSpace& p,
-                                    FiniteElementSpace& Jp) {
-      const H1Space<T, 1, dim>& u = p.template get<0>();
-      const Vec<T, dim>& u_grad = u.get_grad();
+    // Intermediate values
+    A2DObj<T> detJ, r2, dot, output;
+    A2DObj<FiniteElementSpace> s;
 
-      H1Space<T, 1, dim>& v = Jp.template get<0>();
-      Vec<T, dim>& v_grad = v.get_grad();
+    // Grab references to the input values
+    A2DObj<Vec<T, dim>&> x = get_value<0>(geo);
+    A2DObj<T&> u = get_value<0>(s);
+    A2DObj<Vec<T, dim>&> grad = get_grad<0>(s);
 
-      // Set the terms from the variational statement
-      for (index_t k = 0; k < dim; k++) {
-        v_grad(k) = wdetJ * u_grad(k);
-      }
-    }
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(x, x, r2), VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - r2 * r2), output));
 
-   private:
-    T wdetJ;
-  };
-};
+    output.bvalue() = 1.0;
 
-template <typename T, index_t D>
-class PoissonForSphereError {
- public:
-  // Spatial dimension
-  static const index_t dim = D;
-  static const index_t data_dim = 0;
-
-  using DataSpace = typename PoissonForSphere<T, D>::DataSpace;
-  using FiniteElementSpace =
-      typename PoissonForSphere<T, D>::FiniteElementSpace;
-  using FiniteElementGeometry =
-      typename PoissonForSphere<T, D>::FiniteElementGeometry;
-  using SolutionMapping = typename PoissonForSphere<T, D>::SolutionMapping;
-
-  PoissonForSphereError(T R = 1.0) : R(R) {}
-
-  T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry& geo,
-              const FiniteElementSpace& s) const {
-    T u = (s.template get<0>()).get_value();
-
-    // Compute the right-hand-side
-    const Vec<T, dim>& x = (geo.template get<0>()).get_value();
-    T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
-    T u0 = (r * r * r * r * r * r - R * R * R * R * R * R) / 42.0;
-
-    T err = (u - u0);
-
-    return wdetJ * err * err;
+    // Compute the Jacobian-vector product
+    JacobianProduct<of, wrt>(stack, data, geo, sref, p, res);
   }
 
-  double R;
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementJacobian<of, wrt>& jac) const {
+    A2DObj<FiniteElementSpace> sref(sref0);
+    A2DObj<FiniteElementGeometry> geo(geo0);
+
+    // Intermediate values
+    A2DObj<T> detJ, r2, dot, output;
+    A2DObj<FiniteElementSpace> s;
+
+    // Grab references to the input values
+    A2DObj<Vec<T, dim>&> x = get_value<0>(geo);
+    A2DObj<T&> u = get_value<0>(s);
+    A2DObj<Vec<T, dim>&> grad = get_grad<0>(s);
+
+    // Compute wdetJ * (0.5 * || grad ||_{2}^{2} - u)
+    auto stack = MakeStack(RefElementTransform(geo, sref, detJ, s),
+                           VecDot(x, x, r2), VecDot(grad, grad, dot),
+                           Eval(weight * detJ * (0.5 * dot - r2 * r2), output));
+
+    output.bvalue() = 1.0;
+
+    // Extract the Jacobian
+    ExtractJacobian<of, wrt>(stack, data, geo, sref, jac);
+  }
 };
+
+// template <typename T, index_t D>
+// class PoissonForSphereError {
+//  public:
+//   // Spatial dimension
+//   static const index_t dim = D;
+//   static const index_t data_dim = 0;
+
+//   using DataSpace = typename PoissonForSphere<T, D>::DataSpace;
+//   using FiniteElementSpace =
+//       typename PoissonForSphere<T, D>::FiniteElementSpace;
+//   using FiniteElementGeometry =
+//       typename PoissonForSphere<T, D>::FiniteElementGeometry;
+//   using SolutionMapping = typename PoissonForSphere<T, D>::SolutionMapping;
+
+//   PoissonForSphereError(T R = 1.0) : R(R) {}
+
+//   T integrand(T wdetJ, const DataSpace& data, const FiniteElementGeometry&
+//   geo,
+//               const FiniteElementSpace& s) const {
+//     T u = (s.template get<0>()).get_value();
+
+//     // Compute the right-hand-side
+//     const Vec<T, dim>& x = (geo.template get<0>()).get_value();
+//     T r = std::sqrt(x(0) * x(0) + x(1) * x(1) + x(2) * x(2));
+//     T u0 = (r * r * r * r * r * r - R * R * R * R * R * R) / 42.0;
+
+//     T err = (u - u0);
+
+//     return wdetJ * err * err;
+//   }
+
+//   double R;
+// };
 
 template <typename T, index_t degree>
 class PoissonSphere {

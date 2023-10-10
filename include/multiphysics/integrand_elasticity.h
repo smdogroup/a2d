@@ -864,105 +864,165 @@ class QuadBodyForceTopoElement
 /**
  * @brief Apply surface traction and/or surface torque.
  */
-// template <typename T, index_t D>
-// class IntegrandTopoSurfaceTraction {
-//  public:
-//   KOKKOS_FUNCTION IntegrandTopoSurfaceTraction(const T tx_[] = nullptr,
-//                                                const T torx_[] = nullptr,
-//                                                const T x0_[] = nullptr) {
-//     has_traction = false;
-//     has_torque = false;
+template <typename T, index_t D>
+class SurfaceTractionIntegrand {
+ public:
+  // Number of dimensions
+  static const index_t dim = D;
 
-//     if (tx_) {
-//       for (index_t i = 0; i < dim; i++) {
-//         tx[i] = tx_[i];
-//       }
-//       has_traction = true;
-//     }
+  // Number of data dimensions
+  static const index_t data_dim = 1;
 
-//     if (torx_ && x0_) {
-//       for (index_t i = 0; i < dim; i++) {
-//         x0[i] = x0_[i];
-//         if constexpr (dim == 3) {
-//           torx[i] = torx_[i];
-//         }
-//       }
-//       if constexpr (dim == 2) {
-//         torx[0] = torx_[0];
-//       }
-//       has_torque = true;
-//     }
-//   }
+  // Space for the finite-element data
+  using DataSpace = FESpace<T, dim>;
 
-//   // Number of dimensions
-//   static const index_t dim = D;
+  // Space for the element geometry
+  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
-//   // Number of data dimensions
-//   static const index_t data_dim = 1;
+  // Finite element space
+  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
 
-//   // Space for the finite-element data
-//   using DataSpace = FESpace<T, dim>;
+  // Define the input or output type based on wrt type
+  template <FEVarType wrt>
+  using FiniteElementVar =
+      FEVarSelect<wrt, DataSpace, FiniteElementGeometry, FiniteElementSpace>;
 
-//   // Space for the element geometry
-//   using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  // Define the matrix Jacobian type based on the of and wrt types
+  template <FEVarType of, FEVarType wrt>
+  using FiniteElementJacobian =
+      FESymMatSelect<of, wrt, T, DataSpace::ncomp, FiniteElementGeometry::ncomp,
+                     FiniteElementSpace::ncomp>;
 
-//   // Finite element space
-//   using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  // Data used for information
+  Vec<T, dim> x0;  // Position vector
+  Vec<T, dim> tx;  // Surface traction
+  typename std::conditional<dim == 2, T, Vec<T, dim>>::type torx;
 
-//   // Mapping of the solution from the reference element to the physical
-//   element using SolutionMapping = SurfaceMapping<T, dim>;
+  KOKKOS_FUNCTION SurfaceTractionIntegrand(const T tx_[] = nullptr,
+                                           const T torx_[] = nullptr,
+                                           const T x0_[] = nullptr) {
+    if (tx_) {
+      for (index_t i = 0; i < dim; i++) {
+        tx[i] = tx_[i];
+      }
+    }
 
-//   T tx[dim];  // surface traction vector
-//   T torx[conditional_value<index_t, dim == 3, 3, 1>::value];  // surface
-//   torque
-//                                                               // vector
-//   T x0[dim];                                                  // torque
-//   origin bool has_traction; bool has_torque;
+    if (x0_) {
+      for (index_t i = 0; i < dim; i++) {
+        x0[i] = x0_[i];
+      }
+    }
 
-//   /**
-//    * @brief Evaluate the weak form coefficients for linear elasticity
-//    *
-//    * @param wdetJ The quadrature weight times determinant of the Jacobian
-//    * @param data The data at the quadrature point
-//    * @param geo The geometry at the quadrature point
-//    * @param s The trial solution
-//    * @param coef Output weak form coefficients of the test space
-//    */
-//   KOKKOS_FUNCTION void residual(T wdetJ, const DataSpace& data,
-//                                 const FiniteElementGeometry& geo,
-//                                 const FiniteElementSpace& s,
-//                                 FiniteElementSpace& coef) const {
-//     // Extract the solution
-//     Vec<T, dim>& U = (coef.template get<0>()).get_value();
-//     for (index_t i = 0; i < dim; i++) {
-//       U(i) = 0.0;
-//     }
+    if constexpr (dim == 2) {
+      if (torx_) {
+        torx = torx_[0];
+      } else {
+        torx = 0.0;  // must initialize to zero
+      }
+    } else if constexpr (dim == 3) {
+      if (torx_) {
+        for (index_t i = 0; i < dim; i++) {
+          torx[i] = torx_[i];
+        }
+      }
+    }
+  }
 
-//     if (has_traction) {
-//       for (index_t i = 0; i < dim; i++) {
-//         U(i) -= wdetJ * tx[i];
-//       }
-//     }
+  KOKKOS_FUNCTION T integrand(T weight, const DataSpace& data,
+                              const FiniteElementGeometry& geo,
+                              const FiniteElementSpace& sref) const {
+    FiniteElementSpace s;
+    Vec<T, dim> d, tqx, fx;
+    T dot, detJ, output;
 
-//     if (has_torque) {
-//       // Extract location
-//       const Vec<T, dim>& x = (geo.template get<0>()).get_value();
+    Vec<T, dim>& u = get_value<0>(s);
+    const Vec<T, dim>& x = get_value<0>(geo);
 
-//       if constexpr (dim == 2) {
-//         // Force at this point is (x - x0) cross torque
-//         U(0) += wdetJ * torx[0] * (x(1) - x0[1]);
-//         U(1) += -wdetJ * torx[0] * (x(0) - x0[0]);
-//       } else {  // dim == 3
-//         // Force at this point is (x - x0) cross torque
-//         U(0) += wdetJ * ((x(1) - x0[1]) * torx[2] - (x(2) - x0[2]) *
-//         torx[1]); U(1) += wdetJ * ((x(2) - x0[2]) * torx[0] - (x(0) -
-//         x0[0])
-//         * torx[2]); U(2) += wdetJ * ((x(0) - x0[0]) * torx[1] - (x(1) -
-//         x0[1]) * torx[0]);
-//       }
-//     }
-//   }
-// };
+    BoundaryElementTransform(geo, sref, detJ, s);
+    VecSum(T(1.0), x, T(-1.0), x0, d);
+    VecCross(d, torx, tqx);
+    VecSum(tx, tqx, fx);
+    VecDot(u, fx, dot);
+    output = -weight * detJ * dot;
+
+    return output;
+  }
+
+  template <FEVarType wrt>
+  KOKKOS_FUNCTION void residual(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementVar<wrt>& res) const {
+    if constexpr (wrt == FEVarType::STATE) {
+      ADObj<FiniteElementSpace> sref(sref0), s;
+      ADObj<T> dot, output;
+      ADObj<Vec<T, dim>&> u = get_value<0>(s);
+
+      T detJ;
+      const Vec<T, dim>& x = get_value<0>(geo0);
+
+      Vec<T, dim> d, tqx, fx;
+      VecSum(T(1.0), x, T(-1.0), x0, d);
+      VecCross(d, torx, tqx);
+      VecSum(tx, tqx, fx);
+
+      auto stack =
+          MakeStack(BoundaryElementTransform(geo0, sref, detJ, s),
+                    VecDot(u, fx, dot), Eval(-weight * detJ * dot, output));
+
+      output.bvalue() = 1.0;
+      stack.reverse();
+
+      res.copy(sref.bvalue());
+    }
+  }
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian_product(T weight, const DataSpace& data0,
+                                        const FiniteElementGeometry& geo0,
+                                        const FiniteElementSpace& sref0,
+                                        const FiniteElementVar<wrt>& p,
+                                        FiniteElementVar<of>& res) const {}
+
+  template <FEVarType of, FEVarType wrt>
+  KOKKOS_FUNCTION void jacobian(T weight, const DataSpace& data0,
+                                const FiniteElementGeometry& geo0,
+                                const FiniteElementSpace& sref0,
+                                FiniteElementJacobian<of, wrt>& jac) const {}
+};
+
+template <class Impl, index_t degree>
+class QuadSurfTraction
+    : public ElementIntegrand<
+          Impl, SurfaceTractionIntegrand<typename Impl::type, 2>,
+          QuadGaussQuadrature<degree + 1>, FEBasis<typename Impl::type>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1LineBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1LineBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using Integrand = SurfaceTractionIntegrand<T, 2>;
+  using DataBasis = FEBasis<T>;
+  using GeoBasis = FEBasis<T, LagrangeH1LineBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1LineBasis<T, 2, degree>>;
+  using Vec_t = typename Impl::Vec_t;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  QuadSurfTraction(SurfaceTractionIntegrand<T, 2> integrand,
+                   std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                   std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                   std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const SurfaceTractionIntegrand<T, 2>& get_integrand() { return integrand; }
+
+ private:
+  SurfaceTractionIntegrand<T, 2> integrand;
+};
 
 }  // namespace A2D
 

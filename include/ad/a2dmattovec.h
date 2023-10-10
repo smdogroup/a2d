@@ -9,14 +9,16 @@
 namespace A2D {
 
 template <typename T, typename I, int N, int M>
-KOKKOS_FUNCTION void MatColumnToVec(I column, Mat<T, N, M> &A, Vec<T, N> &x) {
+KOKKOS_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
+                                    Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
 }
 
 template <typename T, typename I, int N>
-KOKKOS_FUNCTION void MatColumnToVec(I column, SymMat<T, N> &A, Vec<T, N> &x) {
+KOKKOS_FUNCTION void MatColumnToVec(I column, const SymMat<T, N> &A,
+                                    Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
@@ -92,14 +94,14 @@ KOKKOS_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A,
 }
 
 template <typename T, typename I, int N, int M>
-KOKKOS_FUNCTION void MatRowToVec(I row, Mat<T, N, M> &A, Vec<T, M> &x) {
+KOKKOS_FUNCTION void MatRowToVec(I row, const Mat<T, N, M> &A, Vec<T, M> &x) {
   for (int i = 0; i < M; i++) {
     x(i) = A(row, i);
   }
 }
 
 template <typename T, typename I, int N>
-KOKKOS_FUNCTION void MatRowToVec(I row, SymMat<T, N> &A, Vec<T, N> &x) {
+KOKKOS_FUNCTION void MatRowToVec(I row, const SymMat<T, N> &A, Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(row, i);
   }

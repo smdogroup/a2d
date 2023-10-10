@@ -913,10 +913,14 @@ class SurfaceTractionIntegrand {
       }
     }
 
-    if (torx_) {
-      if constexpr (dim == 2) {
+    if constexpr (dim == 2) {
+      if (torx_) {
         torx = torx_[0];
-      } else if constexpr (dim == 3) {
+      } else {
+        torx = 0.0;  // must initialize to zero
+      }
+    } else if constexpr (dim == 3) {
+      if (torx_) {
         for (index_t i = 0; i < dim; i++) {
           torx[i] = torx_[i];
         }
@@ -934,8 +938,8 @@ class SurfaceTractionIntegrand {
     Vec<T, dim>& u = get_value<0>(s);
     const Vec<T, dim>& x = get_value<0>(geo);
 
-    // SurfElementTransform(geo, sref, detJ, s);
-    VecSum(1.0, x, -1.0, x0, d);
+    BoundaryElementTransform(geo, sref, detJ, s);
+    VecSum(T(1.0), x, T(-1.0), x0, d);
     VecCross(d, torx, tqx);
     VecSum(tx, tqx, fx);
     VecDot(u, fx, dot);
@@ -949,29 +953,26 @@ class SurfaceTractionIntegrand {
                                 const FiniteElementGeometry& geo0,
                                 const FiniteElementSpace& sref0,
                                 FiniteElementVar<wrt>& res) const {
-    A2DObj<DataSpace> data(data0);
-    A2DObj<FiniteElementSpace> sref(sref0);
-    A2DObj<FiniteElementGeometry> geo(geo0);
+    if constexpr (wrt == FEVarType::STATE) {
+      ADObj<FiniteElementSpace> sref(sref0), s;
+      ADObj<T> dot, output;
+      ADObj<Vec<T, dim>&> u = get_value<0>(s);
 
-    ADObj<FiniteElementSpace> s;
-    ADObj<Vec<T, dim>> d, tqx, fx;
-    ADObj<T> dot, detJ, output;
+      T detJ;
+      const Vec<T, dim>& x = get_value<0>(geo0);
 
-    ADObj<Vec<T, dim>&> u = get_value<0>(s);
-    ADObj<Vec<T, dim>&> x = get_value<0>(geo);
+      Vec<T, dim> d, tqx, fx;
+      VecSum(T(1.0), x, T(-1.0), x0, d);
+      VecCross(d, torx, tqx);
+      VecSum(tx, tqx, fx);
 
-    auto stack = MakeStack(  // SurfElementTransform(geo, sref, detJ, s),
-        VecSum(1.0, x, -1.0, x0, d), VecCross(d, torx, tqx),
-        VecSum(tx, tqx, fx), VecDot(u, fx, dot),
-        Eval(-weight * detJ * dot, output));
+      auto stack =
+          MakeStack(BoundaryElementTransform(geo0, sref, detJ, s),
+                    VecDot(u, fx, dot), Eval(-weight * detJ * dot, output));
 
-    output.bvalue() = 1.0;
-    stack.reverse();
+      output.bvalue() = 1.0;
+      stack.reverse();
 
-    if constexpr (wrt == FEVarType::DATA) {
-    } else if constexpr (wrt == FEVarType::GEOMETRY) {
-      res.copy(geo.bvalue());
-    } else if constexpr (wrt == FEVarType::STATE) {
       res.copy(sref.bvalue());
     }
   }
@@ -988,6 +989,39 @@ class SurfaceTractionIntegrand {
                                 const FiniteElementGeometry& geo0,
                                 const FiniteElementSpace& sref0,
                                 FiniteElementJacobian<of, wrt>& jac) const {}
+};
+
+template <class Impl, index_t degree>
+class QuadSurfTraction
+    : public ElementIntegrand<
+          Impl, SurfaceTractionIntegrand<typename Impl::type, 2>,
+          QuadGaussQuadrature<degree + 1>, FEBasis<typename Impl::type>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1LineBasis<typename Impl::type, 2, degree>>,
+          FEBasis<typename Impl::type,
+                  LagrangeH1LineBasis<typename Impl::type, 2, degree>>> {
+ public:
+  using T = typename Impl::type;
+  using Integrand = SurfaceTractionIntegrand<T, 2>;
+  using DataBasis = FEBasis<T>;
+  using GeoBasis = FEBasis<T, LagrangeH1LineBasis<T, 2, degree>>;
+  using Basis = FEBasis<T, LagrangeH1LineBasis<T, 2, degree>>;
+  using Vec_t = typename Impl::Vec_t;
+  template <class Base>
+  using ElementVector = typename Impl::template ElementVector<Base>;
+
+  QuadSurfTraction(SurfaceTractionIntegrand<T, 2> integrand,
+                   std::shared_ptr<ElementMesh<DataBasis>> data_mesh,
+                   std::shared_ptr<ElementMesh<GeoBasis>> geo_mesh,
+                   std::shared_ptr<ElementMesh<Basis>> sol_mesh)
+      : integrand(integrand) {
+    this->set_meshes(data_mesh, geo_mesh, sol_mesh);
+  }
+
+  const SurfaceTractionIntegrand<T, 2>& get_integrand() { return integrand; }
+
+ private:
+  SurfaceTractionIntegrand<T, 2> integrand;
 };
 
 }  // namespace A2D

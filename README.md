@@ -15,7 +15,7 @@ A2D is a header only c++ templated library.
 <!-- with python binding created with
 [pybind11](https://pybind11.readthedocs.io/en/stable/). -->
 
-## TODO list
+<!-- ## TODO list
 - GPU support
     - [ ] replace plain C-array with Kokkos array for all data that are needed from GPU
     - [ ] decorate all functions that are needed from device
@@ -33,9 +33,7 @@ A2D is a header only c++ templated library.
     - [ ] ```feelement.h``` change ```add_jacobian()```, ```add_jacobian_vector_product()```, etc. accordingly
 - Matrix
     - [ ] External library for parallel matrix solution on GPU
-    - [ ] External library for serial non-symmetric matrix factorization
-
-
+    - [ ] External library for serial non-symmetric matrix factorization -->
 
 ## Install
 

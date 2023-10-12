@@ -250,7 +250,6 @@ In A2D, this could be implemented with the following sequence of steps:
 ```c++
 Mat<T, N, N> Uxi, J; // Input
 T output;            // Output
-
 Mat<T, N, N> Jinv, Ux, F, Id;
 SymMat<T, N> E, S;
 
@@ -273,17 +272,10 @@ The stack of operations is created using a call to `MakeStack`. Once created, th
 The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`, and the call to `stack.reverse();` performs the reverse mode AD. After this call, the values `Uxib` and `Jb` contain the desired derivatives.
 
 ```c++
-// Passive matrix (constant)
-Mat<T, N, N> Id;
-
-// Input and derivative output
-ADObj<Mat<T, N, N>> Uxi, J;
-
-// Output
-ADObj<T> output;
-
-// Intermediate values
-ADObj<Mat<T, N, N>> Jinv, U, F;
+Mat<T, N, N> Id;            // Passive matrix (constant)
+ADObj<Mat<T, N, N>> Uxi, J; // Input
+ADObj<T> output;            // Output
+ADObj<Mat<T, N, N>> Jinv, Ux, F;
 ADObj<SymMat<T, N>> E, S;
 
 auto stack = MakeStack(
@@ -294,28 +286,16 @@ auto stack = MakeStack(
     SymIsotropic(T(0.35), T(0.51), E, S),
     SymMatMultTrace(E, S, output));
 
-// Set the seed value
-output.bvalue() = 1.0;
-
-// Reverse mode AD through the stack
-stack.reverse();
-
-// Jb and Uxib contain the derivatives
+output.bvalue() = 1.0; // Set the seed value
+stack.reverse();       // Reverse mode AD through the stack
 ```
 
 For second derivatives, A2D uses Hessian-vector products that require a combination of forward and reverse mode.
 
 ```c++
-// Passive matrix (constant)
-Mat<T, N, N> Id;
-
-// Input
-A2DObj<Mat<T, N, N>> Uxi, J;
-
-// Outputs
-A2DObj<T> output;
-
-// Intermediate data
+Mat<T, N, N> Id;             // Passive matrix (constant)
+A2DObj<Mat<T, N, N>> Uxi, J; // Input
+A2DObj<T> output;            // Output
 A2DObj<Mat<T, N, N>> Jinv, Ux, F;
 A2DObj<SymMat<T, N>> E, S;
 
@@ -327,18 +307,6 @@ auto stack = MakeStack(
     SymIsotropic(T(0.35), T(0.51), E, S),
     SymMatMultTrace(E, S, output));
 
-// Set the seed value and the second derivative value
-output.bvalue() = 1.0;
-stack.reverse();
-
-// Set values for the direction p
-// Set Uxi.pvalue();
-// Set J.pvalue();
-output.hvalue() = 0.0;
-
-// Perform the forward and reverse passes
-stack.hforward();
-stack.hreverse();
-
-// Second derivatives are now available in Uxi.hvalue(); and J.hvalue();
+output.bvalue() = 1.0;  // Set the seed value=
+stack.hproduct();       // Compute the Hessian-vector product
 ```

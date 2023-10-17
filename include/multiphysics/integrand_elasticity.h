@@ -995,7 +995,7 @@ template <class Impl, index_t degree>
 class QuadSurfTraction
     : public ElementIntegrand<
           Impl, SurfaceTractionIntegrand<typename Impl::type, 2>,
-          QuadGaussQuadrature<degree + 1>, FEBasis<typename Impl::type>,
+          LineGaussQuadrature<degree + 1>, FEBasis<typename Impl::type>,
           FEBasis<typename Impl::type,
                   LagrangeH1LineBasis<typename Impl::type, 2, degree>>,
           FEBasis<typename Impl::type,

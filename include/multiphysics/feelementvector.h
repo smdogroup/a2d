@@ -146,8 +146,11 @@ class ElementVector_Serial : public ElementVector_Empty {
   // Required DOF container object
   class FEDof {
    public:
+    static constexpr int size =
+        conditional_value<const int, Basis::ndof >= 1, Basis::ndof, 1>::value;
+
     FEDof(index_t elem, const ElementVector_Serial& elem_vec) {
-      std::fill(dof, dof + Basis::ndof, T(0.0));
+      std::fill(dof, dof + size, T(0.0));
     }
 
     /**
@@ -160,7 +163,7 @@ class ElementVector_Serial : public ElementVector_Empty {
 
    private:
     // Variables for all the basis functions
-    T dof[Basis::ndof];
+    T dof[size];
   };
 
  public:

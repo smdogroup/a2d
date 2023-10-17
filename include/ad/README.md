@@ -265,11 +265,9 @@ Here $T$ and $N$ are template parameters. The scalar, matrix and symmetric matri
 
 To implement AD for first derivatives, A2D uses AD types within the code. The A2D operations support a mixture of AD types and regular types that represent passive variables.
 
-The first order AD types use a container where the data for the value and the first derivative must be passed into the constructor for matrix and vector types. For instance the constructor for `Uxi` takes the value and derivative `Uxi0` and `Uxib`.
-
 The stack of operations is created using a call to `MakeStack`. Once created, the stack can be used to execute the sequence of calls needed to perform reverse mode AD.
 
-The seed for the reverse mode AD is set by the statement `output.bvalue = 1.0;`, and the call to `stack.reverse();` performs the reverse mode AD. After this call, the values `Uxib` and `Jb` contain the desired derivatives.
+The seed for the reverse mode AD is set by the statement `output.bvalue() = 1.0;`, and the call to `stack.reverse();` performs the reverse mode AD. After this call, the values `Uxi.bvalue()` and `J.bvalue()` contain the desired derivatives.
 
 ```c++
 Mat<T, N, N> Id;            // Passive matrix (constant)

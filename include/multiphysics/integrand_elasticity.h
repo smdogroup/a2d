@@ -874,13 +874,13 @@ class SurfaceTractionIntegrand {
   static const index_t data_dim = 1;
 
   // Space for the finite-element data
-  using DataSpace = FESpace<T, dim>;
+  using DataSpace = FESpace<T, dim - 1>;
 
   // Space for the element geometry
-  using FiniteElementGeometry = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  using FiniteElementGeometry = FESpace<T, dim - 1, H1Space<T, dim, dim - 1>>;
 
   // Finite element space
-  using FiniteElementSpace = FESpace<T, dim, H1Space<T, dim, dim - 1>>;
+  using FiniteElementSpace = FESpace<T, dim - 1, H1Space<T, dim, dim - 1>>;
 
   // Define the input or output type based on wrt type
   template <FEVarType wrt>

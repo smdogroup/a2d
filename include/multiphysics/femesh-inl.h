@@ -1479,7 +1479,7 @@ ElementMesh<Basis>::ElementMesh(const index_t label, MeshConnectivityBase& conn,
           index_t orient = 0;
 
           // Set the same vertex index on the corresponding surface
-          ET::ElementEntity dest_entity;
+          ET::ElementEntity dest_entity = ET::Vertex;
           if constexpr (dim == 2) {
             dest_entity = ET::Vertex;
           } else if constexpr (dim == 1) {

@@ -24,11 +24,11 @@ class Mat {
       A[i] = vals[i];
     }
   }
-  template <class MatType>
-  KOKKOS_FUNCTION Mat(const MatType& mat) {
+  template <typename T2>
+  KOKKOS_FUNCTION Mat(const Mat<T2, M, N>& src) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
-        A[N * i + j] = mat(i, j);
+        A[N * i + j] = src(i, j);
       }
     }
   }
@@ -37,16 +37,16 @@ class Mat {
       A[i] = 0.0;
     }
   }
-  template <class MatType>
-  KOKKOS_FUNCTION void copy(const MatType& src) {
+  template <typename T2>
+  KOKKOS_FUNCTION void copy(const Mat<T2, M, N>& src) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         A[N * i + j] = src(i, j);
       }
     }
   }
-  template <class MatType>
-  KOKKOS_FUNCTION void get(MatType& mat) {
+  template <typename T2>
+  KOKKOS_FUNCTION void get(Mat<T2, M, N>& mat) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
         mat(i, j) = A[N * i + j];
@@ -63,8 +63,8 @@ class Mat {
     return A[N * i + j];
   }
 
-  T* get_data() { return A; }
-  const T* get_data() const { return A; }
+  KOKKOS_FUNCTION T* get_data() { return A; }
+  KOKKOS_FUNCTION const T* get_data() const { return A; }
 
   template <typename I>
   KOKKOS_FUNCTION T& operator[](const I i) {
@@ -100,21 +100,29 @@ class SymMat {
       A[i] = vals[i];
     }
   }
-  KOKKOS_FUNCTION void zero() {
-    for (int i = 0; i < MAT_SIZE; i++) {
-      A[i] = 0.0;
-    }
-  }
-  template <class SymMat>
-  KOKKOS_FUNCTION void copy(const SymMat& src) {
+  template <typename T2>
+  KOKKOS_FUNCTION SymMat(const SymMat<T2, N>& src) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
         A[i + j * (j + 1) / 2] = src(i, j);
       }
     }
   }
-  template <class SymMat>
-  KOKKOS_FUNCTION void get(SymMat& mat) {
+  KOKKOS_FUNCTION void zero() {
+    for (int i = 0; i < MAT_SIZE; i++) {
+      A[i] = 0.0;
+    }
+  }
+  template <typename T2>
+  KOKKOS_FUNCTION void copy(const SymMat<T2, N>& src) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j <= i; j++) {
+        A[i + j * (j + 1) / 2] = src(i, j);
+      }
+    }
+  }
+  template <typename T2>
+  KOKKOS_FUNCTION void get(SymMat<T2, N>& mat) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
         mat(i, j) = A[i + j * (j + 1) / 2];

@@ -22,10 +22,10 @@ class Vec {
       V[i] = vals[i];
     }
   }
-  template <class VecType>
-  KOKKOS_FUNCTION Vec(const VecType& vec) {
+  template <typename T2>
+  KOKKOS_FUNCTION Vec(const Vec<T2, N>& src) {
     for (int i = 0; i < N; i++) {
-      V[i] = vec(i);
+      V[i] = src(i);
     }
   }
   KOKKOS_FUNCTION void zero() {
@@ -33,8 +33,8 @@ class Vec {
       V[i] = 0.0;
     }
   }
-  template <class VecType>
-  KOKKOS_FUNCTION void copy(const VecType& vec) {
+  template <typename T2>
+  KOKKOS_FUNCTION void copy(const Vec<T2, N>& vec) {
     for (int i = 0; i < N; i++) {
       V[i] = vec(i);
     }

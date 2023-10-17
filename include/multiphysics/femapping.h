@@ -231,21 +231,22 @@ template <
 KOKKOS_FUNCTION void BoundaryElementTransform(const Geometry& geo,
                                               const Space& in, T& detJ,
                                               Space& out) {
-  const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
-  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+  const Mat<T, Geometry::dim + 1, Geometry::dim>& xd = get_grad<0>(geo);
 
-  if constexpr (Geometry::dim == 2) {
+  if constexpr (Geometry::dim == 1) {
     Vec<T, 2> x0, n;
-    MatColumnToVec(0, J, x0);
+    MatColumnToVec(0, xd, x0);
     VecNorm(n, detJ);
-  } else if constexpr (Geometry::dim == 3) {
+  } else if constexpr (Geometry::dim == 2) {
     Vec<T, 3> x0, x1, n;
-    MatColumnToVec(0, J, x0);
-    MatColumnToVec(1, J, x1);
+    MatColumnToVec(0, xd, x0);
+    MatColumnToVec(1, xd, x1);
     VecCross(x0, x1, n);
     VecNorm(n, detJ);
   }
 
+  Mat<T, Geometry::dim, Geometry::dim> Jinv;
+  Mat<T, Geometry::dim, Geometry::dim> J;
   in.transform(detJ, J, Jinv, out);
 }
 
@@ -262,20 +263,21 @@ class BoundaryElementTransformConstGeoExpr {
       : geo(geo), in(in), detJ(detJ), out(out) {}
 
   KOKKOS_FUNCTION void eval() {
-    const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
+    const Mat<T, Geometry::dim + 1, Geometry::dim>& xd = get_grad<0>(geo);
 
-    if constexpr (Geometry::dim == 2) {
+    if constexpr (Geometry::dim == 1) {
       Vec<T, 2> x0;
-      MatColumnToVec(0, J, x0);
+      MatColumnToVec(0, xd, x0);
       VecNorm(x0, detJ);
-    } else if constexpr (Geometry::dim == 3) {
+    } else if constexpr (Geometry::dim == 2) {
       Vec<T, 3> x0, x1, n;
-      MatColumnToVec(0, J, x0);
-      MatColumnToVec(1, J, x1);
+      MatColumnToVec(0, xd, x0);
+      MatColumnToVec(1, xd, x1);
       VecCross(x0, x1, n);
       VecNorm(n, detJ);
     }
 
+    Mat<T, Geometry::dim, Geometry::dim> J;
     in.value().transform(detJ, J, Jinv, out.value());
   }
 
@@ -285,7 +287,7 @@ class BoundaryElementTransformConstGeoExpr {
   KOKKOS_FUNCTION void forward() {}
 
   KOKKOS_FUNCTION void reverse() {
-    const Mat<T, Geometry::dim, Geometry::dim - 1>& J = get_grad<0>(geo);
+    Mat<T, Geometry::dim, Geometry::dim> J;
     out.bvalue().btransform(detJ, J, Jinv, in.bvalue());
   }
 
@@ -295,7 +297,7 @@ class BoundaryElementTransformConstGeoExpr {
 
  private:
   // Internal data
-  Vec<T, Geometry::dim> x0, x1, n;
+  Vec<T, Geometry::dim + 1> x0, x1, n;
   Mat<T, Geometry::dim, Geometry::dim> Jinv;
 
   // Input/output data

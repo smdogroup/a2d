@@ -2,6 +2,7 @@
 
 #include "ParOptOptimizer.h"
 #include "a2ddefs.h"
+#include "integrand_compliance.h"
 #include "multiphysics/feanalysis.h"
 #include "multiphysics/febasis.h"
 #include "multiphysics/feelement.h"
@@ -154,7 +155,11 @@ class TopOptProb : public ParOptProblem {
     analysis->linear_solve();
 
     // Evaluate objective
-    *fobj = analysis->evaluate(*obj) / fobj_ref;
+    ParOptScalar fobj_value = analysis->evaluate(*obj);
+    if (opt_iter == 0) {
+      fobj_ref = fobj_value;
+    }
+    *fobj = fobj_value / fobj_ref;
 
     // Evaluate constraint
     cons[0] = 1.0 - analysis->evaluate(*volume) / target_volume;
@@ -381,10 +386,8 @@ int main(int argc, char *argv[]) {
     auto analysis = std::make_shared<DirectCholeskyAnalysis<T, block_size>>(
         filter_sol, geo, sol, res, assembler, bcs);
 
-    T design_stress = 100.0, ks_param = 0.01;
-    using Func_t = QuadTopoVonMises<AnlyImpl_t, etype, degree>;
-    TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
-                                                 ks_param);
+    using Func_t = QuadTopoCompliance<AnlyImpl_t, etype, degree>;
+    Compliance<T, dim, etype> func_integrand(E, nu, q);
     auto functional =
         std::make_shared<Func_t>(func_integrand, data_mesh, geo_mesh, sol_mesh);
 

@@ -36,6 +36,11 @@ class A2DTest {
           double dh = 1e-50, double rtol = 1e-10, double atol = 1e-30)
       : test_type(test_type), dh(dh), rtol(rtol), atol(atol) {}
 
+  void set_tolerances(double rtol0 = 1e-10, double atol0 = 1e-30) {
+    rtol = rtol0;
+    atol = atol0;
+  }
+
   /**
    * @brief Get the type of test to perform
    */

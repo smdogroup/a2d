@@ -680,6 +680,8 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::VecOuterTestAll);
   tests.push_back(A2D::Test::ScalarTestAll);
   tests.push_back(A2D::Test::SymEigsTestAll);
+  tests.push_back(A2D::Test::QuaternionMatrixTestAll);
+  tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
   tests.push_back(A2D::Test::RefElementTransformTestAll);
 
   bool passed = true;

@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     const index_t degree = 1;
     const index_t nx = 384, ny = 96;
     const double lx = 8.0, ly = 2.0;
-    const double target_volume = 0.4 * lx * ly;
+    const double target_volume = 0.6 * lx * ly;
 
     // Set up mesh
     const index_t nverts = (nx + 1) * (ny + 1);
@@ -258,12 +258,19 @@ int main(int argc, char *argv[]) {
     auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
 
     // Boundary vertex labels
-    const index_t num_boundary_verts = 2 * (ny + 1);
+    // const index_t num_boundary_verts = 2 * (ny + 1);
+    // const index_t num_boundary_verts = (ny + 1);
+    const index_t num_boundary_verts = (nx + 1);
     index_t boundary_verts[num_boundary_verts];
 
-    for (index_t j = 0; j < ny + 1; j++) {
-      boundary_verts[j] = node_num(0, j);
-      boundary_verts[ny + 1 + j] = node_num(nx, j);
+    // for (index_t j = 0; j < ny + 1; j++) {
+    //   boundary_verts[j] = node_num(0, j);
+    //   // boundary_verts[ny + 1 + j] = node_num(nx, j);
+    // }
+
+    for (index_t j = 0; j < nx + 1; j++) {
+      boundary_verts[j] = node_num(j, 0);
+      // boundary_verts[ny + 1 + j] = node_num(nx, j);
     }
 
     index_t bc_label =
@@ -362,11 +369,11 @@ int main(int argc, char *argv[]) {
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
-    T tx[] = {0.0, 10.0};
+    T tx[] = {0.0, 5.0};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
     // Create the traction integrand
-    T surf_tx[] = {0.0, -100.0};
+    T surf_tx[] = {0.0, -1000.0};
     SurfaceTractionIntegrand<T, dim> traction_integrand(surf_tx);
 
     auto assembler = std::make_shared<ElementAssembler<AnlyImpl_t>>();

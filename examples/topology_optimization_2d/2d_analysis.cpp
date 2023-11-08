@@ -354,7 +354,7 @@ int main(int argc, char *argv[]) {
 
     // Create the filter
     T length = 1.0;
-    T r0 = 0.05 * length;
+    T r0 = 0.05 * length / (2.0 * sqrt(3));
     HelmholtzFilter<T, dim> filter_integrand(r0);
 
     auto filer_assembler = std::make_shared<ElementAssembler<FltrImpl_t>>();

@@ -234,11 +234,57 @@ int main(int argc, char *argv[]) {
     MPI_Comm comm = MPI_COMM_SELF;
     using T = double;
 
+    // Set the default mesh resolution
+    index_t nx = 256, ny = 64;
+
+    // Set the factor for the filter radius
+    double fact = 0.05;
+
+    // Default case selection
+    int selected_case = 0;
+
+    // Default body force
+    double bf = 5.0;
+
+    // Case IDs (Bridge, Pillars, Cantilever)
+    std::array<int, 3> cases = {0, 1, 2};
+
+    for (int i = 0; i < argc; i++) {
+      if (sscanf(argv[i], "fact=%lf", &fact) == 1) {
+        if (fact < 0.01) {
+          fact = 0.01;
+        }
+        printf("fact = %25.10e\n", fact);
+      }
+      if (sscanf(argv[i], "ny=%u", &ny) == 1) {
+        if (ny < 32) {
+          ny = 32;
+        }
+        if (ny > 1024) {
+          ny = 1024;
+        }
+        nx = 4 * ny;
+        printf("nx = %u  ny = %u\n", nx, ny);
+      }
+
+      if (sscanf(argv[i], "bf=%F", &bf) == 1) {
+        printf("Body Force = %F\n", bf);
+      }
+
+      if (sscanf(argv[i], "selected_case=%u", &selected_case) == 1) {
+        if (std::none_of(cases.begin(), cases.end(),
+                         [&](int i) { return i == selected_case; })) {
+          selected_case = 0;
+          printf("Invalid Case Selection, revert to default\n");
+        }
+        printf("Selected case = %u\n", selected_case);
+      }
+    }
+
     // Number of elements in each dimension
     const index_t degree = 1;
-    const index_t nx = 384, ny = 96;
     const double lx = 8.0, ly = 2.0;
-    const double target_volume = 0.6 * lx * ly;
+    const double target_volume = 0.4 * lx * ly;
 
     // Set up mesh
     const index_t nverts = (nx + 1) * (ny + 1);
@@ -255,22 +301,47 @@ int main(int argc, char *argv[]) {
     MeshConnectivity2D conn(nverts, ntri, tri, nquad, quad.data());
 
     // Compute the node index
-    auto node_num = [](index_t i, index_t j) { return i + j * (nx + 1); };
+    auto node_num = [&nx, &ny](index_t i, index_t j) {
+      return i + j * (nx + 1);
+    };
 
-    // Boundary vertex labels
-    // const index_t num_boundary_verts = 2 * (ny + 1);
-    // const index_t num_boundary_verts = (ny + 1);
-    const index_t num_boundary_verts = (nx + 1);
+    index_t num_boundary_verts = 0;
     index_t boundary_verts[num_boundary_verts];
 
-    // for (index_t j = 0; j < ny + 1; j++) {
-    //   boundary_verts[j] = node_num(0, j);
-    //   // boundary_verts[ny + 1 + j] = node_num(nx, j);
-    // }
+    switch (selected_case) {
+      case 0:
+        // Bridge Case
 
-    for (index_t j = 0; j < nx + 1; j++) {
-      boundary_verts[j] = node_num(j, 0);
-      // boundary_verts[ny + 1 + j] = node_num(nx, j);
+        // Boundary vertex labels
+        num_boundary_verts = 2 * (ny + 1);
+
+        for (index_t j = 0; j < ny + 1; j++) {
+          boundary_verts[j] = node_num(0, j);
+          boundary_verts[ny + 1 + j] = node_num(nx, j);
+        }
+        break;
+      case 1:
+        // Pillars Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        for (index_t j = 0; j < nx + 1; j++) {
+          boundary_verts[j] = node_num(j, 0);
+        }
+
+        break;
+      case 2:
+        // Cantilever Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        for (index_t j = 0; j < ny + 1; j++) {
+          boundary_verts[j] = node_num(0, j);
+        }
+
+        break;
     }
 
     index_t bc_label =
@@ -354,7 +425,7 @@ int main(int argc, char *argv[]) {
 
     // Create the filter
     T length = 1.0;
-    T r0 = 0.05 * length / (2.0 * sqrt(3));
+    T r0 = fact * length / (2.0 * std::sqrt(3));
     HelmholtzFilter<T, dim> filter_integrand(r0);
 
     auto filer_assembler = std::make_shared<ElementAssembler<FltrImpl_t>>();
@@ -369,7 +440,7 @@ int main(int argc, char *argv[]) {
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
-    T tx[] = {0.0, 5.0};
+    T tx[] = {0.0, bf};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
     // Create the traction integrand
@@ -407,19 +478,25 @@ int main(int argc, char *argv[]) {
         filter, analysis);
 
     // Set up the topology optimization problem
-    std::string prefix("./results/");
+    std::string prefix = std::string("./results_") + std::to_string(nx) +
+                         std::string("x") + std::to_string(ny) +
+                         std::string("_") + std::to_string(fact) +
+                         std::string("/");
     TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
                                             volume, target_volume, dfdx);
     prob.incref();
     prob.checkGradients(1e-6);
+
+    std::string paropt_out = prefix + std::string("paropt.out");
+    std::string paropt_mma = prefix + std::string("paropt.mma");
 
     // Create the options class, and create default values
     ParOptOptions *options = new ParOptOptions();
     ParOptOptimizer::addDefaultOptions(options);
 
     options->setOption("algorithm", "mma");
-    options->setOption("mma_output_file", "paropt.mma");
-    options->setOption("output_file", "paropt.out");
+    options->setOption("mma_output_file", paropt_mma.c_str());
+    options->setOption("output_file", paropt_out.c_str());
     options->setOption("mma_max_iterations", 100);
     options->setOption("max_major_iters", 100);
     options->setOption("abs_res_tol", 1e-8);

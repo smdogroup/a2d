@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <iterator>
 #include <vector>
 
 #include "ParOptOptimizer.h"
@@ -245,6 +243,9 @@ int main(int argc, char *argv[]) {
     // Default case selection
     int selected_case = 0;
 
+    // Default body force
+    double bf = 5.0;
+
     // Case IDs (Bridge, Pillars, Cantilever)
     std::array<int, 3> cases = {0, 1, 2};
 
@@ -264,6 +265,10 @@ int main(int argc, char *argv[]) {
         }
         nx = 4 * ny;
         printf("nx = %u  ny = %u\n", nx, ny);
+      }
+
+      if (sscanf(argv[i], "bf=%F", &bf) == 1) {
+        printf("Body Force = %F\n", bf);
       }
 
       if (sscanf(argv[i], "selected_case=%u", &selected_case) == 1) {
@@ -300,20 +305,43 @@ int main(int argc, char *argv[]) {
       return i + j * (nx + 1);
     };
 
-    // Boundary vertex labels
-    // const index_t num_boundary_verts = 2 * (ny + 1);
-    // const index_t num_boundary_verts = (ny + 1);
-    const index_t num_boundary_verts = (nx + 1);
+    index_t num_boundary_verts = 0;
     index_t boundary_verts[num_boundary_verts];
 
-    // for (index_t j = 0; j < ny + 1; j++) {
-    //   boundary_verts[j] = node_num(0, j);
-    //   // boundary_verts[ny + 1 + j] = node_num(nx, j);
-    // }
+    switch (selected_case) {
+      case 0:
+        // Bridge Case
 
-    for (index_t j = 0; j < nx + 1; j++) {
-      boundary_verts[j] = node_num(j, 0);
-      // boundary_verts[ny + 1 + j] = node_num(nx, j);
+        // Boundary vertex labels
+        num_boundary_verts = 2 * (ny + 1);
+
+        for (index_t j = 0; j < ny + 1; j++) {
+          boundary_verts[j] = node_num(0, j);
+          boundary_verts[ny + 1 + j] = node_num(nx, j);
+        }
+        break;
+      case 1:
+        // Pillars Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        for (index_t j = 0; j < nx + 1; j++) {
+          boundary_verts[j] = node_num(j, 0);
+        }
+
+        break;
+      case 2:
+        // Cantilever Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        for (index_t j = 0; j < ny + 1; j++) {
+          boundary_verts[j] = node_num(0, j);
+        }
+
+        break;
     }
 
     index_t bc_label =
@@ -397,7 +425,7 @@ int main(int argc, char *argv[]) {
 
     // Create the filter
     T length = 1.0;
-    T r0 = fact * length / (2.0 * sqrt(3));
+    T r0 = fact * length / (2.0 * std::sqrt(3));
     HelmholtzFilter<T, dim> filter_integrand(r0);
 
     auto filer_assembler = std::make_shared<ElementAssembler<FltrImpl_t>>();
@@ -412,7 +440,7 @@ int main(int argc, char *argv[]) {
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
-    T tx[] = {0.0, 5.0};
+    T tx[] = {0.0, bf};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
     // Create the traction integrand

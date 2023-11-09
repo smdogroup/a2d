@@ -306,6 +306,30 @@ int main(int argc, char *argv[]) {
     };
 
     index_t num_boundary_verts = 0;
+
+    switch (selected_case) {
+      case 0:
+        // Bridge Case
+
+        // Boundary vertex labels
+        num_boundary_verts = 2 * (ny + 1);
+        break;
+      case 1:
+        // Pillars Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        break;
+      case 2:
+        // Cantilever Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+        break;
+    }
+
+    // There's a better way to do this than two switch statements
     index_t boundary_verts[num_boundary_verts];
 
     switch (selected_case) {
@@ -478,10 +502,11 @@ int main(int argc, char *argv[]) {
         filter, analysis);
 
     // Set up the topology optimization problem
-    std::string prefix = std::string("./results_") + std::to_string(nx) +
-                         std::string("x") + std::to_string(ny) +
-                         std::string("_") + std::to_string(fact) +
-                         std::string("/");
+    std::string prefix =
+        std::string("./results/") + std::to_string(nx) + std::string("x") +
+        std::to_string(ny) + std::string("_") + std::to_string(selected_case) +
+        std::string("_") + std::to_string(fact) + std::string("_") +
+        std::to_string(bf) + std::string("/");
     TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
                                             volume, target_volume, dfdx);
     prob.incref();

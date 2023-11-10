@@ -267,8 +267,8 @@ int main(int argc, char *argv[]) {
         printf("nx = %u  ny = %u\n", nx, ny);
       }
 
-      if (sscanf(argv[i], "bf=%F", &bf) == 1) {
-        printf("Body Force = %F\n", bf);
+      if (sscanf(argv[i], "bf=%lf", &bf) == 1) {
+        printf("Body Force = %lf\n", bf);
       }
 
       if (sscanf(argv[i], "selected_case=%u", &selected_case) == 1) {
@@ -336,9 +336,6 @@ int main(int argc, char *argv[]) {
       case 0:
         // Bridge Case
 
-        // Boundary vertex labels
-        num_boundary_verts = 2 * (ny + 1);
-
         for (index_t j = 0; j < ny + 1; j++) {
           boundary_verts[j] = node_num(0, j);
           boundary_verts[ny + 1 + j] = node_num(nx, j);
@@ -347,9 +344,6 @@ int main(int argc, char *argv[]) {
       case 1:
         // Pillars Case
 
-        // Boundary vertex labels
-        num_boundary_verts = (nx + 1);
-
         for (index_t j = 0; j < nx + 1; j++) {
           boundary_verts[j] = node_num(j, 0);
         }
@@ -357,9 +351,6 @@ int main(int argc, char *argv[]) {
         break;
       case 2:
         // Cantilever Case
-
-        // Boundary vertex labels
-        num_boundary_verts = (nx + 1);
 
         for (index_t j = 0; j < ny + 1; j++) {
           boundary_verts[j] = node_num(0, j);

@@ -441,7 +441,6 @@ int main(int argc, char *argv[]) {
     // Create the filter
     T length = 1.0;
     T r0 = fact * length / (2.0 * std::sqrt(3));
-    T r0 = fact * length / (2.0 * std::sqrt(3));
     HelmholtzFilter<T, dim> filter_integrand(r0);
 
     auto filer_assembler = std::make_shared<ElementAssembler<FltrImpl_t>>();
@@ -456,7 +455,6 @@ int main(int argc, char *argv[]) {
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
-    T tx[] = {0.0, bf};
     T tx[] = {0.0, bf};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 

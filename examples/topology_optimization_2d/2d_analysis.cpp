@@ -306,7 +306,6 @@ int main(int argc, char *argv[]) {
     };
 
     index_t num_boundary_verts = 0;
-    index_t boundary_verts[num_boundary_verts];
 
     switch (selected_case) {
       case 0:
@@ -314,6 +313,28 @@ int main(int argc, char *argv[]) {
 
         // Boundary vertex labels
         num_boundary_verts = 2 * (ny + 1);
+        break;
+      case 1:
+        // Pillars Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+
+        break;
+      case 2:
+        // Cantilever Case
+
+        // Boundary vertex labels
+        num_boundary_verts = (nx + 1);
+        break;
+    }
+
+    // There's a better way to do this than two switch statements
+    index_t boundary_verts[num_boundary_verts];
+
+    switch (selected_case) {
+      case 0:
+        // Bridge Case
 
         for (index_t j = 0; j < ny + 1; j++) {
           boundary_verts[j] = node_num(0, j);
@@ -323,9 +344,6 @@ int main(int argc, char *argv[]) {
       case 1:
         // Pillars Case
 
-        // Boundary vertex labels
-        num_boundary_verts = (nx + 1);
-
         for (index_t j = 0; j < nx + 1; j++) {
           boundary_verts[j] = node_num(j, 0);
         }
@@ -333,9 +351,6 @@ int main(int argc, char *argv[]) {
         break;
       case 2:
         // Cantilever Case
-
-        // Boundary vertex labels
-        num_boundary_verts = (nx + 1);
 
         for (index_t j = 0; j < ny + 1; j++) {
           boundary_verts[j] = node_num(0, j);
@@ -426,6 +441,7 @@ int main(int argc, char *argv[]) {
     // Create the filter
     T length = 1.0;
     T r0 = fact * length / (2.0 * std::sqrt(3));
+    T r0 = fact * length / (2.0 * std::sqrt(3));
     HelmholtzFilter<T, dim> filter_integrand(r0);
 
     auto filer_assembler = std::make_shared<ElementAssembler<FltrImpl_t>>();
@@ -440,6 +456,7 @@ int main(int argc, char *argv[]) {
     TopoElasticityIntegrand<T, dim, etype> elem_integrand(E, nu, q);
 
     // Create the body force integrand
+    T tx[] = {0.0, bf};
     T tx[] = {0.0, bf};
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
@@ -478,10 +495,11 @@ int main(int argc, char *argv[]) {
         filter, analysis);
 
     // Set up the topology optimization problem
-    std::string prefix = std::string("./results_") + std::to_string(nx) +
-                         std::string("x") + std::to_string(ny) +
-                         std::string("_") + std::to_string(fact) +
-                         std::string("/");
+    std::string prefix =
+        std::string("./results/") + std::to_string(nx) + std::string("x") +
+        std::to_string(ny) + std::string("_") + std::to_string(selected_case) +
+        std::string("_") + std::to_string(fact) + std::string("_") +
+        std::to_string(bf) + std::string("/");
     TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
                                             volume, target_volume, dfdx);
     prob.incref();

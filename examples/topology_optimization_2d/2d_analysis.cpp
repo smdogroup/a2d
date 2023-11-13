@@ -267,8 +267,8 @@ int main(int argc, char *argv[]) {
         printf("nx = %u  ny = %u\n", nx, ny);
       }
 
-      if (sscanf(argv[i], "bf=%F", &bf) == 1) {
-        printf("Body Force = %F\n", bf);
+      if (sscanf(argv[i], "bf=%lf", &bf) == 1) {
+        printf("Body Force = %lf\n", bf);
       }
 
       if (sscanf(argv[i], "selected_case=%u", &selected_case) == 1) {

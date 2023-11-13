@@ -19,8 +19,8 @@ class Compliance {
  public:
   Compliance(T E, T nu, T q) : q(q) {
     // Needs to be different for 2D and 3D
-    mu0 = 0.5 * E / (1.0 + nu);
-    lambda0 = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+    mu0 = 0.5 * E * (1 - nu) / (1.0 - nu * nu);
+    lambda0 = E * nu / (1.0 - nu * nu);
   }
 
   // Number of dimensions

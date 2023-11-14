@@ -325,7 +325,7 @@ int main(int argc, char *argv[]) {
         // Cantilever Case
 
         // Boundary vertex labels
-        num_boundary_verts = (nx + 1);
+        num_boundary_verts = (ny + 1);
         break;
     }
 
@@ -369,6 +369,7 @@ int main(int argc, char *argv[]) {
     for (index_t i = 0; i < nx + 1; i++) {
       traction_verts[i] = node_num(i, ny);
     }
+
     index_t traction_label =
         conn.add_boundary_label_from_verts(num_traction_verts, traction_verts);
 

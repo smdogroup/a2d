@@ -246,6 +246,12 @@ int main(int argc, char *argv[]) {
     // Default body force
     double bf = 5.0;
 
+    // Default volume constraint
+    double vol = 0.4;
+
+    // Default traction
+    double trac = -1000.0;
+
     // Case IDs (Bridge, Pillars, Cantilever)
     std::array<int, 3> cases = {0, 1, 2};
 
@@ -267,8 +273,22 @@ int main(int argc, char *argv[]) {
         printf("nx = %u  ny = %u\n", nx, ny);
       }
 
+      if (sscanf(argv[i], "vol=%lf", &vol) == 1) {
+        if (vol < 0.1) {
+          vol = 0.1;
+        }
+        if (vol > 0.9) {
+          vol = 0.9;
+        }
+        printf("vol = %lf\n", vol);
+      }
+
       if (sscanf(argv[i], "bf=%lf", &bf) == 1) {
         printf("Body Force = %lf\n", bf);
+      }
+
+      if (sscanf(argv[i], "trac=%lf", &trac) == 1) {
+        printf("Traction = %lf\n", trac);
       }
 
       if (sscanf(argv[i], "selected_case=%u", &selected_case) == 1) {
@@ -284,7 +304,7 @@ int main(int argc, char *argv[]) {
     // Number of elements in each dimension
     const index_t degree = 1;
     const double lx = 8.0, ly = 2.0;
-    const double target_volume = 0.4 * lx * ly;
+    const double target_volume = vol * lx * ly;
 
     // Set up mesh
     const index_t nverts = (nx + 1) * (ny + 1);
@@ -459,7 +479,7 @@ int main(int argc, char *argv[]) {
     TopoBodyForceIntegrand<T, dim> body_integrand(q, tx);
 
     // Create the traction integrand
-    T surf_tx[] = {0.0, -1000.0};
+    T surf_tx[] = {0.0, trac};
     SurfaceTractionIntegrand<T, dim> traction_integrand(surf_tx);
 
     auto assembler = std::make_shared<ElementAssembler<AnlyImpl_t>>();
@@ -479,8 +499,10 @@ int main(int argc, char *argv[]) {
     auto analysis = std::make_shared<DirectCholeskyAnalysis<T, block_size>>(
         filter_sol, geo, sol, res, assembler, bcs);
 
-    using Func_t = QuadTopoCompliance<AnlyImpl_t, etype, degree>;
-    Compliance<T, dim, etype> func_integrand(E, nu, q);
+    T design_stress = 100.0, ks_param = 0.01;
+    using Func_t = QuadTopoVonMises<AnlyImpl_t, etype, degree>;
+    TopoVonMisesKS<T, dim, etype> func_integrand(E, nu, q, design_stress,
+                                                 ks_param);
     auto functional =
         std::make_shared<Func_t>(func_integrand, data_mesh, geo_mesh, sol_mesh);
 
@@ -497,7 +519,8 @@ int main(int argc, char *argv[]) {
         std::string("./results/") + std::to_string(nx) + std::string("x") +
         std::to_string(ny) + std::string("_") + std::to_string(selected_case) +
         std::string("_") + std::to_string(fact) + std::string("_") +
-        std::to_string(bf) + std::string("/");
+        std::to_string(bf) + std::string("_") + std::to_string(vol) +
+        std::string("_") + std::to_string(trac) + std::string("/");
     TopOptProb<FltrImpl_t, AnlyImpl_t> prob(prefix, comm, topo, functional,
                                             volume, target_volume, dfdx);
     prob.incref();

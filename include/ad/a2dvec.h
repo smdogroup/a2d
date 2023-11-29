@@ -17,7 +17,8 @@ class Vec {
       V[i] = 0.0;
     }
   }
-  KOKKOS_FUNCTION Vec(const T* vals) {
+  template <typename T2>
+  KOKKOS_FUNCTION Vec(const T2* vals) {
     for (int i = 0; i < N; i++) {
       V[i] = vals[i];
     }

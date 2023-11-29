@@ -19,7 +19,8 @@ class Mat {
       A[i] = 0.0;
     }
   }
-  KOKKOS_FUNCTION Mat(const T* vals) {
+  template <typename T2>
+  KOKKOS_FUNCTION Mat(const T2* vals) {
     for (int i = 0; i < M * N; i++) {
       A[i] = vals[i];
     }

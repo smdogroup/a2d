@@ -67,12 +67,10 @@ class VecCrossExpr {
                       GetSeed<seed>::get_data(z));
       VecCrossCoreAdd<T>(get_data(x), GetSeed<seed>::get_data(y),
                          GetSeed<seed>::get_data(z));
-    }
-    if constexpr (adx == ADiffType::ACTIVE) {
+    } else if constexpr (adx == ADiffType::ACTIVE) {
       VecCrossCore<T>(GetSeed<seed>::get_data(x), get_data(y),
                       GetSeed<seed>::get_data(z));
-    }
-    if constexpr (ady == ADiffType::ACTIVE) {
+    } else if constexpr (ady == ADiffType::ACTIVE) {
       VecCrossCore<T>(get_data(x), GetSeed<seed>::get_data(y),
                       GetSeed<seed>::get_data(z));
     }

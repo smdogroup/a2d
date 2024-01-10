@@ -6,6 +6,8 @@
 #include "Kokkos_UnorderedMap.hpp"
 #include "a2dobjs.h"
 #include "array.h"
+#include "multiphysics/fequadrature.h"
+#include "multiphysics/fespace.h"
 
 using namespace std;
 using T = double;
@@ -726,28 +728,66 @@ void test_KOKKOS_ENABLE_CXX17() {
 #endif
 }
 
+void test_fespace() {
+  // Type and literals
+  using T = double;
+  constexpr A2D::index_t dim = 2;
+  constexpr A2D::index_t order = 3;
+
+  using FiniteElementSpace = A2D::FESpace<T, dim, A2D::H1Space<T, dim, dim>>;
+
+  // We loop over 10 elements in parallel
+  int nelems = 10;
+
+#ifdef KOKKOS_ENABLE_CUDA
+  using MemSpace = Kokkos::CudaUVMSpace;
+  printf("using CUDAUVMSpace\n");
+#else
+  using MemSpace = Kokkos::HostSpace;
+#endif
+
+  Kokkos::View<T*, Kokkos::LayoutRight, MemSpace> probe("probe", nelems);
+
+  auto loop_body = KOKKOS_LAMBDA(int i) {
+    FiniteElementSpace cref;
+    A2D::H1Space<T, dim, dim>& s = cref.template get<0>();
+    // A2D::H1Space<T, dim, dim> s;
+    s.get_grad()(0, 0) = 1.2;
+    s.get_grad()(0, 0) *= 1.5 + 1.2;
+    probe(i) = s.get_grad()(0, 0);
+  };
+
+  Kokkos::parallel_for("loop", nelems, loop_body);
+  Kokkos::fence();
+
+  for (int i = 0; i < 10; i++) {
+    std::printf("probe[%2d]: %.10f\n", i, probe(i));
+  }
+}
+
 int main(int argc, char* argv[]) {
   Kokkos::initialize();
   {  // test_axpy(argc, argv);
-     // test_matvec(argc, argv);
-     // test_unordered_set();
-     // test_subview();
-     // test_sort();
-     // test_is_same_layout();
-     // test_complex();
-     // test_is_complex();
-     // test_view_is_allocated();
-     // test_smart_pointer_behavior();
-     // test_copy();
-     // test_parallel_for();
-     // test_modify_view_from_const_lambda();
-     // test_cuda_axpy(argc, argv);
-     // subview();
-     // test_cuda_axpy_with_UVM(argc, argv);
-     // ParallelVector pv(10);
-     // pv.set_values(4.2);
-     // test_cuda_functor_pass_by_ref();
-    test_KOKKOS_ENABLE_CXX17();
+    // test_matvec(argc, argv);
+    // test_unordered_set();
+    // test_subview();
+    // test_sort();
+    // test_is_same_layout();
+    // test_complex();
+    // test_is_complex();
+    // test_view_is_allocated();
+    // test_smart_pointer_behavior();
+    // test_copy();
+    // test_parallel_for();
+    // test_modify_view_from_const_lambda();
+    // test_cuda_axpy(argc, argv);
+    // subview();
+    // test_cuda_axpy_with_UVM(argc, argv);
+    // ParallelVector pv(10);
+    // pv.set_values(4.2);
+    // test_cuda_functor_pass_by_ref();
+    // test_KOKKOS_ENABLE_CXX17();
+    test_fespace();
   }
   Kokkos::finalize();
 }

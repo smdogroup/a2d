@@ -45,7 +45,7 @@ To build Kokkos with OpenMP and CUDA backend, use:
 cd extern/kokkos
 mkdir build
 cd build
-cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -DCMAKE_CXX_STANDARD=17 -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -G Ninja
+cmake .. -DCMAKE_INSTALL_PREFIX=../../../installs/kokkos -DCMAKE_CXX_STANDARD=17 -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_CUDA_LAMBDA=ON -DKokkos_ENABLE_CUDA_CONSTEXPR=ON -G Ninja
 ninja install
 ```
 For a complete instruction on installing Kokkos, see [Kokkos

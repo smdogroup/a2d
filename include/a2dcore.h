@@ -20,6 +20,7 @@
 #include "ad/a2dmattovec.h"
 #include "ad/a2dmattrace.h"
 #include "ad/a2dmatvecmult.h"
+#include "ad/a2dquaternion.h"
 #include "ad/a2dscalarops.h"
 #include "ad/a2dsymeigs.h"
 #include "ad/a2dsymmatmulttrace.h"

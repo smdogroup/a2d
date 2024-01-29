@@ -412,14 +412,9 @@ class HdivSpace {
                                  const Mat<T, dim, dim>& Jinv,
                                  HdivSpace<T, D>& s) const {
     T inv = 1.0 / detJ;
-    if (D == 2) {
-      s.u(0) = inv * (J(0, 0) * u(0) + J(0, 1) * u(1));
-      s.u(1) = inv * (J(1, 0) * u(0) + J(1, 1) * u(1));
-    } else if (D == 3) {
-      s.u(0) = inv * (J(0, 0) * u(0) + J(0, 1) * u(1) + J(0, 2) * u(2));
-      s.u(1) = inv * (J(1, 0) * u(0) + J(1, 1) * u(1) + J(1, 2) * u(2));
-      s.u(2) = inv * (J(2, 0) * u(0) + J(2, 1) * u(1) + J(2, 2) * u(2));
-    }
+    // s.u = (1.0 / detJ) * J * u
+    MatVecCoreScale<T, D, D, MatOp::NORMAL>(inv, get_data(J), get_data(u),
+                                            get_data(s.u));
     s.div = inv * div;
   }
 
@@ -428,28 +423,28 @@ class HdivSpace {
                                   const Mat<T, dim, dim>& Jinv,
                                   HdivSpace<T, D>& s) const {
     T inv = 1.0 / detJ;
-    if (D == 2) {
-      s.u(0) = inv * (J(0, 0) * u(0) + J(1, 0) * u(1));
-      s.u(1) = inv * (J(0, 1) * u(0) + J(1, 1) * u(1));
-    } else if (D == 3) {
-      s.u(0) = inv * (J(0, 0) * u(0) + J(1, 0) * u(1) + J(2, 0) * u(2));
-      s.u(1) = inv * (J(0, 1) * u(0) + J(1, 1) * u(1) + J(2, 1) * u(2));
-      s.u(2) = inv * (J(0, 2) * u(0) + J(1, 2) * u(1) + J(2, 2) * u(2));
-    }
+
+    // s.u = (1.0 / detJ) * J^{T} * u
+    MatVecCoreScale<T, D, D, MatOp::TRANSPOSE>(inv, get_data(J), get_data(u),
+                                               get_data(s.u));
     s.div = inv * div;
   }
 
   template <ADorder forder, typename dtype, class JType, class JinvType>
   KOKKOS_FUNCTION void forward_transform(const HdivSpace<T, D>& inp,
                                          dtype& detJ, JType& J, JinvType& Jinv,
-                                         HdivSpace<T, D>& outp) const {}
+                                         HdivSpace<T, D>& outp) const {
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
+    const bool additive = true;
+  }
 
   template <typename dtype, class JType, class JinvType>
   KOKKOS_FUNCTION void reverse_transform(const HdivSpace<T, D>& outb,
-                                         dtype& detJ, JType& J, JinvType& Jinv,
+                                         dtype& detJ, JType& J0, JinvType& Jinv,
                                          HdivSpace<T, D>& inb) const {
-    // const bool additive = true;
-    // const Mat<T, D, D>& J = J0.value();
+    const bool additive = true;
+    const Mat<T, D, D>& J = J0.value();
 
     // T inv = 1.0 / detJ.value();
     // T binv = s.div * div;

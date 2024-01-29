@@ -17,8 +17,9 @@ template <typename T, index_t D,
 class TopoElasticityIntegrand {
  public:
   TopoElasticityIntegrand(T E, T nu, T q) : q(q) {
-    mu0 = 0.5 * E / (1.0 + nu);
-    lambda0 = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
+    // Needs to be different for 2D and 3D
+    mu0 = 0.5 * E * (1.0 - nu) / (1.0 - nu * nu);
+    lambda0 = E * nu / (1.0 - nu * nu);
   }
 
   // Data for the element
@@ -325,9 +326,9 @@ class TopoVonMisesKS {
  public:
   TopoVonMisesKS(T E, T nu, T q, T design_stress, T ks_penalty)
       : q(q), design_stress(design_stress), ks_penalty(ks_penalty) {
-    mu = 0.5 * E / (1.0 + nu);
-    lambda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu));
-
+    // Needs to be different for 2D and 3D
+    mu = 0.5 * E * (1.0 - nu) / (1.0 - nu * nu);
+    lambda = E * nu / (1.0 - nu * nu);
     max_failure_index = 1.0;
     failure_index_integral = 1.0;
   }

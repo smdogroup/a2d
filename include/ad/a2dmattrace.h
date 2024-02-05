@@ -3,13 +3,13 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 
 namespace A2D {
 
 template <typename T, int M>
-KOKKOS_FUNCTION T MatTraceCore(const T* A) {
+A2D_FUNCTION T MatTraceCore(const T* A) {
   T trace = T(0.0);
   for (int i = 0; i < M; i++) {
     trace += A[0];
@@ -19,7 +19,7 @@ KOKKOS_FUNCTION T MatTraceCore(const T* A) {
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION T SymMatTraceCore(const T* S) {
+A2D_FUNCTION T SymMatTraceCore(const T* S) {
   T trace = T(0.0);
   for (int i = 0; i < M; i++, S++) {
     S += i;
@@ -29,7 +29,7 @@ KOKKOS_FUNCTION T SymMatTraceCore(const T* S) {
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION void MatAddDiagCore(const T diag, T* A) {
+A2D_FUNCTION void MatAddDiagCore(const T diag, T* A) {
   for (int i = 0; i < M; i++) {
     A[0] += diag;
     A += M + 1;
@@ -37,7 +37,7 @@ KOKKOS_FUNCTION void MatAddDiagCore(const T diag, T* A) {
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION void SymMatAddDiagCore(const T diag, T* S) {
+A2D_FUNCTION void SymMatAddDiagCore(const T diag, T* S) {
   for (int i = 0; i < M; i++, S++) {
     S += i;
     S[0] += diag;
@@ -45,12 +45,12 @@ KOKKOS_FUNCTION void SymMatAddDiagCore(const T diag, T* S) {
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION void MatTrace(Mat<T, M, M>& A, T& trace) {
+A2D_FUNCTION void MatTrace(Mat<T, M, M>& A, T& trace) {
   trace = MatTraceCore<T, M>(get_data(A));
 }
 
 template <typename T, int M>
-KOKKOS_FUNCTION void MatTrace(SymMat<T, M>& S, T& trace) {
+A2D_FUNCTION void MatTrace(SymMat<T, M>& S, T& trace) {
   trace = SymMatTraceCore<T, M>(get_data(S));
 }
 
@@ -74,16 +74,16 @@ class MatTraceExpr {
   static_assert(get_diff_order<Atype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {}
+  A2D_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     get_data(tr) = MatTraceCore<T, M>(get_data(A));
   }
 
-  KOKKOS_FUNCTION void bzero() { tr.bzero(); }
+  A2D_FUNCTION void bzero() { tr.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -93,14 +93,14 @@ class MatTraceExpr {
         MatTraceCore<T, M>(GetSeed<seed>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     MatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
                          GetSeed<ADseed::b>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void hzero() { tr.hzero(); }
+  A2D_FUNCTION void hzero() { tr.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     MatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
                          GetSeed<ADseed::h>::get_data(A));
   }
@@ -114,7 +114,7 @@ template <
     class Atype, class dtype,
     std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
                      bool> = true>
-KOKKOS_FUNCTION auto MatTrace(ADObj<Atype>& A, ADObj<dtype>& tr) {
+A2D_FUNCTION auto MatTrace(ADObj<Atype>& A, ADObj<dtype>& tr) {
   return MatTraceExpr<ADObj<Atype>, ADObj<dtype>>(A, tr);
 }
 
@@ -122,7 +122,7 @@ template <
     class Atype, class dtype,
     std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
                      bool> = true>
-KOKKOS_FUNCTION auto MatTrace(A2DObj<Atype>& A, A2DObj<dtype>& tr) {
+A2D_FUNCTION auto MatTrace(A2DObj<Atype>& A, A2DObj<dtype>& tr) {
   return MatTraceExpr<A2DObj<Atype>, A2DObj<dtype>>(A, tr);
 }
 
@@ -142,14 +142,14 @@ class SymTraceExpr {
   static_assert(get_diff_order<Stype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION SymTraceExpr(Stype& S, dtype& tr) : S(S), tr(tr) {}
+  A2D_FUNCTION SymTraceExpr(Stype& S, dtype& tr) : S(S), tr(tr) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     get_data(tr) = SymMatTraceCore<T, M>(get_data(S));
   }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -159,12 +159,12 @@ class SymTraceExpr {
         SymMatTraceCore<T, M>(GetSeed<seed>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     SymMatAddDiagCore<T, M>(GetSeed<ADseed::b>::get_data(tr),
                             GetSeed<ADseed::b>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     SymMatAddDiagCore<T, M>(GetSeed<ADseed::h>::get_data(tr),
                             GetSeed<ADseed::h>::get_data(S));
   }
@@ -178,7 +178,7 @@ template <
     class Stype, class dtype,
     std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
                      bool> = true>
-KOKKOS_FUNCTION auto MatTrace(ADObj<Stype>& S, ADObj<dtype>& tr) {
+A2D_FUNCTION auto MatTrace(ADObj<Stype>& S, ADObj<dtype>& tr) {
   return SymTraceExpr<ADObj<Stype>, ADObj<dtype>>(S, tr);
 }
 
@@ -186,7 +186,7 @@ template <
     class Stype, class dtype,
     std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
                      bool> = true>
-KOKKOS_FUNCTION auto MatTrace(A2DObj<Stype>& S, A2DObj<dtype>& tr) {
+A2D_FUNCTION auto MatTrace(A2DObj<Stype>& S, A2DObj<dtype>& tr) {
   return SymTraceExpr<A2DObj<Stype>, A2DObj<dtype>>(S, tr);
 }
 

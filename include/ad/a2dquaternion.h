@@ -1,7 +1,9 @@
 #ifndef A2D_QUATERNION_H
 #define A2D_QUATERNION_H
 
-#include "a2ddefs.h"
+#include <iostream>
+
+#include "../a2ddefs.h"
 #include "a2dgemm.h"
 #include "a2dmat.h"
 #include "a2dvec.h"
@@ -71,31 +73,31 @@ class QuaternionMatrixExpr {
   static_assert(M == N && N == 3, "Rotation matrix dimension must be 3");
   static_assert(L == 4, "Quaternion dimension must be 4");
 
-  KOKKOS_FUNCTION QuaternionMatrixExpr(qtype& q, Ctype& C) : q(q), C(C) {}
+  A2D_FUNCTION QuaternionMatrixExpr(qtype& q, Ctype& C) : q(q), C(C) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     QuaternionMatrixCore<T>(get_data(q), get_data(C));
   }
 
-  KOKKOS_FUNCTION void bzero() { C.bzero(); }
+  A2D_FUNCTION void bzero() { C.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     QuaternionMatrixForwardCore<T>(get_data(q), GetSeed<seed>::get_data(q),
                                    GetSeed<seed>::get_data(C));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     QuaternionMatrixReverseCore<T>(get_data(q), GetSeed<seed>::get_data(C),
                                    GetSeed<seed>::get_data(q));
   }
 
-  KOKKOS_FUNCTION void hzero() { C.hzero(); }
+  A2D_FUNCTION void hzero() { C.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     QuaternionMatrixReverseCore<T>(get_data(q), GetSeed<ADseed::h>::get_data(C),
                                    GetSeed<ADseed::h>::get_data(q));
     QuaternionMatrixReverseCore<T>(GetSeed<ADseed::p>::get_data(q),
@@ -109,12 +111,12 @@ class QuaternionMatrixExpr {
 };
 
 template <class qtype, class Ctype>
-KOKKOS_FUNCTION auto QuaternionMatrix(ADObj<qtype>& q, ADObj<Ctype>& C) {
+A2D_FUNCTION auto QuaternionMatrix(ADObj<qtype>& q, ADObj<Ctype>& C) {
   return QuaternionMatrixExpr<ADObj<qtype>, ADObj<Ctype>>(q, C);
 }
 
 template <class qtype, class Ctype>
-KOKKOS_FUNCTION auto QuaternionMatrix(A2DObj<qtype>& q, A2DObj<Ctype>& C) {
+A2D_FUNCTION auto QuaternionMatrix(A2DObj<qtype>& q, A2DObj<Ctype>& C) {
   return QuaternionMatrixExpr<A2DObj<qtype>, A2DObj<Ctype>>(q, C);
 }
 
@@ -183,19 +185,19 @@ class QuaternionAngularVelocityExpr {
   static_assert(M == 3, "Rotation matrix dimension must be 3");
   static_assert(L == 4, "Quaternion dimension must be 4");
 
-  KOKKOS_FUNCTION QuaternionAngularVelocityExpr(qtype& q, qtype& qdot,
-                                                wtype& omega)
+  A2D_FUNCTION QuaternionAngularVelocityExpr(qtype& q, qtype& qdot,
+                                             wtype& omega)
       : q(q), qdot(qdot), omega(omega) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     QuaternionAngularVelocityCore<T>(get_data(q), get_data(qdot),
                                      get_data(omega));
   }
 
-  KOKKOS_FUNCTION void bzero() { omega.bzero(); }
+  A2D_FUNCTION void bzero() { omega.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     QuaternionAngularVelocityForwardCore<T>(
@@ -203,16 +205,16 @@ class QuaternionAngularVelocityExpr {
         GetSeed<seed>::get_data(qdot), GetSeed<seed>::get_data(omega));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     QuaternionAngularVelocityReverseCore<T>(
         get_data(q), get_data(qdot), GetSeed<seed>::get_data(omega),
         GetSeed<seed>::get_data(q), GetSeed<seed>::get_data(qdot));
   }
 
-  KOKKOS_FUNCTION void hzero() { omega.hzero(); }
+  A2D_FUNCTION void hzero() { omega.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     QuaternionAngularVelocityReverseCore<T>(
         get_data(q), get_data(qdot), GetSeed<ADseed::h>::get_data(omega),
         GetSeed<ADseed::h>::get_data(q), GetSeed<ADseed::h>::get_data(qdot));
@@ -230,17 +232,16 @@ class QuaternionAngularVelocityExpr {
 };
 
 template <class qtype, class wtype>
-KOKKOS_FUNCTION auto QuaternionAngularVelocity(ADObj<qtype>& q,
-                                               ADObj<qtype>& qdot,
-                                               ADObj<wtype>& omega) {
+A2D_FUNCTION auto QuaternionAngularVelocity(ADObj<qtype>& q, ADObj<qtype>& qdot,
+                                            ADObj<wtype>& omega) {
   return QuaternionAngularVelocityExpr<ADObj<qtype>, ADObj<wtype>>(q, qdot,
                                                                    omega);
 }
 
 template <class qtype, class wtype>
-KOKKOS_FUNCTION auto QuaternionAngularVelocity(A2DObj<qtype>& q,
-                                               A2DObj<qtype>& qdot,
-                                               A2DObj<wtype>& omega) {
+A2D_FUNCTION auto QuaternionAngularVelocity(A2DObj<qtype>& q,
+                                            A2DObj<qtype>& qdot,
+                                            A2DObj<wtype>& omega) {
   return QuaternionAngularVelocityExpr<A2DObj<qtype>, A2DObj<wtype>>(q, qdot,
                                                                      omega);
 }

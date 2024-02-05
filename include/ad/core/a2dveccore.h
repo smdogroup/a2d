@@ -1,26 +1,26 @@
 #ifndef A2D_VEC_CORE_H
 #define A2D_VEC_CORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 
 template <typename T>
-KOKKOS_FUNCTION void VecCrossCore(const T x[], const T y[], T v[]) {
+A2D_FUNCTION void VecCrossCore(const T x[], const T y[], T v[]) {
   v[0] = x[1] * y[2] - x[2] * y[1];
   v[1] = x[2] * y[0] - x[0] * y[2];
   v[2] = x[0] * y[1] - x[1] * y[0];
 }
 
 template <typename T>
-KOKKOS_FUNCTION void VecCrossCoreAdd(const T x[], const T y[], T v[]) {
+A2D_FUNCTION void VecCrossCoreAdd(const T x[], const T y[], T v[]) {
   v[0] += x[1] * y[2] - x[2] * y[1];
   v[1] += x[2] * y[0] - x[0] * y[2];
   v[2] += x[0] * y[1] - x[1] * y[0];
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecZeroCore(T A[]) {
+A2D_FUNCTION void VecZeroCore(T A[]) {
   for (int i = 0; i < size; i++) {
     A[0] = T(0.0);
     A++;
@@ -28,7 +28,7 @@ KOKKOS_FUNCTION void VecZeroCore(T A[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecCopyCore(const T A[], T C[]) {
+A2D_FUNCTION void VecCopyCore(const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = A[0];
     C++, A++;
@@ -36,7 +36,7 @@ KOKKOS_FUNCTION void VecCopyCore(const T A[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecScaleCore(const T alpha, const T A[], T C[]) {
+A2D_FUNCTION void VecScaleCore(const T alpha, const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = alpha * A[0];
     C++, A++;
@@ -44,7 +44,7 @@ KOKKOS_FUNCTION void VecScaleCore(const T alpha, const T A[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecAddCore(const T A[], T C[]) {
+A2D_FUNCTION void VecAddCore(const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += A[0];
     C++, A++;
@@ -52,7 +52,7 @@ KOKKOS_FUNCTION void VecAddCore(const T A[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecAddCore(const T alpha, const T A[], T C[]) {
+A2D_FUNCTION void VecAddCore(const T alpha, const T A[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += alpha * A[0];
     C++, A++;
@@ -60,7 +60,7 @@ KOKKOS_FUNCTION void VecAddCore(const T alpha, const T A[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION T VecDotCore(const T A[], const T B[]) {
+A2D_FUNCTION T VecDotCore(const T A[], const T B[]) {
   T dot = 0.0;
   for (int i = 0; i < size; i++) {
     dot += A[0] * B[0];
@@ -70,7 +70,7 @@ KOKKOS_FUNCTION T VecDotCore(const T A[], const T B[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCore(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void VecSumCore(const T A[], const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = A[0] + B[0];
     C++, A++, B++;
@@ -78,7 +78,7 @@ KOKKOS_FUNCTION void VecSumCore(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
+A2D_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
                                 const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = alpha * A[0] + beta * B[0];
@@ -87,7 +87,7 @@ KOKKOS_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += A[0] + B[0];
     C++, A++, B++;
@@ -95,7 +95,7 @@ KOKKOS_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, int size>
-KOKKOS_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
+A2D_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
                                    const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += alpha * A[0] + beta * B[0];
@@ -113,7 +113,7 @@ KOKKOS_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
   A = A + alpha * x * y^{T}
 */
 template <typename T, int M, int N, bool additive = false>
-KOKKOS_FUNCTION void VecOuterCore(const T x[], const T y[], T A[]) {
+A2D_FUNCTION void VecOuterCore(const T x[], const T y[], T A[]) {
   if constexpr (additive) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {
@@ -131,7 +131,7 @@ KOKKOS_FUNCTION void VecOuterCore(const T x[], const T y[], T A[]) {
 }
 
 template <typename T, int M, int N, bool additive = false>
-KOKKOS_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[],
+A2D_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[],
                                   T A[]) {
   if constexpr (additive) {
     for (int i = 0; i < M; i++) {
@@ -150,7 +150,7 @@ KOKKOS_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[],
 }
 
 template <typename T, int N, bool additive = false>
-KOKKOS_FUNCTION void VecSymOuterCore(const T x[], T S[]) {
+A2D_FUNCTION void VecSymOuterCore(const T x[], T S[]) {
   if constexpr (additive) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -169,7 +169,7 @@ KOKKOS_FUNCTION void VecSymOuterCore(const T x[], T S[]) {
 }
 
 template <typename T, int N, bool additive = false>
-KOKKOS_FUNCTION void VecSymOuterCore(const T alpha, const T x[], T S[]) {
+A2D_FUNCTION void VecSymOuterCore(const T alpha, const T x[], T S[]) {
   if constexpr (additive) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {

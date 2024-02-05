@@ -1,11 +1,11 @@
 #ifndef A2D_VEC_CROSS_H
 #define A2D_VEC_CROSS_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
 #include "a2dvec.h"
-#include "ad/core/a2dveccore.h"
+#include "core/a2dveccore.h"
 
 namespace A2D {
 
@@ -48,17 +48,17 @@ class VecCrossExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M && M == K && K == 3), "Vector dimensions must agree");
 
-  KOKKOS_FUNCTION VecCrossExpr(xtype &x, ytype &y, ztype &z)
+  A2D_FUNCTION VecCrossExpr(xtype &x, ytype &y, ztype &z)
       : x(x), y(y), z(z) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
   }
 
-  KOKKOS_FUNCTION void bzero() { z.bzero(); }
+  A2D_FUNCTION void bzero() { z.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
@@ -75,7 +75,7 @@ class VecCrossExpr {
                       GetSeed<seed>::get_data(z));
     }
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
 
     if constexpr (adx == ADiffType::ACTIVE) {
@@ -88,9 +88,9 @@ class VecCrossExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { z.hzero(); }
+  A2D_FUNCTION void hzero() { z.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     if constexpr (adx == ADiffType::ACTIVE) {
       VecCrossCoreAdd<T>(get_data(y), GetSeed<ADseed::h>::get_data(z),
                          GetSeed<ADseed::h>::get_data(x));
@@ -164,10 +164,10 @@ class VecCross2DExpr {
   const static bool is_x_scalar =
       is_scalar_type<typename remove_a2dobj<xtype>::type>::value;
 
-  KOKKOS_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype &z)
+  A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype &z)
       : x(x), y(y), z(z) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     auto x0 = get_data(x);
     auto y0 = get_data(y);
     auto z0 = get_data(z);
@@ -180,10 +180,10 @@ class VecCross2DExpr {
     }
   }
 
-  KOKKOS_FUNCTION void bzero() { z.bzero(); }
+  A2D_FUNCTION void bzero() { z.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     auto x0 = get_data(x);
@@ -220,7 +220,7 @@ class VecCross2DExpr {
       }
     }
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     auto x0 = get_data(x);
     auto y0 = get_data(y);
@@ -247,9 +247,9 @@ class VecCross2DExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { z.hzero(); }
+  A2D_FUNCTION void hzero() { z.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     auto x0 = get_data(x);
     auto y0 = get_data(y);

@@ -1,11 +1,11 @@
 #ifndef A2D_MAT_INV_H
 #define A2D_MAT_INV_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
-#include "ad/core/a2dgemmcore.h"
-#include "ad/core/a2dmatinvcore.h"
-#include "ad/core/a2dveccore.h"
+#include "core/a2dgemmcore.h"
+#include "core/a2dmatinvcore.h"
+#include "core/a2dveccore.h"
 
 namespace A2D {
 
@@ -20,7 +20,7 @@ namespace A2D {
 */
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatInv(const Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
+A2D_FUNCTION void MatInv(const Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
   MatInvCore<T, N>(get_data(A), get_data(Ainv));
 }
 
@@ -50,14 +50,14 @@ class MatInvExpr {
   static constexpr MatOp NORMAL = MatOp::NORMAL;
   static constexpr MatOp TRANSPOSE = MatOp::TRANSPOSE;
 
-  KOKKOS_FUNCTION MatInvExpr(Atype& A, Btype& Ainv) : A(A), Ainv(Ainv) {}
+  A2D_FUNCTION MatInvExpr(Atype& A, Btype& Ainv) : A(A), Ainv(Ainv) {}
 
-  KOKKOS_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
+  A2D_FUNCTION void eval() { MatInvCore<T, N>(get_data(A), get_data(Ainv)); }
 
-  KOKKOS_FUNCTION void bzero() { Ainv.bzero(); }
+  A2D_FUNCTION void bzero() { Ainv.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -71,7 +71,7 @@ class MatInvExpr {
         T(-1.0), temp, get_data(Ainv), GetSeed<seed>::get_data(Ainv));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     T temp[N * N];
     const bool additive = true;
     MatMatMultCore<T, N, N, N, N, N, N, TRANSPOSE, NORMAL>(
@@ -80,9 +80,9 @@ class MatInvExpr {
         T(-1.0), temp, get_data(Ainv), GetSeed<ADseed::b>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void hzero() { Ainv.hzero(); }
+  A2D_FUNCTION void hzero() { Ainv.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
@@ -119,12 +119,12 @@ class MatInvExpr {
 };
 
 template <class Atype, class Btype>
-KOKKOS_FUNCTION auto MatInv(ADObj<Atype>& A, ADObj<Btype>& Ainv) {
+A2D_FUNCTION auto MatInv(ADObj<Atype>& A, ADObj<Btype>& Ainv) {
   return MatInvExpr<ADObj<Atype>, ADObj<Btype>>(A, Ainv);
 }
 
 template <class Atype, class Btype>
-KOKKOS_FUNCTION auto MatInv(A2DObj<Atype>& A, A2DObj<Btype>& Ainv) {
+A2D_FUNCTION auto MatInv(A2DObj<Atype>& A, A2DObj<Btype>& Ainv) {
   return MatInvExpr<A2DObj<Atype>, A2DObj<Btype>>(A, Ainv);
 }
 

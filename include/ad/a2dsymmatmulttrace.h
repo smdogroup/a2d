@@ -3,16 +3,16 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
-#include "ad/core/a2dsymmatmulttracecore.h"
+#include "core/a2dsymmatmulttracecore.h"
 
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatMultTrace(const SymMat<T, N>& S,
+A2D_FUNCTION void SymMatMultTrace(const SymMat<T, N>& S,
                                      const SymMat<T, N>& E, T& output) {
   output = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
 }
@@ -39,17 +39,17 @@ class SymMatMultTraceExpr {
   static_assert(get_diff_order<Etype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION SymMatMultTraceExpr(Stype& S, Stype& E, dtype& out)
+  A2D_FUNCTION SymMatMultTraceExpr(Stype& S, Stype& E, dtype& out)
       : S(S), E(E), out(out) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     get_data(out) = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
   }
 
-  KOKKOS_FUNCTION void bzero() { out.bzero(); }
+  A2D_FUNCTION void bzero() { out.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -61,16 +61,16 @@ class SymMatMultTraceExpr {
         SymMatMultTraceCore<T, N>(get_data(S), GetSeed<seed>::get_data(E));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     SymMatMultTraceReverseCore<T, N>(out.bvalue(), get_data(S),
                                      GetSeed<ADseed::b>::get_data(E));
     SymMatMultTraceReverseCore<T, N>(out.bvalue(), get_data(E),
                                      GetSeed<ADseed::b>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void hzero() { out.hzero(); }
+  A2D_FUNCTION void hzero() { out.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     SymMatMultTraceReverseCore<T, N>(out.bvalue(),
                                      GetSeed<ADseed::p>::get_data(S),
                                      GetSeed<ADseed::h>::get_data(E));
@@ -89,14 +89,14 @@ class SymMatMultTraceExpr {
 };
 
 template <class Stype, class Etype, class dtype>
-KOKKOS_FUNCTION auto SymMatMultTrace(ADObj<Stype>& S, ADObj<Etype>& E,
+A2D_FUNCTION auto SymMatMultTrace(ADObj<Stype>& S, ADObj<Etype>& E,
                                      ADObj<dtype>& output) {
   return SymMatMultTraceExpr<ADObj<Stype>, ADObj<Etype>, ADObj<dtype>>(S, E,
                                                                        output);
 }
 
 template <class Stype, class Etype, class dtype>
-KOKKOS_FUNCTION auto SymMatMultTrace(A2DObj<Stype>& S, A2DObj<Etype>& E,
+A2D_FUNCTION auto SymMatMultTrace(A2DObj<Stype>& S, A2DObj<Etype>& E,
                                      A2DObj<dtype>& output) {
   return SymMatMultTraceExpr<A2DObj<Stype>, A2DObj<Etype>, A2DObj<dtype>>(
       S, E, output);

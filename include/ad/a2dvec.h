@@ -1,7 +1,7 @@
 #ifndef A2D_VEC_H
 #define A2D_VEC_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 
 namespace A2D {
 
@@ -12,40 +12,40 @@ class Vec {
   static const ADObjType obj_type = ADObjType::VECTOR;
   static const index_t ncomp = N;
 
-  KOKKOS_FUNCTION Vec() {
+  A2D_FUNCTION Vec() {
     for (int i = 0; i < N; i++) {
       V[i] = 0.0;
     }
   }
   template <typename T2>
-  KOKKOS_FUNCTION Vec(const T2* vals) {
+  A2D_FUNCTION Vec(const T2* vals) {
     for (int i = 0; i < N; i++) {
       V[i] = vals[i];
     }
   }
   template <typename T2>
-  KOKKOS_FUNCTION Vec(const Vec<T2, N>& src) {
+  A2D_FUNCTION Vec(const Vec<T2, N>& src) {
     for (int i = 0; i < N; i++) {
       V[i] = src(i);
     }
   }
-  KOKKOS_FUNCTION void zero() {
+  A2D_FUNCTION void zero() {
     for (int i = 0; i < N; i++) {
       V[i] = 0.0;
     }
   }
   template <typename T2>
-  KOKKOS_FUNCTION void copy(const Vec<T2, N>& vec) {
+  A2D_FUNCTION void copy(const Vec<T2, N>& vec) {
     for (int i = 0; i < N; i++) {
       V[i] = vec(i);
     }
   }
   template <class IdxType>
-  KOKKOS_FUNCTION T& operator()(const IdxType i) {
+  A2D_FUNCTION T& operator()(const IdxType i) {
     return V[i];
   }
   template <class IdxType>
-  KOKKOS_FUNCTION const T& operator()(const IdxType i) const {
+  A2D_FUNCTION const T& operator()(const IdxType i) const {
     return V[i];
   }
 
@@ -53,11 +53,11 @@ class Vec {
   const T* get_data() const { return V; }
 
   template <typename I>
-  KOKKOS_FUNCTION T& operator[](const I i) {
+  A2D_FUNCTION T& operator[](const I i) {
     return V[i];
   }
   template <typename I>
-  KOKKOS_FUNCTION const T& operator[](const I i) const {
+  A2D_FUNCTION const T& operator[](const I i) const {
     return V[i];
   }
 

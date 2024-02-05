@@ -3,7 +3,6 @@
 
 // Key objects
 
-#include "a2ddefs.h"
 #include "ad/a2dmat.h"
 #include "ad/a2dobj.h"
 #include "ad/a2dstack.h"

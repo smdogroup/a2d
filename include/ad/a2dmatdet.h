@@ -1,15 +1,15 @@
 #ifndef A2D_MAT_DET_H
 #define A2D_MAT_DET_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dmatinv.h"
-#include "ad/core/a2dmatdetcore.h"
+#include "core/a2dmatdetcore.h"
 
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatDet(const Mat<T, N, N>& A, T& det) {
+A2D_FUNCTION void MatDet(const Mat<T, N, N>& A, T& det) {
   det = MatDetCore<T, N>(get_data(A));
 }
 
@@ -33,14 +33,14 @@ class MatDetExpr {
   static_assert(get_diff_order<Atype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {}
+  A2D_FUNCTION MatDetExpr(Atype& A, dtype& det) : A(A), det(det) {}
 
-  KOKKOS_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
+  A2D_FUNCTION void eval() { get_data(det) = MatDetCore<T, N>(get_data(A)); }
 
-  KOKKOS_FUNCTION void bzero() { det.bzero(); }
+  A2D_FUNCTION void bzero() { det.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -50,14 +50,14 @@ class MatDetExpr {
         MatDetForwardCore<T, N>(get_data(A), GetSeed<seed>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     MatDetReverseCore<T, N>(GetSeed<ADseed::b>::get_data(det), get_data(A),
                             GetSeed<ADseed::b>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void hzero() { det.hzero(); }
+  A2D_FUNCTION void hzero() { det.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
@@ -72,12 +72,12 @@ class MatDetExpr {
 };
 
 template <class Atype, class dtype>
-KOKKOS_FUNCTION auto MatDet(ADObj<Atype>& A, ADObj<dtype>& det) {
+A2D_FUNCTION auto MatDet(ADObj<Atype>& A, ADObj<dtype>& det) {
   return MatDetExpr<ADObj<Atype>, ADObj<dtype>>(A, det);
 }
 
 template <class Atype, class dtype>
-KOKKOS_FUNCTION auto MatDet(A2DObj<Atype>& A, A2DObj<dtype>& det) {
+A2D_FUNCTION auto MatDet(A2DObj<Atype>& A, A2DObj<dtype>& det) {
   return MatDetExpr<A2DObj<Atype>, A2DObj<dtype>>(A, det);
 }
 

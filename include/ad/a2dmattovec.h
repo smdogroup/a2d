@@ -3,13 +3,13 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 
 namespace A2D {
 
 template <typename T, typename I, int N, int M>
-KOKKOS_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
+A2D_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
                                     Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
@@ -17,7 +17,7 @@ KOKKOS_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
 }
 
 template <typename T, typename I, int N>
-KOKKOS_FUNCTION void MatColumnToVec(I column, const SymMat<T, N> &A,
+A2D_FUNCTION void MatColumnToVec(I column, const SymMat<T, N> &A,
                                     Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
@@ -37,16 +37,16 @@ class MatColumnToVecExpr {
   MatColumnToVecExpr(I column, Atype &A, xtype &x)
       : column(column), A(A), x(x) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     for (int i = 0; i < N; i++) {
       x(i) = A(i, column);
     }
   }
 
-  KOKKOS_FUNCTION void bzero() { x.bzero(); }
+  A2D_FUNCTION void bzero() { x.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     auto xp = GetSeed<seed>::get_obj(x);
@@ -56,7 +56,7 @@ class MatColumnToVecExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     auto xb = GetSeed<seed>::get_obj(x);
     auto Ab = GetSeed<seed>::get_obj(A);
@@ -65,9 +65,9 @@ class MatColumnToVecExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { x.hzero(); }
+  A2D_FUNCTION void hzero() { x.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     auto xh = GetSeed<seed>::get_obj(x);
     auto Ah = GetSeed<seed>::get_obj(A);
@@ -82,26 +82,26 @@ class MatColumnToVecExpr {
 };
 
 template <typename I, class Atype, class xtype>
-KOKKOS_FUNCTION auto MatColumnToVec(I column, ADObj<Atype> &A,
+A2D_FUNCTION auto MatColumnToVec(I column, ADObj<Atype> &A,
                                     ADObj<xtype> &x) {
   return MatColumnToVecExpr<I, ADObj<Atype>, ADObj<xtype>>(column, A, x);
 }
 
 template <typename I, class Atype, class xtype>
-KOKKOS_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A,
+A2D_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A,
                                     A2DObj<xtype> &x) {
   return MatColumnToVecExpr<I, A2DObj<Atype>, A2DObj<xtype>>(column, A, x);
 }
 
 template <typename T, typename I, int N, int M>
-KOKKOS_FUNCTION void MatRowToVec(I row, const Mat<T, N, M> &A, Vec<T, M> &x) {
+A2D_FUNCTION void MatRowToVec(I row, const Mat<T, N, M> &A, Vec<T, M> &x) {
   for (int i = 0; i < M; i++) {
     x(i) = A(row, i);
   }
 }
 
 template <typename T, typename I, int N>
-KOKKOS_FUNCTION void MatRowToVec(I row, const SymMat<T, N> &A, Vec<T, N> &x) {
+A2D_FUNCTION void MatRowToVec(I row, const SymMat<T, N> &A, Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(row, i);
   }
@@ -119,16 +119,16 @@ class MatRowToVecExpr {
 
   MatRowToVecExpr(I row, Atype &A, xtype &x) : row(row), A(A), x(x) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     for (int i = 0; i < N; i++) {
       x(i) = A(row, i);
     }
   }
 
-  KOKKOS_FUNCTION void bzero() { x.bzero(); }
+  A2D_FUNCTION void bzero() { x.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     auto xp = GetSeed<seed>::get_obj(x);
@@ -138,7 +138,7 @@ class MatRowToVecExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     auto xb = GetSeed<seed>::get_obj(x);
     auto Ab = GetSeed<seed>::get_obj(A);
@@ -147,9 +147,9 @@ class MatRowToVecExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { x.hzero(); }
+  A2D_FUNCTION void hzero() { x.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     auto xh = GetSeed<seed>::get_obj(x);
     auto Ah = GetSeed<seed>::get_obj(A);
@@ -164,12 +164,12 @@ class MatRowToVecExpr {
 };
 
 template <typename I, class Atype, class xtype>
-KOKKOS_FUNCTION auto MatRowToVec(I row, ADObj<Atype> &A, ADObj<xtype> &x) {
+A2D_FUNCTION auto MatRowToVec(I row, ADObj<Atype> &A, ADObj<xtype> &x) {
   return MatRowToVecExpr<I, ADObj<Atype>, ADObj<xtype>>(row, A, x);
 }
 
 template <typename I, class Atype, class xtype>
-KOKKOS_FUNCTION auto MatRowToVec(I row, A2DObj<Atype> &A, A2DObj<xtype> &x) {
+A2D_FUNCTION auto MatRowToVec(I row, A2DObj<Atype> &A, A2DObj<xtype> &x) {
   return MatRowToVecExpr<I, A2DObj<Atype>, A2DObj<xtype>>(row, A, x);
 }
 

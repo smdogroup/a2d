@@ -1,7 +1,7 @@
 #ifndef A2D_SYMMAT_RK_CORE_H
 #define A2D_SYMMAT_RK_CORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 
@@ -13,7 +13,7 @@ namespace A2D {
 */
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void SymMatRKCore(const T A[], T S[]) {
+A2D_FUNCTION void SymMatRKCore(const T A[], T S[]) {
   if constexpr (op == MatOp::NORMAL) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -63,7 +63,7 @@ KOKKOS_FUNCTION void SymMatRKCore(const T A[], T S[]) {
 */
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void SymMatRKCoreScale(const T alpha, const T A[], T S[]) {
+A2D_FUNCTION void SymMatRKCoreScale(const T alpha, const T A[], T S[]) {
   if constexpr (op == MatOp::NORMAL) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -113,7 +113,7 @@ KOKKOS_FUNCTION void SymMatRKCoreScale(const T alpha, const T A[], T S[]) {
 */
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
+A2D_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
   if constexpr (op == MatOp::NORMAL) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -179,7 +179,7 @@ KOKKOS_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
 */
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void SymMatR2KCoreScale(const T alpha, const T A[], const T B[],
+A2D_FUNCTION void SymMatR2KCoreScale(const T alpha, const T A[], const T B[],
                                         T S[]) {
   if constexpr (op == MatOp::NORMAL) {
     for (int i = 0; i < N; i++) {
@@ -239,7 +239,7 @@ KOKKOS_FUNCTION void SymMatR2KCoreScale(const T alpha, const T A[], const T B[],
 }
 
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
-KOKKOS_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
+A2D_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
   if constexpr (op == MatOp::NORMAL) {
     // Ab = Sb * A
     for (int i = 0; i < N; i++) {
@@ -293,7 +293,7 @@ KOKKOS_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
 }
 
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
-KOKKOS_FUNCTION void SymMatRKCoreReverseScale(const T alpha, const T A[],
+A2D_FUNCTION void SymMatRKCoreReverseScale(const T alpha, const T A[],
                                               const T Sb[], T Ab[]) {
   if constexpr (op == MatOp::NORMAL) {
     // Ab = Sb * A

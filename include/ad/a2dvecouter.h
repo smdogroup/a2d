@@ -1,22 +1,22 @@
 #ifndef A2D_VEC_OUTER_H
 #define A2D_VEC_OUTER_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dvec.h"
-#include "ad/core/a2dmatveccore.h"
-#include "ad/core/a2dveccore.h"
+#include "core/a2dmatveccore.h"
+#include "core/a2dveccore.h"
 
 namespace A2D {
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION void VecOuter(const Vec<T, M>& x, const Vec<T, N>& y,
+A2D_FUNCTION void VecOuter(const Vec<T, M>& x, const Vec<T, N>& y,
                               Mat<T, M, N>& A) {
   VecOuterCore<T, M, N>(get_data(x), get_data(y), get_data(A));
 }
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION void VecOuter(const T alpha, const Vec<T, M>& x,
+A2D_FUNCTION void VecOuter(const T alpha, const Vec<T, M>& x,
                               const Vec<T, N>& y, Mat<T, M, N>& A) {
   VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
 }
@@ -58,17 +58,17 @@ class VecOuterExpr {
 
   static_assert((M == K && N == L), "Matrix and vector dimensions must agree");
 
-  KOKKOS_FUNCTION VecOuterExpr(const T alpha, xtype& x, ytype& y, Atype& A)
+  A2D_FUNCTION VecOuterExpr(const T alpha, xtype& x, ytype& y, Atype& A)
       : alpha(alpha), x(x), y(y), A(A) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
   }
 
-  KOKKOS_FUNCTION void bzero() { A.bzero(); }
+  A2D_FUNCTION void bzero() { A.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
@@ -88,7 +88,7 @@ class VecOuterExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adx == ADiffType::ACTIVE) {
       constexpr bool additive = true;
@@ -104,9 +104,9 @@ class VecOuterExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { A.hzero(); }
+  A2D_FUNCTION void hzero() { A.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr bool additive = true;
     if constexpr (adx == ADiffType::ACTIVE) {
       MatVecCoreScale<T, M, N, MatOp::NORMAL, additive>(
@@ -136,7 +136,7 @@ class VecOuterExpr {
 };
 
 template <class xtype, class ytype, class Atype>
-KOKKOS_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
+A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
                               ADObj<Atype>& A) {
   using T = typename get_object_numeric_type<Atype>::type;
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
@@ -144,13 +144,13 @@ KOKKOS_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
 }
 
 template <typename T, class xtype, class ytype, class Atype>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
+A2D_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
                               ADObj<Atype>& A) {
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(alpha, x, y, A);
 }
 
 template <class xtype, class ytype, class Atype>
-KOKKOS_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
+A2D_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
                               A2DObj<Atype>& A) {
   using T = typename get_object_numeric_type<Atype>::type;
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
@@ -158,7 +158,7 @@ KOKKOS_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
 }
 
 template <typename T, class xtype, class ytype, class Atype>
-KOKKOS_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
+A2D_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
                               A2DObj<Atype>& A) {
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(alpha, x, y,
                                                                    A);

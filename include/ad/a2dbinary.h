@@ -1,7 +1,7 @@
 #ifndef A2D_BINARY_OPS_H
 #define A2D_BINARY_OPS_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 
 namespace A2D {
 
@@ -17,33 +17,33 @@ namespace A2D {
                                               ADExpr<B, Tb>>::type;          \
     using A_t = typename std::conditional<CA, A, A&>::type;                  \
     using B_t = typename std::conditional<CB, B, B&>::type;                  \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+    A2D_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                           \
         : a(a0.self()), b(b0.self()), val(0.0), bval(0.0) {}                 \
-    KOKKOS_FUNCTION void eval() {                                            \
+    A2D_FUNCTION void eval() {                                               \
       a.eval();                                                              \
       b.eval();                                                              \
       val = (FUNCBODY);                                                      \
     }                                                                        \
-    KOKKOS_FUNCTION void forward() {                                         \
+    A2D_FUNCTION void forward() {                                            \
       a.forward();                                                           \
       b.forward();                                                           \
       bval = (FORWARDBODY);                                                  \
     }                                                                        \
-    KOKKOS_FUNCTION void reverse() {                                         \
+    A2D_FUNCTION void reverse() {                                            \
       a.bvalue() += (AREVBODY);                                              \
       b.bvalue() += (BREVBODY);                                              \
       a.reverse();                                                           \
       b.reverse();                                                           \
     }                                                                        \
-    KOKKOS_FUNCTION void bzero() {                                           \
+    A2D_FUNCTION void bzero() {                                              \
       bval = T(0.0);                                                         \
       a.bzero();                                                             \
       b.bzero();                                                             \
     }                                                                        \
-    KOKKOS_FUNCTION T& value() { return val; }                               \
-    KOKKOS_FUNCTION const T& value() const { return val; }                   \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
+    A2D_FUNCTION T& value() { return val; }                                  \
+    A2D_FUNCTION const T& value() const { return val; }                      \
+    A2D_FUNCTION T& bvalue() { return bval; }                                \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                    \
                                                                              \
    private:                                                                  \
     A_t a;                                                                   \
@@ -97,34 +97,34 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
                                               ADExpr<B, Tb>>::type;          \
     using A_t = typename std::conditional<CA, A, A&>::type;                  \
     using B_t = typename std::conditional<CB, B, B&>::type;                  \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+    A2D_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                           \
         : a(a0.self()), b(b0.self()), tmp(0.0), val(0.0), bval(0.0) {}       \
-    KOKKOS_FUNCTION void eval() {                                            \
+    A2D_FUNCTION void eval() {                                               \
       a.eval();                                                              \
       b.eval();                                                              \
       val = (FUNCBODY);                                                      \
       tmp = (TEMPBODY);                                                      \
     }                                                                        \
-    KOKKOS_FUNCTION void forward() {                                         \
+    A2D_FUNCTION void forward() {                                            \
       a.forward();                                                           \
       b.forward();                                                           \
       bval = (FORWARDBODY);                                                  \
     }                                                                        \
-    KOKKOS_FUNCTION void reverse() {                                         \
+    A2D_FUNCTION void reverse() {                                            \
       a.bvalue() += (AREVBODY);                                              \
       b.bvalue() += (BREVBODY);                                              \
       a.reverse();                                                           \
       b.reverse();                                                           \
     }                                                                        \
-    KOKKOS_FUNCTION void bzero() {                                           \
+    A2D_FUNCTION void bzero() {                                              \
       bval = T(0.0);                                                         \
       a.bzero();                                                             \
       b.bzero();                                                             \
     }                                                                        \
-    KOKKOS_FUNCTION T& value() { return val; }                               \
-    KOKKOS_FUNCTION const T& value() const { return val; }                   \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
+    A2D_FUNCTION T& value() { return val; }                                  \
+    A2D_FUNCTION const T& value() const { return val; }                      \
+    A2D_FUNCTION T& bvalue() { return bval; }                                \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                    \
                                                                              \
    private:                                                                  \
     A_t a;                                                                   \
@@ -174,53 +174,53 @@ A2D_1ST_BINARY(Divide, operator/, a.value() / b.value(), T(1.0) / b.value(),
                                               A2DExpr<B, Tb>>::type;          \
     using A_t = typename std::conditional<CA, A, A&>::type;                   \
     using B_t = typename std::conditional<CB, B, B&>::type;                   \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                         \
+    A2D_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                            \
         : a(a0.self()),                                                       \
           b(b0.self()),                                                       \
           val(0.0),                                                           \
           bval(0.0),                                                          \
           pval(0.0),                                                          \
           hval(0.0) {}                                                        \
-    KOKKOS_FUNCTION void eval() {                                             \
+    A2D_FUNCTION void eval() {                                                \
       a.eval();                                                               \
       b.eval();                                                               \
       val = (FUNCBODY);                                                       \
     }                                                                         \
-    KOKKOS_FUNCTION void reverse() {                                          \
+    A2D_FUNCTION void reverse() {                                             \
       a.bvalue() += (AREVBODY);                                               \
       b.bvalue() += (BREVBODY);                                               \
       a.reverse();                                                            \
       b.reverse();                                                            \
     }                                                                         \
-    KOKKOS_FUNCTION void hforward() {                                         \
+    A2D_FUNCTION void hforward() {                                            \
       a.hforward();                                                           \
       b.hforward();                                                           \
       pval = (HFORWARDBODY);                                                  \
     }                                                                         \
-    KOKKOS_FUNCTION void hreverse() {                                         \
+    A2D_FUNCTION void hreverse() {                                            \
       a.hvalue() += (HAREVBODY);                                              \
       b.hvalue() += (HBREVBODY);                                              \
       a.hreverse();                                                           \
       b.hreverse();                                                           \
     }                                                                         \
-    KOKKOS_FUNCTION void bzero() {                                            \
+    A2D_FUNCTION void bzero() {                                               \
       bval = T(0.0);                                                          \
       a.bzero();                                                              \
       b.bzero();                                                              \
     }                                                                         \
-    KOKKOS_FUNCTION void hzero() {                                            \
+    A2D_FUNCTION void hzero() {                                               \
       hval = T(0.0);                                                          \
       a.hzero();                                                              \
       b.hzero();                                                              \
     }                                                                         \
-    KOKKOS_FUNCTION T& value() { return val; }                                \
-    KOKKOS_FUNCTION const T& value() const { return val; }                    \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                              \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                  \
-    KOKKOS_FUNCTION T& pvalue() { return pval; }                              \
-    KOKKOS_FUNCTION const T& pvalue() const { return pval; }                  \
-    KOKKOS_FUNCTION T& hvalue() { return hval; }                              \
-    KOKKOS_FUNCTION const T& hvalue() const { return hval; }                  \
+    A2D_FUNCTION T& value() { return val; }                                   \
+    A2D_FUNCTION const T& value() const { return val; }                       \
+    A2D_FUNCTION T& bvalue() { return bval; }                                 \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                     \
+    A2D_FUNCTION T& pvalue() { return pval; }                                 \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                     \
+    A2D_FUNCTION T& hvalue() { return hval; }                                 \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                     \
                                                                               \
    private:                                                                   \
     A_t a;                                                                    \
@@ -276,7 +276,7 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
     using A_t = typename std::conditional<CA, A, A&>::type;                  \
     using B_t = typename std::conditional<CB, B, B&>::type;                  \
                                                                              \
-    KOKKOS_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                        \
+    A2D_FUNCTION OBJNAME(Aexpr_t& a0, Bexpr_t& b0)                           \
         : a(a0.self()),                                                      \
           b(b0.self()),                                                      \
           tmp(0.0),                                                          \
@@ -284,47 +284,47 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
           bval(0.0),                                                         \
           pval(0.0),                                                         \
           hval(0.0) {}                                                       \
-    KOKKOS_FUNCTION void eval() {                                            \
+    A2D_FUNCTION void eval() {                                               \
       a.eval();                                                              \
       b.eval();                                                              \
       val = (FUNCBODY);                                                      \
       tmp = (TEMPBODY);                                                      \
     }                                                                        \
-    KOKKOS_FUNCTION void reverse() {                                         \
+    A2D_FUNCTION void reverse() {                                            \
       a.bvalue() += (AREVBODY);                                              \
       b.bvalue() += (BREVBODY);                                              \
       a.reverse();                                                           \
       b.reverse();                                                           \
     }                                                                        \
-    KOKKOS_FUNCTION void hforward() {                                        \
+    A2D_FUNCTION void hforward() {                                           \
       a.hforward();                                                          \
       b.hforward();                                                          \
       pval = (HFORWARDBODY);                                                 \
     }                                                                        \
-    KOKKOS_FUNCTION void hreverse() {                                        \
+    A2D_FUNCTION void hreverse() {                                           \
       a.hvalue() += (HAREVBODY);                                             \
       b.hvalue() += (HBREVBODY);                                             \
       a.hreverse();                                                          \
       b.hreverse();                                                          \
     }                                                                        \
-    KOKKOS_FUNCTION void bzero() {                                           \
+    A2D_FUNCTION void bzero() {                                              \
       bval = T(0.0);                                                         \
       a.bzero();                                                             \
       b.bzero();                                                             \
     }                                                                        \
-    KOKKOS_FUNCTION void hzero() {                                           \
+    A2D_FUNCTION void hzero() {                                              \
       hval = T(0.0);                                                         \
       a.hzero();                                                             \
       b.hzero();                                                             \
     }                                                                        \
-    KOKKOS_FUNCTION T& value() { return val; }                               \
-    KOKKOS_FUNCTION const T& value() const { return val; }                   \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                             \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }                 \
-    KOKKOS_FUNCTION T& pvalue() { return pval; }                             \
-    KOKKOS_FUNCTION const T& pvalue() const { return pval; }                 \
-    KOKKOS_FUNCTION T& hvalue() { return hval; }                             \
-    KOKKOS_FUNCTION const T& hvalue() const { return hval; }                 \
+    A2D_FUNCTION T& value() { return val; }                                  \
+    A2D_FUNCTION const T& value() const { return val; }                      \
+    A2D_FUNCTION T& bvalue() { return bval; }                                \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                    \
+    A2D_FUNCTION T& pvalue() { return pval; }                                \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                    \
+    A2D_FUNCTION T& hvalue() { return hval; }                                \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                    \
                                                                              \
    private:                                                                  \
     A_t a;                                                                   \
@@ -383,28 +383,28 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
     using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,   \
                                              ADExpr<A, Ta>>::type;      \
     using A_t = typename std::conditional<CA, A, A&>::type;             \
-    KOKKOS_FUNCTION OBJNAME(expr_t& a0, const B& b)                     \
+    A2D_FUNCTION OBJNAME(expr_t& a0, const B& b)                        \
         : a(a0.self()), b(b), val(0.0), bval(0.0) {}                    \
-    KOKKOS_FUNCTION void eval() {                                       \
+    A2D_FUNCTION void eval() {                                          \
       a.eval();                                                         \
       val = (FUNCBODY);                                                 \
     }                                                                   \
-    KOKKOS_FUNCTION void forward() {                                    \
+    A2D_FUNCTION void forward() {                                       \
       a.forward();                                                      \
       bval = (FORWARD);                                                 \
     }                                                                   \
-    KOKKOS_FUNCTION void reverse() {                                    \
+    A2D_FUNCTION void reverse() {                                       \
       a.bvalue() += (REVERSE);                                          \
       a.reverse();                                                      \
     }                                                                   \
-    KOKKOS_FUNCTION void bzero() {                                      \
+    A2D_FUNCTION void bzero() {                                         \
       bval = T(0.0);                                                    \
       a.bzero();                                                        \
     }                                                                   \
-    KOKKOS_FUNCTION T& value() { return val; }                          \
-    KOKKOS_FUNCTION const T& value() const { return val; }              \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                        \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }            \
+    A2D_FUNCTION T& value() { return val; }                             \
+    A2D_FUNCTION const T& value() const { return val; }                 \
+    A2D_FUNCTION T& bvalue() { return bval; }                           \
+    A2D_FUNCTION const T& bvalue() const { return bval; }               \
                                                                         \
    private:                                                             \
     A_t a;                                                              \
@@ -413,13 +413,13 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
   };                                                                    \
   template <class A, class Ta, class B,                                 \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
-  KOKKOS_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a, const B& b) {   \
+  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a, const B& b) {      \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, B, T, true>(a, b);                            \
   }                                                                     \
   template <class A, class Ta, class B,                                 \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
-  KOKKOS_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a, const B& b) {         \
+  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a, const B& b) {            \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, B, T, false>(a, b);                           \
   }
@@ -454,40 +454,40 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
     using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,     \
                                              A2DExpr<A, Ta>>::type;        \
     using A_t = typename std::conditional<CA, A, A&>::type;                \
-    KOKKOS_FUNCTION OBJNAME(expr_t& a0, const B& b)                        \
+    A2D_FUNCTION OBJNAME(expr_t& a0, const B& b)                           \
         : a(a0.self()), b(b), val(0.0), bval(0.0), pval(0.0), hval(0.0) {} \
-    KOKKOS_FUNCTION void eval() {                                          \
+    A2D_FUNCTION void eval() {                                             \
       a.eval();                                                            \
       val = (FUNCBODY);                                                    \
     }                                                                      \
-    KOKKOS_FUNCTION void reverse() {                                       \
+    A2D_FUNCTION void reverse() {                                          \
       a.bvalue() += (REVERSE);                                             \
       a.reverse();                                                         \
     }                                                                      \
-    KOKKOS_FUNCTION void hforward() {                                      \
+    A2D_FUNCTION void hforward() {                                         \
       a.hforward();                                                        \
       pval = (HFORWARD);                                                   \
     }                                                                      \
-    KOKKOS_FUNCTION void hreverse() {                                      \
+    A2D_FUNCTION void hreverse() {                                         \
       a.hvalue() += (HREVERSE);                                            \
       a.hreverse();                                                        \
     }                                                                      \
-    KOKKOS_FUNCTION void bzero() {                                         \
+    A2D_FUNCTION void bzero() {                                            \
       bval = T(0.0);                                                       \
       a.bzero();                                                           \
     }                                                                      \
-    KOKKOS_FUNCTION void hzero() {                                         \
+    A2D_FUNCTION void hzero() {                                            \
       hval = T(0.0);                                                       \
       a.hzero();                                                           \
     }                                                                      \
-    KOKKOS_FUNCTION T& value() { return val; }                             \
-    KOKKOS_FUNCTION const T& value() const { return val; }                 \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                           \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }               \
-    KOKKOS_FUNCTION T& pvalue() { return pval; }                           \
-    KOKKOS_FUNCTION const T& pvalue() const { return pval; }               \
-    KOKKOS_FUNCTION T& hvalue() { return hval; }                           \
-    KOKKOS_FUNCTION const T& hvalue() const { return hval; }               \
+    A2D_FUNCTION T& value() { return val; }                                \
+    A2D_FUNCTION const T& value() const { return val; }                    \
+    A2D_FUNCTION T& bvalue() { return bval; }                              \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                  \
+    A2D_FUNCTION T& pvalue() { return pval; }                              \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                  \
+    A2D_FUNCTION T& hvalue() { return hval; }                              \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                  \
                                                                            \
    private:                                                                \
     A_t a;                                                                 \
@@ -496,13 +496,13 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, std::pow(a.value(), b),
   };                                                                       \
   template <class A, class Ta, class B,                                    \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a, const B& b) {     \
+  A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a, const B& b) {        \
     using T = typename remove_const_and_refs<Ta>::type;                    \
     return OBJNAME<A, Ta, B, T, true>(a, b);                               \
   }                                                                        \
   template <class A, class Ta, class B,                                    \
             std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a, const B& b) {           \
+  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a, const B& b) {              \
     using T = typename remove_const_and_refs<Ta>::type;                    \
     return OBJNAME<A, Ta, B, T, false>(a, b);                              \
   }
@@ -542,28 +542,28 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
     using expr_t = typename std::conditional<CB, const ADExpr<B, Tb>,    \
                                              ADExpr<B, Tb>>::type;       \
     using B_t = typename std::conditional<CB, B, B&>::type;              \
-    KOKKOS_FUNCTION OBJNAME(const A& a, expr_t& b0)                      \
+    A2D_FUNCTION OBJNAME(const A& a, expr_t& b0)                         \
         : a(a), b(b0.self()), val(0.0), bval(0.0) {}                     \
-    KOKKOS_FUNCTION void eval() {                                        \
+    A2D_FUNCTION void eval() {                                           \
       b.eval();                                                          \
       val = (FUNCBODY);                                                  \
     }                                                                    \
-    KOKKOS_FUNCTION void forward() {                                     \
+    A2D_FUNCTION void forward() {                                        \
       b.forward();                                                       \
       bval = (FORWARD);                                                  \
     }                                                                    \
-    KOKKOS_FUNCTION void reverse() {                                     \
+    A2D_FUNCTION void reverse() {                                        \
       b.bvalue() += (REVERSE);                                           \
       b.reverse();                                                       \
     }                                                                    \
-    KOKKOS_FUNCTION void bzero() {                                       \
+    A2D_FUNCTION void bzero() {                                          \
       bval = T(0.0);                                                     \
       b.bzero();                                                         \
     }                                                                    \
-    KOKKOS_FUNCTION T& value() { return val; }                           \
-    KOKKOS_FUNCTION const T& value() const { return val; }               \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                         \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }             \
+    A2D_FUNCTION T& value() { return val; }                              \
+    A2D_FUNCTION const T& value() const { return val; }                  \
+    A2D_FUNCTION T& bvalue() { return bval; }                            \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                \
                                                                          \
    private:                                                              \
     const A a;                                                           \
@@ -572,13 +572,13 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, std::pow(a.value(), b),
   };                                                                     \
   template <class A, class B, class Tb,                                  \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, const ADExpr<B, Tb>& b) {    \
+  A2D_FUNCTION auto OPERNAME(const A& a, const ADExpr<B, Tb>& b) {       \
     using T = typename remove_const_and_refs<Tb>::type;                  \
     return OBJNAME<A, B, Tb, T, true>(a, b);                             \
   }                                                                      \
   template <class A, class B, class Tb,                                  \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, ADExpr<B, Tb>& b) {          \
+  A2D_FUNCTION auto OPERNAME(const A& a, ADExpr<B, Tb>& b) {             \
     using T = typename remove_const_and_refs<Tb>::type;                  \
     return OBJNAME<A, B, Tb, T, false>(a, b);                            \
   }
@@ -610,40 +610,40 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
     using expr_t = typename std::conditional<CB, const A2DExpr<B, Tb>,     \
                                              A2DExpr<B, Tb>>::type;        \
     using B_t = typename std::conditional<CB, B, B&>::type;                \
-    KOKKOS_FUNCTION OBJNAME(const A& a, expr_t& b0)                        \
+    A2D_FUNCTION OBJNAME(const A& a, expr_t& b0)                           \
         : a(a), b(b0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0) {} \
-    KOKKOS_FUNCTION void eval() {                                          \
+    A2D_FUNCTION void eval() {                                             \
       b.eval();                                                            \
       val = (FUNCBODY);                                                    \
     }                                                                      \
-    KOKKOS_FUNCTION void reverse() {                                       \
+    A2D_FUNCTION void reverse() {                                          \
       b.bvalue() += (REVERSE);                                             \
       b.reverse();                                                         \
     }                                                                      \
-    KOKKOS_FUNCTION void hforward() {                                      \
+    A2D_FUNCTION void hforward() {                                         \
       b.hforward();                                                        \
       pval = (HFORWARD);                                                   \
     }                                                                      \
-    KOKKOS_FUNCTION void hreverse() {                                      \
+    A2D_FUNCTION void hreverse() {                                         \
       b.hvalue() += (HREVERSE);                                            \
       b.hreverse();                                                        \
     }                                                                      \
-    KOKKOS_FUNCTION void bzero() {                                         \
+    A2D_FUNCTION void bzero() {                                            \
       bval = T(0.0);                                                       \
       b.bzero();                                                           \
     }                                                                      \
-    KOKKOS_FUNCTION void hzero() {                                         \
+    A2D_FUNCTION void hzero() {                                            \
       hval = T(0.0);                                                       \
       b.hzero();                                                           \
     }                                                                      \
-    KOKKOS_FUNCTION T& value() { return val; }                             \
-    KOKKOS_FUNCTION const T& value() const { return val; }                 \
-    KOKKOS_FUNCTION T& bvalue() { return bval; }                           \
-    KOKKOS_FUNCTION const T& bvalue() const { return bval; }               \
-    KOKKOS_FUNCTION T& pvalue() { return pval; }                           \
-    KOKKOS_FUNCTION const T& pvalue() const { return pval; }               \
-    KOKKOS_FUNCTION T& hvalue() { return hval; }                           \
-    KOKKOS_FUNCTION const T& hvalue() const { return hval; }               \
+    A2D_FUNCTION T& value() { return val; }                                \
+    A2D_FUNCTION const T& value() const { return val; }                    \
+    A2D_FUNCTION T& bvalue() { return bval; }                              \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                  \
+    A2D_FUNCTION T& pvalue() { return pval; }                              \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                  \
+    A2D_FUNCTION T& hvalue() { return hval; }                              \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                  \
                                                                            \
    private:                                                                \
     const A a;                                                             \
@@ -652,13 +652,13 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
   };                                                                       \
   template <class A, class B, class Tb,                                    \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, const A2DExpr<B, Tb>& b) {     \
+  A2D_FUNCTION auto OPERNAME(const A& a, const A2DExpr<B, Tb>& b) {        \
     using T = typename remove_const_and_refs<Tb>::type;                    \
     return OBJNAME<A, B, Tb, T, true>(a, b);                               \
   }                                                                        \
   template <class A, class B, class Tb,                                    \
             std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
-  KOKKOS_FUNCTION auto OPERNAME(const A& a, A2DExpr<B, Tb>& b) {           \
+  A2D_FUNCTION auto OPERNAME(const A& a, A2DExpr<B, Tb>& b) {              \
     using T = typename remove_const_and_refs<Tb>::type;                    \
     return OBJNAME<A, B, Tb, T, false>(a, b);                              \
   }

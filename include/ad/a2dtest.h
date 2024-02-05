@@ -2,6 +2,7 @@
 #define A2D_TEST_H
 
 #include <iomanip>
+#include <iostream>
 
 #include "a2dvartuple.h"
 

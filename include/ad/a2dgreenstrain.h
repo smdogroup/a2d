@@ -3,18 +3,18 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
-#include "ad/core/a2dgreenstraincore.h"
+#include "core/a2dgreenstraincore.h"
 
 namespace A2D {
 
 enum class GreenStrainType { LINEAR, NONLINEAR };
 
 template <GreenStrainType etype, typename T, int N>
-KOKKOS_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
+A2D_FUNCTION void MatGreenStrain(const Mat<T, N, N>& Ux, SymMat<T, N>& E) {
   if constexpr (etype == GreenStrainType::LINEAR) {
     LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
   } else {
@@ -43,9 +43,9 @@ class MatGreenStrainExpr {
   static_assert(get_diff_order<Utype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
+  A2D_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainCore<T, N>(get_data(Ux), get_data(E));
     } else {
@@ -53,10 +53,10 @@ class MatGreenStrainExpr {
     }
   }
 
-  KOKKOS_FUNCTION void bzero() { E.bzero(); }
+  A2D_FUNCTION void bzero() { E.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -73,7 +73,7 @@ class MatGreenStrainExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainReverseCore<T, N>(GetSeed<ADseed::b>::get_data(E),
                                          GetSeed<ADseed::b>::get_data(Ux));
@@ -85,9 +85,9 @@ class MatGreenStrainExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { E.hzero(); }
+  A2D_FUNCTION void hzero() { E.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     if constexpr (etype == GreenStrainType::LINEAR) {
       LinearGreenStrainHReverseCore<T, N>(GetSeed<ADseed::h>::get_data(E),
                                           GetSeed<ADseed::h>::get_data(Ux));
@@ -105,12 +105,12 @@ class MatGreenStrainExpr {
 };
 
 template <GreenStrainType etype, class UxMat, class EMat>
-KOKKOS_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
+A2D_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
   return MatGreenStrainExpr<etype, ADObj<UxMat>, ADObj<EMat>>(Ux, E);
 }
 
 template <GreenStrainType etype, class UxMat, class EMat>
-KOKKOS_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
+A2D_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
   return MatGreenStrainExpr<etype, A2DObj<UxMat>, A2DObj<EMat>>(Ux, E);
 }
 

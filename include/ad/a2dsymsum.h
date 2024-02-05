@@ -3,15 +3,15 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dtest.h"
-#include "ad/core/a2dgemmcore.h"
+#include "core/a2dgemmcore.h"
 
 namespace A2D {
 
 template <typename T, int N, bool additive = false>
-KOKKOS_FUNCTION void SymMatSumCore(const T A[], T S[]) {
+A2D_FUNCTION void SymMatSumCore(const T A[], T S[]) {
   if constexpr (additive) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -30,7 +30,7 @@ KOKKOS_FUNCTION void SymMatSumCore(const T A[], T S[]) {
 }
 
 template <typename T, int N, bool additive = false>
-KOKKOS_FUNCTION void SymMatSumCore(const T alpha, const T A[], T S[]) {
+A2D_FUNCTION void SymMatSumCore(const T alpha, const T A[], T S[]) {
   if constexpr (additive) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -49,7 +49,7 @@ KOKKOS_FUNCTION void SymMatSumCore(const T alpha, const T A[], T S[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatSumCoreReverse(const T alpha, const T Sb[], T Ab[]) {
+A2D_FUNCTION void SymMatSumCoreReverse(const T alpha, const T Sb[], T Ab[]) {
   for (int i = 0; i < N; i++) {
     for (int j = 0; j <= i; j++) {
       Ab[N * i + j] += alpha * Sb[0];
@@ -60,7 +60,7 @@ KOKKOS_FUNCTION void SymMatSumCoreReverse(const T alpha, const T Sb[], T Ab[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION T SymMatSumCoreReverse(const T A[], const T Sb[]) {
+A2D_FUNCTION T SymMatSumCoreReverse(const T A[], const T Sb[]) {
   T val = 0.0;
   for (int i = 0; i < N; i++) {
     for (int j = 0; j <= i; j++) {
@@ -72,12 +72,12 @@ KOKKOS_FUNCTION T SymMatSumCoreReverse(const T A[], const T Sb[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatSum(const Mat<T, N, N> &A, SymMat<T, N> &S) {
+A2D_FUNCTION void SymMatSum(const Mat<T, N, N> &A, SymMat<T, N> &S) {
   SymMatSumCore<T, N>(get_data(A), get_data(S));
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N> &A,
+A2D_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N> &A,
                                SymMat<T, N> &S) {
   SymMatSumCore<T, N>(alpha, get_data(A), get_data(S));
 }
@@ -103,17 +103,17 @@ class SymMatSumExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == K && N == M), "Matrix dimensions must agree");
 
-  KOKKOS_FUNCTION SymMatSumExpr(atype alpha, Atype &A, Stype &S)
+  A2D_FUNCTION SymMatSumExpr(atype alpha, Atype &A, Stype &S)
       : alpha(alpha), A(A), S(S) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     SymMatSumCore<T, N>(get_data(alpha), get_data(A), get_data(S));
   }
 
-  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+  A2D_FUNCTION void bzero() { S.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     if constexpr (ada == ADiffType::ACTIVE && adA == ADiffType::ACTIVE) {
@@ -130,7 +130,7 @@ class SymMatSumExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(alpha) +=
@@ -142,9 +142,9 @@ class SymMatSumExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { S.hzero(); }
+  A2D_FUNCTION void hzero() { S.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(alpha) +=
@@ -170,26 +170,26 @@ class SymMatSumExpr {
 
 // Scalar constant alpha = 1.0 case
 template <class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(ADObj<Atype> &A, ADObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(ADObj<Atype> &A, ADObj<Stype> &S) {
   using T = typename get_object_numeric_type<Stype>::type;
   return SymMatSumExpr<const T, ADObj<Atype>, ADObj<Stype>>(T(1.0), A, S);
 }
 
 template <class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(A2DObj<Atype> &A, A2DObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(A2DObj<Atype> &A, A2DObj<Stype> &S) {
   using T = typename get_object_numeric_type<Stype>::type;
   return SymMatSumExpr<const T, A2DObj<Atype>, A2DObj<Stype>>(T(1.0), A, S);
 }
 
 // Cases with alpha
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
+A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
                                ADObj<Stype> &S) {
   return SymMatSumExpr<ADObj<atype> &, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
+A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
                                A2DObj<Stype> &S) {
   return SymMatSumExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<Stype>>(alpha, A,
                                                                       S);
@@ -197,25 +197,25 @@ KOKKOS_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
 
 // Cases with passive variables
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype> &A,
+A2D_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype> &A,
                                ADObj<Stype> &S) {
   return SymMatSumExpr<const atype, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype> &A,
+A2D_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype> &A,
                                A2DObj<Stype> &S) {
   return SymMatSumExpr<const atype, A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(ADObj<atype> &alpha, const Atype &A,
+A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, const Atype &A,
                                ADObj<Stype> &S) {
   return SymMatSumExpr<ADObj<atype> &, const Atype, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A,
+A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A,
                                A2DObj<Stype> &S) {
   return SymMatSumExpr<A2DObj<atype> &, const Atype, A2DObj<Stype>>(alpha, A,
                                                                     S);

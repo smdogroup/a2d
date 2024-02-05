@@ -1,24 +1,14 @@
 #ifndef A2D_DEFS_H
 #define A2D_DEFS_H
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <cstdint>
-
-#include "Kokkos_Core.hpp"
-#include "Kokkos_UnorderedMap.hpp"
-
-#ifdef KOKKOS_ENABLE_CUDA
-#include "cuda/std/complex"
-#include "thrust/fill.h"
-template <typename T>
-using A2D_complex_t = cuda::std::complex<T>;
-#else
-#include <algorithm>
-#include <complex>
 template <typename T>
 using A2D_complex_t = std::complex<T>;
-#endif
+
+#define A2D_FUNCTION
 
 namespace A2D {
 
@@ -86,11 +76,11 @@ struct is_complex<A2D_complex_t<T>> : public std::true_type {};
  Convert scalar value to printf-able format
 */
 template <typename T>
-KOKKOS_FUNCTION double fmt(A2D_complex_t<T> val) {
+A2D_FUNCTION double fmt(A2D_complex_t<T> val) {
   return val.real();
 }
 
-KOKKOS_FUNCTION double fmt(double val) { return val; }
+A2D_FUNCTION double fmt(double val) { return val; }
 
 double absfunc(A2D_complex_t<double> a) {
   if (a.real() >= 0.0) {
@@ -226,38 +216,38 @@ struct conditional_value<T, true, TrueVal, FalseVal> {
 
 #ifdef KOKKOS_ENABLE_CUDA
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T sqrt(T val) {
+A2D_FUNCTION T sqrt(T val) {
   return cuda::std::sqrt(val);
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T exp(T val) {
+A2D_FUNCTION T exp(T val) {
   return cuda::std::exp(val);
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T log(T val) {
+A2D_FUNCTION T log(T val) {
   return cuda::std::log(val);
 }
 
 template <class ForwardIt, class T>
-KOKKOS_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
+A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
   thrust::fill(first, last, value);
 }
 #else
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T sqrt(T val) {
+A2D_FUNCTION T sqrt(T val) {
   return std::sqrt(val);
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T exp(T val) {
+A2D_FUNCTION T exp(T val) {
   return std::exp(val);
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-KOKKOS_FUNCTION T log(T val) {
+A2D_FUNCTION T log(T val) {
   return std::log(val);
 }
 

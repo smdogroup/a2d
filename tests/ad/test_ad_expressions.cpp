@@ -1,7 +1,6 @@
 #include <vector>
 
 #include "a2dcore.h"
-#include "multiphysics/femapping.h"
 
 using namespace A2D;
 
@@ -19,7 +18,7 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 
   // Evaluate the function
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);
     T output;
@@ -40,7 +39,7 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // The AD objects
     ADObj<T> output;
     ADObj<Mat<T, N, N>> Uxi, J, Jinv, Ux;
@@ -63,8 +62,8 @@ class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // The AD objects
     A2DObj<Mat<T, N, N>> Uxi, J;
     A2DObj<T> output;
@@ -101,14 +100,14 @@ class MooneyRivlin
   // Assemble a string to describe the test
   std::string name() { return std::string("MooneyRivlin"); }
 
-  void get_point(Input& x) {
+  void get_point(Input &x) {
     x.set_rand();
     for (int i = 0; i < 9; i++) {
       x[i] *= 0.05;
     }
   }
 
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);
     T W;
@@ -144,7 +143,7 @@ class MooneyRivlin
     return MakeVarTuple<T>(W);
   }
 
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // The AD objects
     ADObj<Mat<T, N, N>> Uxi, J;
     ADObj<T> W;
@@ -187,8 +186,8 @@ class MooneyRivlin
   }
 
   // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // The AD objects
     A2DObj<Mat<T, N, N>> Uxi, J;
     A2DObj<T> W;
@@ -248,7 +247,7 @@ class DefGradTest
   }
 
   // Evaluate the function
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     Mat<T, N, N> Uxi, J;
     x.get_values(Uxi, J);
     T output;
@@ -274,7 +273,7 @@ class DefGradTest
   }
 
   // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // The AD objects
     ADObj<Mat<T, N, N>> Uxi, J;
     ADObj<T> output;
@@ -303,8 +302,8 @@ class DefGradTest
   }
 
   // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // The AD objects
     A2DObj<Mat<T, N, N>> Uxi, J;
     A2DObj<T> output;
@@ -349,7 +348,7 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Evaluate the function
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     const T mu(0.197), lambda(0.839);
     Mat<T, N, N> Ux;
     x.get_values(Ux);
@@ -366,7 +365,7 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // Input
     const T mu(0.197), lambda(0.839);
     ADObj<Mat<T, N, N>> Ux;
@@ -387,8 +386,8 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // Input
     const T mu(0.197), lambda(0.839);
     A2DObj<Mat<T, N, N>> Ux;
@@ -448,7 +447,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
   std::string name() { return "VonMisesPenalty"; }
 
   // Evaluate the function
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     // Set constants
     double q = 5.0;
     double design_stress = 135.0;
@@ -477,7 +476,7 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
     return MakeVarTuple<T>(failure_index);
   }
 
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // Set constants
     double q = 5.0;
     double design_stress = 135.0;
@@ -509,8 +508,8 @@ class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
     g.set_values(rho.bvalue(), Ux.bvalue());
   }
 
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // Set constants
     double q = 5.0;
     double design_stress = 135.0;
@@ -560,7 +559,7 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Evaluate the function
-  Output eval(const Input& x) {
+  Output eval(const Input &x) {
     Mat<T, N, N> J;
     x.get_values(J);
     T Jdet, tr, output;
@@ -578,7 +577,7 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
+  void deriv(const Output &seed, const Input &x, Input &g) {
     // The AD objects
     ADObj<Mat<T, N, N>> J, Jinv;
     ADObj<T> Jdet, tr, output;
@@ -596,8 +595,8 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
+  void hprod(const Output &seed, const Output &hval, const Input &x,
+             const Input &p, Input &h) {
     // The AD objects
     A2DObj<Mat<T, N, N>> J, Jinv;
     A2DObj<T> Jdet, tr, output;
@@ -641,7 +640,7 @@ bool MatIntegrationTests(bool component, bool write_output) {
   return passed;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   bool component = false;     // Default to a projection test
   bool write_output = false;  // Don't write output;
 
@@ -682,7 +681,6 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::SymEigsTestAll);
   tests.push_back(A2D::Test::QuaternionMatrixTestAll);
   tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
-  tests.push_back(A2D::Test::RefElementTransformTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

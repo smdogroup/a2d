@@ -2,7 +2,7 @@
 #define A2D_SCALAR_OPS_H
 
 #include "a2dbinary.h"
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dunary.h"
 
 namespace A2D {
@@ -10,25 +10,25 @@ namespace A2D {
 template <class Expr, class T>
 class EvalExpr {
  public:
-  KOKKOS_FUNCTION EvalExpr(Expr&& expr, ADObj<T>& out)
+  A2D_FUNCTION EvalExpr(Expr&& expr, ADObj<T>& out)
       : expr(std::forward<Expr>(expr)), out(out) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     expr.eval();
     out.value() = expr.value();
   }
-  KOKKOS_FUNCTION void bzero() {
+  A2D_FUNCTION void bzero() {
     out.bzero();
     expr.bzero();
   }
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(forder == ADorder::FIRST,
                   "EvalExpr only works for first-order AD");
     expr.forward();
     out.bvalue() = expr.bvalue();
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     expr.bvalue() = out.bvalue();
     expr.reverse();
   }
@@ -46,33 +46,33 @@ auto Eval(Expr&& expr, ADObj<T>& out) {
 template <class Expr, class T>
 class EvalExpr2 {
  public:
-  KOKKOS_FUNCTION EvalExpr2(Expr&& expr, A2DObj<T>& out)
+  A2D_FUNCTION EvalExpr2(Expr&& expr, A2DObj<T>& out)
       : expr(std::forward<Expr>(expr)), out(out) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     expr.eval();
     out.value() = expr.value();
   }
-  KOKKOS_FUNCTION void bzero() {
+  A2D_FUNCTION void bzero() {
     out.bzero();
     expr.bzero();
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     expr.bvalue() += out.bvalue();
     expr.reverse();
   }
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(forder == ADorder::SECOND,
                   "EvalExpr2 only works for second-order AD");
     expr.hforward();
     out.pvalue() = expr.pvalue();
   }
-  KOKKOS_FUNCTION void hzero() {
+  A2D_FUNCTION void hzero() {
     out.hzero();
     expr.hzero();
   }
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     expr.hvalue() += out.hvalue();
     expr.hreverse();
   }

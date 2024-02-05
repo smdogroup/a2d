@@ -1,7 +1,7 @@
 #ifndef A2D_GEMMCORE_H
 #define A2D_GEMMCORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 
@@ -19,7 +19,7 @@ struct int_conditional<false, i, j> {
 };
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-KOKKOS_FUNCTION void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] = A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
     C[1] = A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
@@ -64,8 +64,8 @@ KOKKOS_FUNCTION void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-KOKKOS_FUNCTION void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[],
-                                            T C[]) {
+A2D_FUNCTION void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[],
+                                         T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] = scalar * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] = scalar * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
@@ -110,7 +110,7 @@ KOKKOS_FUNCTION void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[],
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-KOKKOS_FUNCTION void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] += A[0] * B[0] + A[1] * B[3] + A[2] * B[6];
     C[1] += A[0] * B[1] + A[1] * B[4] + A[2] * B[7];
@@ -155,8 +155,8 @@ KOKKOS_FUNCTION void MatMatMultCore3x3Add(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
-KOKKOS_FUNCTION void MatMatMultCore3x3ScaleAdd(T scalar, const T A[],
-                                               const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultCore3x3ScaleAdd(T scalar, const T A[], const T B[],
+                                            T C[]) {
   if constexpr (opA == MatOp::NORMAL and opB == MatOp::NORMAL) {
     C[0] += scalar * (A[0] * B[0] + A[1] * B[3] + A[2] * B[6]);
     C[1] += scalar * (A[0] * B[1] + A[1] * B[4] + A[2] * B[7]);
@@ -226,20 +226,20 @@ KOKKOS_FUNCTION void MatMatMultCore3x3ScaleAdd(T scalar, const T A[],
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
   // Op(A) is M-by-P, Op(B) is P-by-N, C is M-by-N
   constexpr int M = Cnrows;
   constexpr int N = Cncols;
-  constexpr int P =
-      int_conditional<opA == MatOp::NORMAL, Ancols, Anrows>::value;
+  // constexpr int P =
+  //    int_conditional<opA == MatOp::NORMAL, Ancols, Anrows>::value;
 
   if constexpr (opA == MatOp::NORMAL) {
     if (opB == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[Ancols * i];
-          const T* aend = a + Ancols;
-          const T* b = &B[j];
+          const T *a = &A[Ancols * i];
+          const T *aend = a + Ancols;
+          const T *b = &B[j];
 
           T value = T(0.0);
           for (; a < aend; a++, b += Bncols) {
@@ -256,9 +256,9 @@ KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
     } else {  // opB == MatOp::TRANSPOSE
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[Ancols * i];
-          const T* aend = a + Ancols;
-          const T* b = &B[Bncols * j];
+          const T *a = &A[Ancols * i];
+          const T *aend = a + Ancols;
+          const T *b = &B[Bncols * j];
 
           T value = T(0.0);
           for (; a < aend; a++, b++) {
@@ -277,9 +277,9 @@ KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
     if (opB == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[i];
-          const T* b = &B[j];
-          const T* bend = b + Bnrows * Bncols;
+          const T *a = &A[i];
+          const T *b = &B[j];
+          const T *bend = b + Bnrows * Bncols;
 
           T value = T(0.0);
           for (; b < bend; a += Ancols, b += Bncols) {
@@ -296,9 +296,9 @@ KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
     } else {  // opB == MatOp::TRANSPOSE
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[i];
-          const T* b = &B[Bncols * j];
-          const T* bend = b + Bncols;
+          const T *a = &A[i];
+          const T *b = &B[Bncols * j];
+          const T *bend = b + Bncols;
 
           T value = T(0.0);
           for (; b < bend; a += Ancols, b++) {
@@ -343,21 +343,21 @@ KOKKOS_FUNCTION void MatMatMultCoreGeneral(const T A[], const T B[], T C[]) {
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
-                                                const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
+                                             const T B[], T C[]) {
   // Op(A) is M-by-P, Op(B) is P-by-N, C is M-by-N
   constexpr int M = Cnrows;
   constexpr int N = Cncols;
-  constexpr int P =
-      int_conditional<opA == MatOp::NORMAL, Ancols, Anrows>::value;
+  // constexpr int P =
+  //    int_conditional<opA == MatOp::NORMAL, Ancols, Anrows>::value;
 
   if constexpr (opA == MatOp::NORMAL) {
     if (opB == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[Ancols * i];
-          const T* aend = a + Ancols;
-          const T* b = &B[j];
+          const T *a = &A[Ancols * i];
+          const T *aend = a + Ancols;
+          const T *b = &B[j];
 
           T value = T(0.0);
           for (; a < aend; a++, b += Bncols) {
@@ -374,9 +374,9 @@ KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
     } else {  // opB == MatOp::TRANSPOSE
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[Ancols * i];
-          const T* aend = a + Ancols;
-          const T* b = &B[Bncols * j];
+          const T *a = &A[Ancols * i];
+          const T *aend = a + Ancols;
+          const T *b = &B[Bncols * j];
 
           T value = T(0.0);
           for (; a < aend; a++, b++) {
@@ -395,9 +395,9 @@ KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
     if (opB == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[i];
-          const T* b = &B[j];
-          const T* bend = b + Bnrows * Bncols;
+          const T *a = &A[i];
+          const T *b = &B[j];
+          const T *bend = b + Bnrows * Bncols;
 
           T value = T(0.0);
           for (; b < bend; a += Ancols, b += Bncols) {
@@ -414,9 +414,9 @@ KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
     } else {  // opB == MatOp::TRANSPOSE
       for (int i = 0; i < M; i++) {
         for (int j = 0; j < N; j++, C++) {
-          const T* a = &A[i];
-          const T* b = &B[Bncols * j];
-          const T* bend = b + Bncols;
+          const T *a = &A[i];
+          const T *b = &B[Bncols * j];
+          const T *bend = b + Bncols;
 
           T value = T(0.0);
           for (; b < bend; a += Ancols, b++) {
@@ -464,7 +464,7 @@ KOKKOS_FUNCTION void MatMatMultScaleCoreGeneral(const T alpha, const T A[],
 template <typename T, int Anrows, int Ancols, int Bnrows, int Bncols,
           int Cnrows, int Cncols, MatOp opA = MatOp::NORMAL,
           MatOp opB = MatOp::NORMAL, bool additive = false>
-KOKKOS_FUNCTION void MatMatMultCore(const T A[], const T B[], T C[]) {
+A2D_FUNCTION void MatMatMultCore(const T A[], const T B[], T C[]) {
   // Check if shapes are consistent
   if constexpr (opA == MatOp::TRANSPOSE && opB == MatOp::TRANSPOSE) {
     static_assert(Anrows == Bncols && Ancols == Cnrows && Bnrows == Cncols,

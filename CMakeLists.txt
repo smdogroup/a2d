@@ -8,7 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Make sure a build type is set explicitly
 if(NOT CMAKE_BUILD_TYPE)
-  message(FATAL_ERROR "CMAKE_BUILD_TYPE must be set explicitly: cmake ... -DCMAKE_BUILD_TYPE={Release,Debug}")
+  message("CMAKE_BUILD_TYPE not specified, set it to Release")
+  set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -22,60 +23,14 @@ ENDIF()
 # save A2D root directory
 set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Dependencies
-if(NOT DEFINED A2D_KOKKOS_DIR)
-  set(A2D_KOKKOS_DIR ${A2D_ROOT_DIR}/installs/kokkos)
-endif()
-
-if(NOT DEFINED A2D_METIS_DIR)
-  set(A2D_METIS_DIR ${A2D_ROOT_DIR}/installs/metis)
-endif()
-
-# if(NOT DEFINED KOKKOS_KERNELS_INSTALL_DIR)
-# set(KOKKOS_KERNELS_INSTALL_DIR ${A2D_ROOT_DIR}/installs/kokkos-kernels)
-# endif()
-set(Kokkos_ROOT ${A2D_KOKKOS_DIR}) # CMake needs this to locate Kokkos package
-set(KOKKOS_INSTALL_DIR ${A2D_KOKKOS_DIR}) # CMake needs this to locate Kokkos package
-
 # Set options
 option(A2D_BUILD_EXAMPLES "Compile the a2d examples" ON)
-option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" OFF)
-
-# option(A2D_BUILD_EXTENSION "Compile the pybind11 extension" OFF)
-# option(A2D_BUILD_EXAMPLES_AMGX "build amgx examples that requires AMGX and CUDA" OFF)
+option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" ON)
 
 # Set warning flags
 add_compile_options(
   -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
 )
-
-# Require Lapack and OpenMP
-find_package(LAPACK REQUIRED)
-find_package(OpenMP REQUIRED)
-find_package(Kokkos REQUIRED)
-
-# Build amgx examples
-# if(A2D_BUILD_EXAMPLES_AMGX)
-# # If use AMGX, the following directories should be valid
-# set(AMGX_INCLUDE_DIR ${A2D_ROOT_DIR}/extern/amgx/include)
-# set(AMGX_LIB_DIR ${A2D_ROOT_DIR}/extern/amgx/lib/)
-
-# if(NOT EXISTS ${AMGX_INCLUDE_DIR})
-# message(WARNING "${AMGX_INCLUDE_DIR} does not exist, can't build with AMGX")
-# elseif(NOT EXISTS ${AMGX_LIB_DIR})
-# message(WARNING "${AMGX_LIB_DIR} does not exist, please build AMGX first")
-# else()
-# add_subdirectory(${A2D_ROOT_DIR}/examples/amgx)
-# endif()
-# endif()
-
-# Build pybind11 extension
-# if(A2D_BUILD_EXTENSION)
-# execute_process(COMMAND python3 -m pybind11 --cmakedir OUTPUT_VARIABLE
-# pybind11_DIR OUTPUT_STRIP_TRAILING_WHITESPACE)
-# find_package(pybind11 REQUIRED)
-# add_subdirectory(${A2D_ROOT_DIR}/pybind11)
-# endif()
 
 # Build unit tests
 if(A2D_BUILD_UNIT_TESTS)

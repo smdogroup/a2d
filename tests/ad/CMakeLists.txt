@@ -5,9 +5,6 @@ include_directories(${A2D_ROOT_DIR}/tests)
 # Add targets
 add_executable(test_ad_expressions test_ad_expressions.cpp)
 
-# Link to kokkos
-target_link_libraries(test_ad_expressions Kokkos::kokkos LAPACK::LAPACK)
-
 # target_compile_options(test_ad_expressions PRIVATE -fsanitize=address)
 # target_link_options(test_ad_expressions PRIVATE -fsanitize=address)
 

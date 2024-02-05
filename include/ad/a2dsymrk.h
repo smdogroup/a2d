@@ -3,22 +3,22 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dtest.h"
-#include "ad/core/a2dgemmcore.h"
-#include "ad/core/a2dsymrkcore.h"
+#include "core/a2dgemmcore.h"
+#include "core/a2dsymrkcore.h"
 
 namespace A2D {
 
 template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
+A2D_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
   static_assert(P == N, "SymMatRK matrix dimensions must agree");
   SymMatRKCore<T, N, K, MatOp::NORMAL>(get_data(A), get_data(S));
 }
 
 template <typename T, int N, int K, int P>
-KOKKOS_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
+A2D_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
                               SymMat<T, P>& S) {
   static_assert(P == N, "SymMatRK matrix dimensions must agree");
   SymMatRKCoreScale<T, N, K, MatOp::NORMAL>(get_data(alpha), get_data(A),
@@ -26,7 +26,7 @@ KOKKOS_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
 }
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
+A2D_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
   static_assert(
       (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
       "SymMatRK matrix dimensions must agree");
@@ -34,7 +34,7 @@ KOKKOS_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
 }
 
 template <MatOp op, typename T, int N, int K, int P>
-KOKKOS_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
+A2D_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
                               SymMat<T, P>& S) {
   static_assert(
       (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
@@ -53,35 +53,35 @@ class SymMatRKExpr {
   static constexpr int K = get_matrix_columns<Atype>::size;
   static constexpr int P = get_symmatrix_size<Stype>::size;
 
-  KOKKOS_FUNCTION SymMatRKExpr(Atype& A, Stype& S) : A(A), S(S) {
+  A2D_FUNCTION SymMatRKExpr(Atype& A, Stype& S) : A(A), S(S) {
     static_assert(
         (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
         "SymMatRK matrix dimensions must agree");
   }
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     SymMatRKCore<T, N, K, op>(get_data(A), get_data(S));
   }
 
-  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+  A2D_FUNCTION void bzero() { S.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     SymMatR2KCore<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(A),
                                GetSeed<seed>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     SymMatRKCoreReverse<T, N, K, op>(get_data(A), GetSeed<seed>::get_data(S),
                                      GetSeed<seed>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void hzero() { S.hzero(); }
+  A2D_FUNCTION void hzero() { S.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     SymMatRKCoreReverse<T, N, K, op>(get_data(A),
                                      GetSeed<ADseed::h>::get_data(S),
                                      GetSeed<ADseed::h>::get_data(A));
@@ -96,22 +96,22 @@ class SymMatRKExpr {
 };
 
 template <class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
   return SymMatRKExpr<ADObj<Atype>, ADObj<Stype>>(A, S);
 }
 
 template <MatOp op, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(ADObj<Atype>& A, ADObj<Stype>& S) {
   return SymMatRKExpr<ADObj<Atype>, ADObj<Stype>, op>(A, S);
 }
 
 template <class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
   return SymMatRKExpr<A2DObj<Atype>, A2DObj<Stype>>(A, S);
 }
 
 template <MatOp op, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(A2DObj<Atype>& A, A2DObj<Stype>& S) {
   return SymMatRKExpr<A2DObj<Atype>, A2DObj<Stype>, op>(A, S);
 }
 
@@ -126,21 +126,21 @@ class SymMatRKScaleExpr {
   static constexpr int K = get_matrix_columns<Atype>::size;
   static constexpr int P = get_symmatrix_size<Stype>::size;
 
-  KOKKOS_FUNCTION SymMatRKScaleExpr(const T alpha, Atype& A, Stype& S)
+  A2D_FUNCTION SymMatRKScaleExpr(const T alpha, Atype& A, Stype& S)
       : alpha(alpha), A(A), S(S) {
     static_assert(
         (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
         "SymMatRK matrix dimensions must agree");
   }
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     SymMatRKCoreScale<T, N, K, op>(alpha, get_data(A), get_data(S));
   }
 
-  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+  A2D_FUNCTION void bzero() { S.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     SymMatR2KCoreScale<T, N, K, op>(alpha, get_data(A),
@@ -148,7 +148,7 @@ class SymMatRKScaleExpr {
                                     GetSeed<seed>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
 
     SymMatRKCoreReverseScale<T, N, K, op>(alpha, get_data(A),
@@ -156,9 +156,9 @@ class SymMatRKScaleExpr {
                                           GetSeed<seed>::get_data(A));
   }
 
-  KOKKOS_FUNCTION void hzero() { S.hzero(); }
+  A2D_FUNCTION void hzero() { S.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     SymMatRKCoreReverseScale<T, N, K, op>(alpha, get_data(A),
                                           GetSeed<ADseed::h>::get_data(S),
                                           GetSeed<ADseed::h>::get_data(A));
@@ -173,23 +173,23 @@ class SymMatRKScaleExpr {
 };
 
 template <typename T, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
   return SymMatRKScaleExpr<ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <MatOp op, typename T, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
   return SymMatRKScaleExpr<ADObj<Atype>, ADObj<Stype>, op>(alpha, A, S);
 }
 
 template <typename T, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
+A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
                               A2DObj<Stype>& S) {
   return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
 template <MatOp op, typename T, class Atype, class Stype>
-KOKKOS_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
+A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
                               A2DObj<Stype>& S) {
   return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>, op>(alpha, A, S);
 }

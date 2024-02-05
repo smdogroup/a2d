@@ -3,34 +3,34 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
-#include "ad/core/a2dveccore.h"
+#include "core/a2dveccore.h"
 
 namespace A2D {
 
 template <typename T, int N, int M>
-KOKKOS_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
+A2D_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
                             Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N, int M>
-KOKKOS_FUNCTION void MatSum(const T alpha, const Mat<T, N, M> &A, const T beta,
+A2D_FUNCTION void MatSum(const T alpha, const Mat<T, N, M> &A, const T beta,
                             const Mat<T, N, M> &B, Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(alpha, get_data(A), beta, get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatSum(const SymMat<T, N> &A, const SymMat<T, N> &B,
+A2D_FUNCTION void MatSum(const SymMat<T, N> &A, const SymMat<T, N> &B,
                             SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
+A2D_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
                             const SymMat<T, N> &B, SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(alpha, get_data(A), beta, get_data(B),
                                    get_data(C));
@@ -60,17 +60,17 @@ class MatSumExpr {
                  get_num_matrix_entries<Btype>::size == size),
                 "Matrix sizes must agree");
 
-  KOKKOS_FUNCTION
+  A2D_FUNCTION
   MatSumExpr(Atype &A, Btype &B, Ctype &C) : A(A), B(B), C(C) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     VecSumCore<T, size>(get_data(A), get_data(B), get_data(C));
   }
 
-  KOKKOS_FUNCTION void bzero() { C.bzero(); }
+  A2D_FUNCTION void bzero() { C.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     if constexpr (adA == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
@@ -86,7 +86,7 @@ class MatSumExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(GetSeed<seed>::get_data(C),
@@ -98,9 +98,9 @@ class MatSumExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { C.hzero(); }
+  A2D_FUNCTION void hzero() { C.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(GetSeed<seed>::get_data(C),
@@ -119,34 +119,34 @@ class MatSumExpr {
 
 // Full active variants
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(ADObj<Atype> &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(ADObj<Atype> &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
   return MatSumExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B,
+A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B,
                             A2DObj<Ctype> &C) {
   return MatSumExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(const Atype &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const Atype &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
   return MatSumExpr<const Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B,
+A2D_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B,
                             A2DObj<Ctype> &C) {
   return MatSumExpr<const Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(ADObj<Atype> &A, const Btype &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(ADObj<Atype> &A, const Btype &B, ADObj<Ctype> &C) {
   return MatSumExpr<ADObj<Atype>, const Btype, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B,
+A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B,
                             A2DObj<Ctype> &C) {
   return MatSumExpr<A2DObj<Atype>, const Btype, A2DObj<Ctype>>(A, B, C);
 }
@@ -177,17 +177,17 @@ class MatSumScaleExpr {
                  get_num_matrix_entries<Btype>::size == size),
                 "Matrix sizes must agree");
 
-  KOKKOS_FUNCTION
+  A2D_FUNCTION
   MatSumScaleExpr(atype alpha, Atype &A, btype beta, Btype &B, Ctype &C)
       : alpha(alpha), A(A), beta(beta), B(B), C(C) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     VecSumCore<T, size>(get_data(alpha), get_data(A), get_data(beta),
                         get_data(B), get_data(C));
   }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
@@ -220,7 +220,7 @@ class MatSumScaleExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(C),
@@ -240,7 +240,7 @@ class MatSumScaleExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(C),
@@ -283,7 +283,7 @@ class MatSumScaleExpr {
 
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
+A2D_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
                             ADObj<btype> &beta, ADObj<Btype> &B,
                             ADObj<Ctype> &C) {
   return MatSumScaleExpr<ADObj<atype> &, ADObj<Atype>, ADObj<btype> &,
@@ -291,7 +291,7 @@ KOKKOS_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
+A2D_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
                             A2DObj<btype> &beta, A2DObj<Btype> &B,
                             A2DObj<Ctype> &C) {
   return MatSumScaleExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<btype> &,
@@ -300,7 +300,7 @@ KOKKOS_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
 
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A,
+A2D_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A,
                             const btype beta, ADObj<Btype> &B,
                             ADObj<Ctype> &C) {
   return MatSumScaleExpr<const atype, ADObj<Atype>, const btype, ADObj<Btype>,
@@ -308,7 +308,7 @@ KOKKOS_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A,
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A,
+A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A,
                             const btype beta, A2DObj<Btype> &B,
                             A2DObj<Ctype> &C) {
   return MatSumScaleExpr<const atype, A2DObj<Atype>, const btype, A2DObj<Btype>,

@@ -3,11 +3,11 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
-#include "ad/core/a2dgemmcore.h"
+#include "core/a2dgemmcore.h"
 
 namespace A2D {
 
@@ -51,14 +51,14 @@ namespace A2D {
 // compute C = op(A) * op(B) and returns nothing, where A and B are all
 // passive variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
-KOKKOS_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
+A2D_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
                                 Mat<T, P, Q>& C) {
   MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, MatOp::NORMAL>(
       get_data(A), get_data(B), get_data(C));
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
-KOKKOS_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
+A2D_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
                                 Mat<T, P, Q>& C) {
   MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                 get_data(C));
@@ -92,18 +92,18 @@ class MatMatMultExpr {
   // Get the differentiation order from the output
   static constexpr ADorder order = get_diff_order<Ctype>::order;
 
-  KOKKOS_FUNCTION MatMatMultExpr(Atype& A, Btype& B, Ctype& C)
+  A2D_FUNCTION MatMatMultExpr(Atype& A, Btype& B, Ctype& C)
       : A(A), B(B), C(C) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                   get_data(C));
   }
 
-  KOKKOS_FUNCTION void bzero() { C.bzero(); }
+  A2D_FUNCTION void bzero() { C.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -124,7 +124,7 @@ class MatMatMultExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     if constexpr (adA == ADiffType::ACTIVE) {
       if constexpr (opA == MatOp::NORMAL) {
         // bar{A} += bar{C} * not_opB(B)
@@ -153,9 +153,9 @@ class MatMatMultExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { C.hzero(); }
+  A2D_FUNCTION void hzero() { C.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
@@ -215,25 +215,25 @@ class MatMatMultExpr {
 // compute C = op(A) * op(B) and return an expression, where A and B are all
 // active variables
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, ADObj<Atype>,
                         ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, A2DObj<Atype>,
                         A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(
       A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(
       A, B, C);
@@ -242,25 +242,25 @@ KOKKOS_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
 // compute C = op(A) * op(B) and return an expression, where A is passive, B is
 // active variables
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, const Atype, ADObj<Btype>,
                         ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, const Atype,
                         A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, const Atype, ADObj<Btype>, ADObj<Ctype>>(A, B,
                                                                            C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
+A2D_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, const Atype, A2DObj<Btype>, A2DObj<Ctype>>(
       A, B, C);
@@ -270,25 +270,25 @@ KOKKOS_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
 // is passive variables
 
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, ADObj<Atype>, const Btype,
                         ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
+A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, A2DObj<Atype>,
                         const Btype, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
                                 ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, ADObj<Atype>, const Btype, ADObj<Ctype>>(A, B,
                                                                            C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-KOKKOS_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
+A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
                                 A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, A2DObj<Atype>, const Btype, A2DObj<Ctype>>(
       A, B, C);

@@ -1,16 +1,16 @@
 #ifndef A2D_VEC_NORM_H
 #define A2D_VEC_NORM_H
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
 #include "a2dvec.h"
-#include "ad/core/a2dveccore.h"
+#include "core/a2dveccore.h"
 
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
+A2D_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
   alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
 }
 
@@ -26,30 +26,30 @@ class VecNormExpr {
   // Get the differentiation order from the output
   static constexpr ADorder order = get_diff_order<dtype>::order;
 
-  KOKKOS_FUNCTION VecNormExpr(vtype &x, dtype &alpha) : x(x), alpha(alpha) {}
+  A2D_FUNCTION VecNormExpr(vtype &x, dtype &alpha) : x(x), alpha(alpha) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     get_data(alpha) = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
     inv = 1.0 / get_data(alpha);
   }
-  KOKKOS_FUNCTION void bzero() { alpha.bzero(); }
+  A2D_FUNCTION void bzero() { alpha.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     GetSeed<seed>::get_data(alpha) =
         inv * VecDotCore<T, N>(GetSeed<seed>::get_data(x), get_data(x));
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     VecAddCore<T, N>(inv * GetSeed<seed>::get_data(alpha), get_data(x),
                      GetSeed<seed>::get_data(x));
   }
 
-  KOKKOS_FUNCTION void hzero() { alpha.hzero(); }
+  A2D_FUNCTION void hzero() { alpha.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     VecAddCore<T, N>(inv * GetSeed<ADseed::h>::get_data(alpha), get_data(x),
                      GetSeed<ADseed::h>::get_data(x));
 
@@ -68,17 +68,17 @@ class VecNormExpr {
 };
 
 template <class vtype, class dtype>
-KOKKOS_FUNCTION auto VecNorm(ADObj<vtype> &x, ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecNorm(ADObj<vtype> &x, ADObj<dtype> &alpha) {
   return VecNormExpr<ADObj<vtype>, ADObj<dtype>>(x, alpha);
 }
 
 template <class vtype, class dtype>
-KOKKOS_FUNCTION auto VecNorm(A2DObj<vtype> &x, A2DObj<dtype> &alpha) {
+A2D_FUNCTION auto VecNorm(A2DObj<vtype> &x, A2DObj<dtype> &alpha) {
   return VecNormExpr<A2DObj<vtype>, A2DObj<dtype>>(x, alpha);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
+A2D_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
   T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
   VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
 }
@@ -103,18 +103,18 @@ class VecNormalizeExpr {
   static_assert(get_diff_order<xtype>::order == order,
                 "ADorder does not match");
 
-  KOKKOS_FUNCTION VecNormalizeExpr(xtype &x, ytype &y) : x(x), y(y) {}
+  A2D_FUNCTION VecNormalizeExpr(xtype &x, ytype &y) : x(x), y(y) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
     inv = 1.0 / alpha;
     VecScaleCore<T, N>(inv, get_data(x), get_data(y));
   }
 
-  KOKKOS_FUNCTION void bzero() { y.bzero(); }
+  A2D_FUNCTION void bzero() { y.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     // yp = inv * ( - (xp, y) * y + xp )
@@ -125,7 +125,7 @@ class VecNormalizeExpr {
     VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(y));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     // xb = inv * yb - inv * inv * (yb, x) * y
     VecAddCore<T, N>(inv, GetSeed<seed>::get_data(y),
@@ -135,9 +135,9 @@ class VecNormalizeExpr {
     VecAddCore<T, N>(scale, get_data(y), GetSeed<seed>::get_data(x));
   }
 
-  KOKKOS_FUNCTION void hzero() { y.hzero(); }
+  A2D_FUNCTION void hzero() { y.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     T tmp1 = VecDotCore<T, N>(GetSeed<ADseed::b>::get_data(y), get_data(y));
     T tmp2 = VecDotCore<T, N>(GetSeed<ADseed::p>::get_data(x), get_data(y));
     T tmp3 = VecDotCore<T, N>(GetSeed<ADseed::h>::get_data(y), get_data(x));
@@ -163,17 +163,17 @@ class VecNormalizeExpr {
 };
 
 template <class xtype, class ytype>
-KOKKOS_FUNCTION auto VecNormalize(ADObj<xtype> &x, ADObj<ytype> &y) {
+A2D_FUNCTION auto VecNormalize(ADObj<xtype> &x, ADObj<ytype> &y) {
   return VecNormalizeExpr<ADObj<xtype>, ADObj<ytype>>(x, y);
 }
 
 template <class xtype, class ytype>
-KOKKOS_FUNCTION auto VecNormalize(A2DObj<xtype> &x, A2DObj<ytype> &y) {
+A2D_FUNCTION auto VecNormalize(A2DObj<xtype> &x, A2DObj<ytype> &y) {
   return VecNormalizeExpr<A2DObj<xtype>, A2DObj<ytype>>(x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
+A2D_FUNCTION void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
   VecScaleCore<T, N>(alpha, get_data(x), get_data(y));
 }
 
@@ -197,17 +197,17 @@ class VecScaleExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M), "Vector sizes must agree");
 
-  KOKKOS_FUNCTION VecScaleExpr(dtype alpha, xtype &x, ytype &y)
+  A2D_FUNCTION VecScaleExpr(dtype alpha, xtype &x, ytype &y)
       : alpha(alpha), x(x), y(y) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     VecScaleCore<T, N>(get_data(alpha), get_data(x), get_data(y));
   }
 
-  KOKKOS_FUNCTION void bzero() { y.bzero(); }
+  A2D_FUNCTION void bzero() { y.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
@@ -224,7 +224,7 @@ class VecScaleExpr {
                          GetSeed<seed>::get_data(y));
     }
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<seed>::get_data(alpha) +=
@@ -236,9 +236,9 @@ class VecScaleExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { y.hzero(); }
+  A2D_FUNCTION void hzero() { y.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     if constexpr (ada == ADiffType::ACTIVE) {
       GetSeed<ADseed::h>::get_data(alpha) +=
           VecDotCore<T, N>(GetSeed<ADseed::h>::get_data(y), get_data(x));
@@ -262,42 +262,42 @@ class VecScaleExpr {
 };
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x,
+A2D_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x,
                               ADObj<ytype> &y) {
   return VecScaleExpr<ADObj<T> &, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(const T alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(const T alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
   return VecScaleExpr<const T, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x,
+A2D_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x,
                               ADObj<ytype> &y) {
   return VecScaleExpr<ADObj<T> &, const xtype, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<xtype> &x,
+A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<xtype> &x,
                               A2DObj<ytype> &y) {
   return VecScaleExpr<A2DObj<T> &, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x,
+A2D_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x,
                               A2DObj<ytype> &y) {
   return VecScaleExpr<const T, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-KOKKOS_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x,
+A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x,
                               A2DObj<ytype> &y) {
   return VecScaleExpr<A2DObj<T> &, const xtype, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
+A2D_FUNCTION void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
   alpha = VecDotCore<T, N>(get_data(x), get_data(y));
 }
 
@@ -321,17 +321,17 @@ class VecDotExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M), "Vector dimensions must agree");
 
-  KOKKOS_FUNCTION VecDotExpr(xtype &x, ytype &y, dtype &alpha)
+  A2D_FUNCTION VecDotExpr(xtype &x, ytype &y, dtype &alpha)
       : x(x), y(y), alpha(alpha) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     get_data(alpha) = VecDotCore<T, N>(get_data(x), get_data(y));
   }
 
-  KOKKOS_FUNCTION void bzero() { alpha.bzero(); }
+  A2D_FUNCTION void bzero() { alpha.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
@@ -348,7 +348,7 @@ class VecDotExpr {
           VecDotCore<T, N>(get_data(x), GetSeed<seed>::get_data(y));
     }
   }
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adx == ADiffType::ACTIVE) {
       VecAddCore<T, N>(GetSeed<seed>::get_data(alpha), get_data(y),
@@ -360,9 +360,9 @@ class VecDotExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { alpha.hzero(); }
+  A2D_FUNCTION void hzero() { alpha.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     if constexpr (adx == ADiffType::ACTIVE) {
       VecAddCore<T, N>(GetSeed<ADseed::h>::get_data(alpha), get_data(y),
                        GetSeed<ADseed::h>::get_data(x));
@@ -387,37 +387,37 @@ class VecDotExpr {
 };
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(ADObj<xtype> &x, ADObj<ytype> &y,
+A2D_FUNCTION auto VecDot(ADObj<xtype> &x, ADObj<ytype> &y,
                             ADObj<dtype> &alpha) {
   return VecDotExpr<ADObj<xtype>, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y,
+A2D_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y,
                             ADObj<dtype> &alpha) {
   return VecDotExpr<const xtype, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y,
+A2D_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y,
                             ADObj<dtype> &alpha) {
   return VecDotExpr<ADObj<xtype>, const ytype, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(A2DObj<xtype> &x, A2DObj<ytype> &y,
+A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, A2DObj<ytype> &y,
                             A2DObj<dtype> &alpha) {
   return VecDotExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(const xtype &x, A2DObj<ytype> &y,
+A2D_FUNCTION auto VecDot(const xtype &x, A2DObj<ytype> &y,
                             A2DObj<dtype> &alpha) {
   return VecDotExpr<const xtype, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-KOKKOS_FUNCTION auto VecDot(A2DObj<xtype> &x, const ytype &y,
+A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, const ytype &y,
                             A2DObj<dtype> &alpha) {
   return VecDotExpr<A2DObj<xtype>, const ytype, A2DObj<dtype>>(x, y, alpha);
 }

@@ -1,12 +1,12 @@
 #ifndef A2D_GREEN_STRAIN_CORE_H
 #define A2D_GREEN_STRAIN_CORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void LinearGreenStrainCore(const T Ux[], T E[]) {
+A2D_FUNCTION void LinearGreenStrainCore(const T Ux[], T E[]) {
   static_assert(N == 2 || N == 3,
                 "LinearGreenStrainCore must use N == 2 or N == 3");
   // E = 0.5 * (Ux + Ux^{T})
@@ -28,7 +28,7 @@ KOKKOS_FUNCTION void LinearGreenStrainCore(const T Ux[], T E[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void NonlinearGreenStrainCore(const T Ux[], T E[]) {
+A2D_FUNCTION void NonlinearGreenStrainCore(const T Ux[], T E[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainCore must use N == 2 or N == 3");
 
@@ -54,7 +54,7 @@ KOKKOS_FUNCTION void NonlinearGreenStrainCore(const T Ux[], T E[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void LinearGreenStrainForwardCore(const T Ud[], T E[]) {
+A2D_FUNCTION void LinearGreenStrainForwardCore(const T Ud[], T E[]) {
   static_assert(N == 2 || N == 3,
                 "MatGreenStrainForwardCore must use N == 2 or N == 3");
 
@@ -77,7 +77,7 @@ KOKKOS_FUNCTION void LinearGreenStrainForwardCore(const T Ud[], T E[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void NonlinearGreenStrainForwardCore(const T Ux[], const T Ud[],
+A2D_FUNCTION void NonlinearGreenStrainForwardCore(const T Ux[], const T Ud[],
                                                      T E[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainForwardCore must use N == 2 or N == 3");
@@ -109,7 +109,7 @@ KOKKOS_FUNCTION void NonlinearGreenStrainForwardCore(const T Ux[], const T Ud[],
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void LinearGreenStrainReverseCore(const T Eb[], T Ub[]) {
+A2D_FUNCTION void LinearGreenStrainReverseCore(const T Eb[], T Ub[]) {
   static_assert(N == 2 || N == 3,
                 "LinearGreenStrainReverseCore must use N == 2 or N == 3");
 
@@ -137,7 +137,7 @@ KOKKOS_FUNCTION void LinearGreenStrainReverseCore(const T Eb[], T Ub[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void NonlinearGreenStrainReverseCore(const T Ux[], const T Eb[],
+A2D_FUNCTION void NonlinearGreenStrainReverseCore(const T Ux[], const T Eb[],
                                                      T Ub[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainReverseCore must use N == 2 or N == 3");
@@ -166,7 +166,7 @@ KOKKOS_FUNCTION void NonlinearGreenStrainReverseCore(const T Ux[], const T Eb[],
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void LinearGreenStrainHReverseCore(const T Eh[], T Uh[]) {
+A2D_FUNCTION void LinearGreenStrainHReverseCore(const T Eh[], T Uh[]) {
   static_assert(N == 2 || N == 3,
                 "LinearGreenStrainHReverseCore must use N == 2 or N == 3");
 
@@ -192,7 +192,7 @@ KOKKOS_FUNCTION void LinearGreenStrainHReverseCore(const T Eh[], T Uh[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void NonlinearGreenStrainHReverseCore(const T Ux[],
+A2D_FUNCTION void NonlinearGreenStrainHReverseCore(const T Ux[],
                                                       const T Up[],
                                                       const T Eb[],
                                                       const T Eh[], T Uh[]) {

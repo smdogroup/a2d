@@ -1,12 +1,12 @@
 #ifndef A2D_SYM_TRACE_CORE_H
 #define A2D_SYM_TRACE_CORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION T SymMatMultTraceCore(const T S[], const T E[]) {
+A2D_FUNCTION T SymMatMultTraceCore(const T S[], const T E[]) {
   if constexpr (N == 1) {
     return S[0] * E[0];
   } else if constexpr (N == 2) {
@@ -28,7 +28,7 @@ KOKKOS_FUNCTION T SymMatMultTraceCore(const T S[], const T E[]) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatMultTraceReverseCore(const T scale, const T S[],
+A2D_FUNCTION void SymMatMultTraceReverseCore(const T scale, const T S[],
                                                 T E[]) {
   if constexpr (N == 1) {
     E[0] += scale * S[0];

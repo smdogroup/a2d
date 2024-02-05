@@ -1,13 +1,12 @@
 #ifndef A2D_SYM_MAT_EIGS_H
 #define A2D_SYM_MAT_EIGS_H
 
-#include "a2ddefs.h"
-#include "utils/a2dlapack.h"
+#include "../a2ddefs.h"
 
 namespace A2D {
 
 template <typename T>
-KOKKOS_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
+A2D_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
   T tr = A[0] + A[2];
   T diff = A[0] - A[2];
   T discrm = sqrt(diff * diff + 4.0 * A[1] * A[1]);
@@ -62,8 +61,8 @@ KOKKOS_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
  * @param P Identity on input, transform on output (optional)
  */
 template <typename T, int N>
-KOKKOS_FUNCTION void SymMatTriReduce(T* A, T* alpha, T* beta, T* w,
-                                     T* P = nullptr) {
+A2D_FUNCTION void SymMatTriReduce(T* A, T* alpha, T* beta, T* w,
+                                  T* P = nullptr) {
   for (int j = N - 1; j > 0; j--) {
     // Set the column vector for the Householder transform
     T* aj = &A[j * (j + 1) / 2];
@@ -269,7 +268,7 @@ void TriSymEigs(T* alpha, T* beta, T* Q) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymEigsGeneral(const T* A, T* eigs, T* Q = nullptr) {
+A2D_FUNCTION void SymEigsGeneral(const T* A, T* eigs, T* Q = nullptr) {
   T Acopy[N * (N + 1) / 2], work[2 * N];
   for (int i = 0; i < N * (N + 1) / 2; i++) {
     Acopy[i] = A[i];
@@ -289,8 +288,8 @@ KOKKOS_FUNCTION void SymEigsGeneral(const T* A, T* eigs, T* Q = nullptr) {
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymEigsForward(const T* eigs, const T* Q, const T* Ad,
-                                    T* eigsd) {
+A2D_FUNCTION void SymEigsForward(const T* eigs, const T* Q, const T* Ad,
+                                 T* eigsd) {
   // eigsd[k] = Q[j, k]^{T} * Ad[j, i] * Q[i, k]
   for (int k = 0; k < N; k++) {
     T value = 0.0;
@@ -312,8 +311,8 @@ KOKKOS_FUNCTION void SymEigsForward(const T* eigs, const T* Q, const T* Ad,
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymEigsReverse(const T* eigs, const T* Q, const T* beigs,
-                                    T* bA) {
+A2D_FUNCTION void SymEigsReverse(const T* eigs, const T* Q, const T* beigs,
+                                 T* bA) {
   // bA[i, j] = Q[i, k] * beigs[k] * Q[j, k]
   for (int j = 0; j < N; j++) {
     for (int i = 0; i <= j; i++) {
@@ -334,8 +333,8 @@ KOKKOS_FUNCTION void SymEigsReverse(const T* eigs, const T* Q, const T* beigs,
 
 // Compute the reverse mode for the second derivative of the eigenvalues
 template <typename T, int N>
-KOKKOS_FUNCTION void SymEigsHReverse(const T* eigs, const T* Q, const T* beigs,
-                                     const T* Ap, T* Ah) {
+A2D_FUNCTION void SymEigsHReverse(const T* eigs, const T* Q, const T* beigs,
+                                  const T* Ap, T* Ah) {
   // Compute Bp = Q^{T} * Ap * Q
   // Bp[i, j] = Q[k, i] * Ap[k, l] * Q[l, j]
   T Bp[N * N];
@@ -400,7 +399,7 @@ KOKKOS_FUNCTION void SymEigsHReverse(const T* eigs, const T* Q, const T* beigs,
  * Compute the eigenvalues and eigenvectors of a symmetric eigenvalue problem
  */
 template <typename T, int N>
-KOKKOS_FUNCTION void SymEigs(const SymMat<T, N>& S, Vec<T, N>& eigs) {
+A2D_FUNCTION void SymEigs(const SymMat<T, N>& S, Vec<T, N>& eigs) {
   if constexpr (N == 2) {
     SymEigs2x2(get_data(S), get_data(eigs));
   } else {
@@ -421,9 +420,9 @@ class SymEigsExpr {
   static constexpr int K = get_vec_size<etype>::size;
   static_assert(K == N, "Vector of eigenvalues must be correct size");
 
-  KOKKOS_FUNCTION SymEigsExpr(Stype& S, etype& eigs) : S(S), eigs(eigs) {}
+  A2D_FUNCTION SymEigsExpr(Stype& S, etype& eigs) : S(S), eigs(eigs) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     if constexpr (N == 2) {
       SymEigs2x2(get_data(S), get_data(eigs), get_data(Q));
     } else {
@@ -431,10 +430,10 @@ class SymEigsExpr {
     }
   }
 
-  KOKKOS_FUNCTION void bzero() { eigs.bzero(); }
+  A2D_FUNCTION void bzero() { eigs.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     SymEigsForward<T, N>(get_data(eigs), get_data(Q),
@@ -442,16 +441,16 @@ class SymEigsExpr {
                          GetSeed<seed>::get_data(eigs));
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     SymEigsReverse<T, N>(get_data(eigs), get_data(Q),
                          GetSeed<seed>::get_data(eigs),
                          GetSeed<seed>::get_data(S));
   }
 
-  KOKKOS_FUNCTION void hzero() { eigs.hzero(); }
+  A2D_FUNCTION void hzero() { eigs.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     SymEigsReverse<T, N>(get_data(eigs), get_data(Q),
                          GetSeed<ADseed::h>::get_data(eigs),
                          GetSeed<ADseed::h>::get_data(S));
@@ -467,12 +466,12 @@ class SymEigsExpr {
 };
 
 template <class Stype, class etype>
-KOKKOS_FUNCTION auto SymEigs(ADObj<Stype>& S, ADObj<etype>& eigs) {
+A2D_FUNCTION auto SymEigs(ADObj<Stype>& S, ADObj<etype>& eigs) {
   return SymEigsExpr<ADObj<Stype>, ADObj<etype>>(S, eigs);
 }
 
 template <class Stype, class etype>
-KOKKOS_FUNCTION auto SymEigs(A2DObj<Stype>& S, A2DObj<etype>& eigs) {
+A2D_FUNCTION auto SymEigs(A2DObj<Stype>& S, A2DObj<etype>& eigs) {
   return SymEigsExpr<A2DObj<Stype>, A2DObj<etype>>(S, eigs);
 }
 

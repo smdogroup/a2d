@@ -1,7 +1,7 @@
 #ifndef A2D_MAT_VEC_CORE_H
 #define A2D_MAT_VEC_CORE_H
 
-#include "a2ddefs.h"
+#include "../../a2ddefs.h"
 
 namespace A2D {
 /*
@@ -15,7 +15,7 @@ namespace A2D {
 */
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void MatVecCore(const T A[], const T x[], T y[]) noexcept {
+A2D_FUNCTION void MatVecCore(const T A[], const T x[], T y[]) noexcept {
   if constexpr (additive) {
     if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {
@@ -60,7 +60,7 @@ KOKKOS_FUNCTION void MatVecCore(const T A[], const T x[], T y[]) noexcept {
 
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
-KOKKOS_FUNCTION void MatVecCoreScale(const T alpha, const T A[], const T x[],
+A2D_FUNCTION void MatVecCoreScale(const T alpha, const T A[], const T x[],
                                      T y[]) noexcept {
   if constexpr (additive) {
     if constexpr (opA == MatOp::NORMAL) {
@@ -107,7 +107,7 @@ KOKKOS_FUNCTION void MatVecCoreScale(const T alpha, const T A[], const T x[],
 }
 
 template <typename T, int M, int N>
-KOKKOS_FUNCTION T MatInnerCore(const T A[], const T x[], const T y[]) noexcept {
+A2D_FUNCTION T MatInnerCore(const T A[], const T x[], const T y[]) noexcept {
   T value = 0.0;
   for (int i = 0; i < M; i++) {
     for (int j = 0; j < N; j++) {

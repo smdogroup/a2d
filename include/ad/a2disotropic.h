@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-#include "a2ddefs.h"
+#include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
 #include "a2dtest.h"
@@ -11,7 +11,7 @@
 namespace A2D {
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymIsotropicCore(const T mu, const T lambda, const T E[],
+A2D_FUNCTION void SymIsotropicCore(const T mu, const T lambda, const T E[],
                                       T S[]) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
@@ -34,7 +34,7 @@ KOKKOS_FUNCTION void SymIsotropicCore(const T mu, const T lambda, const T E[],
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda,
+A2D_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda,
                                          const T E[], T S[]) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
@@ -57,7 +57,7 @@ KOKKOS_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda,
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
+A2D_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
                                                  T& mu, T& lambda) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
@@ -72,7 +72,7 @@ KOKKOS_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
 }
 
 template <typename T, int N>
-KOKKOS_FUNCTION void SymIsotropic(const T mu, const T lambda,
+A2D_FUNCTION void SymIsotropic(const T mu, const T lambda,
                                   const SymMat<T, N>& E, SymMat<T, N>& S) {
   SymIsotropicCore<T, N>(mu, lambda, get_data(E), get_data(S));
 }
@@ -98,19 +98,19 @@ class SymIsotropicExpr {
   static constexpr ADiffType lamdiff = get_diff_type<lamtype>::diff_type;
   static constexpr ADiffType Ediff = get_diff_type<Etype>::diff_type;
 
-  KOKKOS_FUNCTION SymIsotropicExpr(mutype mu, lamtype lambda, Etype& E,
+  A2D_FUNCTION SymIsotropicExpr(mutype mu, lamtype lambda, Etype& E,
                                    Stype& S)
       : mu(mu), lambda(lambda), E(E), S(S) {}
 
-  KOKKOS_FUNCTION void eval() {
+  A2D_FUNCTION void eval() {
     SymIsotropicCore<T, N>(get_data(mu), get_data(lambda), get_data(E),
                            get_data(S));
   }
 
-  KOKKOS_FUNCTION void bzero() { S.bzero(); }
+  A2D_FUNCTION void bzero() { S.bzero(); }
 
   template <ADorder forder>
-  KOKKOS_FUNCTION void forward() {
+  A2D_FUNCTION void forward() {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
@@ -137,7 +137,7 @@ class SymIsotropicExpr {
     }
   }
 
-  KOKKOS_FUNCTION void reverse() {
+  A2D_FUNCTION void reverse() {
     if constexpr (Ediff == ADiffType::ACTIVE) {
       SymIsotropicAddCore<T, N>(get_data(mu), get_data(lambda),
                                 GetSeed<ADseed::b>::get_data(S),
@@ -156,9 +156,9 @@ class SymIsotropicExpr {
     }
   }
 
-  KOKKOS_FUNCTION void hzero() { S.hzero(); }
+  A2D_FUNCTION void hzero() { S.hzero(); }
 
-  KOKKOS_FUNCTION void hreverse() {
+  A2D_FUNCTION void hreverse() {
     if constexpr (Ediff == ADiffType::ACTIVE) {
       SymIsotropicAddCore<T, N>(get_data(mu), get_data(lambda),
                                 GetSeed<ADseed::h>::get_data(S),
@@ -206,28 +206,28 @@ class SymIsotropicExpr {
 };
 
 template <class mutype, class lamtype, class Etype, class Stype>
-KOKKOS_FUNCTION auto SymIsotropic(ADObj<mutype>& mu, ADObj<lamtype>& lambda,
+A2D_FUNCTION auto SymIsotropic(ADObj<mutype>& mu, ADObj<lamtype>& lambda,
                                   ADObj<Etype>& E, ADObj<Stype>& S) {
   return SymIsotropicExpr<ADObj<mutype>&, ADObj<lamtype>&, ADObj<Etype>,
                           ADObj<Stype>>(mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
-KOKKOS_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, ADObj<Etype>& E,
+A2D_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, ADObj<Etype>& E,
                                   ADObj<Stype>& S) {
   return SymIsotropicExpr<mutype, lamtype, ADObj<Etype>, ADObj<Stype>>(
       mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
-KOKKOS_FUNCTION auto SymIsotropic(A2DObj<mutype>& mu, A2DObj<lamtype>& lambda,
+A2D_FUNCTION auto SymIsotropic(A2DObj<mutype>& mu, A2DObj<lamtype>& lambda,
                                   A2DObj<Etype>& E, A2DObj<Stype>& S) {
   return SymIsotropicExpr<A2DObj<mutype>&, A2DObj<lamtype>&, A2DObj<Etype>,
                           A2DObj<Stype>>(mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
-KOKKOS_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, A2DObj<Etype>& E,
+A2D_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, A2DObj<Etype>& E,
                                   A2DObj<Stype>& S) {
   return SymIsotropicExpr<mutype, lamtype, A2DObj<Etype>, A2DObj<Stype>>(
       mu, lambda, E, S);

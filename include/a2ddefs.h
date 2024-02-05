@@ -8,7 +8,9 @@
 template <typename T>
 using A2D_complex_t = std::complex<T>;
 
-#define A2D_FUNCTION
+#ifndef A2D_FUNCTION
+#define A2D_FUNCTION  // A2D_FUNCTION does nothing in this scenario
+#endif
 
 namespace A2D {
 

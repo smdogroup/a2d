@@ -79,7 +79,7 @@ A2D_FUNCTION void VecSumCore(const T A[], const T B[], T C[]) {
 
 template <typename T, int size>
 A2D_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
-                                const T B[], T C[]) {
+                             const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] = alpha * A[0] + beta * B[0];
     C++, A++, B++;
@@ -96,7 +96,7 @@ A2D_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
 
 template <typename T, int size>
 A2D_FUNCTION void VecSumCoreAdd(const T alpha, const T A[], const T beta,
-                                   const T B[], T C[]) {
+                                const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += alpha * A[0] + beta * B[0];
     C++, A++, B++;
@@ -131,8 +131,7 @@ A2D_FUNCTION void VecOuterCore(const T x[], const T y[], T A[]) {
 }
 
 template <typename T, int M, int N, bool additive = false>
-A2D_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[],
-                                  T A[]) {
+A2D_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[], T A[]) {
   if constexpr (additive) {
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < N; j++) {

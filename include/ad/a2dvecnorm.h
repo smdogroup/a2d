@@ -262,8 +262,7 @@ class VecScaleExpr {
 };
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x,
-                              ADObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
   return VecScaleExpr<ADObj<T> &, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
@@ -273,26 +272,23 @@ A2D_FUNCTION auto VecScale(const T alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x,
-                              ADObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x, ADObj<ytype> &y) {
   return VecScaleExpr<ADObj<T> &, const xtype, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
 A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<xtype> &x,
-                              A2DObj<ytype> &y) {
+                           A2DObj<ytype> &y) {
   return VecScaleExpr<A2DObj<T> &, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x,
-                              A2DObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x, A2DObj<ytype> &y) {
   return VecScaleExpr<const T, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x,
-                              A2DObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x, A2DObj<ytype> &y) {
   return VecScaleExpr<A2DObj<T> &, const xtype, A2DObj<xtype>>(alpha, x, y);
 }
 
@@ -388,37 +384,35 @@ class VecDotExpr {
 
 template <class xtype, class ytype, class dtype>
 A2D_FUNCTION auto VecDot(ADObj<xtype> &x, ADObj<ytype> &y,
-                            ADObj<dtype> &alpha) {
+                         ADObj<dtype> &alpha) {
   return VecDotExpr<ADObj<xtype>, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y,
-                            ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y, ADObj<dtype> &alpha) {
   return VecDotExpr<const xtype, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y,
-                            ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y, ADObj<dtype> &alpha) {
   return VecDotExpr<ADObj<xtype>, const ytype, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
 A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                            A2DObj<dtype> &alpha) {
+                         A2DObj<dtype> &alpha) {
   return VecDotExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
 A2D_FUNCTION auto VecDot(const xtype &x, A2DObj<ytype> &y,
-                            A2DObj<dtype> &alpha) {
+                         A2DObj<dtype> &alpha) {
   return VecDotExpr<const xtype, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
 A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, const ytype &y,
-                            A2DObj<dtype> &alpha) {
+                         A2DObj<dtype> &alpha) {
   return VecDotExpr<A2DObj<xtype>, const ytype, A2DObj<dtype>>(x, y, alpha);
 }
 

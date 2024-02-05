@@ -13,25 +13,25 @@ namespace A2D {
 
 template <typename T, int N, int M>
 A2D_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
-                            Mat<T, N, M> &C) {
+                         Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N, int M>
 A2D_FUNCTION void MatSum(const T alpha, const Mat<T, N, M> &A, const T beta,
-                            const Mat<T, N, M> &B, Mat<T, N, M> &C) {
+                         const Mat<T, N, M> &B, Mat<T, N, M> &C) {
   VecSumCore<T, N * M>(alpha, get_data(A), beta, get_data(B), get_data(C));
 }
 
 template <typename T, int N>
 A2D_FUNCTION void MatSum(const SymMat<T, N> &A, const SymMat<T, N> &B,
-                            SymMat<T, N> &C) {
+                         SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N>
 A2D_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
-                            const SymMat<T, N> &B, SymMat<T, N> &C) {
+                         const SymMat<T, N> &B, SymMat<T, N> &C) {
   VecSumCore<T, (N * (N + 1)) / 2>(alpha, get_data(A), beta, get_data(B),
                                    get_data(C));
 }
@@ -124,8 +124,7 @@ A2D_FUNCTION auto MatSum(ADObj<Atype> &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B,
-                            A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B, A2DObj<Ctype> &C) {
   return MatSumExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
@@ -135,8 +134,7 @@ A2D_FUNCTION auto MatSum(const Atype &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B,
-                            A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B, A2DObj<Ctype> &C) {
   return MatSumExpr<const Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
@@ -146,8 +144,7 @@ A2D_FUNCTION auto MatSum(ADObj<Atype> &A, const Btype &B, ADObj<Ctype> &C) {
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B,
-                            A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B, A2DObj<Ctype> &C) {
   return MatSumExpr<A2DObj<Atype>, const Btype, A2DObj<Ctype>>(A, B, C);
 }
 
@@ -284,33 +281,30 @@ class MatSumScaleExpr {
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
 A2D_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
-                            ADObj<btype> &beta, ADObj<Btype> &B,
-                            ADObj<Ctype> &C) {
+                         ADObj<btype> &beta, ADObj<Btype> &B, ADObj<Ctype> &C) {
   return MatSumScaleExpr<ADObj<atype> &, ADObj<Atype>, ADObj<btype> &,
                          ADObj<Btype>, ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
 A2D_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
-                            A2DObj<btype> &beta, A2DObj<Btype> &B,
-                            A2DObj<Ctype> &C) {
+                         A2DObj<btype> &beta, A2DObj<Btype> &B,
+                         A2DObj<Ctype> &C) {
   return MatSumScaleExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<btype> &,
                          A2DObj<Btype>, A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A,
-                            const btype beta, ADObj<Btype> &B,
-                            ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A, const btype beta,
+                         ADObj<Btype> &B, ADObj<Ctype> &C) {
   return MatSumScaleExpr<const atype, ADObj<Atype>, const btype, ADObj<Btype>,
                          ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A,
-                            const btype beta, A2DObj<Btype> &B,
-                            A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A, const btype beta,
+                         A2DObj<Btype> &B, A2DObj<Ctype> &C) {
   return MatSumScaleExpr<const atype, A2DObj<Atype>, const btype, A2DObj<Btype>,
                          A2DObj<Ctype>>(alpha, A, beta, B, C);
 }

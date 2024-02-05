@@ -155,9 +155,8 @@ A2D_FUNCTION auto MakeStack(Operations &&...s) {
 template <FEVarType of, FEVarType wrt, class Data, class Geo, class State,
           class PType, class RType, class... Operations>
 A2D_FUNCTION void JacobianProduct(OperationStack<Operations...> &stack,
-                                     A2DObj<Data> &data, A2DObj<Geo> &geo,
-                                     A2DObj<State> &state, PType &p,
-                                     RType &res) {
+                                  A2DObj<Data> &data, A2DObj<Geo> &geo,
+                                  A2DObj<State> &state, PType &p, RType &res) {
   if constexpr (wrt == FEVarType::DATA) {
     data.pvalue().copy(p);
   } else if constexpr (wrt == FEVarType::GEOMETRY) {
@@ -197,8 +196,8 @@ A2D_FUNCTION void JacobianProduct(OperationStack<Operations...> &stack,
 template <FEVarType of, FEVarType wrt, class Data, class Geo, class State,
           class MatType, class... Operations>
 A2D_FUNCTION void ExtractJacobian(OperationStack<Operations...> &stack,
-                                     A2DObj<Data> &data, A2DObj<Geo> &geo,
-                                     A2DObj<State> &state, MatType &jac) {
+                                  A2DObj<Data> &data, A2DObj<Geo> &geo,
+                                  A2DObj<State> &state, MatType &jac) {
   if constexpr (of == FEVarType::DATA) {
     if constexpr (wrt == FEVarType::DATA) {
       stack.hextract(data.pvalue(), data.hvalue(), jac);

@@ -86,7 +86,7 @@ class VarTupleBase {
   template <typename I, index_t index, class TupleObj, class First,
             class... Remain>
   A2D_FUNCTION const T& get_value_const_(const TupleObj& var,
-                                            const I comp) const {
+                                         const I comp) const {
     if constexpr (__is_scalar_type<First>::value) {
       if (comp == 0) {
         return std::get<index>(var);
@@ -116,7 +116,7 @@ class VarTupleBase {
 
   template <index_t index, class TupleObj, class First, class... Remain>
   A2D_FUNCTION void set_values_(TupleObj& var, const First& f,
-                                   const Remain&... r) {
+                                const Remain&... r) {
     if constexpr (__is_scalar_type<First>::value) {
       std::get<index>(var) = f;
     } else if constexpr (First::ncomp > 0) {
@@ -132,7 +132,7 @@ class VarTupleBase {
 
   template <index_t index, class TupleObj, class First, class... Remain>
   A2D_FUNCTION void get_values_(const TupleObj& var, First& f,
-                                   Remain&... r) const {
+                                Remain&... r) const {
     if constexpr (__is_scalar_type<First>::value) {
       f = std::get<index>(var);
     } else if constexpr (First::ncomp > 0) {

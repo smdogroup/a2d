@@ -48,8 +48,7 @@ class VecCrossExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M && M == K && K == 3), "Vector dimensions must agree");
 
-  A2D_FUNCTION VecCrossExpr(xtype &x, ytype &y, ztype &z)
-      : x(x), y(y), z(z) {}
+  A2D_FUNCTION VecCrossExpr(xtype &x, ytype &y, ztype &z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
     VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
@@ -164,8 +163,7 @@ class VecCross2DExpr {
   const static bool is_x_scalar =
       is_scalar_type<typename remove_a2dobj<xtype>::type>::value;
 
-  A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype &z)
-      : x(x), y(y), z(z) {}
+  A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype &z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
     auto x0 = get_data(x);

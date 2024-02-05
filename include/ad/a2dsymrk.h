@@ -19,7 +19,7 @@ A2D_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
 
 template <typename T, int N, int K, int P>
 A2D_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
-                              SymMat<T, P>& S) {
+                           SymMat<T, P>& S) {
   static_assert(P == N, "SymMatRK matrix dimensions must agree");
   SymMatRKCoreScale<T, N, K, MatOp::NORMAL>(get_data(alpha), get_data(A),
                                             get_data(S));
@@ -35,7 +35,7 @@ A2D_FUNCTION void SymMatRK(const Mat<T, N, K>& A, SymMat<T, P>& S) {
 
 template <MatOp op, typename T, int N, int K, int P>
 A2D_FUNCTION void SymMatRK(const T alpha, const Mat<T, N, K>& A,
-                              SymMat<T, P>& S) {
+                           SymMat<T, P>& S) {
   static_assert(
       (op == MatOp::NORMAL && P == N) || (op == MatOp::TRANSPOSE && K == P),
       "SymMatRK matrix dimensions must agree");
@@ -183,14 +183,12 @@ A2D_FUNCTION auto SymMatRK(const T alpha, ADObj<Atype>& A, ADObj<Stype>& S) {
 }
 
 template <typename T, class Atype, class Stype>
-A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
-                              A2DObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A, A2DObj<Stype>& S) {
   return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
 template <MatOp op, typename T, class Atype, class Stype>
-A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A,
-                              A2DObj<Stype>& S) {
+A2D_FUNCTION auto SymMatRK(const T alpha, A2DObj<Atype>& A, A2DObj<Stype>& S) {
   return SymMatRKScaleExpr<A2DObj<Atype>, A2DObj<Stype>, op>(alpha, A, S);
 }
 

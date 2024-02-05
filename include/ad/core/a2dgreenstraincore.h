@@ -78,7 +78,7 @@ A2D_FUNCTION void LinearGreenStrainForwardCore(const T Ud[], T E[]) {
 
 template <typename T, int N>
 A2D_FUNCTION void NonlinearGreenStrainForwardCore(const T Ux[], const T Ud[],
-                                                     T E[]) {
+                                                  T E[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainForwardCore must use N == 2 or N == 3");
 
@@ -138,7 +138,7 @@ A2D_FUNCTION void LinearGreenStrainReverseCore(const T Eb[], T Ub[]) {
 
 template <typename T, int N>
 A2D_FUNCTION void NonlinearGreenStrainReverseCore(const T Ux[], const T Eb[],
-                                                     T Ub[]) {
+                                                  T Ub[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainReverseCore must use N == 2 or N == 3");
 
@@ -192,10 +192,9 @@ A2D_FUNCTION void LinearGreenStrainHReverseCore(const T Eh[], T Uh[]) {
 }
 
 template <typename T, int N>
-A2D_FUNCTION void NonlinearGreenStrainHReverseCore(const T Ux[],
-                                                      const T Up[],
-                                                      const T Eb[],
-                                                      const T Eh[], T Uh[]) {
+A2D_FUNCTION void NonlinearGreenStrainHReverseCore(const T Ux[], const T Up[],
+                                                   const T Eb[], const T Eh[],
+                                                   T Uh[]) {
   static_assert(N == 2 || N == 3,
                 "NonlinearGreenStrainHReverseCore must use N == 2 or N == 3");
 

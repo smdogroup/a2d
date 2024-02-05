@@ -76,9 +76,7 @@ class MatTraceExpr {
 
   A2D_FUNCTION MatTraceExpr(Atype& A, dtype& tr) : A(A), tr(tr) {}
 
-  A2D_FUNCTION void eval() {
-    get_data(tr) = MatTraceCore<T, M>(get_data(A));
-  }
+  A2D_FUNCTION void eval() { get_data(tr) = MatTraceCore<T, M>(get_data(A)); }
 
   A2D_FUNCTION void bzero() { tr.bzero(); }
 

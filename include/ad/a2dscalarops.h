@@ -1,8 +1,8 @@
 #ifndef A2D_SCALAR_OPS_H
 #define A2D_SCALAR_OPS_H
 
-#include "a2dbinary.h"
 #include "../a2ddefs.h"
+#include "a2dbinary.h"
 #include "a2dunary.h"
 
 namespace A2D {

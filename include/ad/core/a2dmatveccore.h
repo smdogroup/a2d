@@ -61,7 +61,7 @@ A2D_FUNCTION void MatVecCore(const T A[], const T x[], T y[]) noexcept {
 template <typename T, int M, int N, MatOp opA = MatOp::NORMAL,
           bool additive = false>
 A2D_FUNCTION void MatVecCoreScale(const T alpha, const T A[], const T x[],
-                                     T y[]) noexcept {
+                                  T y[]) noexcept {
   if constexpr (additive) {
     if constexpr (opA == MatOp::NORMAL) {
       for (int i = 0; i < M; i++) {

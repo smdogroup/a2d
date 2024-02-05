@@ -52,14 +52,14 @@ namespace A2D {
 // passive variables
 template <typename T, int N, int M, int K, int L, int P, int Q>
 A2D_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
-                                Mat<T, P, Q>& C) {
+                             Mat<T, P, Q>& C) {
   MatMatMultCore<T, N, M, K, L, P, Q, MatOp::NORMAL, MatOp::NORMAL>(
       get_data(A), get_data(B), get_data(C));
 }
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 A2D_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
-                                Mat<T, P, Q>& C) {
+                             Mat<T, P, Q>& C) {
   MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                 get_data(C));
 }
@@ -216,25 +216,25 @@ class MatMatMultExpr {
 // active variables
 template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
-                                ADObj<Ctype>& C) {
+                             ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, ADObj<Atype>,
                         ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, A2DObj<Atype>,
                         A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, ADObj<Btype>& B,
-                                ADObj<Ctype>& C) {
+                             ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(
       A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(
       A, B, C);
 }
@@ -242,26 +242,24 @@ A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, A2DObj<Btype>& B,
 // compute C = op(A) * op(B) and return an expression, where A is passive, B is
 // active variables
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
-                                ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, const Atype, ADObj<Btype>,
                         ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, const Atype,
                         A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B,
-                                ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatMatMult(const Atype& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, const Atype, ADObj<Btype>, ADObj<Ctype>>(A, B,
                                                                            C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, const Atype, A2DObj<Btype>, A2DObj<Ctype>>(
       A, B, C);
 }
@@ -270,26 +268,24 @@ A2D_FUNCTION auto MatMatMult(const Atype& A, A2DObj<Btype>& B,
 // is passive variables
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
-                                ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B, ADObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, ADObj<Atype>, const Btype,
                         ADObj<Ctype>>(A, B, C);
 }
 template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<MatOp::NORMAL, MatOp::NORMAL, A2DObj<Atype>,
                         const Btype, A2DObj<Ctype>>(A, B, C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B,
-                                ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatMatMult(ADObj<Atype>& A, const Btype& B, ADObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, ADObj<Atype>, const Btype, ADObj<Ctype>>(A, B,
                                                                            C);
 }
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatMatMult(A2DObj<Atype>& A, const Btype& B,
-                                A2DObj<Ctype>& C) {
+                             A2DObj<Ctype>& C) {
   return MatMatMultExpr<opA, opB, A2DObj<Atype>, const Btype, A2DObj<Ctype>>(
       A, B, C);
 }

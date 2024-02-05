@@ -11,13 +11,13 @@ namespace A2D {
 
 template <typename T, int M, int N>
 A2D_FUNCTION void VecOuter(const Vec<T, M>& x, const Vec<T, N>& y,
-                              Mat<T, M, N>& A) {
+                           Mat<T, M, N>& A) {
   VecOuterCore<T, M, N>(get_data(x), get_data(y), get_data(A));
 }
 
 template <typename T, int M, int N>
 A2D_FUNCTION void VecOuter(const T alpha, const Vec<T, M>& x,
-                              const Vec<T, N>& y, Mat<T, M, N>& A) {
+                           const Vec<T, N>& y, Mat<T, M, N>& A) {
   VecOuterCore<T, M, N>(alpha, get_data(x), get_data(y), get_data(A));
 }
 
@@ -136,8 +136,7 @@ class VecOuterExpr {
 };
 
 template <class xtype, class ytype, class Atype>
-A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
-                              ADObj<Atype>& A) {
+A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y, ADObj<Atype>& A) {
   using T = typename get_object_numeric_type<Atype>::type;
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
                                                                 A);
@@ -145,13 +144,13 @@ A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y,
 
 template <typename T, class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
-                              ADObj<Atype>& A) {
+                           ADObj<Atype>& A) {
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(alpha, x, y, A);
 }
 
 template <class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
-                              A2DObj<Atype>& A) {
+                           A2DObj<Atype>& A) {
   using T = typename get_object_numeric_type<Atype>::type;
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
                                                                    A);
@@ -159,7 +158,7 @@ A2D_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
 
 template <typename T, class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
-                              A2DObj<Atype>& A) {
+                           A2DObj<Atype>& A) {
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(alpha, x, y,
                                                                    A);
 }

@@ -59,8 +59,7 @@ class Mat {
     return A[N * i + j];
   }
   template <class IdxType1, class IdxType2>
-  A2D_FUNCTION const T& operator()(const IdxType1 i,
-                                      const IdxType2 j) const {
+  A2D_FUNCTION const T& operator()(const IdxType1 i, const IdxType2 j) const {
     return A[N * i + j];
   }
 
@@ -140,8 +139,7 @@ class SymMat {
     }
   }
   template <class IdxType1, class IdxType2>
-  A2D_FUNCTION const T& operator()(const IdxType1 i,
-                                      const IdxType2 j) const {
+  A2D_FUNCTION const T& operator()(const IdxType1 i, const IdxType2 j) const {
     if (i >= j) {
       return A[j + i * (i + 1) / 2];
     } else {

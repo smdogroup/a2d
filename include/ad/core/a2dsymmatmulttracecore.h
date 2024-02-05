@@ -29,7 +29,7 @@ A2D_FUNCTION T SymMatMultTraceCore(const T S[], const T E[]) {
 
 template <typename T, int N>
 A2D_FUNCTION void SymMatMultTraceReverseCore(const T scale, const T S[],
-                                                T E[]) {
+                                             T E[]) {
   if constexpr (N == 1) {
     E[0] += scale * S[0];
   } else if constexpr (N == 2) {

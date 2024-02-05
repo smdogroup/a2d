@@ -180,7 +180,7 @@ A2D_FUNCTION void SymMatR2KCore(const T A[], const T B[], T S[]) {
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL,
           bool additive = false>
 A2D_FUNCTION void SymMatR2KCoreScale(const T alpha, const T A[], const T B[],
-                                        T S[]) {
+                                     T S[]) {
   if constexpr (op == MatOp::NORMAL) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
@@ -294,7 +294,7 @@ A2D_FUNCTION void SymMatRKCoreReverse(const T A[], const T Sb[], T Ab[]) {
 
 template <typename T, int N, int K, MatOp op = MatOp::NORMAL>
 A2D_FUNCTION void SymMatRKCoreReverseScale(const T alpha, const T A[],
-                                              const T Sb[], T Ab[]) {
+                                           const T Sb[], T Ab[]) {
   if constexpr (op == MatOp::NORMAL) {
     // Ab = Sb * A
     for (int i = 0; i < N; i++) {

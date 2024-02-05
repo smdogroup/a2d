@@ -13,13 +13,13 @@ namespace A2D {
 
 template <typename T, int N, int M>
 A2D_FUNCTION void MatVecMult(const Mat<T, N, M>& A, const Vec<T, M>& x,
-                                Vec<T, N>& y) {
+                             Vec<T, N>& y) {
   MatVecCore<T, N, M>(get_data(A), get_data(x), get_data(y));
 }
 
 template <MatOp op, typename T, int N, int M, int K, int P>
 A2D_FUNCTION void MatVecMult(const Mat<T, N, M>& A, const Vec<T, K>& x,
-                                Vec<T, P>& y) {
+                             Vec<T, P>& y) {
   static_assert(((op == MatOp::NORMAL && (M == K && N == P)) ||
                  (op == MatOp::TRANSPOSE && (M == P && N == K))),
                 "Matrix and vector dimensions must agree");
@@ -49,8 +49,7 @@ class MatVecMultExpr {
   // Get the differentiation order from the output
   static constexpr ADorder order = get_diff_order<ytype>::order;
 
-  A2D_FUNCTION MatVecMultExpr(Atype& A, xtype& x, ytype& y)
-      : A(A), x(x), y(y) {
+  A2D_FUNCTION MatVecMultExpr(Atype& A, xtype& x, ytype& y) : A(A), x(x), y(y) {
     static_assert(((op == MatOp::NORMAL && (M == K && N == P)) ||
                    (op == MatOp::TRANSPOSE && (M == P && N == K))),
                   "Matrix and vector dimensions must agree");
@@ -151,71 +150,67 @@ class MatVecMultExpr {
 
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, ADObj<xtype>& x,
-                                ADObj<ytype>& y) {
+                             ADObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, ADObj<Atype>, ADObj<xtype>,
                         ADObj<ytype>>(A, x, y);
 }
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, A2DObj<Atype>, A2DObj<xtype>,
                         A2DObj<ytype>>(A, x, y);
 }
 template <class Atype, class xtype, class ytype>
-A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x,
-                                ADObj<ytype>& y) {
+A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x, ADObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, ADObj<Atype>, const xtype, ADObj<ytype>>(
       A, x, y);
 }
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, A2DObj<Atype>, const xtype,
                         A2DObj<ytype>>(A, x, y);
 }
 template <class Atype, class xtype, class ytype>
-A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x,
-                                ADObj<ytype>& y) {
+A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x, ADObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, const Atype, ADObj<xtype>, ADObj<ytype>>(
       A, x, y);
 }
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<MatOp::NORMAL, const Atype, A2DObj<xtype>,
                         A2DObj<ytype>>(A, x, y);
 }
 
 template <MatOp op, class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, ADObj<xtype>& x,
-                                ADObj<ytype>& y) {
+                             ADObj<ytype>& y) {
   return MatVecMultExpr<op, ADObj<Atype>, ADObj<xtype>, ADObj<ytype>>(A, x, y);
 }
 template <MatOp op, class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<op, A2DObj<Atype>, A2DObj<xtype>, A2DObj<ytype>>(A, x,
                                                                          y);
 }
 template <MatOp op, class Atype, class xtype, class ytype>
-A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x,
-                                ADObj<ytype>& y) {
+A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x, ADObj<ytype>& y) {
   return MatVecMultExpr<op, ADObj<Atype>, const xtype, ADObj<ytype>>(A, x, y);
 }
 template <MatOp op, class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<op, A2DObj<Atype>, const xtype, A2DObj<ytype>>(A, x, y);
 }
 
 template <MatOp op, class Atype, class xtype, class ytype>
-A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x,
-                                ADObj<ytype>& y) {
+A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x, ADObj<ytype>& y) {
   return MatVecMultExpr<op, const Atype, ADObj<xtype>, ADObj<ytype>>(A, x, y);
 }
 template <MatOp op, class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
-                                A2DObj<ytype>& y) {
+                             A2DObj<ytype>& y) {
   return MatVecMultExpr<op, const Atype, A2DObj<xtype>, A2DObj<ytype>>(A, x, y);
 }
 

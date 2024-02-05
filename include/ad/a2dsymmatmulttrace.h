@@ -12,8 +12,8 @@
 namespace A2D {
 
 template <typename T, int N>
-A2D_FUNCTION void SymMatMultTrace(const SymMat<T, N>& S,
-                                     const SymMat<T, N>& E, T& output) {
+A2D_FUNCTION void SymMatMultTrace(const SymMat<T, N>& S, const SymMat<T, N>& E,
+                                  T& output) {
   output = SymMatMultTraceCore<T, N>(get_data(S), get_data(E));
 }
 
@@ -90,14 +90,14 @@ class SymMatMultTraceExpr {
 
 template <class Stype, class Etype, class dtype>
 A2D_FUNCTION auto SymMatMultTrace(ADObj<Stype>& S, ADObj<Etype>& E,
-                                     ADObj<dtype>& output) {
+                                  ADObj<dtype>& output) {
   return SymMatMultTraceExpr<ADObj<Stype>, ADObj<Etype>, ADObj<dtype>>(S, E,
                                                                        output);
 }
 
 template <class Stype, class Etype, class dtype>
 A2D_FUNCTION auto SymMatMultTrace(A2DObj<Stype>& S, A2DObj<Etype>& E,
-                                     A2DObj<dtype>& output) {
+                                  A2DObj<dtype>& output) {
   return SymMatMultTraceExpr<A2DObj<Stype>, A2DObj<Etype>, A2DObj<dtype>>(
       S, E, output);
 }

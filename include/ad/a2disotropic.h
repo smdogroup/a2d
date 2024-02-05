@@ -12,7 +12,7 @@ namespace A2D {
 
 template <typename T, int N>
 A2D_FUNCTION void SymIsotropicCore(const T mu, const T lambda, const T E[],
-                                      T S[]) {
+                                   T S[]) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
   if constexpr (N == 2) {
@@ -34,8 +34,8 @@ A2D_FUNCTION void SymIsotropicCore(const T mu, const T lambda, const T E[],
 }
 
 template <typename T, int N>
-A2D_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda,
-                                         const T E[], T S[]) {
+A2D_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda, const T E[],
+                                      T S[]) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
   if constexpr (N == 2) {
@@ -57,8 +57,8 @@ A2D_FUNCTION void SymIsotropicAddCore(const T mu, const T lambda,
 }
 
 template <typename T, int N>
-A2D_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
-                                                 T& mu, T& lambda) {
+A2D_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[], T& mu,
+                                              T& lambda) {
   static_assert(N == 2 || N == 3, "SymIsotropicCore must use N == 2 or N == 3");
 
   if constexpr (N == 2) {
@@ -73,7 +73,7 @@ A2D_FUNCTION void SymIsotropicReverseCoefCore(const T E[], const T Sb[],
 
 template <typename T, int N>
 A2D_FUNCTION void SymIsotropic(const T mu, const T lambda,
-                                  const SymMat<T, N>& E, SymMat<T, N>& S) {
+                               const SymMat<T, N>& E, SymMat<T, N>& S) {
   SymIsotropicCore<T, N>(mu, lambda, get_data(E), get_data(S));
 }
 
@@ -98,8 +98,7 @@ class SymIsotropicExpr {
   static constexpr ADiffType lamdiff = get_diff_type<lamtype>::diff_type;
   static constexpr ADiffType Ediff = get_diff_type<Etype>::diff_type;
 
-  A2D_FUNCTION SymIsotropicExpr(mutype mu, lamtype lambda, Etype& E,
-                                   Stype& S)
+  A2D_FUNCTION SymIsotropicExpr(mutype mu, lamtype lambda, Etype& E, Stype& S)
       : mu(mu), lambda(lambda), E(E), S(S) {}
 
   A2D_FUNCTION void eval() {
@@ -207,28 +206,28 @@ class SymIsotropicExpr {
 
 template <class mutype, class lamtype, class Etype, class Stype>
 A2D_FUNCTION auto SymIsotropic(ADObj<mutype>& mu, ADObj<lamtype>& lambda,
-                                  ADObj<Etype>& E, ADObj<Stype>& S) {
+                               ADObj<Etype>& E, ADObj<Stype>& S) {
   return SymIsotropicExpr<ADObj<mutype>&, ADObj<lamtype>&, ADObj<Etype>,
                           ADObj<Stype>>(mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
 A2D_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, ADObj<Etype>& E,
-                                  ADObj<Stype>& S) {
+                               ADObj<Stype>& S) {
   return SymIsotropicExpr<mutype, lamtype, ADObj<Etype>, ADObj<Stype>>(
       mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
 A2D_FUNCTION auto SymIsotropic(A2DObj<mutype>& mu, A2DObj<lamtype>& lambda,
-                                  A2DObj<Etype>& E, A2DObj<Stype>& S) {
+                               A2DObj<Etype>& E, A2DObj<Stype>& S) {
   return SymIsotropicExpr<A2DObj<mutype>&, A2DObj<lamtype>&, A2DObj<Etype>,
                           A2DObj<Stype>>(mu, lambda, E, S);
 }
 
 template <class mutype, class lamtype, class Etype, class Stype>
 A2D_FUNCTION auto SymIsotropic(mutype mu, lamtype lambda, A2DObj<Etype>& E,
-                                  A2DObj<Stype>& S) {
+                               A2DObj<Stype>& S) {
   return SymIsotropicExpr<mutype, lamtype, A2DObj<Etype>, A2DObj<Stype>>(
       mu, lambda, E, S);
 }

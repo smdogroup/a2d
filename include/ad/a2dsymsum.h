@@ -78,7 +78,7 @@ A2D_FUNCTION void SymMatSum(const Mat<T, N, N> &A, SymMat<T, N> &S) {
 
 template <typename T, int N>
 A2D_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N> &A,
-                               SymMat<T, N> &S) {
+                            SymMat<T, N> &S) {
   SymMatSumCore<T, N>(alpha, get_data(A), get_data(S));
 }
 
@@ -184,13 +184,13 @@ A2D_FUNCTION auto SymMatSum(A2DObj<Atype> &A, A2DObj<Stype> &S) {
 // Cases with alpha
 template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
-                               ADObj<Stype> &S) {
+                            ADObj<Stype> &S) {
   return SymMatSumExpr<ADObj<atype> &, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
-                               A2DObj<Stype> &S) {
+                            A2DObj<Stype> &S) {
   return SymMatSumExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<Stype>>(alpha, A,
                                                                       S);
 }
@@ -198,25 +198,24 @@ A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
 // Cases with passive variables
 template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype> &A,
-                               ADObj<Stype> &S) {
+                            ADObj<Stype> &S) {
   return SymMatSumExpr<const atype, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype> &A,
-                               A2DObj<Stype> &S) {
+                            A2DObj<Stype> &S) {
   return SymMatSumExpr<const atype, A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, const Atype &A,
-                               ADObj<Stype> &S) {
+                            ADObj<Stype> &S) {
   return SymMatSumExpr<ADObj<atype> &, const Atype, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A,
-                               A2DObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A, A2DObj<Stype> &S) {
   return SymMatSumExpr<A2DObj<atype> &, const Atype, A2DObj<Stype>>(alpha, A,
                                                                     S);
 }

@@ -72,7 +72,7 @@ A2D_FUNCTION void MatDetReverseCore(const T bdet, const T A[], T Ab[]) {
 
 template <typename T, int N>
 A2D_FUNCTION void MatDetHReverseCore(const T bdet, const T hdet, const T A[],
-                                        const T Ap[], T Ah[]) {
+                                     const T Ap[], T Ah[]) {
   if constexpr (N == 1) {
     Ah[0] += hdet;
   } else if constexpr (N == 2) {

@@ -10,7 +10,7 @@ namespace A2D {
 
 template <typename T, typename I, int N, int M>
 A2D_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
-                                    Vec<T, N> &x) {
+                                 Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
@@ -18,7 +18,7 @@ A2D_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
 
 template <typename T, typename I, int N>
 A2D_FUNCTION void MatColumnToVec(I column, const SymMat<T, N> &A,
-                                    Vec<T, N> &x) {
+                                 Vec<T, N> &x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
@@ -82,14 +82,12 @@ class MatColumnToVecExpr {
 };
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatColumnToVec(I column, ADObj<Atype> &A,
-                                    ADObj<xtype> &x) {
+A2D_FUNCTION auto MatColumnToVec(I column, ADObj<Atype> &A, ADObj<xtype> &x) {
   return MatColumnToVecExpr<I, ADObj<Atype>, ADObj<xtype>>(column, A, x);
 }
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A,
-                                    A2DObj<xtype> &x) {
+A2D_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A, A2DObj<xtype> &x) {
   return MatColumnToVecExpr<I, A2DObj<Atype>, A2DObj<xtype>>(column, A, x);
 }
 

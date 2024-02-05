@@ -10,8 +10,7 @@
 namespace A2D {
 
 template <typename T, int N>
-A2D_FUNCTION void VecSum(const Vec<T, N> &x, const Vec<T, N> &y,
-                            Vec<T, N> &z) {
+A2D_FUNCTION void VecSum(const Vec<T, N> &x, const Vec<T, N> &y, Vec<T, N> &z) {
   VecSumCore<T, N>(get_data(x), get_data(y), get_data(z));
 }
 
@@ -89,8 +88,7 @@ A2D_FUNCTION auto VecSum(ADObj<xtype> &x, ADObj<ytype> &y, ADObj<ztype> &z) {
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                            A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(A2DObj<xtype> &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
   return VecSumExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
@@ -100,8 +98,7 @@ A2D_FUNCTION auto VecSum(const xtype &x, ADObj<ytype> &y, ADObj<ztype> &z) {
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(const xtype &x, A2DObj<ytype> &y,
-                            A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(const xtype &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
   return VecSumExpr<const xtype, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
@@ -111,14 +108,13 @@ A2D_FUNCTION auto VecSum(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(A2DObj<xtype> &x, const ytype &y,
-                            A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(A2DObj<xtype> &x, const ytype &y, A2DObj<ztype> &z) {
   return VecSumExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
 
 template <typename T, int N>
 A2D_FUNCTION void VecSum(const T alpha, const Vec<T, N> &x, const T beta,
-                            const Vec<T, N> &y, Vec<T, N> &z) {
+                         const Vec<T, N> &y, Vec<T, N> &z) {
   VecSumCore<T, N>(alpha, get_data(x), beta, get_data(y), get_data(z));
 }
 
@@ -253,77 +249,72 @@ class VecSumScaleExpr {
 // Full AD
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(ADObj<atype> &alpha, ADObj<xtype> &x,
-                            ADObj<btype> &beta, ADObj<ytype> &y,
-                            ADObj<ztype> &z) {
+                         ADObj<btype> &beta, ADObj<ytype> &y, ADObj<ztype> &z) {
   return VecSumScaleExpr<ADObj<atype> &, ADObj<xtype>, ADObj<btype> &,
                          ADObj<ytype>, ADObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(A2DObj<atype> &alpha, A2DObj<xtype> &x,
-                            A2DObj<btype> &beta, A2DObj<ytype> &y,
-                            A2DObj<ztype> &z) {
+                         A2DObj<btype> &beta, A2DObj<ytype> &y,
+                         A2DObj<ztype> &z) {
   return VecSumScaleExpr<A2DObj<atype> &, A2DObj<xtype>, A2DObj<btype> &,
                          A2DObj<ytype>, A2DObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(const atype alpha, ADObj<xtype> &x,
-                            const btype beta, ADObj<ytype> &y,
-                            ADObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(const atype alpha, ADObj<xtype> &x, const btype beta,
+                         ADObj<ytype> &y, ADObj<ztype> &z) {
   return VecSumScaleExpr<const atype, ADObj<xtype>, const btype, ADObj<ytype>,
                          ADObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x,
-                            const btype beta, A2DObj<ytype> &y,
-                            A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x, const btype beta,
+                         A2DObj<ytype> &y, A2DObj<ztype> &z) {
   return VecSumScaleExpr<const atype, A2DObj<xtype>, const btype, A2DObj<ytype>,
                          A2DObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(const atype alpha, const xtype &x, const btype beta,
-                            ADObj<ytype> &y, ADObj<ztype> &z) {
+                         ADObj<ytype> &y, ADObj<ztype> &z) {
   return VecSumScaleExpr<const atype, const xtype, const btype, ADObj<ytype>,
                          ADObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(const atype alpha, const xtype &x, const btype beta,
-                            A2DObj<ytype> &y, A2DObj<ztype> &z) {
+                         A2DObj<ytype> &y, A2DObj<ztype> &z) {
   return VecSumScaleExpr<const atype, const xtype, const btype, A2DObj<ytype>,
                          A2DObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(const atype alpha, ADObj<xtype> &x,
-                            const btype beta, const ytype &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(const atype alpha, ADObj<xtype> &x, const btype beta,
+                         const ytype &y, ADObj<ztype> &z) {
   return VecSumScaleExpr<const atype, ADObj<xtype>, const btype, const ytype,
                          ADObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
-A2D_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x,
-                            const btype beta, const ytype &y,
-                            A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecSum(const atype alpha, A2DObj<xtype> &x, const btype beta,
+                         const ytype &y, A2DObj<ztype> &z) {
   return VecSumScaleExpr<const atype, A2DObj<xtype>, const btype, const ytype,
                          A2DObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(ADObj<atype> &alpha, const xtype &x,
-                            ADObj<btype> &beta, const ytype &y,
-                            ADObj<ztype> &z) {
+                         ADObj<btype> &beta, const ytype &y, ADObj<ztype> &z) {
   return VecSumScaleExpr<ADObj<atype> &, const xtype, ADObj<btype> &,
                          const ytype, ADObj<ztype>>(alpha, x, beta, y, z);
 }
 
 template <class atype, class xtype, class btype, class ytype, class ztype>
 A2D_FUNCTION auto VecSum(A2DObj<atype> &alpha, const xtype &x,
-                            A2DObj<btype> &beta, const ytype &y,
-                            A2DObj<ztype> &z) {
+                         A2DObj<btype> &beta, const ytype &y,
+                         A2DObj<ztype> &z) {
   return VecSumScaleExpr<A2DObj<atype> &, const xtype, A2DObj<btype> &,
                          const ytype, A2DObj<ztype>>(alpha, x, beta, y, z);
 }

@@ -1,51 +1,80 @@
-# Specify cmake version needed
-cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12)
 
-# Set project name, language and c++ std
-project(A2D LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project("A2D"
+  VERSION 1.0.0
+  DESCRIPTION "A light-weight header only library for 1st and 2nd order automatic differentiation"
+  HOMEPAGE_URL "https://github.com/smdogroup/a2d"
+  LANGUAGES CXX)
 
-# Make sure a build type is set explicitly
-if(NOT CMAKE_BUILD_TYPE)
-  message("CMAKE_BUILD_TYPE not specified, set it to Release")
-  set(CMAKE_BUILD_TYPE "Release")
-endif()
+# Change the default value of CMAKE_INSTALL_PREFIX
+set(A2D_INSTALL_DIR $ENV{HOME}/installs/a2d)
 
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
-  message("This is a Debug build.")
-ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
-  message("This is a Release build.")
-ELSE()
-  message(FATAL_ERROR "Unknown build type CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}, should be Release or Debug")
-ENDIF()
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  set(CMAKE_INSTALL_PREFIX ${A2D_INSTALL_DIR} CACHE PATH "The default\
+  path to install A2D to" FORCE)
+  message("The directory to install A2D is set to default:\
+   ${A2D_INSTALL_DIR}")
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-# save A2D root directory
-set(A2D_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
-# Set options
-option(A2D_BUILD_EXAMPLES "Compile the a2d examples" ON)
-option(A2D_BUILD_UNIT_TESTS "Compile the unit test executables" ON)
+option(A2D_BUILD_TESTS "Build unit tests" OFF)
+option(A2D_INSTALL_LIBRARY "Enable installation" ${PROJECT_IS_TOP_LEVEL})
+
+add_library(${PROJECT_NAME} INTERFACE)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
+target_include_directories(
+  ${PROJECT_NAME}
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Set warning flags
-add_compile_options(
-  -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
-)
-
-# Build unit tests
-if(A2D_BUILD_UNIT_TESTS)
-  # Download google test (git tag needs to be updated frequently)
-  include(FetchContent)
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG e2239ee6043f73722e7aa812a459f54a28552929 # release-1.10.0
+# TODO: specify warning flags for other compilers
+if(CMAKE_CXX_COMPILER_ID MATCHES "AppleClang|GNU")
+  target_compile_options(${PROJECT_NAME} INTERFACE
+    -Wall -Wextra -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare
   )
-  FetchContent_MakeAvailable(googletest)
-  add_subdirectory(${A2D_ROOT_DIR}/tests)
 endif()
 
-# Build a2d examples
-if(A2D_BUILD_EXAMPLES)
-  add_subdirectory(${A2D_ROOT_DIR}/examples)
+if(A2D_INSTALL_LIBRARY)
+  install(
+    TARGETS ${PROJECT_NAME}
+    EXPORT ${PROJECT_NAME}_Targets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  )
+
+  write_basic_package_version_file("${PROJECT_NAME}ConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+
+  configure_package_config_file(
+    "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION
+    ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
+
+  # install cmake files
+  install(
+    EXPORT ${PROJECT_NAME}_Targets
+    FILE "${PROJECT_NAME}Targets.cmake"
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
+  )
+  install(
+    FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
+  )
+
+  # Install headers
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
+endif()
+
+if(A2D_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()

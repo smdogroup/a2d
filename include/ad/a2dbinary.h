@@ -5,6 +5,22 @@
 
 namespace A2D {
 
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T max2(const T a, const T b) {
+  if (std::real(a) > std::real(b)) {
+    return a;
+  }
+  return b;
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T min2(const T a, const T b) {
+  if (std::real(a) < std::real(b)) {
+    return a;
+  }
+  return b;
+}
+
 #define A2D_1ST_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, FORWARDBODY,       \
                              AREVBODY, BREVBODY)                             \
                                                                              \
@@ -161,6 +177,18 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
 A2D_1ST_BINARY(Divide, operator/, a.value() / b.value(), T(1.0) / b.value(),
                tmp*(a.bvalue() - tmp * a.value() * b.bvalue()), tmp* bval,
                -tmp* tmp* a.value() * bval)
+A2D_1ST_BINARY(Max, max2,
+               (std::real(a.value()) > std::real(b.value()) ? a.value()
+                                                            : b.value()),
+               (std::real(a.value()) > std::real(b.value()) ? T(1.0) : T(0.0)),
+               tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* bval,
+               (1.0 - tmp) * bval)
+A2D_1ST_BINARY(Min, min2,
+               (std::real(a.value()) < std::real(b.value()) ? a.value()
+                                                            : b.value()),
+               (std::real(a.value()) < std::real(b.value()) ? T(1.0) : T(0.0)),
+               tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* bval,
+               (1.0 - tmp) * bval)
 
 #define A2D_2ND_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, AREVBODY, BREVBODY, \
                              HFORWARDBODY, HAREVBODY, HBREVBODY)              \
@@ -364,6 +392,20 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
                tmp*(hval - tmp * bval * b.pvalue()),
                tmp* tmp * (2.0 * tmp * a.value() * bval * b.pvalue() -
                            a.value() * hval - bval * a.pvalue()))
+A2D_2ND_BINARY(Max2, max2,
+               (std::real(a.value()) > std::real(b.value()) ? a.value()
+                                                            : b.value()),
+               (std::real(a.value()) > std::real(b.value()) ? T(1.0) : T(0.0)),
+               tmp* bval, (1.0 - tmp) * bval,
+               tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* hval,
+               (1.0 - tmp) * hval)
+A2D_2ND_BINARY(Min2, min2,
+               (std::real(a.value()) < std::real(b.value()) ? a.value()
+                                                            : b.value()),
+               (std::real(a.value()) < std::real(b.value()) ? T(1.0) : T(0.0)),
+               tmp* bval, (1.0 - tmp) * bval,
+               tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* hval,
+               (1.0 - tmp) * hval)
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD

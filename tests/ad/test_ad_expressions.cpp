@@ -1,4 +1,5 @@
 #include <vector>
+#include <functional>
 
 #include "a2dcore.h"
 

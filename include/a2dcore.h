@@ -29,5 +29,6 @@
 #include "ad/a2dvecnorm.h"
 #include "ad/a2dvecouter.h"
 #include "ad/a2dvecsum.h"
+#include "ad/a2dhadamard.h"
 
 #endif  //  A2D_CORE_H

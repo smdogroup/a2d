@@ -95,7 +95,8 @@ A2D_FUNCTION void VecHadamardCore(const T A[], const T B[], T C[]) {
 }
 
 template <typename T, int size>
-A2D_FUNCTION void VecHadamardDoubleCore(const T A[], const T Aseed[], const T B[], const T Bseed[], T C[]) {
+A2D_FUNCTION void VecHadamardDoubleCore(const T A[], const T Aseed[],
+                                        const T B[], const T Bseed[], T C[]) {
   for (int i = 0; i < size; i++) {
     // C[0] = A[0] * B[0];
     C[0] = Aseed[0] * B[0] + Bseed[0] * A[0];

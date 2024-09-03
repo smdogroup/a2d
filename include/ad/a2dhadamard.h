@@ -10,8 +10,9 @@
 namespace A2D {
 
 template <typename T, int N>
-A2D_FUNCTION void VecHadamard(const Vec<T, N> &x, const Vec<T, N> &y, Vec<T, N> &z) {
-    VecHadamardCore<T, N>(get_data(x), get_data(y), get_data(z));
+A2D_FUNCTION void VecHadamard(const Vec<T, N> &x, const Vec<T, N> &y,
+                              Vec<T, N> &z) {
+  VecHadamardCore<T, N>(get_data(x), get_data(y), get_data(z));
 }
 
 template <class xtype, class ytype, class ztype>
@@ -32,7 +33,7 @@ class VecHadamardExpr {
   // Make sure the vector dimensions are consistent
   static_assert((N == M && M == K), "Vector sizes must agree");
 
-  A2D_FUNCTION 
+  A2D_FUNCTION
   VecHadamardExpr(xtype &x, ytype &y, ztype &z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
@@ -46,23 +47,27 @@ class VecHadamardExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
     if constexpr (adx == ADiffType::ACTIVE && ady == ADiffType::ACTIVE) {
-      VecHadamardDoubleCore<T, N>(get_data(x), GetSeed<seed>::get_data(x), 
-                            get_data(y), GetSeed<seed>::get_data(y), 
-                            GetSeed<seed>::get_data(z));
+      VecHadamardDoubleCore<T, N>(get_data(x), GetSeed<seed>::get_data(x),
+                                  get_data(y), GetSeed<seed>::get_data(y),
+                                  GetSeed<seed>::get_data(z));
     } else if constexpr (adx == ADiffType::ACTIVE) {
-      VecHadamardSingleCore<T, N>(get_data(y), GetSeed<seed>::get_data(x), GetSeed<seed>::get_data(z));
+      VecHadamardSingleCore<T, N>(get_data(y), GetSeed<seed>::get_data(x),
+                                  GetSeed<seed>::get_data(z));
     } else if constexpr (ady == ADiffType::ACTIVE) {
-      VecHadamardSingleCore<T, N>(get_data(x), GetSeed<seed>::get_data(y), GetSeed<seed>::get_data(z));
+      VecHadamardSingleCore<T, N>(get_data(x), GetSeed<seed>::get_data(y),
+                                  GetSeed<seed>::get_data(z));
     }
   }
 
   A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adx == ADiffType::ACTIVE) {
-      VecHadamardAddCore<T, N>(get_data(y), GetSeed<seed>::get_data(z), GetSeed<seed>::get_data(x));
+      VecHadamardAddCore<T, N>(get_data(y), GetSeed<seed>::get_data(z),
+                               GetSeed<seed>::get_data(x));
     }
     if constexpr (ady == ADiffType::ACTIVE) {
-      VecHadamardAddCore<T, N>(get_data(x), GetSeed<seed>::get_data(z), GetSeed<seed>::get_data(y));
+      VecHadamardAddCore<T, N>(get_data(x), GetSeed<seed>::get_data(z),
+                               GetSeed<seed>::get_data(y));
     }
   }
 
@@ -71,20 +76,21 @@ class VecHadamardExpr {
   A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;
     if constexpr (adx == ADiffType::ACTIVE) {
-      VecHadamardAddCore<T, N>(get_data(y), GetSeed<seed>::get_data(z), GetSeed<seed>::get_data(x));
+      VecHadamardAddCore<T, N>(get_data(y), GetSeed<seed>::get_data(z),
+                               GetSeed<seed>::get_data(x));
     }
     if constexpr (ady == ADiffType::ACTIVE) {
-      VecHadamardAddCore<T, N>(get_data(x), GetSeed<seed>::get_data(z), GetSeed<seed>::get_data(y));  
+      VecHadamardAddCore<T, N>(get_data(x), GetSeed<seed>::get_data(z),
+                               GetSeed<seed>::get_data(y));
     }
     if constexpr (adx == ADiffType::ACTIVE && ady == ADiffType::ACTIVE) {
-      VecHadamardAddCore<T, N>(GetSeed<ADseed::p>::get_data(y), 
-                               GetSeed<ADseed::b>::get_data(z), 
+      VecHadamardAddCore<T, N>(GetSeed<ADseed::p>::get_data(y),
+                               GetSeed<ADseed::b>::get_data(z),
                                GetSeed<ADseed::h>::get_data(x));
-      VecHadamardAddCore<T, N>(GetSeed<ADseed::b>::get_data(z), 
-                               GetSeed<ADseed::p>::get_data(x), 
+      VecHadamardAddCore<T, N>(GetSeed<ADseed::b>::get_data(z),
+                               GetSeed<ADseed::p>::get_data(x),
                                GetSeed<ADseed::h>::get_data(y));
     }
-
   }
 
   xtype &x;
@@ -93,32 +99,38 @@ class VecHadamardExpr {
 };
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, ADObj<ytype> &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, ADObj<ytype> &y,
+                              ADObj<ztype> &z) {
   return VecHadamardExpr<ADObj<xtype>, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, A2DObj<ytype> &y,
+                              A2DObj<ztype> &z) {
   return VecHadamardExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(const xtype &x, ADObj<ytype> &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(const xtype &x, ADObj<ytype> &y,
+                              ADObj<ztype> &z) {
   return VecHadamardExpr<const xtype, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(const xtype &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(const xtype &x, A2DObj<ytype> &y,
+                              A2DObj<ztype> &z) {
   return VecHadamardExpr<const xtype, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, const ytype &y,
+                              ADObj<ztype> &z) {
   return VecHadamardExpr<ADObj<xtype>, const ytype, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, const ytype &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, const ytype &y,
+                              A2DObj<ztype> &z) {
   return VecHadamardExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
 
@@ -126,7 +138,7 @@ namespace Test {
 
 template <typename T, int N>
 class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
- public: 
+ public:
   using Input = VarTuple<T, Vec<T, N>, Vec<T, N>>;
   using Output = VarTuple<T, Vec<T, N>>;
 
@@ -179,10 +191,8 @@ bool VecHadamardTestAll(bool component = false, bool write_output = true) {
   return passed;
 }
 
+}  // namespace Test
 
-} // namespace Test
+}  // namespace A2D
 
-
-} // namespace A2D
-
-#endif // A2D_HADAMARD_H
+#endif  // A2D_HADAMARD_H

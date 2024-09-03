@@ -12,6 +12,7 @@
 
 #include "ad/a2dgemm.h"
 #include "ad/a2dgreenstrain.h"
+#include "ad/a2dhadamard.h"
 #include "ad/a2disotropic.h"
 #include "ad/a2dmatdet.h"
 #include "ad/a2dmatinv.h"
@@ -29,6 +30,5 @@
 #include "ad/a2dvecnorm.h"
 #include "ad/a2dvecouter.h"
 #include "ad/a2dvecsum.h"
-#include "ad/a2dhadamard.h"
 
 #endif  //  A2D_CORE_H

@@ -7,7 +7,7 @@ using namespace A2D;
 
 template <typename T, int N>
 class StrainTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
-public:
+ public:
   using Input = VarTuple<T, Mat<T, N, N>, Mat<T, N, N>>;
   using Output = VarTuple<T, T>;
 
@@ -28,13 +28,13 @@ public:
     Mat<T, N, N> Jinv, Ux;
     SymMat<T, N> E1, E2, E, S;
 
-    MatInv(J, Jinv);                      // Jinv = J^{-1}
-    MatMatMult(Uxi, Jinv, Ux);            // Ux = Uxi * Jinv
-    SymMatSum(T(0.5), Ux, E1);            // E1 = 0.5 * (Ux + Ux^{T})
-    SymMatRK<MatOp::TRANSPOSE>(Ux, E2);   // E2 = Ux^{T} * Ux
-    MatSum(T(1.0), E1, T(0.5), E2, E);    // E = E1 + 0.5 * E2
-    SymIsotropic(T(0.35), T(0.51), E, S); // S = 2 * mu * E + lam * tr(E) * I
-    SymMatMultTrace(E, S, output);        // output = tr(E * S)
+    MatInv(J, Jinv);                       // Jinv = J^{-1}
+    MatMatMult(Uxi, Jinv, Ux);             // Ux = Uxi * Jinv
+    SymMatSum(T(0.5), Ux, E1);             // E1 = 0.5 * (Ux + Ux^{T})
+    SymMatRK<MatOp::TRANSPOSE>(Ux, E2);    // E2 = Ux^{T} * Ux
+    MatSum(T(1.0), E1, T(0.5), E2, E);     // E = E1 + 0.5 * E2
+    SymIsotropic(T(0.35), T(0.51), E, S);  // S = 2 * mu * E + lam * tr(E) * I
+    SymMatMultTrace(E, S, output);         // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }
@@ -49,12 +49,12 @@ public:
     x.get_values(Uxi.value(), J.value());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),           // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux), // Ux = Uxi * Jinv
-                  SymMatSum(T(0.5), Ux, E1), // E1 = 0.5 * (Ux + Ux^{T})
-                  SymMatRK<MatOp::TRANSPOSE>(Ux, E2),   // E2 = Ux^{T} * Ux
-                  MatSum(T(1.0), E1, T(0.5), E2, E),    // E = E1 + 0.5 * E2
-                  SymIsotropic(T(0.35), T(0.51), E, S), // S = S(E)
+        MakeStack(MatInv(J, Jinv),            // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),  // Ux = Uxi * Jinv
+                  SymMatSum(T(0.5), Ux, E1),  // E1 = 0.5 * (Ux + Ux^{T})
+                  SymMatRK<MatOp::TRANSPOSE>(Ux, E2),    // E2 = Ux^{T} * Ux
+                  MatSum(T(1.0), E1, T(0.5), E2, E),     // E = E1 + 0.5 * E2
+                  SymIsotropic(T(0.35), T(0.51), E, S),  // S = S(E)
                   SymMatMultTrace(E, S, output));
 
     seed.get_values(output.bvalue());
@@ -75,12 +75,12 @@ public:
     p.get_values(Uxi.pvalue(), J.pvalue());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),           // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux), // Ux = Uxi * Jinv
-                  SymMatSum(T(0.5), Ux, E1), // E1 = 0.5 * (Ux + Ux^{T})
-                  SymMatRK<MatOp::TRANSPOSE>(Ux, E2),   // E2 = Ux^{T} * Ux
-                  MatSum(T(1.0), E1, T(0.5), E2, E),    // E = E1 + 0.5 * E2
-                  SymIsotropic(T(0.35), T(0.51), E, S), // S = S(E)
+        MakeStack(MatInv(J, Jinv),            // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),  // Ux = Uxi * Jinv
+                  SymMatSum(T(0.5), Ux, E1),  // E1 = 0.5 * (Ux + Ux^{T})
+                  SymMatRK<MatOp::TRANSPOSE>(Ux, E2),    // E2 = Ux^{T} * Ux
+                  MatSum(T(1.0), E1, T(0.5), E2, E),     // E = E1 + 0.5 * E2
+                  SymIsotropic(T(0.35), T(0.51), E, S),  // S = S(E)
                   SymMatMultTrace(E, S, output));
 
     seed.get_values(output.bvalue());
@@ -93,7 +93,7 @@ public:
 template <typename T>
 class MooneyRivlin
     : public A2D::Test::A2DTest<T, T, Mat<T, 3, 3>, Mat<T, 3, 3>> {
-public:
+ public:
   using Input = VarTuple<T, Mat<T, 3, 3>, Mat<T, 3, 3>>;
   using Output = VarTuple<T, T>;
   static const int N = 3;
@@ -128,17 +128,17 @@ public:
 
     const T C1(0.1), C2(0.23);
 
-    MatInv(J, Jinv);               // Jinv = J^{-1}
-    MatMatMult(Uxi, Jinv, Ux);     // Ux = Uxi * Jinv
-    MatSum(Id, Ux, F);             // F = I + Ux
-    MatDet(F, detF);               // detF = det(F)
-    SymMatRK(F, B);                // B = F * F^{T}
-    MatTrace(B, trB);              // trB = tr(B)
-    SymMatMultTrace(B, B, trB2);   // trB2 = tr(B * B)
-    inv = pow(detF, -2.0 / 3.0);   // inv = detF^{-2/3}
-    I2 = 0.5 * (trB * trB - trB2); // I2 = 0.5 * (trB * trB - tr(B * B))
-    I1bar = inv * trB;             // I1bar = inv * I1 = inv * tr(B)
-    I2bar = inv * inv * I2;        // I2bar = inv^2 * I2
+    MatInv(J, Jinv);                // Jinv = J^{-1}
+    MatMatMult(Uxi, Jinv, Ux);      // Ux = Uxi * Jinv
+    MatSum(Id, Ux, F);              // F = I + Ux
+    MatDet(F, detF);                // detF = det(F)
+    SymMatRK(F, B);                 // B = F * F^{T}
+    MatTrace(B, trB);               // trB = tr(B)
+    SymMatMultTrace(B, B, trB2);    // trB2 = tr(B * B)
+    inv = pow(detF, -2.0 / 3.0);    // inv = detF^{-2/3}
+    I2 = 0.5 * (trB * trB - trB2);  // I2 = 0.5 * (trB * trB - tr(B * B))
+    I1bar = inv * trB;              // I1bar = inv * I1 = inv * tr(B)
+    I2bar = inv * inv * I2;         // I2bar = inv^2 * I2
     W = C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0);
 
     return MakeVarTuple<T>(W);
@@ -167,18 +167,18 @@ public:
     x.get_values(Uxi.value(), J.value());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),                  // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux),        // Ux = Uxi * Jinv
-                  MatSum(Id, Ux, F),                // F = I + Ux
-                  MatDet(F, detF),                  // detF = det(F)
-                  SymMatRK(F, B),                   // B = F * F^{T}
-                  MatTrace(B, trB),                 // trB = tr(B)
-                  SymMatMultTrace(B, B, trB2),      // trB2 = tr(B * B)
-                  Eval(pow(detF, -2.0 / 3.0), inv), // inv = detF^{-2/3}
+        MakeStack(MatInv(J, Jinv),                   // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),         // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),                 // F = I + Ux
+                  MatDet(F, detF),                   // detF = det(F)
+                  SymMatRK(F, B),                    // B = F * F^{T}
+                  MatTrace(B, trB),                  // trB = tr(B)
+                  SymMatMultTrace(B, B, trB2),       // trB2 = tr(B * B)
+                  Eval(pow(detF, -2.0 / 3.0), inv),  // inv = detF^{-2/3}
                   Eval(0.5 * (trB * trB - trB2),
-                       I2),               // I2 = 0.5 * (trB * trB - tr(B * B))
-                  Eval(inv * trB, I1bar), // I1bar = inv * I1 = inv * tr(B)
-                  Eval(inv * inv * I2, I2bar), // I2bar = inv^2 * I2
+                       I2),                // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Eval(inv * trB, I1bar),  // I1bar = inv * I1 = inv * tr(B)
+                  Eval(inv * inv * I2, I2bar),  // I2bar = inv^2 * I2
                   Eval(C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0), W));
 
     seed.get_values(W.bvalue());
@@ -212,18 +212,18 @@ public:
     p.get_values(Uxi.pvalue(), J.pvalue());
 
     auto stack =
-        MakeStack(MatInv(J, Jinv),                  // Jinv = J^{-1}
-                  MatMatMult(Uxi, Jinv, Ux),        // Ux = Uxi * Jinv
-                  MatSum(Id, Ux, F),                // F = I + Ux
-                  MatDet(F, detF),                  // detF = det(F)
-                  SymMatRK(F, B),                   // B = F * F^{T}
-                  MatTrace(B, trB),                 // trB = tr(B)
-                  SymMatMultTrace(B, B, trB2),      // trB2 = tr(B * B)
-                  Eval(pow(detF, -2.0 / 3.0), inv), // inv = detF^{-2/3}
+        MakeStack(MatInv(J, Jinv),                   // Jinv = J^{-1}
+                  MatMatMult(Uxi, Jinv, Ux),         // Ux = Uxi * Jinv
+                  MatSum(Id, Ux, F),                 // F = I + Ux
+                  MatDet(F, detF),                   // detF = det(F)
+                  SymMatRK(F, B),                    // B = F * F^{T}
+                  MatTrace(B, trB),                  // trB = tr(B)
+                  SymMatMultTrace(B, B, trB2),       // trB2 = tr(B * B)
+                  Eval(pow(detF, -2.0 / 3.0), inv),  // inv = detF^{-2/3}
                   Eval(0.5 * (trB * trB - trB2),
-                       I2),               // I2 = 0.5 * (trB * trB - tr(B * B))
-                  Eval(inv * trB, I1bar), // I1bar = inv * I1 = inv * tr(B)
-                  Eval(inv * inv * I2, I2bar), // I2bar = inv^2 * I2
+                       I2),                // I2 = 0.5 * (trB * trB - tr(B * B))
+                  Eval(inv * trB, I1bar),  // I1bar = inv * I1 = inv * tr(B)
+                  Eval(inv * inv * I2, I2bar),  // I2bar = inv^2 * I2
                   Eval(C1 * (I1bar - 3.0) + C2 * (I2bar - 3.0), W));
 
     seed.get_values(W.bvalue());
@@ -236,7 +236,7 @@ public:
 template <typename T, int N>
 class DefGradTest
     : public A2D::Test::A2DTest<T, T, Mat<T, N, N>, Mat<T, N, N>> {
-public:
+ public:
   using Input = VarTuple<T, Mat<T, N, N>, Mat<T, N, N>>;
   using Output = VarTuple<T, T>;
 
@@ -263,12 +263,12 @@ public:
       Id(k, k) = 1.0;
     }
 
-    MatInv(J, Jinv);                          // Jinv = J^{-1}
-    MatMatMult(Uxi, Jinv, Ux);                // Ux = Uxi * Jinv
-    MatSum(Ux, Id, F);                        // F = I + Ux
-    SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E); // E = 0.5 * F^{T} * F
-    SymIsotropic(T(0.35), T(0.51), E, S); // S = 2 * mu * E + lam * tr(E) * I
-    SymMatMultTrace(E, S, output);        // output = tr(E * S)
+    MatInv(J, Jinv);                           // Jinv = J^{-1}
+    MatMatMult(Uxi, Jinv, Ux);                 // Ux = Uxi * Jinv
+    MatSum(Ux, Id, F);                         // F = I + Ux
+    SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E);  // E = 0.5 * F^{T} * F
+    SymIsotropic(T(0.35), T(0.51), E, S);  // S = 2 * mu * E + lam * tr(E) * I
+    SymMatMultTrace(E, S, output);         // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }
@@ -290,12 +290,12 @@ public:
     x.get_values(Uxi.value(), J.value());
 
     auto stack = MakeStack(
-        MatInv(J, Jinv),                          // Jinv = J^{-1}
-        MatMatMult(Uxi, Jinv, Ux),                // Ux = Uxi * Jinv
-        MatSum(Ux, Id, F),                        // F = I + Ux
-        SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E), // E = 0.5 * F^{T} * F
-        SymIsotropic(T(0.35), T(0.51), E, S),     // S = S(E)
-        SymMatMultTrace(E, S, output));           // output = tr(E * S)
+        MatInv(J, Jinv),                           // Jinv = J^{-1}
+        MatMatMult(Uxi, Jinv, Ux),                 // Ux = Uxi * Jinv
+        MatSum(Ux, Id, F),                         // F = I + Ux
+        SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),  // E = 0.5 * F^{T} * F
+        SymIsotropic(T(0.35), T(0.51), E, S),      // S = S(E)
+        SymMatMultTrace(E, S, output));            // output = tr(E * S)
 
     seed.get_values(output.bvalue());
     stack.reverse();
@@ -321,12 +321,12 @@ public:
     p.get_values(Uxi.pvalue(), J.pvalue());
 
     auto stack = MakeStack(
-        MatInv(J, Jinv),                          // Jinv = J^{-1}
-        MatMatMult(Uxi, Jinv, Ux),                // Ux = Uxi * Jinv
-        MatSum(Ux, Id, F),                        // F = I + Ux
-        SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E), // E = 0.5 * F^{T} * F
-        SymIsotropic(T(0.35), T(0.51), E, S),     // S = S(E)
-        SymMatMultTrace(E, S, output));           // output = tr(E * S)
+        MatInv(J, Jinv),                           // Jinv = J^{-1}
+        MatMatMult(Uxi, Jinv, Ux),                 // Ux = Uxi * Jinv
+        MatSum(Ux, Id, F),                         // F = I + Ux
+        SymMatRK<MatOp::TRANSPOSE>(T(0.5), F, E),  // E = 0.5 * F^{T} * F
+        SymIsotropic(T(0.35), T(0.51), E, S),      // S = S(E)
+        SymMatMultTrace(E, S, output));            // output = tr(E * S)
 
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
@@ -337,7 +337,7 @@ public:
 
 template <typename T, int N>
 class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
-public:
+ public:
   using Input = VarTuple<T, Mat<T, N, N>>;
   using Output = VarTuple<T, T>;
 
@@ -358,9 +358,9 @@ public:
     // Symmetric matrices
     SymMat<T, N> E, S;
 
-    MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E); // E = E(Ux)
-    SymIsotropic(mu, lambda, E, S);                    // S = S(E)
-    SymMatMultTrace(E, S, output);                     // output = tr(E * S)
+    MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E);  // E = E(Ux)
+    SymIsotropic(mu, lambda, E, S);                     // S = S(E)
+    SymMatMultTrace(E, S, output);                      // output = tr(E * S)
 
     return MakeVarTuple<T>(output);
   }
@@ -377,9 +377,9 @@ public:
     ADObj<SymMat<T, N>> E, S;
 
     auto stack = MakeStack(
-        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E), // E = E(Ux)
-        SymIsotropic(mu, lambda, E, S),                    // S = S(E)
-        SymMatMultTrace(E, S, output));                    // output = tr(E * S)
+        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),                     // S = S(E)
+        SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     seed.get_values(output.bvalue());
     stack.reverse();
@@ -399,9 +399,9 @@ public:
     A2DObj<SymMat<T, N>> E, S;
 
     auto stack = MakeStack(
-        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E), // E = E(Ux)
-        SymIsotropic(mu, lambda, E, S),                    // S = S(E)
-        SymMatMultTrace(E, S, output));                    // output = tr(E * S)
+        MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E),  // E = E(Ux)
+        SymIsotropic(mu, lambda, E, S),                     // S = S(E)
+        SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Number of components in the derivative
     constexpr index_t ncomp = N * N;
@@ -426,7 +426,7 @@ public:
     auto out = MakeTieTuple<T, ADseed::h>(Ux);
 
     // Extract the Hessian matrix
-    Mat<T, ncomp, ncomp> jac; // Symmetric only if hval = 0.0
+    Mat<T, ncomp, ncomp> jac;  // Symmetric only if hval = 0.0
     stack.hextract(in, out, jac);
 
     // Mupltiply the outputs
@@ -440,7 +440,7 @@ public:
 
 template <typename T>
 class VonMisesPenaltyTest : public A2D::Test::A2DTest<T, T, T, Mat<T, 3, 3>> {
-public:
+ public:
   using Input = VarTuple<T, T, Mat<T, 3, 3>>;
   using Output = VarTuple<T, T>;
 
@@ -548,7 +548,7 @@ public:
 /* Test AD and A2D for a diamond-like computational graph */
 template <typename T, int N>
 class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
-public:
+ public:
   using Input = VarTuple<T, Mat<T, N, N>>;
   using Output = VarTuple<T, T>;
 
@@ -569,10 +569,10 @@ public:
     Mat<T, N, N> Jinv, Ux;
     SymMat<T, N> E1, E2, E, S;
 
-    MatDet(J, Jdet);    // Jdet = det(J)
-    MatInv(J, Jinv);    // Jinv = J^{-1}
-    MatTrace(Jinv, tr); // tr = tr(Jinv)
-    output = tr + Jdet; // output = tr + Jdet
+    MatDet(J, Jdet);     // Jdet = det(J)
+    MatInv(J, Jinv);     // Jinv = J^{-1}
+    MatTrace(Jinv, tr);  // tr = tr(Jinv)
+    output = tr + Jdet;  // output = tr + Jdet
 
     return MakeVarTuple<T>(output);
   }
@@ -585,10 +585,10 @@ public:
 
     x.get_values(J.value());
 
-    auto stack = MakeStack(MatDet(J, Jdet),          // Jdet = det(J)
-                           MatInv(J, Jinv),          // Jinv = J^{-1}
-                           MatTrace(Jinv, tr),       // tr = tr(Jinv)
-                           Eval(tr + Jdet, output)); // output = tr + Jdet
+    auto stack = MakeStack(MatDet(J, Jdet),           // Jdet = det(J)
+                           MatInv(J, Jinv),           // Jinv = J^{-1}
+                           MatTrace(Jinv, tr),        // tr = tr(Jinv)
+                           Eval(tr + Jdet, output));  // output = tr + Jdet
 
     seed.get_values(output.bvalue());
     stack.reverse();
@@ -605,10 +605,10 @@ public:
     x.get_values(J.value());
     p.get_values(J.pvalue());
 
-    auto stack = MakeStack(MatDet(J, Jdet),          // Jdet = det(J)
-                           MatInv(J, Jinv),          // Jinv = J^{-1}
-                           MatTrace(Jinv, tr),       // tr = tr(Jinv)
-                           Eval(tr + Jdet, output)); // output = tr + Jdet
+    auto stack = MakeStack(MatDet(J, Jdet),           // Jdet = det(J)
+                           MatInv(J, Jinv),           // Jinv = J^{-1}
+                           MatTrace(Jinv, tr),        // tr = tr(Jinv)
+                           Eval(tr + Jdet, output));  // output = tr + Jdet
 
     seed.get_values(output.bvalue());
     hval.get_values(output.hvalue());
@@ -642,8 +642,8 @@ bool MatIntegrationTests(bool component, bool write_output) {
 }
 
 int main(int argc, char *argv[]) {
-  bool component = false;    // Default to a projection test
-  bool write_output = false; // Don't write output;
+  bool component = false;     // Default to a projection test
+  bool write_output = false;  // Don't write output;
 
   // Check for the write_output flag
   for (int i = 0; i < argc; i++) {

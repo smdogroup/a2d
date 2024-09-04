@@ -61,7 +61,7 @@ namespace A2D {
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
 A2D_1ST_UNARY_BASIC(ExpExpr, exp, std::exp(a.value()), val)
 A2D_1ST_UNARY_BASIC(UnaryPos, operator+, a.value(), T(1.0))
-A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, - a.value(), -T(1.0))
+A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
 
 /*
   Definitions for second-derivative implementations with zero second derivative

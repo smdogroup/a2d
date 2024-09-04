@@ -130,7 +130,7 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
   }
 
 A2D_2ND_UNARY_BASIC(UnaryPos2, operator+, a.value(), T(1.0))
-A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, - a.value(), -T(1.0))
+A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
 
 /*
   Definitions for forward and reverse-mode first-order AD with temporary

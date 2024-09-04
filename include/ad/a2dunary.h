@@ -61,7 +61,7 @@ namespace A2D {
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
 A2D_1ST_UNARY_BASIC(ExpExpr, exp, std::exp(a.value()), val)
 A2D_1ST_UNARY_BASIC(UnaryPos, operator+, a.value(), T(1.0))
-A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
+A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, - a.value(), -T(1.0))
 
 /*
   Definitions for second-derivative implementations with zero second derivative
@@ -130,7 +130,7 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
   }
 
 A2D_2ND_UNARY_BASIC(UnaryPos2, operator+, a.value(), T(1.0))
-A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
+A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, - a.value(), -T(1.0))
 
 /*
   Definitions for forward and reverse-mode first-order AD with temporary
@@ -193,8 +193,10 @@ A2D_1ST_UNARY(SinExpr, sin, std::sin(a.value()), std::cos(a.value()), tmp)
 A2D_1ST_UNARY(CosExpr, cos, std::cos(a.value()), std::sin(a.value()), -tmp)
 A2D_1ST_UNARY(SqrtExpr, sqrt, std::sqrt(a.value()), 1.0 / val, 0.5 * tmp)
 A2D_1ST_UNARY(LogExpr, log, std::log(a.value()), 1.0 / a.value(), tmp)
-A2D_1ST_UNARY(ACosExpr, acos, std::acos(a.value()), -1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp)
-A2D_1ST_UNARY(ASinExpr, asin, std::asin(a.value()), 1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp)
+A2D_1ST_UNARY(ACosExpr, acos, std::acos(a.value()),
+              -1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp)
+A2D_1ST_UNARY(ASinExpr, asin, std::asin(a.value()),
+              1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp)
 
 /*
   Definitions for forward and reverse-mode first-order AD with temporary
@@ -276,8 +278,12 @@ A2D_2ND_UNARY(SqrtExpr2, sqrt, std::sqrt(a.value()), 1.0 / val, 0.5 * tmp,
               -0.25 * tmp * tmp * tmp)
 A2D_2ND_UNARY(LogExpr2, log, std::log(a.value()), 1.0 / a.value(), tmp,
               -tmp* tmp)
-A2D_2ND_UNARY(ACosExpr2, acos, std::acos(a.value()), -1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp, -a.value() / std::pow(1.0 - a.value() * a.value(), 1.5))
-A2D_2ND_UNARY(ASinExpr2, asin, std::asin(a.value()), 1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp, a.value() / std::pow(1.0 - a.value() * a.value(), 1.5))
+A2D_2ND_UNARY(ACosExpr2, acos, std::acos(a.value()),
+              -1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp,
+              -a.value() / std::pow(1.0 - a.value() * a.value(), 1.5))
+A2D_2ND_UNARY(ASinExpr2, asin, std::asin(a.value()),
+              1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp,
+              a.value() / std::pow(1.0 - a.value() * a.value(), 1.5))
 
 }  // namespace A2D
 

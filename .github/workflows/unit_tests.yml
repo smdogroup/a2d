@@ -24,7 +24,7 @@ jobs:
           A2D_ROOT=$(pwd);
           mkdir ${A2D_ROOT}/build;
           cd ${A2D_ROOT}/build;
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=ON -DA2D_BUILD_UNIT_TESTS=ON;
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DA2D_BUILD_EXAMPLES=ON -DA2D_BUILD_TESTS=ON;
           make -j;
 
       - name: run unit tests

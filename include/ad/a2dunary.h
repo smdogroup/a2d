@@ -13,48 +13,49 @@ namespace A2D {
   FUNCBODY: Body of the function evaluation
   DERIVBODY: Body of the derivative evaluation
 */
-#define A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)            \
-                                                                               \
-  template <class A, class Ta, class T, bool CA>                               \
-  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {                    \
-  public:                                                                      \
-    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,          \
-                                             ADExpr<A, Ta>>::type;             \
-    using A_t = typename std::conditional<CA, A, A &>::type;                   \
-    A2D_FUNCTION OBJNAME(expr_t &a0) : a(a0.self()), val(0.0), bval(0.0) {}    \
-    A2D_FUNCTION void eval() {                                                 \
-      a.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-    }                                                                          \
-    A2D_FUNCTION void forward() {                                              \
-      a.forward();                                                             \
-      bval = (DERIVBODY)*a.bvalue();                                           \
-    }                                                                          \
-    A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY)*bval;                                          \
-      a.reverse();                                                             \
-    }                                                                          \
-    A2D_FUNCTION void bzero() {                                                \
-      bval = T(0.0);                                                           \
-      a.bzero();                                                               \
-    }                                                                          \
-    A2D_FUNCTION T &value() { return val; }                                    \
-    A2D_FUNCTION const T &value() const { return val; }                        \
-    A2D_FUNCTION T &bvalue() { return bval; }                                  \
-    A2D_FUNCTION const T &bvalue() const { return bval; }                      \
-                                                                               \
-  private:                                                                     \
-    A_t a;                                                                     \
-    T val, bval;                                                               \
-  };                                                                           \
-  template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                         \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
-    return OBJNAME<A, Ta, T, true>(a);                                         \
-  }                                                                            \
-  template <class A, class Ta> A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {  \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
-    return OBJNAME<A, Ta, T, false>(a);                                        \
+#define A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)         \
+                                                                            \
+  template <class A, class Ta, class T, bool CA>                            \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {                 \
+   public:                                                                  \
+    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,       \
+                                             ADExpr<A, Ta>>::type;          \
+    using A_t = typename std::conditional<CA, A, A &>::type;                \
+    A2D_FUNCTION OBJNAME(expr_t &a0) : a(a0.self()), val(0.0), bval(0.0) {} \
+    A2D_FUNCTION void eval() {                                              \
+      a.eval();                                                             \
+      val = (FUNCBODY);                                                     \
+    }                                                                       \
+    A2D_FUNCTION void forward() {                                           \
+      a.forward();                                                          \
+      bval = (DERIVBODY)*a.bvalue();                                        \
+    }                                                                       \
+    A2D_FUNCTION void reverse() {                                           \
+      a.bvalue() += (DERIVBODY)*bval;                                       \
+      a.reverse();                                                          \
+    }                                                                       \
+    A2D_FUNCTION void bzero() {                                             \
+      bval = T(0.0);                                                        \
+      a.bzero();                                                            \
+    }                                                                       \
+    A2D_FUNCTION T &value() { return val; }                                 \
+    A2D_FUNCTION const T &value() const { return val; }                     \
+    A2D_FUNCTION T &bvalue() { return bval; }                               \
+    A2D_FUNCTION const T &bvalue() const { return bval; }                   \
+                                                                            \
+   private:                                                                 \
+    A_t a;                                                                  \
+    T val, bval;                                                            \
+  };                                                                        \
+  template <class A, class Ta>                                              \
+  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                      \
+    using T = typename remove_const_and_refs<Ta>::type;                     \
+    return OBJNAME<A, Ta, T, true>(a);                                      \
+  }                                                                         \
+  template <class A, class Ta>                                              \
+  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {                            \
+    using T = typename remove_const_and_refs<Ta>::type;                     \
+    return OBJNAME<A, Ta, T, false>(a);                                     \
   }
 
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
@@ -74,7 +75,7 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, - a.value(), -T(1.0))
                                                                                \
   template <class A, class Ta, class T, bool CA>                               \
   class OBJNAME : public A2DExpr<OBJNAME<A, Ta, T, CA>, T> {                   \
-  public:                                                                      \
+   public:                                                                     \
     using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
                                              A2DExpr<A, Ta>>::type;            \
     using A_t = typename std::conditional<CA, A, A &>::type;                   \
@@ -113,7 +114,7 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, - a.value(), -T(1.0))
     A2D_FUNCTION T &hvalue() { return hval; }                                  \
     A2D_FUNCTION const T &hvalue() const { return hval; }                      \
                                                                                \
-  private:                                                                     \
+   private:                                                                    \
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
@@ -122,7 +123,8 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, - a.value(), -T(1.0))
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
-  template <class A, class Ta> A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) { \
+  template <class A, class Ta>                                                 \
+  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) {                              \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
@@ -139,50 +141,51 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, - a.value(), -T(1.0))
   TEMPBODY: Body of the temporary variable calculation (computed in eval)
   DERIVBODY: Body of the derivative evaluation
 */
-#define A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)        \
-                                                                               \
-  template <class A, class Ta, class T, bool CA>                               \
-  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {                    \
-  public:                                                                      \
-    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,          \
-                                             ADExpr<A, Ta>>::type;             \
-    using A_t = typename std::conditional<CA, A, A &>::type;                   \
-    A2D_FUNCTION OBJNAME(expr_t &a0)                                           \
-        : a(a0.self()), val(0.0), bval(0.0), tmp(0.0) {}                       \
-    A2D_FUNCTION void eval() {                                                 \
-      a.eval();                                                                \
-      val = (FUNCBODY);                                                        \
-      tmp = (TEMPBODY);                                                        \
-    }                                                                          \
-    A2D_FUNCTION void forward() {                                              \
-      a.forward();                                                             \
-      bval = (DERIVBODY)*a.bvalue();                                           \
-    }                                                                          \
-    A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY)*bval;                                          \
-      a.reverse();                                                             \
-    }                                                                          \
-    A2D_FUNCTION void bzero() {                                                \
-      bval = T(0.0);                                                           \
-      a.bzero();                                                               \
-    }                                                                          \
-    A2D_FUNCTION T &value() { return val; }                                    \
-    A2D_FUNCTION const T &value() const { return val; }                        \
-    A2D_FUNCTION T &bvalue() { return bval; }                                  \
-    A2D_FUNCTION const T &bvalue() const { return bval; }                      \
-                                                                               \
-  private:                                                                     \
-    A_t a;                                                                     \
-    T val, bval, tmp;                                                          \
-  };                                                                           \
-  template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                         \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
-    return OBJNAME<A, Ta, T, true>(a);                                         \
-  }                                                                            \
-  template <class A, class Ta> A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {  \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
-    return OBJNAME<A, Ta, T, false>(a);                                        \
+#define A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY) \
+                                                                        \
+  template <class A, class Ta, class T, bool CA>                        \
+  class OBJNAME : public ADExpr<OBJNAME<A, Ta, T, CA>, T> {             \
+   public:                                                              \
+    using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,   \
+                                             ADExpr<A, Ta>>::type;      \
+    using A_t = typename std::conditional<CA, A, A &>::type;            \
+    A2D_FUNCTION OBJNAME(expr_t &a0)                                    \
+        : a(a0.self()), val(0.0), bval(0.0), tmp(0.0) {}                \
+    A2D_FUNCTION void eval() {                                          \
+      a.eval();                                                         \
+      val = (FUNCBODY);                                                 \
+      tmp = (TEMPBODY);                                                 \
+    }                                                                   \
+    A2D_FUNCTION void forward() {                                       \
+      a.forward();                                                      \
+      bval = (DERIVBODY)*a.bvalue();                                    \
+    }                                                                   \
+    A2D_FUNCTION void reverse() {                                       \
+      a.bvalue() += (DERIVBODY)*bval;                                   \
+      a.reverse();                                                      \
+    }                                                                   \
+    A2D_FUNCTION void bzero() {                                         \
+      bval = T(0.0);                                                    \
+      a.bzero();                                                        \
+    }                                                                   \
+    A2D_FUNCTION T &value() { return val; }                             \
+    A2D_FUNCTION const T &value() const { return val; }                 \
+    A2D_FUNCTION T &bvalue() { return bval; }                           \
+    A2D_FUNCTION const T &bvalue() const { return bval; }               \
+                                                                        \
+   private:                                                             \
+    A_t a;                                                              \
+    T val, bval, tmp;                                                   \
+  };                                                                    \
+  template <class A, class Ta>                                          \
+  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                  \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, T, true>(a);                                  \
+  }                                                                     \
+  template <class A, class Ta>                                          \
+  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {                        \
+    using T = typename remove_const_and_refs<Ta>::type;                 \
+    return OBJNAME<A, Ta, T, false>(a);                                 \
   }
 
 // A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)
@@ -210,7 +213,7 @@ A2D_1ST_UNARY(ASinExpr, asin, std::asin(a.value()),
                                                                                \
   template <class A, class Ta, class T, bool CA>                               \
   class OBJNAME : public A2DExpr<OBJNAME<A, Ta, T, CA>, T> {                   \
-  public:                                                                      \
+   public:                                                                     \
     using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
                                              A2DExpr<A, Ta>>::type;            \
     using A_t = typename std::conditional<CA, A, A &>::type;                   \
@@ -250,7 +253,7 @@ A2D_1ST_UNARY(ASinExpr, asin, std::asin(a.value()),
     A2D_FUNCTION T &hvalue() { return hval; }                                  \
     A2D_FUNCTION const T &hvalue() const { return hval; }                      \
                                                                                \
-  private:                                                                     \
+   private:                                                                    \
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
@@ -259,7 +262,8 @@ A2D_1ST_UNARY(ASinExpr, asin, std::asin(a.value()),
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
-  template <class A, class Ta> A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) { \
+  template <class A, class Ta>                                                 \
+  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) {                              \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
@@ -281,6 +285,6 @@ A2D_2ND_UNARY(ASinExpr2, asin, std::asin(a.value()),
               1.0 / std::sqrt(1.0 - a.value() * a.value()), tmp,
               a.value() / std::pow(1.0 - a.value() * a.value(), 1.5))
 
-} // namespace A2D
+}  // namespace A2D
 
-#endif // A2D_UNARY_OPS_H
+#endif  // A2D_UNARY_OPS_H

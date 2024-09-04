@@ -87,6 +87,40 @@ A2D_FUNCTION void VecSumCore(const T alpha, const T A[], const T beta,
 }
 
 template <typename T, int size>
+A2D_FUNCTION void VecHadamardCore(const T A[], const T B[], T C[]) {
+  for (int i = 0; i < size; i++) {
+    C[0] = A[0] * B[0];
+    C++, A++, B++;
+  }
+}
+
+template <typename T, int size>
+A2D_FUNCTION void VecHadamardDoubleCore(const T A[], const T Aseed[],
+                                        const T B[], const T Bseed[], T C[]) {
+  for (int i = 0; i < size; i++) {
+    // C[0] = A[0] * B[0];
+    C[0] = Aseed[0] * B[0] + Bseed[0] * A[0];
+    C++, A++, B++, Aseed++, Bseed++;
+  }
+}
+
+template <typename T, int size>
+A2D_FUNCTION void VecHadamardSingleCore(const T A[], const T Bseed[], T C[]) {
+  for (int i = 0; i < size; i++) {
+    C[0] = A[0] * Bseed[0];
+    C++, A++, Bseed++;
+  }
+}
+
+template <typename T, int size>
+A2D_FUNCTION void VecHadamardAddCore(const T A[], const T Bseed[], T C[]) {
+  for (int i = 0; i < size; i++) {
+    C[0] += A[0] * Bseed[0];
+    C++, A++, Bseed++;
+  }
+}
+
+template <typename T, int size>
 A2D_FUNCTION void VecSumCoreAdd(const T A[], const T B[], T C[]) {
   for (int i = 0; i < size; i++) {
     C[0] += A[0] + B[0];

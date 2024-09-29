@@ -31,4 +31,7 @@
 #include "ad/a2dvecouter.h"
 #include "ad/a2dvecsum.h"
 
+// shell routines
+#include "ad/shell/a2dshellassembleframe.h"
+
 #endif  //  A2D_CORE_H

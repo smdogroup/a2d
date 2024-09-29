@@ -3,16 +3,16 @@
 
 #include <type_traits>
 
-#include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dvec.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
+#include "../../a2ddefs.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
+#include "../a2dstack.h"
+#include "../a2dtest.h"
 
 namespace A2D {
 
 template <typename T>
-A2D_FUNCTION void ShellAssembleFrameCore(const T Axi[], const T n, T frame[]) {
+A2D_FUNCTION void ShellAssembleFrameCore(const T Axi[], const T n[], T frame[]) {
     
     // Axi usually 3x2 matrix, n is length 3 vec => assembled to 3x3 frame matrix
     frame[0] = Axi[0];
@@ -29,7 +29,7 @@ A2D_FUNCTION void ShellAssembleFrameCore(const T Axi[], const T n, T frame[]) {
 }
 
 template <typename T>
-A2D_FUNCTION void ShellAssembleFrameReverseCore(const T frameb[], T& Axib, T& nb) {
+A2D_FUNCTION void ShellAssembleFrameReverseCore(const T frameb[], T Axib[], T nb[]) {
     
     // backprop sensitivities from frame to Axi, n
     Axib[0] += frameb[0];
@@ -65,29 +65,28 @@ class ShellAssembleFrameExpr {
       static constexpr ADiffType adframe = get_diff_type<frametype>::diff_type;
 
       // assert all are same type
-      static_assert(((get_a2d_object_type<Axitype>::value ==
-                  get_a2d_object_type<ntype>::value) &&
-                 (get_a2d_object_type<ntype>::value ==
-                  get_a2d_object_type<frametype>::value)),
-                "Inputs are not all of the same type");
+    //   static_assert(((get_a2d_object_type<Axitype>::value ==
+    //               get_a2d_object_type<ntype>::value) &&
+    //              (get_a2d_object_type<ntype>::value ==
+    //               get_a2d_object_type<frametype>::value)),
+    //             "Inputs are not all of the same type");
 
       // assert correct sizes
-      static_assert((N == 3) && (M == 2) && (K == 3) (L == 3) && (P == 3),
+      static_assert((N == 3) && (M == 2) && (K == 3) && (L == 3) && (P == 3),
                     "AssembleFrame (3,2);(3) => (3,3)");
 
       // get the differentiation order
-      static constexpr ADOrder order = get_diff_order<frametype>::order; 
+      static constexpr ADorder order = get_diff_order<frametype>::order; 
 
-      A2D_FUNCTION ShellAssembleFrameExpr(Axitype& Axi, ntype& n, frametype& frame)
-           : Axi(Axi), n(n), frame(frame) {}
+      A2D_FUNCTION ShellAssembleFrameExpr(Axitype& Axi, ntype& n, frametype& frame) : Axi(Axi), n(n), frame(frame) {}
 
       A2D_FUNCTION void eval() {
         ShellAssembleFrameCore<T>(get_data(Axi), get_data(n), get_data(frame));
       }
 
-      A2D_FUNCTION void bzero() { frame.bzero() }
+      A2D_FUNCTION void bzero() { frame.bzero(); }
 
-      template <ADOrder forder>
+      template <ADorder forder>
       A2D_FUNCTION void forward() {
         constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
@@ -97,60 +96,60 @@ class ShellAssembleFrameExpr {
                           GetSeed<seed>::get_data(n),
                           GetSeed<seed>::get_data(frame));
         } else if constexpr (adAxi == ADiffType::ACTIVE) {
-            Mat<T,N,M> Axi_void{};
+            Mat<T,N,M> Axi_void;
             ShellAssembleFrameCore<T>(
                 get_data(Axi_void),
                 GetSeed<seed>::get_data(n),
-                GetSeed<seed>::get_data(frame),
+                GetSeed<seed>::get_data(frame)
             );
         } else if constexpr (adn == ADiffType::ACTIVE) {
             Vec<T,K> n_void;
             ShellAssembleFrameCore<T>(
                 GetSeed<seed>::get_data(Axi),
                 get_data(n_void),
-                GetSeed<seed>::get_data(frame),
+                GetSeed<seed>::get_data(frame)
             );
         }
       }
 
       A2D_FUNCTION void reverse() {
         constexpr ADseed seed = ADseed::b;
-        if constexpr (adAxi == ADiffType::ACTIVE) {
-            Mat<T,N,M> Axi_void{};
+        if constexpr (adn == ADiffType::ACTIVE) {
+            Mat<T,N,M> Axi_void;
             ShellAssembleFrameReverseCore<T>(
                 GetSeed<seed>::get_data(frame),
                 get_data(Axi_void),
                 GetSeed<seed>::get_data(n)
             );
         }
-        if constexpr (adn == ADiffType::ACTIVE) {
+        if constexpr (adAxi == ADiffType::ACTIVE) {
             Vec<T,K> n_void;
             ShellAssembleFrameReverseCore<T>(
                 GetSeed<seed>::get_data(frame),
                 GetSeed<seed>::get_data(Axi),
-                get_data(n_void),
+                get_data(n_void)
             );
         }
       }
 
-      A2D_FUNCTION void hzero() { C.hzero(); }
+      A2D_FUNCTION void hzero() { frame.hzero(); }
 
       A2D_FUNCTION void hreverse() {
         constexpr ADseed seed = ADseed::h;
-        if constexpr (adAxi == ADiffType::ACTIVE) {
-            Mat<T,N,M> Axi_void{};
+        if constexpr (adn == ADiffType::ACTIVE) {
+            Mat<T,N,M> Axi_void;
             ShellAssembleFrameReverseCore<T>(
                 GetSeed<seed>::get_data(frame),
                 get_data(Axi_void),
                 GetSeed<seed>::get_data(n)
             );
         }
-        if constexpr (adn == ADiffType::ACTIVE) {
+        if constexpr (adAxi == ADiffType::ACTIVE) {
             Vec<T,K> n_void;
             ShellAssembleFrameReverseCore<T>(
                 GetSeed<seed>::get_data(frame),
                 GetSeed<seed>::get_data(Axi),
-                get_data(n_void),
+                get_data(n_void)
             );
         }
       }
@@ -161,18 +160,18 @@ class ShellAssembleFrameExpr {
 }; // end of ShellAssembleFrameExpr class definition
 
 // Full active variants
-template <class Axitype, class ntype, class frametype>
-A2D_FUNCTION auto ShellAssembleFrame(const Axitype &Axi, const ntype &n, const frametype &frame) {
+template <class Axitype, class ntype, class frametype> // should be const args?
+A2D_FUNCTION auto ShellAssembleFrame(Axitype &Axi, ntype &n, frametype &frame) {
     return ShellAssembleFrameExpr<Axitype, ntype, frametype>(Axi, n, frame);
 }
 
 template <class Axitype, class ntype, class frametype>
-A2D_FUNCTION auto ShellAssembleFrame(const ADObj<Axitype> &Axi, const ADObj<ntype> &n, const ADObj<frametype> &frame) {
+A2D_FUNCTION auto ShellAssembleFrame(ADObj<Axitype> &Axi, ADObj<ntype> &n, ADObj<frametype> &frame) {
     return ShellAssembleFrameExpr<ADObj<Axitype>, ADObj<ntype>, ADObj<frametype>>(Axi, n, frame);
 }
 
 template <class Axitype, class ntype, class frametype>
-A2D_FUNCTION auto ShellAssembleFrame(const A2DObj<Axitype> &Axi, const A2DObj<ntype> &n, const A2DObj<frametype> &frame) {
+A2D_FUNCTION auto ShellAssembleFrame(A2DObj<Axitype> &Axi, A2DObj<ntype> &n, A2DObj<frametype> &frame) {
     return ShellAssembleFrameExpr<A2DObj<Axitype>, A2DObj<ntype>, A2DObj<frametype>>(Axi, n, frame);
 }
 

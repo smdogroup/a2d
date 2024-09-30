@@ -95,14 +95,14 @@ class ShellAssembleFrameExpr {
             ShellAssembleFrameCore<T>(GetSeed<seed>::get_data(Axi),
                           GetSeed<seed>::get_data(n),
                           GetSeed<seed>::get_data(frame));
-        } else if constexpr (adAxi == ADiffType::ACTIVE) {
+        } else if constexpr (adn == ADiffType::ACTIVE) {
             Mat<T,N,M> Axi_void;
             ShellAssembleFrameCore<T>(
                 get_data(Axi_void),
                 GetSeed<seed>::get_data(n),
                 GetSeed<seed>::get_data(frame)
             );
-        } else if constexpr (adn == ADiffType::ACTIVE) {
+        } else if constexpr (adAxi == ADiffType::ACTIVE) {
             Vec<T,K> n_void;
             ShellAssembleFrameCore<T>(
                 GetSeed<seed>::get_data(Axi),

@@ -33,5 +33,6 @@
 
 // shell routines
 #include "ad/shell/a2dshellassembleframe.h"
+#include "ad/shell/a2dmatconcat.h"
 
 #endif  //  A2D_CORE_H

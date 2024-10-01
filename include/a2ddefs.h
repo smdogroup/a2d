@@ -238,6 +238,18 @@ A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
 }
 #else
 
+template <typename T, typename R,
+          std::enable_if_t<is_scalar_type<T>::value, bool> = true,
+          std::enable_if_t<is_scalar_type<R>::value, bool> = true>
+A2D_FUNCTION T pow(T val, R exponent) {
+  return std::pow(val, exponent);
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T fabs(T val) {
+  return std::fabs(val);
+}
+
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T sqrt(T val) {
   return std::sqrt(val);

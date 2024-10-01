@@ -1,3 +1,4 @@
+#include <functional>
 #include <vector>
 
 #include "a2dcore.h"
@@ -681,6 +682,7 @@ int main(int argc, char *argv[]) {
   tests.push_back(A2D::Test::SymEigsTestAll);
   tests.push_back(A2D::Test::QuaternionMatrixTestAll);
   tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
+  tests.push_back(A2D::Test::VecHadamardTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

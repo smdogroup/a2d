@@ -1,5 +1,2 @@
-# include A2D headers
-include_directories(${A2D_ROOT_DIR}/include)
-
-# Add targets
 add_executable(toy_ad toy_ad.cpp)
+target_link_libraries(toy_ad PRIVATE A2D::A2D)

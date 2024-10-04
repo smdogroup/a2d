@@ -683,6 +683,7 @@ int main(int argc, char *argv[]) {
   tests.push_back(A2D::Test::QuaternionMatrixTestAll);
   tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
   tests.push_back(A2D::Test::VecHadamardTestAll);
+  tests.push_back(A2D::Test::MatRotateFrameTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

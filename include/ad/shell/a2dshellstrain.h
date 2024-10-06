@@ -1,5 +1,5 @@
-#ifndef A2D_GREEN_STRAIN_H
-#define A2D_GREEN_STRAIN_H
+#ifndef A2D_SHELL_STRAIN_H
+#define A2D_SHELL_STRAIN_H
 
 #include <type_traits>
 
@@ -7,15 +7,15 @@
 #include "../a2dmat.h"
 #include "../a2dstack.h"
 #include "../a2dtest.h"
-#include "../core/a2dgreenstraincore.h"
+// #include "../core/a2dgreenstraincore.h"
 
 namespace A2D {
 
 enum class ShellStrainType { LINEAR, NONLINEAR };
 
 template <typename T>
-A2D_FUNCTION void LinearShellStrainCore(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
-                                const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
+A2D_FUNCTION void LinearShellStrainCore(const T u0x[], const T u1x[],
+                                const T e0ty[], const T et[], T e[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0]; // e11
     e[1] = e0ty[3]; // e22
@@ -29,12 +29,12 @@ A2D_FUNCTION void LinearShellStrainCore(const Mat<T,3,3> &u0x, const Mat<T,3,3> 
     // Add the components of the shear strain
     e[6] = 2.0 * e0ty[4]; // e23, transverse shear
     e[7] = 2.0 * e0ty[2]; // e13, transverse shear
-    e[8] = et; // e12 (drill strain)
+    e[8] = et[0]; // e12 (drill strain)
 }
 
 template <typename T>
-A2D_FUNCTION void LinearShellStrainForwardCore(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
-                                const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
+A2D_FUNCTION void LinearShellStrainForwardCore(const T u0x[], const T u1x[],
+                                const T e0ty[], const T et[], T e[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] += e0ty[0]; // e11
     e[1] += e0ty[3]; // e22
@@ -48,12 +48,14 @@ A2D_FUNCTION void LinearShellStrainForwardCore(const Mat<T,3,3> &u0x, const Mat<
     // Add the components of the shear strain
     e[6] += 2.0 * e0ty[4]; // e23, transverse shear
     e[7] += 2.0 * e0ty[2]; // e13, transverse shear
-    e[8] += et; // e12 (drill strain)
+    e[8] += et[0]; // e12 (drill strain)
 }
 
 template <typename T>
-A2D_FUNCTION void LinearShellStrainReverseCore(const Mat<T,3,3> &u0xb, const Mat<T,3,3> &u1xb,
-                                const SymMat<T,3> &e0tyb, const T &etb, Vec<T,9> &eb) {
+A2D_FUNCTION void LinearShellStrainReverseCore(
+    const T u0x[], const T u1x[], const T e0ty[], const T et[],
+    const T u0xb[], const T u1xb[], const T e0tyb[], const T etb[], 
+    T eb[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     eb[0] += e0tyb[0]; // e11
     eb[1] += e0tyb[3]; // e22
@@ -67,12 +69,12 @@ A2D_FUNCTION void LinearShellStrainReverseCore(const Mat<T,3,3> &u0xb, const Mat
     // Add the components of the shear strain
     eb[6] += 2.0 * e0tyb[4]; // e23, transverse shear
     eb[7] += 2.0 * e0tyb[2]; // e13, transverse shear
-    eb[8] += etb; // e12 (drill strain)
+    eb[8] += etb[0]; // e12 (drill strain)
 }
 
 template <typename T>
-A2D_FUNCTION void NonlinearShellStrainCore(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
-                                const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
+A2D_FUNCTION void NonlinearShellStrainCore(const T u0x[], const T u1x[],
+                                const T e0ty[], const T et[], T e[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] = e0ty[0]; // e11
     e[1] = e0ty[3]; // e22
@@ -88,12 +90,12 @@ A2D_FUNCTION void NonlinearShellStrainCore(const Mat<T,3,3> &u0x, const Mat<T,3,
     // Add the components of the shear strain
     e[6] = 2.0 * e0ty[4]; // e23, transverse shear
     e[7] = 2.0 * e0ty[2]; // e13, transverse shear
-    e[8] = et; // e12 (drill strain)
+    e[8] = et[0]; // e12 (drill strain)
 }
 
 template <typename T>
-A2D_FUNCTION void NonlinearShellStrainForwardCore(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
-                                const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
+A2D_FUNCTION void NonlinearShellStrainForwardCore(const T u0x[], const T u1x[],
+                                const T e0ty[], const T et[], T e[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     e[0] += e0ty[0]; // e11
     e[1] += e0ty[3]; // e22
@@ -109,14 +111,14 @@ A2D_FUNCTION void NonlinearShellStrainForwardCore(const Mat<T,3,3> &u0x, const M
     // Add the components of the shear strain
     e[6] += 2.0 * e0ty[4]; // e23, transverse shear
     e[7] += 2.0 * e0ty[2]; // e13, transverse shear
-    e[8] += et; // e12 (drill strain)
+    e[8] += et[0]; // e12 (drill strain)
 }
 
 template <typename T>
 A2D_FUNCTION void NonlinearShellStrainReverseCore(
-  const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x, const SymMat<T,3> &e0ty, const T &et, 
-  const Mat<T,3,3> &u0xb, const Mat<T,3,3> &u1xb, const SymMat<T,3> &e0tyb, const T &etb, 
-  Vec<T,9> &e) {
+  const T u0x[], const T u1x[], const T e0ty[], const T et[], 
+  const T u0xb[], const T u1xb[], const T e0tyb[], const T etb[], 
+  T eb[]) {
     // Evaluate the in-plane strains from the tying strain expressions
     eb[0] += e0tyb[0]; // e11
     eb[1] += e0tyb[3]; // e22
@@ -136,16 +138,16 @@ A2D_FUNCTION void NonlinearShellStrainReverseCore(
     // Add the components of the shear strain
     eb[6] += 2.0 * e0tyb[4]; // e23, transverse shear
     eb[7] += 2.0 * e0tyb[2]; // e13, transverse shear
-    eb[8] += etb; // e12 (drill strain)
+    eb[8] += etb[0]; // e12 (drill strain)
 }
 
 // TODO : reverse core.. and Hessian version?
 // TODO : haven't gone past this section yet
 
-template <ShellStrainType strainType, typename T>
+template <ShellStrainType straintype, typename T>
 A2D_FUNCTION void ShellStrain(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
                                 const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
-  if constexpr (strainType == ShellStrainType::LINEAR) {
+  if constexpr (straintype == ShellStrainType::LINEAR) {
     LinearShellStrainCore<T>(get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
   } else {
     NonlinearShellStrainCore<T>(get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
@@ -160,15 +162,16 @@ class ShellStrainExpr {
 
   // Extract the dimensions of the underlying matrix
   static constexpr int u0x_rows = get_matrix_rows<u0xtype>::size;
-  static constexpr int u0x_cols = get_matrix_cols<u0xtype>::size;
+  static constexpr int u0x_cols = get_matrix_columns<u0xtype>::size;
   static constexpr int u1x_rows = get_matrix_rows<u1xtype>::size;
-  static constexpr int u1x_cols = get_matrix_cols<u1xtype>::size;
+  static constexpr int u1x_cols = get_matrix_columns<u1xtype>::size;
   static constexpr int e0ty_size = get_symmatrix_size<e0tytype>::size;
+  static constexpr int et_size = get_vec_size<ettype>::size;
   static constexpr int e_size = get_vec_size<etype>::size;
 
   // make sure the correct sizes
   static_assert(
-    (u0x_rows == 3) && (u0x_cols == 3) && (u1x_rows == 3) && (u1x_cols == 3) && (e0ty_size == 3) && (e_size == 9),
+    (u0x_rows == 3) && (u0x_cols == 3) && (u1x_rows == 3) && (u1x_cols == 3) && (e0ty_size == 3) && (et_size == 1) && (e_size == 9),
     "Shell Strain Expression does not have right size.."
   );
 
@@ -188,54 +191,14 @@ class ShellStrainExpr {
         u0x(u0x), u1x(u1x), e0ty(e0ty), et(et), e(e) {}
 
   A2D_FUNCTION void eval() {
-    if constexpr (strainType == ShellStrainType::LINEAR) {
+    if constexpr (straintype == ShellStrainType::LINEAR) {
       LinearShellStrainCore<T>(get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
     } else {
       NonlinearShellStrainCore<T>(get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
     }
-    // convert to something like this
-    if constexpr (adu0x == ADiffType::ACTIVE && adu1x == ADiffType::ACTIVE &&
-                  ade0ty == ADiffType::ACTIVE && adet == ADiffType::ACTIVE) {
-      if constexpr (strainType == ShellStrainType::LINEAR) {
-        LinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
-      } else {
-        // keep u0x, u1x forward sens separate as coupled, other terms are decoupled
-        VecZeroCore<T,e_size>(GetSeed<seed>::get_data(e));
-        NonlinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), get_data(u1x), GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
-        NonlinearShellStrainForwardCore<T>(get_data(u0x), GetSeed<seed>::get_data(u1x), get_data(e0ty), get_data(et), GetSeed<seed>::get_data(e));
-      }
-    } else {
-      // left off here
-      VecZeroCore<T, size>(GetSeed<seed>::get_data(C));
-      if constexpr (strainType == ShellStrainType::LINEAR) {
-        LinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), get_data(e));
-      } else {
-        // keep u0x, u1x forward sens separate as coupled, other terms are decoupled
-        VecZeroCore<T,e_size>(GetSeed<seed>::get_data(e));
-        NonlinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), get_data(u1x), GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), get_data(e));
-        NonlinearShellStrainForwardCore<T>(get_data(u0x), GetSeed<seed>::get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
-      }
-
-      if constexpr (adA == ADiffType::ACTIVE) {
-        VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(A),
-                            GetSeed<seed>::get_data(C));
-      }
-      if constexpr (adB == ADiffType::ACTIVE) {
-        VecAddCore<T, size>(get_data(beta), GetSeed<seed>::get_data(B),
-                            GetSeed<seed>::get_data(C));
-      }
-      if constexpr (ada == ADiffType::ACTIVE) {
-        VecAddCore<T, size>(GetSeed<seed>::get_data(alpha), get_data(A),
-                            GetSeed<seed>::get_data(C));
-      }
-      if constexpr (adb == ADiffType::ACTIVE) {
-        VecAddCore<T, size>(GetSeed<seed>::get_data(beta), get_data(B),
-                            GetSeed<seed>::get_data(C));
-      }
-    }
   }
 
-  A2D_FUNCTION void bzero() { E.bzero(); }
+  A2D_FUNCTION void bzero() { e.bzero(); }
 
   template <ADorder forder>
   A2D_FUNCTION void forward() {
@@ -245,47 +208,47 @@ class ShellStrainExpr {
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
 
-    if constexpr (strainType == ShellStrainType::LINEAR) {
-      // need extra if statements here..
-      LinearShellStrainCore<T>(GetSeed<seed>::get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
+    // need more statements here? (maybe some with only some pvalues transferred forward at a time? see matSum expr)
+    if constexpr (straintype == ShellStrainType::LINEAR) {
+      LinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), GetSeed<seed>::get_data(e0ty), 
+            GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     } else {
-      NonlinearShellStrainCore<T>(get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et), get_data(e));
-    }
-
-    if constexpr (etype == GreenStrainType::LINEAR) {
-      LinearGreenStrainForwardCore<T, N>(GetSeed<seed>::get_data(Ux),
-                                         GetSeed<seed>::get_data(E));
-    } else {
-      NonlinearGreenStrainForwardCore<T, N>(get_data(Ux),
-                                            GetSeed<seed>::get_data(Ux),
-                                            GetSeed<seed>::get_data(E));
+      NonlinearShellStrainForwardCore<T>(GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), 
+            GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     }
   }
 
   A2D_FUNCTION void reverse() {
-    if constexpr (etype == GreenStrainType::LINEAR) {
-      LinearGreenStrainReverseCore<T, N>(GetSeed<ADseed::b>::get_data(E),
-                                         GetSeed<ADseed::b>::get_data(Ux));
-
+    constexpr ADseed seed = ADseed::b;
+    // need more conditions on which ADseeds are active here
+    if constexpr (straintype == ShellStrainType::LINEAR) {
+      LinearShellStrainReverseCore<T>(
+            get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et),
+            GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), GetSeed<seed>::get_data(e0ty), 
+            GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     } else {
-      NonlinearGreenStrainReverseCore<T, N>(get_data(Ux),
-                                            GetSeed<ADseed::b>::get_data(E),
-                                            GetSeed<ADseed::b>::get_data(Ux));
+      LinearShellStrainReverseCore<T>(
+            get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et),
+            GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), 
+            GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     }
   }
 
-  A2D_FUNCTION void hzero() { E.hzero(); }
+  A2D_FUNCTION void hzero() { e.hzero(); }
 
   A2D_FUNCTION void hreverse() {
-    if constexpr (etype == GreenStrainType::LINEAR) {
-      LinearGreenStrainHReverseCore<T, N>(GetSeed<ADseed::h>::get_data(E),
-                                          GetSeed<ADseed::h>::get_data(Ux));
-
+    // need more conditions on which ADseeds are active here
+    constexpr ADseed seed = ADseed::h;
+    if constexpr (straintype == ShellStrainType::LINEAR) {
+      LinearShellStrainReverseCore<T>(
+            get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et),
+            GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), GetSeed<seed>::get_data(e0ty), 
+            GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     } else {
-      NonlinearGreenStrainHReverseCore<T, N>(
-          get_data(Ux), GetSeed<ADseed::p>::get_data(Ux),
-          GetSeed<ADseed::b>::get_data(E), GetSeed<ADseed::h>::get_data(E),
-          GetSeed<ADseed::h>::get_data(Ux));
+      LinearShellStrainReverseCore<T>(
+            get_data(u0x), get_data(u1x), get_data(e0ty), get_data(et),
+            GetSeed<seed>::get_data(u0x), GetSeed<seed>::get_data(u1x), 
+            GetSeed<seed>::get_data(e0ty), GetSeed<seed>::get_data(et), GetSeed<seed>::get_data(e));
     }
   }
 
@@ -296,19 +259,23 @@ class ShellStrainExpr {
   etype& e;
 };
 
-template <GreenStrainType etype, class UxMat, class EMat>
-A2D_FUNCTION auto MatGreenStrain(ADObj<UxMat>& Ux, ADObj<EMat>& E) {
-  return MatGreenStrainExpr<etype, ADObj<UxMat>, ADObj<EMat>>(Ux, E);
+// template <ShellStrainType straintype, typename T>
+// A2D_FUNCTION void ShellStrain(const Mat<T,3,3> &u0x, const Mat<T,3,3> &u1x,
+//                                 const SymMat<T,3> &e0ty, const T &et, Vec<T,9> &e) {
+
+template <ShellStrainType straintype, class u0xtype, class u1xtype, class e0tytype, class ettype, class etype>
+A2D_FUNCTION auto ShellStrain(ADObj<u0xtype> &u0x, ADObj<u1xtype> &u1x, ADObj<e0tytype> &e0ty, ADObj<ettype> &et, ADObj<etype> &e) {
+  return ShellStrainExpr<straintype, ADObj<u0xtype>, ADObj<u1xtype>, ADObj<e0tytype>, ADObj<ettype>, ADObj<etype>>(u0x, u1x, e0ty, et, e);
 }
 
-template <GreenStrainType etype, class UxMat, class EMat>
-A2D_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
-  return MatGreenStrainExpr<etype, A2DObj<UxMat>, A2DObj<EMat>>(Ux, E);
+template <ShellStrainType straintype, class u0xtype, class u1xtype, class e0tytype, class ettype, class etype>
+A2D_FUNCTION auto ShellStrain(A2DObj<u0xtype> &u0x, A2DObj<u1xtype> &u1x, A2DObj<e0tytype> &e0ty, A2DObj<ettype> &et, A2DObj<etype> &e) {
+  return ShellStrainExpr<straintype, A2DObj<u0xtype>, A2DObj<u1xtype>, A2DObj<e0tytype>, A2DObj<ettype>, A2DObj<etype>>(u0x, u1x, e0ty, et, e);
 }
 
 // namespace Test {
 
-// template <GreenStrainType etype, typename T, int N>
+// template <ShellStrainType etype, typename T, int N>
 // class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 //  public:
 //   using Input = VarTuple<T, Mat<T, N, N>>;
@@ -318,7 +285,7 @@ A2D_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
 //   std::string name() {
 //     std::stringstream s;
 //     s << "MatGreenStrain<";
-//     if (etype == GreenStrainType::LINEAR) {
+//     if (etype == ShellStrainType::LINEAR) {
 //       s << "LINEAR," << N << ">";
 //     } else {
 //       s << "NONLINEAR," << N << ">";
@@ -368,14 +335,14 @@ A2D_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
 //   using Tc = std::complex<double>;
 
 //   bool passed = true;
-//   MatGreenStrainTest<GreenStrainType::LINEAR, Tc, 2> test1;
+//   MatGreenStrainTest<ShellStrainType::LINEAR, Tc, 2> test1;
 //   passed = passed && Run(test1, component, write_output);
-//   MatGreenStrainTest<GreenStrainType::NONLINEAR, Tc, 2> test2;
+//   MatGreenStrainTest<ShellStrainType::NONLINEAR, Tc, 2> test2;
 //   passed = passed && Run(test2, component, write_output);
 
-//   MatGreenStrainTest<GreenStrainType::LINEAR, Tc, 3> test3;
+//   MatGreenStrainTest<ShellStrainType::LINEAR, Tc, 3> test3;
 //   passed = passed && Run(test3, component, write_output);
-//   MatGreenStrainTest<GreenStrainType::NONLINEAR, Tc, 3> test4;
+//   MatGreenStrainTest<ShellStrainType::NONLINEAR, Tc, 3> test4;
 //   passed = passed && Run(test4, component, write_output);
 
 //   return passed;
@@ -385,4 +352,4 @@ A2D_FUNCTION auto MatGreenStrain(A2DObj<UxMat>& Ux, A2DObj<EMat>& E) {
 
 }  // namespace A2D
 
-#endif  // A2D_GREEN_STRAIN_H
+#endif  // A2D_SHELL_STRAIN_H

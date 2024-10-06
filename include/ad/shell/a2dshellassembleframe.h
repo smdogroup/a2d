@@ -171,8 +171,18 @@ A2D_FUNCTION auto ShellAssembleFrame(ADObj<Axitype> &Axi, ADObj<ntype> &n, ADObj
 }
 
 template <class Axitype, class ntype, class frametype>
+A2D_FUNCTION auto ShellAssembleFrame(Axitype &Axi, ntype &n, ADObj<frametype> &frame) {
+    return ShellAssembleFrameExpr<Axitype, ntype, ADObj<frametype>>(Axi, n, frame);
+}
+
+template <class Axitype, class ntype, class frametype>
 A2D_FUNCTION auto ShellAssembleFrame(A2DObj<Axitype> &Axi, A2DObj<ntype> &n, A2DObj<frametype> &frame) {
     return ShellAssembleFrameExpr<A2DObj<Axitype>, A2DObj<ntype>, A2DObj<frametype>>(Axi, n, frame);
+}
+
+template <class Axitype, class ntype, class frametype>
+A2D_FUNCTION auto ShellAssembleFrame(Axitype &Axi, ntype &n, A2DObj<frametype> &frame) {
+    return ShellAssembleFrameExpr<Axitype, ntype, A2DObj<frametype>>(Axi, n, frame);
 }
 
 

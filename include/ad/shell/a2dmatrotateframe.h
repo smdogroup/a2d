@@ -47,6 +47,10 @@ class MatRotateFrameExpr {
   typedef typename get_object_numeric_type<Ctype>::type T;
 
   // Extract the dimensions of the matrices
+  // if (get_diff_type::)
+  // how to get matrix rows for symMat?
+  // optional SymMat or Mat here
+  // const bool A_issym = get_a2d_object_type<Atype>::value == ADObjType::SYMMAT
   static constexpr int N = get_matrix_rows<Atype>::size;
   static constexpr int M = get_matrix_columns<Atype>::size;
   static constexpr int K = get_matrix_rows<Btype>::size;
@@ -200,8 +204,28 @@ A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, ADObj<Btype>& B, ADObj<Ctype>&
 }
 
 template <class Atype, class Btype, class Ctype>
+A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, Btype &B, ADObj<Ctype>& C) {
+  return MatRotateFrameExpr<ADObj<Atype>, Btype, ADObj<Ctype>>(A, B, C);
+}
+
+template <class Atype, class Btype, class Ctype>
+A2D_FUNCTION auto MatRotateFrame(Atype &A, ADObj<Btype>& B, ADObj<Ctype>& C) {
+  return MatRotateFrameExpr<ADObj<Atype>, Btype, ADObj<Ctype>>(A, B, C);
+}
+
+template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
   return MatRotateFrameExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
+}
+
+template <class Atype, class Btype, class Ctype>
+A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, Btype &B, A2DObj<Ctype>& C) {
+  return MatRotateFrameExpr<A2DObj<Atype>, Btype, A2DObj<Ctype>>(A, B, C);
+}
+
+template <class Atype, class Btype, class Ctype>
+A2D_FUNCTION auto MatRotateFrame(Atype &A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
+  return MatRotateFrameExpr<A2DObj<Atype>, Btype, A2DObj<Ctype>>(A, B, C);
 }
 
 namespace Test {

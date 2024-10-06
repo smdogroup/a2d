@@ -109,7 +109,7 @@ class MatMatMultExpr {
         "Can't perform second order forward with first order objects");
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    if constexpr (adA == ADiffType::ACTIVE) {
+    if constexpr (adA == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
       constexpr bool additive = true;
       MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(
           GetSeed<seed>::get_data(A), get_data(B), GetSeed<seed>::get_data(C));

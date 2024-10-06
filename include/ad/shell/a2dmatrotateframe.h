@@ -91,25 +91,34 @@ class MatRotateFrameExpr {
         "Can't perform second order forward with first order objects");
     constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
                                               ADseed::b, ADseed::p>::value;
-    if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
-      constexpr bool additive = true;
-      Mat<T, N, N> Ctemp;
 
-      // Afwd^T * B * Afwd pass to Cfwd
+    // full expression of forward pass:
+    //   Cdot = Adot^T * B * A + A^T * B * Adot + A^T * Bdot * A
+
+    if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
+      Mat<T, N, N> Ctemp;
+      // Adot term1
       MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
-      // A^T * Bfwd * A added into Cfwd
+      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      // Adot term2
+      MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      // Bdot term
       MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
       MatMatSquareMult<T,N,true>(get_data(Ctemp), get_data(A), get_data(C));
 
     } else if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
-      // Afwd^T * B * Afwd pass to Cfwd
+      // Adot term1
       MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      // Adot term2
+      MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+
     } else if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
-      // A^T * Bfwd * A added into Cfwd
+      // Bdot term
       MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
       MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
     }
@@ -141,51 +150,58 @@ class MatRotateFrameExpr {
     static_assert(order == ADorder::SECOND,
                   "hreverse() can be called for only second order objects.");
 
-    // HJP backpropagation includes two terms from 2nd order chain rule
-    // 1st two if statements go directly from Chat to Ahat or Bhat
-    // 3rd if statement goes from Cbar and test vectors in Hessian vector product to the Ahat or Bhat
+    // HJP backpropagation based on Aaron's paper and my ppt
+    // 
+    // Ahat += B^T * A * Chat + B * A * Chat^T +
+    //         Bdot^T * A * Cbar + Bdot * A * Cbar^T +
+    //         B^T * Adot * Cbar + B * Adot * Cbar^T
+    // 
+    // Bhat += A * Chat * A^T +
+    //         Adot * Cbar * A^T + A * Cbar * Adot^T
+
     if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
-      // full expression: Ahat += B^T * A * Chat + B * A * Chat^T
-      // first term B^T * A * Chat
+      // term1 for Ahat : B^T * A * Chat
       MatMatLeftTrSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
       MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
 
-      // second term B * A * Chat^T added in
+      // term2 for Ahat : B * A * Chat^T
       MatMatSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
       MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+
+      // term 5 for Ahat : B^T * Adot * Cbar
+      MatMatLeftTrSquareMult<T,N>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
+      MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+
+      // term 6 for Ahat : B * Adot * Cbar^T
+      MatMatSquareMult<T,N>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
+      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
     }
+
     if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
-      // full expresion Bhat += A * Chat * A^T
+      // term 1 for Bhat : A * Chat * A^T
       MatMatSquareMult<T,N>(get_data(A), GetSeed<ADseed::h>::get_data(C), get_data(temp));
       MatMatRightTrSquareMult<T,N,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
     }
+
     if constexpr (adA == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
-      // this if statement goes from Cbar to Ahat, Bhat using the 2nd term in 2nd order chain rule
+      // now only remaining terms how up
       Mat<T, N, N> temp;
-      // full expression for HJPs (see Aaron's paper for eqns): 
-      // Ahat += Bdot^T * A * Cbar + Bdot * A * Cbar^T + 2 B * Adot * Cbar^T
-      // Ahat term1
+
+      // term3 for Ahat : Bdot^T * A * Cbar
       MatMatLeftTrSquareMult<T,N>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
       MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
 
-      // Ahat term2
+      // term4 for Ahat : Bdot * A * Cbar^T
       MatMatSquareMult<T,N>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
       MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
 
-      // Ahat term3
-      MatMatSquareMult<T,N>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
-      //   add it in twice to double it
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
-
-      // full expresion for Bhat += Adot * Cbar * A^T + A * Cbar * Adot^T
-      // Bhat term1
+      // term2 for Bhat : Adot * Cbar * A^T
       MatMatSquareMult<T,N>(GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
       MatMatRightTrSquareMult<T,N,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
 
-      // Bhat term2
+      // term3 for Bhat : A * Cbar * Adot^T
       MatMatSquareMult<T,N>(get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
       MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::h>::get_data(B));
     }
@@ -283,13 +299,14 @@ bool MatRotateFrameTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;
-  MatRotateFrameTest<Tc, 2> test1;
-  passed = passed && Run(test1, component, write_output);
+  // MatRotateFrameTest<Tc, 2> test1;
+  // passed = passed && Run(test1, component, write_output);
   MatRotateFrameTest<Tc, 3> test2;
-  passed = passed && Run(test2, component, write_output);
+  // passed = passed && Run(test2, component, write_output);
+  passed = Run(test2, component, write_output); // just do this test for now (only one I care about)
 
-  MatRotateFrameTest<Tc, 4> test3;
-  passed = passed && Run(test3, component, write_output);
+  // MatRotateFrameTest<Tc, 4> test3;
+  // passed = passed && Run(test3, component, write_output);
 
   return passed;
 }

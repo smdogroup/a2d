@@ -299,14 +299,12 @@ bool MatRotateFrameTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;
-  // MatRotateFrameTest<Tc, 2> test1;
-  // passed = passed && Run(test1, component, write_output);
+  MatRotateFrameTest<Tc, 2> test1;
+  passed = passed && Run(test1, component, write_output);
   MatRotateFrameTest<Tc, 3> test2;
-  // passed = passed && Run(test2, component, write_output);
-  passed = Run(test2, component, write_output); // just do this test for now (only one I care about)
-
-  // MatRotateFrameTest<Tc, 4> test3;
-  // passed = passed && Run(test3, component, write_output);
+  passed = passed && Run(test2, component, write_output);
+  MatRotateFrameTest<Tc, 4> test3;
+  passed = passed && Run(test3, component, write_output);
 
   return passed;
 }

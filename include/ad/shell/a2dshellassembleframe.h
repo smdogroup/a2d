@@ -45,6 +45,10 @@ A2D_FUNCTION void ShellAssembleFrameReverseCore(const T frameb[], T Axib[], T nb
     nb[2]   += frameb[8];
 }
 
+template <typename T>
+A2D_FUNCTION void ShellAssembleFrame(const Mat<T,3,2> &Axi, const Vec<T,3> &n, Mat<T,3,3> &frame) {
+  ShellAssembleFrameCore<T>(get_data(Axi), get_data(n), get_data(frame));
+}
 
 template <class Axitype, class ntype, class frametype>
 class ShellAssembleFrameExpr {
@@ -160,11 +164,6 @@ class ShellAssembleFrameExpr {
 }; // end of ShellAssembleFrameExpr class definition
 
 // Full active variants
-template <class Axitype, class ntype, class frametype> // should be const args?
-A2D_FUNCTION auto ShellAssembleFrame(Axitype &Axi, ntype &n, frametype &frame) {
-    return ShellAssembleFrameExpr<Axitype, ntype, frametype>(Axi, n, frame);
-}
-
 template <class Axitype, class ntype, class frametype>
 A2D_FUNCTION auto ShellAssembleFrame(ADObj<Axitype> &Axi, ADObj<ntype> &n, ADObj<frametype> &frame) {
     return ShellAssembleFrameExpr<ADObj<Axitype>, ADObj<ntype>, ADObj<frametype>>(Axi, n, frame);
@@ -186,8 +185,72 @@ A2D_FUNCTION auto ShellAssembleFrame(Axitype &Axi, ntype &n, A2DObj<frametype> &
 }
 
 
-// TODO : add testing here?
+namespace Test {
 
+template <typename T>
+class ShellAssembleFrameTest
+    : public A2DTest<T, Mat<T,3,3>, Mat<T,3,2>, Vec<T,3>> {
+ public:
+  using Input = VarTuple<T, Mat<T,3,2>, Vec<T,3>>;
+  using Output = VarTuple<T, Mat<T,3,3>>;
+
+  // Assemble a string to describe the test
+  std::string name() {
+    std::stringstream s;
+    s << "ShellAssembleFrame>";
+    return s.str();
+  }
+
+  // Evaluate the matrix-matrix product
+  Output eval(const Input& x) {
+    Mat<T, 3, 2> Axi;
+    Vec<T,3> n;
+    Mat<T,3,3> frame;
+
+    x.get_values(Axi, n);
+    ShellAssembleFrame(Axi, n, frame);
+    return MakeVarTuple<T>(frame);
+  }
+
+  // Compute the derivative
+  void deriv(const Output& seed, const Input& x, Input& g) {
+    ADObj<Mat<T, 3, 2>> Axi;
+    ADObj<Vec<T,3>> n;
+    ADObj<Mat<T,3,3>> frame;
+
+    x.get_values(Axi.value(), n.value());
+    auto stack = MakeStack(ShellAssembleFrame(Axi, n, frame));
+    seed.get_values(frame.bvalue());
+    stack.reverse();
+    g.set_values(Axi.bvalue(), n.bvalue());
+  }
+
+  // Compute the second-derivative
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
+    A2DObj<Mat<T, 3, 2>> Axi;
+    A2DObj<Vec<T,3>> n;
+    A2DObj<Mat<T,3,3>> frame;
+
+    x.get_values(Axi.value(), n.value());
+    p.get_values(Axi.pvalue(), n.pvalue());
+    auto stack = MakeStack(ShellAssembleFrame(Axi, n, frame));
+    seed.get_values(frame.bvalue());
+    hval.get_values(frame.hvalue());
+    stack.hproduct();
+    h.set_values(Axi.hvalue(), n.hvalue());
+  }
+};
+
+bool ShellAssembleFrameTestAll(bool component = false, bool write_output = true) {
+  using Tc = std::complex<double>;
+
+  ShellAssembleFrameTest<Tc> test;
+  bool passed = Run(test, component, write_output);
+  return passed;
+}
+
+}  // namespace Test
 
 
 } // end of A2D namespace

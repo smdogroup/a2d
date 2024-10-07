@@ -684,6 +684,8 @@ int main(int argc, char *argv[]) {
   tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
   tests.push_back(A2D::Test::VecHadamardTestAll);
   tests.push_back(A2D::Test::MatRotateFrameTestAll);
+  tests.push_back(A2D::Test::ShellStrainTestAll);
+  tests.push_back(A2D::Test::ShellAssembleFrameTestAll);
 
   bool passed = true;
   for (int i = 0; i < tests.size(); i++) {

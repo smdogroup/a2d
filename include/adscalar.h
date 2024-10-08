@@ -43,10 +43,17 @@ class ADScalar {
   inline bool operator<(const R &rhs) {
     return value < rhs;
   }
-
+  template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
+  inline bool operator<=(const R &rhs) {
+    return value <= rhs;
+  }
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
   inline bool operator>(const R &rhs) {
     return value > rhs;
+  }
+  template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
+  inline bool operator>=(const R &rhs) {
+    return value >= rhs;
   }
 
   // Operator +=, -=, *=, /=

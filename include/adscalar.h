@@ -8,6 +8,30 @@
 
 namespace A2D {
 
+// Primary template for get_non_scalar_type
+template <typename... Types>
+struct get_non_scalar_type;
+
+// Specialization for the case where there are only two types
+template <typename First, typename Second>
+struct get_non_scalar_type<First, Second> {
+  using type = typename std::conditional<is_scalar_type<First>::value, Second,
+                                         First>::type;
+};
+
+// Recursive case
+template <typename First, typename Second, typename Third, typename... Rest>
+struct get_non_scalar_type<First, Second, Third, Rest...> {
+  using type = typename std::conditional<
+      is_scalar_type<
+          typename get_non_scalar_type<Second, Third, Rest...>::type>::value,
+      First, typename get_non_scalar_type<Second, Third, Rest...>::type>::type;
+};
+
+// Helper alias template to simplify usage
+template <typename... Types>
+using get_non_scalar_type_t = typename get_non_scalar_type<Types...>::type;
+
 template <class T, int N>
 class ADScalar {
  public:
@@ -40,20 +64,37 @@ class ADScalar {
 
   // Comparison operators
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
-  inline bool operator<(const R &rhs) {
+  inline bool operator<(const R &rhs) const {
     return value < rhs;
   }
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
-  inline bool operator<=(const R &rhs) {
+  inline bool operator<=(const R &rhs) const {
     return value <= rhs;
   }
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
-  inline bool operator>(const R &rhs) {
+  inline bool operator>(const R &rhs) const {
     return value > rhs;
   }
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
-  inline bool operator>=(const R &rhs) {
+  inline bool operator>=(const R &rhs) const {
     return value >= rhs;
+  }
+
+  template <typename X, int M>
+  inline bool operator<(const ADScalar<X, M> &rhs) const {
+    return value < rhs.value;
+  }
+  template <typename X, int M>
+  inline bool operator<=(const ADScalar<X, M> &rhs) const {
+    return value <= rhs.value;
+  }
+  template <typename X, int M>
+  inline bool operator>(const ADScalar<X, M> &rhs) const {
+    return value > rhs.value;
+  }
+  template <typename X, int M>
+  inline bool operator>=(const ADScalar<X, M> &rhs) const {
+    return value >= rhs.value;
   }
 
   // Operator +=, -=, *=, /=
@@ -266,6 +307,16 @@ inline ADScalar<X, M> pow(const ADScalar<X, M> &r, const R &exponent) {
   X inv = exponent * value / r.value;
   for (int i = 0; i < M; i++) {
     out.deriv[i] = inv * r.deriv[i];
+  }
+  return out;
+}
+
+template <class X, int M>
+inline ADScalar<X, M> exp(const ADScalar<X, M> &r) {
+  X value = exp(r.value);
+  ADScalar<X, M> out(value);
+  for (int i = 0; i < M; i++) {
+    out.deriv[i] = value * r.deriv[i];
   }
   return out;
 }

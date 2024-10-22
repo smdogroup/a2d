@@ -226,7 +226,7 @@ A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, Btype &B, ADObj<Ctype>& C) {
 
 template <class Atype, class Btype, class Ctype>
 A2D_FUNCTION auto MatRotateFrame(Atype &A, ADObj<Btype>& B, ADObj<Ctype>& C) {
-  return MatRotateFrameExpr<ADObj<Atype>, Btype, ADObj<Ctype>>(A, B, C);
+  return MatRotateFrameExpr<Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
@@ -240,8 +240,8 @@ A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, Btype &B, A2DObj<Ctype>& C) {
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(Atype &A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
-  return MatRotateFrameExpr<A2DObj<Atype>, Btype, A2DObj<Ctype>>(A, B, C);
+A2D_FUNCTION auto MatRotateFrame(Atype& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
+  return MatRotateFrameExpr<Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
 namespace Test {

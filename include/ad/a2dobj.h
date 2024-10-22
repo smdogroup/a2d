@@ -310,8 +310,8 @@ struct __get_matrix_rows<SymMat<T, N>> {
 
 template <class T>
 struct get_matrix_rows : __get_matrix_rows<typename remove_a2dobj<T>::type> {
-  // static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
-  //               "get_matrix_rows called on incorrect type");
+  static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
+                "get_matrix_rows called on incorrect type");
 };
 
 /*
@@ -335,8 +335,8 @@ struct __get_matrix_columns<SymMat<T, N>> {
 template <class T>
 struct get_matrix_columns
     : __get_matrix_columns<typename remove_a2dobj<T>::type> {
-  // static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
-  //               "get_matrix_rows called on incorrect type");
+  static_assert(get_a2d_object_type<T>::value == ADObjType::MATRIX,
+                "get_matrix_rows called on incorrect type");
 };
 
 /*

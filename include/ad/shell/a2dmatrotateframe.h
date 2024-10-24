@@ -99,28 +99,28 @@ class MatRotateFrameExpr {
       Mat<T, N, N> Ctemp;
       // Adot term1
       MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
       MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
       // Bdot term
       MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), get_data(A), get_data(C));
+      MatMatSquareMult<T,N,true>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
 
     } else if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
       MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
       MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
 
     } else if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Bdot term
       MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
     }
   }
 

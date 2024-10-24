@@ -298,29 +298,29 @@ class SymMatRotateFrameExpr {
     if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      SymMatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
-      SymMatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
       // Bdot term
-      SymMatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,true>(get_data(Ctemp), get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
 
     } else if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      SymMatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
-      SymMatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
 
     } else if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Bdot term
-      SymMatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
     }
   }
 

@@ -35,6 +35,8 @@ using get_non_scalar_type_t = typename get_non_scalar_type<Types...>::type;
 template <class T, int N>
 class ADScalar {
  public:
+  // using type = T;
+
   ADScalar() {}
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
 
@@ -78,6 +80,10 @@ class ADScalar {
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
   inline bool operator>=(const R &rhs) const {
     return value >= rhs;
+  }
+  template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>
+  inline bool operator!=(const R &rhs) const {
+    return value != rhs;
   }
 
   template <typename X, int M>
@@ -148,7 +154,7 @@ class ADScalar {
     return *this;
   }
   template <class R, typename = std::enable_if_t<is_scalar_type<R>::value>>
-  inline ADScalar<T, N> &operator/=(const R &r) {
+  inline ADScalar<T, N> operator/=(const R &r) {
     T inv = 1.0 / r;
     value *= inv;
     for (int i = 0; i < N; i++) {
@@ -156,6 +162,15 @@ class ADScalar {
     }
     return *this;
   }
+
+  inline ADScalar<T, N> operator-() const {
+      T negderivs[N];
+      for (int i = 0; i < N; i++) {
+          negderivs[i] = -deriv[i];
+      }
+      return ADScalar<T, N>(-value, negderivs);  // Return by value, not by reference
+  }
+
 
   //  private:
   T value;
@@ -338,6 +353,18 @@ inline ADScalar<X, M> cos(const ADScalar<X, M> &r) {
     out.deriv[i] = d * r.deriv[i];
   }
 }
+
+// for A2D Objects
+
+// template <int N>
+// struct __get_object_numeric_type<ADScalar<double,N>> {
+//   using type = ADScalar<double,N>;
+// };
+
+// template <int N>
+// struct __get_object_numeric_type<ADScalar<std::complex<double>,N>> {
+//   using type = ADScalar<std::complex<double>,N>;
+// };
 
 }  // namespace A2D
 

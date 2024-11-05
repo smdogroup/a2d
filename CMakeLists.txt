@@ -6,6 +6,9 @@ project("A2D"
   HOMEPAGE_URL "https://github.com/smdogroup/a2d"
   LANGUAGES CXX)
 
+# Export the compile commands that clangd LS uses
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Change the default value of CMAKE_INSTALL_PREFIX
 set(A2D_INSTALL_DIR $ENV{HOME}/installs/a2d)
 

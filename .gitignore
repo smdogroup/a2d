@@ -7,3 +7,6 @@ Makefile.in
 *.pyc
 *.vtk
 *.log
+.clang-format
+.clangd
+.cache

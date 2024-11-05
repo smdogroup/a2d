@@ -104,7 +104,7 @@ class SymMat {
   A2D_FUNCTION SymMat(const SymMat<T2, N>& src) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
-        A[i + j * (j + 1) / 2] = src(i, j);
+        A[j + i * (i + 1) / 2] = src(i, j);
       }
     }
   }
@@ -117,7 +117,7 @@ class SymMat {
   A2D_FUNCTION void copy(const SymMat<T2, N>& src) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
-        A[i + j * (j + 1) / 2] = src(i, j);
+        A[j + i * (i + 1) / 2] = src(i, j);
       }
     }
   }
@@ -125,7 +125,7 @@ class SymMat {
   A2D_FUNCTION void get(SymMat<T2, N>& mat) {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j <= i; j++) {
-        mat(i, j) = A[i + j * (j + 1) / 2];
+        mat(i, j) = A[j + i * (i + 1) / 2];
       }
     }
   }

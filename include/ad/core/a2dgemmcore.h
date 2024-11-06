@@ -63,6 +63,40 @@ A2D_FUNCTION void MatMatMultCore3x3(const T A[], const T B[], T C[]) {
   }
 }
 
+template <typename T>
+A2D_FUNCTION void SMatSMatMultCore2x2(const T SA[], const T SB[], T C[]) {
+  C[0] = SA[0] * SB[0] + SA[1] * SB[1];
+  C[1] = SA[0] * SB[1] + SA[1] * SB[2];
+  C[2] = SA[1] * SB[0] + SA[2] * SB[1];
+  C[3] = SA[1] * SB[1] + SA[2] * SB[2];
+}
+
+template <typename T>
+A2D_FUNCTION void SMatSMatMultCore3x3(const T SA[], const T SB[], T C[]) {
+  C[0] = SA[0] * SB[0] + SA[1] * SB[1] + SA[3] * SB[3];
+  C[1] = SA[0] * SB[1] + SA[1] * SB[2] + SA[3] * SB[4];
+  C[2] = SA[0] * SB[3] + SA[1] * SB[4] + SA[3] * SB[5];
+  C[3] = SA[1] * SB[0] + SA[2] * SB[1] + SA[4] * SB[3];
+  C[4] = SA[1] * SB[1] + SA[2] * SB[2] + SA[4] * SB[4];
+  C[5] = SA[1] * SB[3] + SA[2] * SB[4] + SA[4] * SB[5];
+  C[6] = SA[3] * SB[0] + SA[4] * SB[1] + SA[5] * SB[3];
+  C[7] = SA[3] * SB[1] + SA[4] * SB[2] + SA[5] * SB[4];
+  C[8] = SA[3] * SB[3] + SA[4] * SB[4] + SA[5] * SB[5];
+}
+
+template <typename T, int Anrows>
+A2D_FUNCTION void SMatSMatMultCoreGeneral(const T SA[], const T SB[], T C[]) {
+  for (int i = 0; i < Anrows; i++) {
+    for (int j = 0; j < Anrows; j++) {
+      for (int k = 0; k < Anrows; k++) {
+        C[i * Anrows + k] +=
+            SA[i >= j ? j + i * (i + 1) / 2 : i + j * (j + 1) / 2] *
+            SB[j >= k ? k + j * (j + 1) / 2 : j + k * (k + 1) / 2];
+      }
+    }
+  }
+}
+
 template <typename T, MatOp opA = MatOp::NORMAL, MatOp opB = MatOp::NORMAL>
 A2D_FUNCTION void MatMatMultCore3x3Scale(T scalar, const T A[], const T B[],
                                          T C[]) {
@@ -489,6 +523,16 @@ A2D_FUNCTION void MatMatMultCore(const T A[], const T B[], T C[]) {
   } else {  // The general fallback implmentation
     MatMatMultCoreGeneral<T, Anrows, Ancols, Bnrows, Bncols, Cnrows, Cncols,
                           opA, opB, additive>(A, B, C);
+  }
+}
+template <typename T, int Anrows, bool additive = false>
+A2D_FUNCTION void SMatSMatMultCore(const T SA[], const T SB[], T C[]) {
+  if constexpr (Anrows == 2) {
+    SMatSMatMultCore2x2(SA, SB, C);
+  } else if constexpr (Anrows == 3) {
+    SMatSMatMultCore3x3(SA, SB, C);
+  } else {
+    SMatSMatMultCoreGeneral<T, Anrows>(SA, SB, C);
   }
 }
 

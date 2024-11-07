@@ -448,7 +448,7 @@ bool QuaternionAngularVelocityTestAll(bool component = false,
 
   QuaternionAngularVelocityTest<Tc> test1;
   test1.set_tolerances(1e-10, 1e-14);
-  bool passed = TestQuaternions(test1, write_output);
+  bool passed = TestQuaternions(test1, write_output, 1e-30, 1e-12);
   passed = passed && Run(test1, component, write_output);
 
   return passed;

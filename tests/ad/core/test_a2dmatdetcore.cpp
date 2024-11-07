@@ -62,7 +62,7 @@ void test_mat_det_reverse_core() {
 
   for (int i = 0; i < S.ncomp; i++) {
     S[i] = static_cast<T>(rand()) / RAND_MAX;
-    Sb[i] = static_cast<T>(rand()) / RAND_MAX;
+    Sb[i] = 0.0;
   }
 
   for (int i = 0; i < N; i++) {
@@ -77,7 +77,11 @@ void test_mat_det_reverse_core() {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
-      EXPECT_DOUBLE_EQ(Ab(i, j), Sb(i, j));
+      if (i == j) {
+        EXPECT_DOUBLE_EQ(Ab(i, j), Sb(i, j));
+      } else {
+        EXPECT_DOUBLE_EQ(2.0 * Ab(i, j), Sb(i, j));
+      }
     }
   }
 }
@@ -92,7 +96,7 @@ void test_mat_det_hreverse_core() {
   for (int i = 0; i < S.ncomp; i++) {
     S[i] = static_cast<T>(rand()) / RAND_MAX;
     Sp[i] = static_cast<T>(rand()) / RAND_MAX;
-    Sh[i] = static_cast<T>(rand()) / RAND_MAX;
+    Sh[i] = 0.0;
   }
 
   for (int i = 0; i < N; i++) {
@@ -109,7 +113,11 @@ void test_mat_det_hreverse_core() {
 
   for (int i = 0; i < N; i++) {
     for (int j = 0; j < N; j++) {
-      EXPECT_DOUBLE_EQ(Ah(i, j), Sh(i, j));
+      if (i == j) {
+        EXPECT_DOUBLE_EQ(Ah(i, j), Sh(i, j));
+      } else {
+        EXPECT_DOUBLE_EQ(2.0 * Ah(i, j), Sh(i, j));
+      }
     }
   }
 }

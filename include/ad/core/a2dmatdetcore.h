@@ -157,14 +157,14 @@ A2D_FUNCTION void SymMatDetReverseCore(const T bdet, const T S[], T Sb[]) {
     Sb[0] += bdet;
   } else if constexpr (N == 2) {
     Sb[0] += S[2] * bdet;
-    Sb[1] += -S[1] * bdet;
+    Sb[1] += -2.0 * S[1] * bdet;
     Sb[2] += S[0] * bdet;
   } else if constexpr (N == 3) {
     Sb[0] += (S[5] * S[2] - S[4] * S[4]) * bdet;
-    Sb[1] += (S[3] * S[4] - S[5] * S[1]) * bdet;
-    Sb[3] += (S[4] * S[1] - S[3] * S[2]) * bdet;
+    Sb[1] += 2.0 * (S[3] * S[4] - S[5] * S[1]) * bdet;
+    Sb[3] += 2.0 * (S[4] * S[1] - S[3] * S[2]) * bdet;
     Sb[2] += (S[5] * S[0] - S[3] * S[3]) * bdet;
-    Sb[4] += (S[3] * S[1] - S[4] * S[0]) * bdet;
+    Sb[4] += 2.0 * (S[3] * S[1] - S[4] * S[0]) * bdet;
     Sb[5] += (S[0] * S[2] - S[1] * S[1]) * bdet;
   }
 }
@@ -176,25 +176,28 @@ A2D_FUNCTION void SymMatDetHReverseCore(const T bdet, const T hdet, const T S[],
     Sh[0] += hdet;
   } else if constexpr (N == 2) {
     Sh[0] += Sp[2] * bdet;
-    Sh[1] += -Sp[1] * bdet;
+    Sh[1] += -2.0 * Sp[1] * bdet;
     Sh[2] += Sp[0] * bdet;
 
     Sh[0] += S[2] * hdet;
-    Sh[1] += -S[1] * hdet;
+    Sh[1] += -2.0 * S[1] * hdet;
     Sh[2] += S[0] * hdet;
   } else if constexpr (N == 3) {
     Sh[0] += (S[5] * Sp[2] - S[4] * Sp[4] + Sp[5] * S[2] - Sp[4] * S[4]) * bdet;
-    Sh[1] += (S[3] * Sp[4] - S[5] * Sp[1] + Sp[3] * S[4] - Sp[5] * S[1]) * bdet;
-    Sh[3] += (S[4] * Sp[1] - S[3] * Sp[2] + Sp[4] * S[1] - Sp[3] * S[2]) * bdet;
+    Sh[1] += 2.0 * (S[3] * Sp[4] - S[5] * Sp[1] + Sp[3] * S[4] - Sp[5] * S[1]) *
+             bdet;
+    Sh[3] += 2.0 * (S[4] * Sp[1] - S[3] * Sp[2] + Sp[4] * S[1] - Sp[3] * S[2]) *
+             bdet;
     Sh[2] += (S[5] * Sp[0] - S[3] * Sp[3] + Sp[5] * S[0] - Sp[3] * S[3]) * bdet;
-    Sh[4] += (S[3] * Sp[1] - S[4] * Sp[0] + Sp[3] * S[1] - Sp[4] * S[0]) * bdet;
+    Sh[4] += 2.0 * (S[3] * Sp[1] - S[4] * Sp[0] + Sp[3] * S[1] - Sp[4] * S[0]) *
+             bdet;
     Sh[5] += (S[0] * Sp[2] - S[1] * Sp[1] + Sp[0] * S[2] - Sp[1] * S[1]) * bdet;
 
     Sh[0] += (S[5] * S[2] - S[4] * S[4]) * hdet;
-    Sh[1] += (S[3] * S[4] - S[5] * S[1]) * hdet;
-    Sh[3] += (S[4] * S[1] - S[3] * S[2]) * hdet;
+    Sh[1] += 2.0 * (S[3] * S[4] - S[5] * S[1]) * hdet;
+    Sh[3] += 2.0 * (S[4] * S[1] - S[3] * S[2]) * hdet;
     Sh[2] += (S[5] * S[0] - S[3] * S[3]) * hdet;
-    Sh[4] += (S[3] * S[1] - S[4] * S[0]) * hdet;
+    Sh[4] += 2.0 * (S[3] * S[1] - S[4] * S[0]) * hdet;
     Sh[5] += (S[0] * S[2] - S[1] * S[1]) * hdet;
   }
 }

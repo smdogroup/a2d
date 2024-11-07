@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <string>
 
 // Global typenames
 typedef double T;
@@ -57,6 +58,12 @@ void print_mat(const MatType& mat) {
     }
     std::cout << std::endl;
   }
+}
+
+template <I m, I n, class MatType>
+void print_mat(std::string name, const MatType& mat) {
+  std::cout << name << ":\n";
+  print_mat<m, n>(mat);
 }
 
 // Helper macros

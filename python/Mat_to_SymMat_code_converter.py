@@ -15,7 +15,7 @@ def convert(s, mat):
     }
 
     for i, c in enumerate(s):
-        if c in mapper and s[i - 2] == mat:
+        if c in mapper and s[i - 2] in mat:
             c = mapper[c]
         s_mod += c
 
@@ -28,27 +28,21 @@ def convert(s, mat):
 
 if __name__ == "__main__":
     s = """
-    C[0] = A[0] * S[0] + A[1] * S[3] + A[2] * S[6];
-    C[1] = A[0] * S[1] + A[1] * S[4] + A[2] * S[7];
-    C[2] = A[0] * S[2] + A[1] * S[5] + A[2] * S[8];
-    C[3] = A[3] * S[0] + A[4] * S[3] + A[5] * S[6];
-    C[4] = A[3] * S[1] + A[4] * S[4] + A[5] * S[7];
-    C[5] = A[3] * S[2] + A[4] * S[5] + A[5] * S[8];
-    C[6] = A[6] * S[0] + A[7] * S[3] + A[8] * S[6];
-    C[7] = A[6] * S[1] + A[7] * S[4] + A[8] * S[7];
-    C[8] = A[6] * S[2] + A[7] * S[5] + A[8] * S[8];
-  } else if constexpr (opA == MatOp::TRANSPOSE) {
-    C[0] = A[0] * S[0] + A[3] * S[3] + A[6] * S[6];
-    C[1] = A[0] * S[1] + A[3] * S[4] + A[6] * S[7];
-    C[2] = A[0] * S[2] + A[3] * S[5] + A[6] * S[8];
-    C[3] = A[1] * S[0] + A[4] * S[3] + A[7] * S[6];
-    C[4] = A[1] * S[1] + A[4] * S[4] + A[7] * S[7];
-    C[5] = A[1] * S[2] + A[4] * S[5] + A[7] * S[8];
-    C[6] = A[2] * S[0] + A[5] * S[3] + A[8] * S[6];
-    C[7] = A[2] * S[1] + A[5] * S[4] + A[8] * S[7];
-    C[8] = A[2] * S[2] + A[5] * S[5] + A[8] * S[8];
+    Sh[0] += (S[8] * Sp[4] - S[7] * Sp[5] + Sp[8] * S[4] - Sp[7] * S[5]) * bdet;
+    Sh[1] += (S[6] * Sp[5] - S[8] * Sp[3] + Sp[6] * S[5] - Sp[8] * S[3]) * bdet;
+    Sh[2] += (S[7] * Sp[3] - S[6] * Sp[4] + Sp[7] * S[3] - Sp[6] * S[4]) * bdet;
+    Sh[4] += (S[8] * Sp[0] - S[6] * Sp[2] + Sp[8] * S[0] - Sp[6] * S[2]) * bdet;
+    Sh[5] += (S[6] * Sp[1] - S[7] * Sp[0] + Sp[6] * S[1] - Sp[7] * S[0]) * bdet;
+    Sh[8] += (S[0] * Sp[4] - S[3] * Sp[1] + Sp[0] * S[4] - Sp[3] * S[1]) * bdet;
+
+    Sh[0] += (S[8] * S[4] - S[7] * S[5]) * hdet;
+    Sh[1] += (S[6] * S[5] - S[8] * S[3]) * hdet;
+    Sh[2] += (S[7] * S[3] - S[6] * S[4]) * hdet;
+    Sh[4] += (S[8] * S[0] - S[6] * S[2]) * hdet;
+    Sh[5] += (S[6] * S[1] - S[7] * S[0]) * hdet;
+    Sh[8] += (S[0] * S[4] - S[3] * S[1]) * hdet;
     """
 
-    mat = "S"
+    mat = {"S", "p", "h"}
 
     convert(s, mat)

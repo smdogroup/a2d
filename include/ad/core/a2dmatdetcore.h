@@ -108,6 +108,97 @@ A2D_FUNCTION void MatDetHReverseCore(const T bdet, const T hdet, const T A[],
   }
 }
 
+template <typename T, int N>
+A2D_FUNCTION T SymMatDetCore(const T S[]) {
+  static_assert((N >= 1 && N <= 3), "SymMatDet not implemented for N >= 4");
+
+  if constexpr (N == 1) {
+    return S[0];
+  } else if constexpr (N == 2) {
+    return S[0] * S[2] - S[1] * S[1];
+  } else {  // N == 3
+    T det = (S[5] * (S[0] * S[2] - S[1] * S[1]) -
+             S[4] * (S[0] * S[4] - S[3] * S[1]) +
+             S[3] * (S[1] * S[4] - S[3] * S[2]));
+    return det;
+  }
+}
+
+template <typename T, int N>
+A2D_FUNCTION T SymMatDetForwardCore(const T S[], const T Sd[]) {
+  static_assert((N >= 1 && N <= 3),
+                "MatDetForwardCore not implemented for N >= 4");
+
+  if constexpr (N == 1) {
+    return Sd[0];
+  } else if constexpr (N == 2) {
+    T detd = Sd[0] * S[2] + S[0] * Sd[2] - Sd[1] * S[1] - S[1] * Sd[1];
+    return detd;
+  } else {  // N == 3
+    T detd = (Sd[0] * (S[5] * S[2] - S[4] * S[4]) +
+              Sd[1] * (S[3] * S[4] - S[5] * S[1]) +
+              Sd[3] * (S[4] * S[1] - S[3] * S[2]) +
+              Sd[1] * (S[4] * S[3] - S[5] * S[1]) +
+              Sd[2] * (S[5] * S[0] - S[3] * S[3]) +
+              Sd[4] * (S[3] * S[1] - S[4] * S[0]) +
+              Sd[3] * (S[1] * S[4] - S[3] * S[2]) +
+              Sd[4] * (S[1] * S[3] - S[0] * S[4]) +
+              Sd[5] * (S[0] * S[2] - S[1] * S[1]));
+    return detd;
+  }
+}
+
+template <typename T, int N>
+A2D_FUNCTION void SymMatDetReverseCore(const T bdet, const T S[], T Sb[]) {
+  static_assert((N >= 1 && N <= 3),
+                "MatDetReverseCore not implemented for N >= 4");
+
+  if constexpr (N == 1) {
+    Sb[0] += bdet;
+  } else if constexpr (N == 2) {
+    Sb[0] += S[2] * bdet;
+    Sb[1] += -S[1] * bdet;
+    Sb[2] += S[0] * bdet;
+  } else if constexpr (N == 3) {
+    Sb[0] += (S[5] * S[2] - S[4] * S[4]) * bdet;
+    Sb[1] += (S[3] * S[4] - S[5] * S[1]) * bdet;
+    Sb[3] += (S[4] * S[1] - S[3] * S[2]) * bdet;
+    Sb[2] += (S[5] * S[0] - S[3] * S[3]) * bdet;
+    Sb[4] += (S[3] * S[1] - S[4] * S[0]) * bdet;
+    Sb[5] += (S[0] * S[2] - S[1] * S[1]) * bdet;
+  }
+}
+
+template <typename T, int N>
+A2D_FUNCTION void SymMatDetHReverseCore(const T bdet, const T hdet, const T S[],
+                                        const T Sp[], T Sh[]) {
+  if constexpr (N == 1) {
+    Sh[0] += hdet;
+  } else if constexpr (N == 2) {
+    Sh[0] += Sp[2] * bdet;
+    Sh[1] += -Sp[1] * bdet;
+    Sh[2] += Sp[0] * bdet;
+
+    Sh[0] += S[2] * hdet;
+    Sh[1] += -S[1] * hdet;
+    Sh[2] += S[0] * hdet;
+  } else if constexpr (N == 3) {
+    Sh[0] += (S[5] * Sp[2] - S[4] * Sp[4] + Sp[5] * S[2] - Sp[4] * S[4]) * bdet;
+    Sh[1] += (S[3] * Sp[4] - S[5] * Sp[1] + Sp[3] * S[4] - Sp[5] * S[1]) * bdet;
+    Sh[3] += (S[4] * Sp[1] - S[3] * Sp[2] + Sp[4] * S[1] - Sp[3] * S[2]) * bdet;
+    Sh[2] += (S[5] * Sp[0] - S[3] * Sp[3] + Sp[5] * S[0] - Sp[3] * S[3]) * bdet;
+    Sh[4] += (S[3] * Sp[1] - S[4] * Sp[0] + Sp[3] * S[1] - Sp[4] * S[0]) * bdet;
+    Sh[5] += (S[0] * Sp[2] - S[1] * Sp[1] + Sp[0] * S[2] - Sp[1] * S[1]) * bdet;
+
+    Sh[0] += (S[5] * S[2] - S[4] * S[4]) * hdet;
+    Sh[1] += (S[3] * S[4] - S[5] * S[1]) * hdet;
+    Sh[3] += (S[4] * S[1] - S[3] * S[2]) * hdet;
+    Sh[2] += (S[5] * S[0] - S[3] * S[3]) * hdet;
+    Sh[4] += (S[3] * S[1] - S[4] * S[0]) * hdet;
+    Sh[5] += (S[0] * S[2] - S[1] * S[1]) * hdet;
+  }
+}
+
 }  // namespace A2D
 
 #endif  // A2D_MAT_DET_CORE_H

@@ -265,6 +265,16 @@ A2D_FUNCTION T log(T val) {
   return std::log(val);
 }
 
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T sin(T val) {
+  return std::sin(val);
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T cos(T val) {
+  return std::cos(val);
+}
+
 template <class ForwardIt, class T>
 void fill(ForwardIt first, ForwardIt last, const T& value) {
   std::fill(first, last, value);

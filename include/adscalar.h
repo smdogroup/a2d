@@ -328,6 +328,7 @@ inline ADScalar<X, M> sin(const ADScalar<X, M> &r) {
   for (int i = 0; i < M; i++) {
     out.deriv[i] = d * r.deriv[i];
   }
+  return out;
 }
 
 template <class X, int M>
@@ -337,6 +338,7 @@ inline ADScalar<X, M> cos(const ADScalar<X, M> &r) {
   for (int i = 0; i < M; i++) {
     out.deriv[i] = d * r.deriv[i];
   }
+  return out;
 }
 
 }  // namespace A2D

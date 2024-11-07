@@ -3,6 +3,7 @@
 
 #include "../a2ddefs.h"
 #include "a2dbinary.h"
+#include "a2dtest.h"
 #include "a2dunary.h"
 
 namespace A2D {
@@ -154,6 +155,9 @@ bool ScalarTestAll(bool component, bool write_output) {
 
   bool passed = true;
   ScalarTest<Tc> test1;
+  test1.set_step_size(1e-8);  // inverse trigonometric functions may suffer from
+                              // subtraction cancellation even for complex step
+                              // with certain underlying implementation
   passed = passed && Run(test1, component, write_output);
 
   return passed;

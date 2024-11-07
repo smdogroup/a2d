@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "a2dobj.h"
+#include "a2dstack.h"
 #include "a2dvartuple.h"
 
 namespace A2D {
@@ -52,6 +54,11 @@ class A2DTest {
    * @brief Get the type of test to perform
    */
   TestType get_test_type() const { return test_type; }
+
+  /**
+   * @brief Set the complex-step step size
+   */
+  void set_step_size(double dh0) { dh = dh0; }
 
   /**
    * @brief Get the complex-step step size

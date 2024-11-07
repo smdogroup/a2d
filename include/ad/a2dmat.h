@@ -80,6 +80,16 @@ class Mat {
   T A[M * N];
 };
 
+/*
+ * Only lower triangle entries of the SymMat are stored in the following order:
+ *
+ * S[0]
+ * S[1] S[2]
+ * S[3] S[4] S[5]
+ * S[6] S[7] S[8] S[9]
+ * ...
+ *
+ * */
 template <typename T, int N>
 class SymMat {
  public:

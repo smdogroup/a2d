@@ -37,4 +37,34 @@ A2D_FUNCTION void MatInvCore(const T A[], T Ainv[]) {
   }
 }
 
+template <typename T, int N>
+A2D_FUNCTION void SymMatInvCore(const T S[], T Sinv[]) {
+  static_assert((N >= 1 && N <= 3), "MatInvCore not implemented for N >= 4");
+
+  if constexpr (N == 1) {
+    Sinv[0] = 1.0 / S[0];
+  } else if constexpr (N == 2) {
+    T det = S[0] * S[2] - S[1] * S[1];
+    T detinv = 1.0 / det;
+
+    Sinv[0] = S[2] * detinv;
+    Sinv[1] = -S[1] * detinv;
+    Sinv[2] = S[0] * detinv;
+  } else {  // N == 3
+    T det = (S[5] * (S[0] * S[2] - S[1] * S[1]) -
+             S[4] * (S[0] * S[4] - S[1] * S[3]) +
+             S[3] * (S[1] * S[4] - S[3] * S[2]));
+    T detinv = 1.0 / det;
+
+    Sinv[0] = (S[2] * S[5] - S[4] * S[4]) * detinv;
+    Sinv[1] = -(S[1] * S[5] - S[3] * S[4]) * detinv;
+    Sinv[3] = (S[1] * S[4] - S[3] * S[2]) * detinv;
+
+    Sinv[2] = (S[0] * S[5] - S[3] * S[3]) * detinv;
+    Sinv[4] = -(S[0] * S[4] - S[3] * S[1]) * detinv;
+
+    Sinv[5] = (S[0] * S[2] - S[1] * S[1]) * detinv;
+  }
+}
+
 #endif  // A2D_MAT_INV_CORE_H

@@ -3,6 +3,8 @@
 
 #include "../a2ddefs.h"
 #include "a2dmat.h"
+#include "a2dobj.h"
+#include "a2dtest.h"
 #include "core/a2dgemmcore.h"
 #include "core/a2dmatinvcore.h"
 #include "core/a2dveccore.h"
@@ -22,6 +24,10 @@ namespace A2D {
 template <typename T, int N>
 A2D_FUNCTION void MatInv(const Mat<T, N, N>& A, Mat<T, N, N>& Ainv) {
   MatInvCore<T, N>(get_data(A), get_data(Ainv));
+}
+template <typename T, int N>
+A2D_FUNCTION void MatInv(const SymMat<T, N>& S, SymMat<T, N>& Sinv) {
+  SymMatInvCore<T, N>(get_data(S), get_data(Sinv));
 }
 
 template <class Atype, class Btype>

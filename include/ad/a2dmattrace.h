@@ -5,6 +5,9 @@
 
 #include "../a2ddefs.h"
 #include "a2dmat.h"
+#include "a2dobj.h"
+#include "a2dstack.h"
+#include "a2dtest.h"
 
 namespace A2D {
 

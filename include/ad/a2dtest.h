@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include "a2dobj.h"
+#include "a2dstack.h"
 #include "a2dvartuple.h"
 
 namespace A2D {

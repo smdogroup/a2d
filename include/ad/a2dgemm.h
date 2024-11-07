@@ -63,11 +63,16 @@ A2D_FUNCTION void MatMatMult(const Mat<T, N, M>& A, const Mat<T, K, L>& B,
   MatMatMultCore<T, N, M, K, L, P, Q, opA, opB>(get_data(A), get_data(B),
                                                 get_data(C));
 }
-template <typename T, int N>
-A2D_FUNCTION void MatMatMult(const SymMat<T, N>& SA, const SymMat<T, N>& SB,
-                             Mat<T, N, N>& C) {
-  SMatSMatMultCore<T, N>(get_data(SA), get_data(SB), get_data(C));
-}
+
+// Note: we probably don't want these unless they're really inevitable, because
+// This opens up a whole bunch of combinations of AD/A2D functions to
+// implement...
+//
+// template <typename T, int N>
+// A2D_FUNCTION void MatMatMult(const SymMat<T, N>& SA, const SymMat<T, N>& SB,
+//                              Mat<T, N, N>& C) {
+//   SMatSMatMultCore<T, N>(get_data(SA), get_data(SB), get_data(C));
+// }
 
 template <MatOp opA, MatOp opB, class Atype, class Btype, class Ctype>
 class MatMatMultExpr {

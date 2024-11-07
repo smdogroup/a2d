@@ -3,6 +3,7 @@
 
 #include "../a2ddefs.h"
 #include "a2dbinary.h"
+#include "a2dtest.h"
 #include "a2dunary.h"
 
 namespace A2D {
@@ -104,7 +105,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
 
     f = log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
         max2(a, min2(a * b, b * b)) - 4.0 * a / b + pow(5.0 / (b * b), 2.0) +
-        cos(a * 0.1);
+        acos(a * 0.1);
 
     return MakeVarTuple<T>(f);
   }
@@ -119,7 +120,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
     auto stack = MakeStack(Eval(
         log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
             max2(a, min2(a * b, b * b)) - 4.0 * a / b +
-            pow(5.0 / (b * b), 2.0) + cos(a * 0.1),
+            pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
         f));
 
     seed.get_values(f.bvalue());
@@ -139,7 +140,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
     auto stack = MakeStack(Eval(
         log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
             max2(a, min2(a * b, b * b)) - 4.0 * a / b +
-            pow(5.0 / (b * b), 2.0) + cos(a * 0.1),
+            pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
         f));
 
     seed.get_values(f.bvalue());
@@ -154,6 +155,9 @@ bool ScalarTestAll(bool component, bool write_output) {
 
   bool passed = true;
   ScalarTest<Tc> test1;
+  test1.set_step_size(1e-8);  // inverse trigonometric functions may suffer from
+                              // subtraction cancellation even for complex step
+                              // with certain underlying implementation
   passed = passed && Run(test1, component, write_output);
 
   return passed;

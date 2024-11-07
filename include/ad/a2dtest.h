@@ -56,6 +56,11 @@ class A2DTest {
   TestType get_test_type() const { return test_type; }
 
   /**
+   * @brief Set the complex-step step size
+   */
+  void set_step_size(double dh0) { dh = dh0; }
+
+  /**
    * @brief Get the complex-step step size
    */
   double get_step_size() const { return dh; }

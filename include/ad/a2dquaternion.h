@@ -292,7 +292,8 @@ class QuaternionMatrixTest : public A2DTest<T, Mat<T, 3, 3>, Vec<T, 4>> {
   }
 };
 
-inline bool QuaternionMatrixTestAll(bool component = false, bool write_output = true) {
+inline bool QuaternionMatrixTestAll(bool component = false,
+                                    bool write_output = true) {
   using Tc = std::complex<double>;
 
   QuaternionMatrixTest<Tc> test1;
@@ -443,7 +444,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
 }
 
 inline bool QuaternionAngularVelocityTestAll(bool component = false,
-                                      bool write_output = true) {
+                                             bool write_output = true) {
   using Tc = std::complex<double>;
 
   QuaternionAngularVelocityTest<Tc> test1;

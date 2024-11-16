@@ -571,7 +571,8 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
   }
 };
 
-inline bool VecNormalizeTestAll(bool component = false, bool write_output = true) {
+inline bool VecNormalizeTestAll(bool component = false,
+                                bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

@@ -329,7 +329,7 @@ bool SymMatRKTestHelper(bool component = false, bool write_output = true) {
   return passed;
 }
 
-bool SymMatRKTestAll(bool component = false, bool write_output = true) {
+inline bool SymMatRKTestAll(bool component = false, bool write_output = true) {
   bool passed = true;
   passed = passed && SymMatRKTestHelper<double, 3, 3>(component, write_output);
   passed = passed && SymMatRKTestHelper<double, 2, 4>(component, write_output);

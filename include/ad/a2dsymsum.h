@@ -321,7 +321,7 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
   }
 };
 
-bool SymMatSumTestAll(bool component = false, bool write_output = true) {
+inline bool SymMatSumTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

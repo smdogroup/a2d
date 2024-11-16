@@ -389,7 +389,7 @@ bool MatMatMultTestHelper(bool component = false, bool write_output = true) {
   return passed;
 }
 
-bool MatMatMultTestAll(bool component = false, bool write_output = true) {
+inline bool MatMatMultTestAll(bool component = false, bool write_output = true) {
   bool passed = true;
   passed =
       passed && MatMatMultTestHelper<double, 3, 3, 3>(component, write_output);

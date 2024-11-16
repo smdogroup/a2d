@@ -292,7 +292,7 @@ class SymTraceTest : public A2DTest<T, T, SymMat<T, N>> {
   }
 };
 
-bool MatTraceTestAll(bool component = false, bool write_output = true) {
+inline bool MatTraceTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

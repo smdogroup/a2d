@@ -292,7 +292,7 @@ bool MatVecMultTestHelper(bool component = false, bool write_output = true) {
   return passed;
 }
 
-bool MatVecMultTestAll(bool component = false, bool write_output = true) {
+inline bool MatVecMultTestAll(bool component = false, bool write_output = true) {
   bool passed = true;
   passed =
       passed && MatVecMultTestHelper<double, 3, 3>(component, write_output);

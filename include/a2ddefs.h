@@ -12,6 +12,15 @@ using A2D_complex_t = std::complex<T>;
 #define A2D_FUNCTION  // A2D_FUNCTION does nothing in this scenario
 #endif
 
+// CUDA compiling info
+#ifdef __CUDACC__
+#define __HOST_DEVICE__ __host__ __device__
+#define __DEVICE__ __device__
+#else
+#define __HOST_DEVICE__
+#define __DEVICE__
+#endif // __CUDACC__
+
 namespace A2D {
 
 /**

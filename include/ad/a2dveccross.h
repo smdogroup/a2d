@@ -421,7 +421,7 @@ class VecCross2DTest : public A2DTest<T, Vec<T, 2>, Vec<T, 2>, T> {
   }
 };
 
-bool VecCrossTestAll(bool component = false, bool write_output = true) {
+inline bool VecCrossTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

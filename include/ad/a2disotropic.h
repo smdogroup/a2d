@@ -329,7 +329,8 @@ class SymIsotropicTest : public A2DTest<T, SymMat<T, N>, T, T, SymMat<T, N>> {
   }
 };
 
-bool SymIsotropicTestAll(bool component = false, bool write_output = true) {
+inline bool SymIsotropicTestAll(bool component = false,
+                                bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

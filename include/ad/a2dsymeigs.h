@@ -524,7 +524,7 @@ class SymEigsTest : public A2DTest<T, Vec<T, N>, SymMat<T, N>> {
   }
 };
 
-bool SymEigsTestAll(bool component = false, bool write_output = true) {
+inline bool SymEigsTestAll(bool component = false, bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

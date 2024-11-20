@@ -296,7 +296,8 @@ __HOST_DEVICE__ inline ADScalar<X, M> fabs(const ADScalar<X, M> &r) {
   if (r.value < 0.0) {
     scalar = -1.0;
   }
-  ADScalar<X, M> out(fabs(r.value));
+  // device compatible fabs
+  ADScalar<X, M> out(::fabs(r.value));
   for (int i = 0; i < M; i++) {
     out.deriv[i] = scalar * r.deriv[i];
   }
@@ -305,7 +306,8 @@ __HOST_DEVICE__ inline ADScalar<X, M> fabs(const ADScalar<X, M> &r) {
 
 template <class X, int M>
 __HOST_DEVICE__ inline ADScalar<X, M> sqrt(const ADScalar<X, M> &r) {
-  X value = sqrt(r.value);
+  // device compatible sqrt
+  X value = ::sqrt(r.value);
   ADScalar<X, M> out(value);
   X inv = 0.5 / value;
   for (int i = 0; i < M; i++) {
@@ -317,7 +319,8 @@ __HOST_DEVICE__ inline ADScalar<X, M> sqrt(const ADScalar<X, M> &r) {
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
 __HOST_DEVICE__ inline ADScalar<X, M> pow(const ADScalar<X, M> &r, const R &exponent) {
-  X value = pow(r.value, exponent);
+  // device compatible pow
+  X value = ::pow(r.value, exponent);
   ADScalar<X, M> out(value);
   X inv = exponent * value / r.value;
   for (int i = 0; i < M; i++) {
@@ -328,7 +331,8 @@ __HOST_DEVICE__ inline ADScalar<X, M> pow(const ADScalar<X, M> &r, const R &expo
 
 template <class X, int M>
 __HOST_DEVICE__ inline ADScalar<X, M> exp(const ADScalar<X, M> &r) {
-  X value = exp(r.value);
+  // device compatible exp
+  X value = ::exp(r.value);
   ADScalar<X, M> out(value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = value * r.deriv[i];
@@ -338,8 +342,9 @@ __HOST_DEVICE__ inline ADScalar<X, M> exp(const ADScalar<X, M> &r) {
 
 template <class X, int M>
 __HOST_DEVICE__ inline ADScalar<X, M> sin(const ADScalar<X, M> &r) {
-  ADScalar<X, M> out(sin(r.value));
-  X d = cos(r.value);
+  // device compatible sin, cos
+  ADScalar<X, M> out(::sin(r.value));
+  X d = ::cos(r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = d * r.deriv[i];
   }
@@ -347,8 +352,9 @@ __HOST_DEVICE__ inline ADScalar<X, M> sin(const ADScalar<X, M> &r) {
 
 template <class X, int M>
 __HOST_DEVICE__ inline ADScalar<X, M> cos(const ADScalar<X, M> &r) {
-  ADScalar<X, M> out(cos(r.value));
-  X d = -sin(r.value);
+  // device compatible sin, cos
+  ADScalar<X, M> out(::cos(r.value));
+  X d = -::sin(r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = d * r.deriv[i];
   }

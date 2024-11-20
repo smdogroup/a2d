@@ -15,6 +15,7 @@ using A2D_complex_t = std::complex<T>;
 #else // not __CUDACC__
 #define A2D_FUNCTION
 #endif
+#endif
 
 namespace A2D {
 

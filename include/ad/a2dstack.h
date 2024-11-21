@@ -3,6 +3,7 @@
 
 #include "../a2ddefs.h"
 #include "a2dobj.h"
+#include "a2dtuple.h"
 
 namespace A2D {
 
@@ -13,7 +14,7 @@ class OperationStack {
   static constexpr index_t num_ops = sizeof...(Operations);
 
   A2D_FUNCTION OperationStack(Operations &&...s)
-      : stack(std::forward<Operations>(s)...) {
+      : stack(a2d_forward<Operations>(s)...) {
     eval_<0>();
   }
 
@@ -132,7 +133,7 @@ class OperationStack {
  */
 template <class... Operations>
 A2D_FUNCTION auto MakeStack(Operations &&...s) {
-  return OperationStack<Operations...>(std::forward<Operations>(s)...);
+  return OperationStack<Operations...>(a2d_forward<Operations>(s)...);
 }
 
 /**

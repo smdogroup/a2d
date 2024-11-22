@@ -14,13 +14,14 @@ namespace A2D {
   Define an expression for C = A^T * B * A
 */
 
-template <typename T, int N, bool symA = false, bool symB = false, bool symC = true, bool additive = false>
-A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {  
+template <typename T, int N, bool symA = false, bool symB = false,
+          bool symC = true, bool additive = false>
+A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   // C = A * B
   // zero the matrix if not additive
   if constexpr (!additive) {
     if constexpr (symC) {
-      std::fill(C, C + N * (N-1)/2, static_cast<T>(0));
+      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
     } else {
       std::fill(C, C + N * N, static_cast<T>(0));
     }
@@ -30,20 +31,21 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   std::array<int, N * N> symMatIndices;
   int index = 0;
   for (int i = 0; i < N; ++i) {
-      for (int j = i; j < N; ++j, ++index) {
-          symMatIndices[i * N + j] = index;
-          symMatIndices[j * N + i] = index;
-      }
+    for (int j = i; j < N; ++j, ++index) {
+      symMatIndices[i * N + j] = index;
+      symMatIndices[j * N + i] = index;
+    }
   }
-
 
   // Compute Mat A * Mat B => SymMat C (symmetric part only)
   int inner_start;
   if constexpr (symC) {
     for (int irow = 0; irow < N; irow++) {
-      for (int icol = irow; icol < N; icol++) { // only populate lower / upper diag once symMat C
+      for (int icol = irow; icol < N;
+           icol++) {  // only populate lower / upper diag once symMat C
         int inner_start;
-        if constexpr (symB) { // had extra halfDiag bool here before, only shows up jin reverse mode stuff
+        if constexpr (symB) {  // had extra halfDiag bool here before, only
+                               // shows up jin reverse mode stuff
           inner_start = icol;
         } else {
           inner_start = 0;
@@ -69,12 +71,14 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
           C[ic] += aVal * bVal;
         }
       }
-    } 
-  } else { // not symC
+    }
+  } else {  // not symC
     for (int irow = 0; irow < N; irow++) {
-      for (int icol = 0; icol < N; icol++) { // only populate lower / upper diag once symMat C
+      for (int icol = 0; icol < N;
+           icol++) {  // only populate lower / upper diag once symMat C
         int inner_start;
-        if constexpr (symB) { // had extra halfDiag bool here before, only shows up jin reverse mode stuff
+        if constexpr (symB) {  // had extra halfDiag bool here before, only
+                               // shows up jin reverse mode stuff
           inner_start = icol;
         } else {
           inner_start = 0;
@@ -96,7 +100,7 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
           } else {
             bVal = B[N * inner + icol];
           }
-          
+
           C[N * irow + icol] += aVal * bVal;
         }
       }
@@ -104,12 +108,13 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   }
 }
 
-template <typename T, int N, bool symA = false, bool symB = true, bool symC = false, bool additive = false>
+template <typename T, int N, bool symA = false, bool symB = true,
+          bool symC = false, bool additive = false>
 A2D_FUNCTION void SymMatMatLeftTrSquareMult(const T A[], const T B[], T C[]) {
   // zero the matrix if not additive
   if constexpr (!additive) {
     if constexpr (symC) {
-      std::fill(C, C + N * (N-1)/2, static_cast<T>(0));
+      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
     } else {
       std::fill(C, C + N * N, static_cast<T>(0));
     }
@@ -119,47 +124,50 @@ A2D_FUNCTION void SymMatMatLeftTrSquareMult(const T A[], const T B[], T C[]) {
   std::array<int, N * N> symMatIndices;
   int index = 0;
   for (int i = 0; i < N; ++i) {
-      for (int j = i; j < N; ++j, ++index) {
-          symMatIndices[i * N + j] = index;
-          symMatIndices[j * N + i] = index;
-      }
+    for (int j = i; j < N; ++j, ++index) {
+      symMatIndices[i * N + j] = index;
+      symMatIndices[j * N + i] = index;
+    }
   }
 
   // Compute Mat A^T * SymMat B => C (most of the time)
-  // symC is always false so not considering it (just makes it easier to type same # inputs for template)
+  // symC is always false so not considering it (just makes it easier to type
+  // same # inputs for template)
   for (int inner = 0; inner < N; ++inner) {
     for (int icol = 0; icol < N; ++icol) {
-          T bValue;
-          if constexpr (symB) {
-            // Use precomputed index
-            int ib = symMatIndices[inner * N + icol];
-            bValue = B[ib]; // Access the value of symmetric matrix A once
-          } else {
-            bValue = B[N * inner + icol];
-          }
-          
-          // Use a temporary variable to accumulate values for C
-          for (int irow = 0; irow < N; ++irow) {
-            T aValue;
-            if constexpr (symA) {
-              int ia = symMatIndices[N * inner + irow];
-              aValue = A[ia];
-            } else {
-              aValue = A[N * inner + irow];
-            }
-            // printf("W[%d] += S[%d] * T[%d]\n", N * irow + icol, N * inner + irow, ib);
-            C[N * irow + icol] += aValue * bValue;
-          }
+      T bValue;
+      if constexpr (symB) {
+        // Use precomputed index
+        int ib = symMatIndices[inner * N + icol];
+        bValue = B[ib];  // Access the value of symmetric matrix A once
+      } else {
+        bValue = B[N * inner + icol];
       }
+
+      // Use a temporary variable to accumulate values for C
+      for (int irow = 0; irow < N; ++irow) {
+        T aValue;
+        if constexpr (symA) {
+          int ia = symMatIndices[N * inner + irow];
+          aValue = A[ia];
+        } else {
+          aValue = A[N * inner + irow];
+        }
+        // printf("W[%d] += S[%d] * T[%d]\n", N * irow + icol, N * inner + irow,
+        // ib);
+        C[N * irow + icol] += aValue * bValue;
+      }
+    }
   }
 }
 
-template <typename T, int N, bool symA = false, bool symB = false, bool symC = false, bool additive = false>
+template <typename T, int N, bool symA = false, bool symB = false,
+          bool symC = false, bool additive = false>
 A2D_FUNCTION void SymMatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
   // zero the matrix if not additive
   if constexpr (!additive) {
     if constexpr (symC) {
-      std::fill(C, C + N * (N-1)/2, static_cast<T>(0));
+      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
     } else {
       std::fill(C, C + N * N, static_cast<T>(0));
     }
@@ -169,10 +177,10 @@ A2D_FUNCTION void SymMatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
   std::array<int, N * N> symMatIndices;
   int index = 0;
   for (int i = 0; i < N; ++i) {
-      for (int j = i; j < N; ++j, ++index) {
-          symMatIndices[i * N + j] = index;
-          symMatIndices[j * N + i] = index;
-      }
+    for (int j = i; j < N; ++j, ++index) {
+      symMatIndices[i * N + j] = index;
+      symMatIndices[j * N + i] = index;
+    }
   }
 
   // Compute Mat A * SymMat B^T => C
@@ -181,69 +189,71 @@ A2D_FUNCTION void SymMatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
   if constexpr (symC) {
     for (int inner = 0; inner < N; ++inner) {
       int col_start;
-      if constexpr (symB) { // had extra halfDiag bool here before, only shows up jin reverse mode stuff
+      if constexpr (symB) {  // had extra halfDiag bool here before, only shows
+                             // up jin reverse mode stuff
         col_start = inner;
       } else {
         col_start = 0;
       }
       // int col_start = 0;
       for (int icol = col_start; icol < N; ++icol) {
-            // Use precomputed index (because transpose)
-            T bValue;
-            if constexpr (symB) {
-              int ib = symMatIndices[icol * N + inner];
-              bValue = B[ib];
-            } else {
-              bValue = B[N * icol + inner];
-            }
-            
-            // Use a temporary variable to accumulate values for C
-            for (int irow = 0; irow < N; ++irow) {
-              int ic = symMatIndices[N * irow + icol];
-              C[ic] += A[N * irow + inner] * bValue;
-            }
+        // Use precomputed index (because transpose)
+        T bValue;
+        if constexpr (symB) {
+          int ib = symMatIndices[icol * N + inner];
+          bValue = B[ib];
+        } else {
+          bValue = B[N * icol + inner];
         }
+
+        // Use a temporary variable to accumulate values for C
+        for (int irow = 0; irow < N; ++irow) {
+          int ic = symMatIndices[N * irow + icol];
+          C[ic] += A[N * irow + inner] * bValue;
+        }
+      }
     }
-  } else  { // C output is not symmetric
+  } else {  // C output is not symmetric
     for (int inner = 0; inner < N; ++inner) {
       int col_start;
-      if constexpr (symB) { // had extra halfDiag bool here before, only shows up jin reverse mode stuff
+      if constexpr (symB) {  // had extra halfDiag bool here before, only shows
+                             // up jin reverse mode stuff
         col_start = inner;
       } else {
         col_start = 0;
       }
       // int col_start = 0;
       for (int icol = col_start; icol < N; ++icol) {
-            // Use precomputed index (because transpose)
-            T bValue;
-            if constexpr (symB) {
-              int ib = symMatIndices[icol * N + inner];
-              bValue = B[ib];
-            } else {
-              bValue = B[N * icol + inner];
-            }
-
-            for (int irow = 0; irow < N; ++irow) {
-              C[N * irow + icol] += A[N * irow + inner] * bValue;
-            }
+        // Use precomputed index (because transpose)
+        T bValue;
+        if constexpr (symB) {
+          int ib = symMatIndices[icol * N + inner];
+          bValue = B[ib];
+        } else {
+          bValue = B[N * icol + inner];
         }
+
+        for (int irow = 0; irow < N; ++irow) {
+          C[N * irow + icol] += A[N * irow + inner] * bValue;
+        }
+      }
     }
   }
 }
 
 template <typename T, int N>
-A2D_FUNCTION void SymMatRotateFrame(const Mat<T,N,N> &A, const SymMat<T,N> &B, SymMat<T,N> &C) {
+A2D_FUNCTION void SymMatRotateFrame(const Mat<T, N, N>& A,
+                                    const SymMat<T, N>& B, SymMat<T, N>& C) {
   Mat<T, N, N> Ctemp;
   // Ctemp = A^T * B
-  SymMatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+  SymMatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
   // C = Ctemp * A
-  SymMatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+  SymMatMatSquareMult<T, N>(get_data(Ctemp), get_data(A), get_data(C));
 }
 
 template <class Atype, class Btype, class Ctype>
 class SymMatRotateFrameExpr {
  public:
-
   // Extract the numeric type to use
   typedef typename get_object_numeric_type<Ctype>::type T;
 
@@ -258,10 +268,9 @@ class SymMatRotateFrameExpr {
   static constexpr int P = get_symmatrix_size<Ctype>::size;
 
   // check all square matrices
-  static_assert(
-    (N == M) && (M == K) && (K == P),
-    "all matrices in MatRotateFrameExpr must be same N x N square matrix size."
-  );
+  static_assert((N == M) && (M == K) && (K == P),
+                "all matrices in MatRotateFrameExpr must be same N x N square "
+                "matrix size.");
 
   // Get the types of the matrices
   static constexpr ADiffType adA = get_diff_type<Atype>::diff_type;
@@ -276,9 +285,9 @@ class SymMatRotateFrameExpr {
   A2D_FUNCTION void eval() {
     Mat<T, N, N> Ctemp;
     // Ctemp = A^T * B
-    SymMatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+    SymMatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
     // C = Ctemp * A
-    SymMatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+    SymMatMatSquareMult<T, N>(get_data(Ctemp), get_data(A), get_data(C));
   }
 
   A2D_FUNCTION void bzero() { C.bzero(); }
@@ -298,29 +307,43 @@ class SymMatRotateFrameExpr {
     if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, false>(
+          get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, true>(
+          get_data(Ctemp), GetSeed<seed>::get_data(A),
+          GetSeed<seed>::get_data(C));
       // Bdot term
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, true>(
+          get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
 
     } else if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, false>(
+          get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
       // Adot term2
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          get_data(A), get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, true>(
+          get_data(Ctemp), GetSeed<seed>::get_data(A),
+          GetSeed<seed>::get_data(C));
 
     } else if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Bdot term
-      SymMatMatLeftTrSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      SymMatMatSquareMult<T,N,false,false,true,false>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      SymMatMatLeftTrSquareMult<T, N, false, true, false, false>(
+          get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
+      SymMatMatSquareMult<T, N, false, false, true, false>(
+          get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
     }
   }
 
@@ -330,18 +353,26 @@ class SymMatRotateFrameExpr {
       Mat<T, N, N> temp;
       // full expression: Abar += B^T * A * Cbar + B * A * Cbar^T
       // first term B^T * A * Cbar
-      SymMatMatLeftTrSquareMult<T,N,true,false,false,false>(get_data(B), get_data(A), get_data(temp));
-      SymMatMatSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::b>::get_data(A));
+      SymMatMatLeftTrSquareMult<T, N, true, false, false, false>(
+          get_data(B), get_data(A), get_data(temp));
+      SymMatMatSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::b>::get_data(A));
 
       // second term B * A * Cbar^T added in
-      SymMatMatSquareMult<T,N,true,false,false,false>(get_data(B), get_data(A), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::b>::get_data(A));
+      SymMatMatSquareMult<T, N, true, false, false, false>(
+          get_data(B), get_data(A), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::b>::get_data(A));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // full expresion Bbar += A * Cbar * A^T
-      SymMatMatSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,false,true,true>(get_data(temp), get_data(A), GetSeed<ADseed::b>::get_data(B));
+      SymMatMatSquareMult<T, N, false, true, false, false>(
+          get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, false, true, true>(
+          get_data(temp), get_data(A), GetSeed<ADseed::b>::get_data(B));
     }
   }
 
@@ -352,38 +383,52 @@ class SymMatRotateFrameExpr {
                   "hreverse() can be called for only second order objects.");
 
     // HJP backpropagation based on Aaron's paper and my ppt
-    // 
+    //
     // Ahat += B^T * A * Chat + B * A * Chat^T +
     //         Bdot^T * A * Cbar + Bdot * A * Cbar^T +
     //         B^T * Adot * Cbar + B * Adot * Cbar^T
-    // 
+    //
     // Bhat += A * Chat * A^T +
     //         Adot * Cbar * A^T + A * Cbar * Adot^T
 
     if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // term1 for Ahat : B^T * A * Chat
-      SymMatMatLeftTrSquareMult<T,N,true,false,false,false>(get_data(B), get_data(A), get_data(temp));
-      SymMatMatSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatLeftTrSquareMult<T, N, true, false, false, false>(
+          get_data(B), get_data(A), get_data(temp));
+      SymMatMatSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::h>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
 
       // term2 for Ahat : B * A * Chat^T
-      SymMatMatSquareMult<T,N,true,false,false,false>(get_data(B), get_data(A), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatSquareMult<T, N, true, false, false, false>(
+          get_data(B), get_data(A), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::h>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
 
       // term 5 for Ahat : B^T * Adot * Cbar
-      SymMatMatLeftTrSquareMult<T,N,true,false,false,false>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
-      SymMatMatSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatLeftTrSquareMult<T, N, true, false, false, false>(
+          get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
+      SymMatMatSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
 
       // term 6 for Ahat : B * Adot * Cbar^T
-      SymMatMatSquareMult<T,N,true,false,false,false>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatSquareMult<T, N, true, false, false, false>(
+          get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
     }
 
     if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // term 1 for Bhat : A * Chat * A^T
-      SymMatMatSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<ADseed::h>::get_data(C), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,false,true,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
+      SymMatMatSquareMult<T, N, false, true, false, false>(
+          get_data(A), GetSeed<ADseed::h>::get_data(C), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, false, true, true>(
+          get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
     }
 
     if constexpr (adA == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
@@ -391,20 +436,32 @@ class SymMatRotateFrameExpr {
       Mat<T, N, N> temp;
 
       // term3 for Ahat : Bdot^T * A * Cbar
-      SymMatMatLeftTrSquareMult<T,N,true,false,false,false>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
-      SymMatMatSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatLeftTrSquareMult<T, N, true, false, false, false>(
+          GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
+      SymMatMatSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
 
       // term4 for Ahat : Bdot * A * Cbar^T
-      SymMatMatSquareMult<T,N,true,false,false,false>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,true,false,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      SymMatMatSquareMult<T, N, true, false, false, false>(
+          GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, true, false, true>(
+          get_data(temp), GetSeed<ADseed::b>::get_data(C),
+          GetSeed<ADseed::h>::get_data(A));
 
       // term2 for Bhat : Adot * Cbar * A^T
-      SymMatMatSquareMult<T,N,false,true,false,false>(GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,false,true,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
+      SymMatMatSquareMult<T, N, false, true, false, false>(
+          GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::b>::get_data(C),
+          get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, false, true, true>(
+          get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
 
       // term3 for Bhat : A * Cbar * Adot^T
-      SymMatMatSquareMult<T,N,false,true,false,false>(get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      SymMatMatRightTrSquareMult<T,N,false,false,true,true>(get_data(temp), GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::h>::get_data(B));
+      SymMatMatSquareMult<T, N, false, true, false, false>(
+          get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
+      SymMatMatRightTrSquareMult<T, N, false, false, true, true>(
+          get_data(temp), GetSeed<ADseed::p>::get_data(A),
+          GetSeed<ADseed::h>::get_data(B));
     }
   }
 
@@ -416,32 +473,40 @@ class SymMatRotateFrameExpr {
 
 // all implementations
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(ADObj<Atype>& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
-  return SymMatRotateFrameExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
+A2D_FUNCTION auto SymMatRotateFrame(ADObj<Atype>& A, ADObj<Btype>& B,
+                                    ADObj<Ctype>& C) {
+  return SymMatRotateFrameExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B,
+                                                                         C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(ADObj<Atype>& A, Btype &B, ADObj<Ctype>& C) {
+A2D_FUNCTION auto SymMatRotateFrame(ADObj<Atype>& A, Btype& B,
+                                    ADObj<Ctype>& C) {
   return SymMatRotateFrameExpr<ADObj<Atype>, Btype, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(Atype &A, ADObj<Btype>& B, ADObj<Ctype>& C) {
+A2D_FUNCTION auto SymMatRotateFrame(Atype& A, ADObj<Btype>& B,
+                                    ADObj<Ctype>& C) {
   return SymMatRotateFrameExpr<Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(A2DObj<Atype>& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
-  return SymMatRotateFrameExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
+A2D_FUNCTION auto SymMatRotateFrame(A2DObj<Atype>& A, A2DObj<Btype>& B,
+                                    A2DObj<Ctype>& C) {
+  return SymMatRotateFrameExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(
+      A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(A2DObj<Atype>& A, Btype &B, A2DObj<Ctype>& C) {
+A2D_FUNCTION auto SymMatRotateFrame(A2DObj<Atype>& A, Btype& B,
+                                    A2DObj<Ctype>& C) {
   return SymMatRotateFrameExpr<A2DObj<Atype>, Btype, A2DObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto SymMatRotateFrame(Atype& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
+A2D_FUNCTION auto SymMatRotateFrame(Atype& A, A2DObj<Btype>& B,
+                                    A2DObj<Ctype>& C) {
   return SymMatRotateFrameExpr<Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
@@ -449,7 +514,7 @@ namespace Test {
 
 template <typename T, int N>
 class SymMatRotateFrameTest
-    : public A2DTest<T, SymMat<T,N>, Mat<T, N, N>, SymMat<T, N>> {
+    : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>, SymMat<T, N>> {
  public:
   using Input = VarTuple<T, Mat<T, N, N>, SymMat<T, N>>;
   using Output = VarTuple<T, SymMat<T, N>>;
@@ -464,7 +529,7 @@ class SymMatRotateFrameTest
   // Evaluate the matrix-matrix product
   Output eval(const Input& x) {
     Mat<T, N, N> A;
-    SymMat<T,N> B, C;
+    SymMat<T, N> B, C;
 
     x.get_values(A, B);
     SymMatRotateFrame(A, B, C);
@@ -474,7 +539,7 @@ class SymMatRotateFrameTest
   // Compute the derivative
   void deriv(const Output& seed, const Input& x, Input& g) override {
     ADObj<Mat<T, N, N>> A;
-    ADObj<SymMat<T,N>> B, C;
+    ADObj<SymMat<T, N>> B, C;
 
     x.get_values(A.value(), B.value());
     auto stack = MakeStack(SymMatRotateFrame(A, B, C));
@@ -487,7 +552,7 @@ class SymMatRotateFrameTest
   void hprod(const Output& seed, const Output& hval, const Input& x,
              const Input& p, Input& h) override {
     A2DObj<Mat<T, N, N>> A;
-    A2DObj<SymMat<T,N>> B, C;
+    A2DObj<SymMat<T, N>> B, C;
 
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());
@@ -499,7 +564,8 @@ class SymMatRotateFrameTest
   }
 };
 
-bool SymMatRotateFrameTestAll(bool component = false, bool write_output = true) {
+bool SymMatRotateFrameTestAll(bool component = false,
+                              bool write_output = true) {
   using Tc = std::complex<double>;
 
   bool passed = true;

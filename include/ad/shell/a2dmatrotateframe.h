@@ -17,32 +17,35 @@ namespace A2D {
 
 template <typename T, int N, bool additive = false>
 A2D_FUNCTION void MatMatSquareMult(const T A[], const T B[], T C[]) {
-  MatMatMultCore<T,N,N,N,N,N,N,MatOp::NORMAL,MatOp::NORMAL, additive>(A,B,C);
+  MatMatMultCore<T, N, N, N, N, N, N, MatOp::NORMAL, MatOp::NORMAL, additive>(
+      A, B, C);
 }
 
 template <typename T, int N, bool additive = false>
 A2D_FUNCTION void MatMatLeftTrSquareMult(const T A[], const T B[], T C[]) {
-  MatMatMultCore<T,N,N,N,N,N,N,MatOp::TRANSPOSE,MatOp::NORMAL, additive>(A,B,C);
+  MatMatMultCore<T, N, N, N, N, N, N, MatOp::TRANSPOSE, MatOp::NORMAL,
+                 additive>(A, B, C);
 }
 
 template <typename T, int N, bool additive = false>
 A2D_FUNCTION void MatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
-  MatMatMultCore<T,N,N,N,N,N,N,MatOp::NORMAL,MatOp::TRANSPOSE, additive>(A,B,C);
+  MatMatMultCore<T, N, N, N, N, N, N, MatOp::NORMAL, MatOp::TRANSPOSE,
+                 additive>(A, B, C);
 }
 
 template <typename T, int N>
-A2D_FUNCTION void MatRotateFrame(const Mat<T,N,N> &A, const Mat<T,N,N> &B, Mat<T,N,N> &C) {
+A2D_FUNCTION void MatRotateFrame(const Mat<T, N, N>& A, const Mat<T, N, N>& B,
+                                 Mat<T, N, N>& C) {
   Mat<T, N, N> Ctemp;
   // Ctemp = A^T * B
-  MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+  MatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
   // C = Ctemp * A
-  MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+  MatMatSquareMult<T, N>(get_data(Ctemp), get_data(A), get_data(C));
 }
 
 template <class Atype, class Btype, class Ctype>
 class MatRotateFrameExpr {
  public:
-
   // Extract the numeric type to use
   typedef typename get_object_numeric_type<Ctype>::type T;
 
@@ -59,10 +62,9 @@ class MatRotateFrameExpr {
   static constexpr int Q = get_matrix_columns<Ctype>::size;
 
   // check all square matrices
-  static_assert(
-    (N == M) && (M == K) && (K == L) && (L == P) && (P == Q),
-    "all matrices in MatRotateFrameExpr must be same N x N square matrix size."
-  );
+  static_assert((N == M) && (M == K) && (K == L) && (L == P) && (P == Q),
+                "all matrices in MatRotateFrameExpr must be same N x N square "
+                "matrix size.");
 
   // Get the types of the matrices
   static constexpr ADiffType adA = get_diff_type<Atype>::diff_type;
@@ -77,9 +79,9 @@ class MatRotateFrameExpr {
   A2D_FUNCTION void eval() {
     Mat<T, N, N> Ctemp;
     // Ctemp = A^T * B
-    MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
+    MatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
     // C = Ctemp * A
-    MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), get_data(C));
+    MatMatSquareMult<T, N>(get_data(Ctemp), get_data(A), get_data(C));
   }
 
   A2D_FUNCTION void bzero() { C.bzero(); }
@@ -98,29 +100,39 @@ class MatRotateFrameExpr {
     if constexpr (adA == ADiffType::ACTIVE and adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(GetSeed<seed>::get_data(A), get_data(B),
+                                   get_data(Ctemp));
+      MatMatSquareMult<T, N>(get_data(Ctemp), get_data(A),
+                             GetSeed<seed>::get_data(C));
       // Adot term2
-      MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
+      MatMatSquareMult<T, N, true>(get_data(Ctemp), GetSeed<seed>::get_data(A),
+                                   GetSeed<seed>::get_data(C));
       // Bdot term
-      MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(get_data(A), GetSeed<seed>::get_data(B),
+                                   get_data(Ctemp));
+      MatMatSquareMult<T, N, true>(get_data(Ctemp), get_data(A),
+                                   GetSeed<seed>::get_data(C));
 
     } else if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Adot term1
-      MatMatLeftTrSquareMult<T,N>(GetSeed<seed>::get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(GetSeed<seed>::get_data(A), get_data(B),
+                                   get_data(Ctemp));
+      MatMatSquareMult<T, N>(get_data(Ctemp), get_data(A),
+                             GetSeed<seed>::get_data(C));
       // Adot term2
-      MatMatLeftTrSquareMult<T,N>(get_data(A), get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N,true>(get_data(Ctemp), GetSeed<seed>::get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(get_data(A), get_data(B), get_data(Ctemp));
+      MatMatSquareMult<T, N, true>(get_data(Ctemp), GetSeed<seed>::get_data(A),
+                                   GetSeed<seed>::get_data(C));
 
     } else if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> Ctemp;
       // Bdot term
-      MatMatLeftTrSquareMult<T,N>(get_data(A), GetSeed<seed>::get_data(B), get_data(Ctemp));
-      MatMatSquareMult<T,N>(get_data(Ctemp), get_data(A), GetSeed<seed>::get_data(C));
+      MatMatLeftTrSquareMult<T, N>(get_data(A), GetSeed<seed>::get_data(B),
+                                   get_data(Ctemp));
+      MatMatSquareMult<T, N>(get_data(Ctemp), get_data(A),
+                             GetSeed<seed>::get_data(C));
     }
   }
 
@@ -129,18 +141,24 @@ class MatRotateFrameExpr {
       Mat<T, N, N> temp;
       // full expression: Abar += B^T * A * Cbar + B * A * Cbar^T
       // first term B^T * A * Cbar
-      MatMatLeftTrSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
-      MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::b>::get_data(A));
+      MatMatLeftTrSquareMult<T, N>(get_data(B), get_data(A), get_data(temp));
+      MatMatSquareMult<T, N, true>(get_data(temp),
+                                   GetSeed<ADseed::b>::get_data(C),
+                                   GetSeed<ADseed::b>::get_data(A));
 
       // second term B * A * Cbar^T added in
-      MatMatSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::b>::get_data(A));
+      MatMatSquareMult<T, N>(get_data(B), get_data(A), get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp),
+                                          GetSeed<ADseed::b>::get_data(C),
+                                          GetSeed<ADseed::b>::get_data(A));
     }
     if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // full expresion Bbar += A * Cbar * A^T
-      MatMatSquareMult<T,N>(get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), get_data(A), GetSeed<ADseed::b>::get_data(B));
+      MatMatSquareMult<T, N>(get_data(A), GetSeed<ADseed::b>::get_data(C),
+                             get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp), get_data(A),
+                                          GetSeed<ADseed::b>::get_data(B));
     }
   }
 
@@ -151,38 +169,50 @@ class MatRotateFrameExpr {
                   "hreverse() can be called for only second order objects.");
 
     // HJP backpropagation based on Aaron's paper and my ppt
-    // 
+    //
     // Ahat += B^T * A * Chat + B * A * Chat^T +
     //         Bdot^T * A * Cbar + Bdot * A * Cbar^T +
     //         B^T * Adot * Cbar + B * Adot * Cbar^T
-    // 
+    //
     // Bhat += A * Chat * A^T +
     //         Adot * Cbar * A^T + A * Cbar * Adot^T
 
     if constexpr (adA == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // term1 for Ahat : B^T * A * Chat
-      MatMatLeftTrSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
-      MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatLeftTrSquareMult<T, N>(get_data(B), get_data(A), get_data(temp));
+      MatMatSquareMult<T, N, true>(get_data(temp),
+                                   GetSeed<ADseed::h>::get_data(C),
+                                   GetSeed<ADseed::h>::get_data(A));
 
       // term2 for Ahat : B * A * Chat^T
-      MatMatSquareMult<T,N>(get_data(B), get_data(A), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::h>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatSquareMult<T, N>(get_data(B), get_data(A), get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp),
+                                          GetSeed<ADseed::h>::get_data(C),
+                                          GetSeed<ADseed::h>::get_data(A));
 
       // term 5 for Ahat : B^T * Adot * Cbar
-      MatMatLeftTrSquareMult<T,N>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
-      MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatLeftTrSquareMult<T, N>(get_data(B), GetSeed<ADseed::p>::get_data(A),
+                                   get_data(temp));
+      MatMatSquareMult<T, N, true>(get_data(temp),
+                                   GetSeed<ADseed::b>::get_data(C),
+                                   GetSeed<ADseed::h>::get_data(A));
 
       // term 6 for Ahat : B * Adot * Cbar^T
-      MatMatSquareMult<T,N>(get_data(B), GetSeed<ADseed::p>::get_data(A), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatSquareMult<T, N>(get_data(B), GetSeed<ADseed::p>::get_data(A),
+                             get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp),
+                                          GetSeed<ADseed::b>::get_data(C),
+                                          GetSeed<ADseed::h>::get_data(A));
     }
 
     if constexpr (adB == ADiffType::ACTIVE) {
       Mat<T, N, N> temp;
       // term 1 for Bhat : A * Chat * A^T
-      MatMatSquareMult<T,N>(get_data(A), GetSeed<ADseed::h>::get_data(C), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
+      MatMatSquareMult<T, N>(get_data(A), GetSeed<ADseed::h>::get_data(C),
+                             get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp), get_data(A),
+                                          GetSeed<ADseed::h>::get_data(B));
     }
 
     if constexpr (adA == ADiffType::ACTIVE && adB == ADiffType::ACTIVE) {
@@ -190,20 +220,31 @@ class MatRotateFrameExpr {
       Mat<T, N, N> temp;
 
       // term3 for Ahat : Bdot^T * A * Cbar
-      MatMatLeftTrSquareMult<T,N>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
-      MatMatSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatLeftTrSquareMult<T, N>(GetSeed<ADseed::p>::get_data(B), get_data(A),
+                                   get_data(temp));
+      MatMatSquareMult<T, N, true>(get_data(temp),
+                                   GetSeed<ADseed::b>::get_data(C),
+                                   GetSeed<ADseed::h>::get_data(A));
 
       // term4 for Ahat : Bdot * A * Cbar^T
-      MatMatSquareMult<T,N>(GetSeed<ADseed::p>::get_data(B), get_data(A), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::b>::get_data(C), GetSeed<ADseed::h>::get_data(A));
+      MatMatSquareMult<T, N>(GetSeed<ADseed::p>::get_data(B), get_data(A),
+                             get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp),
+                                          GetSeed<ADseed::b>::get_data(C),
+                                          GetSeed<ADseed::h>::get_data(A));
 
       // term2 for Bhat : Adot * Cbar * A^T
-      MatMatSquareMult<T,N>(GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), get_data(A), GetSeed<ADseed::h>::get_data(B));
+      MatMatSquareMult<T, N>(GetSeed<ADseed::p>::get_data(A),
+                             GetSeed<ADseed::b>::get_data(C), get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp), get_data(A),
+                                          GetSeed<ADseed::h>::get_data(B));
 
       // term3 for Bhat : A * Cbar * Adot^T
-      MatMatSquareMult<T,N>(get_data(A), GetSeed<ADseed::b>::get_data(C), get_data(temp));
-      MatMatRightTrSquareMult<T,N,true>(get_data(temp), GetSeed<ADseed::p>::get_data(A), GetSeed<ADseed::h>::get_data(B));
+      MatMatSquareMult<T, N>(get_data(A), GetSeed<ADseed::b>::get_data(C),
+                             get_data(temp));
+      MatMatRightTrSquareMult<T, N, true>(get_data(temp),
+                                          GetSeed<ADseed::p>::get_data(A),
+                                          GetSeed<ADseed::h>::get_data(B));
     }
   }
 
@@ -215,27 +256,30 @@ class MatRotateFrameExpr {
 
 // all implementations
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, ADObj<Btype>& B,
+                                 ADObj<Ctype>& C) {
   return MatRotateFrameExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, Btype &B, ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatRotateFrame(ADObj<Atype>& A, Btype& B, ADObj<Ctype>& C) {
   return MatRotateFrameExpr<ADObj<Atype>, Btype, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(Atype &A, ADObj<Btype>& B, ADObj<Ctype>& C) {
+A2D_FUNCTION auto MatRotateFrame(Atype& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatRotateFrameExpr<Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
-  return MatRotateFrameExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
+A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, A2DObj<Btype>& B,
+                                 A2DObj<Ctype>& C) {
+  return MatRotateFrameExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B,
+                                                                         C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, Btype &B, A2DObj<Ctype>& C) {
+A2D_FUNCTION auto MatRotateFrame(A2DObj<Atype>& A, Btype& B, A2DObj<Ctype>& C) {
   return MatRotateFrameExpr<A2DObj<Atype>, Btype, A2DObj<Ctype>>(A, B, C);
 }
 

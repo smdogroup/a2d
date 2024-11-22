@@ -43,7 +43,9 @@ class MatGreenStrainExpr {
   static_assert(get_diff_order<Utype>::order == order,
                 "ADorder does not match");
 
-  A2D_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {}
+  A2D_FUNCTION MatGreenStrainExpr(Utype& Ux, Etype& E) : Ux(Ux), E(E) {
+    // printf("made mat green strain expression\n");
+  }
 
   A2D_FUNCTION void eval() {
     if constexpr (etype == GreenStrainType::LINEAR) {

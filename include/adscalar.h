@@ -164,13 +164,13 @@ class ADScalar {
   }
 
   A2D_FUNCTION inline ADScalar<T, N> operator-() const {
-      T negderivs[N];
-      for (int i = 0; i < N; i++) {
-          negderivs[i] = -deriv[i];
-      }
-      return ADScalar<T, N>(-value, negderivs);  // Return by value, not by reference
+    T negderivs[N];
+    for (int i = 0; i < N; i++) {
+      negderivs[i] = -deriv[i];
+    }
+    return ADScalar<T, N>(-value,
+                          negderivs);  // Return by value, not by reference
   }
-
 
   //  private:
   T value;
@@ -180,7 +180,7 @@ class ADScalar {
 // Addition
 template <class X, int M>
 A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M> &l,
-                                const ADScalar<X, M> &r) {
+                                             const ADScalar<X, M> &r) {
   ADScalar<X, M> out(l.value + r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = l.deriv[i] + r.deriv[i];
@@ -189,19 +189,21 @@ A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M> &l,
 }
 template <class X, int M, class L,
           typename = std::enable_if_t<is_scalar_type<L>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator+(const L &l, const ADScalar<X, M> &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator+(const L &l,
+                                             const ADScalar<X, M> &r) {
   return ADScalar<X, M>(r.value + l, r.deriv);
 }
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M> &l, const R &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M> &l,
+                                             const R &r) {
   return ADScalar<X, M>(l.value + r, l.deriv);
 }
 
 // Subtraction
 template <class X, int M>
 A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M> &l,
-                                const ADScalar<X, M> &r) {
+                                             const ADScalar<X, M> &r) {
   ADScalar<X, M> out(l.value - r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = l.deriv[i] - r.deriv[i];
@@ -210,7 +212,8 @@ A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M> &l,
 }
 template <class X, int M, class L,
           typename = std::enable_if_t<is_scalar_type<L>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator-(const L &l, const ADScalar<X, M> &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator-(const L &l,
+                                             const ADScalar<X, M> &r) {
   ADScalar<X, M> out(l - r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = -r.deriv[i];
@@ -219,14 +222,15 @@ A2D_FUNCTION inline ADScalar<X, M> operator-(const L &l, const ADScalar<X, M> &r
 }
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M> &l, const R &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M> &l,
+                                             const R &r) {
   return ADScalar<X, M>(l.value - r, l.deriv);
 }
 
 // Multiplication
 template <class X, int M>
 A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M> &l,
-                                const ADScalar<X, M> &r) {
+                                             const ADScalar<X, M> &r) {
   ADScalar<X, M> out(l.value * r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = r.value * l.deriv[i] + r.deriv[i] * l.value;
@@ -235,7 +239,8 @@ A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M> &l,
 }
 template <class X, int M, class L,
           typename = std::enable_if_t<is_scalar_type<L>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator*(const L &l, const ADScalar<X, M> &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator*(const L &l,
+                                             const ADScalar<X, M> &r) {
   ADScalar<X, M> out(l * r.value);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = r.deriv[i] * l;
@@ -244,7 +249,8 @@ A2D_FUNCTION inline ADScalar<X, M> operator*(const L &l, const ADScalar<X, M> &r
 }
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M> &l, const R &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M> &l,
+                                             const R &r) {
   ADScalar<X, M> out(l.value * r);
   for (int i = 0; i < M; i++) {
     out.deriv[i] = l.deriv[i] * r;
@@ -255,7 +261,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M> &l, const R &r
 // Division
 template <class X, int M>
 A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M> &l,
-                                const ADScalar<X, M> &r) {
+                                             const ADScalar<X, M> &r) {
   X inv = 1.0 / r.value;
   X inv2 = l.value * inv * inv;
   ADScalar<X, M> out(inv * l.value);
@@ -267,7 +273,8 @@ A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M> &l,
 }
 template <class X, int M, class L,
           typename = std::enable_if_t<is_scalar_type<L>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator/(const L &l, const ADScalar<X, M> &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator/(const L &l,
+                                             const ADScalar<X, M> &r) {
   X inv = 1.0 / r.value;
   X inv2 = l * inv * inv;
   ADScalar<X, M> out(inv * l);
@@ -279,7 +286,8 @@ A2D_FUNCTION inline ADScalar<X, M> operator/(const L &l, const ADScalar<X, M> &r
 }
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
-A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M> &l, const R &r) {
+A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M> &l,
+                                             const R &r) {
   X inv = 1.0 / r;
   ADScalar<X, M> out(inv * l.value);
 
@@ -318,7 +326,8 @@ A2D_FUNCTION inline ADScalar<X, M> sqrt(const ADScalar<X, M> &r) {
 
 template <class X, int M, class R,
           typename = std::enable_if_t<is_scalar_type<R>::value>>
-A2D_FUNCTION inline ADScalar<X, M> pow(const ADScalar<X, M> &r, const R &exponent) {
+A2D_FUNCTION inline ADScalar<X, M> pow(const ADScalar<X, M> &r,
+                                       const R &exponent) {
   // device compatible pow
   X value = ::pow(r.value, exponent);
   ADScalar<X, M> out(value);

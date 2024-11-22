@@ -35,7 +35,7 @@ using get_non_scalar_type_t = typename get_non_scalar_type<Types...>::type;
 template <class T, int N>
 class ADScalar {
  public:
-  // using type = T;
+  using type = T;
 
   A2D_FUNCTION ADScalar() {}
   template <typename R, typename = std::enable_if_t<is_scalar_type<R>::value>>

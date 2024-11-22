@@ -135,9 +135,9 @@ class A2DTest {
    * @return false If the test fails
    */
   bool is_close(const T test_value, const T ref_value) {
-    T abs_err = fabs(std::real(test_value - ref_value));
-    T combo = atol + rtol * fabs(std::real(ref_value));
-    if (std::real(abs_err) > std::real(combo)) {
+    T abs_err = fabs(RealPart(test_value - ref_value));
+    T combo = atol + rtol * fabs(RealPart(ref_value));
+    if (RealPart(abs_err) > RealPart(combo)) {
       return false;
     }
     return true;
@@ -156,14 +156,14 @@ class A2DTest {
     bool passed = is_close(test_value, ref_value);
 
     // Compute the relative error
-    T abs_err = fabs(std::real(test_value - ref_value));
-    T rel_err = fabs(std::real((test_value - ref_value) / ref_value));
+    T abs_err = fabs(RealPart(test_value - ref_value));
+    T rel_err = fabs(RealPart((test_value - ref_value) / ref_value));
 
     out << std::scientific << std::setprecision(9) << str
-        << " AD: " << std::setw(17) << std::real(test_value)
-        << " CS: " << std::setw(17) << std::real(ref_value)
-        << " Rel Err: " << std::setw(17) << std::real(rel_err)
-        << " Abs Err: " << std::setw(17) << std::real(abs_err);
+        << " AD: " << std::setw(17) << RealPart(test_value)
+        << " CS: " << std::setw(17) << RealPart(ref_value)
+        << " Rel Err: " << std::setw(17) << RealPart(rel_err)
+        << " Abs Err: " << std::setw(17) << RealPart(abs_err);
     if (passed) {
       out << "  PASSED." << std::endl;
     } else {
@@ -218,20 +218,20 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
       // Set x1 = x + dh * p1
       double dh = test.get_step_size();
       for (index_t i = 0; i < x.get_num_components(); i++) {
-        x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
+        x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
       }
 
       // Compute the complex-step result: fd = p^{T} * df/dx
       VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
       T fd = 0.0;
       for (index_t i = 0; i < value.get_num_components(); i++) {
-        fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
+        fd += (ImagPart(value[i]) / dh) * RealPart(seed[i]);
       }
 
       // Compute the solution from the AD
       T ans = 0.0;
       for (index_t i = 0; i < x.get_num_components(); i++) {
-        ans += std::real(g[i] * p[i]);
+        ans += RealPart(g[i] * p[i]);
       }
 
       passed = passed && test.is_close(ans, fd);
@@ -257,20 +257,20 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
         // Set x1 = x + dh * p1
         double dh = test.get_step_size();
         for (index_t i = 0; i < x.get_num_components(); i++) {
-          x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
+          x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
         }
 
         // Set the seed and include the second-derivative parts
         VarTuple<A2D_complex_t<T>, Output> seedh;
         for (index_t i = 0; i < seed.get_num_components(); i++) {
           seedh[i] =
-              seed[i] + A2D_complex_t<double>(0.0, std::real(dh * hvalue[i]));
+              seed[i] + A2D_complex_t<double>(0.0, RealPart(dh * hvalue[i]));
         }
         test.deriv(seedh, x1, g);
 
         for (index_t i = 0; i < x.get_num_components(); i++) {
-          T ans = std::real(h[i]);
-          T fd = std::imag(g[i]) / dh;
+          T ans = RealPart(h[i]);
+          T fd = ImagPart(g[i]) / dh;
 
           passed = passed && test.is_close(ans, fd);
 
@@ -297,20 +297,20 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
     // Set x1 = x + dh * p1
     double dh = test.get_step_size();
     for (index_t i = 0; i < x.get_num_components(); i++) {
-      x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
+      x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
     }
 
     // Compute the complex-step result: fd = p^{T} * df/dx
     VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
     T fd = 0.0;
     for (index_t i = 0; i < value.get_num_components(); i++) {
-      fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
+      fd += (ImagPart(value[i]) / dh) * RealPart(seed[i]);
     }
 
     // Compute the solution from the AD
     T ans = 0.0;
     for (index_t i = 0; i < x.get_num_components(); i++) {
-      ans += std::real(g[i] * p[i]);
+      ans += RealPart(g[i] * p[i]);
     }
 
     passed = test.is_close(ans, fd);
@@ -325,13 +325,13 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
       // Set the seed and include the second-derivative parts
       for (index_t i = 0; i < seed.get_num_components(); i++) {
         seed[i] =
-            seed[i] + A2D_complex_t<double>(0.0, std::real(dh * hvalue[i]));
+            seed[i] + A2D_complex_t<double>(0.0, RealPart(dh * hvalue[i]));
       }
       test.deriv(seed, x1, g);
 
       for (index_t i = 0; i < x.get_num_components(); i++) {
-        T ans = std::real(h[i]);
-        T fd = std::imag(g[i]) / dh;
+        T ans = RealPart(h[i]);
+        T fd = ImagPart(g[i]) / dh;
 
         passed = passed && test.is_close(ans, fd);
 

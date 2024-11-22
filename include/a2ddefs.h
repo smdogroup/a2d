@@ -6,7 +6,7 @@
 #include <complex>
 #include <cstdint>
 
-#ifndef __CUDACC_
+#ifndef __CUDACC__
 template <typename T>
 using A2D_complex_t = std::complex<T>;
 #else
@@ -118,6 +118,10 @@ inline double absfunc(double a) {
 inline double RealPart(double a) { return a; }
 
 inline double RealPart(A2D_complex_t<double> a) { return a.real(); }
+
+inline double ImagPart(double a) { return 0.0; }
+
+inline double ImagPart(A2D_complex_t<double> a) { return a.imag(); }
 
 /*
   Remove the const-ness and references for a type
@@ -257,7 +261,11 @@ template <typename T, typename R,
           std::enable_if_t<is_scalar_type<T>::value, bool> = true,
           std::enable_if_t<is_scalar_type<R>::value, bool> = true>
 A2D_FUNCTION T pow(T val, R exponent) {
+#ifndef __CUDACC__
   return std::pow(val, exponent);
+#else
+  return thrust::pow(val, exponent);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
@@ -267,27 +275,65 @@ A2D_FUNCTION T fabs(T val) {
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T sqrt(T val) {
+#ifndef __CUDACC__
   return std::sqrt(val);
+#else
+  return thrust::sqrt(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T exp(T val) {
+#ifndef __CUDACC__
   return std::exp(val);
+#else
+  return thrust::exp(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T log(T val) {
+#ifndef __CUDACC__
   return std::log(val);
+#else
+  return thrust::log(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T sin(T val) {
+#ifndef __CUDACC__
   return std::sin(val);
+#else
+  return thrust::sin(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T asin(T val) {
+#ifndef __CUDACC__
+  return std::asin(val);
+#else
+  return thrust::asin(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T cos(T val) {
+#ifndef __CUDACC__
   return std::cos(val);
+#else
+  return thrust::cos(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T acos(T val) {
+#ifndef __CUDACC__
+  return std::acos(val);
+#else
+  return thrust::acos(val);
+#endif
 }
 
 template <class ForwardIt, class T>

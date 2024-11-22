@@ -13,10 +13,10 @@ A2D_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
   T det = A[0] * A[2] - A[1] * A[1];
 
   // Compute the eigenvalues such that eigs[0] <= eigs[1]
-  if (std::real(tr) > 0.0) {
+  if (RealPart(tr) > 0.0) {
     eigs[1] = 0.5 * (tr + discrm);
     eigs[0] = det / eigs[1];
-  } else if (std::real(tr) < 0.0) {
+  } else if (RealPart(tr) < 0.0) {
     eigs[0] = 0.5 * (tr - discrm);
     eigs[1] = det / eigs[0];
   } else {
@@ -27,8 +27,8 @@ A2D_FUNCTION void SymEigs2x2(const T* A, T* eigs, T* Q = nullptr) {
   if (Q != nullptr) {
     // Compute the eigenvector components
     T u = 1.0, v = 0.0;
-    if (std::real(A[1]) != 0.0) {
-      if (std::real(diff) > 0.0) {
+    if (RealPart(A[1]) != 0.0) {
+      if (RealPart(diff) > 0.0) {
         T a = 0.5 * (diff + discrm);
         T inv = 1.0 / sqrt(a * a + A[1] * A[1]);
         u = inv * A[1];
@@ -76,10 +76,10 @@ A2D_FUNCTION void SymMatTriReduce(T* A, T* alpha, T* beta, T* w,
     for (int i = 0; i < j; i++) {
       sigma += aj[i] * aj[i];
     }
-    sigma = std::sqrt(sigma);
+    sigma = sqrt(sigma);
 
     // Set sigma to reduce round-off error
-    if (std::real(aj[j - 1]) < 0.0) {
+    if (RealPart(aj[j - 1]) < 0.0) {
       sigma *= -1.0;
     }
 
@@ -90,7 +90,7 @@ A2D_FUNCTION void SymMatTriReduce(T* A, T* alpha, T* beta, T* w,
     }
     h += (aj[j - 1] + sigma) * (aj[j - 1] + sigma);
     T hinv = 0.0;
-    if (std::real(h) != 0.0) {
+    if (RealPart(h) != 0.0) {
       hinv = 2.0 / h;
     }
 
@@ -204,9 +204,9 @@ void TriSymEigs(T* alpha, T* beta, T* Q) {
     for (int iter = 0; iter < 30; iter++) {
       int m = j;
       for (; m < N - 1; m++) {
-        double tr = (std::fabs(std::real(alpha[m + 1])) +
-                     std::fabs(std::real(alpha[m])));
-        if (tr + std::fabs(std::real(beta[m])) == tr) {
+        double tr =
+            (std::fabs(RealPart(alpha[m + 1])) + std::fabs(RealPart(alpha[m])));
+        if (tr + std::fabs(RealPart(beta[m])) == tr) {
           break;
         }
       }
@@ -215,10 +215,10 @@ void TriSymEigs(T* alpha, T* beta, T* Q) {
       if (m != j) {
         // Compute whether the shift should be positive or negative
         T g = (alpha[j + 1] - alpha[j]) / (2.0 * beta[j]);
-        T r = std::sqrt(1.0 + g * g);
+        T r = sqrt(1.0 + g * g);
 
         // Compute the shift using the expression with less roundoff error
-        if (std::real(g) >= 0.0) {
+        if (RealPart(g) >= 0.0) {
           g = alpha[m] - alpha[j] + beta[j] / (g + r);
         } else {
           g = alpha[m] - alpha[j] + beta[j] / (g - r);
@@ -230,10 +230,10 @@ void TriSymEigs(T* alpha, T* beta, T* Q) {
         for (; i >= j; i--) {
           T f = s * beta[i];
           T b = c * beta[i];
-          r = std::sqrt(f * f + g * g);
+          r = sqrt(f * f + g * g);
           beta[i + 1] = r;
 
-          if (std::real(r) == 0.0) {
+          if (RealPart(r) == 0.0) {
             alpha[i + 1] -= p;
             beta[m] = 0.0;
             break;
@@ -256,7 +256,7 @@ void TriSymEigs(T* alpha, T* beta, T* Q) {
             }
           }
         }
-        if (std::real(r) == 0.0 && i >= j) {
+        if (RealPart(r) == 0.0 && i >= j) {
           continue;
         }
         alpha[j] -= p;

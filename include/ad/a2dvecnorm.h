@@ -11,7 +11,7 @@ namespace A2D {
 
 template <typename T, int N>
 A2D_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
-  alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+  alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
 }
 
 template <class vtype, class dtype>
@@ -29,7 +29,7 @@ class VecNormExpr {
   A2D_FUNCTION VecNormExpr(vtype &x, dtype &alpha) : x(x), alpha(alpha) {}
 
   A2D_FUNCTION void eval() {
-    get_data(alpha) = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+    get_data(alpha) = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
     inv = 1.0 / get_data(alpha);
   }
   A2D_FUNCTION void bzero() { alpha.bzero(); }
@@ -79,7 +79,7 @@ A2D_FUNCTION auto VecNorm(A2DObj<vtype> &x, A2DObj<dtype> &alpha) {
 
 template <typename T, int N>
 A2D_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
-  T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+  T alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
   VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
 }
 
@@ -106,7 +106,7 @@ class VecNormalizeExpr {
   A2D_FUNCTION VecNormalizeExpr(xtype &x, ytype &y) : x(x), y(y) {}
 
   A2D_FUNCTION void eval() {
-    T alpha = std::sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
+    T alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
     inv = 1.0 / alpha;
     VecScaleCore<T, N>(inv, get_data(x), get_data(y));
   }

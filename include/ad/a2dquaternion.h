@@ -376,7 +376,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   }
 
   for (int i = 0; i < 4; i++) {
-    q(i) = Tc(std::real(q(i)), dh * std::real(qdot(i)));
+    q(i) = Tc(RealPart(q(i)), dh * RealPart(qdot(i)));
   }
 
   // Compute the quaternion matrix and the angular rate
@@ -386,7 +386,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   // Set Cdot
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      Cdot(i, j) = std::imag(C(i, j)) / dh;
+      Cdot(i, j) = ImagPart(C(i, j)) / dh;
     }
   }
 
@@ -409,9 +409,9 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       if (i == j) {
-        err += std::fabs(std::real(A(i, j)) - 1.0);
+        err += std::fabs(RealPart(A(i, j)) - 1.0);
       } else {
-        err += std::fabs(std::real(A(i, j)));
+        err += std::fabs(RealPart(A(i, j)));
       }
 
       if (write_output) {
@@ -430,7 +430,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       Tc ans = OmegaX(i, j) + negOmegaX(i, j);
-      err += std::fabs(std::real(ans));
+      err += std::fabs(RealPart(ans));
 
       if (write_output) {
         test.write_result("omega^{x} + dot{C} * C^{T}", std::cout, ans, 0.0);

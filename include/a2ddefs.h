@@ -10,8 +10,8 @@
 template <typename T>
 using A2D_complex_t = std::complex<T>;
 #else
-// A2D_complex_t is not supported on the GPU, need to use thrust::complex
-// instead
+#include <thrust/fill.h>
+
 #include <cuda/std/complex>
 template <typename T>
 using A2D_complex_t = cuda::std::complex<T>;

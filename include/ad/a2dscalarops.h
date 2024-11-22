@@ -12,7 +12,7 @@ template <class Expr, class T>
 class EvalExpr {
  public:
   A2D_FUNCTION EvalExpr(Expr&& expr, ADObj<T>& out)
-      : expr(std::forward<Expr>(expr)), out(out) {}
+      : expr(a2d_forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -41,14 +41,14 @@ class EvalExpr {
 
 template <class Expr, class T>
 auto Eval(Expr&& expr, ADObj<T>& out) {
-  return EvalExpr<Expr, T>(std::forward<Expr>(expr), out);
+  return EvalExpr<Expr, T>(a2d_forward<Expr>(expr), out);
 }
 
 template <class Expr, class T>
 class EvalExpr2 {
  public:
   A2D_FUNCTION EvalExpr2(Expr&& expr, A2DObj<T>& out)
-      : expr(std::forward<Expr>(expr)), out(out) {}
+      : expr(a2d_forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -85,7 +85,7 @@ class EvalExpr2 {
 
 template <class Expr, class T>
 auto Eval(Expr&& expr, A2DObj<T>& out) {
-  return EvalExpr2<Expr, T>(std::forward<Expr>(expr), out);
+  return EvalExpr2<Expr, T>(a2d_forward<Expr>(expr), out);
 }
 
 namespace Test {

@@ -68,25 +68,28 @@ A2D_FUNCTION T min2(const T a, const T b) {
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {     \
+  A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
+                                    const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {           \
+  A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
+                                    ADExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {           \
+  A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a,                        \
+                                    const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {                 \
+  A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {    \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }
@@ -149,25 +152,28 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {     \
+  A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
+                                    const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {           \
+  A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
+                                    ADExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(ADExpr<A, Ta>& a, const ADExpr<B, Tb>& b) {           \
+  A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a,                        \
+                                    const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {                 \
+  A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {    \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }
@@ -257,25 +263,28 @@ A2D_1ST_BINARY(Min, min2,
   };                                                                          \
   template <class A, class Ta, class B, class Tb,                             \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
-  inline auto OPERNAME(const A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {    \
+  A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                  \
+                                    const A2DExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                        \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
-  inline auto OPERNAME(const A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {          \
+  A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                  \
+                                    A2DExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                       \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
-  inline auto OPERNAME(A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {          \
+  A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a,                        \
+                                    const A2DExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                       \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
-  inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {                \
+  A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {   \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                      \
   }
@@ -361,25 +370,28 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {   \
+  A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                 \
+                                    const A2DExpr<B, Tb>& b) {               \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(const A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {         \
+  A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                 \
+                                    A2DExpr<B, Tb>& b) {                     \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(A2DExpr<A, Ta>& a, const A2DExpr<B, Tb>& b) {         \
+  A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a,                       \
+                                    const A2DExpr<B, Tb>& b) {               \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
             std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
-  inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {               \
+  A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {  \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
   }

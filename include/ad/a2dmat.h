@@ -157,8 +157,8 @@ class SymMat {
     }
   }
 
-  T* get_data() { return A; }
-  const T* get_data() const { return A; }
+  A2D_FUNCTION T* get_data() { return A; }
+  A2D_FUNCTION const T* get_data() const { return A; }
 
   template <typename I>
   A2D_FUNCTION T& operator[](const I i) {

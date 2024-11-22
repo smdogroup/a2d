@@ -40,7 +40,7 @@ class EvalExpr {
 };
 
 template <class Expr, class T>
-auto Eval(Expr&& expr, ADObj<T>& out) {
+A2D_FUNCTION auto Eval(Expr&& expr, ADObj<T>& out) {
   return EvalExpr<Expr, T>(a2d_forward<Expr>(expr), out);
 }
 
@@ -84,7 +84,7 @@ class EvalExpr2 {
 };
 
 template <class Expr, class T>
-auto Eval(Expr&& expr, A2DObj<T>& out) {
+A2D_FUNCTION auto Eval(Expr&& expr, A2DObj<T>& out) {
   return EvalExpr2<Expr, T>(a2d_forward<Expr>(expr), out);
 }
 

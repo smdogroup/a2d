@@ -49,8 +49,8 @@ class Vec {
     return V[i];
   }
 
-  T* get_data() { return V; }
-  const T* get_data() const { return V; }
+  A2D_FUNCTION T* get_data() { return V; }
+  A2D_FUNCTION const T* get_data() const { return V; }
 
   template <typename I>
   A2D_FUNCTION T& operator[](const I i) {

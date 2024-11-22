@@ -99,7 +99,7 @@ A2D_FUNCTION double fmt(A2D_complex_t<T> val) {
 
 A2D_FUNCTION inline double fmt(double val) { return val; }
 
-inline double absfunc(A2D_complex_t<double> a) {
+A2D_FUNCTION inline double absfunc(A2D_complex_t<double> a) {
   if (a.real() >= 0.0) {
     return a.real();
   } else {
@@ -107,7 +107,7 @@ inline double absfunc(A2D_complex_t<double> a) {
   }
 }
 
-inline double absfunc(double a) {
+A2D_FUNCTION inline double absfunc(double a) {
   if (a >= 0.0) {
     return a;
   } else {
@@ -115,13 +115,17 @@ inline double absfunc(double a) {
   }
 }
 
-inline double RealPart(double a) { return a; }
+A2D_FUNCTION inline double RealPart(double a) { return a; }
 
-inline double RealPart(A2D_complex_t<double> a) { return a.real(); }
+A2D_FUNCTION inline double RealPart(A2D_complex_t<double> a) {
+  return a.real();
+}
 
-inline double ImagPart(double a) { return 0.0; }
+A2D_FUNCTION inline double ImagPart(double a) { return 0.0; }
 
-inline double ImagPart(A2D_complex_t<double> a) { return a.imag(); }
+A2D_FUNCTION inline double ImagPart(A2D_complex_t<double> a) {
+  return a.imag();
+}
 
 /*
   Remove the const-ness and references for a type

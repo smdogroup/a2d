@@ -752,7 +752,7 @@ template <class T, int N>
 struct __is_numeric_type<ADScalar<T, N>> : std::is_floating_point<T> {};
 
 template <class T, int N>
-struct __is_numeric_type<ADScalar<std::complex<T>, N>>
+struct __is_numeric_type<ADScalar<A2D_complex_t<T>, N>>
     : std::is_floating_point<T> {};
 
 template <int N>
@@ -761,8 +761,8 @@ struct __get_object_numeric_type<ADScalar<double, N>> {
 };
 
 template <int N>
-struct __get_object_numeric_type<ADScalar<std::complex<double>, N>> {
-  using type = ADScalar<std::complex<double>, N>;
+struct __get_object_numeric_type<ADScalar<A2D_complex_t<double>, N>> {
+  using type = ADScalar<A2D_complex_t<double>, N>;
 };
 
 template <typename T, int N,

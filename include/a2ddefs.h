@@ -5,8 +5,17 @@
 #include <cmath>
 #include <complex>
 #include <cstdint>
+
+#ifndef __CUDACC_
 template <typename T>
 using A2D_complex_t = std::complex<T>;
+#else
+// A2D_complex_t is not supported on the GPU, need to use thrust::complex
+// instead
+#include "thrust/complex.h"
+template <typename T>
+using A2D_complex_t = thrust::complex<T>;
+#endif
 
 // CUDA headers
 #ifndef A2D_FUNCTION
@@ -124,7 +133,7 @@ template <class T>
 struct __is_numeric_type : std::is_floating_point<T> {};
 
 template <class T>
-struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
+struct __is_numeric_type<A2D_complex_t<T>> : std::is_floating_point<T> {};
 
 template <class T>
 struct is_numeric_type
@@ -153,15 +162,15 @@ struct __get_object_numeric_type<double> {
 };
 
 template <>
-struct __get_object_numeric_type<std::complex<double>> {
-  using type = std::complex<double>;
+struct __get_object_numeric_type<A2D_complex_t<double>> {
+  using type = A2D_complex_t<double>;
 };
 
 /*
   Get the numeric type of the underlying object.
 
   All A2D numeric objects must either be scalar values (float, double,
-  std::complex) or must use a typedef statement to define the static scalar
+  A2D_complex_t) or must use a typedef statement to define the static scalar
   type.
 */
 template <class T>
@@ -182,7 +191,7 @@ struct __get_a2d_object_type<double> {
 };
 
 template <>
-struct __get_a2d_object_type<std::complex<double>> {
+struct __get_a2d_object_type<A2D_complex_t<double>> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 

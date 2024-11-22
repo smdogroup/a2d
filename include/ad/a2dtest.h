@@ -182,11 +182,11 @@ class A2DTest {
  * Run the AD test
  */
 template <typename T, class Output, class... Inputs>
-bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
+bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
          bool component = false, bool write_output = true) {
   // Declare all of the variables needed
-  VarTuple<std::complex<T>, Inputs...> x, g, x1, p, h;
-  VarTuple<std::complex<T>, Output> seed, hvalue;
+  VarTuple<A2D_complex_t<T>, Inputs...> x, g, x1, p, h;
+  VarTuple<A2D_complex_t<T>, Output> seed, hvalue;
 
   TestType test_type = test.get_test_type();
   if (test_type == TestType::FIRST_ORDER_INTEGRATION ||
@@ -218,11 +218,11 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
       // Set x1 = x + dh * p1
       double dh = test.get_step_size();
       for (index_t i = 0; i < x.get_num_components(); i++) {
-        x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+        x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
       }
 
       // Compute the complex-step result: fd = p^{T} * df/dx
-      VarTuple<std::complex<T>, Output> value = test.eval(x1);
+      VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
       T fd = 0.0;
       for (index_t i = 0; i < value.get_num_components(); i++) {
         fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
@@ -257,14 +257,14 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
         // Set x1 = x + dh * p1
         double dh = test.get_step_size();
         for (index_t i = 0; i < x.get_num_components(); i++) {
-          x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+          x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
         }
 
         // Set the seed and include the second-derivative parts
-        VarTuple<std::complex<T>, Output> seedh;
+        VarTuple<A2D_complex_t<T>, Output> seedh;
         for (index_t i = 0; i < seed.get_num_components(); i++) {
           seedh[i] =
-              seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+              seed[i] + A2D_complex_t<double>(0.0, std::real(dh * hvalue[i]));
         }
         test.deriv(seedh, x1, g);
 
@@ -297,11 +297,11 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
     // Set x1 = x + dh * p1
     double dh = test.get_step_size();
     for (index_t i = 0; i < x.get_num_components(); i++) {
-      x1[i] = std::complex<double>(std::real(x[i]), std::real(dh * p[i]));
+      x1[i] = A2D_complex_t<double>(std::real(x[i]), std::real(dh * p[i]));
     }
 
     // Compute the complex-step result: fd = p^{T} * df/dx
-    VarTuple<std::complex<T>, Output> value = test.eval(x1);
+    VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
     T fd = 0.0;
     for (index_t i = 0; i < value.get_num_components(); i++) {
       fd += (std::imag(value[i]) / dh) * std::real(seed[i]);
@@ -325,7 +325,7 @@ bool Run(A2DTest<std::complex<T>, Output, Inputs...>& test,
       // Set the seed and include the second-derivative parts
       for (index_t i = 0; i < seed.get_num_components(); i++) {
         seed[i] =
-            seed[i] + std::complex<double>(0.0, std::real(dh * hvalue[i]));
+            seed[i] + A2D_complex_t<double>(0.0, std::real(dh * hvalue[i]));
       }
       test.deriv(seed, x1, g);
 

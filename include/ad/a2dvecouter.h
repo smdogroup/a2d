@@ -216,7 +216,7 @@ class VecOuterTest : public A2DTest<T, Mat<T, N, M>, Vec<T, N>, Vec<T, M>> {
 };
 
 inline bool VecOuterTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecOuterTest<Tc, 3, 5> test1;

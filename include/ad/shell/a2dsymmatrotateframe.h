@@ -566,7 +566,7 @@ class SymMatRotateFrameTest
 
 bool SymMatRotateFrameTestAll(bool component = false,
                               bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   // SymMatRotateFrameTest<Tc, 1> test0;

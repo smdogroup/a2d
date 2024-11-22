@@ -313,7 +313,7 @@ template <typename T, int N, int K>
 bool SymMatRKTestHelper(bool component = false, bool write_output = true) {
   const MatOp NORMAL = MatOp::NORMAL;
   const MatOp TRANSPOSE = MatOp::TRANSPOSE;
-  using Tc = std::complex<T>;
+  using Tc = A2D_complex_t<T>;
 
   bool passed = true;
   SymMatRKTest<NORMAL, Tc, N, K, N> test1;

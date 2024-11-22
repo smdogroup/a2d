@@ -416,7 +416,7 @@ class VecSumScaleTest
 };
 
 inline bool VecSumTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecSumTest<Tc, 3> test1;

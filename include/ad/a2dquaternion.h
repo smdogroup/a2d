@@ -294,7 +294,7 @@ class QuaternionMatrixTest : public A2DTest<T, Mat<T, 3, 3>, Vec<T, 4>> {
 
 inline bool QuaternionMatrixTestAll(bool component = false,
                                     bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   QuaternionMatrixTest<Tc> test1;
   bool passed = Run(test1, component, write_output);
@@ -351,7 +351,7 @@ template <typename T>
 bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
                      bool write_output = false, const double dh = 1e-30,
                      const double rtol = 1e-14) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   Vec<Tc, 4> q, qdot;
   Mat<Tc, 3, 3> C, Cdot, A;
@@ -445,7 +445,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
 
 inline bool QuaternionAngularVelocityTestAll(bool component = false,
                                              bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   QuaternionAngularVelocityTest<Tc> test1;
   test1.set_tolerances(1e-10, 1e-14);

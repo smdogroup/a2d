@@ -374,7 +374,7 @@ template <typename T, int N, int M, int K>
 bool MatMatMultTestHelper(bool component = false, bool write_output = true) {
   const MatOp NORMAL = MatOp::NORMAL;
   const MatOp TRANSPOSE = MatOp::TRANSPOSE;
-  using Tc = std::complex<T>;
+  using Tc = A2D_complex_t<T>;
 
   bool passed = true;
   MatMatMultTest<NORMAL, NORMAL, Tc, N, M, M, K, N, K> test1;

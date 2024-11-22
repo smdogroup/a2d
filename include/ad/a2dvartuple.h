@@ -12,7 +12,7 @@ template <typename T>
 struct __is_complex : public std::false_type {};
 
 template <typename T>
-struct __is_complex<std::complex<T>> : public std::true_type {};
+struct __is_complex<A2D_complex_t<T>> : public std::true_type {};
 
 template <typename T>
 struct __is_scalar_type {

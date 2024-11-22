@@ -463,7 +463,7 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
 };
 
 inline bool VecNormTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecNormTest<Tc, 3> test1;
@@ -519,7 +519,7 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
 };
 
 inline bool VecScaleTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecScaleTest<Tc, 3> test1;
@@ -573,7 +573,7 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
 
 inline bool VecNormalizeTestAll(bool component = false,
                                 bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecNormalizeTest<Tc, 3> test1;
@@ -629,7 +629,7 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
 };
 
 inline bool VecDotTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecDotTest<Tc, 3> test1;

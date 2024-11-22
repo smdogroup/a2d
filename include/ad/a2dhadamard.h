@@ -183,7 +183,7 @@ class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
 
 inline bool VecHadamardTestAll(bool component = false,
                                bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   VecHadamardTest<Tc, 3> test1;

@@ -151,7 +151,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
 };
 
 inline bool ScalarTestAll(bool component, bool write_output) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   ScalarTest<Tc> test1;

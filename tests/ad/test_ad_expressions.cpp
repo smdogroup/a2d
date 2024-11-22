@@ -620,22 +620,22 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
 bool MatIntegrationTests(bool component, bool write_output) {
   bool passed = true;
 
-  StrainTest<std::complex<double>, 3> test1;
+  StrainTest<A2D_complex_t<double>, 3> test1;
   passed = passed && A2D::Test::Run(test1, component, write_output);
 
-  DefGradTest<std::complex<double>, 3> test2;
+  DefGradTest<A2D_complex_t<double>, 3> test2;
   passed = passed && A2D::Test::Run(test2, component, write_output);
 
-  MooneyRivlin<std::complex<double>> test3;
+  MooneyRivlin<A2D_complex_t<double>> test3;
   passed = passed && A2D::Test::Run(test3, component, write_output);
 
-  HExtractTest<std::complex<double>, 3> test4;
+  HExtractTest<A2D_complex_t<double>, 3> test4;
   passed = passed && A2D::Test::Run(test4, component, write_output);
 
-  VonMisesPenaltyTest<std::complex<double>> test5;
+  VonMisesPenaltyTest<A2D_complex_t<double>> test5;
   passed = passed && A2D::Test::Run(test5, component, write_output);
 
-  DiamondGraphTest<std::complex<double>, 3> test6;
+  DiamondGraphTest<A2D_complex_t<double>, 3> test6;
   passed = passed && A2D::Test::Run(test6, component, write_output);
 
   return passed;

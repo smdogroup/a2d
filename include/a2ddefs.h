@@ -5,8 +5,17 @@
 #include <cmath>
 #include <complex>
 #include <cstdint>
+
+#ifndef __CUDACC__
 template <typename T>
 using A2D_complex_t = std::complex<T>;
+#else
+#include <thrust/fill.h>
+
+#include <cuda/std/complex>
+template <typename T>
+using A2D_complex_t = cuda::std::complex<T>;
+#endif
 
 // CUDA headers
 #ifndef A2D_FUNCTION
@@ -90,7 +99,7 @@ A2D_FUNCTION double fmt(A2D_complex_t<T> val) {
 
 A2D_FUNCTION inline double fmt(double val) { return val; }
 
-inline double absfunc(A2D_complex_t<double> a) {
+A2D_FUNCTION inline double absfunc(A2D_complex_t<double> a) {
   if (a.real() >= 0.0) {
     return a.real();
   } else {
@@ -98,7 +107,7 @@ inline double absfunc(A2D_complex_t<double> a) {
   }
 }
 
-inline double absfunc(double a) {
+A2D_FUNCTION inline double absfunc(double a) {
   if (a >= 0.0) {
     return a;
   } else {
@@ -106,9 +115,17 @@ inline double absfunc(double a) {
   }
 }
 
-inline double RealPart(double a) { return a; }
+A2D_FUNCTION inline double RealPart(double a) { return a; }
 
-inline double RealPart(A2D_complex_t<double> a) { return a.real(); }
+A2D_FUNCTION inline double RealPart(A2D_complex_t<double> a) {
+  return a.real();
+}
+
+A2D_FUNCTION inline double ImagPart(double a) { return 0.0; }
+
+A2D_FUNCTION inline double ImagPart(A2D_complex_t<double> a) {
+  return a.imag();
+}
 
 /*
   Remove the const-ness and references for a type
@@ -124,7 +141,7 @@ template <class T>
 struct __is_numeric_type : std::is_floating_point<T> {};
 
 template <class T>
-struct __is_numeric_type<std::complex<T>> : std::is_floating_point<T> {};
+struct __is_numeric_type<A2D_complex_t<T>> : std::is_floating_point<T> {};
 
 template <class T>
 struct is_numeric_type
@@ -153,15 +170,15 @@ struct __get_object_numeric_type<double> {
 };
 
 template <>
-struct __get_object_numeric_type<std::complex<double>> {
-  using type = std::complex<double>;
+struct __get_object_numeric_type<A2D_complex_t<double>> {
+  using type = A2D_complex_t<double>;
 };
 
 /*
   Get the numeric type of the underlying object.
 
   All A2D numeric objects must either be scalar values (float, double,
-  std::complex) or must use a typedef statement to define the static scalar
+  A2D_complex_t) or must use a typedef statement to define the static scalar
   type.
 */
 template <class T>
@@ -182,7 +199,7 @@ struct __get_a2d_object_type<double> {
 };
 
 template <>
-struct __get_a2d_object_type<std::complex<double>> {
+struct __get_a2d_object_type<A2D_complex_t<double>> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 
@@ -222,33 +239,15 @@ struct conditional_value<T, true, TrueVal, FalseVal> {
   static constexpr T value = TrueVal;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T sqrt(T val) {
-  return cuda::std::sqrt(val);
-}
-
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T exp(T val) {
-  return cuda::std::exp(val);
-}
-
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T log(T val) {
-  return cuda::std::log(val);
-}
-
-template <class ForwardIt, class T>
-A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
-  thrust::fill(first, last, value);
-}
-#else
-
 template <typename T, typename R,
           std::enable_if_t<is_scalar_type<T>::value, bool> = true,
           std::enable_if_t<is_scalar_type<R>::value, bool> = true>
 A2D_FUNCTION T pow(T val, R exponent) {
+#ifndef __CUDACC__
   return std::pow(val, exponent);
+#else
+  return cuda::std::pow(val, exponent);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
@@ -258,34 +257,83 @@ A2D_FUNCTION T fabs(T val) {
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T sqrt(T val) {
+#ifndef __CUDACC__
   return std::sqrt(val);
+#else
+  return cuda::std::sqrt(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T exp(T val) {
+#ifndef __CUDACC__
   return std::exp(val);
+#else
+  return cuda::std::exp(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T log(T val) {
+#ifndef __CUDACC__
   return std::log(val);
+#else
+  return cuda::std::log(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T sin(T val) {
+#ifndef __CUDACC__
   return std::sin(val);
+#else
+  return cuda::std::sin(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T asin(T val) {
+#ifndef __CUDACC__
+  return std::asin(val);
+#else
+  return cuda::std::asin(val);
+#endif
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T cos(T val) {
+#ifndef __CUDACC__
   return std::cos(val);
+#else
+  return cuda::std::cos(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T acos(T val) {
+#ifndef __CUDACC__
+  return std::acos(val);
+#else
+  return cuda::std::acos(val);
+#endif
 }
 
 template <class ForwardIt, class T>
-void fill(ForwardIt first, ForwardIt last, const T& value) {
+A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
+#ifdef __CUDACC__
+  thrust::fill(first, last, value);
+#else
   std::fill(first, last, value);
-}
 #endif
+}
+
+A2D_FUNCTION int A2D_rand() {
+#ifdef __CUDACC__
+  return 123456;
+#else
+  return rand();
+#endif
+}
 
 }  // namespace A2D
 

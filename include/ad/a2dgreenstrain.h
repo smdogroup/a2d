@@ -176,7 +176,7 @@ class MatGreenStrainTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
 
 inline bool MatGreenStrainTestAll(bool component = false,
                                   bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   MatGreenStrainTest<GreenStrainType::LINEAR, Tc, 2> test1;

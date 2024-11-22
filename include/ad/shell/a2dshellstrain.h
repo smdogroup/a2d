@@ -483,7 +483,7 @@ class ShellStrainTest : public A2DTest<T, Vec<T, 9>, Mat<T, 3, 3>, Mat<T, 3, 3>,
 };
 
 bool ShellStrainTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   ShellStrainTest<ShellStrainType::LINEAR, Tc> test1;
   bool passed = Run(test1, component, write_output);

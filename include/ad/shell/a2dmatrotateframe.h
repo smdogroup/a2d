@@ -340,7 +340,7 @@ class MatRotateFrameTest
 };
 
 bool MatRotateFrameTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   MatRotateFrameTest<Tc, 2> test1;

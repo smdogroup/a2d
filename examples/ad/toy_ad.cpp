@@ -1,9 +1,9 @@
-#include <complex>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
 #include "a2dcore.h"
+#include "a2ddefs.h"
 
 template <typename I, typename T>
 void print_row_major_matrix(const std::string name, I M, I N, T mat[]) {
@@ -58,7 +58,7 @@ void MatMatMult(const T A[], const T B[], T C[], T alpha = T(1.0)) {
  *
  * Note: F and A are all matrices, eval has the following signature:
  *
- *   eval(const std::complex<T> Ac[], std::complex<T> Fc[])
+ *   eval(const A2D_complex_t<T> Ac[], A2D_complex_t<T> Fc[])
  *
  * Note: On exit, Fdot is incremented, hence this function can be called
  * multiple times to evaluate forward derivatives using complex step of a
@@ -67,9 +67,9 @@ void MatMatMult(const T A[], const T B[], T C[], T alpha = T(1.0)) {
 template <typename T, int Am, int An, int Fm, int Fn, class Functor>
 void complex_step(const T A[], const T Adot[], T Fdot[], Functor& eval,
                   T h = T(1e-30)) {
-  std::complex<T> Ac[Am * An];    // A in complex
-  std::complex<T> Ap[Am * An];    // A perturbed
-  std::complex<T> dFdA[Fm * Fn];  // df/dA(k, l)
+  A2D_complex_t<T> Ac[Am * An];    // A in complex
+  A2D_complex_t<T> Ap[Am * An];    // A perturbed
+  A2D_complex_t<T> dFdA[Fm * Fn];  // df/dA(k, l)
 
   for (int n = 0; n < Am * An; n++) {
     Ac[n] = A[n];
@@ -83,7 +83,7 @@ void complex_step(const T A[], const T Adot[], T Fdot[], Functor& eval,
       }
 
       // Perturb A(k, l) only
-      Ap[k * An + l] += std::complex<T>(0.0, h);
+      Ap[k * An + l] += A2D_complex_t<T>(0.0, h);
 
       // Evaluate dF(i, j)/dA(k, l) for all i, j
       eval(Ap, dFdA);
@@ -138,20 +138,20 @@ void test_matmatmult_forward() {
   expr.template forward<A2D::ADorder::FIRST>();
   print_row_major_matrix("Cb", Cm, Cn, Cb.get_data());
 
-  auto evalA = [=](const std::complex<T> Ac[], std::complex<T> Cc[]) mutable {
-    std::complex<T> Bc[Bm * Bn];
+  auto evalA = [=](const A2D_complex_t<T> Ac[], A2D_complex_t<T> Cc[]) mutable {
+    A2D_complex_t<T> Bc[Bm * Bn];
     for (int n = 0; n < Bm * Bn; n++) {
       Bc[n] = B[n];
     }
-    A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
+    A2D::MatMatMultCore<A2D_complex_t<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
   };
 
-  auto evalB = [=](const std::complex<T> Bc[], std::complex<T> Cc[]) mutable {
-    std::complex<T> Ac[Am * An];
+  auto evalB = [=](const A2D_complex_t<T> Bc[], A2D_complex_t<T> Cc[]) mutable {
+    A2D_complex_t<T> Ac[Am * An];
     for (int n = 0; n < Am * An; n++) {
       Ac[n] = A[n];
     }
-    A2D::MatMatMultCore<std::complex<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
+    A2D::MatMatMultCore<A2D_complex_t<T>, Am, An, Bm, Bn, Cm, Cn>(Ac, Bc, Cc);
   };
 
   RefImpl::complex_step<T, Am, An, Cm, Cn>(A.get_data(), Ab.get_data(),

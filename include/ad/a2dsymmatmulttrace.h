@@ -156,7 +156,7 @@ class SymMatMultTraceTest : public A2DTest<T, T, SymMat<T, N>, SymMat<T, N>> {
 
 inline bool SymMatMultTraceTestAll(bool component = false,
                                    bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   SymMatMultTraceTest<Tc, 2> test1;

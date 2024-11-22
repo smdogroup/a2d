@@ -187,7 +187,7 @@ class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
 };
 
 inline bool MatInvTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   MatInvTest<Tc, 2> test1;

@@ -9,7 +9,7 @@ using namespace A2D;
 
 TEST(test_a2dmat, SymMat_CopyConstructor) {
   using T = double;
-  using T2 = std::complex<T>;
+  using T2 = A2D_complex_t<T>;
   constexpr int N = 4;
 
   SymMat<T, N> S1;
@@ -26,7 +26,7 @@ TEST(test_a2dmat, SymMat_CopyConstructor) {
 
 TEST(test_a2dmat, SymMat_copy) {
   using T = double;
-  using T2 = std::complex<T>;
+  using T2 = A2D_complex_t<T>;
   constexpr int N = 4;
 
   SymMat<T, N> S1;
@@ -44,7 +44,7 @@ TEST(test_a2dmat, SymMat_copy) {
 
 TEST(test_a2dmat, SymMat_get) {
   using T = double;
-  using T2 = std::complex<T>;
+  using T2 = A2D_complex_t<T>;
   constexpr int N = 4;
 
   SymMat<T, N> S1;

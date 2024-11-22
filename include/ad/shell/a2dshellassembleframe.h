@@ -239,7 +239,7 @@ class ShellAssembleFrameTest
 
 bool ShellAssembleFrameTestAll(bool component = false,
                                bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   ShellAssembleFrameTest<Tc> test;
   bool passed = Run(test, component, write_output);

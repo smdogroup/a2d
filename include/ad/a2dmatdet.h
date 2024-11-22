@@ -264,7 +264,7 @@ class SymMatDetTest : public A2DTest<T, T, SymMat<T, N>> {
 };
 
 inline bool MatDetTestAll(bool component = false, bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   MatDetTest<Tc, 2> test1;

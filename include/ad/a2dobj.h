@@ -14,8 +14,8 @@ namespace A2D {
 template <class A, typename T>
 class ADExpr {
  public:
-  A& self() { return static_cast<A&>(*this); }
-  const A& self() const { return static_cast<const A&>(*this); }
+  A2D_FUNCTION A& self() { return static_cast<A&>(*this); }
+  A2D_FUNCTION const A& self() const { return static_cast<const A&>(*this); }
 
   // Evaluation and derivatives
   A2D_FUNCTION void eval() { self().eval(); }
@@ -84,8 +84,8 @@ class ADObj : public ADExpr<ADObj<T>, T> {
 template <class A, typename T>
 class A2DExpr {
  public:
-  A& self() { return static_cast<A&>(*this); }
-  const A& self() const { return static_cast<const A&>(*this); }
+  A2D_FUNCTION A& self() { return static_cast<A&>(*this); }
+  A2D_FUNCTION const A& self() const { return static_cast<const A&>(*this); }
 
   // Evaluation and derivatives
   A2D_FUNCTION void eval() { self().eval(); }
@@ -625,32 +625,32 @@ class GetSeed {
 };
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-T& get_data(T& value) {
+A2D_FUNCTION T& get_data(T& value) {
   return value;
 }
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const T& get_data(const T& value) {
+A2D_FUNCTION const T& get_data(const T& value) {
   return value;
 }
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-T& get_data(ADObj<T>& value) {
+A2D_FUNCTION T& get_data(ADObj<T>& value) {
   return value.value();
 }
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const T& get_data(const ADObj<T>& value) {
+A2D_FUNCTION const T& get_data(const ADObj<T>& value) {
   return value.value();
 }
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-T& get_data(A2DObj<T>& value) {
+A2D_FUNCTION T& get_data(A2DObj<T>& value) {
   return value.value();
 }
 
 template <typename T, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const T& get_data(const A2DObj<T>& value) {
+A2D_FUNCTION const T& get_data(const A2DObj<T>& value) {
   return value.value();
 }
 
@@ -752,7 +752,7 @@ template <class T, int N>
 struct __is_numeric_type<ADScalar<T, N>> : std::is_floating_point<T> {};
 
 template <class T, int N>
-struct __is_numeric_type<ADScalar<std::complex<T>, N>>
+struct __is_numeric_type<ADScalar<A2D_complex_t<T>, N>>
     : std::is_floating_point<T> {};
 
 template <int N>
@@ -761,8 +761,8 @@ struct __get_object_numeric_type<ADScalar<double, N>> {
 };
 
 template <int N>
-struct __get_object_numeric_type<ADScalar<std::complex<double>, N>> {
-  using type = ADScalar<std::complex<double>, N>;
+struct __get_object_numeric_type<ADScalar<A2D_complex_t<double>, N>> {
+  using type = ADScalar<A2D_complex_t<double>, N>;
 };
 
 template <typename T, int N,

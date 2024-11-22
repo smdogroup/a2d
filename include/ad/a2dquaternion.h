@@ -294,7 +294,7 @@ class QuaternionMatrixTest : public A2DTest<T, Mat<T, 3, 3>, Vec<T, 4>> {
 
 inline bool QuaternionMatrixTestAll(bool component = false,
                                     bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   QuaternionMatrixTest<Tc> test1;
   bool passed = Run(test1, component, write_output);
@@ -351,7 +351,7 @@ template <typename T>
 bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
                      bool write_output = false, const double dh = 1e-30,
                      const double rtol = 1e-14) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   Vec<Tc, 4> q, qdot;
   Mat<Tc, 3, 3> C, Cdot, A;
@@ -376,7 +376,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   }
 
   for (int i = 0; i < 4; i++) {
-    q(i) = Tc(std::real(q(i)), dh * std::real(qdot(i)));
+    q(i) = Tc(RealPart(q(i)), dh * RealPart(qdot(i)));
   }
 
   // Compute the quaternion matrix and the angular rate
@@ -386,7 +386,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   // Set Cdot
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
-      Cdot(i, j) = std::imag(C(i, j)) / dh;
+      Cdot(i, j) = ImagPart(C(i, j)) / dh;
     }
   }
 
@@ -409,9 +409,9 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       if (i == j) {
-        err += std::fabs(std::real(A(i, j)) - 1.0);
+        err += std::fabs(RealPart(A(i, j)) - 1.0);
       } else {
-        err += std::fabs(std::real(A(i, j)));
+        err += std::fabs(RealPart(A(i, j)));
       }
 
       if (write_output) {
@@ -430,7 +430,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 3; j++) {
       Tc ans = OmegaX(i, j) + negOmegaX(i, j);
-      err += std::fabs(std::real(ans));
+      err += std::fabs(RealPart(ans));
 
       if (write_output) {
         test.write_result("omega^{x} + dot{C} * C^{T}", std::cout, ans, 0.0);
@@ -445,7 +445,7 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
 
 inline bool QuaternionAngularVelocityTestAll(bool component = false,
                                              bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   QuaternionAngularVelocityTest<Tc> test1;
   test1.set_tolerances(1e-10, 1e-14);

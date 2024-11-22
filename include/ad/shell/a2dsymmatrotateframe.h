@@ -28,7 +28,7 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   }
 
   // Precompute the symmetric matrix indices
-  std::array<int, N * N> symMatIndices;
+  int symMatIndices[N * N];
   int index = 0;
   for (int i = 0; i < N; ++i) {
     for (int j = i; j < N; ++j, ++index) {
@@ -38,7 +38,7 @@ A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   }
 
   // Compute Mat A * Mat B => SymMat C (symmetric part only)
-  int inner_start;
+  // int inner_start;
   if constexpr (symC) {
     for (int irow = 0; irow < N; irow++) {
       for (int icol = irow; icol < N;
@@ -121,7 +121,7 @@ A2D_FUNCTION void SymMatMatLeftTrSquareMult(const T A[], const T B[], T C[]) {
   }
 
   // Precompute the symmetric matrix indices
-  std::array<int, N * N> symMatIndices;
+  int symMatIndices[N * N];
   int index = 0;
   for (int i = 0; i < N; ++i) {
     for (int j = i; j < N; ++j, ++index) {
@@ -174,7 +174,7 @@ A2D_FUNCTION void SymMatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
   }
 
   // Precompute the symmetric matrix indices
-  std::array<int, N * N> symMatIndices;
+  int symMatIndices[N * N];
   int index = 0;
   for (int i = 0; i < N; ++i) {
     for (int j = i; j < N; ++j, ++index) {
@@ -566,7 +566,7 @@ class SymMatRotateFrameTest
 
 bool SymMatRotateFrameTestAll(bool component = false,
                               bool write_output = true) {
-  using Tc = std::complex<double>;
+  using Tc = A2D_complex_t<double>;
 
   bool passed = true;
   // SymMatRotateFrameTest<Tc, 1> test0;

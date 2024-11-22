@@ -2,19 +2,20 @@
 #define A2D_STACK_H
 
 #include "../a2ddefs.h"
+#include "../a2dtuple.h"
 #include "a2dobj.h"
+#include "a2dtuple.h"
 
 namespace A2D {
 
 template <class... Operations>
 class OperationStack {
  public:
-  using StackTuple = std::tuple<Operations...>;
+  using StackTuple = a2d_tuple<Operations...>;
   static constexpr index_t num_ops = sizeof...(Operations);
 
   A2D_FUNCTION OperationStack(Operations &&...s)
-      : stack(std::forward<Operations>(s)...) {
-    // printf("in stack constructor\n");
+      : stack(a2d_forward<Operations>(s)...) {
     eval_<0>();
   }
 
@@ -67,8 +68,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void eval_() {
-    // printf("evaluating the stack\n");
-    std::get<index>(stack).eval();
+    a2d_get<index>(stack).eval();
     if constexpr (index < num_ops - 1) {
       eval_<index + 1>();
     }
@@ -76,7 +76,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void bzero_() {
-    std::get<index>(stack).bzero();
+    a2d_get<index>(stack).bzero();
     if constexpr (index < num_ops - 1) {
       bzero_<index + 1>();
     }
@@ -84,7 +84,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void forward_() {
-    std::get<index>(stack).template forward<ADorder::FIRST>();
+    a2d_get<index>(stack).template forward<ADorder::FIRST>();
     if constexpr (index < num_ops - 1) {
       forward_<index + 1>();
     }
@@ -92,7 +92,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void reverse_() {
-    std::get<index>(stack).reverse();
+    a2d_get<index>(stack).reverse();
     if constexpr (index) {
       reverse_<index - 1>();
     }
@@ -100,7 +100,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void hzero_() {
-    std::get<index>(stack).hzero();
+    a2d_get<index>(stack).hzero();
     if constexpr (index < num_ops - 1) {
       hzero_<index + 1>();
     }
@@ -108,7 +108,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void hforward_() {
-    std::get<index>(stack).template forward<ADorder::SECOND>();
+    a2d_get<index>(stack).template forward<ADorder::SECOND>();
     if constexpr (index < num_ops - 1) {
       hforward_<index + 1>();
     }
@@ -116,7 +116,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void hreverse_() {
-    std::get<index>(stack).hreverse();
+    a2d_get<index>(stack).hreverse();
     if constexpr (index) {
       hreverse_<index - 1>();
     }
@@ -134,8 +134,7 @@ class OperationStack {
  */
 template <class... Operations>
 A2D_FUNCTION auto MakeStack(Operations &&...s) {
-  // printf("in make stack\n");
-  return OperationStack<Operations...>(std::forward<Operations>(s)...);
+  return OperationStack<Operations...>(a2d_forward<Operations>(s)...);
 }
 
 /**

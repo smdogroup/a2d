@@ -3,6 +3,7 @@
 #include <any>
 
 #include "a2ddefs.h"
+#include "a2dtuple.h"
 #include "ad/a2dmat.h"
 #include "ad/a2dobj.h"
 #include "ad/core/a2dgemmcore.h"
@@ -159,9 +160,9 @@ void run_single_test(case_t c) {
   using T = double;
 
   for (auto scale : {true, false}) {
-    auto A = std::get<0>(c);
-    auto B = std::get<1>(c);
-    auto C = std::get<2>(c);
+    auto A = a2d_get<0>(c);
+    auto B = a2d_get<1>(c);
+    auto C = a2d_get<2>(c);
     test_gemm_core<additive, opA, opB>(A, B, C, scale);
   }
 }
@@ -174,9 +175,9 @@ void run_tests(cases_t cases) {
     for (auto scale : {true, false}) {
       std::visit(
           [&](const auto& c) {
-            auto A = std::get<0>(c);
-            auto B = std::get<1>(c);
-            auto C = std::get<2>(c);
+            auto A = a2d_get<0>(c);
+            auto B = a2d_get<1>(c);
+            auto C = a2d_get<2>(c);
             test_gemm_core<additive, opA, opB>(A, B, C, scale);
           },
           c_v);
@@ -185,21 +186,21 @@ void run_tests(cases_t cases) {
 }
 
 TEST(test_a2dgemmcore, square_matrices) {
-  using case1 = std::tuple<Mat<T, 2, 2>, Mat<T, 2, 2>, Mat<T, 2, 2>>;
-  using case2 = std::tuple<Mat<T, 3, 3>, Mat<T, 3, 3>, Mat<T, 3, 3>>;
-  using case3 = std::tuple<Mat<T, 4, 4>, Mat<T, 4, 4>, Mat<T, 4, 4>>;
+  using case1 = a2d_tuple<Mat<T, 2, 2>, Mat<T, 2, 2>, Mat<T, 2, 2>>;
+  using case2 = a2d_tuple<Mat<T, 3, 3>, Mat<T, 3, 3>, Mat<T, 3, 3>>;
+  using case3 = a2d_tuple<Mat<T, 4, 4>, Mat<T, 4, 4>, Mat<T, 4, 4>>;
 
-  using case4 = std::tuple<SymMat<T, 2>, SymMat<T, 2>, Mat<T, 2, 2>>;
-  using case5 = std::tuple<SymMat<T, 3>, SymMat<T, 3>, Mat<T, 3, 3>>;
-  using case6 = std::tuple<SymMat<T, 4>, SymMat<T, 4>, Mat<T, 4, 4>>;
+  using case4 = a2d_tuple<SymMat<T, 2>, SymMat<T, 2>, Mat<T, 2, 2>>;
+  using case5 = a2d_tuple<SymMat<T, 3>, SymMat<T, 3>, Mat<T, 3, 3>>;
+  using case6 = a2d_tuple<SymMat<T, 4>, SymMat<T, 4>, Mat<T, 4, 4>>;
 
-  using case7 = std::tuple<SymMat<T, 2>, Mat<T, 2, 2>, Mat<T, 2, 2>>;
-  using case8 = std::tuple<SymMat<T, 3>, Mat<T, 3, 3>, Mat<T, 3, 3>>;
-  using case9 = std::tuple<SymMat<T, 4>, Mat<T, 4, 4>, Mat<T, 4, 4>>;
+  using case7 = a2d_tuple<SymMat<T, 2>, Mat<T, 2, 2>, Mat<T, 2, 2>>;
+  using case8 = a2d_tuple<SymMat<T, 3>, Mat<T, 3, 3>, Mat<T, 3, 3>>;
+  using case9 = a2d_tuple<SymMat<T, 4>, Mat<T, 4, 4>, Mat<T, 4, 4>>;
 
-  using case10 = std::tuple<Mat<T, 2, 2>, SymMat<T, 2>, Mat<T, 2, 2>>;
-  using case11 = std::tuple<Mat<T, 3, 3>, SymMat<T, 3>, Mat<T, 3, 3>>;
-  using case12 = std::tuple<Mat<T, 4, 4>, SymMat<T, 4>, Mat<T, 4, 4>>;
+  using case10 = a2d_tuple<Mat<T, 2, 2>, SymMat<T, 2>, Mat<T, 2, 2>>;
+  using case11 = a2d_tuple<Mat<T, 3, 3>, SymMat<T, 3>, Mat<T, 3, 3>>;
+  using case12 = a2d_tuple<Mat<T, 4, 4>, SymMat<T, 4>, Mat<T, 4, 4>>;
 
   std::vector<std::variant<case1, case2, case3, case4, case5, case6, case7,
                            case8, case9, case10, case11, case12>>
@@ -220,16 +221,16 @@ TEST(test_a2dgemmcore, square_matrices) {
 }
 
 TEST(test_a2dgemmcore, rectangular_matrices) {
-  using case1 = std::tuple<Mat<T, 2, 3>, Mat<T, 3, 4>, Mat<T, 2, 4>>;
-  using case2 = std::tuple<Mat<T, 3, 2>, Mat<T, 3, 4>, Mat<T, 2, 4>>;
-  using case3 = std::tuple<Mat<T, 2, 3>, Mat<T, 4, 3>, Mat<T, 2, 4>>;
-  using case4 = std::tuple<Mat<T, 3, 2>, Mat<T, 4, 3>, Mat<T, 2, 4>>;
+  using case1 = a2d_tuple<Mat<T, 2, 3>, Mat<T, 3, 4>, Mat<T, 2, 4>>;
+  using case2 = a2d_tuple<Mat<T, 3, 2>, Mat<T, 3, 4>, Mat<T, 2, 4>>;
+  using case3 = a2d_tuple<Mat<T, 2, 3>, Mat<T, 4, 3>, Mat<T, 2, 4>>;
+  using case4 = a2d_tuple<Mat<T, 3, 2>, Mat<T, 4, 3>, Mat<T, 2, 4>>;
 
-  using case5 = std::tuple<SymMat<T, 4>, Mat<T, 4, 5>, Mat<T, 4, 5>>;
-  using case6 = std::tuple<SymMat<T, 2>, Mat<T, 3, 2>, Mat<T, 2, 3>>;
+  using case5 = a2d_tuple<SymMat<T, 4>, Mat<T, 4, 5>, Mat<T, 4, 5>>;
+  using case6 = a2d_tuple<SymMat<T, 2>, Mat<T, 3, 2>, Mat<T, 2, 3>>;
 
-  using case7 = std::tuple<Mat<T, 4, 5>, SymMat<T, 5>, Mat<T, 4, 5>>;
-  using case8 = std::tuple<Mat<T, 5, 4>, SymMat<T, 5>, Mat<T, 4, 5>>;
+  using case7 = a2d_tuple<Mat<T, 4, 5>, SymMat<T, 5>, Mat<T, 4, 5>>;
+  using case8 = a2d_tuple<Mat<T, 5, 4>, SymMat<T, 5>, Mat<T, 4, 5>>;
 
   // Regular and Scale
   run_single_test<false, MatOp::NORMAL, MatOp::NORMAL>(case1());

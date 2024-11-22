@@ -4,10 +4,12 @@
 #include <type_traits>
 #include <utility>
 
+#include "a2ddefs.h"
+
 namespace A2D {
 
 template <class _Tp>
-inline constexpr _Tp &&a2d_forward(
+A2D_FUNCTION inline constexpr _Tp &&a2d_forward(
     typename std::remove_reference<_Tp>::type &__t) noexcept {
   return static_cast<_Tp &&>(__t);
 }
@@ -26,14 +28,14 @@ class _tuple_impl {
       typename std::remove_const<typename std::remove_reference<T>::type>::type;
 
  public:
-  _tuple_impl(value_type &v) : val(v) {}
+  A2D_FUNCTION _tuple_impl(value_type &v) : val(v) {}
 
-  _tuple_impl(value_type &&v) : val(std::move(v)) {}
+  A2D_FUNCTION _tuple_impl(value_type &&v) : val(std::move(v)) {}
 
-  _tuple_impl() : val(T{}) {}
+  A2D_FUNCTION _tuple_impl() : val(T{}) {}
 
-  value_type &a2d_get() { return val; }
-  const value_type &a2d_get() const { return val; }
+  A2D_FUNCTION value_type &a2d_get() { return val; }
+  A2D_FUNCTION const value_type &a2d_get() const { return val; }
 
  private:
   T val;
@@ -53,12 +55,12 @@ class _tuple_recurr_base<_index, L, types...>
       public _tuple_recurr_base<_index + 1, types...> {
  public:
   // Default Constructor that takes in no objects
-  _tuple_recurr_base()
+  A2D_FUNCTION _tuple_recurr_base()
       // : _tuple_impl<_index, typename std::remove_reference<L>::type>(),
       : _tuple_impl<_index, L>(), _tuple_recurr_base<_index + 1, types...>() {}
 
   template <typename CL, typename... CArgs>
-  _tuple_recurr_base(CL &&arg, CArgs &&...args)
+  A2D_FUNCTION _tuple_recurr_base(CL &&arg, CArgs &&...args)
       // : _tuple_impl<_index, typename std::remove_reference<CL>::type>(
       : _tuple_impl<_index,
                     typename std::conditional<
@@ -71,11 +73,11 @@ template <typename L, typename... types>
 class a2d_tuple : public _tuple_recurr_base<0, L, types...> {
  public:
   // Default Constructor that takes in no objects
-  a2d_tuple() : _tuple_recurr_base<0, L, types...>() {}
+  A2D_FUNCTION a2d_tuple() : _tuple_recurr_base<0, L, types...>() {}
 
   // The constructor uses the same recursion as the inheritance
   template <typename... CArgs>
-  a2d_tuple(CArgs &&...args)
+  A2D_FUNCTION a2d_tuple(CArgs &&...args)
       : _tuple_recurr_base<0, L, types...>(a2d_forward<CArgs>(args)...) {}
   //
 };
@@ -105,13 +107,13 @@ struct extract_type_at<0, L, Args...> {
 // We cast the tuple to the base class that corresponds to the index
 // and type for that index
 template <std::size_t index, typename... Args>
-auto &a2d_get(a2d_tuple<Args...> &t) {
+A2D_FUNCTION auto &a2d_get(a2d_tuple<Args...> &t) {
   return (static_cast<_tuple_impl<
               index, typename extract_type_at<index, Args...>::type> &>(t))
       .a2d_get();
 }
 template <std::size_t index, typename... Args>
-const auto &a2d_get(const a2d_tuple<Args...> &t) {
+A2D_FUNCTION const auto &a2d_get(const a2d_tuple<Args...> &t) {
   return (static_cast<const _tuple_impl<
               index, typename extract_type_at<index, Args...>::type> &>(t))
       .a2d_get();

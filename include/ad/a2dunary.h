@@ -28,10 +28,10 @@ namespace A2D {
     }                                                                       \
     A2D_FUNCTION void forward() {                                           \
       a.forward();                                                          \
-      bval = (DERIVBODY) * a.bvalue();                                      \
+      bval = (DERIVBODY)*a.bvalue();                                        \
     }                                                                       \
     A2D_FUNCTION void reverse() {                                           \
-      a.bvalue() += (DERIVBODY) * bval;                                     \
+      a.bvalue() += (DERIVBODY)*bval;                                       \
       a.reverse();                                                          \
     }                                                                       \
     A2D_FUNCTION void bzero() {                                             \
@@ -86,15 +86,15 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
       val = (FUNCBODY);                                                        \
     }                                                                          \
     A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY) * bval;                                        \
+      a.bvalue() += (DERIVBODY)*bval;                                          \
       a.reverse();                                                             \
     }                                                                          \
     A2D_FUNCTION void hforward() {                                             \
       a.hforward();                                                            \
-      pval = (DERIVBODY) * a.pvalue();                                         \
+      pval = (DERIVBODY)*a.pvalue();                                           \
     }                                                                          \
     A2D_FUNCTION void hreverse() {                                             \
-      a.hvalue() += (DERIVBODY) * hval;                                        \
+      a.hvalue() += (DERIVBODY)*hval;                                          \
       a.hreverse();                                                            \
     }                                                                          \
     A2D_FUNCTION void bzero() {                                                \
@@ -158,10 +158,10 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
     }                                                                   \
     A2D_FUNCTION void forward() {                                       \
       a.forward();                                                      \
-      bval = (DERIVBODY) * a.bvalue();                                  \
+      bval = (DERIVBODY)*a.bvalue();                                    \
     }                                                                   \
     A2D_FUNCTION void reverse() {                                       \
-      a.bvalue() += (DERIVBODY) * bval;                                 \
+      a.bvalue() += (DERIVBODY)*bval;                                   \
       a.reverse();                                                      \
     }                                                                   \
     A2D_FUNCTION void bzero() {                                         \
@@ -225,15 +225,15 @@ A2D_1ST_UNARY(ASinExpr, asin, asin(a.value()),
       tmp = (TEMPBODY);                                                        \
     }                                                                          \
     A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY) * bval;                                        \
+      a.bvalue() += (DERIVBODY)*bval;                                          \
       a.reverse();                                                             \
     }                                                                          \
     A2D_FUNCTION void hforward() {                                             \
       a.hforward();                                                            \
-      pval = (DERIVBODY) * a.pvalue();                                         \
+      pval = (DERIVBODY)*a.pvalue();                                           \
     }                                                                          \
     A2D_FUNCTION void hreverse() {                                             \
-      a.hvalue() += (DERIVBODY) * hval + (DERIV2BODY) * bval * a.pvalue();     \
+      a.hvalue() += (DERIVBODY)*hval + (DERIV2BODY)*bval * a.pvalue();         \
       a.hreverse();                                                            \
     }                                                                          \
     A2D_FUNCTION void bzero() {                                                \

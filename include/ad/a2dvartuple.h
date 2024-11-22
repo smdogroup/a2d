@@ -164,11 +164,12 @@ class VarTupleBase {
   A2D_FUNCTION void set_rand_(TupleObj& var, const T low, const T high) {
     if constexpr (__is_scalar_type<First>::value) {
       a2d_get<index>(var) =
-          low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
+          low + (high - low) * (static_cast<double>(A2D_rand()) / RAND_MAX);
     } else if constexpr (First::ncomp > 0) {
       First& val = a2d_get<index>(var);
       for (index_t i = 0; i < First::ncomp; i++) {
-        val[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
+        val[i] =
+            low + (high - low) * (static_cast<double>(A2D_rand()) / RAND_MAX);
       }
     }
     if constexpr (sizeof...(Remain) > 0) {

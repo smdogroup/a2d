@@ -327,6 +327,14 @@ A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
 #endif
 }
 
+A2D_FUNCTION int A2D_rand() {
+#ifdef __CUDACC__
+  return 123456;
+#else
+  return rand();
+#endif
+}
+
 }  // namespace A2D
 
 #endif  // A2D_DEFS_H

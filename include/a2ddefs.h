@@ -165,8 +165,18 @@ struct __get_object_numeric_type {
 };
 
 template <>
+struct __get_object_numeric_type<float> {
+  using type = float;
+};
+
+template <>
 struct __get_object_numeric_type<double> {
   using type = double;
+};
+
+template <>
+struct __get_object_numeric_type<A2D_complex_t<float>> {
+  using type = A2D_complex_t<float>;
 };
 
 template <>

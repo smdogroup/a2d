@@ -779,25 +779,27 @@ const ADScalar<T, N>& get_data(const ADScalar<T, N>& value) {
 
 template <typename T, int N,
           std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-ADScalar<T, N>& get_data(ADObj<ADScalar<T, N>>& value) {
+A2D_FUNCTION ADScalar<T, N>& get_data(ADObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
 template <typename T, int N,
           std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const ADScalar<T, N>& get_data(const ADObj<ADScalar<T, N>>& value) {
+A2D_FUNCTION const ADScalar<T, N>& get_data(
+    const ADObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
 template <typename T, int N,
           std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-ADScalar<T, N>& get_data(A2DObj<ADScalar<T, N>>& value) {
+A2D_FUNCTION ADScalar<T, N>& get_data(A2DObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
 template <typename T, int N,
           std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const ADScalar<T, N>& get_data(const A2DObj<ADScalar<T, N>>& value) {
+A2D_FUNCTION const ADScalar<T, N>& get_data(
+    const A2DObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 

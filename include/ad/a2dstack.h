@@ -14,6 +14,7 @@ class OperationStack {
 
   A2D_FUNCTION OperationStack(Operations &&...s)
       : stack(std::forward<Operations>(s)...) {
+    // printf("in stack constructor\n");
     eval_<0>();
   }
 
@@ -66,6 +67,7 @@ class OperationStack {
 
   template <index_t index>
   A2D_FUNCTION void eval_() {
+    // printf("evaluating the stack\n");
     std::get<index>(stack).eval();
     if constexpr (index < num_ops - 1) {
       eval_<index + 1>();
@@ -132,6 +134,7 @@ class OperationStack {
  */
 template <class... Operations>
 A2D_FUNCTION auto MakeStack(Operations &&...s) {
+  // printf("in make stack\n");
   return OperationStack<Operations...>(std::forward<Operations>(s)...);
 }
 

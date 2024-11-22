@@ -217,6 +217,8 @@ class MatSumScaleExpr {
     }
   }
 
+  A2D_FUNCTION void bzero() { B.bzero(); }
+
   A2D_FUNCTION void reverse() {
     constexpr ADseed seed = ADseed::b;
     if constexpr (adA == ADiffType::ACTIVE) {
@@ -236,6 +238,8 @@ class MatSumScaleExpr {
           VecDotCore<T, size>(GetSeed<seed>::get_data(C), get_data(B));
     }
   }
+
+  A2D_FUNCTION void hzero() { C.hzero(); }
 
   A2D_FUNCTION void hreverse() {
     constexpr ADseed seed = ADseed::h;

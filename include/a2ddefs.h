@@ -8,8 +8,14 @@
 template <typename T>
 using A2D_complex_t = std::complex<T>;
 
+// CUDA headers
 #ifndef A2D_FUNCTION
-#define A2D_FUNCTION  // A2D_FUNCTION does nothing in this scenario
+#ifdef __CUDACC__
+#define A2D_FUNCTION \
+  __host__ __device__  // A2D_FUNCTION does nothing in this scenario
+#else                  // not __CUDACC__
+#define A2D_FUNCTION
+#endif
 #endif
 
 namespace A2D {

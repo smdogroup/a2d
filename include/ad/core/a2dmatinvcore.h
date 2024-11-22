@@ -24,15 +24,15 @@ A2D_FUNCTION void MatInvCore(const T A[], T Ainv[]) {
     T detinv = 1.0 / det;
 
     Ainv[0] = (A[4] * A[8] - A[5] * A[7]) * detinv;
-    Ainv[1] = -(A[1] * A[8] - A[2] * A[7]) * detinv;
+    Ainv[1] = -1.0 * (A[1] * A[8] - A[2] * A[7]) * detinv;
     Ainv[2] = (A[1] * A[5] - A[2] * A[4]) * detinv;
 
-    Ainv[3] = -(A[3] * A[8] - A[5] * A[6]) * detinv;
+    Ainv[3] = -1.0 * (A[3] * A[8] - A[5] * A[6]) * detinv;
     Ainv[4] = (A[0] * A[8] - A[2] * A[6]) * detinv;
-    Ainv[5] = -(A[0] * A[5] - A[2] * A[3]) * detinv;
+    Ainv[5] = -1.0 * (A[0] * A[5] - A[2] * A[3]) * detinv;
 
     Ainv[6] = (A[3] * A[7] - A[4] * A[6]) * detinv;
-    Ainv[7] = -(A[0] * A[7] - A[1] * A[6]) * detinv;
+    Ainv[7] = -1.0 * (A[0] * A[7] - A[1] * A[6]) * detinv;
     Ainv[8] = (A[0] * A[4] - A[1] * A[3]) * detinv;
   }
 }

@@ -118,6 +118,16 @@ A2D_FUNCTION T MatInnerCore(const T A[], const T x[], const T y[]) noexcept {
   return value;
 }
 
+template <typename T, int M, int N>
+A2D_FUNCTION void MatScaleCore(const T alpha, const T A[], T B[]) noexcept {
+  for (int i = 0; i < M; i++) {
+    for (int j = 0; j < N; j++) {
+      B[0] = alpha * A[0];
+      A++, B++;
+    }
+  }
+}
+
 }  // namespace A2D
 
 #endif  //  A2D_MAT_VEC_CORE_H

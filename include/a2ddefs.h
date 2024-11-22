@@ -12,9 +12,9 @@ using A2D_complex_t = std::complex<T>;
 #else
 // A2D_complex_t is not supported on the GPU, need to use thrust::complex
 // instead
-#include "thrust/complex.h"
+#include <cuda/std/complex>
 template <typename T>
-using A2D_complex_t = thrust::complex<T>;
+using A2D_complex_t = cuda::std::complex<T>;
 #endif
 
 // CUDA headers
@@ -235,28 +235,6 @@ struct conditional_value<T, true, TrueVal, FalseVal> {
   static constexpr T value = TrueVal;
 };
 
-#ifdef KOKKOS_ENABLE_CUDA
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T sqrt(T val) {
-  return cuda::std::sqrt(val);
-}
-
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T exp(T val) {
-  return cuda::std::exp(val);
-}
-
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T log(T val) {
-  return cuda::std::log(val);
-}
-
-template <class ForwardIt, class T>
-A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
-  thrust::fill(first, last, value);
-}
-#else
-
 template <typename T, typename R,
           std::enable_if_t<is_scalar_type<T>::value, bool> = true,
           std::enable_if_t<is_scalar_type<R>::value, bool> = true>
@@ -264,7 +242,7 @@ A2D_FUNCTION T pow(T val, R exponent) {
 #ifndef __CUDACC__
   return std::pow(val, exponent);
 #else
-  return thrust::pow(val, exponent);
+  return cuda::std::pow(val, exponent);
 #endif
 }
 
@@ -278,7 +256,7 @@ A2D_FUNCTION T sqrt(T val) {
 #ifndef __CUDACC__
   return std::sqrt(val);
 #else
-  return thrust::sqrt(val);
+  return cuda::std::sqrt(val);
 #endif
 }
 
@@ -287,7 +265,7 @@ A2D_FUNCTION T exp(T val) {
 #ifndef __CUDACC__
   return std::exp(val);
 #else
-  return thrust::exp(val);
+  return cuda::std::exp(val);
 #endif
 }
 
@@ -296,7 +274,7 @@ A2D_FUNCTION T log(T val) {
 #ifndef __CUDACC__
   return std::log(val);
 #else
-  return thrust::log(val);
+  return cuda::std::log(val);
 #endif
 }
 
@@ -305,7 +283,7 @@ A2D_FUNCTION T sin(T val) {
 #ifndef __CUDACC__
   return std::sin(val);
 #else
-  return thrust::sin(val);
+  return cuda::std::sin(val);
 #endif
 }
 
@@ -314,7 +292,7 @@ A2D_FUNCTION T asin(T val) {
 #ifndef __CUDACC__
   return std::asin(val);
 #else
-  return thrust::asin(val);
+  return cuda::std::asin(val);
 #endif
 }
 
@@ -323,7 +301,7 @@ A2D_FUNCTION T cos(T val) {
 #ifndef __CUDACC__
   return std::cos(val);
 #else
-  return thrust::cos(val);
+  return cuda::std::cos(val);
 #endif
 }
 
@@ -332,15 +310,18 @@ A2D_FUNCTION T acos(T val) {
 #ifndef __CUDACC__
   return std::acos(val);
 #else
-  return thrust::acos(val);
+  return cuda::std::acos(val);
 #endif
 }
 
 template <class ForwardIt, class T>
-void fill(ForwardIt first, ForwardIt last, const T& value) {
+A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
+#ifdef __CUDACC__
+  thrust::fill(first, last, value);
+#else
   std::fill(first, last, value);
-}
 #endif
+}
 
 }  // namespace A2D
 

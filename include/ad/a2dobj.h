@@ -749,48 +749,55 @@ A2D_FUNCTION T* get_data(A2DObj<Vec<T, n>&>& vec) {
 
 // new ADScalar get_data  (SPE)
 template <class T, int N>
-struct __is_numeric_type<ADScalar<T,N>> : std::is_floating_point<T> {};
+struct __is_numeric_type<ADScalar<T, N>> : std::is_floating_point<T> {};
 
 template <class T, int N>
-struct __is_numeric_type<ADScalar<std::complex<T>,N>> : std::is_floating_point<T> {};
+struct __is_numeric_type<ADScalar<std::complex<T>, N>>
+    : std::is_floating_point<T> {};
 
 template <int N>
-struct __get_object_numeric_type<ADScalar<double,N>> {
-  using type = ADScalar<double,N>;
+struct __get_object_numeric_type<ADScalar<double, N>> {
+  using type = ADScalar<double, N>;
 };
 
 template <int N>
-struct __get_object_numeric_type<ADScalar<std::complex<double>,N>> {
-  using type = ADScalar<std::complex<double>,N>;
+struct __get_object_numeric_type<ADScalar<std::complex<double>, N>> {
+  using type = ADScalar<std::complex<double>, N>;
 };
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-ADScalar<T,N>& get_data(ADScalar<T,N>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+ADScalar<T, N>& get_data(ADScalar<T, N>& value) {
   return value;
 }
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const ADScalar<T,N>& get_data(const ADScalar<T,N>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+const ADScalar<T, N>& get_data(const ADScalar<T, N>& value) {
   return value;
 }
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-ADScalar<T,N>& get_data(ADObj<ADScalar<T,N>>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+ADScalar<T, N>& get_data(ADObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const ADScalar<T,N>& get_data(const ADObj<ADScalar<T,N>>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+const ADScalar<T, N>& get_data(const ADObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-ADScalar<T,N>& get_data(A2DObj<ADScalar<T,N>>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+ADScalar<T, N>& get_data(A2DObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
-template <typename T, int N, std::enable_if_t<is_numeric_type<T>::value, bool> = true>
-const ADScalar<T,N>& get_data(const A2DObj<ADScalar<T,N>>& value) {
+template <typename T, int N,
+          std::enable_if_t<is_numeric_type<T>::value, bool> = true>
+const ADScalar<T, N>& get_data(const A2DObj<ADScalar<T, N>>& value) {
   return value.value();
 }
 
@@ -798,95 +805,96 @@ const ADScalar<T,N>& get_data(const A2DObj<ADScalar<T,N>>& value) {
  * @brief Get data pointers from objects
  */
 template <typename T, int N, int m, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(Mat<ADScalar<T,N>, m, n>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(Mat<ADScalar<T, N>, m, n>& mat) {
   return mat.get_data();
 }
 
 template <typename T, int N, int m, int n>
-A2D_FUNCTION const ADScalar<T,N>* get_data(const Mat<ADScalar<T,N>, m, n>& mat) {
+A2D_FUNCTION const ADScalar<T, N>* get_data(
+    const Mat<ADScalar<T, N>, m, n>& mat) {
   return mat.get_data();
 }
 
 template <typename T, int N, int m, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<Mat<ADScalar<T,N>, m, n>>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<Mat<ADScalar<T, N>, m, n>>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<Mat<ADScalar<T,N>, m, n>>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<Mat<ADScalar<T, N>, m, n>>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<Mat<ADScalar<T,N>, m, n>&>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<Mat<ADScalar<T, N>, m, n>&>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<Mat<ADScalar<T,N>, m, n>&>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<Mat<ADScalar<T, N>, m, n>&>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION ADScalar<T,N>* get_data(SymMat<ADScalar<T,N>, m>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(SymMat<ADScalar<T, N>, m>& mat) {
   return mat.get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION const ADScalar<T,N>* get_data(const SymMat<ADScalar<T,N>, m>& mat) {
+A2D_FUNCTION const ADScalar<T, N>* get_data(
+    const SymMat<ADScalar<T, N>, m>& mat) {
   return mat.get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<SymMat<ADScalar<T,N>, m>>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<SymMat<ADScalar<T, N>, m>>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<SymMat<ADScalar<T,N>, m>>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<SymMat<ADScalar<T, N>, m>>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<SymMat<ADScalar<T,N>, m>&>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<SymMat<ADScalar<T, N>, m>&>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int m>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<SymMat<ADScalar<T,N>, m>&>& mat) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<SymMat<ADScalar<T, N>, m>&>& mat) {
   return mat.value().get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(Vec<ADScalar<T,N>, n>& vec) {
+A2D_FUNCTION ADScalar<T, N>* get_data(Vec<ADScalar<T, N>, n>& vec) {
   return vec.get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION const ADScalar<T,N>* get_data(const Vec<ADScalar<T,N>, n>& vec) {
+A2D_FUNCTION const ADScalar<T, N>* get_data(const Vec<ADScalar<T, N>, n>& vec) {
   return vec.get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<Vec<ADScalar<T,N>, n>>& vec) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<Vec<ADScalar<T, N>, n>>& vec) {
   return vec.value().get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<Vec<ADScalar<T,N>, n>>& vec) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<Vec<ADScalar<T, N>, n>>& vec) {
   return vec.value().get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(ADObj<Vec<ADScalar<T,N>, n>&>& vec) {
+A2D_FUNCTION ADScalar<T, N>* get_data(ADObj<Vec<ADScalar<T, N>, n>&>& vec) {
   return vec.value().get_data();
 }
 
 template <typename T, int N, int n>
-A2D_FUNCTION ADScalar<T,N>* get_data(A2DObj<Vec<ADScalar<T,N>, n>&>& vec) {
+A2D_FUNCTION ADScalar<T, N>* get_data(A2DObj<Vec<ADScalar<T, N>, n>&>& vec) {
   return vec.value().get_data();
 }
-
 
 }  // namespace A2D
 

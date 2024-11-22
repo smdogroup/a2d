@@ -11,8 +11,9 @@ using A2D_complex_t = std::complex<T>;
 // CUDA headers
 #ifndef A2D_FUNCTION
 #ifdef __CUDACC__
-#define A2D_FUNCTION __host__ __device__ // A2D_FUNCTION does nothing in this scenario
-#else // not __CUDACC__
+#define A2D_FUNCTION \
+  __host__ __device__  // A2D_FUNCTION does nothing in this scenario
+#else                  // not __CUDACC__
 #define A2D_FUNCTION
 #endif
 #endif

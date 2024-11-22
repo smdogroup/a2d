@@ -216,7 +216,8 @@ A2D_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
 
 // now define MatScale
 template <typename T, int M, int N>
-A2D_FUNCTION void MatScale(const T alpha, const Mat<T, M, N> &x, Mat<T, M, N> &y) {
+A2D_FUNCTION void MatScale(const T alpha, const Mat<T, M, N>& x,
+                           Mat<T, M, N>& y) {
   MatScaleCore<T, M, N>(alpha, get_data(x), get_data(y));
 }
 
@@ -240,10 +241,10 @@ class MatScaleExpr {
 
   // Make sure the matrix dimensions are consistent
   static_assert((get_a2d_object_type<Atype>::value ==
-                  get_a2d_object_type<Btype>::value),
+                 get_a2d_object_type<Btype>::value),
                 "Matrices are not all of the same type");
 
-  A2D_FUNCTION MatScaleExpr(dtype alpha, Atype &A, Btype &B)
+  A2D_FUNCTION MatScaleExpr(dtype alpha, Atype& A, Btype& B)
       : alpha(alpha), A(A), B(B) {}
 
   A2D_FUNCTION void eval() {
@@ -259,15 +260,15 @@ class MatScaleExpr {
 
     if constexpr (add == ADiffType::ACTIVE && adA == ADiffType::ACTIVE) {
       MatScaleCore<T, M, N>(GetSeed<seed>::get_data(alpha), get_data(A),
-                         GetSeed<seed>::get_data(B));
+                            GetSeed<seed>::get_data(B));
       VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(A),
-                       GetSeed<seed>::get_data(B));
+                          GetSeed<seed>::get_data(B));
     } else if constexpr (add == ADiffType::ACTIVE) {
       MatScaleCore<T, M, N>(GetSeed<seed>::get_data(alpha), get_data(A),
-                         GetSeed<seed>::get_data(B));
+                            GetSeed<seed>::get_data(B));
     } else if constexpr (adA == ADiffType::ACTIVE) {
       MatScaleCore<T, M, N>(get_data(alpha), GetSeed<seed>::get_data(A),
-                         GetSeed<seed>::get_data(B));
+                            GetSeed<seed>::get_data(B));
     }
   }
   A2D_FUNCTION void reverse() {
@@ -278,7 +279,7 @@ class MatScaleExpr {
     }
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(get_data(alpha), GetSeed<seed>::get_data(B),
-                       GetSeed<seed>::get_data(A));
+                          GetSeed<seed>::get_data(A));
     }
   }
 
@@ -291,51 +292,51 @@ class MatScaleExpr {
     }
     if constexpr (adA == ADiffType::ACTIVE) {
       VecAddCore<T, size>(get_data(alpha), GetSeed<ADseed::h>::get_data(B),
-                       GetSeed<ADseed::h>::get_data(B));
+                          GetSeed<ADseed::h>::get_data(B));
     }
     if constexpr (add == ADiffType::ACTIVE && adA == ADiffType::ACTIVE) {
       GetSeed<ADseed::h>::get_data(alpha) += VecDotCore<T, size>(
           GetSeed<ADseed::b>::get_data(B), GetSeed<ADseed::p>::get_data(A));
       VecAddCore<T, size>(GetSeed<ADseed::p>::get_data(alpha),
-                       GetSeed<ADseed::b>::get_data(B),
-                       GetSeed<ADseed::h>::get_data(A));
+                          GetSeed<ADseed::b>::get_data(B),
+                          GetSeed<ADseed::h>::get_data(A));
     }
   }
 
   dtype alpha;
-  Atype &A;
-  Btype &B;
+  Atype& A;
+  Btype& B;
 };
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(ADObj<T> &alpha, ADObj<Atype> &x, ADObj<Btype> &y) {
-  return MatScaleExpr<ADObj<T> &, ADObj<Atype>, ADObj<Atype>>(alpha, x, y);
+A2D_FUNCTION auto MatScale(ADObj<T>& alpha, ADObj<Atype>& x, ADObj<Btype>& y) {
+  return MatScaleExpr<ADObj<T>&, ADObj<Atype>, ADObj<Atype>>(alpha, x, y);
 }
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(const T alpha, ADObj<Atype> &x, ADObj<Btype> &y) {
+A2D_FUNCTION auto MatScale(const T alpha, ADObj<Atype>& x, ADObj<Btype>& y) {
   return MatScaleExpr<const T, ADObj<Atype>, ADObj<Atype>>(alpha, x, y);
 }
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(ADObj<T> &alpha, const Atype &x, ADObj<Btype> &y) {
-  return MatScaleExpr<ADObj<T> &, const Atype, ADObj<Atype>>(alpha, x, y);
+A2D_FUNCTION auto MatScale(ADObj<T>& alpha, const Atype& x, ADObj<Btype>& y) {
+  return MatScaleExpr<ADObj<T>&, const Atype, ADObj<Atype>>(alpha, x, y);
 }
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(A2DObj<T> &alpha, A2DObj<Atype> &x,
-                           A2DObj<Btype> &y) {
-  return MatScaleExpr<A2DObj<T> &, A2DObj<Atype>, A2DObj<Atype>>(alpha, x, y);
+A2D_FUNCTION auto MatScale(A2DObj<T>& alpha, A2DObj<Atype>& x,
+                           A2DObj<Btype>& y) {
+  return MatScaleExpr<A2DObj<T>&, A2DObj<Atype>, A2DObj<Atype>>(alpha, x, y);
 }
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(const T alpha, A2DObj<Atype> &x, A2DObj<Btype> &y) {
+A2D_FUNCTION auto MatScale(const T alpha, A2DObj<Atype>& x, A2DObj<Btype>& y) {
   return MatScaleExpr<const T, A2DObj<Atype>, A2DObj<Atype>>(alpha, x, y);
 }
 
 template <class T, class Atype, class Btype>
-A2D_FUNCTION auto MatScale(A2DObj<T> &alpha, const Atype &x, A2DObj<Btype> &y) {
-  return MatScaleExpr<A2DObj<T> &, const Atype, A2DObj<Atype>>(alpha, x, y);
+A2D_FUNCTION auto MatScale(A2DObj<T>& alpha, const Atype& x, A2DObj<Btype>& y) {
+  return MatScaleExpr<A2DObj<T>&, const Atype, A2DObj<Atype>>(alpha, x, y);
 }
 
 namespace Test {

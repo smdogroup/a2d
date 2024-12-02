@@ -19,13 +19,13 @@ template <typename T, int N, bool symA = false, bool symB = false,
 A2D_FUNCTION void SymMatMatSquareMult(const T A[], const T B[], T C[]) {
   // C = A * B
   // zero the matrix if not additive
-  if constexpr (!additive) {
-    if constexpr (symC) {
-      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
-    } else {
-      std::fill(C, C + N * N, static_cast<T>(0));
-    }
-  }
+  // if constexpr (!additive) {
+  //   if constexpr (symC) {
+  //     std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
+  //   } else {
+  //     std::fill(C, C + N * N, static_cast<T>(0));
+  //   }
+  // }
 
   // Precompute the symmetric matrix indices
   int symMatIndices[N * N];
@@ -112,13 +112,13 @@ template <typename T, int N, bool symA = false, bool symB = true,
           bool symC = false, bool additive = false>
 A2D_FUNCTION void SymMatMatLeftTrSquareMult(const T A[], const T B[], T C[]) {
   // zero the matrix if not additive
-  if constexpr (!additive) {
-    if constexpr (symC) {
-      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
-    } else {
-      std::fill(C, C + N * N, static_cast<T>(0));
-    }
-  }
+  // if constexpr (!additive) {
+  //   if constexpr (symC) {
+  //     std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
+  //   } else {
+  //     std::fill(C, C + N * N, static_cast<T>(0));
+  //   }
+  // }
 
   // Precompute the symmetric matrix indices
   int symMatIndices[N * N];
@@ -165,13 +165,13 @@ template <typename T, int N, bool symA = false, bool symB = false,
           bool symC = false, bool additive = false>
 A2D_FUNCTION void SymMatMatRightTrSquareMult(const T A[], const T B[], T C[]) {
   // zero the matrix if not additive
-  if constexpr (!additive) {
-    if constexpr (symC) {
-      std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
-    } else {
-      std::fill(C, C + N * N, static_cast<T>(0));
-    }
-  }
+  // if constexpr (!additive) {
+  //   if constexpr (symC) {
+  //     std::fill(C, C + N * (N - 1) / 2, static_cast<T>(0));
+  //   } else {
+  //     std::fill(C, C + N * N, static_cast<T>(0));
+  //   }
+  // }
 
   // Precompute the symmetric matrix indices
   int symMatIndices[N * N];

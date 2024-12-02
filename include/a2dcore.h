@@ -37,5 +37,6 @@
 #include "ad/shell/a2dmatrotateframe.h"
 #include "ad/shell/a2dshellstrain.h"
 #include "ad/shell/a2dsymmatrotateframe.h"
+#include "ad/shell/a2disotropicshellstress.h"
 
 #endif  //  A2D_CORE_H

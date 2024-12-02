@@ -3,6 +3,8 @@
 
 #include "../../a2ddefs.h"
 
+namespace A2D {
+
 template <typename T, int N>
 A2D_FUNCTION void MatInvCore(const T A[], T Ainv[]) {
   static_assert((N >= 1 && N <= 3), "MatInvCore not implemented for N >= 4");
@@ -65,6 +67,8 @@ A2D_FUNCTION void SymMatInvCore(const T S[], T Sinv[]) {
 
     Sinv[5] = (S[0] * S[2] - S[1] * S[1]) * detinv;
   }
+}
+
 }
 
 #endif  // A2D_MAT_INV_CORE_H

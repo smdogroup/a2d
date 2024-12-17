@@ -402,8 +402,8 @@ A2D_2ND_BINARY(Divide2, operator/, a.value() / b.value(), T(1.0) / b.value(),
                tmp* bval, -tmp* tmp* a.value() * bval,
                tmp*(a.pvalue() - tmp * a.value() * b.pvalue()),
                tmp*(hval - tmp * bval * b.pvalue()),
-               tmp* tmp * (2.0 * tmp * a.value() * bval * b.pvalue() -
-                           a.value() * hval - bval * a.pvalue()))
+               tmp* tmp*(2.0 * tmp * a.value() * bval * b.pvalue() -
+                         a.value() * hval - bval * a.pvalue()))
 A2D_2ND_BINARY(Max2, max2,
                (RealPart(a.value()) > RealPart(b.value()) ? a.value()
                                                           : b.value()),

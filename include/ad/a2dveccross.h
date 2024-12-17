@@ -11,7 +11,8 @@ namespace A2D {
 
 // z = x cross y
 template <typename T>
-A2D_FUNCTION void VecCross(const Vec<T, 3> &x, const Vec<T, 3> &y, Vec<T, 3> &z) {
+A2D_FUNCTION void VecCross(const Vec<T, 3> &x, const Vec<T, 3> &y,
+                           Vec<T, 3> &z) {
   VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
 }
 
@@ -133,7 +134,8 @@ A2D_FUNCTION auto VecCross(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y,
+                           A2DObj<ztype> &z) {
   return VecCrossExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
@@ -317,7 +319,8 @@ A2D_FUNCTION auto VecCross(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y,
+                           A2DObj<ztype> &z) {
   return VecCross2DExpr<A2DObj<xtype> &, A2DObj<ytype> &, A2DObj<ztype>>(x, y,
                                                                          z);
 }

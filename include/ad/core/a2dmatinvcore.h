@@ -69,6 +69,6 @@ A2D_FUNCTION void SymMatInvCore(const T S[], T Sinv[]) {
   }
 }
 
-}
+}  // namespace A2D
 
 #endif  // A2D_MAT_INV_CORE_H

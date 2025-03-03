@@ -37,9 +37,9 @@ A2D_FUNCTION void MatVecMult(const Mat<T, N, M>& A, const Vec<T, K>& x,
 template <MatOp op, class Atype, class xtype, class ytype>
 class MatVecMultExpr {
  public:
-  static constexpr MatOp not_op = conditional_value < MatOp,
-                         op == MatOp::NORMAL, MatOp::TRANSPOSE,
-                         MatOp::NORMAL > ::value;
+  static constexpr MatOp not_op =
+      conditional_value<MatOp, op == MatOp::NORMAL, MatOp::TRANSPOSE,
+                        MatOp::NORMAL>::value;
 
   // Extract the numeric type to use
   typedef typename get_object_numeric_type<ytype>::type T;
@@ -74,8 +74,8 @@ class MatVecMultExpr {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
-    constexpr ADseed seed = conditional_value < ADseed,
-                     forder == ADorder::FIRST, ADseed::b, ADseed::p > ::value;
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
 
     if constexpr (adA == ADiffType::ACTIVE && adx == ADiffType::ACTIVE) {
       constexpr bool additive = true;
@@ -191,8 +191,8 @@ class SymMatVecMultExpr {
     static_assert(
         !(order == ADorder::FIRST and forder == ADorder::SECOND),
         "Can't perform second order forward with first order objects");
-    constexpr ADseed seed = conditional_value < ADseed,
-                     forder == ADorder::FIRST, ADseed::b, ADseed::p > ::value;
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
 
     if constexpr (adA == ADiffType::ACTIVE && adx == ADiffType::ACTIVE) {
       constexpr bool additive = true;
@@ -389,8 +389,8 @@ class MatScaleExpr {
 
   template <ADorder forder>
   A2D_FUNCTION void forward() {
-    constexpr ADseed seed = conditional_value < ADseed,
-                     forder == ADorder::FIRST, ADseed::b, ADseed::p > ::value;
+    constexpr ADseed seed = conditional_value<ADseed, forder == ADorder::FIRST,
+                                              ADseed::b, ADseed::p>::value;
 
     if constexpr (add == ADiffType::ACTIVE && adA == ADiffType::ACTIVE) {
       MatScaleCore<T, M, N>(GetSeed<seed>::get_data(alpha), get_data(A),

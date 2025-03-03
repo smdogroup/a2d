@@ -258,7 +258,7 @@ class SymMatVecMultExpr {
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, ADObj<xtype>& x,
                              ADObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<ADObj<Atype>, ADObj<xtype>, ADObj<ytype>>(A, x, y);
   } else {
     return MatVecMultExpr<MatOp::NORMAL, ADObj<Atype>, ADObj<xtype>,
@@ -268,7 +268,7 @@ A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, ADObj<xtype>& x,
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
                              A2DObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<A2DObj<Atype>, A2DObj<xtype>, A2DObj<ytype>>(A, x,
                                                                           y);
   } else {
@@ -278,7 +278,7 @@ A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, A2DObj<xtype>& x,
 }
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x, ADObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<ADObj<Atype>, const xtype, ADObj<ytype>>(A, x, y);
   } else {
     return MatVecMultExpr<MatOp::NORMAL, ADObj<Atype>, const xtype,
@@ -288,7 +288,7 @@ A2D_FUNCTION auto MatVecMult(ADObj<Atype>& A, const xtype& x, ADObj<ytype>& y) {
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
                              A2DObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<A2DObj<Atype>, const xtype, A2DObj<ytype>>(A, x,
                                                                         y);
   } else {
@@ -298,7 +298,7 @@ A2D_FUNCTION auto MatVecMult(A2DObj<Atype>& A, const xtype& x,
 }
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x, ADObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<const Atype, ADObj<xtype>, ADObj<ytype>>(A, x, y);
   } else {
     return MatVecMultExpr<MatOp::NORMAL, const Atype, ADObj<xtype>,
@@ -308,7 +308,7 @@ A2D_FUNCTION auto MatVecMult(const Atype& A, ADObj<xtype>& x, ADObj<ytype>& y) {
 template <class Atype, class xtype, class ytype>
 A2D_FUNCTION auto MatVecMult(const Atype& A, A2DObj<xtype>& x,
                              A2DObj<ytype>& y) {
-  if constexpr (Atype::obj_type == ADObjType::SYMMAT) {
+  if constexpr (get_a2d_object_type<Atype>::value == ADObjType::SYMMAT) {
     return SymMatVecMultExpr<const Atype, A2DObj<xtype>, A2DObj<ytype>>(A, x,
                                                                         y);
   } else {

@@ -371,6 +371,18 @@ A2D_FUNCTION inline ADScalar<X, M> cos(const ADScalar<X, M> &r) {
   return out;
 }
 
+template <class X, int M>
+A2D_FUNCTION inline ADScalar<X, M> atan(const ADScalar<X, M> &r) {
+  // device compatible sin, cos
+  ADScalar<X, M> out(::atan(r.value));
+  X d = 1.0/(1.0 + r.value * r.value); // 1/(1+x^2)
+  for (int i = 0; i < M; i++) {
+    out.deriv[i] = d * r.deriv[i];
+  }
+  return out;
+}
+
+
 // for A2D Objects
 
 // template <int N>

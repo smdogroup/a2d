@@ -88,7 +88,7 @@ A2D_FUNCTION void NonlinearGreenStrainForwardCore(const T Ux[], const T Ud[],
 
     E[1] = 0.5 * (Ud[1] + Ud[2] + Ux[0] * Ud[1] + Ux[2] * Ud[3] +
                   Ud[0] * Ux[1] + Ud[2] * Ux[3]);
-    E[2] = Ud[2] + Ux[1] * Ud[1] + Ux[3] * Ud[3];
+    E[2] = Ud[3] + Ux[1] * Ud[1] + Ux[3] * Ud[3];
 
   } else {
     E[0] = Ud[0] + Ux[0] * Ud[0] + Ux[3] * Ud[3] + Ux[6] * Ud[6];

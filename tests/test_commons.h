@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <iomanip>
 #include <string>
 
 // Global typenames

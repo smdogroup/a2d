@@ -182,6 +182,35 @@ A2D_FUNCTION void VecOuterCore(const T alpha, const T x[], const T y[], T A[]) {
   }
 }
 
+/*
+ * Diagonal-preserving symmetrization of the vec-vec outer product:
+ *
+ * Ret = x y^T + y x^T - diag(x) * diag(y)
+ * */
+template <typename T, int N, bool additive = false>
+A2D_FUNCTION void DiagonalPreservingVecSymOuterCore(const T x[], const T y[],
+                                                    T S[]) {
+  if constexpr (additive) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < i; j++) {
+        S[0] += x[i] * y[j] + x[j] * y[i];
+        S++;
+      }
+      S[0] += x[i] * y[i];
+      S++;
+    }
+  } else {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < i; j++) {
+        S[0] = x[i] * y[j] + x[j] * y[i];
+        S++;
+      }
+      S[0] = x[i] * y[i];
+      S++;
+    }
+  }
+}
+
 template <typename T, int N, bool additive = false>
 A2D_FUNCTION void VecSymOuterCore(const T x[], T S[]) {
   if constexpr (additive) {

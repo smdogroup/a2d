@@ -65,7 +65,7 @@ enum class ADseed { b, p, h };
  */
 enum class FEVarType { DATA, GEOMETRY, STATE };
 
-using index_t = uint32_t;  // TODO: size_t may be a better choice here
+using index_t = int32_t;
 static constexpr index_t MAX_INDEX = std::numeric_limits<index_t>::max();
 static constexpr index_t INDEX_NBITS = std::numeric_limits<index_t>::digits;
 static constexpr index_t NO_INDEX = MAX_INDEX;
@@ -337,13 +337,13 @@ A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
 #endif
 }
 
-A2D_FUNCTION int A2D_rand() {
-#ifdef __CUDACC__
-  return 123456;
-#else
-  return rand();
-#endif
-}
+// A2D_FUNCTION int A2D_rand() {
+// #ifdef __CUDACC__
+//   return 123456;
+// #else
+//   return rand();
+// #endif
+// }
 
 }  // namespace A2D
 

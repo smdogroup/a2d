@@ -350,6 +350,17 @@ A2D_FUNCTION inline ADScalar<X, M> exp(const ADScalar<X, M> &r) {
 }
 
 template <class X, int M>
+A2D_FUNCTION inline ADScalar<X, M> log(const ADScalar<X, M> &r) {
+  // device compatible log
+  ADScalar<X, M> out(::log(r.value));
+  X inv = 1.0 / r.value;
+  for (int i = 0; i < M; i++) {
+    out.deriv[i] = inv * r.deriv[i];
+  }
+  return out;
+}
+
+template <class X, int M>
 A2D_FUNCTION inline ADScalar<X, M> sin(const ADScalar<X, M> &r) {
   // device compatible sin, cos
   ADScalar<X, M> out(::sin(r.value));

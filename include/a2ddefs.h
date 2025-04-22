@@ -195,6 +195,10 @@ template <class T>
 struct get_object_numeric_type
     : __get_object_numeric_type<typename remove_const_and_refs<T>::type> {};
 
+// Forward declaration of class ADScalar
+template <class T, int N>
+class ADScalar;
+
 /*
   Get the type of object
 */
@@ -210,6 +214,11 @@ struct __get_a2d_object_type<double> {
 
 template <>
 struct __get_a2d_object_type<A2D_complex_t<double>> {
+  static constexpr ADObjType value = ADObjType::SCALAR;
+};
+
+template <class T, int N>
+struct __get_a2d_object_type<ADScalar<T, N>> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 

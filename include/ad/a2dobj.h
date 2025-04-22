@@ -510,6 +510,25 @@ class GetSeed {
   }
 
   template <typename T, int N>
+  static A2D_FUNCTION ADScalar<T, N>& get_data(ADObj<ADScalar<T, N>>& value) {
+    static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
+    return value.bvalue();
+  }
+
+  template <typename T, int N>
+  static A2D_FUNCTION ADScalar<T, N>& get_data(A2DObj<ADScalar<T, N>>& value) {
+    static_assert(seed == ADseed::b or seed == ADseed::p or seed == ADseed::h,
+                  "Incompatible seed type for A2DObj");
+    if constexpr (seed == ADseed::b) {
+      return value.bvalue();
+    } else if constexpr (seed == ADseed::p) {
+      return value.pvalue();
+    } else {  // seed == ADseed::h
+      return value.hvalue();
+    }
+  }
+
+  template <typename T, int N>
   static A2D_FUNCTION T* get_data(ADObj<Vec<T, N>>& value) {
     static_assert(seed == ADseed::b, "Incompatible seed type for ADObj");
     return value.bvalue().get_data();

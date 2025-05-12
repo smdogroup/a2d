@@ -233,7 +233,22 @@ class VarTuple : public VarTupleBase<T, Vars...> {
 
  private:
   VarTupleObj var;
+
+  template <int index, typename T1, class... Vars1>
+  friend auto& get(VarTuple<T1, Vars1...>&);
+  template <int index, typename T1, class... Vars1>
+  friend auto& get(const VarTuple<T1, Vars1...>&);
 };
+
+template <int index, typename T, class... Vars>
+A2D_FUNCTION auto& get(VarTuple<T, Vars...>& t) {
+  return a2d_get<index>(t.var);
+}
+
+template <int index, typename T, class... Vars>
+A2D_FUNCTION auto& get(const VarTuple<T, Vars...>& t) {
+  return a2d_get<index>(t.var);
+}
 
 template <typename T, class... Vars>
 A2D_FUNCTION auto MakeVarTuple(Vars&... s) {
@@ -293,7 +308,22 @@ class TieTuple : public VarTupleBase<T, Vars...> {
 
  private:
   VarTupleObj var;
+
+  template <int index, typename T1, class... Vars1>
+  friend auto get(TieTuple<T1, Vars1...>&);
+  template <int index, typename T1, class... Vars1>
+  friend auto get(const TieTuple<T1, Vars1...>&);
 };
+
+template <int index, typename T, class... Vars>
+A2D_FUNCTION auto get(TieTuple<T, Vars...>& t) {
+  return a2d_get<index>(t.var);
+}
+
+template <int index, typename T, class... Vars>
+A2D_FUNCTION auto get(const TieTuple<T, Vars...>& t) {
+  return a2d_get<index>(t.var);
+}
 
 template <typename T, class... Vars>
 A2D_FUNCTION auto MakeTieTuple(Vars&... s) {

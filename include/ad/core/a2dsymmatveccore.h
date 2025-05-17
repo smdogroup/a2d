@@ -52,7 +52,7 @@ A2D_FUNCTION void SymMatVecCore(const T S[], const T x[], T y[]) noexcept {
       T value = 0.0;
       for (int j = 0; j < M; j++) {
         int index = i >= j ? j + i * (i + 1) / 2 : i + j * (j + 1) / 2;
-        value += S[index] * x[j]; // value += S[i, j] * y[j]
+        value += S[index] * x[j];  // value += S[i, j] * y[j]
       }
       y[i] += value;
     }
@@ -61,13 +61,13 @@ A2D_FUNCTION void SymMatVecCore(const T S[], const T x[], T y[]) noexcept {
       T value = 0.0;
       for (int j = 0; j < M; j++) {
         int index = i >= j ? j + i * (i + 1) / 2 : i + j * (j + 1) / 2;
-        value += S[index] * x[j]; // value += S[i, j] * y[j]
+        value += S[index] * x[j];  // value += S[i, j] * y[j]
       }
       y[i] = value;
     }
   }
 }
 
-} // namespace A2D
+}  // namespace A2D
 
-#endif // A2D_SYMMAT_VEC_CORE_H
+#endif  // A2D_SYMMAT_VEC_CORE_H

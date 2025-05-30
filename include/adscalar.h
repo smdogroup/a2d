@@ -358,18 +358,6 @@ A2D_FUNCTION inline ADScalar<X, M> cos(const ADScalar<X, M> &r) {
   return out;
 }
 
-// for A2D Objects
-
-// template <int N>
-// struct __get_object_numeric_type<ADScalar<double,N>> {
-//   using type = ADScalar<double,N>;
-// };
-
-// template <int N>
-// struct __get_object_numeric_type<ADScalar<A2D_complex_t<double>,N>> {
-//   using type = ADScalar<A2D_complex_t<double>,N>;
-// };
-
 }  // namespace A2D
 
 #endif  // A2D_ADSCALAR_H

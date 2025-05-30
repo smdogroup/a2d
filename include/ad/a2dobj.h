@@ -243,7 +243,7 @@ class A2DObj : public A2DExpr<A2DObj<T>, T> {
       std::enable_if_t<
           is_a2d_sym_matrix<typename remove_const_and_refs<U>::type>::value,
           bool> = true>
-  A2D_FUNCTION ADObj<type&> operator()(const I i, const I j) {
+  A2D_FUNCTION A2DObj<type&> operator()(const I i, const I j) {
     return A2DObj<type&>(A(i, j), Ab(i, j), Ap(i, j), Ah(i, j));
   }
 

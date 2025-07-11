@@ -410,8 +410,6 @@ A2D_FUNCTION inline ADScalar<X, M> tanh(const ADScalar<X, M> &r) {
   return out;
 }
 
-// for A2D Objects
-
 // template <int N>
 // struct __get_object_numeric_type<ADScalar<double,N>> {
 //   using type = ADScalar<double,N>;

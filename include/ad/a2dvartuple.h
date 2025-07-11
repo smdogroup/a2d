@@ -6,6 +6,7 @@
 
 #include "../a2ddefs.h"
 #include "../a2dtuple.h"
+#include "../adscalar.h"
 #include "a2dobj.h"
 
 namespace A2D {
@@ -17,9 +18,15 @@ template <typename T>
 struct __is_complex<A2D_complex_t<T>> : public std::true_type {};
 
 template <typename T>
+struct __is_adscalar : public std::false_type {};
+
+template <typename T>
+struct __is_adscalar<ADScalar<T, 1>> : public std::true_type {};
+
+template <typename T>
 struct __is_scalar_type {
-  static const bool value =
-      std::is_arithmetic<T>::value || __is_complex<T>::value;
+  static const bool value = std::is_arithmetic<T>::value ||
+                            __is_complex<T>::value || __is_adscalar<T>::value;
 };
 
 struct __basic_arithmetic_type {

@@ -196,6 +196,11 @@ A2D_1ST_BINARY(Min, min2,
                tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* bval,
                (1.0 - tmp) * bval)
 
+A2D_1ST_BINARY(Atan2, atan2, atan2(a.value(), b.value()),
+               T(1.0) / (a.value() * a.value() + b.value() * b.value()),
+               tmp*(b.value() * a.bvalue() - a.value() * b.bvalue()),
+               b.value() * tmp * bval, -a.value() * tmp * bval)
+
 #define A2D_2ND_BINARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, AREVBODY, BREVBODY, \
                              HFORWARDBODY, HAREVBODY, HBREVBODY)              \
                                                                               \
@@ -418,6 +423,17 @@ A2D_2ND_BINARY(Min2, min2,
                tmp* bval, (1.0 - tmp) * bval,
                tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* hval,
                (1.0 - tmp) * hval)
+// atan2(y, x): a=y, b=x, tmp = 1/(x^2 + y^2)
+A2D_2ND_BINARY(Atan22, atan2, atan2(a.value(), b.value()),
+               T(1.0) / (a.value() * a.value() + b.value() * b.value()),
+               b.value() * tmp * bval, -a.value() * tmp * bval,
+               tmp*(b.value() * a.pvalue() - a.value() * b.pvalue()),
+               tmp*(b.value() * hval -
+                    2.0 * a.value() * tmp * bval *
+                        (b.value() * a.pvalue() - a.value() * b.pvalue())),
+               tmp * (-a.value() * hval -
+                      2.0 * b.value() * tmp * bval *
+                          (b.value() * a.pvalue() - a.value() * b.pvalue())))
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD

@@ -346,6 +346,24 @@ A2D_FUNCTION T acos(T val) {
 #endif
 }
 
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T atan(T val) {
+#ifndef __CUDACC__
+  return std::atan(val);
+#else
+  return cuda::std::atan(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T atan2(T y, T x) {
+#ifndef __CUDACC__
+  return std::atan2(y, x);
+#else
+  return cuda::std::atan2(y, x);
+#endif
+}
+
 template <class ForwardIt, class T>
 A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T &value) {
 #ifdef __CUDACC__

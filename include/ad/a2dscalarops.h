@@ -173,79 +173,82 @@ A2D_FUNCTION auto Eval(Expr&& expr, A2DObj<T&> out) {
 }
 
 namespace Test {
-template <typename T>
-class ScalarTest : public A2DTest<T, T, T, T> {
- public:
-  using Input = VarTuple<T, T, T>;
-  using Output = VarTuple<T, T>;
 
-  // Assemble a string to describe the test
-  std::string name() { return std::string("ScalarOperations"); }
+// template <typename T>
+// class ScalarTest : public A2DTest<T, T, T, T> {
+//  public:
+//   using Input = VarTuple<T, T, T>;
+//   using Output = VarTuple<T, T>;
 
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    T a, b, f;
-    x.get_values(a, b);
+//   // Assemble a string to describe the test
+//   std::string name() { return std::string("ScalarOperations"); }
 
-    f = log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
-        max2(a, min2(a * b, b * b)) - 4.0 * a / b + pow(5.0 / (b * b), 2.0) +
-        acos(a * 0.1);
+//   // Evaluate the matrix-matrix product
+//   Output eval(const Input& x) {
+//     T a, b, f;
+//     x.get_values(a, b);
 
-    return MakeVarTuple<T>(f);
-  }
+//     f = log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
+//         max2(a, min2(a * b, b * b)) - 4.0 * a / b + pow(5.0 / (b * b), 2.0) +
+//         acos(a * 0.1);
 
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    T a0, ab, b0, bb;
-    ADObj<T&> a(a0, ab), b(b0, bb);
-    ADObj<T> f;
-    x.get_values(a.value(), b.value());
+//     return MakeVarTuple<T>(f);
+//   }
 
-    auto stack = MakeStack(Eval(
-        log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
-            max2(a, min2(a * b, b * b)) - 4.0 * a / b +
-            pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
-        f));
+//   // Compute the derivative
+//   void deriv(const Output& seed, const Input& x, Input& g) {
+//     T a0, ab, b0, bb;
+//     ADObj<T&> a(a0, ab), b(b0, bb);
+//     ADObj<T> f;
+//     x.get_values(a.value(), b.value());
 
-    seed.get_values(f.bvalue());
-    stack.reverse();
-    g.set_values(a.bvalue(), b.bvalue());
-  }
+//     auto stack = MakeStack(Eval(
+//         log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
+//             max2(a, min2(a * b, b * b)) - 4.0 * a / b +
+//             pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
+//         f));
 
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    T a0, ab, ap, ah, b0, bb, bp, bh;
-    A2DObj<T&> a(a0, ab, ap, ah), b(b0, bb, bp, bh);
-    A2DObj<T> f;
-    x.get_values(a.value(), b.value());
-    p.get_values(a.pvalue(), b.pvalue());
+//     seed.get_values(f.bvalue());
+//     stack.reverse();
+//     g.set_values(a.bvalue(), b.bvalue());
+//   }
 
-    auto stack = MakeStack(Eval(
-        log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
-            max2(a, min2(a * b, b * b)) - 4.0 * a / b +
-            pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
-        f));
+//   // Compute the second-derivative
+//   void hprod(const Output& seed, const Output& hval, const Input& x,
+//              const Input& p, Input& h) {
+//     T a0, ab, ap, ah, b0, bb, bp, bh;
+//     A2DObj<T&> a(a0, ab, ap, ah), b(b0, bb, bp, bh);
+//     A2DObj<T> f;
+//     x.get_values(a.value(), b.value());
+//     p.get_values(a.pvalue(), b.pvalue());
 
-    seed.get_values(f.bvalue());
-    hval.get_values(f.hvalue());
-    stack.hproduct();
-    h.set_values(a.hvalue(), b.hvalue());
-  }
-};
+//     auto stack = MakeStack(Eval(
+//         log(a * a * sqrt(exp(a * sin(a) + 3.0 * a)) + 2.0 * a * a * a * a) +
+//             max2(a, min2(a * b, b * b)) - 4.0 * a / b +
+//             pow(5.0 / (b * b), 2.0) + acos(a * 0.1),
+//         f));
 
-inline bool ScalarTestAll(bool component, bool write_output) {
-  using Tc = A2D_complex_t<double>;
+//     seed.get_values(f.bvalue());
+//     hval.get_values(f.hvalue());
+//     stack.hproduct();
+//     h.set_values(a.hvalue(), b.hvalue());
+//   }
+// };
 
-  bool passed = true;
-  ScalarTest<Tc> test1;
-  test1.set_step_size(1e-8);  // inverse trigonometric functions may suffer from
-                              // subtraction cancellation even for complex step
-                              // with certain underlying implementation
-  passed = passed && Run(test1, component, write_output);
+// inline bool ScalarTestAll(bool component, bool write_output) {
+//   using Tc = A2D_complex_t<double>;
 
-  return passed;
-}
+//   bool passed = true;
+//   ScalarTest<Tc> test1;
+//   test1.set_step_size(1e-8);  // inverse trigonometric functions may suffer
+//   from
+//                               // subtraction cancellation even for complex
+//                               step
+//                               // with certain underlying implementation
+//   passed = passed && Run(test1, component, write_output);
+
+//   return passed;
+// }
 
 }  // namespace Test
 

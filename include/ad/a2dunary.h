@@ -20,46 +20,46 @@ namespace A2D {
    public:                                                                  \
     using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,       \
                                              ADExpr<A, Ta>>::type;          \
-    using A_t = typename std::conditional<CA, A, A &>::type;                \
-    A2D_FUNCTION OBJNAME(expr_t &a0) : a(a0.self()), val(0.0), bval(0.0) {} \
+    using A_t = typename std::conditional<CA, A, A&>::type;                 \
+    A2D_FUNCTION OBJNAME(expr_t& a0) : a(a0.self()), val(0.0), bval(0.0) {} \
     A2D_FUNCTION void eval() {                                              \
       a.eval();                                                             \
       val = (FUNCBODY);                                                     \
     }                                                                       \
     A2D_FUNCTION void forward() {                                           \
       a.forward();                                                          \
-      bval = (DERIVBODY)*a.bvalue();                                        \
+      bval = (DERIVBODY) * a.bvalue();                                      \
     }                                                                       \
     A2D_FUNCTION void reverse() {                                           \
-      a.bvalue() += (DERIVBODY)*bval;                                       \
+      a.bvalue() += (DERIVBODY) * bval;                                     \
       a.reverse();                                                          \
     }                                                                       \
     A2D_FUNCTION void bzero() {                                             \
       bval = T(0.0);                                                        \
       a.bzero();                                                            \
     }                                                                       \
-    A2D_FUNCTION T &value() { return val; }                                 \
-    A2D_FUNCTION const T &value() const { return val; }                     \
-    A2D_FUNCTION T &bvalue() { return bval; }                               \
-    A2D_FUNCTION const T &bvalue() const { return bval; }                   \
+    A2D_FUNCTION T& value() { return val; }                                 \
+    A2D_FUNCTION const T& value() const { return val; }                     \
+    A2D_FUNCTION T& bvalue() { return bval; }                               \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                   \
                                                                             \
    private:                                                                 \
     A_t a;                                                                  \
     T val, bval;                                                            \
   };                                                                        \
   template <class A, class Ta>                                              \
-  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                      \
+  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {                      \
     using T = typename remove_const_and_refs<Ta>::type;                     \
     return OBJNAME<A, Ta, T, true>(a);                                      \
   }                                                                         \
   template <class A, class Ta>                                              \
-  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {                            \
+  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                            \
     using T = typename remove_const_and_refs<Ta>::type;                     \
     return OBJNAME<A, Ta, T, false>(a);                                     \
   }
 
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
-A2D_1ST_UNARY_BASIC(ExpExpr, exp, exp(a.value()), val)
+A2D_1ST_UNARY_BASIC(ExpExpr, exp, A2D::exp(a.value()), val)
 A2D_1ST_UNARY_BASIC(UnaryPos, operator+, a.value(), T(1.0))
 A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
 
@@ -78,23 +78,23 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
    public:                                                                     \
     using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
                                              A2DExpr<A, Ta>>::type;            \
-    using A_t = typename std::conditional<CA, A, A &>::type;                   \
-    A2D_FUNCTION OBJNAME(expr_t &a0)                                           \
+    using A_t = typename std::conditional<CA, A, A&>::type;                    \
+    A2D_FUNCTION OBJNAME(expr_t& a0)                                           \
         : a(a0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0), tmp(0.0) {} \
     A2D_FUNCTION void eval() {                                                 \
       a.eval();                                                                \
       val = (FUNCBODY);                                                        \
     }                                                                          \
     A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY)*bval;                                          \
+      a.bvalue() += (DERIVBODY) * bval;                                        \
       a.reverse();                                                             \
     }                                                                          \
     A2D_FUNCTION void hforward() {                                             \
       a.hforward();                                                            \
-      pval = (DERIVBODY)*a.pvalue();                                           \
+      pval = (DERIVBODY) * a.pvalue();                                         \
     }                                                                          \
     A2D_FUNCTION void hreverse() {                                             \
-      a.hvalue() += (DERIVBODY)*hval;                                          \
+      a.hvalue() += (DERIVBODY) * hval;                                        \
       a.hreverse();                                                            \
     }                                                                          \
     A2D_FUNCTION void bzero() {                                                \
@@ -105,26 +105,26 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
       hval = T(0.0);                                                           \
       a.hzero();                                                               \
     }                                                                          \
-    A2D_FUNCTION T &value() { return val; }                                    \
-    A2D_FUNCTION const T &value() const { return val; }                        \
-    A2D_FUNCTION T &bvalue() { return bval; }                                  \
-    A2D_FUNCTION const T &bvalue() const { return bval; }                      \
-    A2D_FUNCTION T &pvalue() { return pval; }                                  \
-    A2D_FUNCTION const T &pvalue() const { return pval; }                      \
-    A2D_FUNCTION T &hvalue() { return hval; }                                  \
-    A2D_FUNCTION const T &hvalue() const { return hval; }                      \
+    A2D_FUNCTION T& value() { return val; }                                    \
+    A2D_FUNCTION const T& value() const { return val; }                        \
+    A2D_FUNCTION T& bvalue() { return bval; }                                  \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                      \
+    A2D_FUNCTION T& pvalue() { return pval; }                                  \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                      \
+    A2D_FUNCTION T& hvalue() { return hval; }                                  \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                      \
                                                                                \
    private:                                                                    \
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
   template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta> &a) {                        \
+  A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                        \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
   template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) {                              \
+  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                              \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
@@ -148,8 +148,8 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
    public:                                                              \
     using expr_t = typename std::conditional<CA, const ADExpr<A, Ta>,   \
                                              ADExpr<A, Ta>>::type;      \
-    using A_t = typename std::conditional<CA, A, A &>::type;            \
-    A2D_FUNCTION OBJNAME(expr_t &a0)                                    \
+    using A_t = typename std::conditional<CA, A, A&>::type;             \
+    A2D_FUNCTION OBJNAME(expr_t& a0)                                    \
         : a(a0.self()), val(0.0), bval(0.0), tmp(0.0) {}                \
     A2D_FUNCTION void eval() {                                          \
       a.eval();                                                         \
@@ -158,32 +158,32 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
     }                                                                   \
     A2D_FUNCTION void forward() {                                       \
       a.forward();                                                      \
-      bval = (DERIVBODY)*a.bvalue();                                    \
+      bval = (DERIVBODY) * a.bvalue();                                  \
     }                                                                   \
     A2D_FUNCTION void reverse() {                                       \
-      a.bvalue() += (DERIVBODY)*bval;                                   \
+      a.bvalue() += (DERIVBODY) * bval;                                 \
       a.reverse();                                                      \
     }                                                                   \
     A2D_FUNCTION void bzero() {                                         \
       bval = T(0.0);                                                    \
       a.bzero();                                                        \
     }                                                                   \
-    A2D_FUNCTION T &value() { return val; }                             \
-    A2D_FUNCTION const T &value() const { return val; }                 \
-    A2D_FUNCTION T &bvalue() { return bval; }                           \
-    A2D_FUNCTION const T &bvalue() const { return bval; }               \
+    A2D_FUNCTION T& value() { return val; }                             \
+    A2D_FUNCTION const T& value() const { return val; }                 \
+    A2D_FUNCTION T& bvalue() { return bval; }                           \
+    A2D_FUNCTION const T& bvalue() const { return bval; }               \
                                                                         \
    private:                                                             \
     A_t a;                                                              \
     T val, bval, tmp;                                                   \
   };                                                                    \
   template <class A, class Ta>                                          \
-  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta> &a) {                  \
+  A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {                  \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, T, true>(a);                                  \
   }                                                                     \
   template <class A, class Ta>                                          \
-  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta> &a) {                        \
+  A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                        \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, T, false>(a);                                 \
   }
@@ -191,15 +191,15 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
 // A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)
 A2D_1ST_UNARY(FabsExpr, fabs, (a.value() < 0.0 ? -a.value() : a.value()),
               (a.value() < 0.0 ? -1.0 : 1.0), tmp)
-A2D_1ST_UNARY(SinExpr, sin, sin(a.value()), cos(a.value()), tmp)
-A2D_1ST_UNARY(CosExpr, cos, cos(a.value()), sin(a.value()), -tmp)
-A2D_1ST_UNARY(SqrtExpr, sqrt, sqrt(a.value()), 1.0 / val, 0.5 * tmp)
-A2D_1ST_UNARY(LogExpr, log, log(a.value()), 1.0 / a.value(), tmp)
-A2D_1ST_UNARY(ACosExpr, acos, acos(a.value()),
-              -1.0 / sqrt(1.0 - a.value() * a.value()), tmp)
+A2D_1ST_UNARY(SinExpr, sin, A2D::sin(a.value()), A2D::cos(a.value()), tmp)
+A2D_1ST_UNARY(CosExpr, cos, A2D::cos(a.value()), A2D::sin(a.value()), -tmp)
+A2D_1ST_UNARY(SqrtExpr, sqrt, A2D::sqrt(a.value()), T(1.0) / val, T(0.5) * tmp)
+A2D_1ST_UNARY(LogExpr, log, A2D::log(a.value()), 1.0 / a.value(), tmp)
+A2D_1ST_UNARY(ACosExpr, acos, A2D::acos(a.value()),
+              -1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
 A2D_1ST_UNARY(ASinExpr, asin, asin(a.value()),
-              1.0 / sqrt(1.0 - a.value() * a.value()), tmp)
-A2D_1ST_UNARY(ATanExpr, atan, atan(a.value()),
+              1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
+A2D_1ST_UNARY(ATanExpr, atan, A2D::atan(a.value()),
               1.0 / (1.0 + a.value() * a.value()), tmp)
 
 /*
@@ -220,8 +220,8 @@ A2D_1ST_UNARY(ATanExpr, atan, atan(a.value()),
    public:                                                                     \
     using expr_t = typename std::conditional<CA, const A2DExpr<A, Ta>,         \
                                              A2DExpr<A, Ta>>::type;            \
-    using A_t = typename std::conditional<CA, A, A &>::type;                   \
-    A2D_FUNCTION OBJNAME(expr_t &a0)                                           \
+    using A_t = typename std::conditional<CA, A, A&>::type;                    \
+    A2D_FUNCTION OBJNAME(expr_t& a0)                                           \
         : a(a0.self()), val(0.0), bval(0.0), pval(0.0), hval(0.0), tmp(0.0) {} \
     A2D_FUNCTION void eval() {                                                 \
       a.eval();                                                                \
@@ -229,15 +229,15 @@ A2D_1ST_UNARY(ATanExpr, atan, atan(a.value()),
       tmp = (TEMPBODY);                                                        \
     }                                                                          \
     A2D_FUNCTION void reverse() {                                              \
-      a.bvalue() += (DERIVBODY)*bval;                                          \
+      a.bvalue() += (DERIVBODY) * bval;                                        \
       a.reverse();                                                             \
     }                                                                          \
     A2D_FUNCTION void hforward() {                                             \
       a.hforward();                                                            \
-      pval = (DERIVBODY)*a.pvalue();                                           \
+      pval = (DERIVBODY) * a.pvalue();                                         \
     }                                                                          \
     A2D_FUNCTION void hreverse() {                                             \
-      a.hvalue() += (DERIVBODY)*hval + (DERIV2BODY)*bval * a.pvalue();         \
+      a.hvalue() += (DERIVBODY) * hval + (DERIV2BODY) * bval * a.pvalue();     \
       a.hreverse();                                                            \
     }                                                                          \
     A2D_FUNCTION void bzero() {                                                \
@@ -248,26 +248,26 @@ A2D_1ST_UNARY(ATanExpr, atan, atan(a.value()),
       hval = T(0.0);                                                           \
       a.hzero();                                                               \
     }                                                                          \
-    A2D_FUNCTION T &value() { return val; }                                    \
-    A2D_FUNCTION const T &value() const { return val; }                        \
-    A2D_FUNCTION T &bvalue() { return bval; }                                  \
-    A2D_FUNCTION const T &bvalue() const { return bval; }                      \
-    A2D_FUNCTION T &pvalue() { return pval; }                                  \
-    A2D_FUNCTION const T &pvalue() const { return pval; }                      \
-    A2D_FUNCTION T &hvalue() { return hval; }                                  \
-    A2D_FUNCTION const T &hvalue() const { return hval; }                      \
+    A2D_FUNCTION T& value() { return val; }                                    \
+    A2D_FUNCTION const T& value() const { return val; }                        \
+    A2D_FUNCTION T& bvalue() { return bval; }                                  \
+    A2D_FUNCTION const T& bvalue() const { return bval; }                      \
+    A2D_FUNCTION T& pvalue() { return pval; }                                  \
+    A2D_FUNCTION const T& pvalue() const { return pval; }                      \
+    A2D_FUNCTION T& hvalue() { return hval; }                                  \
+    A2D_FUNCTION const T& hvalue() const { return hval; }                      \
                                                                                \
    private:                                                                    \
     A_t a;                                                                     \
     T val, bval, pval, hval, tmp;                                              \
   };                                                                           \
   template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta> &a) {                        \
+  A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                        \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
   template <class A, class Ta>                                                 \
-  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta> &a) {                              \
+  A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                              \
     using T = typename remove_const_and_refs<Ta>::type;                        \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
@@ -275,19 +275,22 @@ A2D_1ST_UNARY(ATanExpr, atan, atan(a.value()),
 // A2D_2ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY, DERIV2BODY)
 A2D_2ND_UNARY(FabsExpr2, fabs, (a.value() < 0.0 ? -a.value() : a.value()),
               (a.value() < 0.0 ? -1.0 : 1.0), tmp, 0.0)
-A2D_2ND_UNARY(ExpExpr2, exp, exp(a.value()), val, tmp, tmp)
-A2D_2ND_UNARY(SinExpr2, sin, sin(a.value()), cos(a.value()), tmp, -val)
-A2D_2ND_UNARY(CosExpr2, cos, cos(a.value()), sin(a.value()), -tmp, -val)
-A2D_2ND_UNARY(SqrtExpr2, sqrt, sqrt(a.value()), 1.0 / val, 0.5 * tmp,
-              -0.25 * tmp * tmp * tmp)
-A2D_2ND_UNARY(LogExpr2, log, log(a.value()), 1.0 / a.value(), tmp, -tmp *tmp)
-A2D_2ND_UNARY(ACosExpr2, acos, acos(a.value()),
-              -1.0 / sqrt(1.0 - a.value() * a.value()), tmp,
-              -a.value() / pow(1.0 - a.value() * a.value(), 1.5))
-A2D_2ND_UNARY(ASinExpr2, asin, asin(a.value()),
-              1.0 / sqrt(1.0 - a.value() * a.value()), tmp,
-              a.value() / pow(1.0 - a.value() * a.value(), 1.5))
-A2D_2ND_UNARY(ATanExpr2, atan, atan(a.value()),
+A2D_2ND_UNARY(ExpExpr2, exp, A2D::exp(a.value()), val, tmp, tmp)
+A2D_2ND_UNARY(SinExpr2, sin, A2D::sin(a.value()), A2D::cos(a.value()), tmp,
+              -val)
+A2D_2ND_UNARY(CosExpr2, cos, A2D::cos(a.value()), A2D::sin(a.value()), -tmp,
+              -val)
+A2D_2ND_UNARY(SqrtExpr2, sqrt, A2D::sqrt(a.value()), T(1.0) / val, T(0.5) * tmp,
+              -T(0.25) * tmp * tmp * tmp)
+A2D_2ND_UNARY(LogExpr2, log, A2D::log(a.value()), 1.0 / a.value(), tmp,
+              -tmp* tmp)
+A2D_2ND_UNARY(ACosExpr2, acos, A2D::acos(a.value()),
+              -1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
+              -a.value() / A2D::pow(1.0 - a.value() * a.value(), 1.5))
+A2D_2ND_UNARY(ASinExpr2, asin, A2D::asin(a.value()),
+              1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
+              a.value() / A2D::pow(1.0 - a.value() * a.value(), 1.5))
+A2D_2ND_UNARY(ATanExpr2, atan, A2D::atan(a.value()),
               1.0 / (1.0 + a.value() * a.value()), tmp,
               -2.0 * a.value() * tmp * tmp)
 

@@ -9,16 +9,16 @@
 namespace A2D {
 
 template <typename T, typename I, int N, int M>
-A2D_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M> &A,
-                                 Vec<T, N> &x) {
+A2D_FUNCTION void MatColumnToVec(I column, const Mat<T, N, M>& A,
+                                 Vec<T, N>& x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
 }
 
 template <typename T, typename I, int N>
-A2D_FUNCTION void MatColumnToVec(I column, const SymMat<T, N> &A,
-                                 Vec<T, N> &x) {
+A2D_FUNCTION void MatColumnToVec(I column, const SymMat<T, N>& A,
+                                 Vec<T, N>& x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(i, column);
   }
@@ -34,7 +34,7 @@ class MatColumnToVecExpr {
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 
-  MatColumnToVecExpr(I column, Atype &A, xtype &x)
+  MatColumnToVecExpr(I column, Atype& A, xtype& x)
       : column(column), A(A), x(x) {}
 
   A2D_FUNCTION void eval() {
@@ -77,29 +77,29 @@ class MatColumnToVecExpr {
   }
 
   const I column;
-  Atype &A;
-  xtype &x;
+  Atype& A;
+  xtype& x;
 };
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatColumnToVec(I column, ADObj<Atype> &A, ADObj<xtype> &x) {
+A2D_FUNCTION auto MatColumnToVec(I column, ADObj<Atype>& A, ADObj<xtype>& x) {
   return MatColumnToVecExpr<I, ADObj<Atype>, ADObj<xtype>>(column, A, x);
 }
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype> &A, A2DObj<xtype> &x) {
+A2D_FUNCTION auto MatColumnToVec(I column, A2DObj<Atype>& A, A2DObj<xtype>& x) {
   return MatColumnToVecExpr<I, A2DObj<Atype>, A2DObj<xtype>>(column, A, x);
 }
 
 template <typename T, typename I, int N, int M>
-A2D_FUNCTION void MatRowToVec(I row, const Mat<T, N, M> &A, Vec<T, M> &x) {
+A2D_FUNCTION void MatRowToVec(I row, const Mat<T, N, M>& A, Vec<T, M>& x) {
   for (int i = 0; i < M; i++) {
     x(i) = A(row, i);
   }
 }
 
 template <typename T, typename I, int N>
-A2D_FUNCTION void MatRowToVec(I row, const SymMat<T, N> &A, Vec<T, N> &x) {
+A2D_FUNCTION void MatRowToVec(I row, const SymMat<T, N>& A, Vec<T, N>& x) {
   for (int i = 0; i < N; i++) {
     x(i) = A(row, i);
   }
@@ -115,7 +115,7 @@ class MatRowToVecExpr {
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 
-  MatRowToVecExpr(I row, Atype &A, xtype &x) : row(row), A(A), x(x) {}
+  MatRowToVecExpr(I row, Atype& A, xtype& x) : row(row), A(A), x(x) {}
 
   A2D_FUNCTION void eval() {
     for (int i = 0; i < N; i++) {
@@ -157,17 +157,17 @@ class MatRowToVecExpr {
   }
 
   const I row;
-  Atype &A;
-  xtype &x;
+  Atype& A;
+  xtype& x;
 };
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatRowToVec(I row, ADObj<Atype> &A, ADObj<xtype> &x) {
+A2D_FUNCTION auto MatRowToVec(I row, ADObj<Atype>& A, ADObj<xtype>& x) {
   return MatRowToVecExpr<I, ADObj<Atype>, ADObj<xtype>>(row, A, x);
 }
 
 template <typename I, class Atype, class xtype>
-A2D_FUNCTION auto MatRowToVec(I row, A2DObj<Atype> &A, A2DObj<xtype> &x) {
+A2D_FUNCTION auto MatRowToVec(I row, A2DObj<Atype>& A, A2DObj<xtype>& x) {
   return MatRowToVecExpr<I, A2DObj<Atype>, A2DObj<xtype>>(row, A, x);
 }
 

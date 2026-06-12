@@ -10,7 +10,7 @@
 namespace A2D {
 
 template <typename T, int N>
-A2D_FUNCTION void VecNorm(const Vec<T, N> &x, T &alpha) {
+A2D_FUNCTION void VecNorm(const Vec<T, N>& x, T& alpha) {
   alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
 }
 
@@ -26,7 +26,7 @@ class VecNormExpr {
   // Get the differentiation order from the output
   static constexpr ADorder order = get_diff_order<dtype>::order;
 
-  A2D_FUNCTION VecNormExpr(vtype &x, dtype &alpha) : x(x), alpha(alpha) {}
+  A2D_FUNCTION VecNormExpr(vtype& x, dtype& alpha) : x(x), alpha(alpha) {}
 
   A2D_FUNCTION void eval() {
     get_data(alpha) = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
@@ -62,23 +62,23 @@ class VecNormExpr {
     VecAddCore<T, N>(scale, get_data(x), GetSeed<ADseed::h>::get_data(x));
   }
 
-  vtype &x;
-  dtype &alpha;
+  vtype& x;
+  dtype& alpha;
   T inv;
 };
 
 template <class vtype, class dtype>
-A2D_FUNCTION auto VecNorm(ADObj<vtype> &x, ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecNorm(ADObj<vtype>& x, ADObj<dtype>& alpha) {
   return VecNormExpr<ADObj<vtype>, ADObj<dtype>>(x, alpha);
 }
 
 template <class vtype, class dtype>
-A2D_FUNCTION auto VecNorm(A2DObj<vtype> &x, A2DObj<dtype> &alpha) {
+A2D_FUNCTION auto VecNorm(A2DObj<vtype>& x, A2DObj<dtype>& alpha) {
   return VecNormExpr<A2DObj<vtype>, A2DObj<dtype>>(x, alpha);
 }
 
 template <typename T, int N>
-A2D_FUNCTION void VecNormalize(const Vec<T, N> &x, Vec<T, N> &y) {
+A2D_FUNCTION void VecNormalize(const Vec<T, N>& x, Vec<T, N>& y) {
   T alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
   VecScaleCore<T, N>(1.0 / alpha, get_data(x), get_data(y));
 }
@@ -103,7 +103,7 @@ class VecNormalizeExpr {
   static_assert(get_diff_order<xtype>::order == order,
                 "ADorder does not match");
 
-  A2D_FUNCTION VecNormalizeExpr(xtype &x, ytype &y) : x(x), y(y) {}
+  A2D_FUNCTION VecNormalizeExpr(xtype& x, ytype& y) : x(x), y(y) {}
 
   A2D_FUNCTION void eval() {
     T alpha = sqrt(VecDotCore<T, N>(get_data(x), get_data(x)));
@@ -158,22 +158,22 @@ class VecNormalizeExpr {
   }
 
   T inv;
-  xtype &x;
-  ytype &y;
+  xtype& x;
+  ytype& y;
 };
 
 template <class xtype, class ytype>
-A2D_FUNCTION auto VecNormalize(ADObj<xtype> &x, ADObj<ytype> &y) {
+A2D_FUNCTION auto VecNormalize(ADObj<xtype>& x, ADObj<ytype>& y) {
   return VecNormalizeExpr<ADObj<xtype>, ADObj<ytype>>(x, y);
 }
 
 template <class xtype, class ytype>
-A2D_FUNCTION auto VecNormalize(A2DObj<xtype> &x, A2DObj<ytype> &y) {
+A2D_FUNCTION auto VecNormalize(A2DObj<xtype>& x, A2DObj<ytype>& y) {
   return VecNormalizeExpr<A2DObj<xtype>, A2DObj<ytype>>(x, y);
 }
 
 template <typename T, int N>
-A2D_FUNCTION void VecScale(const T alpha, const Vec<T, N> &x, Vec<T, N> &y) {
+A2D_FUNCTION void VecScale(const T alpha, const Vec<T, N>& x, Vec<T, N>& y) {
   VecScaleCore<T, N>(alpha, get_data(x), get_data(y));
 }
 
@@ -197,7 +197,7 @@ class VecScaleExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M), "Vector sizes must agree");
 
-  A2D_FUNCTION VecScaleExpr(dtype alpha, xtype &x, ytype &y)
+  A2D_FUNCTION VecScaleExpr(dtype alpha, xtype& x, ytype& y)
       : alpha(alpha), x(x), y(y) {}
 
   A2D_FUNCTION void eval() {
@@ -257,43 +257,43 @@ class VecScaleExpr {
   }
 
   dtype alpha;
-  xtype &x;
-  ytype &y;
+  xtype& x;
+  ytype& y;
 };
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(ADObj<T> &alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
-  return VecScaleExpr<ADObj<T> &, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
+A2D_FUNCTION auto VecScale(ADObj<T>& alpha, ADObj<xtype>& x, ADObj<ytype>& y) {
+  return VecScaleExpr<ADObj<T>&, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(const T alpha, ADObj<xtype> &x, ADObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y) {
   return VecScaleExpr<const T, ADObj<xtype>, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(ADObj<T> &alpha, const xtype &x, ADObj<ytype> &y) {
-  return VecScaleExpr<ADObj<T> &, const xtype, ADObj<xtype>>(alpha, x, y);
+A2D_FUNCTION auto VecScale(ADObj<T>& alpha, const xtype& x, ADObj<ytype>& y) {
+  return VecScaleExpr<ADObj<T>&, const xtype, ADObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, A2DObj<xtype> &x,
-                           A2DObj<ytype> &y) {
-  return VecScaleExpr<A2DObj<T> &, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
+A2D_FUNCTION auto VecScale(A2DObj<T>& alpha, A2DObj<xtype>& x,
+                           A2DObj<ytype>& y) {
+  return VecScaleExpr<A2DObj<T>&, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(const T alpha, A2DObj<xtype> &x, A2DObj<ytype> &y) {
+A2D_FUNCTION auto VecScale(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y) {
   return VecScaleExpr<const T, A2DObj<xtype>, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <class T, class xtype, class ytype>
-A2D_FUNCTION auto VecScale(A2DObj<T> &alpha, const xtype &x, A2DObj<ytype> &y) {
-  return VecScaleExpr<A2DObj<T> &, const xtype, A2DObj<xtype>>(alpha, x, y);
+A2D_FUNCTION auto VecScale(A2DObj<T>& alpha, const xtype& x, A2DObj<ytype>& y) {
+  return VecScaleExpr<A2DObj<T>&, const xtype, A2DObj<xtype>>(alpha, x, y);
 }
 
 template <typename T, int N>
-A2D_FUNCTION void VecDot(const Vec<T, N> &x, const Vec<T, N> &y, T &alpha) {
+A2D_FUNCTION void VecDot(const Vec<T, N>& x, const Vec<T, N>& y, T& alpha) {
   alpha = VecDotCore<T, N>(get_data(x), get_data(y));
 }
 
@@ -317,7 +317,7 @@ class VecDotExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M), "Vector dimensions must agree");
 
-  A2D_FUNCTION VecDotExpr(xtype &x, ytype &y, dtype &alpha)
+  A2D_FUNCTION VecDotExpr(xtype& x, ytype& y, dtype& alpha)
       : x(x), y(y), alpha(alpha) {}
 
   A2D_FUNCTION void eval() {
@@ -377,42 +377,42 @@ class VecDotExpr {
     }
   }
 
-  xtype &x;
-  ytype &y;
-  dtype &alpha;
+  xtype& x;
+  ytype& y;
+  dtype& alpha;
 };
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(ADObj<xtype> &x, ADObj<ytype> &y,
-                         ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(ADObj<xtype>& x, ADObj<ytype>& y,
+                         ADObj<dtype>& alpha) {
   return VecDotExpr<ADObj<xtype>, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(const xtype &x, ADObj<ytype> &y, ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(const xtype& x, ADObj<ytype>& y, ADObj<dtype>& alpha) {
   return VecDotExpr<const xtype, ADObj<ytype>, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(ADObj<xtype> &x, const ytype &y, ADObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(ADObj<xtype>& x, const ytype& y, ADObj<dtype>& alpha) {
   return VecDotExpr<ADObj<xtype>, const ytype, ADObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                         A2DObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                         A2DObj<dtype>& alpha) {
   return VecDotExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(const xtype &x, A2DObj<ytype> &y,
-                         A2DObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(const xtype& x, A2DObj<ytype>& y,
+                         A2DObj<dtype>& alpha) {
   return VecDotExpr<const xtype, A2DObj<ytype>, A2DObj<dtype>>(x, y, alpha);
 }
 
 template <class xtype, class ytype, class dtype>
-A2D_FUNCTION auto VecDot(A2DObj<xtype> &x, const ytype &y,
-                         A2DObj<dtype> &alpha) {
+A2D_FUNCTION auto VecDot(A2DObj<xtype>& x, const ytype& y,
+                         A2DObj<dtype>& alpha) {
   return VecDotExpr<A2DObj<xtype>, const ytype, A2DObj<dtype>>(x, y, alpha);
 }
 
@@ -428,7 +428,7 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
   std::string name() { return "VecNorm"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     T alpha;
     Vec<T, N> x;
     X.get_values(x);
@@ -437,7 +437,7 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<T> alpha;
     ADObj<Vec<T, N>> x;
     X.get_values(x.value());
@@ -448,8 +448,8 @@ class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<T> alpha;
     A2DObj<Vec<T, N>> x;
     X.get_values(x.value());
@@ -484,7 +484,7 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
   std::string name() { return "VecScale"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     T alpha;
     Vec<T, N> x, y;
     X.get_values(alpha, x);
@@ -493,7 +493,7 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<T> alpha;
     ADObj<Vec<T, N>> x, y;
     X.get_values(alpha.value(), x.value());
@@ -504,8 +504,8 @@ class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<T> alpha;
     A2DObj<Vec<T, N>> x, y;
     X.get_values(alpha.value(), x.value());
@@ -540,7 +540,7 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
   std::string name() { return "VecNormalize"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     Vec<T, N> x, y;
     X.get_values(x);
     VecNormalize(x, y);
@@ -548,7 +548,7 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<Vec<T, N>> x, y;
     X.get_values(x.value());
     auto stack = MakeStack(VecNormalize(x, y));
@@ -558,8 +558,8 @@ class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<Vec<T, N>> x, y;
     X.get_values(x.value());
     p.get_values(x.pvalue());
@@ -594,7 +594,7 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
   std::string name() { return "VecDot"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     T alpha;
     Vec<T, N> x, y;
     X.get_values(x, y);
@@ -603,7 +603,7 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<T> alpha;
     ADObj<Vec<T, N>> x, y;
     X.get_values(x.value(), y.value());
@@ -614,8 +614,8 @@ class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<T> alpha;
     A2DObj<Vec<T, N>> x, y;
     X.get_values(x.value(), y.value());

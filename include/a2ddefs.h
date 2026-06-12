@@ -320,20 +320,29 @@ A2D_FUNCTION T sin(T val) {
 }
 
 template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T asin(T val) {
-#ifndef __CUDACC__
-  return std::asin(val);
-#else
-  return cuda::std::asin(val);
-#endif
-}
-
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
 A2D_FUNCTION T cos(T val) {
 #ifndef __CUDACC__
   return std::cos(val);
 #else
   return cuda::std::cos(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T tan(T val) {
+#ifndef __CUDACC__
+  return std::tan(val);
+#else
+  return cuda::std::tan(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T asin(T val) {
+#ifndef __CUDACC__
+  return std::asin(val);
+#else
+  return cuda::std::asin(val);
 #endif
 }
 
@@ -364,8 +373,62 @@ A2D_FUNCTION T atan2(T y, T x) {
 #endif
 }
 
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T sinh(T val) {
+#ifndef __CUDACC__
+  return std::sinh(val);
+#else
+  return cuda::std::sinh(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T cosh(T val) {
+#ifndef __CUDACC__
+  return std::cosh(val);
+#else
+  return cuda::std::cosh(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T tanh(T val) {
+#ifndef __CUDACC__
+  return std::tanh(val);
+#else
+  return cuda::std::tanh(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T asinh(T val) {
+#ifndef __CUDACC__
+  return std::asinh(val);
+#else
+  return cuda::std::asinh(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T acosh(T val) {
+#ifndef __CUDACC__
+  return std::acosh(val);
+#else
+  return cuda::std::acosh(val);
+#endif
+}
+
+template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+A2D_FUNCTION T atanh(T val) {
+#ifndef __CUDACC__
+  return std::atanh(val);
+#else
+  return cuda::std::atanh(val);
+#endif
+}
+
 template <class ForwardIt, class T>
-A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T &value) {
+A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
 #ifdef __CUDACC__
   thrust::fill(first, last, value);
 #else

@@ -12,26 +12,26 @@
 namespace A2D {
 
 template <typename T, int N, int M>
-A2D_FUNCTION void MatSum(const Mat<T, N, M> &A, const Mat<T, N, M> &B,
-                         Mat<T, N, M> &C) {
+A2D_FUNCTION void MatSum(const Mat<T, N, M>& A, const Mat<T, N, M>& B,
+                         Mat<T, N, M>& C) {
   VecSumCore<T, N * M>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N, int M>
-A2D_FUNCTION void MatSum(const T alpha, const Mat<T, N, M> &A, const T beta,
-                         const Mat<T, N, M> &B, Mat<T, N, M> &C) {
+A2D_FUNCTION void MatSum(const T alpha, const Mat<T, N, M>& A, const T beta,
+                         const Mat<T, N, M>& B, Mat<T, N, M>& C) {
   VecSumCore<T, N * M>(alpha, get_data(A), beta, get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-A2D_FUNCTION void MatSum(const SymMat<T, N> &A, const SymMat<T, N> &B,
-                         SymMat<T, N> &C) {
+A2D_FUNCTION void MatSum(const SymMat<T, N>& A, const SymMat<T, N>& B,
+                         SymMat<T, N>& C) {
   VecSumCore<T, (N * (N + 1)) / 2>(get_data(A), get_data(B), get_data(C));
 }
 
 template <typename T, int N>
-A2D_FUNCTION void MatSum(const T alpha, const SymMat<T, N> &A, const T beta,
-                         const SymMat<T, N> &B, SymMat<T, N> &C) {
+A2D_FUNCTION void MatSum(const T alpha, const SymMat<T, N>& A, const T beta,
+                         const SymMat<T, N>& B, SymMat<T, N>& C) {
   VecSumCore<T, (N * (N + 1)) / 2>(alpha, get_data(A), beta, get_data(B),
                                    get_data(C));
 }
@@ -61,7 +61,7 @@ class MatSumExpr {
                 "Matrix sizes must agree");
 
   A2D_FUNCTION
-  MatSumExpr(Atype &A, Btype &B, Ctype &C) : A(A), B(B), C(C) {}
+  MatSumExpr(Atype& A, Btype& B, Ctype& C) : A(A), B(B), C(C) {}
 
   A2D_FUNCTION void eval() {
     VecSumCore<T, size>(get_data(A), get_data(B), get_data(C));
@@ -112,39 +112,39 @@ class MatSumExpr {
     }
   }
 
-  Atype &A;
-  Btype &B;
-  Ctype &C;
+  Atype& A;
+  Btype& B;
+  Ctype& C;
 };
 
 // Full active variants
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(ADObj<Atype> &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(ADObj<Atype>& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatSumExpr<ADObj<Atype>, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, A2DObj<Btype> &B, A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(A2DObj<Atype>& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
   return MatSumExpr<A2DObj<Atype>, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const Atype &A, ADObj<Btype> &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const Atype& A, ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatSumExpr<const Atype, ADObj<Btype>, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const Atype &A, A2DObj<Btype> &B, A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const Atype& A, A2DObj<Btype>& B, A2DObj<Ctype>& C) {
   return MatSumExpr<const Atype, A2DObj<Btype>, A2DObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(ADObj<Atype> &A, const Btype &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(ADObj<Atype>& A, const Btype& B, ADObj<Ctype>& C) {
   return MatSumExpr<ADObj<Atype>, const Btype, ADObj<Ctype>>(A, B, C);
 }
 
 template <class Atype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(A2DObj<Atype> &A, const Btype &B, A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(A2DObj<Atype>& A, const Btype& B, A2DObj<Ctype>& C) {
   return MatSumExpr<A2DObj<Atype>, const Btype, A2DObj<Ctype>>(A, B, C);
 }
 
@@ -175,7 +175,7 @@ class MatSumScaleExpr {
                 "Matrix sizes must agree");
 
   A2D_FUNCTION
-  MatSumScaleExpr(atype alpha, Atype &A, btype beta, Btype &B, Ctype &C)
+  MatSumScaleExpr(atype alpha, Atype& A, btype beta, Btype& B, Ctype& C)
       : alpha(alpha), A(A), beta(beta), B(B), C(C) {}
 
   A2D_FUNCTION void eval() {
@@ -276,39 +276,39 @@ class MatSumScaleExpr {
   }
 
   atype alpha;
-  Atype &A;
+  Atype& A;
   btype beta;
-  Btype &B;
-  Ctype &C;
+  Btype& B;
+  Ctype& C;
 };
 
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
-                         ADObj<btype> &beta, ADObj<Btype> &B, ADObj<Ctype> &C) {
-  return MatSumScaleExpr<ADObj<atype> &, ADObj<Atype>, ADObj<btype> &,
+A2D_FUNCTION auto MatSum(ADObj<atype>& alpha, ADObj<Atype>& A,
+                         ADObj<btype>& beta, ADObj<Btype>& B, ADObj<Ctype>& C) {
+  return MatSumScaleExpr<ADObj<atype>&, ADObj<Atype>, ADObj<btype>&,
                          ADObj<Btype>, ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
-                         A2DObj<btype> &beta, A2DObj<Btype> &B,
-                         A2DObj<Ctype> &C) {
-  return MatSumScaleExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<btype> &,
+A2D_FUNCTION auto MatSum(A2DObj<atype>& alpha, A2DObj<Atype>& A,
+                         A2DObj<btype>& beta, A2DObj<Btype>& B,
+                         A2DObj<Ctype>& C) {
+  return MatSumScaleExpr<A2DObj<atype>&, A2DObj<Atype>, A2DObj<btype>&,
                          A2DObj<Btype>, A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 // Fully AD
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const atype alpha, ADObj<Atype> &A, const btype beta,
-                         ADObj<Btype> &B, ADObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const atype alpha, ADObj<Atype>& A, const btype beta,
+                         ADObj<Btype>& B, ADObj<Ctype>& C) {
   return MatSumScaleExpr<const atype, ADObj<Atype>, const btype, ADObj<Btype>,
                          ADObj<Ctype>>(alpha, A, beta, B, C);
 }
 
 template <class atype, class Atype, class btype, class Btype, class Ctype>
-A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype> &A, const btype beta,
-                         A2DObj<Btype> &B, A2DObj<Ctype> &C) {
+A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype>& A, const btype beta,
+                         A2DObj<Btype>& B, A2DObj<Ctype>& C) {
   return MatSumScaleExpr<const atype, A2DObj<Atype>, const btype, A2DObj<Btype>,
                          A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
@@ -329,7 +329,7 @@ class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
   }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &x) {
+  Output eval(const Input& x) {
     Mat<T, N, M> A, B, C;
     x.get_values(A, B);
     MatSum(A, B, C);
@@ -337,7 +337,7 @@ class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &x, Input &g) {
+  void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<Mat<T, N, M>> A, B, C;
     x.get_values(A.value(), B.value());
     auto stack = MakeStack(MatSum(A, B, C));
@@ -347,8 +347,8 @@ class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
     A2DObj<Mat<T, N, M>> A, B, C;
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());
@@ -375,7 +375,7 @@ class MatSumScaleTest
   }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &x) {
+  Output eval(const Input& x) {
     T alpha, beta;
     Mat<T, N, M> A, B, C;
     x.get_values(alpha, A, beta, B);
@@ -384,7 +384,7 @@ class MatSumScaleTest
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &x, Input &g) {
+  void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<T> alpha, beta;
     ADObj<Mat<T, N, M>> A, B, C;
     x.get_values(alpha.value(), A.value(), beta.value(), B.value());
@@ -395,8 +395,8 @@ class MatSumScaleTest
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
     A2DObj<T> alpha, beta;
     A2DObj<Mat<T, N, M>> A, B, C;
     x.get_values(alpha.value(), A.value(), beta.value(), B.value());

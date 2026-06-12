@@ -72,13 +72,13 @@ A2D_FUNCTION T SymMatSumCoreReverse(const T A[], const T Sb[]) {
 }
 
 template <typename T, int N>
-A2D_FUNCTION void SymMatSum(const Mat<T, N, N> &A, SymMat<T, N> &S) {
+A2D_FUNCTION void SymMatSum(const Mat<T, N, N>& A, SymMat<T, N>& S) {
   SymMatSumCore<T, N>(get_data(A), get_data(S));
 }
 
 template <typename T, int N>
-A2D_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N> &A,
-                            SymMat<T, N> &S) {
+A2D_FUNCTION void SymMatSum(const T alpha, const Mat<T, N, N>& A,
+                            SymMat<T, N>& S) {
   SymMatSumCore<T, N>(alpha, get_data(A), get_data(S));
 }
 
@@ -103,7 +103,7 @@ class SymMatSumExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == K && N == M), "Matrix dimensions must agree");
 
-  A2D_FUNCTION SymMatSumExpr(atype alpha, Atype &A, Stype &S)
+  A2D_FUNCTION SymMatSumExpr(atype alpha, Atype& A, Stype& S)
       : alpha(alpha), A(A), S(S) {}
 
   A2D_FUNCTION void eval() {
@@ -164,60 +164,59 @@ class SymMatSumExpr {
   }
 
   atype alpha;
-  Atype &A;
-  Stype &S;
+  Atype& A;
+  Stype& S;
 };
 
 // Scalar constant alpha = 1.0 case
 template <class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(ADObj<Atype> &A, ADObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(ADObj<Atype>& A, ADObj<Stype>& S) {
   using T = typename get_object_numeric_type<Stype>::type;
   return SymMatSumExpr<const T, ADObj<Atype>, ADObj<Stype>>(T(1.0), A, S);
 }
 
 template <class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(A2DObj<Atype> &A, A2DObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(A2DObj<Atype>& A, A2DObj<Stype>& S) {
   using T = typename get_object_numeric_type<Stype>::type;
   return SymMatSumExpr<const T, A2DObj<Atype>, A2DObj<Stype>>(T(1.0), A, S);
 }
 
 // Cases with alpha
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, ADObj<Atype> &A,
-                            ADObj<Stype> &S) {
-  return SymMatSumExpr<ADObj<atype> &, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
+A2D_FUNCTION auto SymMatSum(ADObj<atype>& alpha, ADObj<Atype>& A,
+                            ADObj<Stype>& S) {
+  return SymMatSumExpr<ADObj<atype>&, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, A2DObj<Atype> &A,
-                            A2DObj<Stype> &S) {
-  return SymMatSumExpr<A2DObj<atype> &, A2DObj<Atype>, A2DObj<Stype>>(alpha, A,
-                                                                      S);
+A2D_FUNCTION auto SymMatSum(A2DObj<atype>& alpha, A2DObj<Atype>& A,
+                            A2DObj<Stype>& S) {
+  return SymMatSumExpr<A2DObj<atype>&, A2DObj<Atype>, A2DObj<Stype>>(alpha, A,
+                                                                     S);
 }
 
 // Cases with passive variables
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype> &A,
-                            ADObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(const atype alpha, ADObj<Atype>& A,
+                            ADObj<Stype>& S) {
   return SymMatSumExpr<const atype, ADObj<Atype>, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype> &A,
-                            A2DObj<Stype> &S) {
+A2D_FUNCTION auto SymMatSum(const atype alpha, A2DObj<Atype>& A,
+                            A2DObj<Stype>& S) {
   return SymMatSumExpr<const atype, A2DObj<Atype>, A2DObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(ADObj<atype> &alpha, const Atype &A,
-                            ADObj<Stype> &S) {
-  return SymMatSumExpr<ADObj<atype> &, const Atype, ADObj<Stype>>(alpha, A, S);
+A2D_FUNCTION auto SymMatSum(ADObj<atype>& alpha, const Atype& A,
+                            ADObj<Stype>& S) {
+  return SymMatSumExpr<ADObj<atype>&, const Atype, ADObj<Stype>>(alpha, A, S);
 }
 
 template <class atype, class Atype, class Stype>
-A2D_FUNCTION auto SymMatSum(A2DObj<atype> &alpha, Atype &A, A2DObj<Stype> &S) {
-  return SymMatSumExpr<A2DObj<atype> &, const Atype, A2DObj<Stype>>(alpha, A,
-                                                                    S);
+A2D_FUNCTION auto SymMatSum(A2DObj<atype>& alpha, Atype& A, A2DObj<Stype>& S) {
+  return SymMatSumExpr<A2DObj<atype>&, const Atype, A2DObj<Stype>>(alpha, A, S);
 }
 
 namespace Test {
@@ -236,7 +235,7 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
   }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &x) {
+  Output eval(const Input& x) {
     Mat<T, N, N> A;
     SymMat<T, N> S;
     x.get_values(A);
@@ -245,7 +244,7 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &x, Input &g) {
+  void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<Mat<T, N, N>> A;
     ADObj<SymMat<T, N>> S;
     x.get_values(A.value());
@@ -256,8 +255,8 @@ class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
     A2DObj<SymMat<T, N>> S;
     A2DObj<Mat<T, N, N>> A;
     x.get_values(A.value());
@@ -284,7 +283,7 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
   }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &x) {
+  Output eval(const Input& x) {
     T alpha;
     Mat<T, N, N> A;
     SymMat<T, N> S;
@@ -294,7 +293,7 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &x, Input &g) {
+  void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<T> alpha;
     ADObj<Mat<T, N, N>> A;
     ADObj<SymMat<T, N>> S;
@@ -306,8 +305,8 @@ class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
     A2DObj<T> alpha;
     A2DObj<SymMat<T, N>> S;
     A2DObj<Mat<T, N, N>> A;

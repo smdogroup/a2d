@@ -60,6 +60,7 @@ namespace A2D {
 
 // A2D_1ST_UNARY_BASIC(OBJNAME, OPERNAME, FUNCBODY, DERIVBODY)
 A2D_1ST_UNARY_BASIC(ExpExpr, exp, A2D::exp(a.value()), val)
+A2D_1ST_UNARY_BASIC(TanExpr, tan, A2D::tan(a.value()), T(1.0) + val * val)
 A2D_1ST_UNARY_BASIC(UnaryPos, operator+, a.value(), T(1.0))
 A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
 
@@ -190,17 +191,27 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
 
 // A2D_1ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY)
 A2D_1ST_UNARY(FabsExpr, fabs, (a.value() < 0.0 ? -a.value() : a.value()),
-              (a.value() < 0.0 ? -1.0 : 1.0), tmp)
-A2D_1ST_UNARY(SinExpr, sin, A2D::sin(a.value()), A2D::cos(a.value()), tmp)
-A2D_1ST_UNARY(CosExpr, cos, A2D::cos(a.value()), A2D::sin(a.value()), -tmp)
+              (a.value() < 0.0 ? -T(1.0) : T(1.0)), tmp)
 A2D_1ST_UNARY(SqrtExpr, sqrt, A2D::sqrt(a.value()), T(1.0) / val, T(0.5) * tmp)
 A2D_1ST_UNARY(LogExpr, log, A2D::log(a.value()), 1.0 / a.value(), tmp)
+A2D_1ST_UNARY(SinExpr, sin, A2D::sin(a.value()), A2D::cos(a.value()), tmp)
+A2D_1ST_UNARY(CosExpr, cos, A2D::cos(a.value()), A2D::sin(a.value()), -tmp)
 A2D_1ST_UNARY(ACosExpr, acos, A2D::acos(a.value()),
-              -1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
+              T(-1.0) / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
 A2D_1ST_UNARY(ASinExpr, asin, asin(a.value()),
-              1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
+              T(1.0) / A2D::sqrt(1.0 - a.value() * a.value()), tmp)
 A2D_1ST_UNARY(ATanExpr, atan, A2D::atan(a.value()),
-              1.0 / (1.0 + a.value() * a.value()), tmp)
+              T(1.0) / (T(1.0) + a.value() * a.value()), tmp)
+A2D_1ST_UNARY(SinhExpr, sinh, A2D::sinh(a.value()), A2D::cosh(a.value()), tmp)
+A2D_1ST_UNARY(CoshExpr, cosh, A2D::cosh(a.value()), A2D::sinh(a.value()), tmp)
+A2D_1ST_UNARY(TanhExpr, tanh, A2D::tanh(a.value()), val, T(1.0) - tmp * tmp)
+A2D_1ST_UNARY(ASinhExpr, asinh, A2D::asinh(a.value()),
+              T(1.0) / A2D::sqrt(T(1.0) + a.value() * a.value()), tmp)
+A2D_1ST_UNARY(ACoshExpr, acosh, A2D::acosh(a.value()),
+              T(1.0) / A2D::sqrt((a.value() - T(1.0)) * (a.value() + T(1.0))),
+              tmp)
+A2D_1ST_UNARY(ATanhExpr, atanh, A2D::atanh(a.value()),
+              T(1.0) / (T(1.0) - a.value() * a.value()), tmp)
 
 /*
   Definitions for forward and reverse-mode first-order AD with temporary
@@ -274,25 +285,42 @@ A2D_1ST_UNARY(ATanExpr, atan, A2D::atan(a.value()),
 
 // A2D_2ST_UNARY(OBJNAME, OPERNAME, FUNCBODY, TEMPBODY, DERIVBODY, DERIV2BODY)
 A2D_2ND_UNARY(FabsExpr2, fabs, (a.value() < 0.0 ? -a.value() : a.value()),
-              (a.value() < 0.0 ? -1.0 : 1.0), tmp, 0.0)
+              (a.value() < 0.0 ? T(-1.0) : T(1.0)), tmp, 0.0)
 A2D_2ND_UNARY(ExpExpr2, exp, A2D::exp(a.value()), val, tmp, tmp)
+A2D_2ND_UNARY(SqrtExpr2, sqrt, A2D::sqrt(a.value()), T(1.0) / val, T(0.5) * tmp,
+              -T(0.25) * tmp * tmp * tmp)
 A2D_2ND_UNARY(SinExpr2, sin, A2D::sin(a.value()), A2D::cos(a.value()), tmp,
               -val)
 A2D_2ND_UNARY(CosExpr2, cos, A2D::cos(a.value()), A2D::sin(a.value()), -tmp,
               -val)
-A2D_2ND_UNARY(SqrtExpr2, sqrt, A2D::sqrt(a.value()), T(1.0) / val, T(0.5) * tmp,
-              -T(0.25) * tmp * tmp * tmp)
-A2D_2ND_UNARY(LogExpr2, log, A2D::log(a.value()), 1.0 / a.value(), tmp,
+A2D_2ND_UNARY(TanExpr2, tan, A2D::tan(a.value()), val, T(1.0) + tmp * tmp,
+              T(2.0) * tmp * (T(1.0) + tmp * tmp))
+A2D_2ND_UNARY(LogExpr2, log, A2D::log(a.value()), T(1.0) / a.value(), tmp,
               -tmp* tmp)
 A2D_2ND_UNARY(ACosExpr2, acos, A2D::acos(a.value()),
-              -1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
-              -a.value() / A2D::pow(1.0 - a.value() * a.value(), 1.5))
+              T(-1.0) / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
+              -a.value() / A2D::pow(1.0 - a.value() * a.value(), T(1.5)))
 A2D_2ND_UNARY(ASinExpr2, asin, A2D::asin(a.value()),
-              1.0 / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
-              a.value() / A2D::pow(1.0 - a.value() * a.value(), 1.5))
+              T(1.0) / A2D::sqrt(1.0 - a.value() * a.value()), tmp,
+              a.value() / A2D::pow(1.0 - a.value() * a.value(), T(1.5)))
 A2D_2ND_UNARY(ATanExpr2, atan, A2D::atan(a.value()),
-              1.0 / (1.0 + a.value() * a.value()), tmp,
-              -2.0 * a.value() * tmp * tmp)
+              T(1.0) / (T(1.0) + a.value() * a.value()), tmp,
+              T(-2.0) * a.value() * tmp * tmp)
+A2D_2ND_UNARY(SinhExpr2, sinh, A2D::sinh(a.value()), A2D::cosh(a.value()), tmp,
+              val)
+A2D_2ND_UNARY(CoshExpr2, cosh, A2D::cosh(a.value()), A2D::sinh(a.value()), tmp,
+              val)
+A2D_2ND_UNARY(TanhExpr2, tanh, A2D::tanh(a.value()), val, T(1.0) - tmp * tmp,
+              -T(2.0) * tmp * (T(1.0) - tmp * tmp))
+A2D_2ND_UNARY(ASinhExpr2, asinh, A2D::asinh(a.value()),
+              T(1.0) / A2D::sqrt(T(1.0) + a.value() * a.value()), tmp,
+              -a.value() * tmp * tmp * tmp)
+A2D_2ND_UNARY(ACoshExpr2, acosh, A2D::acosh(a.value()),
+              T(1.0) / A2D::sqrt((a.value() - T(1.0)) * (a.value() + T(1.0))),
+              tmp, -a.value() * tmp * tmp * tmp)
+A2D_2ND_UNARY(ATanhExpr2, atanh, A2D::atanh(a.value()),
+              T(1.0) / (T(1.0) - a.value() * a.value()), tmp,
+              T(2.0) * a.value() * tmp * tmp)
 
 }  // namespace A2D
 

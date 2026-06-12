@@ -11,22 +11,22 @@ namespace A2D {
 
 // z = x cross y
 template <typename T>
-A2D_FUNCTION void VecCross(const Vec<T, 3> &x, const Vec<T, 3> &y,
-                           Vec<T, 3> &z) {
+A2D_FUNCTION void VecCross(const Vec<T, 3>& x, const Vec<T, 3>& y,
+                           Vec<T, 3>& z) {
   VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
 }
 
 // 2D variants
 // Use vec(x) = x * hat(k)
 template <typename Tx, typename T>
-A2D_FUNCTION void VecCross(const Tx x, const Vec<T, 2> &y, Vec<T, 2> &z) {
+A2D_FUNCTION void VecCross(const Tx x, const Vec<T, 2>& y, Vec<T, 2>& z) {
   z(0) = -x * y(1);
   z(1) = x * y(0);
 }
 
 // Use vec(y) = y * hat(k)
 template <typename T, typename Ty>
-A2D_FUNCTION void VecCross(const Vec<T, 2> &x, const Ty y, Vec<T, 2> &z) {
+A2D_FUNCTION void VecCross(const Vec<T, 2>& x, const Ty y, Vec<T, 2>& z) {
   z(0) = y * x(1);
   z(1) = -y * x(0);
 }
@@ -49,7 +49,7 @@ class VecCrossExpr {
   // Make sure the matrix dimensions are consistent
   static_assert((N == M && M == K && K == 3), "Vector dimensions must agree");
 
-  A2D_FUNCTION VecCrossExpr(xtype &x, ytype &y, ztype &z) : x(x), y(y), z(z) {}
+  A2D_FUNCTION VecCrossExpr(xtype& x, ytype& y, ztype& z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
     VecCrossCore<T>(get_data(x), get_data(y), get_data(z));
@@ -109,45 +109,45 @@ class VecCrossExpr {
     }
   }
 
-  xtype &x;
-  ytype &y;
-  ztype &z;
+  xtype& x;
+  ytype& y;
+  ztype& z;
 };
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(ADObj<xtype> &x, ADObj<ytype> &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(ADObj<xtype>& x, ADObj<ytype>& y, ADObj<ztype>& z) {
   return VecCrossExpr<ADObj<xtype>, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(const xtype &x, ADObj<ytype> &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(const xtype& x, ADObj<ytype>& y, ADObj<ztype>& z) {
   return VecCrossExpr<const xtype, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(ADObj<xtype>& x, const ytype& y, ADObj<ztype>& z) {
   return VecCrossExpr<ADObj<xtype>, const ytype, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                           A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                           A2DObj<ztype>& z) {
   return VecCrossExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(const xtype &x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(const xtype& x, A2DObj<ytype>& y, A2DObj<ztype>& z) {
   return VecCrossExpr<const xtype, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 3, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, const ytype &y, A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecCross(A2DObj<xtype>& x, const ytype& y, A2DObj<ztype>& z) {
   return VecCrossExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
 
@@ -165,7 +165,7 @@ class VecCross2DExpr {
   const static bool is_x_scalar =
       is_scalar_type<typename remove_a2dobj<xtype>::type>::value;
 
-  A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype &z) : x(x), y(y), z(z) {}
+  A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype& z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
     auto x0 = get_data(x);
@@ -296,45 +296,44 @@ class VecCross2DExpr {
 
   xtype x;
   ytype y;
-  ztype &z;
+  ztype& z;
 };
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(ADObj<xtype> &x, ADObj<ytype> &y, ADObj<ztype> &z) {
-  return VecCross2DExpr<ADObj<xtype> &, ADObj<ytype> &, ADObj<ztype>>(x, y, z);
+A2D_FUNCTION auto VecCross(ADObj<xtype>& x, ADObj<ytype>& y, ADObj<ztype>& z) {
+  return VecCross2DExpr<ADObj<xtype>&, ADObj<ytype>&, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(const xtype x, ADObj<ytype> &y, ADObj<ztype> &z) {
-  return VecCross2DExpr<const xtype, ADObj<ytype> &, ADObj<ztype>>(x, y, z);
+A2D_FUNCTION auto VecCross(const xtype x, ADObj<ytype>& y, ADObj<ztype>& z) {
+  return VecCross2DExpr<const xtype, ADObj<ytype>&, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(ADObj<xtype> &x, const ytype &y, ADObj<ztype> &z) {
-  return VecCross2DExpr<ADObj<xtype> &, const ytype, ADObj<ztype>>(x, y, z);
+A2D_FUNCTION auto VecCross(ADObj<xtype>& x, const ytype& y, ADObj<ztype>& z) {
+  return VecCross2DExpr<ADObj<xtype>&, const ytype, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                           A2DObj<ztype> &z) {
-  return VecCross2DExpr<A2DObj<xtype> &, A2DObj<ytype> &, A2DObj<ztype>>(x, y,
-                                                                         z);
+A2D_FUNCTION auto VecCross(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                           A2DObj<ztype>& z) {
+  return VecCross2DExpr<A2DObj<xtype>&, A2DObj<ytype>&, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(const xtype x, A2DObj<ytype> &y, A2DObj<ztype> &z) {
-  return VecCross2DExpr<const xtype, A2DObj<ytype> &, A2DObj<ztype>>(x, y, z);
+A2D_FUNCTION auto VecCross(const xtype x, A2DObj<ytype>& y, A2DObj<ztype>& z) {
+  return VecCross2DExpr<const xtype, A2DObj<ytype>&, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype,
           std::enable_if_t<get_vec_size<ztype>::size == 2, bool> = true>
-A2D_FUNCTION auto VecCross(A2DObj<xtype> &x, const ytype y, A2DObj<ztype> &z) {
-  return VecCross2DExpr<A2DObj<xtype> &, const ytype, A2DObj<ztype>>(x, y, z);
+A2D_FUNCTION auto VecCross(A2DObj<xtype>& x, const ytype y, A2DObj<ztype>& z) {
+  return VecCross2DExpr<A2DObj<xtype>&, const ytype, A2DObj<ztype>>(x, y, z);
 }
 
 namespace Test {
@@ -349,7 +348,7 @@ class VecCross3DTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
   std::string name() { return "VecCross"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     Vec<T, 3> x, y, z;
     X.get_values(x, y);
     VecCross(x, y, z);
@@ -357,7 +356,7 @@ class VecCross3DTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<Vec<T, 3>> x, y, z;
     X.get_values(x.value(), y.value());
     auto stack = MakeStack(VecCross(x, y, z));
@@ -367,8 +366,8 @@ class VecCross3DTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<Vec<T, 3>> x, y, z;
     X.get_values(x.value(), y.value());
     p.get_values(x.pvalue(), y.pvalue());
@@ -390,7 +389,7 @@ class VecCross2DTest : public A2DTest<T, Vec<T, 2>, Vec<T, 2>, T> {
   std::string name() { return "VecCross"; }
 
   // Evaluate the matrix-matrix product
-  Output eval(const Input &X) {
+  Output eval(const Input& X) {
     Vec<T, 2> x, z;
     T y;
     X.get_values(x, y);
@@ -399,7 +398,7 @@ class VecCross2DTest : public A2DTest<T, Vec<T, 2>, Vec<T, 2>, T> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &X, Input &g) {
+  void deriv(const Output& seed, const Input& X, Input& g) {
     ADObj<Vec<T, 2>> x, z;
     ADObj<T> y;
     X.get_values(x.value(), y.value());
@@ -410,8 +409,8 @@ class VecCross2DTest : public A2DTest<T, Vec<T, 2>, Vec<T, 2>, T> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &X,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& X,
+             const Input& p, Input& h) {
     A2DObj<Vec<T, 2>> x, z;
     A2DObj<T> y;
     X.get_values(x.value(), y.value());

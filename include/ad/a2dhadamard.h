@@ -10,8 +10,8 @@
 namespace A2D {
 
 template <typename T, int N>
-A2D_FUNCTION void VecHadamard(const Vec<T, N> &x, const Vec<T, N> &y,
-                              Vec<T, N> &z) {
+A2D_FUNCTION void VecHadamard(const Vec<T, N>& x, const Vec<T, N>& y,
+                              Vec<T, N>& z) {
   VecHadamardCore<T, N>(get_data(x), get_data(y), get_data(z));
 }
 
@@ -34,7 +34,7 @@ class VecHadamardExpr {
   static_assert((N == M && M == K), "Vector sizes must agree");
 
   A2D_FUNCTION
-  VecHadamardExpr(xtype &x, ytype &y, ztype &z) : x(x), y(y), z(z) {}
+  VecHadamardExpr(xtype& x, ytype& y, ztype& z) : x(x), y(y), z(z) {}
 
   A2D_FUNCTION void eval() {
     VecHadamardCore<T, N>(get_data(x), get_data(y), get_data(z));
@@ -93,44 +93,44 @@ class VecHadamardExpr {
     }
   }
 
-  xtype &x;
-  ytype &y;
-  ztype &z;
+  xtype& x;
+  ytype& y;
+  ztype& z;
 };
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, ADObj<ytype> &y,
-                              ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(ADObj<xtype>& x, ADObj<ytype>& y,
+                              ADObj<ztype>& z) {
   return VecHadamardExpr<ADObj<xtype>, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, A2DObj<ytype> &y,
-                              A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(A2DObj<xtype>& x, A2DObj<ytype>& y,
+                              A2DObj<ztype>& z) {
   return VecHadamardExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(const xtype &x, ADObj<ytype> &y,
-                              ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(const xtype& x, ADObj<ytype>& y,
+                              ADObj<ztype>& z) {
   return VecHadamardExpr<const xtype, ADObj<ytype>, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(const xtype &x, A2DObj<ytype> &y,
-                              A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(const xtype& x, A2DObj<ytype>& y,
+                              A2DObj<ztype>& z) {
   return VecHadamardExpr<const xtype, A2DObj<ytype>, A2DObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(ADObj<xtype> &x, const ytype &y,
-                              ADObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(ADObj<xtype>& x, const ytype& y,
+                              ADObj<ztype>& z) {
   return VecHadamardExpr<ADObj<xtype>, const ytype, ADObj<ztype>>(x, y, z);
 }
 
 template <class xtype, class ytype, class ztype>
-A2D_FUNCTION auto VecHadamard(A2DObj<xtype> &x, const ytype &y,
-                              A2DObj<ztype> &z) {
+A2D_FUNCTION auto VecHadamard(A2DObj<xtype>& x, const ytype& y,
+                              A2DObj<ztype>& z) {
   return VecHadamardExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
 
@@ -150,7 +150,7 @@ class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
   }
 
   // Evaluate the operation
-  Output eval(const Input &x) {
+  Output eval(const Input& x) {
     Vec<T, N> A, B, C;
     x.get_values(A, B);
     VecHadamard(A, B, C);
@@ -158,7 +158,7 @@ class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the derivative
-  void deriv(const Output &seed, const Input &x, Input &g) {
+  void deriv(const Output& seed, const Input& x, Input& g) {
     ADObj<Vec<T, N>> A, B, C;
     x.get_values(A.value(), B.value());
     auto stack = MakeStack(VecHadamard(A, B, C));
@@ -168,8 +168,8 @@ class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
   }
 
   // Compute the second-derivative
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) {
     A2DObj<Vec<T, N>> A, B, C;
     x.get_values(A.value(), B.value());
     p.get_values(A.pvalue(), B.pvalue());

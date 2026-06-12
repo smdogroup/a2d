@@ -1,6 +1,8 @@
 #ifndef A2D_CORE_H
 #define A2D_CORE_H
 
+#include "a2ddefs.h"
+
 // Key objects
 
 #include "ad/a2dmat.h"

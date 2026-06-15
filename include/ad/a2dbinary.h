@@ -195,7 +195,6 @@ A2D_1ST_BINARY(Min, min2,
                (RealPart(a.value()) < RealPart(b.value()) ? T(1.0) : T(0.0)),
                tmp* a.bvalue() + (1.0 - tmp) * b.value(), tmp* bval,
                (1.0 - tmp) * bval)
-
 A2D_1ST_BINARY(Atan2, atan2, A2D::atan2(a.value(), b.value()),
                T(1.0) / (a.value() * a.value() + b.value() * b.value()),
                tmp*(b.value() * a.bvalue() - a.value() * b.bvalue()),
@@ -502,12 +501,9 @@ A2D_1ST_BINARY_LEFT_BASIC(LMultExpr, operator*, a.value() * b, a.bvalue() * b,
                           b* bval)
 A2D_1ST_BINARY_LEFT_BASIC(LDivide, operator/, a.value() / b, a.bvalue() / b,
                           bval / b)
-// A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, pow(a.value(), b),
-//                           a.bvalue() * b * pow(a.value(), b - 1.0),
-//                           b* pow(a.value(), b - 1.0) * bval)
 A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, A2D::pow(a.value(), b),
-                          a.bvalue() * b * A2D::pow(a.value(), b - T(1.0)),
-                          b* A2D::pow(a.value(), b - T(1.0)) * bval)
+                          a.bvalue() * b * A2D::pow(a.value(), b - B(1.0)),
+                          b* A2D::pow(a.value(), b - B(1.0)) * bval)
 /*
   Definitions for memory-less forward and reverse-mode first-order AD
 
@@ -590,18 +586,12 @@ A2D_2ND_BINARY_LEFT_BASIC(LMultExpr2, operator*, a.value() * b, b* bval,
                           b* a.pvalue(), b* hval)
 A2D_2ND_BINARY_LEFT_BASIC(LDivide2, operator/, a.value() / b, bval / b,
                           a.pvalue() / b, hval / b)
-// A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, pow(a.value(), b),
-//                           bval * b * pow(a.value(), b - 1.0),
-//                           a.pvalue() * b * pow(a.value(), b - 1.0),
-//                           hval * b * pow(a.value(), b - 1.0) +
-//                               bval * a.pvalue() * b * (b - 1.0) *
-//                                   pow(a.value(), b - 2.0));
 A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, A2D::pow(a.value(), b),
-                          bval * b * A2D::pow(a.value(), b - 1.0),
-                          a.pvalue() * b * A2D::pow(a.value(), b - 1.0),
-                          hval * b * A2D::pow(a.value(), b - 1.0) +
-                              bval * a.pvalue() * b * (b - 1.0) *
-                                  A2D::pow(a.value(), b - 2.0));
+                          bval * b * A2D::pow(a.value(), b - B(1.0)),
+                          a.pvalue() * b * A2D::pow(a.value(), b - B(1.0)),
+                          hval * b * A2D::pow(a.value(), b - B(1.0)) +
+                              bval * a.pvalue() * b * (b - B(1.0)) *
+                                  A2D::pow(a.value(), b - B(2.0)));
 
 /*
   Definitions for memory-less forward and reverse-mode first-order AD

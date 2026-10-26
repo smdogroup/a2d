@@ -74,8 +74,17 @@ class OperationStack {
   StackTuple stack;
 
   template <int index>
+  A2D_FUNCTION inline decltype(auto) get(StackTuple& stack) {
+#ifdef __CUDACC__
+    return cuda::std::get<index>(stack);
+#else
+    return std::get<index>(stack);
+#endif
+  }
+
+  template <int index>
   A2D_FUNCTION void eval_() {
-    std::get<index>(stack).eval();
+    get<index>(stack).eval();
     if constexpr (index < num_ops - 1) {
       eval_<index + 1>();
     }
@@ -83,7 +92,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void bzero_() {
-    std::get<index>(stack).bzero();
+    get<index>(stack).bzero();
     if constexpr (index < num_ops - 1) {
       bzero_<index + 1>();
     }
@@ -91,7 +100,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void forward_() {
-    std::get<index>(stack).template forward<ADorder::FIRST>();
+    get<index>(stack).template forward<ADorder::FIRST>();
     if constexpr (index < num_ops - 1) {
       forward_<index + 1>();
     }
@@ -99,7 +108,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void reverse_() {
-    std::get<index>(stack).reverse();
+    get<index>(stack).reverse();
     if constexpr (index) {
       reverse_<index - 1>();
     }
@@ -107,7 +116,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void hzero_() {
-    std::get<index>(stack).hzero();
+    get<index>(stack).hzero();
     if constexpr (index < num_ops - 1) {
       hzero_<index + 1>();
     }
@@ -115,7 +124,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void hforward_() {
-    std::get<index>(stack).template forward<ADorder::SECOND>();
+    get<index>(stack).template forward<ADorder::SECOND>();
     if constexpr (index < num_ops - 1) {
       hforward_<index + 1>();
     }
@@ -123,7 +132,7 @@ class OperationStack {
 
   template <int index>
   A2D_FUNCTION void hreverse_() {
-    std::get<index>(stack).hreverse();
+    get<index>(stack).hreverse();
     if constexpr (index) {
       hreverse_<index - 1>();
     }

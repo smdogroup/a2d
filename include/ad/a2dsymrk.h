@@ -1,11 +1,8 @@
 #ifndef A2D_SYMMAT_RK_H
 #define A2D_SYMMAT_RK_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dgemmcore.h"
 #include "core/a2dsymrkcore.h"
 

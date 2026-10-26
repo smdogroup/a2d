@@ -1,13 +1,8 @@
 #ifndef A2D_MAT_TRACE_H
 #define A2D_MAT_TRACE_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dobj.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 
 namespace A2D {
 

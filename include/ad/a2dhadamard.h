@@ -2,8 +2,6 @@
 #define A2D_HADAMARD_H
 
 #include "../a2ddefs.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
 #include "a2dvec.h"
 #include "core/a2dveccore.h"
 
@@ -133,8 +131,6 @@ A2D_FUNCTION auto VecHadamard(A2DObj<xtype>& x, const ytype& y,
                               A2DObj<ztype>& z) {
   return VecHadamardExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
-
-namespace Test {}  // namespace Test
 
 }  // namespace A2D
 

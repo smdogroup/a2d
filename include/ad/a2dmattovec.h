@@ -1,10 +1,9 @@
 #ifndef A2D_MAT_TO_VEC_H
 #define A2D_MAT_TO_VEC_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
 
 namespace A2D {
 

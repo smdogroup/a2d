@@ -1,12 +1,10 @@
 #ifndef A2D_QUATERNION_H
 #define A2D_QUATERNION_H
 
-#include <iostream>
-
 #include "../a2ddefs.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
 #include "a2dgemm.h"
-#include "a2dmat.h"
-#include "a2dvec.h"
 
 namespace A2D {
 

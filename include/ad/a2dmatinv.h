@@ -2,9 +2,7 @@
 #define A2D_MAT_INV_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dobj.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dgemmcore.h"
 #include "core/a2dmatinvcore.h"
 #include "core/a2dveccore.h"
@@ -133,8 +131,6 @@ template <class Atype, class Btype>
 A2D_FUNCTION auto MatInv(A2DObj<Atype>& A, A2DObj<Btype>& Ainv) {
   return MatInvExpr<A2DObj<Atype>, A2DObj<Btype>>(A, Ainv);
 }
-
-namespace Test {}  // namespace Test
 
 }  // namespace A2D
 

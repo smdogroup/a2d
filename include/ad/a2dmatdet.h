@@ -2,9 +2,8 @@
 #define A2D_MAT_DET_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
+#include "../a2dmat.h"
 #include "a2dmatinv.h"
-#include "a2dvartuple.h"
 #include "core/a2dmatdetcore.h"
 
 namespace A2D {

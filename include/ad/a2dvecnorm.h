@@ -2,9 +2,7 @@
 #define A2D_VEC_NORM_H
 
 #include "../a2ddefs.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
-#include "a2dvec.h"
+#include "../a2dvec.h"
 #include "core/a2dveccore.h"
 
 namespace A2D {

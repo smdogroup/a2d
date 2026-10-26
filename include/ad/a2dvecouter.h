@@ -2,8 +2,8 @@
 #define A2D_VEC_OUTER_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dvec.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
 #include "core/a2dmatveccore.h"
 #include "core/a2dveccore.h"
 

@@ -2,9 +2,7 @@
 #define A2D_SYM_MAT_TRACE_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dsymmatmulttracecore.h"
 
 namespace A2D {

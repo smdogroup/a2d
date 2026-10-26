@@ -2,7 +2,6 @@
 #define A2D_SYM_MAT_EIGS_H
 
 #include "../a2ddefs.h"
-#include "a2dtest.h"
 
 namespace A2D {
 

@@ -1,10 +1,8 @@
 #ifndef A2D_MAT_VEC_MULT_H
 #define A2D_MAT_VEC_MULT_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
+#include "../a2dmat.h"
 #include "core/a2dmatveccore.h"
 #include "core/a2dsymmatveccore.h"
 #include "core/a2dveccore.h"

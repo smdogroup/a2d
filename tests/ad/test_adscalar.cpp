@@ -15,7 +15,7 @@ class ADScalarTest : public A2D::Test::A2DTest<T, T, T> {
   std::string name() override { return "ADScalarTest"; }
 
   // Evaluate f(x) = x^2 using ADScalar
-  Output eval(const Input &x) override {
+  Output eval(const Input& x) override {
     T val;
     x.get_values(val);
     ADScalar<T, 1> ad_x(val);
@@ -24,7 +24,7 @@ class ADScalarTest : public A2D::Test::A2DTest<T, T, T> {
   }
 
   // Compute the derivative: df/dx = 2x using ADScalar
-  void deriv(const Output &seed, const Input &x, Input &g) override {
+  void deriv(const Output& seed, const Input& x, Input& g) override {
     T val;
     x.get_values(val);
     T dy;
@@ -36,8 +36,8 @@ class ADScalarTest : public A2D::Test::A2DTest<T, T, T> {
   }
 
   // Compute the second derivative: d^2f/dx^2 = 2 using ADScalar
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) override {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) override {
     T val, pval, dy, ddy;
     x.get_values(val);
     p.get_values(pval);
@@ -60,7 +60,7 @@ class ADScalarNestedTest : public A2D::Test::A2DTest<T, T, T> {
   std::string name() override { return "ADScalarNestedTest"; }
 
   // Evaluate f(x) = x^2 using nested ADScalar
-  Output eval(const Input &x) override {
+  Output eval(const Input& x) override {
     T val;
     x.get_values(val);
     ADScalar<T, 1> ad_x(val);
@@ -70,7 +70,7 @@ class ADScalarNestedTest : public A2D::Test::A2DTest<T, T, T> {
   }
 
   // Compute the derivative: df/dx = 2x using nested ADScalar
-  void deriv(const Output &seed, const Input &x, Input &g) override {
+  void deriv(const Output& seed, const Input& x, Input& g) override {
     T val;
     x.get_values(val);
     T dy;
@@ -88,8 +88,8 @@ class ADScalarNestedTest : public A2D::Test::A2DTest<T, T, T> {
   }
 
   // Compute the second derivative: d^2f/dx^2 = 2 using nested ADScalar
-  void hprod(const Output &seed, const Output &hval, const Input &x,
-             const Input &p, Input &h) override {
+  void hprod(const Output& seed, const Output& hval, const Input& x,
+             const Input& p, Input& h) override {
     T val, pval, dy, ddy;
     x.get_values(val);
     p.get_values(pval);
@@ -104,6 +104,7 @@ class ADScalarNestedTest : public A2D::Test::A2DTest<T, T, T> {
     h.set_values(2.0 * pval * dy + 2.0 * ddy * val);
   }
 };
+
 bool ADScalarTestAll(bool component, bool write_output) {
   using Tc = A2D_complex_t<double>;
 
@@ -120,7 +121,7 @@ bool ADScalarTestAll(bool component, bool write_output) {
   return passed;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   bool component = false;     // Default to a projection test
   bool write_output = false;  // Don't write output;
 

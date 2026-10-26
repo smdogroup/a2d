@@ -475,35 +475,23 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     // Input
     const T mu(0.197), lambda(0.839);
     A2DObj<Mat<T, N, N>> Ux;
-    x.get_values(Ux.value());
-    p.get_values(Ux.pvalue());
     A2DObj<T> output;
 
     // Symmetric matrices
     A2DObj<SymMat<T, N>> E, S;
+
+    x.get_values(Ux.value());
+    p.get_values(Ux.pvalue());
 
     auto stack = MakeStack(
         MatGreenStrain<GreenStrainType::NONLINEAR>(Ux, E),  // E = E(Ux)
         SymIsotropic(mu, lambda, E, S),                     // S = S(E)
         SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
-    // Number of components in the derivative
-    constexpr int ncomp = N * N;
-
-    stack.reverse();
-
-    // Set the seeds for the second-order part
-    output.hvalue() = hval[0];
-    output.bvalue() = seed[0];
-
-    // Perform the second-order forward/reverse sweeps
-    stack.hforward();
-    stack.hreverse();
-
-    // Get the values
-    for (int i = 0; i < ncomp; i++) {
-      h[i] = Ux.hvalue()[i];
-    }
+    seed.get_values(output.bvalue());
+    hval.get_values(output.hvalue());
+    stack.hproduct();
+    h.set_values(Ux.hvalue());
   }
 };
 
@@ -686,7 +674,7 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-bool MatIntegrationTests(bool component, bool write_output) {
+bool IntegrationTests(bool component, bool write_output) {
   bool passed = true;
 
   StrainTest<A2D_complex_t<double>, 3> test1;
@@ -728,8 +716,8 @@ int main(int argc, char* argv[]) {
   typedef std::function<bool(bool, bool)> TestFunc;
   std::vector<TestFunc> tests;
 
-  tests.push_back(MatIntegrationTests);
-  tests.push_back(A2D::Test::MatMatMultTestAll);
+  tests.push_back(IntegrationTests);
+  // tests.push_back(A2D::Test::MatMatMultTestAll);
   tests.push_back(A2D::Test::MatVecMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);

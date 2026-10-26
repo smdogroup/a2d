@@ -235,8 +235,10 @@ struct object_scalar_impl<A2D_complex_t<double>> {
 };
 
 template <typename T>
-struct object_scalar : object_scalar_impl<remove_cvref_t<T>> {};
-
+struct object_scalar {
+  using type =
+      remove_cvref_t<typename object_scalar_impl<remove_cvref_t<T>>::type>;
+};
 /**
  * @brief Get the underlying scalar computational type, e.g. double, float,
  * complex or ADScalar

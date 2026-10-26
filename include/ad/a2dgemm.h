@@ -2,8 +2,6 @@
 #define A2D_GEMM_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dtest.h"
 #include "core/a2dgemmcore.h"
 
 namespace A2D {

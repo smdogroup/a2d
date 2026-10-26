@@ -3,7 +3,7 @@
 
 #include <tuple>
 
-#include "../a2ddefs.h"
+#include "a2ddefs.h"
 
 namespace A2D {
 

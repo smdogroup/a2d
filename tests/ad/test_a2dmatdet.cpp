@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "a2ddefs.h"
-#include "ad/a2dmat.h"
-#include "ad/a2dmatdet.h"
+#include "a2dcore.h"
 #include "test_commons.h"
 
 using namespace A2D;

@@ -4,38 +4,20 @@
 #include <tuple>
 #include <type_traits>
 
-#include "../a2ddefs.h"
-#include "../adscalar.h"
+#include "a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dobj.h"
 #include "a2dvec.h"
+#include "adscalar.h"
 
 namespace A2D {
-
-template <typename T>
-struct __is_complex : public std::false_type {};
-
-template <typename T>
-struct __is_complex<A2D_complex_t<T>> : public std::true_type {};
-
-template <typename T>
-struct __is_adscalar : public std::false_type {};
-
-template <typename T>
-struct __is_adscalar<ADScalar<T, 1>> : public std::true_type {};
-
-template <typename T>
-struct __is_scalar_type {
-  static const bool value = std::is_arithmetic<T>::value ||
-                            __is_complex<T>::value || __is_adscalar<T>::value;
-};
 
 template <class Var, typename Enable = void>
 struct VarTraits;  // Unsupported types produce a compile error
 
 // Scalar
 template <typename T>
-struct VarTraits<T, std::enable_if_t<__is_scalar_type<T>::value>> {
+struct VarTraits<T, std::enable_if_t<is_numeric_v<T>>> {
   static constexpr int ncomp = 1;
   using ScalarType = T;
   using Ref = T&;
@@ -115,12 +97,11 @@ class VarTuple {
   A2D_FUNCTION T& operator[](const I i) {
     return values[i];
   }
+
   template <typename I>
   A2D_FUNCTION const T& operator[](const I i) const {
     return values[i];
   }
-
-  // Get the
 
   // Zero the values
   A2D_FUNCTION void zero() {
@@ -162,7 +143,7 @@ class VarTuple {
     constexpr int offset = var_offset<I, Vars...>();
     constexpr int ncomp = VarTraits<Var>::ncomp;
 
-    if constexpr (__is_scalar_type<Var>::value) {
+    if constexpr (is_numeric_v<Var>) {
       values[offset] = var;
     } else {
       for (int i = 0; i < ncomp; i++) {
@@ -184,7 +165,7 @@ class VarTuple {
     constexpr int offset = var_offset<I, Vars...>();
     constexpr int ncomp = VarTraits<Var>::ncomp;
 
-    if constexpr (__is_scalar_type<Var>::value) {
+    if constexpr (is_numeric_v<Var>) {
       var = values[offset];
     } else {
       for (int i = 0; i < ncomp; i++) {
@@ -210,7 +191,7 @@ A2D_FUNCTION decltype(auto) get(VarTuple<T, Vars...>& t) {
 
   constexpr int offset = var_offset<I, Vars...>();
 
-  if constexpr (__is_scalar_type<Var>::value) {
+  if constexpr (is_numeric_v<Var>) {
     return (t.values[offset]);  // T&
   } else {
     return Ref(t.values + offset);
@@ -226,7 +207,7 @@ A2D_FUNCTION decltype(auto) get(const VarTuple<T, Vars...>& t) {
 
   constexpr int offset = var_offset<I, Vars...>();
 
-  if constexpr (__is_scalar_type<Var>::value) {
+  if constexpr (is_numeric_v<Var>) {
     return (t.values[offset]);  // T&
   } else {
     return ConstRef(t.values + offset);

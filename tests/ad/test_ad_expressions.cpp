@@ -1,7 +1,10 @@
+#include <gtest/gtest.h>
+
 #include <functional>
 #include <vector>
 
 #include "a2dcore.h"
+#include "a2dtest.h"
 
 using namespace A2D;
 
@@ -70,7 +73,7 @@ class ScalarTest : public A2DTest<T, T, T, T> {
   }
 };
 
-inline bool ScalarTestAll(bool component, bool write_output) {
+inline bool ScalarTestAll(bool component = false, bool write_output = true) {
   using Tc = A2D_complex_t<double>;
 
   bool passed = true;
@@ -674,7 +677,7 @@ class DiamondGraphTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
   }
 };
 
-bool IntegrationTests(bool component, bool write_output) {
+bool IntegrationTests(bool component = false, bool write_output = true) {
   bool passed = true;
 
   StrainTest<A2D_complex_t<double>, 3> test1;
@@ -698,67 +701,8 @@ bool IntegrationTests(bool component, bool write_output) {
   return passed;
 }
 
-int main(int argc, char* argv[]) {
-  bool component = false;     // Default to a projection test
-  bool write_output = false;  // Don't write output;
+TEST(test_integration, IntegrationTests) { EXPECT_TRUE(IntegrationTests()); }
 
-  // Check for the write_output flag
-  for (int i = 0; i < argc; i++) {
-    std::string str(argv[i]);
-    if (str.compare("--write_output") == 0) {
-      write_output = true;
-    }
-    if (str.compare("--component") == 0) {
-      component = true;
-    }
-  }
-
-  typedef std::function<bool(bool, bool)> TestFunc;
-  std::vector<TestFunc> tests;
-
-  tests.push_back(IntegrationTests);
-  // tests.push_back(A2D::Test::MatMatMultTestAll);
-  tests.push_back(A2D::Test::MatVecMultTestAll);
-  tests.push_back(A2D::Test::MatDetTestAll);
-  tests.push_back(A2D::Test::MatInvTestAll);
-  tests.push_back(A2D::Test::MatTraceTestAll);
-  tests.push_back(A2D::Test::MatGreenStrainTestAll);
-  tests.push_back(A2D::Test::SymMatMultTraceTestAll);
-  tests.push_back(A2D::Test::SymIsotropicTestAll);
-  tests.push_back(A2D::Test::MatSumTestAll);
-  tests.push_back(A2D::Test::SymMatRKTestAll);
-  tests.push_back(A2D::Test::SymMatSumTestAll);
-  tests.push_back(A2D::Test::VecCrossTestAll);
-  tests.push_back(A2D::Test::VecNormTestAll);
-  tests.push_back(A2D::Test::VecDotTestAll);
-  tests.push_back(A2D::Test::VecScaleTestAll);
-  tests.push_back(A2D::Test::VecNormalizeTestAll);
-  tests.push_back(A2D::Test::VecSumTestAll);
-  tests.push_back(A2D::Test::VecOuterTestAll);
-  tests.push_back(A2D::Test::ScalarTestAll);
-  tests.push_back(A2D::Test::SymEigsTestAll);
-  tests.push_back(A2D::Test::QuaternionTestAll);
-  tests.push_back(A2D::Test::VecHadamardTestAll);
-
-  bool passed = true;
-  for (size_t i = 0; i < tests.size(); i++) {
-    bool test_passed = tests[i](component, write_output);
-
-    // If the test fails, perform a component test and print the results
-    // to screen
-    if (!test_passed) {
-      bool comp = true;
-      bool write = true;
-      tests[i](comp, write);
-    }
-
-    passed = test_passed && passed;
-  }
-
-  // Convert to a fail flag
-  int fail = 0;
-  if (!passed) {
-    fail = 1;
-  }
-  return fail;
+TEST(test_scalarexpr, ScalarTestAll) {
+  EXPECT_TRUE(A2D::Test::ScalarTestAll());
 }

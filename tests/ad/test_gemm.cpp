@@ -7,7 +7,7 @@ using namespace A2D;
 template <MatOp opA, MatOp opB, typename T, int N, int M, int K, int L, int P,
           int Q>
 class MatMatMultTest
-    : public A2DTest<T, Mat<T, P, Q>, Mat<T, N, M>, Mat<T, K, L>> {
+    : public Test::A2DTest<T, Mat<T, P, Q>, Mat<T, N, M>, Mat<T, K, L>> {
  public:
   using Input = VarTuple<T, Mat<T, N, M>, Mat<T, K, L>>;
   using Output = VarTuple<T, Mat<T, P, Q>>;

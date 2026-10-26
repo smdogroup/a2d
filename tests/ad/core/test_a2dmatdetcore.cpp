@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "ad/a2dmat.h"
-#include "ad/a2dobj.h"
+#include "a2dmat.h"
+#include "a2dobj.h"
 #include "ad/core/a2dmatdetcore.h"
 #include "test_commons.h"
 

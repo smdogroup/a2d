@@ -1,10 +1,10 @@
 #ifndef A2D_OBJECTS_H
 #define A2D_OBJECTS_H
 
-#include "../a2ddefs.h"
-#include "../adscalar.h"
+#include "a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dvec.h"
+#include "adscalar.h"
 
 namespace A2D {
 

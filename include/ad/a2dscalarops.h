@@ -5,7 +5,6 @@
 
 #include "../a2ddefs.h"
 #include "a2dbinary.h"
-#include "a2dtest.h"
 #include "a2dunary.h"
 
 namespace A2D {

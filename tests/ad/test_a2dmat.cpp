@@ -2,7 +2,7 @@
 
 #include <complex>
 
-#include "ad/a2dmat.h"
+#include "a2dcore.h"
 #include "test_commons.h"
 
 using namespace A2D;

@@ -3,7 +3,7 @@
 #include <any>
 
 #include "a2dcore.h"
-#include "ad/a2dvartuple.h"
+#include "a2dvartuple.h"
 #include "ad/core/a2dgemmcore.h"
 #include "test_commons.h"
 

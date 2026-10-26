@@ -1,3 +1,5 @@
+#include <gtest/gtest.h>
+
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -105,7 +107,7 @@ class ADScalarNestedTest : public A2D::Test::A2DTest<T, T, T> {
   }
 };
 
-bool ADScalarTestAll(bool component, bool write_output) {
+bool ADScalarTestAll(bool component = false, bool write_output = true) {
   using Tc = A2D_complex_t<double>;
 
   bool passed = true;
@@ -121,22 +123,4 @@ bool ADScalarTestAll(bool component, bool write_output) {
   return passed;
 }
 
-int main(int argc, char* argv[]) {
-  bool component = false;     // Default to a projection test
-  bool write_output = false;  // Don't write output;
-
-  // Check for the write_output flag
-  for (int i = 0; i < argc; i++) {
-    std::string str(argv[i]);
-    if (str.compare("--write_output") == 0) {
-      write_output = true;
-    }
-    if (str.compare("--component") == 0) {
-      component = true;
-    }
-  }
-
-  bool passed = ADScalarTestAll(component, write_output);
-
-  return passed ? 0 : 1;
-}
+TEST(test_adscalar, ADScalarTestAll) { EXPECT_TRUE(ADScalarTestAll()); }

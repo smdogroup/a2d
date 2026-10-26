@@ -1,7 +1,6 @@
 #ifndef A2D_VAR_TUPLE_H
 #define A2D_VAR_TUPLE_H
 
-#include <tuple>
 #include <type_traits>
 
 #include "a2ddefs.h"
@@ -68,19 +67,37 @@ struct VarTraits<const Var> : VarTraits<Var> {
 };
 
 // Compute the offset based on the variable list
-template <int I, class... Vars, std::size_t... Is>
-constexpr int var_offset_impl(std::index_sequence<Is...>) {
-  using Tuple = std::tuple<Vars...>;
-
-  return (int{0} + ... + VarTraits<std::tuple_element_t<Is, Tuple>>::ncomp);
+template <int I, typename First, typename... Remain>
+A2D_FUNCTION constexpr int var_offset_impl() {
+  if constexpr (I == 0) {
+    return 0;
+  } else {
+    return VarTraits<First>::ncomp + var_offset_impl<I - 1, Remain...>();
+  }
 }
 
 template <int I, class... Vars>
-constexpr int var_offset() {
+A2D_FUNCTION constexpr int var_offset() {
   static_assert(I < sizeof...(Vars));
-
-  return var_offset_impl<I, Vars...>(std::make_index_sequence<I>{});
+  return var_offset_impl<I, Vars...>();
 }
+
+/*
+ * Extract the type of the variable at the given index
+ */
+template <int I, typename... Vars>
+struct var_element;
+
+template <int I, typename First, typename... Remain>
+struct var_element<I, First, Remain...> : var_element<I - 1, Remain...> {};
+
+template <typename First, typename... Remain>
+struct var_element<0, First, Remain...> {
+  using type = First;
+};
+
+template <int I, typename... Vars>
+using var_element_t = typename var_element<I, Vars...>::type;
 
 template <typename T, class... Vars>
 class VarTuple {
@@ -186,7 +203,7 @@ template <int I, typename T, class... Vars>
 A2D_FUNCTION decltype(auto) get(VarTuple<T, Vars...>& t) {
   static_assert(I < sizeof...(Vars));
 
-  using Var = std::tuple_element_t<I, std::tuple<Vars...>>;
+  using Var = var_element_t<I, Vars...>;
   using Ref = typename VarTraits<Var>::Ref;
 
   constexpr int offset = var_offset<I, Vars...>();
@@ -202,7 +219,7 @@ template <int I, typename T, class... Vars>
 A2D_FUNCTION decltype(auto) get(const VarTuple<T, Vars...>& t) {
   static_assert(I < sizeof...(Vars));
 
-  using Var = std::tuple_element_t<I, std::tuple<Vars...>>;
+  using Var = var_element_t<I, Vars...>;
   using ConstRef = typename VarTraits<Var>::ConstRef;
 
   constexpr int offset = var_offset<I, Vars...>();

@@ -49,12 +49,12 @@ namespace A2D {
   };                                                                        \
   template <class A, class Ta>                                              \
   A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {                      \
-    using T = typename remove_const_and_refs<Ta>::type;                     \
+    using T = remove_cvref_t<Ta>;                                           \
     return OBJNAME<A, Ta, T, true>(a);                                      \
   }                                                                         \
   template <class A, class Ta>                                              \
   A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                            \
-    using T = typename remove_const_and_refs<Ta>::type;                     \
+    using T = remove_cvref_t<Ta>;                                           \
     return OBJNAME<A, Ta, T, false>(a);                                     \
   }
 
@@ -121,12 +121,12 @@ A2D_1ST_UNARY_BASIC(UnaryNeg, operator-, -a.value(), -T(1.0))
   };                                                                           \
   template <class A, class Ta>                                                 \
   A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                        \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
+    using T = remove_cvref_t<Ta>;                                              \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
   template <class A, class Ta>                                                 \
   A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                              \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
+    using T = remove_cvref_t<Ta>;                                              \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
 
@@ -180,12 +180,12 @@ A2D_2ND_UNARY_BASIC(UnaryNeg2, operator-, -a.value(), -T(1.0))
   };                                                                    \
   template <class A, class Ta>                                          \
   A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a) {                  \
-    using T = typename remove_const_and_refs<Ta>::type;                 \
+    using T = remove_cvref_t<Ta>;                                       \
     return OBJNAME<A, Ta, T, true>(a);                                  \
   }                                                                     \
   template <class A, class Ta>                                          \
   A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a) {                        \
-    using T = typename remove_const_and_refs<Ta>::type;                 \
+    using T = remove_cvref_t<Ta>;                                       \
     return OBJNAME<A, Ta, T, false>(a);                                 \
   }
 
@@ -274,12 +274,12 @@ A2D_1ST_UNARY(ATanhExpr, atanh, A2D::atanh(a.value()),
   };                                                                           \
   template <class A, class Ta>                                                 \
   A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a) {                        \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
+    using T = remove_cvref_t<Ta>;                                              \
     return OBJNAME<A, Ta, T, true>(a);                                         \
   }                                                                            \
   template <class A, class Ta>                                                 \
   A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a) {                              \
-    using T = typename remove_const_and_refs<Ta>::type;                        \
+    using T = remove_cvref_t<Ta>;                                              \
     return OBJNAME<A, Ta, T, false>(a);                                        \
   }
 

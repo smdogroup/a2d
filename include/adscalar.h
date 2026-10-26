@@ -17,7 +17,8 @@ class ADScalar {
   A2D_FUNCTION ADScalar() {}
 
   // Value constructor (sets a value, zeros derivatives)
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION ADScalar(const R value) : value(value), deriv{0.0} {}
 
   // Value and derivative constructor (sets both, and works regardless of the
@@ -29,7 +30,8 @@ class ADScalar {
   }
 
   // Scalar-only version for ADScalar constructor for a common occasion
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   ADScalar(const R val, const T d[]) : ADScalar(T(val), d) {}
 
   // Copy constructor (sets value and derivatives from another ADScalar)
@@ -64,7 +66,8 @@ class ADScalar {
   }
 
   // Assignment operator
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline ADScalar<T, N>& operator=(const R& r) {
     value = r;
     for (int i = 0; i < N; i++) {
@@ -74,27 +77,32 @@ class ADScalar {
   }
 
   // Comparison operators
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline bool operator<(const R& rhs) const {
     return value < rhs;
   }
 
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline bool operator<=(const R& rhs) const {
     return value <= rhs;
   }
 
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline bool operator>(const R& rhs) const {
     return value > rhs;
   }
 
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline bool operator>=(const R& rhs) const {
     return value >= rhs;
   }
 
-  template <typename R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <typename R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline bool operator!=(const R& rhs) const {
     return value != rhs;
   }
@@ -128,7 +136,8 @@ class ADScalar {
     return *this;
   }
 
-  template <class R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <class R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline ADScalar<T, N>& operator+=(const R& r) {
     value += r;
     return *this;
@@ -142,7 +151,8 @@ class ADScalar {
     return *this;
   }
 
-  template <class R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <class R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline ADScalar<T, N>& operator-=(const R& r) {
     value -= r;
     return *this;
@@ -156,7 +166,8 @@ class ADScalar {
     return *this;
   }
 
-  template <class R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <class R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline ADScalar<T, N>& operator*=(const R& r) {
     value *= r;
     for (int i = 0; i < N; i++) {
@@ -175,7 +186,8 @@ class ADScalar {
     return *this;
   }
 
-  template <class R, std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+  template <class R,
+            std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
   A2D_FUNCTION inline ADScalar<T, N> operator/=(const R& r) {
     T inv = T(1.0) / r;
     value *= inv;
@@ -209,14 +221,14 @@ A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M>& l,
 }
 
 template <class X, int M, class L,
-          std::enable_if_t<is_passive_scalar_v<L>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<L>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator+(const L& l,
                                              const ADScalar<X, M>& r) {
   return ADScalar<X, M>(r.value + l, r.deriv);
 }
 
 template <class X, int M, class R,
-          std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator+(const ADScalar<X, M>& l,
                                              const R& r) {
   return ADScalar<X, M>(l.value + r, l.deriv);
@@ -233,7 +245,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M>& l,
 }
 
 template <class X, int M, class L,
-          std::enable_if_t<is_passive_scalar_v<L>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<L>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator-(const L& l,
                                              const ADScalar<X, M>& r) {
   ADScalar<X, M> out(l - r.value);
@@ -244,7 +256,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator-(const L& l,
 }
 
 template <class X, int M, class R,
-          std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator-(const ADScalar<X, M>& l,
                                              const R& r) {
   return ADScalar<X, M>(l.value - r, l.deriv);
@@ -261,7 +273,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M>& l,
 }
 
 template <class X, int M, class L,
-          std::enable_if_t<is_passive_scalar_v<L>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<L>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator*(const L& l,
                                              const ADScalar<X, M>& r) {
   ADScalar<X, M> out(l * r.value);
@@ -272,7 +284,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator*(const L& l,
 }
 
 template <class X, int M, class R,
-          std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator*(const ADScalar<X, M>& l,
                                              const R& r) {
   ADScalar<X, M> out(l.value * r);
@@ -296,7 +308,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M>& l,
 }
 
 template <class X, int M, class L,
-          std::enable_if_t<is_passive_scalar_v<L>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<L>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator/(const L& l,
                                              const ADScalar<X, M>& r) {
   X inv = X(1.0) / r.value;
@@ -310,7 +322,7 @@ A2D_FUNCTION inline ADScalar<X, M> operator/(const L& l,
 }
 
 template <class X, int M, class R,
-          std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> operator/(const ADScalar<X, M>& l,
                                              const R& r) {
   X inv = X(1.0) / r;
@@ -347,7 +359,7 @@ A2D_FUNCTION inline ADScalar<X, M> sqrt(const ADScalar<X, M>& r) {
 }
 
 template <class X, int M, class R,
-          std::enable_if_t<is_passive_scalar_v<R>, int> = 0>
+          std::enable_if_t<is_passive_scalar_or_integral_v<R>, int> = 0>
 A2D_FUNCTION inline ADScalar<X, M> pow(const ADScalar<X, M>& r,
                                        const R& exponent) {
   X value = A2D::pow(r.value, exponent);

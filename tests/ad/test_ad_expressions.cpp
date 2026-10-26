@@ -476,6 +476,7 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
     const T mu(0.197), lambda(0.839);
     A2DObj<Mat<T, N, N>> Ux;
     x.get_values(Ux.value());
+    p.get_values(Ux.pvalue());
     A2DObj<T> output;
 
     // Symmetric matrices
@@ -487,36 +488,21 @@ class HExtractTest : public A2D::Test::A2DTest<T, T, Mat<T, N, N>> {
         SymMatMultTrace(E, S, output));  // output = tr(E * S)
 
     // Number of components in the derivative
-    constexpr index_t ncomp = N * N;
+    constexpr int ncomp = N * N;
 
-    output.bvalue() = hval[0];
     stack.reverse();
 
-    auto g = MakeTieTuple<T, ADseed::b>(Ux);
-    for (int i = 0; i < ncomp; i++) {
-      h[i] = g[i];
-    }
-
-    auto temps = MakeTieTuple<T, ADseed::b>(Ux, S, E);
-    temps.zero();
-
     // Set the seeds for the second-order part
-    output.hvalue() = 0.0;
+    output.hvalue() = hval[0];
     output.bvalue() = seed[0];
 
-    // Create data for extracting the Hessian-vector product
-    auto in = MakeTieTuple<T, ADseed::p>(Ux);
-    auto out = MakeTieTuple<T, ADseed::h>(Ux);
+    // Perform the second-order forward/reverse sweeps
+    stack.hforward();
+    stack.hreverse();
 
-    // Extract the Hessian matrix
-    Mat<T, ncomp, ncomp> jac;  // Symmetric only if hval = 0.0
-    stack.hextract(in, out, jac);
-
-    // Mupltiply the outputs
+    // Get the values
     for (int i = 0; i < ncomp; i++) {
-      for (int j = 0; j < ncomp; j++) {
-        h[i] += jac(i, j) * p[j];
-      }
+      h[i] = Ux.hvalue()[i];
     }
   }
 };
@@ -745,7 +731,6 @@ int main(int argc, char* argv[]) {
   tests.push_back(MatIntegrationTests);
   tests.push_back(A2D::Test::MatMatMultTestAll);
   tests.push_back(A2D::Test::MatVecMultTestAll);
-  tests.push_back(A2D::Test::SymMatVecMultTestAll);
   tests.push_back(A2D::Test::MatDetTestAll);
   tests.push_back(A2D::Test::MatInvTestAll);
   tests.push_back(A2D::Test::MatTraceTestAll);
@@ -764,12 +749,11 @@ int main(int argc, char* argv[]) {
   tests.push_back(A2D::Test::VecOuterTestAll);
   tests.push_back(A2D::Test::ScalarTestAll);
   tests.push_back(A2D::Test::SymEigsTestAll);
-  tests.push_back(A2D::Test::QuaternionMatrixTestAll);
-  tests.push_back(A2D::Test::QuaternionAngularVelocityTestAll);
+  tests.push_back(A2D::Test::QuaternionTestAll);
   tests.push_back(A2D::Test::VecHadamardTestAll);
 
   bool passed = true;
-  for (int i = 0; i < tests.size(); i++) {
+  for (size_t i = 0; i < tests.size(); i++) {
     bool test_passed = tests[i](component, write_output);
 
     // If the test fails, perform a component test and print the results

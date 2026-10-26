@@ -152,6 +152,18 @@ struct is_passive_scalar : is_passive_scalar_impl<remove_cvref_t<T>> {};
 template <typename T>
 inline constexpr bool is_passive_scalar_v = is_passive_scalar<T>::value;
 
+/*
+ * Detect passive scalars or integral types
+ */
+template <typename T>
+struct is_passive_scalar_or_integral
+    : std::bool_constant<is_passive_scalar<T>::value ||
+                         std::is_integral<T>::value> {};
+
+template <typename T>
+inline constexpr bool is_passive_scalar_or_integral_v =
+    is_passive_scalar_or_integral<T>::value;
+
 /**
  * @brief Detect ADScalar types
  */
@@ -168,14 +180,6 @@ template <typename T>
 inline constexpr bool is_adscalar_v = is_adscalar<T>::value;
 
 /**
- * @brief Detect AD scalar types, discarding const/ref qualifiers
- *
- * @tparam T
- */
-template <typename T>
-inline constexpr bool is_ad_scalar_v = is_adscalar<T>::value;
-
-/**
  * @brief Detect scalar or ad types - numeric types
  */
 template <typename T>
@@ -188,6 +192,17 @@ struct is_numeric : is_numeric_impl<remove_cvref_t<T>> {};
 
 template <typename T>
 inline constexpr bool is_numeric_v = is_numeric<T>::value;
+
+/**
+ * Detect numeric or integral types
+ */
+template <typename T>
+struct is_numeric_or_integral
+    : std::bool_constant<is_numeric<T>::value || std::is_integral<T>::value> {};
+
+template <typename T>
+inline constexpr bool is_numeric_or_integral_v =
+    is_numeric_or_integral<T>::value;
 
 /**
  * @brief Get the scalar type used for the computation.

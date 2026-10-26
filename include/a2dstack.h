@@ -1,7 +1,11 @@
 #ifndef A2D_STACK_H
 #define A2D_STACK_H
 
+#ifdef __CUDACC__
+#include <cuda/std/tuple>
+#else
 #include <tuple>
+#endif
 
 #include "a2ddefs.h"
 
@@ -11,7 +15,11 @@ template <class... Operations>
 class OperationStack {
  public:
   static constexpr int num_ops = sizeof...(Operations);
+#ifdef __CUDACC__
+  using StackTuple = cuda::std::tuple<Operations...>;
+#else
   using StackTuple = std::tuple<Operations...>;
+#endif
 
   template <class... Args>
   A2D_FUNCTION OperationStack(Args&&... s) : stack(std::forward<Args>(s)...) {

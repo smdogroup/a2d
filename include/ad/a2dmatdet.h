@@ -4,6 +4,7 @@
 #include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dmatinv.h"
+#include "a2dvartuple.h"
 #include "core/a2dmatdetcore.h"
 
 namespace A2D {
@@ -22,7 +23,7 @@ template <class Atype, class dtype>
 class MatDetExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the matrix
   static constexpr int N = get_matrix_rows<Atype>::size;
@@ -80,7 +81,7 @@ template <class Stype, class dtype>
 class SymMatDetExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int M = get_symmatrix_size<Stype>::size;
@@ -130,34 +131,26 @@ class SymMatDetExpr {
   dtype& det;
 };
 
-template <
-    class Atype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
-                     bool> = true>
+template <class Atype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Atype> == ADObjType::MATRIX, int> = 0>
 A2D_FUNCTION auto MatDet(ADObj<Atype>& A, ADObj<dtype>& det) {
   return MatDetExpr<ADObj<Atype>, ADObj<dtype>>(A, det);
 }
 
-template <
-    class Atype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
-                     bool> = true>
+template <class Atype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Atype> == ADObjType::MATRIX, int> = 0>
 A2D_FUNCTION auto MatDet(A2DObj<Atype>& A, A2DObj<dtype>& det) {
   return MatDetExpr<A2DObj<Atype>, A2DObj<dtype>>(A, det);
 }
 
-template <
-    class Stype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
-                     bool> = true>
+template <class Stype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Stype> == ADObjType::SYMMAT, int> = 0>
 A2D_FUNCTION auto MatDet(ADObj<Stype>& S, ADObj<dtype>& det) {
   return SymMatDetExpr<ADObj<Stype>, ADObj<dtype>>(S, det);
 }
 
-template <
-    class Stype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
-                     bool> = true>
+template <class Stype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Stype> == ADObjType::SYMMAT, int> = 0>
 A2D_FUNCTION auto MatDet(A2DObj<Stype>& S, A2DObj<dtype>& det) {
   return SymMatDetExpr<A2DObj<Stype>, A2DObj<dtype>>(S, det);
 }

@@ -2,6 +2,7 @@
 #define A2D_SYM_MAT_EIGS_H
 
 #include "../a2ddefs.h"
+#include "a2dtest.h"
 
 namespace A2D {
 
@@ -411,7 +412,7 @@ template <class Stype, class etype>
 class SymEigsExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<etype>::type T;
+  using T = object_scalar_t<etype>;
 
   // Extract the dimensions of the underlying matrices
   static constexpr int N = get_symmatrix_size<Stype>::size;

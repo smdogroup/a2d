@@ -42,7 +42,7 @@ template <class xtype, class ytype, class Atype>
 class VecOuterExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Atype>::type T;
+  using T = object_scalar_t<Atype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int M = get_vec_size<xtype>::size;
@@ -137,7 +137,7 @@ class VecOuterExpr {
 
 template <class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y, ADObj<Atype>& A) {
-  using T = typename get_object_numeric_type<Atype>::type;
+  using T = object_scalar_t<Atype>;
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
                                                                 A);
 }
@@ -151,7 +151,7 @@ A2D_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
 template <class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
                            A2DObj<Atype>& A) {
-  using T = typename get_object_numeric_type<Atype>::type;
+  using T = object_scalar_t<Atype>;
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
                                                                    A);
 }

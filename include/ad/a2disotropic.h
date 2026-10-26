@@ -81,7 +81,7 @@ template <class mutype, class lamtype, class Etype, class Stype>
 class SymIsotropicExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Stype>::type T;
+  using T = object_scalar_t<Stype>;
 
   // Extract the dimensions of the matrices
   static constexpr int N = get_symmatrix_size<Etype>::size;

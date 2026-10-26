@@ -86,7 +86,7 @@ template <class atype, class Atype, class Stype>
 class SymMatSumExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Stype>::type T;
+  using T = object_scalar_t<Stype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int M = get_matrix_rows<Atype>::size;
@@ -171,13 +171,13 @@ class SymMatSumExpr {
 // Scalar constant alpha = 1.0 case
 template <class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(ADObj<Atype>& A, ADObj<Stype>& S) {
-  using T = typename get_object_numeric_type<Stype>::type;
+  using T = object_scalar_t<Stype>;
   return SymMatSumExpr<const T, ADObj<Atype>, ADObj<Stype>>(T(1.0), A, S);
 }
 
 template <class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(A2DObj<Atype>& A, A2DObj<Stype>& S) {
-  using T = typename get_object_numeric_type<Stype>::type;
+  using T = object_scalar_t<Stype>;
   return SymMatSumExpr<const T, A2DObj<Atype>, A2DObj<Stype>>(T(1.0), A, S);
 }
 

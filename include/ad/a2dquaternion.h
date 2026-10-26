@@ -61,7 +61,7 @@ template <class qtype, class Ctype>
 class QuaternionMatrixExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Extract the underlying sizes of the matrix
   static constexpr int M = get_matrix_rows<Ctype>::size;
@@ -174,7 +174,7 @@ template <class qtype, class wtype>
 class QuaternionAngularVelocityExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<wtype>::type T;
+  using T = object_scalar_t<wtype>;
 
   // Extract the underlying sizes of the matrix
   static constexpr int M = get_vec_size<wtype>::size;
@@ -291,16 +291,6 @@ class QuaternionMatrixTest : public A2DTest<T, Mat<T, 3, 3>, Vec<T, 4>> {
     h.set_values(q.hvalue());
   }
 };
-
-inline bool QuaternionMatrixTestAll(bool component = false,
-                                    bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  QuaternionMatrixTest<Tc> test1;
-  bool passed = Run(test1, component, write_output);
-
-  return passed;
-}
 
 template <typename T>
 class QuaternionAngularVelocityTest
@@ -443,14 +433,17 @@ bool TestQuaternions(QuaternionAngularVelocityTest<T> test,
   return passed;
 }
 
-inline bool QuaternionAngularVelocityTestAll(bool component = false,
-                                             bool write_output = true) {
+inline bool QuaternionTestAll(bool component = false,
+                              bool write_output = true) {
   using Tc = A2D_complex_t<double>;
 
-  QuaternionAngularVelocityTest<Tc> test1;
+  QuaternionMatrixTest<Tc> test1;
+  bool passed = Run(test1, component, write_output);
+
+  QuaternionAngularVelocityTest<Tc> test2;
   test1.set_tolerances(1e-10, 1e-14);
-  bool passed = TestQuaternions(test1, write_output, 1e-30, 1e-12);
-  passed = passed && Run(test1, component, write_output);
+  passed = passed && TestQuaternions(test2, write_output, 1e-30, 1e-12);
+  passed = passed && Run(test2, component, write_output);
 
   return passed;
 }

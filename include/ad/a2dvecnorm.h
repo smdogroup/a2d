@@ -18,7 +18,7 @@ template <class vtype, class dtype>
 class VecNormExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<vtype>::size;
@@ -87,7 +87,7 @@ template <class xtype, class ytype>
 class VecNormalizeExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ytype>::type T;
+  using T = object_scalar_t<ytype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -181,7 +181,7 @@ template <class dtype, class xtype, class ytype>
 class VecScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -301,7 +301,7 @@ template <class xtype, class ytype, class dtype>
 class VecDotExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;

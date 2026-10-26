@@ -5,7 +5,7 @@
 
 namespace A2D {
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_passive_scalar_v<T>, int> = 0>
 A2D_FUNCTION T max2(const T a, const T b) {
   if (RealPart(a) > RealPart(b)) {
     return a;
@@ -13,7 +13,7 @@ A2D_FUNCTION T max2(const T a, const T b) {
   return b;
 }
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_passive_scalar_v<T>, int> = 0>
 A2D_FUNCTION T min2(const T a, const T b) {
   if (RealPart(a) < RealPart(b)) {
     return a;
@@ -67,28 +67,28 @@ A2D_FUNCTION T min2(const T a, const T b) {
     T val, bval;                                                             \
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
                                     const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
                                     ADExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a,                        \
                                     const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {    \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
@@ -151,28 +151,28 @@ A2D_1ST_BINARY_BASIC(MultExpr, operator*, a.value() * b.value(),
     T tmp, val, bval;                                                        \
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
                                     const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const ADExpr<A, Ta>& a,                  \
                                     ADExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a,                        \
                                     const ADExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(ADExpr<A, Ta>& a, ADExpr<B, Tb>& b) {    \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
@@ -266,28 +266,28 @@ A2D_1ST_BINARY(Atan2, atan2, A2D::atan2(a.value(), b.value()),
     T val, bval, pval, hval;                                                  \
   };                                                                          \
   template <class A, class Ta, class B, class Tb,                             \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>         \
   A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                  \
                                     const A2DExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                        \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>         \
   A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                  \
                                     A2DExpr<B, Tb>& b) {                      \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                       \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>         \
   A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a,                        \
                                     const A2DExpr<B, Tb>& b) {                \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                       \
   }                                                                           \
   template <class A, class Ta, class B, class Tb,                             \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>       \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>         \
   A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {   \
     using T = typename remove_const_and_refs<Tb>::type;                       \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                      \
@@ -373,28 +373,28 @@ A2D_2ND_BINARY_BASIC(MultExpr2, operator*, a.value() * b.value(),
     T tmp, val, bval, pval, hval;                                            \
   };                                                                         \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                 \
                                     const A2DExpr<B, Tb>& b) {               \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, true>(a, b);                       \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(const A2DExpr<A, Ta>& a,                 \
                                     A2DExpr<B, Tb>& b) {                     \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, true, false>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a,                       \
                                     const A2DExpr<B, Tb>& b) {               \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, true>(a, b);                      \
   }                                                                          \
   template <class A, class Ta, class B, class Tb,                            \
-            std::enable_if_t<is_same_type<Ta, Tb>::value, bool> = true>      \
+            std::enable_if_t<is_same_unqualified_v<Ta, Tb>, int> = 0>        \
   A2D_FUNCTION inline auto OPERNAME(A2DExpr<A, Ta>& a, A2DExpr<B, Tb>& b) {  \
     using T = typename remove_const_and_refs<Tb>::type;                      \
     return OBJNAME<A, Ta, B, Tb, T, false, false>(a, b);                     \
@@ -482,13 +482,13 @@ A2D_2ND_BINARY(Atan22, atan2, A2D::atan2(a.value(), b.value()),
     T val, bval;                                                        \
   };                                                                    \
   template <class A, class Ta, class B,                                 \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
+            std::enable_if_t<is_passive_scalar_v<B>, int> = 0>          \
   A2D_FUNCTION auto OPERNAME(const ADExpr<A, Ta>& a, const B b) {       \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, B, T, true>(a, b);                            \
   }                                                                     \
   template <class A, class Ta, class B,                                 \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>    \
+            std::enable_if_t<is_passive_scalar_v<B>, int> = 0>          \
   A2D_FUNCTION auto OPERNAME(ADExpr<A, Ta>& a, const B b) {             \
     using T = typename remove_const_and_refs<Ta>::type;                 \
     return OBJNAME<A, Ta, B, T, false>(a, b);                           \
@@ -564,13 +564,13 @@ A2D_1ST_BINARY_LEFT_BASIC(PowExpr, pow, A2D::pow(a.value(), b),
     T val, bval, pval, hval;                                               \
   };                                                                       \
   template <class A, class Ta, class B,                                    \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
+            std::enable_if_t<is_passive_scalar_v<B>, int> = 0>             \
   A2D_FUNCTION auto OPERNAME(const A2DExpr<A, Ta>& a, const B b) {         \
     using T = typename remove_const_and_refs<Ta>::type;                    \
     return OBJNAME<A, Ta, B, T, true>(a, b);                               \
   }                                                                        \
   template <class A, class Ta, class B,                                    \
-            std::enable_if_t<is_scalar_type<B>::value, bool> = true>       \
+            std::enable_if_t<is_passive_scalar_v<B>, int> = 0>             \
   A2D_FUNCTION auto OPERNAME(A2DExpr<A, Ta>& a, const B b) {               \
     using T = typename remove_const_and_refs<Ta>::type;                    \
     return OBJNAME<A, Ta, B, T, false>(a, b);                              \
@@ -640,13 +640,13 @@ A2D_2ND_BINARY_LEFT_BASIC(PowExpr2, pow, A2D::pow(a.value(), b),
     T val, bval;                                                         \
   };                                                                     \
   template <class A, class B, class Tb,                                  \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
+            std::enable_if_t<is_passive_scalar_v<A>, int> = 0>           \
   A2D_FUNCTION auto OPERNAME(const A a, const ADExpr<B, Tb>& b) {        \
     using T = typename remove_const_and_refs<Tb>::type;                  \
     return OBJNAME<A, B, Tb, T, true>(a, b);                             \
   }                                                                      \
   template <class A, class B, class Tb,                                  \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>     \
+            std::enable_if_t<is_passive_scalar_v<A>, int> = 0>           \
   A2D_FUNCTION auto OPERNAME(const A a, ADExpr<B, Tb>& b) {              \
     using T = typename remove_const_and_refs<Tb>::type;                  \
     return OBJNAME<A, B, Tb, T, false>(a, b);                            \
@@ -720,13 +720,13 @@ A2D_1ST_BINARY_RIGHT_BASIC(RMultExpr, operator*, a* b.value(), a* b.bvalue(),
     T val, bval, pval, hval;                                               \
   };                                                                       \
   template <class A, class B, class Tb,                                    \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
+            std::enable_if_t<is_passive_scalar_v<A>, int> = 0>             \
   A2D_FUNCTION auto OPERNAME(const A a, const A2DExpr<B, Tb>& b) {         \
     using T = typename remove_const_and_refs<Tb>::type;                    \
     return OBJNAME<A, B, Tb, T, true>(a, b);                               \
   }                                                                        \
   template <class A, class B, class Tb,                                    \
-            std::enable_if_t<is_scalar_type<A>::value, bool> = true>       \
+            std::enable_if_t<is_passive_scalar_v<A>, int> = 0>             \
   A2D_FUNCTION auto OPERNAME(const A a, A2DExpr<B, Tb>& b) {               \
     using T = typename remove_const_and_refs<Tb>::type;                    \
     return OBJNAME<A, B, Tb, T, false>(a, b);                              \

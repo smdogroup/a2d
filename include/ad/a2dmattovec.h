@@ -28,9 +28,8 @@ template <typename I, class Atype, class xtype>
 class MatColumnToVecExpr {
  public:
   // Get the dimension of the matrix
-  static constexpr int N = conditional_value<
-      int, get_a2d_object_type<Atype>::obj_type == ADObjType::SYMMAT,
-      get_symmatrix_size<Atype>::size, get_matrix_rows<Atype>::size>::value;
+  static constexpr int N = get_matrix_rows<Atype>::size;
+
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 
@@ -109,9 +108,7 @@ template <typename I, class Atype, class xtype>
 class MatRowToVecExpr {
  public:
   // Get the dimension of the matrix
-  static constexpr int N = conditional_value<
-      int, get_a2d_object_type<Atype>::obj_type == ADObjType::SYMMAT,
-      get_symmatrix_size<Atype>::size, get_matrix_columns<Atype>::size>::value;
+  static constexpr int N = get_matrix_columns<Atype>::size;
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 

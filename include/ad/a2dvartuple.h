@@ -5,9 +5,10 @@
 #include <type_traits>
 
 #include "../a2ddefs.h"
-#include "../a2dtuple.h"
 #include "../adscalar.h"
+#include "a2dmat.h"
 #include "a2dobj.h"
+#include "a2dvec.h"
 
 namespace A2D {
 
@@ -29,317 +30,207 @@ struct __is_scalar_type {
                             __is_complex<T>::value || __is_adscalar<T>::value;
 };
 
-struct __basic_arithmetic_type {
-  static const index_t ncomp = 1;
+template <class Var, typename Enable = void>
+struct VarTraits;  // Unsupported types produce a compile error
+
+// Scalar
+template <typename T>
+struct VarTraits<T, std::enable_if_t<__is_scalar_type<T>::value>> {
+  static constexpr int ncomp = 1;
+  using ScalarType = T;
+  using Ref = T&;
+  using ConstRef = const T&;
 };
 
-template <class... Vars>
-struct __count_var_components;
-
-template <>
-struct __count_var_components<> {
-  static const index_t ncomp = 0;
+// Vector
+template <typename T, int N>
+struct VarTraits<Vec<T, N>> {
+  static constexpr int ncomp = N;
+  using ScalarType = T;
+  using Ref = VecRef<T, N>;
+  using ConstRef = VecRef<const T, N>;
 };
 
-template <class First, class... Remain>
-struct __count_var_components<First, Remain...> {
-  static const index_t ncomp =
-      std::conditional<__is_scalar_type<First>::value, __basic_arithmetic_type,
-                       First>::type::ncomp +
-      __count_var_components<Remain...>::ncomp;
+// Matrix
+template <typename T, int M, int N>
+struct VarTraits<Mat<T, M, N>> {
+  static constexpr int ncomp = M * N;
+  using ScalarType = T;
+  using Ref = MatRef<T, M, N>;
+  using ConstRef = MatRef<const T, M, N>;
 };
+
+// Symmetric matrix
+template <typename T, int N>
+struct VarTraits<SymMat<T, N>> {
+  static constexpr int ncomp = N * (N + 1) / 2;
+  using ScalarType = T;
+  using Ref = SymMatRef<T, N>;
+  using ConstRef = SymMatRef<const T, N>;
+};
+
+// Existing references
+template <typename T, int N>
+struct VarTraits<VecRef<T, N>> : VarTraits<Vec<T, N>> {};
+
+template <typename T, int M, int N>
+struct VarTraits<MatRef<T, M, N>> : VarTraits<Mat<T, M, N>> {};
+
+template <typename T, int N>
+struct VarTraits<SymMatRef<T, N>> : VarTraits<SymMat<T, N>> {};
+
+// Constant references
+template <typename Var>
+struct VarTraits<const Var> : VarTraits<Var> {
+  using Ref = typename VarTraits<Var>::ConstRef;
+};
+
+// Compute the offset based on the variable list
+template <int I, class... Vars, std::size_t... Is>
+constexpr int var_offset_impl(std::index_sequence<Is...>) {
+  using Tuple = std::tuple<Vars...>;
+
+  return (int{0} + ... + VarTraits<std::tuple_element_t<Is, Tuple>>::ncomp);
+}
+
+template <int I, class... Vars>
+constexpr int var_offset() {
+  static_assert(I < sizeof...(Vars));
+
+  return var_offset_impl<I, Vars...>(std::make_index_sequence<I>{});
+}
 
 template <typename T, class... Vars>
-class VarTupleBase {
+class VarTuple {
  public:
-  /**
-   * @brief Number of components in the tuple of variables
-   */
-  static constexpr index_t ncomp = __count_var_components<Vars...>::ncomp;
+  static_assert((std::is_same_v<T, typename VarTraits<Vars>::ScalarType> &&
+                 ...),
+                "All variables must use the same scalar type");
+  static constexpr int ncomp = (int{0} + ... + VarTraits<Vars>::ncomp);
 
-  /**
-   * @brief Get the number of components
-   */
-  A2D_FUNCTION index_t get_num_components() const { return ncomp; }
+  // Get the number of components
+  int get_ncomp() const { return ncomp; }
 
- protected:
-  template <typename I, index_t index, class TupleObj, class First,
-            class... Remain>
-  A2D_FUNCTION T& get_value_(TupleObj& var, const I comp) {
-    if constexpr (__is_scalar_type<First>::value) {
-      if (comp == 0) {
-        return a2d_get<index>(var);
-      } else if constexpr (sizeof...(Remain) == 0) {
-        return a2d_get<index>(var);
-      } else {
-        return get_value_<I, index + 1, TupleObj, Remain...>(var, comp - 1);
-      }
-    } else {
-      if constexpr (sizeof...(Remain) == 0) {
-        return a2d_get<index>(var)[comp];
-      } else {
-        if constexpr (First::ncomp > 0) {
-          if (comp < First::ncomp) {
-            return a2d_get<index>(var)[comp];
-          } else {
-            return get_value_<I, index + 1, TupleObj, Remain...>(
-                var, comp - First::ncomp);
-          }
-        } else {
-          return get_value_<I, index + 1, TupleObj, Remain...>(var, comp);
-        }
-      }
-    }
-  }
-
-  template <typename I, index_t index, class TupleObj, class First,
-            class... Remain>
-  A2D_FUNCTION const T& get_value_const_(const TupleObj& var,
-                                         const I comp) const {
-    if constexpr (__is_scalar_type<First>::value) {
-      if (comp == 0) {
-        return a2d_get<index>(var);
-      } else if constexpr (sizeof...(Remain) == 0) {
-        return a2d_get<index>(var);
-      } else {
-        return get_value_const_<I, index + 1, TupleObj, Remain...>(var,
-                                                                   comp - 1);
-      }
-    } else {
-      if constexpr (sizeof...(Remain) == 0) {
-        return a2d_get<index>(var)[comp];
-      } else {
-        if constexpr (First::ncomp > 0) {
-          if (comp < First::ncomp) {
-            return a2d_get<index>(var)[comp];
-          } else {
-            return get_value_const_<I, index + 1, TupleObj, Remain...>(
-                var, comp - First::ncomp);
-          }
-        } else {
-          return get_value_const_<I, index + 1, TupleObj, Remain...>(var, comp);
-        }
-      }
-    }
-  }
-
-  template <index_t index, class TupleObj, class First, class... Remain>
-  A2D_FUNCTION void set_values_(TupleObj& var, const First& f,
-                                const Remain&... r) {
-    if constexpr (__is_scalar_type<First>::value) {
-      a2d_get<index>(var) = f;
-    } else if constexpr (First::ncomp > 0) {
-      First& val = a2d_get<index>(var);
-      for (index_t i = 0; i < First::ncomp; i++) {
-        val[i] = f[i];
-      }
-    }
-    if constexpr (sizeof...(Remain) > 0) {
-      set_values_<index + 1, TupleObj, Remain...>(var, r...);
-    }
-  }
-
-  template <index_t index, class TupleObj, class First, class... Remain>
-  A2D_FUNCTION void get_values_(const TupleObj& var, First& f,
-                                Remain&... r) const {
-    if constexpr (__is_scalar_type<First>::value) {
-      f = a2d_get<index>(var);
-    } else if constexpr (First::ncomp > 0) {
-      const First& val = a2d_get<index>(var);
-      for (index_t i = 0; i < First::ncomp; i++) {
-        f[i] = val[i];
-      }
-    }
-    if constexpr (sizeof...(Remain) > 0) {
-      get_values_<index + 1, TupleObj, Remain...>(var, r...);
-    }
-  }
-
-  template <index_t index, class TupleObj, class First, class... Remain>
-  A2D_FUNCTION void zero_(TupleObj& var) {
-    if constexpr (__is_scalar_type<First>::value) {
-      a2d_get<index>(var) = T(0.0);
-    } else if constexpr (First::ncomp > 0) {
-      a2d_get<index>(var).zero();
-    }
-    if constexpr (sizeof...(Remain) > 0) {
-      zero_<index + 1, TupleObj, Remain...>(var);
-    }
-  }
-
-  template <index_t index, class TupleObj, class First, class... Remain>
-  A2D_FUNCTION void set_rand_(TupleObj& var, const T low, const T high) {
-    if constexpr (__is_scalar_type<First>::value) {
-      a2d_get<index>(var) =
-          low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
-    } else if constexpr (First::ncomp > 0) {
-      First& val = a2d_get<index>(var);
-      for (index_t i = 0; i < First::ncomp; i++) {
-        val[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
-      }
-    }
-    if constexpr (sizeof...(Remain) > 0) {
-      set_rand_<index + 1, TupleObj, Remain...>(var, low, high);
-    }
-  }
-};
-
-template <typename T, class... Vars>
-class VarTuple : public VarTupleBase<T, Vars...> {
- public:
-  using VarTupleObj = a2d_tuple<Vars...>;
-
-  // Default constructor that takes in no arguments
-  A2D_FUNCTION VarTuple() {}
-
-  // A2D_FUNCTION VarTuple() {}
-  A2D_FUNCTION VarTuple(const Vars&... s) {
-    this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
-  }
-
-  /// @brief Access a reference to an object indexed by this class
   template <typename I>
-  A2D_FUNCTION T& operator[](const I comp) {
-    return this->template get_value_<I, 0, VarTupleObj, Vars...>(var, comp);
+  A2D_FUNCTION T& operator[](const I i) {
+    return values[i];
   }
-
-  /// @brief Access a reference to an object indexed by this class
   template <typename I>
-  A2D_FUNCTION const T& operator[](const I comp) const {
-    return this->template get_value_const_<I, 0, VarTupleObj, Vars...>(var,
-                                                                       comp);
+  A2D_FUNCTION const T& operator[](const I i) const {
+    return values[i];
   }
 
-  /// @brief Zero the components of the tuple
+  // Get the
+
+  // Zero the values
   A2D_FUNCTION void zero() {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template zero_<0, VarTupleObj, Vars...>(var);
+    for (int i = 0; i < ncomp; i++) {
+      values[i] = 0.0;
     }
   }
 
-  /// @brief Set a random set of values on an interval
-  A2D_FUNCTION void set_rand(T low = T(-1.0), T high = T(1.0)) {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
+  // Set a random set of values on an interval
+  A2D_FUNCTION void set_rand(const T low = T(-1.0), const T high = T(1.0)) {
+    for (int i = 0; i < ncomp; i++) {
+      values[i] = low + (high - low) * (static_cast<double>(rand()) / RAND_MAX);
     }
   }
 
-  /// @brief Set values into the tuple from a list of objects
-  A2D_FUNCTION void set_values(const Vars&... s) {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
-    }
+  // Set values into the VarTuple based on the object values
+  A2D_FUNCTION void set_values(const Vars&... vars) {
+    set_values_impl<0, Vars...>(vars...);
   }
 
-  /// @brief Place the values from the tuple into list of objects
-  A2D_FUNCTION void get_values(Vars&... s) const {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
-    }
+  // Get the object values from the VarTuple
+  A2D_FUNCTION void get_values(Vars&... vars) const {
+    get_values_impl<0, Vars...>(vars...);
   }
+
+  T values[ncomp];
 
  private:
-  VarTupleObj var;
+  template <int I, class Var, class... Remain>
+  A2D_FUNCTION void set_values_impl(const Var& var, const Remain&... remain) {
+    set_value<I, Var>(var);
+    if constexpr (sizeof...(Remain) > 0) {
+      set_values_impl<I + 1, Remain...>(remain...);
+    }
+  }
 
-  template <int index, typename T1, class... Vars1>
-  friend auto& get(VarTuple<T1, Vars1...>&);
-  template <int index, typename T1, class... Vars1>
-  friend auto& get(const VarTuple<T1, Vars1...>&);
+  template <int I, class Var>
+  A2D_FUNCTION void set_value(const Var& var) {
+    constexpr int offset = var_offset<I, Vars...>();
+    constexpr int ncomp = VarTraits<Var>::ncomp;
+
+    if constexpr (__is_scalar_type<Var>::value) {
+      values[offset] = var;
+    } else {
+      for (int i = 0; i < ncomp; i++) {
+        values[offset + i] = var[i];
+      }
+    }
+  }
+
+  template <int I, class Var, class... Remain>
+  A2D_FUNCTION void get_values_impl(Var& var, Remain&... remain) const {
+    get_value<I, Var>(var);
+    if constexpr (sizeof...(Remain) > 0) {
+      get_values_impl<I + 1, Remain...>(remain...);
+    }
+  }
+
+  template <int I, class Var>
+  A2D_FUNCTION void get_value(Var& var) const {
+    constexpr int offset = var_offset<I, Vars...>();
+    constexpr int ncomp = VarTraits<Var>::ncomp;
+
+    if constexpr (__is_scalar_type<Var>::value) {
+      var = values[offset];
+    } else {
+      for (int i = 0; i < ncomp; i++) {
+        var[i] = values[offset + i];
+      }
+    }
+  }
 };
 
-template <int index, typename T, class... Vars>
-A2D_FUNCTION auto& get(VarTuple<T, Vars...>& t) {
-  return a2d_get<index>(t.var);
-}
-
-template <int index, typename T, class... Vars>
-A2D_FUNCTION auto& get(const VarTuple<T, Vars...>& t) {
-  return a2d_get<index>(t.var);
-}
-
 template <typename T, class... Vars>
-A2D_FUNCTION auto MakeVarTuple(Vars&... s) {
-  return VarTuple<T, Vars...>(s...);
+A2D_FUNCTION VarTuple<T, Vars...> MakeVarTuple(const Vars&... vars) {
+  VarTuple<T, Vars...> t;
+  t.set_values(vars...);
+  return t;
 }
 
-template <typename T, class... Vars>
-class TieTuple : public VarTupleBase<T, Vars...> {
- public:
-  using VarTupleObj = a2d_tuple<Vars&...>;
+template <int I, typename T, class... Vars>
+A2D_FUNCTION decltype(auto) get(VarTuple<T, Vars...>& t) {
+  static_assert(I < sizeof...(Vars));
 
-  // Default constructor that takes in no arguments
-  A2D_FUNCTION TieTuple() {}
+  using Var = std::tuple_element_t<I, std::tuple<Vars...>>;
+  using Ref = typename VarTraits<Var>::Ref;
 
-  A2D_FUNCTION TieTuple(Vars&... s) : var(s...) {}
+  constexpr int offset = var_offset<I, Vars...>();
 
-  /// @brief Access a reference to an object indexed by this class
-  template <typename I>
-  A2D_FUNCTION T& operator[](const I comp) {
-    return this->template get_value_<I, 0, VarTupleObj, Vars...>(var, comp);
+  if constexpr (__is_scalar_type<Var>::value) {
+    return (t.values[offset]);  // T&
+  } else {
+    return Ref(t.values + offset);
   }
-
-  /// @brief Access a reference to an object indexed by this class
-  template <typename I>
-  A2D_FUNCTION const T& operator[](const I comp) const {
-    return this->template get_value_const_<I, 0, VarTupleObj, Vars...>(var,
-                                                                       comp);
-  }
-
-  /// @brief Zero the components of the tuple
-  A2D_FUNCTION void zero() {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template zero_<0, VarTupleObj, Vars...>(var);
-    }
-  }
-
-  /// @brief Set a random set of values on an interval
-  A2D_FUNCTION void set_rand(T low = T(-1.0), T high = T(1.0)) {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template set_rand_<0, VarTupleObj, Vars...>(var, low, high);
-    }
-  }
-
-  /// @brief Set values into the tuple from a list of objects
-  A2D_FUNCTION void set_values(const Vars&... s) {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template set_values_<0, VarTupleObj, Vars...>(var, s...);
-    }
-  }
-
-  /// @brief Place the values from the tuple into list of objects
-  A2D_FUNCTION void get_values(Vars&... s) const {
-    if constexpr (sizeof...(Vars) > 0) {
-      this->template get_values_<0, VarTupleObj, Vars...>(var, s...);
-    }
-  }
-
- private:
-  VarTupleObj var;
-
-  template <int index, typename T1, class... Vars1>
-  friend auto get(TieTuple<T1, Vars1...>&);
-  template <int index, typename T1, class... Vars1>
-  friend auto get(const TieTuple<T1, Vars1...>&);
-};
-
-template <int index, typename T, class... Vars>
-A2D_FUNCTION auto get(TieTuple<T, Vars...>& t) {
-  return a2d_get<index>(t.var);
 }
 
-template <int index, typename T, class... Vars>
-A2D_FUNCTION auto get(const TieTuple<T, Vars...>& t) {
-  return a2d_get<index>(t.var);
-}
+template <int I, typename T, class... Vars>
+A2D_FUNCTION decltype(auto) get(const VarTuple<T, Vars...>& t) {
+  static_assert(I < sizeof...(Vars));
 
-template <typename T, class... Vars>
-A2D_FUNCTION auto MakeTieTuple(Vars&... s) {
-  return TieTuple<T, Vars...>(s...);
-}
+  using Var = std::tuple_element_t<I, std::tuple<Vars...>>;
+  using ConstRef = typename VarTraits<Var>::ConstRef;
 
-template <typename T, ADseed seed, class... Vars>
-A2D_FUNCTION auto MakeTieTuple(Vars&... s) {
-  return MakeTieTuple<T>(GetSeed<seed>::get_obj(s)...);
+  constexpr int offset = var_offset<I, Vars...>();
+
+  if constexpr (__is_scalar_type<Var>::value) {
+    return (t.values[offset]);  // T&
+  } else {
+    return ConstRef(t.values + offset);
+  }
 }
 
 }  // namespace A2D

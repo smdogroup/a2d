@@ -85,7 +85,7 @@ class MatMatMultExpr {
                         MatOp::NORMAL>::value;
 
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Extract the dimensions of the matrices
   static constexpr int N = get_matrix_rows<Atype>::size;

@@ -26,7 +26,7 @@ template <GreenStrainType etype, class Utype, class Etype>
 class MatGreenStrainExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Etype>::type T;
+  using T = object_scalar_t<Etype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int M = get_matrix_rows<Utype>::size;

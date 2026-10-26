@@ -18,7 +18,7 @@ template <class xtype, class ytype, class ztype>
 class VecSumExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -122,7 +122,7 @@ template <class atype, class xtype, class btype, class ytype, class ztype>
 class VecSumScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;

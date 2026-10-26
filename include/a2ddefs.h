@@ -59,21 +59,15 @@ enum class MatSymType { NORMAL, SYMMETRIC };
  */
 enum class ADseed { b, p, h };
 
-/**
- * @brief The type of variable type
- *
- */
-enum class FEVarType { DATA, GEOMETRY, STATE };
+// Forward declarations of classes
+template <typename T, int N>
+class ADScalar;
 
-using index_t = int32_t;
-static constexpr index_t MAX_INDEX = std::numeric_limits<index_t>::max();
-static constexpr index_t INDEX_NBITS = std::numeric_limits<index_t>::digits;
-static constexpr index_t NO_INDEX = MAX_INDEX;
+template <class T>
+class ADObj;
 
-// Free heap memory and set pointer to nullptr
-#define DELETE_ARRAY(array_ptr) \
-  delete[] array_ptr;           \
-  array_ptr = nullptr;
+template <class T>
+class A2DObj;
 
 /**
  * @brief Check if a type is complex.
@@ -84,10 +78,10 @@ static constexpr index_t NO_INDEX = MAX_INDEX;
  *     is_complex<T>::value == false
  */
 template <typename T>
-struct is_complex : public std::false_type {};
+struct is_complex : std::false_type {};
 
 template <typename T>
-struct is_complex<A2D_complex_t<T>> : public std::true_type {};
+struct is_complex<A2D_complex_t<T>> : std::true_type {};
 
 /*
  Convert scalar value to printf-able format
@@ -127,117 +121,142 @@ A2D_FUNCTION inline double ImagPart(A2D_complex_t<double> a) {
   return a.imag();
 }
 
-/*
-  Remove the const-ness and references for a type
-*/
-template <class T>
-struct remove_const_and_refs
-    : std::remove_const<typename std::remove_reference<T>::type> {};
+/**
+ * @brief Remove the constant value and references
+ */
+template <typename T>
+using remove_cvref_t = typename std::remove_cv_t<std::remove_reference_t<T>>;
 
-/*
-  Check if a type is numeric or not - this includes complex numbers
-*/
-template <class T>
-struct __is_numeric_type : std::is_floating_point<T> {};
+/**
+ * @brief Detect passive scalar types - e.g. float, double, complex
+ */
+template <typename T>
+struct is_passive_scalar_impl : std::false_type {};
 
-template <class T>
-struct __is_numeric_type<A2D_complex_t<T>> : std::is_floating_point<T> {};
+template <>
+struct is_passive_scalar_impl<float> : std::true_type {};
 
-template <class T>
-struct is_numeric_type
-    : __is_numeric_type<typename remove_const_and_refs<T>::type> {};
+template <>
+struct is_passive_scalar_impl<double> : std::true_type {};
 
-/*
-  Check if the type is a scalar - an arithmetic or complex type
-*/
-template <class T>
-struct is_scalar_type {
-  static const bool value =
-      is_numeric_type<T>::value || std::is_arithmetic<T>::value;
+template <typename T>
+struct is_passive_scalar_impl<A2D_complex_t<T>>
+    : std::bool_constant<std::is_floating_point_v<T>> {};
+
+template <typename T>
+struct is_passive_scalar : is_passive_scalar_impl<remove_cvref_t<T>> {};
+
+/**
+ * @brief Detect scalar types, discarding const/ref qualifiers
+ */
+template <typename T>
+inline constexpr bool is_passive_scalar_v = is_passive_scalar<T>::value;
+
+/**
+ * @brief Detect ADScalar types
+ */
+template <typename T>
+struct is_adscalar_impl : std::false_type {};
+
+template <typename T, int N>
+struct is_adscalar_impl<ADScalar<T, N>> : std::true_type {};
+
+template <typename T>
+struct is_adscalar : is_adscalar_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+inline constexpr bool is_adscalar_v = is_adscalar<T>::value;
+
+/**
+ * @brief Detect AD scalar types, discarding const/ref qualifiers
+ *
+ * @tparam T
+ */
+template <typename T>
+inline constexpr bool is_ad_scalar_v = is_adscalar<T>::value;
+
+/**
+ * @brief Detect scalar or ad types - numeric types
+ */
+template <typename T>
+struct is_numeric_impl
+    : std::bool_constant<is_passive_scalar<T>::value || is_adscalar<T>::value> {
 };
 
-/*
-  Get the numeric type of the object
-*/
-template <class T>
-struct __get_object_numeric_type {
+template <typename T>
+struct is_numeric : is_numeric_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+inline constexpr bool is_numeric_v = is_numeric<T>::value;
+
+/**
+ * @brief Get the scalar type used for the computation.
+ *
+ * This works for ADScalar, ADObj and complex types.
+ */
+template <typename T>
+struct object_scalar_impl {
   using type = typename T::type;
 };
 
 template <>
-struct __get_object_numeric_type<float> {
+struct object_scalar_impl<float> {
   using type = float;
 };
 
 template <>
-struct __get_object_numeric_type<double> {
+struct object_scalar_impl<double> {
   using type = double;
 };
 
 template <>
-struct __get_object_numeric_type<A2D_complex_t<float>> {
+struct object_scalar_impl<A2D_complex_t<float>> {
   using type = A2D_complex_t<float>;
 };
 
 template <>
-struct __get_object_numeric_type<A2D_complex_t<double>> {
+struct object_scalar_impl<A2D_complex_t<double>> {
   using type = A2D_complex_t<double>;
 };
 
-/*
-  Get the numeric type of the underlying object.
+template <typename T>
+struct object_scalar : object_scalar_impl<remove_cvref_t<T>> {};
 
-  All A2D numeric objects must either be scalar values (float, double,
-  A2D_complex_t) or must use a typedef statement to define the static scalar
-  type.
-*/
-template <class T>
-struct get_object_numeric_type
-    : __get_object_numeric_type<typename remove_const_and_refs<T>::type> {};
-
-// Forward declaration of class ADScalar
-template <class T, int N>
-class ADScalar;
+/**
+ * @brief Get the underlying scalar computational type, e.g. double, float,
+ * complex or ADScalar
+ */
+template <typename T>
+using object_scalar_t = typename object_scalar<T>::type;
 
 /*
-  Get the type of object
+  Get the type of object. Note that ADObj and ADScalar types have obj_type.
 */
 template <class T>
-struct __get_a2d_object_type {
+struct a2d_object_type_impl {
   static constexpr ADObjType value = T::obj_type;
 };
 
 template <>
-struct __get_a2d_object_type<double> {
+struct a2d_object_type_impl<double> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 
 template <>
-struct __get_a2d_object_type<A2D_complex_t<double>> {
+struct a2d_object_type_impl<A2D_complex_t<double>> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 
 template <class T, int N>
-struct __get_a2d_object_type<ADScalar<T, N>> {
+struct a2d_object_type_impl<ADScalar<T, N>> {
   static constexpr ADObjType value = ADObjType::SCALAR;
 };
 
 template <class T>
-struct get_a2d_object_type
-    : __get_a2d_object_type<typename std::remove_reference<T>::type> {};
+struct a2d_obj_type : a2d_object_type_impl<remove_cvref_t<T>> {};
 
-/**
- * @brief compile-time conditional for type values
- */
-template <bool B, class TrueType, class FalseType>
-struct conditional_type {
-  using type = TrueType;
-};
-
-template <class TrueType, class FalseType>
-struct conditional_type<false, TrueType, FalseType> {
-  using type = FalseType;
-};
+template <typename T>
+inline constexpr ADObjType a2d_obj_type_v = a2d_obj_type<T>::value;
 
 /**
  * @brief compile-time conditional for non-type values, works like
@@ -258,191 +277,319 @@ struct conditional_value<T, true, TrueVal, FalseVal> {
   static constexpr T value = TrueVal;
 };
 
-template <typename T, typename R,
-          std::enable_if_t<is_scalar_type<T>::value, bool> = true,
-          std::enable_if_t<is_scalar_type<R>::value, bool> = true>
-A2D_FUNCTION T pow(T val, R exponent) {
-#ifndef __CUDACC__
-  return std::pow(val, exponent);
-#else
-  return cuda::std::pow(val, exponent);
-#endif
-}
+/**
+ * @brief Check if two types are the same when they're unqualified by
+ * const/references
+ */
+template <class Ta, class Tb>
+struct is_same_unqualified {
+  const static bool value =
+      std::is_same<remove_cvref_t<Ta>, remove_cvref_t<Tb>>::value;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T fabs(T val) {
-#ifndef __CUDACC__
-  return std::fabs(val);
-#else
-  return cuda::std::fabs(val);
-#endif
-}
+template <typename Ta, typename Tb>
+inline constexpr bool is_same_unqualified_v =
+    is_same_unqualified<Ta, Tb>::value;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T fsgn(T val) {
-  return std::copysign(1.0, val);
-}
+/*
+  Get whether the type is passive or not...
+*/
+template <class T>
+struct get_diff_type {
+  static constexpr ADiffType diff_type = ADiffType::PASSIVE;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T sqrt(T val) {
-#ifndef __CUDACC__
-  return std::sqrt(val);
-#else
-  return cuda::std::sqrt(val);
-#endif
-}
+template <class T>
+struct get_diff_type<ADObj<T>> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T exp(T val) {
-#ifndef __CUDACC__
-  return std::exp(val);
-#else
-  return cuda::std::exp(val);
-#endif
-}
+template <class T>
+struct get_diff_type<A2DObj<T>> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T log(T val) {
-#ifndef __CUDACC__
-  return std::log(val);
-#else
-  return cuda::std::log(val);
-#endif
-}
+template <class T>
+struct get_diff_type<ADObj<T>&> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T sin(T val) {
-#ifndef __CUDACC__
-  return std::sin(val);
-#else
-  return cuda::std::sin(val);
-#endif
-}
+template <class T>
+struct get_diff_type<A2DObj<T>&> {
+  static constexpr ADiffType diff_type = ADiffType::ACTIVE;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T cos(T val) {
-#ifndef __CUDACC__
-  return std::cos(val);
-#else
-  return cuda::std::cos(val);
-#endif
-}
+/*
+  Get whether the type is passive or not...
+*/
+template <class T>
+struct get_diff_order {
+  static constexpr ADorder order = ADorder::ZERO;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T tan(T val) {
-#ifndef __CUDACC__
-  return std::tan(val);
-#else
-  return cuda::std::tan(val);
-#endif
-}
+template <class T>
+struct get_diff_order<ADObj<T>> {
+  static constexpr ADorder order = ADorder::FIRST;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T asin(T val) {
-#ifndef __CUDACC__
-  return std::asin(val);
-#else
-  return cuda::std::asin(val);
-#endif
-}
+template <class T>
+struct get_diff_order<A2DObj<T>> {
+  static constexpr ADorder order = ADorder::SECOND;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T acos(T val) {
-#ifndef __CUDACC__
-  return std::acos(val);
-#else
-  return cuda::std::acos(val);
-#endif
-}
+/**
+ * Forward declaration of vector and matrix types
+ */
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T atan(T val) {
-#ifndef __CUDACC__
-  return std::atan(val);
-#else
-  return cuda::std::atan(val);
-#endif
-}
+template <typename T, int N>
+class Vec;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T atan2(T y, T x) {
-#ifndef __CUDACC__
-  return std::atan2(y, x);
-#else
-  return cuda::std::atan2(y, x);
-#endif
-}
+template <typename T, int N>
+class VecRef;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T sinh(T val) {
-#ifndef __CUDACC__
-  return std::sinh(val);
-#else
-  return cuda::std::sinh(val);
-#endif
-}
+template <typename T, int M, int N>
+class Mat;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T cosh(T val) {
-#ifndef __CUDACC__
-  return std::cosh(val);
-#else
-  return cuda::std::cosh(val);
-#endif
-}
+template <typename T, int M, int N>
+class MatRef;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T tanh(T val) {
-#ifndef __CUDACC__
-  return std::tanh(val);
-#else
-  return cuda::std::tanh(val);
-#endif
-}
+template <typename T, int N>
+class SymMat;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T asinh(T val) {
-#ifndef __CUDACC__
-  return std::asinh(val);
-#else
-  return cuda::std::asinh(val);
-#endif
-}
+template <typename T, int N>
+class SymMatRef;
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T acosh(T val) {
-#ifndef __CUDACC__
-  return std::acosh(val);
-#else
-  return cuda::std::acosh(val);
-#endif
-}
+/*
+  Remove the A2D template wrapper remove_a2dobj<T>::type provides the base type
+*/
+template <typename T>
+struct remove_a2dobj_impl {
+  typedef T type;
+};
 
-template <typename T, std::enable_if_t<is_scalar_type<T>::value, bool> = true>
-A2D_FUNCTION T atanh(T val) {
-#ifndef __CUDACC__
-  return std::atanh(val);
-#else
-  return cuda::std::atanh(val);
-#endif
-}
+template <typename T>
+struct remove_a2dobj_impl<ADObj<T>> {
+  typedef typename std::remove_reference<T>::type type;
+};
 
-template <class ForwardIt, class T>
-A2D_FUNCTION void fill(ForwardIt first, ForwardIt last, const T& value) {
-#ifdef __CUDACC__
-  thrust::fill(first, last, value);
-#else
-  std::fill(first, last, value);
-#endif
-}
+template <typename T>
+struct remove_a2dobj_impl<A2DObj<T>> {
+  typedef typename std::remove_reference<T>::type type;
+};
 
-// A2D_FUNCTION int A2D_rand() {
-// #ifdef __CUDACC__
-//   return 123456;
-// #else
-//   return rand();
-// #endif
-// }
+template <typename T>
+struct remove_a2dobj : remove_a2dobj_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+using remove_a2dobj_t = typename remove_a2dobj<T>::type;
+
+/*
+  Get the vector size
+*/
+template <typename T>
+struct get_vec_size_impl {
+  static constexpr int size = 0;
+};
+
+template <typename T, int N>
+struct get_vec_size_impl<Vec<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N>
+struct get_vec_size_impl<VecRef<T, N>> {
+  static constexpr int size = N;
+};
+
+template <class T>
+struct get_vec_size : get_vec_size_impl<remove_a2dobj_t<T>> {
+  static_assert(a2d_obj_type_v<T> == ADObjType::VECTOR,
+                "get_symmatrix_size called on incorrect type");
+};
+
+/*
+  Get the symmetric matrix size
+*/
+template <typename T>
+struct get_symmatrix_size_impl {
+  static constexpr int size = 0;
+};
+
+template <typename T, int N>
+struct get_symmatrix_size_impl<SymMat<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N>
+struct get_symmatrix_size_impl<SymMatRef<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T>
+struct get_symmatrix_size : get_symmatrix_size_impl<remove_a2dobj_t<T>> {
+  static_assert(a2d_obj_type_v<T> == ADObjType::SYMMAT,
+                "get_symmatrix_size called on incorrect type");
+};
+
+/*
+  Get the number of matrix rows
+*/
+template <typename T>
+struct get_matrix_rows_impl {
+  static constexpr int size = 0;
+};
+
+template <typename T, int N, int M>
+struct get_matrix_rows_impl<Mat<T, N, M>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N, int M>
+struct get_matrix_rows_impl<MatRef<T, N, M>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N>
+struct get_matrix_rows_impl<SymMat<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N>
+struct get_matrix_rows_impl<SymMatRef<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T>
+struct get_matrix_rows : get_matrix_rows_impl<remove_a2dobj_t<T>> {
+  static_assert((a2d_obj_type_v<T> == ADObjType::MATRIX ||
+                 a2d_obj_type_v<T> == ADObjType::SYMMAT),
+                "get_matrix_rows called on incorrect type");
+};
+
+/*
+  Get the number of matrix columns
+*/
+template <typename T>
+struct get_matrix_columns_impl {
+  static constexpr int size = 0;
+};
+
+template <typename T, int N, int M>
+struct get_matrix_columns_impl<Mat<T, N, M>> {
+  static constexpr int size = M;
+};
+
+template <typename T, int N, int M>
+struct get_matrix_columns_impl<MatRef<T, N, M>> {
+  static constexpr int size = M;
+};
+
+template <typename T, int N>
+struct get_matrix_columns_impl<SymMat<T, N>> {
+  static constexpr int size = N;
+};
+
+template <typename T, int N>
+struct get_matrix_columns_impl<SymMatRef<T, N>> {
+  static constexpr int size = N;
+};
+
+template <class T>
+struct get_matrix_columns : get_matrix_columns_impl<remove_a2dobj_t<T>> {
+  static_assert((a2d_obj_type_v<T> == ADObjType::MATRIX ||
+                 a2d_obj_type_v<T> == ADObjType::SYMMAT),
+                "get_matrix_rows called on incorrect type");
+};
+
+/*
+  Get the number of entries in the matrix -- symmetric or non-symmetric
+*/
+template <class T>
+struct get_num_matrix_entries_impl {
+  static constexpr int size = 0;
+};
+
+template <typename T, int N>
+struct get_num_matrix_entries_impl<SymMat<T, N>> {
+  static constexpr int size = N * (N + 1) / 2;
+};
+
+template <typename T, int N>
+struct get_num_matrix_entries_impl<SymMatRef<T, N>> {
+  static constexpr int size = N * (N + 1) / 2;
+};
+
+template <typename T, int N, int M>
+struct get_num_matrix_entries_impl<Mat<T, N, M>> {
+  static constexpr int size = N * M;
+};
+
+template <typename T, int N, int M>
+struct get_num_matrix_entries_impl<MatRef<T, N, M>> {
+  static constexpr int size = N * M;
+};
+
+template <class T>
+struct get_num_matrix_entries
+    : get_num_matrix_entries_impl<remove_a2dobj_t<T>> {
+  static_assert((a2d_obj_type_v<T> == ADObjType::MATRIX ||
+                 a2d_obj_type_v<T> == ADObjType::SYMMAT),
+                "get_num_matrix_entries called on incorrect type");
+};
+
+/*
+ * Vector class detection
+ */
+template <typename T>
+struct is_a2d_vector_impl : std::false_type {};
+
+template <typename U, int N>
+struct is_a2d_vector_impl<Vec<U, N>> : std::true_type {};
+
+template <typename U, int N>
+struct is_a2d_vector_impl<VecRef<U, N>> : std::true_type {};
+
+template <typename T>
+struct is_a2d_vector : is_a2d_vector_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+inline constexpr bool is_a2d_vector_v = is_a2d_vector<T>::value;
+
+/*
+ * Matrix class detection
+ */
+template <typename T>
+struct is_a2d_matrix_impl : std::false_type {};
+
+template <typename U, int M, int N>
+struct is_a2d_matrix_impl<Mat<U, M, N>> : std::true_type {};
+
+template <typename U, int M, int N>
+struct is_a2d_matrix_impl<MatRef<U, M, N>> : std::true_type {};
+
+template <typename T>
+struct is_a2d_matrix : is_a2d_matrix_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+inline constexpr bool is_a2d_matrix_v = is_a2d_matrix<T>::value;
+
+/*
+ * Symmetric matrix class detection
+ */
+template <typename T>
+struct is_a2d_sym_matrix_impl : std::false_type {};
+
+template <typename U, int N>
+struct is_a2d_sym_matrix_impl<SymMat<U, N>> : std::true_type {};
+
+template <typename U, int N>
+struct is_a2d_sym_matrix_impl<SymMatRef<U, N>> : std::true_type {};
+
+template <typename T>
+struct is_a2d_sym_matrix : is_a2d_sym_matrix_impl<remove_cvref_t<T>> {};
+
+template <typename T>
+inline constexpr bool is_a2d_sym_matrix_v = is_a2d_sym_matrix<T>::value;
 
 }  // namespace A2D
 

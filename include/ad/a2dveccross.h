@@ -35,7 +35,7 @@ template <class xtype, class ytype, class ztype>
 class VecCrossExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -155,15 +155,14 @@ template <class xtype, class ytype, class ztype>
 class VecCross2DExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the diff type
   static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
   static constexpr ADiffType ady = get_diff_type<ytype>::diff_type;
 
   // Check if x is a scalar
-  const static bool is_x_scalar =
-      is_scalar_type<typename remove_a2dobj<xtype>::type>::value;
+  const static bool is_x_scalar = is_numeric_v<xtype>;
 
   A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype& z) : x(x), y(y), z(z) {}
 

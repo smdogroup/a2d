@@ -46,7 +46,7 @@ template <class Atype, class Stype, MatOp op = MatOp::NORMAL>
 class SymMatRKExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Stype>::type T;
+  using T = object_scalar_t<Stype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int N = get_matrix_rows<Atype>::size;
@@ -119,7 +119,7 @@ template <class Atype, class Stype, MatOp op = MatOp::NORMAL>
 class SymMatRKScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Stype>::type T;
+  using T = object_scalar_t<Stype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int N = get_matrix_rows<Atype>::size;

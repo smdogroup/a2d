@@ -1,8 +1,6 @@
 #ifndef A2D_SYM_MAT_TRACE_H
 #define A2D_SYM_MAT_TRACE_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
 #include "a2dmat.h"
 #include "a2dstack.h"
@@ -21,7 +19,7 @@ template <class Stype, class Etype, class dtype>
 class SymMatMultTraceExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Etype>::type T;
+  using T = object_scalar_t<Etype>;
 
   // Extract the dimensions of the underlying matrices
   static constexpr int N = get_symmatrix_size<Etype>::size;

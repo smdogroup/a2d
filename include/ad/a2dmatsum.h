@@ -40,7 +40,7 @@ template <class Atype, class Btype, class Ctype>
 class MatSumExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Get the sizes of the matrices
   static const int size = get_num_matrix_entries<Ctype>::size;
@@ -50,10 +50,8 @@ class MatSumExpr {
   static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
 
   // Assert that all the matrices are compatible types
-  static_assert(((get_a2d_object_type<Atype>::value ==
-                  get_a2d_object_type<Btype>::value) &&
-                 (get_a2d_object_type<Btype>::value ==
-                  get_a2d_object_type<Ctype>::value)),
+  static_assert(((a2d_obj_type_v<Atype> == a2d_obj_type_v<Btype>) &&
+                 (a2d_obj_type_v<Btype> == a2d_obj_type_v<Ctype>)),
                 "Matrices are not all of the same type");
 
   static_assert((get_num_matrix_entries<Atype>::size == size &&
@@ -152,7 +150,7 @@ template <class atype, class Atype, class btype, class Btype, class Ctype>
 class MatSumScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Get the sizes of the matrices
   static const int size = get_num_matrix_entries<Ctype>::size;
@@ -164,10 +162,8 @@ class MatSumScaleExpr {
   static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
 
   // Assert that all the matrices are compatible types
-  static_assert(((get_a2d_object_type<Atype>::value ==
-                  get_a2d_object_type<Btype>::value) &&
-                 (get_a2d_object_type<Btype>::value ==
-                  get_a2d_object_type<Ctype>::value)),
+  static_assert(((a2d_obj_type_v<Atype> == a2d_obj_type_v<Btype>) &&
+                 (a2d_obj_type_v<Btype> == a2d_obj_type_v<Ctype>)),
                 "Matrices are not all of the same type");
 
   static_assert((get_num_matrix_entries<Atype>::size == size &&

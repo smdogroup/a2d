@@ -34,7 +34,7 @@ template <class Atype, class Btype>
 class MatInvExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Btype>::type T;
+  using T = object_scalar_t<Btype>;
 
   // Extract the dimensions of the matrix
   static constexpr int N = get_matrix_rows<Atype>::size;

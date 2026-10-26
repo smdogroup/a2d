@@ -2,9 +2,7 @@
 #define A2D_MAT_INV_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dobj.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dgemmcore.h"
 #include "core/a2dmatinvcore.h"
 #include "core/a2dveccore.h"
@@ -34,7 +32,7 @@ template <class Atype, class Btype>
 class MatInvExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Btype>::type T;
+  using T = object_scalar_t<Btype>;
 
   // Extract the dimensions of the matrix
   static constexpr int N = get_matrix_rows<Atype>::size;
@@ -133,72 +131,6 @@ template <class Atype, class Btype>
 A2D_FUNCTION auto MatInv(A2DObj<Atype>& A, A2DObj<Btype>& Ainv) {
   return MatInvExpr<A2DObj<Atype>, A2DObj<Btype>>(A, Ainv);
 }
-
-namespace Test {
-
-template <typename T, int N>
-class MatInvTest : public A2DTest<T, Mat<T, N, N>, Mat<T, N, N>> {
- public:
-  using Input = VarTuple<T, Mat<T, N, N>>;
-  using Output = VarTuple<T, Mat<T, N, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "MatInv<" << N << "," << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    Mat<T, N, N> A;
-    Mat<T, N, N> B;
-    x.get_values(A);
-    MatInv(A, B);
-    return MakeVarTuple<T>(B);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<Mat<T, N, N>> A;
-    ADObj<Mat<T, N, N>> B;
-
-    x.get_values(A.value());
-    auto stack = MakeStack(MatInv(A, B));
-    seed.get_values(B.bvalue());
-    stack.reverse();
-    g.set_values(A.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<Mat<T, N, N>> A;
-    A2DObj<Mat<T, N, N>> B;
-
-    x.get_values(A.value());
-    p.get_values(A.pvalue());
-    auto stack = MakeStack(MatInv(A, B));
-    seed.get_values(B.bvalue());
-    hval.get_values(B.hvalue());
-    stack.hproduct();
-    h.set_values(A.hvalue());
-  }
-};
-
-inline bool MatInvTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  MatInvTest<Tc, 2> test1;
-  passed = passed && Run(test1, component, write_output);
-  MatInvTest<Tc, 3> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

@@ -1,10 +1,9 @@
 #ifndef A2D_MAT_TO_VEC_H
 #define A2D_MAT_TO_VEC_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
 
 namespace A2D {
 
@@ -28,9 +27,8 @@ template <typename I, class Atype, class xtype>
 class MatColumnToVecExpr {
  public:
   // Get the dimension of the matrix
-  static constexpr int N = conditional_value<
-      int, get_a2d_object_type<Atype>::obj_type == ADObjType::SYMMAT,
-      get_symmatrix_size<Atype>::size, get_matrix_rows<Atype>::size>::value;
+  static constexpr int N = get_matrix_rows<Atype>::size;
+
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 
@@ -109,9 +107,7 @@ template <typename I, class Atype, class xtype>
 class MatRowToVecExpr {
  public:
   // Get the dimension of the matrix
-  static constexpr int N = conditional_value<
-      int, get_a2d_object_type<Atype>::obj_type == ADObjType::SYMMAT,
-      get_symmatrix_size<Atype>::size, get_matrix_columns<Atype>::size>::value;
+  static constexpr int N = get_matrix_columns<Atype>::size;
   static_assert(get_vec_size<xtype>::size == N,
                 "Matrix and vector dimensions must agree");
 

@@ -2,7 +2,7 @@
 #define A2D_MAT_DET_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
+#include "../a2dmat.h"
 #include "a2dmatinv.h"
 #include "core/a2dmatdetcore.h"
 
@@ -22,7 +22,7 @@ template <class Atype, class dtype>
 class MatDetExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the matrix
   static constexpr int N = get_matrix_rows<Atype>::size;
@@ -80,7 +80,7 @@ template <class Stype, class dtype>
 class SymMatDetExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int M = get_symmatrix_size<Stype>::size;
@@ -130,156 +130,29 @@ class SymMatDetExpr {
   dtype& det;
 };
 
-template <
-    class Atype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
-                     bool> = true>
+template <class Atype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Atype> == ADObjType::MATRIX, int> = 0>
 A2D_FUNCTION auto MatDet(ADObj<Atype>& A, ADObj<dtype>& det) {
   return MatDetExpr<ADObj<Atype>, ADObj<dtype>>(A, det);
 }
 
-template <
-    class Atype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Atype>::value == ADObjType::MATRIX,
-                     bool> = true>
+template <class Atype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Atype> == ADObjType::MATRIX, int> = 0>
 A2D_FUNCTION auto MatDet(A2DObj<Atype>& A, A2DObj<dtype>& det) {
   return MatDetExpr<A2DObj<Atype>, A2DObj<dtype>>(A, det);
 }
 
-template <
-    class Stype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
-                     bool> = true>
+template <class Stype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Stype> == ADObjType::SYMMAT, int> = 0>
 A2D_FUNCTION auto MatDet(ADObj<Stype>& S, ADObj<dtype>& det) {
   return SymMatDetExpr<ADObj<Stype>, ADObj<dtype>>(S, det);
 }
 
-template <
-    class Stype, class dtype,
-    std::enable_if_t<get_a2d_object_type<Stype>::value == ADObjType::SYMMAT,
-                     bool> = true>
+template <class Stype, class dtype,
+          std::enable_if_t<a2d_obj_type_v<Stype> == ADObjType::SYMMAT, int> = 0>
 A2D_FUNCTION auto MatDet(A2DObj<Stype>& S, A2DObj<dtype>& det) {
   return SymMatDetExpr<A2DObj<Stype>, A2DObj<dtype>>(S, det);
 }
-
-namespace Test {
-
-template <typename T, int N>
-class MatDetTest : public A2DTest<T, T, Mat<T, N, N>> {
- public:
-  using Input = VarTuple<T, Mat<T, N, N>>;
-  using Output = VarTuple<T, T>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "MatDet<" << N << "," << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    T det;
-    Mat<T, N, N> A, Ainv;
-    x.get_values(A);
-    MatDet(A, det);
-    MatInv(A, Ainv);
-    return MakeVarTuple<T>(det);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> det;
-    ADObj<Mat<T, N, N>> A, Ainv;
-
-    x.get_values(A.value());
-    auto stack = MakeStack(MatDet(A, det), MatInv(A, Ainv));
-    seed.get_values(det.bvalue());
-    stack.reverse();
-    g.set_values(A.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<T> det;
-    A2DObj<Mat<T, N, N>> A, Ainv;
-    x.get_values(A.value());
-    p.get_values(A.pvalue());
-    auto stack = MakeStack(MatDet(A, det), MatInv(A, Ainv));
-    seed.get_values(det.bvalue());
-    hval.get_values(det.hvalue());
-    stack.hproduct();
-    h.set_values(A.hvalue());
-  }
-};
-
-template <typename T, int N>
-class SymMatDetTest : public A2DTest<T, T, SymMat<T, N>> {
- public:
-  using Input = VarTuple<T, SymMat<T, N>>;
-  using Output = VarTuple<T, T>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "SymMatDet<" << N << "," << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    T det;
-    SymMat<T, N> S, Sinv;
-    x.get_values(S);
-    MatDet(S, det);
-    return MakeVarTuple<T>(det);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> det;
-    ADObj<SymMat<T, N>> S, Sinv;
-
-    x.get_values(S.value());
-    auto stack = MakeStack(MatDet(S, det));
-    seed.get_values(det.bvalue());
-    stack.reverse();
-    g.set_values(S.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<T> det;
-    A2DObj<SymMat<T, N>> S, Sinv;
-    x.get_values(S.value());
-    p.get_values(S.pvalue());
-    auto stack = MakeStack(MatDet(S, det));
-    seed.get_values(det.bvalue());
-    hval.get_values(det.hvalue());
-    stack.hproduct();
-    h.set_values(S.hvalue());
-  }
-};
-
-inline bool MatDetTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  MatDetTest<Tc, 2> test1;
-  passed = passed && Run(test1, component, write_output);
-  MatDetTest<Tc, 3> test2;
-  passed = passed && Run(test2, component, write_output);
-  SymMatDetTest<Tc, 2> test3;
-  passed = passed && Run(test3, component, write_output);
-  SymMatDetTest<Tc, 3> test4;
-  passed = passed && Run(test4, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

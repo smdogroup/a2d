@@ -5,10 +5,11 @@
 
 // Key objects
 
-#include "ad/a2dmat.h"
-#include "ad/a2dobj.h"
-#include "ad/a2dstack.h"
-#include "ad/a2dvec.h"
+#include "a2dmat.h"
+#include "a2dobj.h"
+#include "a2dstack.h"
+#include "a2dtest.h"
+#include "a2dvec.h"
 
 // Operations
 

@@ -2,8 +2,8 @@
 #define A2D_VEC_OUTER_H
 
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dvec.h"
+#include "../a2dmat.h"
+#include "../a2dvec.h"
 #include "core/a2dmatveccore.h"
 #include "core/a2dveccore.h"
 
@@ -42,7 +42,7 @@ template <class xtype, class ytype, class Atype>
 class VecOuterExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Atype>::type T;
+  using T = object_scalar_t<Atype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int M = get_vec_size<xtype>::size;
@@ -137,7 +137,7 @@ class VecOuterExpr {
 
 template <class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(ADObj<xtype>& x, ADObj<ytype>& y, ADObj<Atype>& A) {
-  using T = typename get_object_numeric_type<Atype>::type;
+  using T = object_scalar_t<Atype>;
   return VecOuterExpr<ADObj<xtype>, ADObj<ytype>, ADObj<Atype>>(T(1.0), x, y,
                                                                 A);
 }
@@ -151,7 +151,7 @@ A2D_FUNCTION auto VecOuter(const T alpha, ADObj<xtype>& x, ADObj<ytype>& y,
 template <class xtype, class ytype, class Atype>
 A2D_FUNCTION auto VecOuter(A2DObj<xtype>& x, A2DObj<ytype>& y,
                            A2DObj<Atype>& A) {
-  using T = typename get_object_numeric_type<Atype>::type;
+  using T = object_scalar_t<Atype>;
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(T(1.0), x, y,
                                                                    A);
 }
@@ -162,72 +162,6 @@ A2D_FUNCTION auto VecOuter(const T alpha, A2DObj<xtype>& x, A2DObj<ytype>& y,
   return VecOuterExpr<A2DObj<xtype>, A2DObj<ytype>, A2DObj<Atype>>(alpha, x, y,
                                                                    A);
 }
-
-namespace Test {
-
-template <typename T, int N, int M>
-class VecOuterTest : public A2DTest<T, Mat<T, N, M>, Vec<T, N>, Vec<T, M>> {
- public:
-  using Input = VarTuple<T, Vec<T, N>, Vec<T, M>>;
-  using Output = VarTuple<T, Mat<T, N, M>>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecOuter"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    T alpha(0.3157);
-    Vec<T, N> x;
-    Vec<T, M> y;
-    Mat<T, N, M> A;
-    X.get_values(x, y);
-    VecOuter(alpha, x, y, A);
-    return MakeVarTuple<T>(A);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    T alpha(0.3157);
-    ADObj<Vec<T, N>> x;
-    ADObj<Vec<T, M>> y;
-    ADObj<Mat<T, N, M>> A;
-    X.get_values(x.value(), y.value());
-    auto stack = MakeStack(VecOuter(alpha, x, y, A));
-    seed.get_values(A.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue(), y.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    T alpha(0.3157);
-    A2DObj<Vec<T, N>> x;
-    A2DObj<Vec<T, M>> y;
-    A2DObj<Mat<T, N, M>> A;
-    X.get_values(x.value(), y.value());
-    p.get_values(x.pvalue(), y.pvalue());
-    auto stack = MakeStack(VecOuter(alpha, x, y, A));
-    seed.get_values(A.bvalue());
-    hval.get_values(A.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue(), y.hvalue());
-  }
-};
-
-inline bool VecOuterTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecOuterTest<Tc, 3, 5> test1;
-  passed = passed && Run(test1, component, write_output);
-  VecOuterTest<Tc, 6, 4> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

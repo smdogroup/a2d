@@ -2,9 +2,7 @@
 #define A2D_VEC_NORM_H
 
 #include "../a2ddefs.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
-#include "a2dvec.h"
+#include "../a2dvec.h"
 #include "core/a2dveccore.h"
 
 namespace A2D {
@@ -18,7 +16,7 @@ template <class vtype, class dtype>
 class VecNormExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<vtype>::size;
@@ -87,7 +85,7 @@ template <class xtype, class ytype>
 class VecNormalizeExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ytype>::type T;
+  using T = object_scalar_t<ytype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -181,7 +179,7 @@ template <class dtype, class xtype, class ytype>
 class VecScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -301,7 +299,7 @@ template <class xtype, class ytype, class dtype>
 class VecDotExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<dtype>::type T;
+  using T = object_scalar_t<dtype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -415,232 +413,6 @@ A2D_FUNCTION auto VecDot(A2DObj<xtype>& x, const ytype& y,
                          A2DObj<dtype>& alpha) {
   return VecDotExpr<A2DObj<xtype>, const ytype, A2DObj<dtype>>(x, y, alpha);
 }
-
-namespace Test {
-
-template <typename T, int N>
-class VecNormTest : public A2DTest<T, T, Vec<T, N>> {
- public:
-  using Input = VarTuple<T, Vec<T, N>>;
-  using Output = VarTuple<T, T>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecNorm"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    T alpha;
-    Vec<T, N> x;
-    X.get_values(x);
-    VecNorm(x, alpha);
-    return MakeVarTuple<T>(alpha);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<T> alpha;
-    ADObj<Vec<T, N>> x;
-    X.get_values(x.value());
-    auto stack = MakeStack(VecNorm(x, alpha));
-    seed.get_values(alpha.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<T> alpha;
-    A2DObj<Vec<T, N>> x;
-    X.get_values(x.value());
-    p.get_values(x.pvalue());
-    auto stack = MakeStack(VecNorm(x, alpha));
-    seed.get_values(alpha.bvalue());
-    hval.get_values(alpha.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue());
-  }
-};
-
-inline bool VecNormTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecNormTest<Tc, 3> test1;
-  passed = passed && Run(test1, component, write_output);
-  VecNormTest<Tc, 6> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-template <typename T, int N>
-class VecScaleTest : public A2DTest<T, Vec<T, N>, T, Vec<T, N>> {
- public:
-  using Input = VarTuple<T, T, Vec<T, N>>;
-  using Output = VarTuple<T, Vec<T, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecScale"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    T alpha;
-    Vec<T, N> x, y;
-    X.get_values(alpha, x);
-    VecScale(alpha, x, y);
-    return MakeVarTuple<T>(y);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<T> alpha;
-    ADObj<Vec<T, N>> x, y;
-    X.get_values(alpha.value(), x.value());
-    auto stack = MakeStack(VecScale(alpha, x, y));
-    seed.get_values(y.bvalue());
-    stack.reverse();
-    g.set_values(alpha.bvalue(), x.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<T> alpha;
-    A2DObj<Vec<T, N>> x, y;
-    X.get_values(alpha.value(), x.value());
-    p.get_values(alpha.pvalue(), x.pvalue());
-    auto stack = MakeStack(VecScale(alpha, x, y));
-    seed.get_values(y.bvalue());
-    hval.get_values(y.hvalue());
-    stack.hproduct();
-    h.set_values(alpha.hvalue(), x.hvalue());
-  }
-};
-
-inline bool VecScaleTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecScaleTest<Tc, 3> test1;
-  passed = passed && Run(test1, component, write_output);
-  VecScaleTest<Tc, 6> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-template <typename T, int N>
-class VecNormalizeTest : public A2DTest<T, Vec<T, N>, Vec<T, N>> {
- public:
-  using Input = VarTuple<T, Vec<T, N>>;
-  using Output = VarTuple<T, Vec<T, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecNormalize"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    Vec<T, N> x, y;
-    X.get_values(x);
-    VecNormalize(x, y);
-    return MakeVarTuple<T>(y);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<Vec<T, N>> x, y;
-    X.get_values(x.value());
-    auto stack = MakeStack(VecNormalize(x, y));
-    seed.get_values(y.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<Vec<T, N>> x, y;
-    X.get_values(x.value());
-    p.get_values(x.pvalue());
-    auto stack = MakeStack(VecNormalize(x, y));
-    seed.get_values(y.bvalue());
-    hval.get_values(y.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue());
-  }
-};
-
-inline bool VecNormalizeTestAll(bool component = false,
-                                bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecNormalizeTest<Tc, 3> test1;
-  passed = passed && Run(test1, component, write_output);
-  VecNormalizeTest<Tc, 6> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-template <typename T, int N>
-class VecDotTest : public A2DTest<T, T, Vec<T, N>, Vec<T, N>> {
- public:
-  using Input = VarTuple<T, Vec<T, N>, Vec<T, N>>;
-  using Output = VarTuple<T, T>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecDot"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    T alpha;
-    Vec<T, N> x, y;
-    X.get_values(x, y);
-    VecDot(x, y, alpha);
-    return MakeVarTuple<T>(alpha);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<T> alpha;
-    ADObj<Vec<T, N>> x, y;
-    X.get_values(x.value(), y.value());
-    auto stack = MakeStack(VecDot(x, y, alpha));
-    seed.get_values(alpha.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue(), y.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<T> alpha;
-    A2DObj<Vec<T, N>> x, y;
-    X.get_values(x.value(), y.value());
-    p.get_values(x.pvalue(), y.pvalue());
-    auto stack = MakeStack(VecDot(x, y, alpha));
-    seed.get_values(alpha.bvalue());
-    hval.get_values(alpha.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue(), y.hvalue());
-  }
-};
-
-inline bool VecDotTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecDotTest<Tc, 3> test1;
-  passed = passed && Run(test1, component, write_output);
-  VecDotTest<Tc, 6> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

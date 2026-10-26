@@ -2,8 +2,6 @@
 #define A2D_HADAMARD_H
 
 #include "../a2ddefs.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
 #include "a2dvec.h"
 #include "core/a2dveccore.h"
 
@@ -19,7 +17,7 @@ template <class xtype, class ytype, class ztype>
 class VecHadamardExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -133,66 +131,6 @@ A2D_FUNCTION auto VecHadamard(A2DObj<xtype>& x, const ytype& y,
                               A2DObj<ztype>& z) {
   return VecHadamardExpr<A2DObj<xtype>, const ytype, A2DObj<ztype>>(x, y, z);
 }
-
-namespace Test {
-
-template <typename T, int N>
-class VecHadamardTest : public A2DTest<T, Vec<T, N>, Vec<T, N>, Vec<T, N>> {
- public:
-  using Input = VarTuple<T, Vec<T, N>, Vec<T, N>>;
-  using Output = VarTuple<T, Vec<T, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "VecHadamard<" << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the operation
-  Output eval(const Input& x) {
-    Vec<T, N> A, B, C;
-    x.get_values(A, B);
-    VecHadamard(A, B, C);
-    return MakeVarTuple<T>(C);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<Vec<T, N>> A, B, C;
-    x.get_values(A.value(), B.value());
-    auto stack = MakeStack(VecHadamard(A, B, C));
-    seed.get_values(C.bvalue());
-    stack.reverse();
-    g.set_values(A.bvalue(), B.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<Vec<T, N>> A, B, C;
-    x.get_values(A.value(), B.value());
-    p.get_values(A.pvalue(), B.pvalue());
-    auto stack = MakeStack(VecHadamard(A, B, C));
-    seed.get_values(C.bvalue());
-    hval.get_values(C.hvalue());
-    stack.hproduct();
-    h.set_values(A.hvalue(), B.hvalue());
-  }
-};
-
-inline bool VecHadamardTestAll(bool component = false,
-                               bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecHadamardTest<Tc, 3> test1;
-  passed = passed && Run(test1, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

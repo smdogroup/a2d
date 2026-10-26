@@ -1,9 +1,10 @@
 #ifndef A2D_SCALAR_OPS_H
 #define A2D_SCALAR_OPS_H
 
+#include <utility>
+
 #include "../a2ddefs.h"
 #include "a2dbinary.h"
-#include "a2dtest.h"
 #include "a2dunary.h"
 
 namespace A2D {
@@ -12,7 +13,7 @@ template <class Expr, class T>
 class EvalExpr {
  public:
   A2D_FUNCTION EvalExpr(Expr&& expr, ADObj<T>& out)
-      : expr(a2d_forward<Expr>(expr)), out(out) {}
+      : expr(std::forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -43,7 +44,7 @@ template <class Expr, class T>
 class EvalExprRef {
  public:
   A2D_FUNCTION EvalExprRef(Expr&& expr, ADObj<T&> out)
-      : expr(a2d_forward<Expr>(expr)), out(out) {}
+      : expr(std::forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -70,23 +71,23 @@ class EvalExprRef {
   ADObj<T&> out;
 };
 
-template <class Expr, class T,
-          std::enable_if_t<!std::is_reference<T>::value, bool> = true>
+template <class Expr, typename T,
+          std::enable_if_t<!std::is_reference<T>::value, int> = 0>
 A2D_FUNCTION auto Eval(Expr&& expr, ADObj<T>& out) {
-  return EvalExpr<Expr, T>(a2d_forward<Expr>(expr), out);
+  return EvalExpr<Expr, T>(std::forward<Expr>(expr), out);
 }
 
-template <class Expr, class T,
-          std::enable_if_t<!std::is_reference<T>::value, bool> = true>
+template <class Expr, typename T,
+          std::enable_if_t<!std::is_reference<T>::value, int> = 0>
 A2D_FUNCTION auto Eval(Expr&& expr, ADObj<T&> out) {
-  return EvalExprRef<Expr, T>(a2d_forward<Expr>(expr), out);
+  return EvalExprRef<Expr, T>(std::forward<Expr>(expr), out);
 }
 
 template <class Expr, class T>
 class EvalExpr2 {
  public:
   A2D_FUNCTION EvalExpr2(Expr&& expr, A2DObj<T>& out)
-      : expr(a2d_forward<Expr>(expr)), out(out) {}
+      : expr(std::forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -125,7 +126,7 @@ template <class Expr, class T>
 class EvalExprRef2 {
  public:
   A2D_FUNCTION EvalExprRef2(Expr&& expr, A2DObj<T&> out)
-      : expr(a2d_forward<Expr>(expr)), out(out) {}
+      : expr(std::forward<Expr>(expr)), out(out) {}
 
   A2D_FUNCTION void eval() {
     expr.eval();
@@ -160,16 +161,16 @@ class EvalExprRef2 {
   A2DObj<T&> out;
 };
 
-template <class Expr, class T,
-          std::enable_if_t<!std::is_reference<T>::value, bool> = true>
+template <class Expr, typename T,
+          std::enable_if_t<!std::is_reference<T>::value, int> = 0>
 A2D_FUNCTION auto Eval(Expr&& expr, A2DObj<T>& out) {
-  return EvalExpr2<Expr, T>(a2d_forward<Expr>(expr), out);
+  return EvalExpr2<Expr, T>(std::forward<Expr>(expr), out);
 }
 
-template <class Expr, class T,
-          std::enable_if_t<!std::is_reference<T>::value, bool> = true>
+template <class Expr, typename T,
+          std::enable_if_t<!std::is_reference<T>::value, int> = 0>
 A2D_FUNCTION auto Eval(Expr&& expr, A2DObj<T&> out) {
-  return EvalExprRef2<Expr, T>(a2d_forward<Expr>(expr), out);
+  return EvalExprRef2<Expr, T>(std::forward<Expr>(expr), out);
 }
 
 }  // namespace A2D

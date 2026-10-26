@@ -195,7 +195,7 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
     seed.set_rand();
     hvalue.set_rand();
   } else {
-    for (int i = 0; i < seed.get_num_components(); i++) {
+    for (int i = 0; i < seed.get_ncomp(); i++) {
       seed[i] = T(1.0);
       hvalue[i] = T(0.0);
     }
@@ -209,7 +209,7 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
   // Perform a component-by-component test for gradients and the Hessian-vector
   // products
   if (component) {
-    for (int k = 0; k < p.get_num_components(); k++) {
+    for (int k = 0; k < p.get_ncomp(); k++) {
       p.zero();
       p[k] = T(1.0);
 
@@ -217,20 +217,20 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
 
       // Set x1 = x + dh * p1
       double dh = test.get_step_size();
-      for (index_t i = 0; i < x.get_num_components(); i++) {
+      for (int i = 0; i < x.get_ncomp(); i++) {
         x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
       }
 
       // Compute the complex-step result: fd = p^{T} * df/dx
       VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
       T fd = 0.0;
-      for (index_t i = 0; i < value.get_num_components(); i++) {
+      for (int i = 0; i < value.get_ncomp(); i++) {
         fd += (ImagPart(value[i]) / dh) * RealPart(seed[i]);
       }
 
       // Compute the solution from the AD
       T ans = 0.0;
-      for (index_t i = 0; i < x.get_num_components(); i++) {
+      for (int i = 0; i < x.get_ncomp(); i++) {
         ans += RealPart(g[i] * p[i]);
       }
 
@@ -248,7 +248,7 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
 
     if (test_type == TestType::SECOND_ORDER ||
         test_type == TestType::SECOND_ORDER_INTEGRATION) {
-      for (int k = 0; k < p.get_num_components(); k++) {
+      for (int k = 0; k < p.get_ncomp(); k++) {
         p.zero();
         p[k] = 1.0;
 
@@ -256,19 +256,19 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
 
         // Set x1 = x + dh * p1
         double dh = test.get_step_size();
-        for (index_t i = 0; i < x.get_num_components(); i++) {
+        for (int i = 0; i < x.get_ncomp(); i++) {
           x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
         }
 
         // Set the seed and include the second-derivative parts
         VarTuple<A2D_complex_t<T>, Output> seedh;
-        for (index_t i = 0; i < seed.get_num_components(); i++) {
+        for (int i = 0; i < seed.get_ncomp(); i++) {
           seedh[i] =
               seed[i] + A2D_complex_t<double>(0.0, RealPart(dh * hvalue[i]));
         }
         test.deriv(seedh, x1, g);
 
-        for (index_t i = 0; i < x.get_num_components(); i++) {
+        for (int i = 0; i < x.get_ncomp(); i++) {
           T ans = RealPart(h[i]);
           T fd = ImagPart(g[i]) / dh;
 
@@ -296,20 +296,20 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
 
     // Set x1 = x + dh * p1
     double dh = test.get_step_size();
-    for (index_t i = 0; i < x.get_num_components(); i++) {
+    for (int i = 0; i < x.get_ncomp(); i++) {
       x1[i] = A2D_complex_t<double>(RealPart(x[i]), RealPart(dh * p[i]));
     }
 
     // Compute the complex-step result: fd = p^{T} * df/dx
     VarTuple<A2D_complex_t<T>, Output> value = test.eval(x1);
     T fd = 0.0;
-    for (index_t i = 0; i < value.get_num_components(); i++) {
+    for (int i = 0; i < value.get_ncomp(); i++) {
       fd += (ImagPart(value[i]) / dh) * RealPart(seed[i]);
     }
 
     // Compute the solution from the AD
     T ans = 0.0;
-    for (index_t i = 0; i < x.get_num_components(); i++) {
+    for (int i = 0; i < x.get_ncomp(); i++) {
       ans += RealPart(g[i] * p[i]);
     }
 
@@ -323,13 +323,13 @@ bool Run(A2DTest<A2D_complex_t<T>, Output, Inputs...>& test,
     if (test_type == TestType::SECOND_ORDER ||
         test_type == TestType::SECOND_ORDER_INTEGRATION) {
       // Set the seed and include the second-derivative parts
-      for (index_t i = 0; i < seed.get_num_components(); i++) {
+      for (int i = 0; i < seed.get_ncomp(); i++) {
         seed[i] =
             seed[i] + A2D_complex_t<double>(0.0, RealPart(dh * hvalue[i]));
       }
       test.deriv(seed, x1, g);
 
-      for (index_t i = 0; i < x.get_num_components(); i++) {
+      for (int i = 0; i < x.get_ncomp(); i++) {
         T ans = RealPart(h[i]);
         T fd = ImagPart(g[i]) / dh;
 

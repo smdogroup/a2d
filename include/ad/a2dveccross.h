@@ -2,9 +2,7 @@
 #define A2D_VEC_CROSS_H
 
 #include "../a2ddefs.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
-#include "a2dvec.h"
+#include "../a2dvec.h"
 #include "core/a2dveccore.h"
 
 namespace A2D {
@@ -35,7 +33,7 @@ template <class xtype, class ytype, class ztype>
 class VecCrossExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the dimensions of the underlying vectors
   static constexpr int N = get_vec_size<xtype>::size;
@@ -155,15 +153,14 @@ template <class xtype, class ytype, class ztype>
 class VecCross2DExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<ztype>::type T;
+  using T = object_scalar_t<ztype>;
 
   // Extract the diff type
   static constexpr ADiffType adx = get_diff_type<xtype>::diff_type;
   static constexpr ADiffType ady = get_diff_type<ytype>::diff_type;
 
   // Check if x is a scalar
-  const static bool is_x_scalar =
-      is_scalar_type<typename remove_a2dobj<xtype>::type>::value;
+  const static bool is_x_scalar = is_numeric_v<xtype>;
 
   A2D_FUNCTION VecCross2DExpr(xtype x, ytype y, ztype& z) : x(x), y(y), z(z) {}
 
@@ -335,108 +332,6 @@ template <class xtype, class ytype, class ztype,
 A2D_FUNCTION auto VecCross(A2DObj<xtype>& x, const ytype y, A2DObj<ztype>& z) {
   return VecCross2DExpr<A2DObj<xtype>&, const ytype, A2DObj<ztype>>(x, y, z);
 }
-
-namespace Test {
-
-template <typename T>
-class VecCross3DTest : public A2DTest<T, Vec<T, 3>, Vec<T, 3>, Vec<T, 3>> {
- public:
-  using Input = VarTuple<T, Vec<T, 3>, Vec<T, 3>>;
-  using Output = VarTuple<T, Vec<T, 3>>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecCross"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    Vec<T, 3> x, y, z;
-    X.get_values(x, y);
-    VecCross(x, y, z);
-    return MakeVarTuple<T>(z);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<Vec<T, 3>> x, y, z;
-    X.get_values(x.value(), y.value());
-    auto stack = MakeStack(VecCross(x, y, z));
-    seed.get_values(z.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue(), y.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<Vec<T, 3>> x, y, z;
-    X.get_values(x.value(), y.value());
-    p.get_values(x.pvalue(), y.pvalue());
-    auto stack = MakeStack(VecCross(x, y, z));
-    seed.get_values(z.bvalue());
-    hval.get_values(z.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue(), y.hvalue());
-  }
-};
-
-template <typename T>
-class VecCross2DTest : public A2DTest<T, Vec<T, 2>, Vec<T, 2>, T> {
- public:
-  using Input = VarTuple<T, Vec<T, 2>, T>;
-  using Output = VarTuple<T, Vec<T, 2>>;
-
-  // Assemble a string to describe the test
-  std::string name() { return "VecCross"; }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& X) {
-    Vec<T, 2> x, z;
-    T y;
-    X.get_values(x, y);
-    VecCross(x, y, z);
-    return MakeVarTuple<T>(z);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& X, Input& g) {
-    ADObj<Vec<T, 2>> x, z;
-    ADObj<T> y;
-    X.get_values(x.value(), y.value());
-    auto stack = MakeStack(VecCross(x, y, z));
-    seed.get_values(z.bvalue());
-    stack.reverse();
-    g.set_values(x.bvalue(), y.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& X,
-             const Input& p, Input& h) {
-    A2DObj<Vec<T, 2>> x, z;
-    A2DObj<T> y;
-    X.get_values(x.value(), y.value());
-    p.get_values(x.pvalue(), y.pvalue());
-    auto stack = MakeStack(VecCross(x, y, z));
-    seed.get_values(z.bvalue());
-    hval.get_values(z.hvalue());
-    stack.hproduct();
-    h.set_values(x.hvalue(), y.hvalue());
-  }
-};
-
-inline bool VecCrossTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  VecCross3DTest<Tc> test1;
-  passed = passed && Run(test1, component, write_output);
-
-  VecCross2DTest<Tc> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

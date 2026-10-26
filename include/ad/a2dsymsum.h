@@ -1,11 +1,8 @@
 #ifndef A2D_SYM_MAT_SUM_H
 #define A2D_SYM_MAT_SUM_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dgemmcore.h"
 
 namespace A2D {
@@ -86,7 +83,7 @@ template <class atype, class Atype, class Stype>
 class SymMatSumExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Stype>::type T;
+  using T = object_scalar_t<Stype>;
 
   // Extract the dimensions of the underlying matrix
   static constexpr int M = get_matrix_rows<Atype>::size;
@@ -171,13 +168,13 @@ class SymMatSumExpr {
 // Scalar constant alpha = 1.0 case
 template <class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(ADObj<Atype>& A, ADObj<Stype>& S) {
-  using T = typename get_object_numeric_type<Stype>::type;
+  using T = object_scalar_t<Stype>;
   return SymMatSumExpr<const T, ADObj<Atype>, ADObj<Stype>>(T(1.0), A, S);
 }
 
 template <class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(A2DObj<Atype>& A, A2DObj<Stype>& S) {
-  using T = typename get_object_numeric_type<Stype>::type;
+  using T = object_scalar_t<Stype>;
   return SymMatSumExpr<const T, A2DObj<Atype>, A2DObj<Stype>>(T(1.0), A, S);
 }
 
@@ -218,122 +215,6 @@ template <class atype, class Atype, class Stype>
 A2D_FUNCTION auto SymMatSum(A2DObj<atype>& alpha, Atype& A, A2DObj<Stype>& S) {
   return SymMatSumExpr<A2DObj<atype>&, const Atype, A2DObj<Stype>>(alpha, A, S);
 }
-
-namespace Test {
-
-template <typename T, int N>
-class SymMatSumTest : public A2DTest<T, SymMat<T, N>, Mat<T, N, N>> {
- public:
-  using Input = VarTuple<T, Mat<T, N, N>>;
-  using Output = VarTuple<T, SymMat<T, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "SymMatSum<" << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    Mat<T, N, N> A;
-    SymMat<T, N> S;
-    x.get_values(A);
-    SymMatSum(A, S);
-    return MakeVarTuple<T>(S);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<Mat<T, N, N>> A;
-    ADObj<SymMat<T, N>> S;
-    x.get_values(A.value());
-    auto stack = MakeStack(SymMatSum(A, S));
-    seed.get_values(S.bvalue());
-    stack.reverse();
-    g.set_values(A.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<SymMat<T, N>> S;
-    A2DObj<Mat<T, N, N>> A;
-    x.get_values(A.value());
-    p.get_values(A.pvalue());
-    auto stack = MakeStack(SymMatSum(A, S));
-    seed.get_values(S.bvalue());
-    hval.get_values(S.hvalue());
-    stack.hproduct();
-    h.set_values(A.hvalue());
-  }
-};
-
-template <typename T, int N>
-class SymMatSumScaleTest : public A2DTest<T, SymMat<T, N>, T, Mat<T, N, N>> {
- public:
-  using Input = VarTuple<T, T, Mat<T, N, N>>;
-  using Output = VarTuple<T, SymMat<T, N>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "SymMatSum<" << N << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    T alpha;
-    Mat<T, N, N> A;
-    SymMat<T, N> S;
-    x.get_values(alpha, A);
-    SymMatSum(alpha, A, S);
-    return MakeVarTuple<T>(S);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> alpha;
-    ADObj<Mat<T, N, N>> A;
-    ADObj<SymMat<T, N>> S;
-    x.get_values(alpha.value(), A.value());
-    auto stack = MakeStack(SymMatSum(alpha, A, S));
-    seed.get_values(S.bvalue());
-    stack.reverse();
-    g.set_values(alpha.bvalue(), A.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<T> alpha;
-    A2DObj<SymMat<T, N>> S;
-    A2DObj<Mat<T, N, N>> A;
-    x.get_values(alpha.value(), A.value());
-    p.get_values(alpha.pvalue(), A.pvalue());
-    auto stack = MakeStack(SymMatSum(alpha, A, S));
-    seed.get_values(S.bvalue());
-    hval.get_values(S.hvalue());
-    stack.hproduct();
-    h.set_values(alpha.hvalue(), A.hvalue());
-  }
-};
-
-inline bool SymMatSumTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  SymMatSumTest<Tc, 4> test1;
-  passed = passed && Run(test1, component, write_output);
-
-  SymMatSumScaleTest<Tc, 3> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 

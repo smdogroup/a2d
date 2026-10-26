@@ -1,12 +1,8 @@
 #ifndef A2D_MAT_ADD_H
 #define A2D_MAT_ADD_H
 
-#include <type_traits>
-
 #include "../a2ddefs.h"
-#include "a2dmat.h"
-#include "a2dstack.h"
-#include "a2dtest.h"
+#include "../a2dmat.h"
 #include "core/a2dveccore.h"
 
 namespace A2D {
@@ -40,7 +36,7 @@ template <class Atype, class Btype, class Ctype>
 class MatSumExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Get the sizes of the matrices
   static const int size = get_num_matrix_entries<Ctype>::size;
@@ -50,10 +46,8 @@ class MatSumExpr {
   static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
 
   // Assert that all the matrices are compatible types
-  static_assert(((get_a2d_object_type<Atype>::value ==
-                  get_a2d_object_type<Btype>::value) &&
-                 (get_a2d_object_type<Btype>::value ==
-                  get_a2d_object_type<Ctype>::value)),
+  static_assert(((a2d_obj_type_v<Atype> == a2d_obj_type_v<Btype>) &&
+                 (a2d_obj_type_v<Btype> == a2d_obj_type_v<Ctype>)),
                 "Matrices are not all of the same type");
 
   static_assert((get_num_matrix_entries<Atype>::size == size &&
@@ -152,7 +146,7 @@ template <class atype, class Atype, class btype, class Btype, class Ctype>
 class MatSumScaleExpr {
  public:
   // Extract the numeric type to use
-  typedef typename get_object_numeric_type<Ctype>::type T;
+  using T = object_scalar_t<Ctype>;
 
   // Get the sizes of the matrices
   static const int size = get_num_matrix_entries<Ctype>::size;
@@ -164,10 +158,8 @@ class MatSumScaleExpr {
   static constexpr ADiffType adB = get_diff_type<Btype>::diff_type;
 
   // Assert that all the matrices are compatible types
-  static_assert(((get_a2d_object_type<Atype>::value ==
-                  get_a2d_object_type<Btype>::value) &&
-                 (get_a2d_object_type<Btype>::value ==
-                  get_a2d_object_type<Ctype>::value)),
+  static_assert(((a2d_obj_type_v<Atype> == a2d_obj_type_v<Btype>) &&
+                 (a2d_obj_type_v<Btype> == a2d_obj_type_v<Ctype>)),
                 "Matrices are not all of the same type");
 
   static_assert((get_num_matrix_entries<Atype>::size == size &&
@@ -312,119 +304,6 @@ A2D_FUNCTION auto MatSum(const atype alpha, A2DObj<Atype>& A, const btype beta,
   return MatSumScaleExpr<const atype, A2DObj<Atype>, const btype, A2DObj<Btype>,
                          A2DObj<Ctype>>(alpha, A, beta, B, C);
 }
-
-namespace Test {
-
-template <typename T, int N, int M>
-class MatSumTest : public A2DTest<T, Mat<T, N, M>, Mat<T, N, M>, Mat<T, N, M>> {
- public:
-  using Input = VarTuple<T, Mat<T, N, M>, Mat<T, N, M>>;
-  using Output = VarTuple<T, Mat<T, N, M>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "MatSum<" << N << "," << M << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    Mat<T, N, M> A, B, C;
-    x.get_values(A, B);
-    MatSum(A, B, C);
-    return MakeVarTuple<T>(C);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<Mat<T, N, M>> A, B, C;
-    x.get_values(A.value(), B.value());
-    auto stack = MakeStack(MatSum(A, B, C));
-    seed.get_values(C.bvalue());
-    stack.reverse();
-    g.set_values(A.bvalue(), B.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<Mat<T, N, M>> A, B, C;
-    x.get_values(A.value(), B.value());
-    p.get_values(A.pvalue(), B.pvalue());
-    auto stack = MakeStack(MatSum(A, B, C));
-    seed.get_values(C.bvalue());
-    hval.get_values(C.hvalue());
-    stack.hproduct();
-    h.set_values(A.hvalue(), B.hvalue());
-  }
-};
-
-template <typename T, int N, int M>
-class MatSumScaleTest
-    : public A2DTest<T, Mat<T, N, M>, T, Mat<T, N, M>, T, Mat<T, N, M>> {
- public:
-  using Input = VarTuple<T, T, Mat<T, N, M>, T, Mat<T, N, M>>;
-  using Output = VarTuple<T, Mat<T, N, M>>;
-
-  // Assemble a string to describe the test
-  std::string name() {
-    std::stringstream s;
-    s << "MatSum<" << N << "," << M << ">";
-    return s.str();
-  }
-
-  // Evaluate the matrix-matrix product
-  Output eval(const Input& x) {
-    T alpha, beta;
-    Mat<T, N, M> A, B, C;
-    x.get_values(alpha, A, beta, B);
-    MatSum(alpha, A, beta, B, C);
-    return MakeVarTuple<T>(C);
-  }
-
-  // Compute the derivative
-  void deriv(const Output& seed, const Input& x, Input& g) {
-    ADObj<T> alpha, beta;
-    ADObj<Mat<T, N, M>> A, B, C;
-    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
-    auto stack = MakeStack(MatSum(alpha, A, beta, B, C));
-    seed.get_values(C.bvalue());
-    stack.reverse();
-    g.set_values(alpha.bvalue(), A.bvalue(), beta.bvalue(), B.bvalue());
-  }
-
-  // Compute the second-derivative
-  void hprod(const Output& seed, const Output& hval, const Input& x,
-             const Input& p, Input& h) {
-    A2DObj<T> alpha, beta;
-    A2DObj<Mat<T, N, M>> A, B, C;
-    x.get_values(alpha.value(), A.value(), beta.value(), B.value());
-    p.get_values(alpha.pvalue(), A.pvalue(), beta.pvalue(), B.pvalue());
-    auto stack = MakeStack(MatSum(alpha, A, beta, B, C));
-    seed.get_values(C.bvalue());
-    hval.get_values(C.hvalue());
-    stack.hproduct();
-    h.set_values(alpha.hvalue(), A.hvalue(), beta.hvalue(), B.hvalue());
-  }
-};
-
-inline bool MatSumTestAll(bool component = false, bool write_output = true) {
-  using Tc = A2D_complex_t<double>;
-
-  bool passed = true;
-  MatSumTest<Tc, 3, 4> test1;
-  passed = passed && Run(test1, component, write_output);
-  MatSumTest<Tc, 5, 3> test2;
-  passed = passed && Run(test2, component, write_output);
-
-  MatSumScaleTest<Tc, 3, 4> test3;
-  passed = passed && Run(test3, component, write_output);
-
-  return passed;
-}
-
-}  // namespace Test
 
 }  // namespace A2D
 
